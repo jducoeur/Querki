@@ -17,6 +17,7 @@ Func.notThing={0} didn't receive a Thing value
 Func.paramNotThing={0} parameter {1} should be a Thing
 Func.unknownThing={0} received a link to an unknown Thing! (Maybe something got deleted?)
 Func.wrongType={0} didn't receive the expected type {1}
+Func.generalWrongType=Expecting type {0}, but actually got type {1}
 Func.paramWrongType={0} parameter {1} should be of type {2} but is actually {3}
 Func.missingDefiningContext={0} must be used with a dot
 Func.notProp={0} can only be used on Properties

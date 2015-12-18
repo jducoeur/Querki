@@ -36,7 +36,7 @@ case class ElemValue(elem:Any, pType:PType[_]) {
       { v => v },
       {
         try {
-          throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + expectedType.realType)
+          throw new PublicException("Func.generalWrongType", expectedType.realType.displayName, myType.displayName)
         } catch {
           case e:Exception => play.api.Logger.error("", e); throw e
         }

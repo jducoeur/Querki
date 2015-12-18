@@ -184,11 +184,15 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       // that descendants() returns SortedSets, which can be combined to preserve the sorting. The below
       // logic is designed specifically to preserve that sorting until we're done.
       val context = inv.definingContext.getOrElse(inv.context)
-      val roots = context.value.rawList(LinkType)
-      val allSets = roots.map(root => inv.state.descendants(root, false, true, true))
-      // At this point, we have to lock it down into sequence, since now we will transform it to OIDs:
-      val descendants = allSets.reduce(_ ++ _).toSeq
-      Future.successful(QList.makePropValue(descendants.map(desc => LinkType(desc)), LinkType))
+      if (context.value.matchesType(LinkType)) {
+        val roots = context.value.rawList(LinkType)
+        val allSets = roots.map(root => inv.state.descendants(root, false, true, true))
+        // At this point, we have to lock it down into sequence, since now we will transform it to OIDs:
+        val descendants = allSets.reduce(_ ++ _).toSeq
+        Future.successful(QList.makePropValue(descendants.map(desc => LinkType(desc)), LinkType))
+      } else {
+        throw new PublicException("Func.notThing", displayName)
+      }
     }
   }
   
