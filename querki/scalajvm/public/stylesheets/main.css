@@ -551,6 +551,10 @@ body {
   display: inherit;
 }
 
+._checklist ._listContent {
+  list-style-type: none;
+}
+
 /****************************
  * Error styles
  */

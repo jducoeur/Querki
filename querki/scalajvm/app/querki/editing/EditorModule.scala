@@ -463,9 +463,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         yield 
           HtmlUI.HtmlValue(
             form(
-              cls:="_checkList",
-              data.thing:=setThing.toThingId.toString,
-              data.prop:=setProp.toThingId.toString,
+              cls:="_checklist",
+              data.thing:=setThing.id.toThingId.toString,
+              data.prop:=setProp.id.toThingId.toString,
               ul(
                 cls:="_listContent",
                 raw(itemStr)
@@ -491,12 +491,12 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
             // ... show the checkbox...
             input(
               cls:="_checkOption", 
-              value:=t.toThingId.toString,
+              value:=t.id.toThingId.toString,
               tpe:="checkbox",
               if (selected) checked:="checked"),
             " ",
             // ... and the display content
-            div(raw(display.toString))
+            div(cls:="_pickName", raw(display.toString))
           ).toString
           
       // Turn them all into one String, to return to the main function:
