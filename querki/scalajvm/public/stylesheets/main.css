@@ -527,7 +527,7 @@ body {
  
  ._pickName {
    display: inline-block;
-   height: 20px;
+   min-height: 20px;
  }
  
 ._pickName ._deleteInstanceButton {
