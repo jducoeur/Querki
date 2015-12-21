@@ -18,7 +18,7 @@ class EditorTests extends QuerkiTests {
     
     implicit class strTests(str:String) {
       def has(t:models.Thing, checked:Boolean) = {
-        val tid = t.toThingId.toString
+        val tid = t.id.toThingId.toString
         if (checked)
           str should include(s"""<input class="_checkOption" value="$tid" type="checkbox" checked="checked" />""")
         else
@@ -26,7 +26,7 @@ class EditorTests extends QuerkiTests {
       }
       
       def lacks(t:models.Thing) = {
-        val tid = t.toThingId.toString
+        val tid = t.id.toThingId.toString
         str should not include(tid)
       }
     }
