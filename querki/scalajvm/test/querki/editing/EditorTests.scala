@@ -3,6 +3,59 @@ package querki.editing
 import querki.test._
 
 class EditorTests extends QuerkiTests {
+  "_checkList" should {
+    class TSpace extends CommonSpace {
+      val fruit = new SimpleTestThing("Fruit")
+      val apple = new TestThing("Apple", fruit)
+      val banana = new TestThing("Banana", fruit)
+      val blackberry = new TestThing("Blackberry", fruit)
+      val cherry = new TestThing("Cherry", fruit)
+      val raspberry = new TestThing("Raspberry", fruit)
+      
+      val fruits = new TestProperty(LinkType, QSet, "Fruits")
+      val basket = new SimpleTestThing("Basket", fruits(banana, cherry))
+    }
+    
+    implicit class strTests(str:String) {
+      def has(t:models.Thing, checked:Boolean) = {
+        val tid = t.toThingId.toString
+        if (checked)
+          str should include(s"""<input class="_checkOption" value="$tid" type="checkbox" checked="checked" />""")
+        else
+          str should include(s"""<input class="_checkOption" value="$tid" type="checkbox"></input>""")
+      }
+      
+      def lacks(t:models.Thing) = {
+        val tid = t.toThingId.toString
+        str should not include(tid)
+      }
+    }
+    
+    "work normally with all instances" in {
+      implicit val s = new TSpace
+      import s._
+      
+      val res = pql("""[[Fruit._instances -> Fruits._checkList(on = Basket)]]""")
+      res.has(apple, false)
+      res.has(banana, true)
+      res.has(blackberry, false)
+      res.has(cherry, true)
+      res.has(raspberry, false)
+    }
+    
+    "work with selectedOnly" in {
+      implicit val s = new TSpace
+      import s._
+      
+      val res = pql("""[[Fruit._instances -> Fruits._checkList(on = Basket, selectedOnly = true)]]""")
+      res.lacks(apple)
+      res.has(banana, true)
+      res.lacks(blackberry)
+      res.has(cherry, true)
+      res.lacks(raspberry)      
+    }
+  }
+  
   "_edit" should {
     
     "let me edit a single Property" in {

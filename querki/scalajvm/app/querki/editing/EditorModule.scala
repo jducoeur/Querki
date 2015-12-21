@@ -2,6 +2,9 @@ package querki.editing
 
 import scala.xml.Elem
 
+import scalatags.Text.all.{id => idAttr, _}
+import scalatags.Text.TypedTag
+
 import models.{DisplayPropVal, Kind, OID, Property, PropertyBundle, Thing, ThingState, Wikitext}
 import Thing._
 
@@ -21,17 +24,18 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   
   val Types = initRequires[querki.types.Types]
   val Basic = initRequires[querki.basic.Basic]
+  val Logic = initRequires[querki.logic.Logic]
   val Links = initRequires[querki.links.Links]
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Apps = interface[querki.apps.Apps]
-  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
-  lazy val PropListMgr = interface[querki.core.PropListManager]
+  lazy val DeriveName = interface[querki.types.DeriveName]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
-  lazy val DeriveName = interface[querki.types.DeriveName]
-  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val QL = interface[querki.ql.QL]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -394,6 +398,112 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	  }
 	}
   
+  lazy val CheckListMethod = new InternalMethod(CheckListOID,
+    toProps(
+      setName("_checkList"),
+      Summary("""Display a checklist of items to add or remove from a Set."""),
+      Signature(
+        expected = Some(Seq(LinkType), "The items to choose from."),
+        defining = Some(true, Seq(LinkType), "The Property that actually contains the checklist, which should be a Set of Things"),
+        reqs = Seq(
+          ("on", LinkType, "The Thing that contains the Set.")
+        ),
+        opts = Seq(
+          ("selectedOnly", YesNoType, ExactlyOne(Logic.False), "If True, only items currently in the Set will be displayed."),
+          ("display", AnyType, Core.QNone, "How to display each item.")
+        ),
+        returns = (AnyType, "The Check List, ready to display.")
+      ),
+      Details("""Sometimes, you want to be able to take a Set, and use it as a checklist. The `_checkList`
+        |function is designed for that.
+        |
+        |For example, say that you have a Shopping List Space. There is a Shopping Item Model, with an Instance
+        |for each item that you sometimes shop for, and a Shops Tag Set saying where it can be found.
+        |You have a Thing named "Shopping List", with a Property "Contents", which is a Set of Things.
+        |You would display the whole shopping list, as a checklist, like this:
+        |```
+        |\[[Shopping Item._instances -> Contents.checkList(on = Shopping List)\]]
+        |```
+        |That is, the actual list is found in Shopping List.Contents, and you are choosing from
+        |all Instances of Shopping Item. This lets you easily add Items to the list.
+        |
+        |Sometimes, you only want to list the items that are actually checked-off. For example, when
+        |you go shopping, you just want to be checking things *off* the list. So you would say:
+        |```
+        |\[[Shopping Item._instances -> Contents._checkList(on = Shopping List, selectedOnly = true)\]]
+        |```
+        |By using `selectedOnly` like this, it will only display the currently-selected Items, so
+        |you can check them off.
+        |
+        |You can filter which items show on the list. For instance, you could show a list of just the
+        |Items to look for at Acme like this:
+        |```
+        |\[[Shopping Item._instances 
+        |  -> _filter(Shops -> _contains(Acme))
+        |  -> Contents._checkList(on = Shopping List, selectedOnly = true)\]]
+        |```
+        |This way, you can easily display customized checklists for particular situations.
+        |
+        |By default, _checkList will display show each item's Name. But you can customize this using
+        |the `display` parameter. If provided, this will be applied to every item, and the result is
+        |what will be shown.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val state = inv.state
+      
+      for {
+        selectedOnly <- inv.processAs("selectedOnly", YesNoType)
+        setOID <- inv.processAs("on", LinkType)
+        setThing <- inv.opt(state.anything(setOID))
+        setProp <- inv.definingContextAsPropertyOf(LinkType)
+        currentPV <- inv.opt(setThing.getPropOpt(setProp), Some(new PublicException("Edit.checklist.propMissing", setThing.displayName, setProp.displayName)))
+        currentSet = currentPV.rawList
+        itemStr <- inv.fut(items(inv, currentSet, selectedOnly))
+      }
+        yield 
+          HtmlUI.HtmlValue(
+            form(
+              cls:="_checkList",
+              data.thing:=setThing.toThingId.toString,
+              data.prop:=setProp.toThingId.toString,
+              ul(
+                cls:="_listContent",
+                raw(itemStr)
+              ))) 
+    }
+    
+    def items(inv:Invocation, currentSet:List[OID], selectedOnly:Boolean):Future[String] = {
+      implicit val state = inv.state
+      implicit val rc = inv.context.request
+      
+      val itemInv = for {  
+        elemCtx <- inv.contextElements
+        t <- inv.contextAllThings(elemCtx)
+        selected = currentSet.contains(t.id)
+        // If we're in selectedOnly, screen out items that aren't in the set:
+        if (selected || !selectedOnly)
+        displayOpt <- inv.processAsOpt("display", QL.ParsedTextType, elemCtx)
+        display <- inv.fut(displayOpt.map(d => fut(d.display)).getOrElse(t.nameOrComputed))
+      }
+        yield 
+          // For each element...
+          li(
+            // ... show the checkbox...
+            input(
+              cls:="_checkOption", 
+              value:=t.toThingId.toString,
+              tpe:="checkbox",
+              if (selected) checked:="checked"),
+            " ",
+            // ... and the display content
+            div(raw(display.toString))
+          ).toString
+          
+      // Turn them all into one String, to return to the main function:
+      itemInv.get.map(_.toSeq.reduce(_ + _))
+    }
+  }
+  
   override lazy val props = Seq(
     PlaceholderTextProp,
     PromptProp,
@@ -404,6 +514,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     editAsPicklistMethod,
     EditWidthProp,
     FormLineMethod,
-    NotEditableProp
+    NotEditableProp,
+    CheckListMethod
   )
 }

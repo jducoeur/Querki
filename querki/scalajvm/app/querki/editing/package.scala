@@ -23,6 +23,7 @@ package object editing {
     val InstanceEditViewOID = moid(2)
     val EditWidthPropOID = moid(3)
     val NotEditableOID = moid(4)
+    val CheckListOID = moid(5)
   }
 
   trait Editor extends EcologyInterface {

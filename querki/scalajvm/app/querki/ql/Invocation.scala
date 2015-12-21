@@ -204,13 +204,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     }
   }
   
-  def contextAllThings:InvocationValue[Thing] = {
-    if (context.value.matchesType(Core.UnknownType)) {
+  def contextAllThings(ctx:QLContext = context):InvocationValue[Thing] = {
+    if (ctx.value.matchesType(Core.UnknownType)) {
       InvocationValueImpl(None)
-    } else if (!context.value.matchesType(Core.LinkType)) {
+    } else if (!ctx.value.matchesType(Core.LinkType)) {
       error("Func.notThing", displayName)
     } else {
-      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+      val ids = ctx.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
         InvocationValueImpl(thingsOpt.flatten)

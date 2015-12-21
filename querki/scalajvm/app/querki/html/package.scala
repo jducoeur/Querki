@@ -4,6 +4,8 @@ import scala.xml.NodeSeq
 
 import play.api.data.Form
 
+import scalatags.Text.TypedTag
+
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, ThingId, Wikitext}
 
 import querki.core.QLText
@@ -42,6 +44,7 @@ package object html {
     def HtmlValue(html:QHtml):QValue
     def HtmlValue(str:String):QValue
     def HtmlValue(xml:NodeSeq):QValue
+    def HtmlValue(tag:TypedTag[_]):QValue
     
     def toWikitext(xml:NodeSeq):Wikitext
   }

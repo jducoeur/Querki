@@ -162,7 +162,13 @@ package object ql {
      * Iterates over all of the received Things. (That is, this checks that the received values are
      * all LinkType, resolves them to Thing, and gives an error if any aren't Links.)
      */
-    def contextAllThings:InvocationValue[Thing]
+    def contextAllThings:InvocationValue[Thing] = contextAllThings(context)
+
+    /**
+     * This overload of contextAllThings lets you say which context to use. It should usually be
+     * used underneath contextElements.
+     */
+    def contextAllThings(processContext:QLContext):InvocationValue[Thing]
     
     /**
      * Iterates over all of the received Bundles. That is, you can pass *either* a Link to a Thing or a
