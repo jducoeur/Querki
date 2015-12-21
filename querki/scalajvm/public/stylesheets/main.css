@@ -555,6 +555,10 @@ body {
   list-style-type: none;
 }
 
+._checkOption {
+  vertical-align: top;
+}
+
 /****************************
  * Error styles
  */
