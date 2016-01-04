@@ -120,7 +120,11 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
         
         results,
         
-        p(SaveButton)
+        p(SaveButton),
+        
+        p(new ButtonGadget(ButtonGadget.Primary, "Done")({ () => 
+          Pages.thingPageFactory.showPage(initialThingId)
+        }))
       )
     }
   	  yield PageContents(s"QL Explorer for ${thingInfo.displayName}", guts)
