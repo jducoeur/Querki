@@ -98,7 +98,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
    */
   def doComp(context:QLContext)(left:VT, right:VT):Boolean = {
     implicit val s = context.state
-    math.Ordering.String.lt(doToUser(left), doToUser(right)) 
+    math.Ordering.String.lt(doToUser(left).toLowerCase, doToUser(right).toLowerCase) 
   } 
   final def comp(context:QLContext)(left:ElemValue, right:ElemValue):Boolean = doComp(context)(get(left), get(right))
   

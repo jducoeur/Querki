@@ -478,6 +478,18 @@ Wild!, 19, """.stripReturns)
       pql("""[[Ordinals._instances -> _sort]]""") should
         equal(listOfLinkText(s.first, s.fourth, s.second, s.third))
     }
+    
+    "handle Tags correctly" in {
+      class TSpace extends CommonSpace {
+        // This test data is drawn from Issue .3y28aek -- this is essentially a regression test for that:
+        val withTags = new SimpleTestThing("With Tags", listTagsProp("Underwater Branch", "Canoe", "Lug the Undulous Burden", "elk"))
+      }
+      implicit val s = new TSpace
+      
+      // Test that it sorts case-insensitively:
+      pql("""[[With Tags -> My List of Tags -> _sort]]""") should
+        equal(listOfTags("Canoe", "elk", "Lug the Undulous Burden", "Underwater Branch"))
+    }
   }
     
   // === _take ===

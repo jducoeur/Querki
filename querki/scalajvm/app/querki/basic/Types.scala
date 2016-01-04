@@ -32,7 +32,7 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
     def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
       Future.successful(Wikitext(v.text))
     
-    override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
+    override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text.toLowerCase < right.text.toLowerCase } 
       
     override def doMatches(left:PlainText, right:PlainText):Boolean = equalNames(left, right)
   
