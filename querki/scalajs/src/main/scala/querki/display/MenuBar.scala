@@ -76,13 +76,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
    * lines of the old Server-side NavSection?
    */
   def sections:Seq[Navigable] = {
-    Seq(thingLink, actionSection, appsSection, adminSection).flatten
-  }
-  
-  def thingLink = {
-    thingOpt.map { t =>
-      NavLink(truncateName(t.displayName), thingUrl(t))
-    }
+    Seq(actionSection, appsSection, adminSection).flatten
   }
   
   def alwaysLinks:Seq[Navigable] = {
