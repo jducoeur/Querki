@@ -100,9 +100,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                 title:=s"Create a $thingName",
                 href:=Pages.createAndEditFactory.pageUrl(thing))
             },
-            querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
-              title:=s"Edit all instances of $thingName",
-              href:=Editing.editInstancesFactory.pageUrl(thing))
+            if (thing.isEditable || thing.isInstantiatable) {
+              querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
+                title:=s"Edit all instances of $thingName",
+                href:=Editing.editInstancesFactory.pageUrl(thing))
+            }
           )
         } else {
           // Not a Model
