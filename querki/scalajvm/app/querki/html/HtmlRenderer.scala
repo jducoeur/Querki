@@ -119,7 +119,10 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |<dl>
         |[[_foreachProperty -> 
         |  _sort -> 
-        |  ""<dt>[[_prop]]</dt><dd>[[_val -> _rawVal]]</dd>""
+        |  ""<dt>[[_prop]]</dt><dd>[[
+        |    _if(_prop -> Property Type -> _is(Thing Type), 
+        |        _val -> _rawVal -> _commas, 
+        |        _val -> _rawVal)]]</dd>""
         |]]
         |</dl>""".stripMargin
     val fullText =
