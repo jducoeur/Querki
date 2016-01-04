@@ -88,11 +88,12 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   def removeProperty(editor:PropValueEditor) = {
     val propToRemove = editor.propInfo.oid
-    def removeEditor = editor.section.removeEditor(editor)
     // TODO: this should handle exceptions!
     Client[EditFunctions].removeProperty(modelId, propToRemove).call().foreach { result =>
       result match {
         case PropertyChanged => {
+          // Remove the Editor, and update Instance Props if needed:
+          editor.section.removeEditor(editor)
           // If the Property is local...
           if (!editor.propInfo.isShadow) {
             Client[EditFunctions].getPropertyUsage(propToRemove).call() foreach { usage =>
@@ -100,13 +101,11 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
               if (usage.nModels == 0 && usage.nInstances == 0) {
                 // ... then delete it completely:
                 Client[ThingFunctions].deleteThing(propToRemove).call().foreach { dummy =>
-                  removeEditor
+                  // Do we need to do anything here?
                 }
-              } else
-                removeEditor
+              }
             }
-          } else
-            removeEditor
+          }
         }
       }
     }

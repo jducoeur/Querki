@@ -65,9 +65,11 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   
   def removeEditor(editor:PropValueEditor) = {
     val child = $(editor.elem)
-    child.hide(400, { () => child.remove() })
-    propIds() -= editor.info.propInfo.oid
-    page.instancePropSection().onMoved()
+    child.hide(400, { () => 
+      child.remove() 
+      propIds() -= editor.info.propInfo.oid
+      page.instancePropSection().onMoved()
+    })
   }
   
   def refreshEditor(editor:PropValueEditor) = {
