@@ -25,9 +25,6 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
   
   implicit val t = thingInfo
   
-  lazy val _onDisplay = Promise[ConversationPane]
-  lazy val onDisplayFut:Future[ConversationPane] = _onDisplay.future
-  
   override def onCreate(e:dom.HTMLDivElement) = {
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()
     // TODO: how can we encapsulate this error-catching universally for Client? This needs research:
@@ -35,33 +32,38 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
       case t:Throwable => println(s"Got an error: $t")
     }
     fut.foreach { convInfo =>
-      val convs =
-        div(
-          for (conv <- convInfo.convs)
-            yield new ConversationGadget(conv, convInfo.canComment)
-        )
-      convWrapper.replaceContents(convs.render)
+      val canComment = convInfo.canComment
+      // If the user can't do anything with it, don't show the pane at all
+      val showPane = canComment || (convInfo.canReadComments && (convInfo.convs.length > 0))
       
-      val guts = 
-        div(
-          hr,
-          h4(cls:="_commentsHeader", "Comments"),
-          convWrapper,
-          new ReplyGadget(None, "Start a new conversation...", { node => onNewConversation(node, convInfo.canComment) })
-        )
+      if (showPane) {
+        val convs =
+          div(
+            for (conv <- convInfo.convs)
+              yield new ConversationGadget(conv, canComment)
+          )
+        convWrapper.replaceContents(convs.render)
         
-      allWrapper.replaceContents(guts.render)
-      Gadgets.hookPendingGadgets()
-      
-      // If we're supposed to be focusing on a specific comment, show that:
-      focusedComment.foreach { commentId =>
-        val target = $(elem).find(s"a[name=$commentId]")
-        // TODO: this highlight should probably fade out over, eg, three seconds?
-        $(target).parent().addClass("_commentHighlight")
-        $("html,body").scrollTop(target.offset().top)        
+        val guts = 
+          div(
+            hr,
+            h4(cls:="_commentsHeader", "Comments"),
+            convWrapper,
+            if (canComment)
+              new ReplyGadget(None, "Start a new conversation...", { node => onNewConversation(node, convInfo.canComment) })
+          )
+          
+        allWrapper.replaceContents(guts.render)
+        Gadgets.hookPendingGadgets()
+        
+        // If we're supposed to be focusing on a specific comment, show that:
+        focusedComment.foreach { commentId =>
+          val target = $(elem).find(s"a[name=$commentId]")
+          // TODO: this highlight should probably fade out over, eg, three seconds?
+          $(target).parent().addClass("_commentHighlight")
+          $("html,body").scrollTop(target.offset().top)        
+        }
       }
-      
-      _onDisplay.success(this)
     }
   }
   
