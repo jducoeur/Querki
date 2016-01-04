@@ -90,7 +90,9 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
             })
           )
         },
-        new ButtonGadget(ButtonGadget.Primary, "Done")({ () => Pages.showSpacePage(DataAccess.space.get) })
+        new ButtonGadget(ButtonGadget.Primary, "Done")({ () => 
+          Pages.thingPageFactory.showPage(thingId)
+        })
       )
   }
     yield PageContents(s"Advanced Commands", guts)
