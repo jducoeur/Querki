@@ -13,7 +13,7 @@ import models.Wikitext
 import querki.globals._
 
 import querki.comm._
-import querki.data.BasicThingInfo
+import querki.data.{BasicThingInfo, ThingInfo}
 import querki.util.ScalatagUtils
 
 /**
@@ -114,6 +114,8 @@ trait QuerkiUIUtils extends ScalatagUtils {
    * Show a standard Querki icon button.
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
+  
+  def thingUrl(thing:ThingInfo) = s"#!${thing.urlName.underlying}"
   
   def thingUrl(name:TID) = s"#!${name.underlying}"
   

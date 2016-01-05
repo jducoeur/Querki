@@ -15,6 +15,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val Tags = interface[querki.tags.Tags]
   
   override def postInit() = {
     // Search does not require login:
@@ -28,6 +29,18 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
       None
     else {
       val searchComp = searchStr.toLowerCase()
+      
+      def matchLocs(s:String):List[Int] = {
+        def matchLocsRec(start:Int):List[Int] = {
+          val i = s.indexOf(searchComp, start)
+          if (i == -1)
+            Nil
+          else
+            i :: matchLocsRec(i + 1)
+        }
+        
+        matchLocsRec(0)
+      }
       
       def checkOne(t:Thing):Seq[SearchResultInternal] = {
         if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
@@ -44,18 +57,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
                 val firstVal = propValue.firstAs(textType)
                 firstVal.flatMap { qtext => 
                   val propComp = qtext.text.toLowerCase()
-                  if (propComp.contains(searchComp)) {
-                    
-                    def matchLocs(start:Int):List[Int] = {
-                      val i = propComp.indexOf(searchComp, start)
-                      if (i == -1)
-                        Nil
-                      else
-                        i :: matchLocs(i + 1)
-                    }
-
-                    Some(SearchResultInternal(t, state.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
-                  }
+                  if (propComp.contains(searchComp))
+                    Some(SearchResultInternal(t, state.prop(propId).get, 0.5, qtext.text, matchLocs(propComp)))
                   else
                     None
                 }
@@ -67,9 +70,16 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
         }
       }
       
-      val allResults = state.everythingLocal.map(checkOne(_)).flatten.toSeq
+      val thingResults = state.everythingLocal.map(checkOne(_)).flatten.toSeq
+      val tagResults:Seq[SearchResultInternal] =
+        Tags
+          .fetchAllTags(state)
+          .filter(_.toLowerCase.contains(searchComp))
+          .map(Tags.getTag(_, state))
+          .map(tag => SearchResultInternal(tag, DisplayNameProp, 0.7, tag.displayName, matchLocs(tag.displayName.toLowerCase)))
+          .toSeq
     
-      Some(SearchResultsInternal(searchStr, allResults))      
+      Some(SearchResultsInternal(searchStr, thingResults ++ tagResults))      
     }
   }
 }

@@ -215,8 +215,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
     override lazy val unsafeDisplayName = name
-    override lazy val canonicalName = Some(name)
-    override lazy val linkName = Some(name)
+    override lazy val canonicalName = linkName
+    override lazy val linkName = Some(SafeUrl(name))
     override lazy val toThingId:ThingId = new AsDisplayName(name)
     
     override def thingOps(e:Ecology) = new TagThingOps(this)
@@ -249,7 +249,17 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // Screen out any null tags, in case they have snuck in, and translate the "canonical" names to "public" ones:
     tagList.toSet.filter(_.length > 0).map(publicTag(_))
   }
-    
+  
+  def fetchAllTags(state:SpaceState):Set[String] = {
+    state
+      .allProps
+      .values
+      .filter(prop => prop.pType == NewTagSetType || prop.pType == TagSetType)
+      .map(prop => fetchTags(state, prop))
+      .toSet
+      .flatten
+  }
+
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
     val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(LinkModelOID))
     val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(LinkModelOID))

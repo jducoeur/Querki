@@ -37,6 +37,12 @@ package object tags {
     
     def getTag(name:String, state:SpaceState):Thing
     def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String]
+    /**
+     * Fetch all the Tags used in this Space.
+     * 
+     * This will warm up the Tag cache, so don't be too afraid of it.
+     */
+    def fetchAllTags(state:SpaceState):Set[String]
     def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing
     /**
      * Returns true iff this Property is "taggable" -- that is, Manifest can treat it like a tag.

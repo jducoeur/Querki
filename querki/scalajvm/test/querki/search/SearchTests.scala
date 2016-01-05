@@ -41,7 +41,7 @@ class SearchTests extends QuerkiTests {
       
       val results = Search.search("box")(s.state)
       results.shouldHave(_.thing == s.sandbox)
-      results.shouldHave(_.thing == s.bluebox)
+      results.shouldHave(res => res.thing == s.bluebox && res.positions.contains(5))
       results.shouldntHave(_.thing == s.cello)
     }
     
@@ -53,7 +53,7 @@ class SearchTests extends QuerkiTests {
       implicit val s = new TSpace
       
       val results = Search.search("glorious")(s.state)
-      results.shouldHave(_.thing == s.t2)
+      results.shouldHave(res => res.thing == s.t2 && res.positions.contains(5))
       results.shouldntHave(_.thing == s.t1)
     }
   }
