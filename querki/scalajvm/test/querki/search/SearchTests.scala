@@ -1,5 +1,7 @@
 package querki.search
 
+import models.UnknownOID
+
 import querki.globals._
 import querki.test._
 
@@ -55,6 +57,17 @@ class SearchTests extends QuerkiTests {
       val results = Search.search("glorious")(s.state)
       results.shouldHave(res => res.thing == s.t2 && res.positions.contains(5))
       results.shouldntHave(_.thing == s.t1)
+    }
+    
+    "find tags" in {
+      class TSpace extends CommonSpace {
+        val tagThing = new SimpleTestThing("tagThing", listTagsProp("This is a tag", "another tag", "But this is not"))
+      }
+      implicit val s = new TSpace
+      
+      val results = Search.search("tag")(s.state)
+      results.shouldHave(res => res.thing.id == UnknownOID && res.text == "another tag" && res.positions.contains(8))
+      results.shouldntHave(res => res.text == "But this is not")
     }
   }
 }
