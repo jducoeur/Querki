@@ -39,8 +39,19 @@ class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*) extends Gadget[
     buttons().find(_.initiallyActive).map(select(_))
   }
   
-  def select(button:ButtonInfo) = {
+  // This is private because it doesn't actually change *to* this button, which is what outside
+  // code would expect. Use choose() instead:
+  private def select(button:ButtonInfo) = {
     selectedValOpt() = Some(button.value)
+  }
+  
+  // Change to the specified button; we do this by pseudo-clicking on it, since that's what makes
+  // Bootstrap happiest:
+  def choose(button:ButtonInfo) = {
+    $(elem)
+      .find("input")
+      .filter { inp:dom.Element => $(inp).valueString == button.value }
+      .parent().click()
   }
   
   val obs = Obs(buttons, skipInitial=true) {

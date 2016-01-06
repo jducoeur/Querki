@@ -25,6 +25,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     nameInput.map(_.setValue(""))
     typeSelector.map(_.setValue(""))
     modelSelector.map(_.setValue(""))
+    collSelector.map(_.choose(collButtons.head))
   }
   
   val nameInput = GadgetRef[RxText]
