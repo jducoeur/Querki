@@ -201,11 +201,12 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "a" |
-	  "input" | "div" | "span" | "i" | "strike" | "br" | "p" |
-      "dl" | "dd" | "dt" |
-      "ul" | "ol" | "li" |
-      "table" | "tr" | "th" | "td"
+    def xmlName:Parser[String] = "a" | "big" | "blockquote" | "br" | "button" | "b" |
+      "cite" | "code" | "div" | "em" |
+      "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "input" | "i" |
+      "p" | "pre" | "q" | "span" | "strike" | "strong" | "sub" | "sup" | "u" |
+      "dl" | "dd" | "dt" | "ul" | "ol" | "li" |
+      "table" | "thead" | "tbody" | "tfoot" | "tr" | "th" | "td" | "caption" | "col" | "colgroup"
     
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling

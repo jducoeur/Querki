@@ -49,6 +49,6 @@ class BlockParsersTest extends FlatSpec with Matchers with BlockParsers{
       val result = apply(p, lines)
       
       // TODO: this should properly test the result!
-      println(result)
+//      println(result)
     }
 }

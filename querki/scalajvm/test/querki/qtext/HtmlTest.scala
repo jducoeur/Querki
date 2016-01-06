@@ -95,6 +95,10 @@ Foo foo
   
   "Input tags" should {
     "work" in {
+      apply("<input/>") should
+        equal("""<input/>
+          |""".stripReturns)
+      
       apply("""Does this work? <input type="button" class="btn" value="Something"/>.""") should
       equal("""<p>Does this work? <input type="button" class="btn" value="Something"/>.</p>
           |""".stripReturns)
