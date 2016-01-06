@@ -201,12 +201,15 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "a" | "big" | "blockquote" | "br" | "button" | "b" |
+    def xmlName:Parser[String] = "big" | "blockquote" | "br" | "button" |
       "cite" | "code" | "div" | "em" |
-      "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "input" | "i" |
-      "p" | "pre" | "q" | "span" | "strike" | "strong" | "sub" | "sup" | "u" |
+      "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "input" |
+      "p" | "pre" | "q" | "span" | "strike" | "strong" | "sub" | "sup" |
       "dl" | "dd" | "dt" | "ul" | "ol" | "li" |
-      "table" | "thead" | "tbody" | "tfoot" | "tr" | "th" | "td" | "caption" | "col" | "colgroup"
+      "table" | "thead" | "tbody" | "tfoot" | "tr" | "th" | "td" | "caption" | "col" | "colgroup" |
+      // For reasons that are deeply unclear, prefixes to other options totally screw things up,
+      // so let's keep the single-letter tags down here at the end:
+      "a" | "b" | "i" | "u"
     
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling
