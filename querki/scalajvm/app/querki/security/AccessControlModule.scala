@@ -371,7 +371,19 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevelAdvanced),
         Summary("Who else can edit this Thing")))
 
-  lazy val CanReadProp = definePermission(CanReadPropOID, "Who Can Read", "Who else can read Things in this Space", Seq(PublicTag, OwnerTag), true)
+  lazy val CanReadProp = 
+    new SystemProperty(CanReadPropOID, LinkType, QSet,
+      toProps(
+        setName("Who Can Read"),
+        isPermissionProp(true),
+        SkillLevel(SkillLevelAdvanced),
+        LinkModelProp(SecurityPrincipal),
+        Summary("Who else can read Things in this Space"),
+        DefaultPermissionProp(PublicTag, OwnerTag),
+        PublicAllowedProp(true),
+        // You specifically can *not* restrict visibility of Properties or Types, at least not yet:
+        // that makes it way too easy to cause brokenness:
+        AppliesToKindProp(Kind.Thing)))
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
