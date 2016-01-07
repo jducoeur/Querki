@@ -157,7 +157,11 @@ trait QuerkiUIUtils extends ScalatagUtils {
    */
   def canFocus(e:dom.Element):Boolean = {
     e.tagName match {
-      case "A" | "BUTTON" | "INPUT" | "SELECT" | "TEXTAREA" => true
+      case "A" | "BUTTON" | "INPUT" | "SELECT" | "TEXTAREA" => {
+        // True unless it is disabled:
+        // TODO: is this working? I don't think it is doing so, at least not consistently:
+        $(e).prop("disabled").map(_ != true ).getOrElse(true)
+      }
       case _ => false
     }    
   }

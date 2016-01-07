@@ -10,9 +10,11 @@ import querki.globals._
  * A higher-level view of WrapperDiv, to encapsulate the common pattern "show a spinner until the given Future
  * pans out, then process the results and replace the display".
  * 
- * DEPRECATED: this should be replaced with RxDiv more or less everywhere.
+ * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output]) extends MetaGadget[dom.HTMLDivElement] {
+class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit val ecology:Ecology) 
+  extends MetaGadget[dom.HTMLDivElement] with EcologyMember 
+{
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
   lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
   
@@ -20,13 +22,11 @@ class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Out
   
   fut.map { result =>
     val finalTag = guts(result)
-    val wrapped = wrapper.replaceContents(finalTag.render)
-    finalTag.onInserted()
-    wrapped
+    wrapper.replaceContents(finalTag.render)
   }
 }
 object AfterLoading {
-  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output]) = new AfterLoading(fut)(guts)
+  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit ecology:Ecology) = new AfterLoading(fut)(guts)
 }
 
 /**
@@ -35,9 +35,11 @@ object AfterLoading {
  * 
  * Note that AfterLoading encapsulates the combination of WrapperDiv with a Future.
  * 
- * DEPRECATED: this should be replaced with RxDiv more or less everywhere.
+ * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class WrapperDiv extends Gadget[dom.HTMLDivElement] {
+class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+  
+  lazy val PageManager = interface[querki.display.PageManager]
   
   var contentsOpt:Option[dom.Element] = None
   
@@ -67,6 +69,13 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
     case Some(contents) => div(modifiers :+ bindNode(contents)) 
     case None => div(modifiers ++ initial)
   } 
+  
+  override def onInserted() = contentsOpt.map { contents => 
+    findGadgets($(contents)).foreach {
+      case g:Gadget[_] => g.onInserted()
+      case _ =>
+    }
+  }
 
   def replaceContents(newContent:dom.Element, retainExisting:Boolean = false) = {
     contentsOpt = Some(newContent)
@@ -78,6 +87,8 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
           $(elem).empty
         $(elem).append(newContent)
         $(elem).change()
+        onInserted()
+        PageManager.currentPage.map(_.reindex())
         this
       }
       case None => { this }

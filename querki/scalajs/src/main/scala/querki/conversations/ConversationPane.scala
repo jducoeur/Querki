@@ -72,7 +72,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
     $(convWrapper.elem).append(convGadget.render)
   }
   
-  lazy val convWrapper = (new WrapperDiv)(cls:="container")
+  lazy val convWrapper = (new WrapperDiv()(ecology))(cls:="container")
   lazy val allWrapper = new WrapperDiv
   
   def doRender() = div(allWrapper)
@@ -168,7 +168,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
       }
     )
       
-  lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
+  lazy val replyContainer = (new WrapperDiv()(ecology))(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
   lazy val replyPlaceholder = Gadget(
     inp(cls:="_replyPlaceholder form-control", 
