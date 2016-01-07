@@ -7,6 +7,7 @@ import rx._
 import org.querki.jquery._
 
 import querki.display.{Gadget, ManagedFrag, TypedGadget}
+import querki.globals._
 
 /**
  * A reactive wrapper around Gadgets, to make them a bit easier to use. 
@@ -48,7 +49,9 @@ import querki.display.{Gadget, ManagedFrag, TypedGadget}
  * 
  * @author jducoeur
  */
-class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
+class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] with EcologyMember {
+  
+  lazy val PageManager = interface[querki.display.PageManager]
 
   def doRender = ???
   
@@ -73,8 +76,8 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * The safe way to run some code iff this Gadget actually exists.
    */
   def map[T](f:G => T):Option[T] = opt().map(f)
-  
   def flatMap[T](f:G => Option[T]) = opt().flatMap(f)
+  def foreach(f:G => Unit):Unit = opt().foreach(f)
   
   /**
    * Returns the underlying Gadget. Use with care: this will throw if the Gadget hasn't been
@@ -116,6 +119,13 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
       }
       
       opt() = Some(g)
+
+      // Since we're changing the page layout, reindex the tab order.
+      //
+      // TBD: yes, this is horrible. It's actually one of the more compelling
+      // arguments for a React-style approach, although to some degree that just
+      // sweeps the problem under the rug:
+      PageManager.currentPage.foreach(_.reindex())
     }
     this    
   }
@@ -174,7 +184,7 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
  * 
  * Create this using GadgetRef.of[].
  */
-class GadgetElementRef[T <: dom.Element] extends GadgetRef[Gadget[T]] {
+class GadgetElementRef[T <: dom.Element](implicit e:Ecology) extends GadgetRef[Gadget[T]] {
   /**
    * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
    * Gadget. This is used when you declared it with GadgetRef.of[].
@@ -184,6 +194,6 @@ class GadgetElementRef[T <: dom.Element] extends GadgetRef[Gadget[T]] {
 }
 
 object GadgetRef {
-  def apply[G <: Gadget[_]] = new GadgetRef[G]
-  def of[T <: dom.Element] = new GadgetElementRef[T]
+  def apply[G <: Gadget[_]](implicit e:Ecology) = new GadgetRef[G]
+  def of[T <: dom.Element](implicit e:Ecology) = new GadgetElementRef[T]
 }

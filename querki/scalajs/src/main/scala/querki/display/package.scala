@@ -78,6 +78,11 @@ package object display {
     def window:dom.Window
     
     /**
+     * The Page that is currently showing, if any.
+     */
+    def currentPage:Option[Page]
+    
+    /**
      * Set the folder where images are kept.
      */
     def setImagePath(path:String):Unit

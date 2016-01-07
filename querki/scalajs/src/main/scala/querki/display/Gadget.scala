@@ -127,5 +127,38 @@ trait QuerkiUIUtils extends ScalatagUtils {
     
   implicit class jqGadgetExts(jq:JQuery) {
     def tidString(name:String) = TID(jq.data(name).asInstanceOf[String])
+    
+    /**
+     * Goes through all of the passed-in elements and their descendants, recursively,
+     * depth-first, looking for the first element that passes the given predicate.
+     */
+    def findFirst(pred:dom.Element => Boolean):Option[dom.Element] = {
+      val thisLevel = jq.filter(pred)
+      thisLevel.get(0).toOption.orElse {
+        // Okay, nothing found here, so dive down a level, and try each one's children:
+        val raws = jq.get()
+        (Option.empty[dom.Element] /: raws) { (found, raw) =>
+          found.orElse {
+            $(raw.asInstanceOf[dom.Element]).children().findFirst(pred)
+          }
+        }
+      }
+    }
+  }
+  
+  /**
+   * This is our rough heuristic for whether something is "focusable". We use this for stuff
+   * like computing tab order, actually choosing what to focus on, and so on.
+   * 
+   * Our definition of "focusable" is a bit rough and ready: it is stuff the user *might* want
+   * to tab to. We expect this to evolve a bit.
+   * 
+   * TBD: is there really no standard way to do this? I haven't found one yet.
+   */
+  def canFocus(e:dom.Element):Boolean = {
+    e.tagName match {
+      case "A" | "BUTTON" | "INPUT" | "SELECT" | "TEXTAREA" => true
+      case _ => false
+    }    
   }
 }

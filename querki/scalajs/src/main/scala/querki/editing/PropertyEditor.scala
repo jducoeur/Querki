@@ -31,10 +31,12 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
     for {
       editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
       section = new PropertySection(valEditor.section.page, s"Property $propId", editInfo.propInfos, prop, editInfo, false)
-    }
+    } {
       // Note that PropertySection is, at heart, a Gadget[UList], so this is legal. This version of
       // the guts will get swapped in when we get the PropertyEditors:
       guts <= section
+      section.focus()
+    }
       
     result
   }

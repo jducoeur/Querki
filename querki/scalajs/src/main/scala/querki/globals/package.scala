@@ -63,7 +63,7 @@ package object globals {
     println(s"Trying $msg")
     try {
       val result = f
-      println(s"  $msg succeeded")
+      println(s"  $msg succeeded, returning $result")
       result
     } catch {
       case ex:Exception => { println(s"  $msg failed: $ex"); ex.printStackTrace(); throw ex }

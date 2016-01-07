@@ -57,7 +57,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   
   trait Navigable
   
-  case class NavSection(val title:String, val links:Seq[Navigable]) extends Navigable
+  case class NavSection(val title:String, val links:Seq[Navigable], val index:Int) extends Navigable
 
   /**
    * Represents a single link to be shown in a menu.
@@ -130,7 +130,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       }
     }
     val allLinks = alwaysLinks ++ allSpaceLinks.getOrElse(Seq.empty)
-    Some(NavSection("Actions", allLinks))
+    Some(NavSection("Actions", allLinks, 1100))
   }
   
   // Apps are a non-sequiteur if we're not in the context of a Space and fully running
@@ -147,7 +147,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
           NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
           NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
           NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
-        ))
+        ), 1200)
       }
   
   def loginSection = {
@@ -156,12 +156,12 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
         NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
           NavLink("Log out", controllers.LoginController.logout())
-        ))  
+        ), 1900)  
       }
       case None => {
         NavSection("Not logged in", Seq(
           NavLink("Log in", controllers.ClientController.index())
-        ))
+        ), 1900)
       }
     }
   }
@@ -173,7 +173,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
         NavLink("Manage Users", Admin.manageUsersFactory.pageUrl()),
         NavLink("Show Space Status", Admin.monitorFactory.pageUrl()),
         NavLink("Send System Message", controllers.AdminController.sendSystemMessage())
-      )))
+      ), 1300))
     else
       None
   }
@@ -214,10 +214,11 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   /**
    * Displays a NavSection == that is, a single menu.
    */
-  def displayNavSection(title:String, links:Seq[Navigable]):Frag = {
+  def displayNavSection(title:String, links:Seq[Navigable], index:Int):Frag = {
     // Filter out characters that aren't legal in tag IDs, or the data-target will cause Bootstrap to choke:
     val legalTitle = filterLegal(title)
     li(cls:="dropdown",
+      tabindex:=index,
       // The clickable drop-down head of the menu
       a(cls:="dropdown-toggle",
         data("target"):=s"#$legalTitle",
@@ -240,7 +241,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     section match {
       case NavLink(display, url, id, enabled, onClick) => 
         displayNavLink(display, url, id.getOrElse(""), enabled, onClick)
-      case NavSection(title, links) => displayNavSection(title, links)
+      case NavSection(title, links, index) => displayNavSection(title, links, index)
       case NavDivider => displayNavDivider
     }
   }
@@ -263,6 +264,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
               
               // Show the logo on the left-hand side:
               a(cls:="navbar-brand",
+                tabindex:=1000,
                 // TODO: where should we define this call?
                 href:="/",
                 img(src:=s"${PageManager.imagePath}/Logo-menubar.png")
@@ -280,12 +282,14 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
               // Search only makes sense in the context of a Space, at least for now:
               if (DataAccess.space.isDefined) {
                 form(cls:="navbar-form navbar-right", role:="search",
+                  tabindex:=1800,
                   div(cls:="form-group",
                     new SearchGadget()))
               },
                   
               if (UserAccess.user.isDefined) {
                 ul(cls:="nav navbar-nav navbar-right",
+                  tabindex:=1700,
                   li(new NotifierGadget)
                 )
               }

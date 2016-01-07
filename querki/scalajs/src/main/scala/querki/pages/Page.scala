@@ -7,6 +7,7 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._
 import org.querki.jsext._
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -103,7 +104,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
           DataAccess.space match {
             case Some(space) =>
               div(cls:="_smallSubtitle _spaceLink _noPrint",
-                a(href:=thingUrl(DataAccess.spaceId), space.displayName)
+                a(href:=thingUrl(DataAccess.spaceId), tabindex:=20000, space.displayName)
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },
@@ -119,10 +120,36 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.title)
       Gadgets.hookPendingGadgets()
+      reindex()
       renderedContentPromise.success(fullyRendered)
       PageManager.onPageRendered(this)
     }
     
     outerPage
+  }
+  
+  // The guts of reindex. We're not doing this pure-recursively for fear of blowing the stack.
+  private def reindex(e:dom.Element, from:Int):Int = {
+    var i = from
+    
+    if (canFocus(e)) {
+      $(e).attr("tabindex", i)
+      i = i + 1        
+    }
+    
+    $(e).children().foreach { child =>
+      i = reindex(child, i)
+    }
+    i
+  }
+  
+  /**
+   * Pages can and should call this when they change the page layout. It adjusts the tab order to match current
+   * reality.
+   */
+  def reindex():Unit = {
+    elemOpt.foreach { e =>
+      reindex(e, 20100)
+    }
   }
 }

@@ -19,6 +19,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   extends InputGadget[dom.HTMLUListElement](e) 
 {
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val PageManager = interface[querki.display.PageManager]
   
   val tid = thing.urlName
   
@@ -78,6 +79,18 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
       // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
       $(editor.elem).replaceWith(newEditor.render)
       Gadgets.hookPendingGadgets()
+      PageManager.currentPage.foreach(_.reindex())
+    }
+  }
+  
+  /**
+   * Focuses on the first useful thing in this section.
+   */
+  def focus() = {
+    elemOpt.foreach { e =>
+      val firstFocusable = $(e).findFirst(canFocus(_))
+      println(s"firstFocusable is $firstFocusable")
+      firstFocusable.map($(_).focus())
     }
   }
   
