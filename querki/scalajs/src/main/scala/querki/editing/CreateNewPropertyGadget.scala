@@ -28,6 +28,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     collSelector.map(_.choose(collButtons.head))
   }
   
+  override def onInserted() = { nameInput.mapElem($(_).focus()) }
+  
   val nameInput = GadgetRef[RxText]
   
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.

@@ -25,6 +25,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     addExistingGadget.map(_.reset())
     createNewGadget.map(_.reset())
     mainDiv.map(_.replaceContents(initButton.rendered, true))
+    initButton.map(_.elemOpt.map(_.focus()))
   }
   
   // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily

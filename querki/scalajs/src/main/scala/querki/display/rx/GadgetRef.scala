@@ -80,6 +80,11 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
   def foreach(f:G => Unit):Unit = opt().foreach(f)
   
   /**
+   * Convenience wrapper for getting at the underlying element, if it's been set up yet.
+   */
+  def mapElem[T](f:Element => T):Option[T] = flatMap(_.asInstanceOf[Gadget[Element]].elemOpt.map(f))
+  
+  /**
    * Just delegate the insertion signal to the underlying Gadget, if there is one.
    */
   override def onInserted() = foreach(_.onInserted())
