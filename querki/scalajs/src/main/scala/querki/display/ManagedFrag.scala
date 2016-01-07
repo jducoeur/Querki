@@ -64,6 +64,12 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def onCreate(elem:Output) = {}
   
   /**
+   * This is called immediately after this fragment is inserted into its parent, so that you can
+   * provide additional stuff that happens then.
+   */
+  def onInserted():Unit = {}
+  
+  /**
    * We intercept render (which is part of Scalatags), to record the Node when it gets created, and
    * to provide access to the creation event.
    * 
@@ -133,5 +139,6 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   override def applyTo(parent:dom.Element) = {
     parentOptRx() = Some(parent)
     super.applyTo(parent)
+    onInserted()
   }
 }

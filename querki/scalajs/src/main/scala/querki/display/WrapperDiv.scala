@@ -20,7 +20,9 @@ class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Out
   
   fut.map { result =>
     val finalTag = guts(result)
-    wrapper.replaceContents(finalTag.render)
+    val wrapped = wrapper.replaceContents(finalTag.render)
+    finalTag.onInserted()
+    wrapped
   }
 }
 object AfterLoading {

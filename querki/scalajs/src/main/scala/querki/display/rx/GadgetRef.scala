@@ -80,6 +80,11 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
   def foreach(f:G => Unit):Unit = opt().foreach(f)
   
   /**
+   * Just delegate the insertion signal to the underlying Gadget, if there is one.
+   */
+  override def onInserted() = foreach(_.onInserted())
+  
+  /**
    * Returns the underlying Gadget. Use with care: this will throw if the Gadget hasn't been
    * created yet!
    */
@@ -108,6 +113,7 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
         val r = g.rendered.asInstanceOf[Element]
         $(r).insertBefore(elem)
         elemOptRx() = Some(r)
+        g.onInserted()
       }
       
       // Detach/remove the previous element from the DOM, if it is there:
