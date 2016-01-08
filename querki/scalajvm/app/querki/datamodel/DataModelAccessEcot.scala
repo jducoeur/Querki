@@ -279,10 +279,29 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   
   })
   
-  class ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
-    """    MODEL -> _children -> LIST OF CHILDREN
-    |This produces all of the Things that list MODEL as their Model. It includes both other Models, and Instances.""".stripMargin,
-  { (thing, context) => Core.listFrom(context.state.allChildren(thing).map(_.id), LinkType) })
+  class ChildrenMethod extends InternalMethod(ChildrenMethodOID,
+    toProps(
+      setName("_children"),
+      Summary("This produces the immediate children of the received Model."),
+      Signature(
+        expected = Some(Seq(LinkType), "A Model"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
+        ),
+        returns = (LinkType, "All of the direct children of that Model in that Space. This may include sub-Models, if there are any, as well as Instances.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        model <- inv.contextAllThings
+        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
+        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
+        child <- inv.iter(space.allChildren(model))
+      }
+        yield ExactlyOne(LinkType(child))
+    }
+  }
 
   class IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
     """    THING -> _isModel -> Yes or No""".stripMargin,
