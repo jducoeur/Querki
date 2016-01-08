@@ -84,7 +84,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |
     |
     |[[Tag Type -> 
-    |  _propsOfType ->
+    |  _propsOfType(space = $_context) ->
     |  _sort ->
     |*""{{well well-sm _root-well:
     |{{row:
@@ -93,7 +93,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |}}
     |
     |{{col-md-9:
-    |[[_foreach(""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
+    |[[_foreach(""**____**: [[_tagsForProperty(space = $_context) -> _sort -> _join("", "")]]
     |"")]]
     |}}
     |}}

@@ -416,16 +416,23 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     toProps(
       setName("_tagsForProperty"),
       Summary("Show all the Tags that are defined for this Property"),
-      // TODO: this isn't displaying properly. Why not? It looks like the "" nested inside of the indirect
-      // Property is causing the problem -- I am getting a syntax error *claiming* to be in Default View,
-      // pointing at the first "":
-      Details("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
-          |_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
+      Signature(
+        expected = Some(Seq(LinkType), "A Tag Property (if it is not in the defining context)"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
+        ),
+        returns = (LinkType, "All of the tags used for that Property in that Space."),
+        defining = Some(false, Seq(LinkType), "A Tag Property")
+      ),
+      Details("""_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
           |tags that have been used in that Property so far.
           |
           |Typically, you then feed the results of this to _tagRefs, to get the Things that use that Tag. For example,
           |if I had a list of Wines, using a Tag Set Property giving its "Wine Color", I could say:
-          |    \[[Wine Color._tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
+          |```
+          |\[[Wine Color._tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
+          |```
           |to produce a list like:
           |* Red: Pinot Noir, Shiraz
           |* White: Pinot Gris, Chardonnay
@@ -433,19 +440,23 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |ADVANCED: It is legal to use this with a received Property, instead of using the dot syntax. But remember
           |that it must be applied to the Property *itself*, so you might have to use _self to get the right results,
           |like this:
-          |    \[[Wine Color._self -> _tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
+          |```
+          |\[[Wine Color._self -> _tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
+          |```
           |In general, you only want to receive the Property like this if you are passing it into a Function.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
+        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
+        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
         (shouldBeProp, _) <- inv.preferDefiningContext.bundlesAndContextsForProp(this)
       }
         yield {
           shouldBeProp match {
             case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
               prop.pType match {
-                case TagSetType => Core.listFrom(fetchTags(inv.state, prop), TagSetType)
-                case NewTagSetType => Core.listFrom(fetchTags(inv.state, prop), NewTagSetType)
+                case TagSetType => Core.listFrom(fetchTags(space, prop), TagSetType)
+                case NewTagSetType => Core.listFrom(fetchTags(space, prop), NewTagSetType)
               }
             }
             case _ => QL.WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")

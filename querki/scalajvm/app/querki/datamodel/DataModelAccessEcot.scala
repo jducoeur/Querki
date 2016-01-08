@@ -418,15 +418,33 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         yield ExactlyOne(receivedId == paramId)
     }
   }
-
-	lazy val PropsOfTypeMethod = new SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
-	    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
-	{ (thing, context) =>
-	  thing match {
-	    case pt:PType[_] => Core.listFrom(context.state.propsOfType(pt), Core.LinkFromThingBuilder)
-	    case _ => QL.WarningValue("_propsOfType can only be used on a Type")
-	  }
-	})
+  
+  lazy val PropsOfTypeMethod = new InternalMethod(PropsOfTypeOID,
+    toProps(
+      setName("_propsOfType"),
+      Summary("This receives a Type, and produces all of the Properties in this Space with that Type"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Type"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
+        ),
+        returns = (LinkType, "All of the Properties of that Type, in that Space.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+        // The next two lines are ugly. We might add a match-like function to inv?
+        dummy <- inv.test(thing.isInstanceOf[PType[_]], "DataModel.propsOfType.notAType", thing.displayName)
+        tpe = thing.asInstanceOf[PType[_]]
+        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
+        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
+        prop <- inv.iter(space.propsOfType(tpe))
+      }
+        yield ExactlyOne(LinkType(prop))
+    }
+  }
 
   lazy val IsFunctionProp = new SystemProperty(IsFunctionOID, YesNoType, ExactlyOne,
     toProps(
