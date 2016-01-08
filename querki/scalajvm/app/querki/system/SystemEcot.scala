@@ -59,7 +59,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |}}
     |
     |{{col-md-9:
-    |[[Simple Thing -> _children(space = $_context) -> _filter(_not(_isModel)) -> _sort -> ""
+    |[[Simple Thing -> _children(_space = $_context) -> _filter(_not(_isModel)) -> _sort -> ""
     |#### ____""]]
     |
     |[[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createButton(""Write a Page"", classes=""btn-xs btn-primary""))]]
@@ -84,7 +84,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |
     |
     |[[Tag Type -> 
-    |  _propsOfType(space = $_context) ->
+    |  _propsOfType(_space = $_context) ->
     |  _sort ->
     |*""{{well well-sm _root-well:
     |{{row:
@@ -93,7 +93,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |}}
     |
     |{{col-md-9:
-    |[[_foreach(""**____**: [[_tagsForProperty(space = $_context) -> _sort -> _join("", "")]]
+    |[[_foreach(""**____**: [[_tagsForProperty(_space = $_context) -> _sort -> _join("", "")]]
     |"")]]
     |}}
     |}}

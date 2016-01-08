@@ -419,9 +419,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       Signature(
         expected = Some(Seq(LinkType), "A Tag Property (if it is not in the defining context)"),
         reqs = Seq.empty,
-        opts = Seq(
-          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
-        ),
+        opts = Seq.empty,
         returns = (LinkType, "All of the tags used for that Property in that Space."),
         defining = Some(false, Seq(LinkType), "A Tag Property")
       ),
@@ -447,16 +445,14 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
-        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
         (shouldBeProp, _) <- inv.preferDefiningContext.bundlesAndContextsForProp(this)
       }
         yield {
           shouldBeProp match {
             case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
               prop.pType match {
-                case TagSetType => Core.listFrom(fetchTags(space, prop), TagSetType)
-                case NewTagSetType => Core.listFrom(fetchTags(space, prop), NewTagSetType)
+                case TagSetType => Core.listFrom(fetchTags(inv.state, prop), TagSetType)
+                case NewTagSetType => Core.listFrom(fetchTags(inv.state, prop), NewTagSetType)
               }
             }
             case _ => QL.WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")

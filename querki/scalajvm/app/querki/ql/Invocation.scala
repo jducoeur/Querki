@@ -104,7 +104,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   /**
    * The signature for this function, which we use to extract specific params.
    */
-  lazy val sig = SignatureInternal.getSignature(method, state, paramsOpt)
+  lazy val sig = SignatureInternal.getSignature(method, context.state, paramsOpt)
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](PublicException(name, params:_*))
   
@@ -537,8 +537,27 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
    * one you usually care about. 
    */
   def context:QLContext = receivedContext
-    
-  implicit def state:SpaceState = context.state
+  
+  implicit lazy val state:SpaceState = {
+    val param = sig.getParam("_space")
+    param.phrase match {
+      case Some(phrase) => {
+        // HACK: is there any decent way around this? We don't really want to force inv.state to
+        // always be a Future, and 99.99% of the time when we use _space it's going to be synchronous,
+        // but we can't actually guarantee that. Hmm. Is there any way to force synchrony here -- to
+        // only allow synchronous functions?
+        val processed = awaitHack(param.process(context.parser.get, context)).value
+        processed.firstAs(LinkType) match {
+          case Some(link) => {
+            context.state.getApp(link).getOrElse(throw new PublicException("QL.invocation.notASpace"))
+          }
+          case _ => throw new PublicException("QL.invocation.notASpace")
+        }
+      }
+      // The normal case: use the current context's Space:
+      case _ => context.state
+    }
+  }
   
   def parser = context.parser
   

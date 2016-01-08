@@ -286,18 +286,14 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       Signature(
         expected = Some(Seq(LinkType), "A Model"),
         reqs = Seq.empty,
-        opts = Seq(
-          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
-        ),
+        opts = Seq.empty,
         returns = (LinkType, "All of the direct children of that Model in that Space. This may include sub-Models, if there are any, as well as Instances.")
       )))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         model <- inv.contextAllThings
-        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
-        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
-        child <- inv.iter(space.allChildren(model))
+        child <- inv.iter(inv.state.allChildren(model))
       }
         yield ExactlyOne(LinkType(child))
     }
@@ -426,9 +422,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       Signature(
         expected = Some(Seq(LinkType), "A Type"),
         reqs = Seq.empty,
-        opts = Seq(
-          ("space", LinkType, Core.QNone, "The Space to look in, which may be an App. If omitted, the current Space is used.")
-        ),
+        opts = Seq.empty,
         returns = (LinkType, "All of the Properties of that Type, in that Space.")
       )))
   {
@@ -438,9 +432,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         // The next two lines are ugly. We might add a match-like function to inv?
         dummy <- inv.test(thing.isInstanceOf[PType[_]], "DataModel.propsOfType.notAType", thing.displayName)
         tpe = thing.asInstanceOf[PType[_]]
-        explicitSpaceOpt <- inv.processAsOpt("space", LinkType)
-        space = explicitSpaceOpt.flatMap(inv.state.getApp(_)).getOrElse(inv.state)
-        prop <- inv.iter(space.propsOfType(tpe))
+        prop <- inv.iter(inv.state.propsOfType(tpe))
       }
         yield ExactlyOne(LinkType(prop))
     }

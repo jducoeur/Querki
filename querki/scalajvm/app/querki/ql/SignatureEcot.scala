@@ -150,6 +150,18 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
         }
       }
     }
+    
+    case class SpecialParam(name:String, phraseActual:QLPhrase) extends ParamResult {
+      def phrase = Some(phraseActual)
+      def process(parser:QLParser, context:QLContext):Future[QLContext] = {
+        parser.processPhrase(phraseActual.ops, context)
+      }
+    }
+    
+    case class EmptyParamResult(name:String) extends ParamResult {
+      def phrase = None
+      def process(parser:QLParser, context:QLContext):Future[QLContext] = ???
+    }
   
     lazy val sigOpt = t.getPropOpt(SignatureProp)
     // The formal parameters of this function, required then optional
@@ -168,6 +180,22 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
 
     def getParam(nameIn:String):ParamResult = {
       val name = nameIn.toLowerCase
+      name match {
+        // The "universal" parameters. If we wind up with more than two of these, they should get
+        // refactored, I suspect.
+        case "_space" => {
+          val result = for {
+            params <- paramsOpt
+            param <- params.find(_.name.map(_.toLowerCase == name).getOrElse(false))
+          }
+            yield SpecialParam(name, param.phrase)
+            
+          result.getOrElse(EmptyParamResult(name))
+        }
+        case _ => getNormalParam(name)
+      }
+    }
+    def getNormalParam(name:String):ParamResult = {
       def notFound = throw new PublicException("Func.unknownParamName", name, t.displayName)
       indexedOpt match {
         case Some(indexed) => {

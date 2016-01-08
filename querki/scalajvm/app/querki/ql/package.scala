@@ -305,6 +305,9 @@ package object ql {
     
     /**
      * The SpaceState of the Context.
+     * 
+     * IMPORTANT: if the "_space" parameter is provided to this Invocation, that Space will be used instead.
+     * It can be the context's Space, or one of its Apps.
      */
     def state:SpaceState
     
