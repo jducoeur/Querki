@@ -6,11 +6,11 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-class StatusTextGadget extends Gadget[dom.HTMLSpanElement] {
+class StatusTextGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLSpanElement] {
   def doRender() = span(id:="statusText")
 }
 
-class StatusLineGadget extends Gadget[dom.HTMLAnchorElement] {
+class StatusLineGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] {
   lazy val textGadget = new StatusTextGadget
   
   def doRender() =

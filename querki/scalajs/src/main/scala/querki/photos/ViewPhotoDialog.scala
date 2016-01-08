@@ -11,7 +11,7 @@ import org.querki.facades.bootstrap._
 
 import querki.display.Gadget
 
-class ViewPhotoDialog extends Gadget[dom.HTMLDivElement] {
+class ViewPhotoDialog(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
 
   def showFrom(thumbnail:Thumbnail) = {
     // TODO: yes, there's a lot of horrible hardcoded magic here. Can we use CSS to make this less awful?

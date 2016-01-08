@@ -41,7 +41,7 @@ package object globals {
   /**
    * This allows you to use a TypedTag in any context where a Gadget is expected.
    */
-  implicit def tag2Gadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output]) = new querki.display.TypedGadget[Output](guts, { elem:Output => })
+  implicit def tag2Gadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output])(implicit ecology:Ecology) = new querki.display.TypedGadget[Output](guts, { elem:Output => })
   
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.

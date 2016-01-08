@@ -25,7 +25,7 @@ trait RxThingSelector {
  * It is legal for the options to include one (usually at the top) with "" as its value. That is considered
  * to be the "not set" state.
  */
-class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] with RxThingSelector {
+class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLSelectElement] with RxThingSelector {
   
   private def curSelected = {
     elemOpt.map(e => $(e).find("option:selected"))
@@ -83,7 +83,7 @@ class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*) 
   }
 }
 object RxSelect {
-  def apply(options:Rx[Seq[Frag]], emptyText:String, mods:Modifier*) = new RxSelect(options, Some(emptyText), mods)
-  def apply(options:Rx[Seq[Frag]], mods:Modifier*) = new RxSelect(options, None, mods)
-  def apply(mods:Modifier*) = new RxSelect(Var(Seq.empty), None, mods)
+  def apply(options:Rx[Seq[Frag]], emptyText:String, mods:Modifier*)(implicit ecology:Ecology) = new RxSelect(options, Some(emptyText), mods)
+  def apply(options:Rx[Seq[Frag]], mods:Modifier*)(implicit ecology:Ecology) = new RxSelect(options, None, mods)
+  def apply(mods:Modifier*)(implicit ecology:Ecology) = new RxSelect(Var(Seq.empty), None, mods)
 }

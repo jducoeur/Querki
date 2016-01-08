@@ -110,7 +110,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
       case Some(result) => Some(result)
       case None => {
         val parent = node.parent()
-        if (parent.length > 0 && parent.get(0) == dom.document)
+        if (parent.length > 0 && parent.get(0).get == dom.document)
           None
         else
           findParentGadgetRec(node.parent(), pred)

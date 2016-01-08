@@ -40,6 +40,8 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   lazy val myLevel = DataAccess.request.userLevel
     
   class UserView(user:AdminUserView) extends Gadget[dom.html.TableRow] {
+    def ecology = ManageUsersPage.this.ecology
+    
     lazy val levelOptions = 
       Var(levels.map { level =>
         option(

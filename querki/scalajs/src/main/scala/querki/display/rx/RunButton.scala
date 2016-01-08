@@ -16,7 +16,7 @@ import querki.globals._
  * When the onClick is finished (this usually involves some kind of asynchronous call to the server),
  * it should call done(), which sets the button back to its inactive state. 
  */
-class RunButton(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:String)(onClick:RunButton => Unit) extends Gadget[dom.html.Span]  {
+class RunButton(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:String)(onClick:RunButton => Unit)(implicit val ecology:Ecology) extends Gadget[dom.html.Span]  {
   private lazy val active = Var(false)
 
   private lazy val actualButton = 

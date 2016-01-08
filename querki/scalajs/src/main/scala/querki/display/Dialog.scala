@@ -24,7 +24,7 @@ class Dialog(
   height:Int, width:Int,
   guts:scalatags.JsDom.TypedTag[_],
   buttonsIn:(String, Dialog => Unit)*
-  ) extends Gadget[dom.HTMLDivElement] 
+  )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 
 {
   def doRender() = div(title:=dialogTitle, guts)
   

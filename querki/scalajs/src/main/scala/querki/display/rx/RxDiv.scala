@@ -19,7 +19,7 @@ import querki.display.Gadget
  * ManagedFrag. Indeed, I really should re-examine the way things work in this light, noting
  * the relationship between doRender() and obs below.
  */
-case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.HTMLDivElement] {
+case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
   def doRender() = divTag()
   
   lazy val divTag = Rx(name="divTag") { div(base, rxGuts()) }
@@ -41,5 +41,5 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.H
 }
 
 object RxDiv {
-  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
+  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*)(implicit ecology:Ecology):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
 }

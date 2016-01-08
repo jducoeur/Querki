@@ -65,6 +65,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     lazy val selector = (new RoleSelector).render
         
     class RoleSelector extends Gadget[dom.HTMLSelectElement] {
+      def ecology = SharingPage.this.ecology
+      
       override def onCreate(e:dom.HTMLSelectElement) = {
         $(elem).value(role().oid.underlying)
           
@@ -85,6 +87,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
+    def ecology = SharingPage.this.ecology
+    
     val initPersonRole = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
     
     def doRender() =

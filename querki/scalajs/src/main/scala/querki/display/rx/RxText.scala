@@ -13,9 +13,9 @@ import querki.display.Gadget
 /**
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
-class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String, mods:Modifier*) extends Gadget[dom.HTMLInputElement] {
+class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLInputElement] {
   
-  def this(inputType:String, mods:Modifier*) = this(None, inputType, mods)
+  def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
   
   private def curValue =
     for {
@@ -74,4 +74,4 @@ class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String,
   def onEnter(f:String => Unit) = enterFunc() = Some(f)
 }
 
-class RxText(mods:Modifier*) extends RxInput("text", mods)
+class RxText(mods:Modifier*)(implicit e:Ecology) extends RxInput("text", mods)

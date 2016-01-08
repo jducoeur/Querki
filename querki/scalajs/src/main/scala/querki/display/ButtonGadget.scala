@@ -24,7 +24,7 @@ import ButtonGadget._
  * NOTE: if you want a stateful button -- one that changes label and disables itself until completed --
  * then use RunButton instead. By and large, err on the side of using that.
  */
-class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick:() => Unit) extends Gadget[dom.HTMLAnchorElement] {
+class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick:() => Unit)(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] {
   def doRender() = {
     a(cls:=s"btn $kind", mods)
   }
