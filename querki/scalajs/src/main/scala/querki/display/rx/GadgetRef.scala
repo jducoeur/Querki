@@ -51,7 +51,7 @@ import querki.globals._
  */
 class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] with EcologyMember {
   
-  lazy val PageManager = interface[querki.display.PageManager]
+  lazy val Pages = interface[querki.pages.Pages]
 
   def doRender = ???
   
@@ -136,7 +136,7 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
       // TBD: yes, this is horrible. It's actually one of the more compelling
       // arguments for a React-style approach, although to some degree that just
       // sweeps the problem under the rug:
-      PageManager.currentPage.foreach(_.reindex())
+      Pages.findPageFor(this).map(_.reindex())
     }
     this    
   }

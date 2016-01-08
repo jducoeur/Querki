@@ -39,7 +39,7 @@ object AfterLoading {
  */
 class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
-  lazy val PageManager = interface[querki.display.PageManager]
+  lazy val Pages = interface[querki.pages.Pages]
   
   var contentsOpt:Option[dom.Element] = None
   
@@ -88,7 +88,7 @@ class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement
         $(elem).append(newContent)
         $(elem).change()
         onInserted()
-        PageManager.currentPage.map(_.reindex())
+        Pages.findPageFor(this).map(_.reindex())
         this
       }
       case None => { this }

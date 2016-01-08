@@ -99,20 +99,31 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     gadgetOptsSeq.flatten
   }
   
-  @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):AnyFrag = {
+  @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):Option[AnyFrag] = {
+    if (node.length == 0)
+      // Implication is that we've gone all the way to the top of the hierarchy without a match, so
+      // give up:
+      None
+      
     val frags = findGadgets(node)
     frags.find(pred(_)) match {
-      case Some(result) => result
-      case None => findParentGadgetRec(node.parent(), pred)
+      case Some(result) => Some(result)
+      case None => {
+        val parent = node.parent()
+        if (parent.length > 0 && parent.get(0) == dom.document)
+          None
+        else
+          findParentGadgetRec(node.parent(), pred)
+      }
     }
   }
-  def findParentGadget(pred:AnyFrag => Boolean):AnyFrag = {
-    findParentGadgetRec($(elem), pred)
+  def findParentGadget(pred:AnyFrag => Boolean):Option[AnyFrag] = {
+    elemOpt.flatMap(e => findParentGadgetRec($(e), pred))
   }
   
   def findGadgets(node:JQuery):Seq[AnyFrag] = {
     if (node.hasClass("_withGadget"))
-      node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
+      node.data("gadgets").map(_.asInstanceOf[Seq[AnyFrag]]).getOrElse(Seq.empty)
     else
       Seq.empty
   }

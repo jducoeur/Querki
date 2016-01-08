@@ -29,8 +29,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   var _window:Option[dom.Window] = None
   def window = _window.get
   
-  var currentPage:Option[Page] = None
-  
   override def init() = {
     // Adds the :notUnder() pseudo-selector to jQuery, which selects only elements that are not contained
     // by the specified selector. See: 
@@ -238,7 +236,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   def onPageRendered(page:Page) = {
-    currentPage = Some(page)
     afterPageLoads(page)
     // Need to do the dance here, because these things can run synchronously during testing:
     val oldPromise = _nextChangePromise

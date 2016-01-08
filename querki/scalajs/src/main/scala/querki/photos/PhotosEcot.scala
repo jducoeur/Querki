@@ -31,21 +31,22 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
   val showInputKey = "Show Photo Input"
   
   def recordTarget(target:PhotoTarget):Unit = {
-    val page = Pages.findPageFor(target)
-    val propId = target.fromProp
-    // Note that this only works because we know the system is single-threaded!
-    // Otherwise, we would need to use getOrElseUpdate.
-    val newMap = page.getMetadata(targetKey).map(_.asInstanceOf[TargetMap]) match {
-      case Some(map) => map + (propId -> target)
-      case None => Map(propId -> target)
+    Pages.findPageFor(target).foreach { page =>
+      val propId = target.fromProp
+      // Note that this only works because we know the system is single-threaded!
+      // Otherwise, we would need to use getOrElseUpdate.
+      val newMap = page.getMetadata(targetKey).map(_.asInstanceOf[TargetMap]) match {
+        case Some(map) => map + (propId -> target)
+        case None => Map(propId -> target)
+      }
+      page.storeMetadata(targetKey, newMap)
     }
-    page.storeMetadata(targetKey, newMap)
   }
   
   def findTargetFor(thumbnail:Thumbnail):Option[PhotoTarget] = {
-    val page = Pages.findPageFor(thumbnail)
     val prop = thumbnail.fromProp
     for {
+      page <- Pages.findPageFor(thumbnail)
       mapRaw <- page.getMetadata(targetKey)
       map = mapRaw.asInstanceOf[TargetMap]
       target <- map.get(prop)
@@ -54,17 +55,18 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
   }
   
   def showInDialog(thumbnail:Thumbnail):Unit = {
-    val page = Pages.findPageFor(thumbnail)
-    // Since it isn't often needed, we build the ViewPhotoDialog on-demand
-    val dialog = page.getMetadata(showDialogKey).map(_.asInstanceOf[ViewPhotoDialog]) match {
-      case Some(dialog) => dialog
-      case None => {
-        val d = new ViewPhotoDialog
-        $(page.elem).append(d.render)
-        page.storeMetadata(showDialogKey, d)
-        d
+    Pages.findPageFor(thumbnail).foreach { page =>
+      // Since it isn't often needed, we build the ViewPhotoDialog on-demand
+      val dialog = page.getMetadata(showDialogKey).map(_.asInstanceOf[ViewPhotoDialog]) match {
+        case Some(dialog) => dialog
+        case None => {
+          val d = new ViewPhotoDialog
+          $(page.elem).append(d.render)
+          page.storeMetadata(showDialogKey, d)
+          d
+        }
       }
+      dialog.showFrom(thumbnail)
     }
-    dialog.showFrom(thumbnail)
   }
 }

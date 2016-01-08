@@ -19,7 +19,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   extends InputGadget[dom.HTMLUListElement](e) 
 {
   lazy val Gadgets = interface[querki.display.Gadgets]
-  lazy val PageManager = interface[querki.display.PageManager]
+  lazy val Pages = interface[querki.pages.Pages]
   
   val tid = thing.urlName
   
@@ -81,7 +81,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
       // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
       $(editor.elem).replaceWith(newEditor.render)
       Gadgets.hookPendingGadgets()
-      PageManager.currentPage.foreach(_.reindex())
+      Pages.findPageFor(this).map(_.reindex())
       after
     }
   }

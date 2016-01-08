@@ -94,11 +94,8 @@ package object pages {
     
     /**
      * Returns the Page that contains the given Frag.
-     * 
-     * IMPORTANT: the Frag *must* have been rendered before you call this, and it must be currently
-     * on the Page, or this is likely to crash!
      */
-    def findPageFor(node:ManagedFrag[_]):Page
+    def findPageFor(node:ManagedFrag[_]):Option[Page]
   }
   
   /**
