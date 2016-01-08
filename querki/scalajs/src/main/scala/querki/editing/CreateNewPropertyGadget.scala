@@ -87,6 +87,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     Client[EditFunctions].create(std.core.urProp, initProps).call().foreach { propInfo =>
       page.addProperty(propInfo.oid, true)
       reset()
+      apg.reset()
     }
   }
   

@@ -75,24 +75,14 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
     })
   }
   
-  def refreshEditor(editor:PropValueEditor) = {
+  def refreshEditor(editor:PropValueEditor)(after: => Unit) = {
     Client[EditFunctions].getOnePropertyEditor(tid, editor.propId).call().foreach { replacementInfo =>
       val newEditor = new PropValueEditor(replacementInfo, this)
       // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
       $(editor.elem).replaceWith(newEditor.render)
       Gadgets.hookPendingGadgets()
       PageManager.currentPage.foreach(_.reindex())
-    }
-  }
-  
-  /**
-   * Focuses on the first useful thing in this section.
-   */
-  def focus() = {
-    elemOpt.foreach { e =>
-      val firstFocusable = $(e).findFirst(canFocus(_))
-      println(s"firstFocusable is $firstFocusable")
-      firstFocusable.map($(_).focus())
+      after
     }
   }
   

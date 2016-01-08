@@ -118,8 +118,6 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
     $(commentInput.elem).autosize()
   }
   
-  def focus() = $(commentInput.elem).focus()
-  
   def postComment():Unit = {
     Client[ConversationFunctions].addComment(thingInfo.oid, $(commentInput.elem).value().asInstanceOf[String], replyTo).call().foreach { node =>
       $(commentInput.elem).value("")

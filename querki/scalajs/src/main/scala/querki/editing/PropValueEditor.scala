@@ -60,7 +60,12 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     // This gets called by PropertyEditor:
     def propEditDone() = {
       // Do the real changes after we slideUp:
-      hideDetails({ _ => section.refreshEditor(this) })
+      hideDetails({ _ => 
+        section.refreshEditor(this) {
+          // And once it's refreshed, focus to it:
+          focus()
+        }
+      })
     }
     
     def doRender() = 

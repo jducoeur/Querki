@@ -32,6 +32,15 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
   def underlyingTag = doRender()
   
   def createFrag = underlyingTag.render
+  
+  /**
+   * Focuses on the first useful thing in this Gadget.
+   */
+  def focus() = {
+    elemOpt.foreach { e =>
+      $(e).findFirst(canFocus(_)).map($(_).focus())
+    }
+  }
 }
 
 /**
