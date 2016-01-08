@@ -75,14 +75,14 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
     })
   }
   
-  def refreshEditor(editor:PropValueEditor)(after: => Unit) = {
+  def refreshEditor(editor:PropValueEditor)(after: PropValueEditor => Unit) = {
     Client[EditFunctions].getOnePropertyEditor(tid, editor.propId).call().foreach { replacementInfo =>
       val newEditor = new PropValueEditor(replacementInfo, this)
       // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
       $(editor.elem).replaceWith(newEditor.render)
       Gadgets.hookPendingGadgets()
       updatePage()
-      after
+      after(newEditor)
     }
   }
   

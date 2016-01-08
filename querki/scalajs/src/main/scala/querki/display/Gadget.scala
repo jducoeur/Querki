@@ -46,7 +46,13 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
   
   /**
    * Indicates that something has changed significantly to alter the page layout, so the
-   * Page should be recalculated as necessary.
+   * Page should be recalculated as necessary. Note that this doesn't actually change
+   * anything visible; rather, this does the needed adjustments after visible changes
+   * have happened.
+   * 
+   * By and large, it is appropriate to call this after any significant alterations to
+   * the page's structure, especially asynchronous changes. (It should not be called
+   * during normal page setup; that's just extra work.)
    */
   def updatePage() = {
     val Pages = interface[querki.pages.Pages]

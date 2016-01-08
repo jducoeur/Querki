@@ -61,9 +61,10 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     def propEditDone() = {
       // Do the real changes after we slideUp:
       hideDetails({ _ => 
-        section.refreshEditor(this) {
-          // And once it's refreshed, focus to it:
-          focus()
+        section.refreshEditor(this) { newEditor =>
+          // And once it's refreshed, focus to it. Note that that's a new
+          // instance; this one is being thrown away afterwards:
+          newEditor.focus()
         }
       })
     }
