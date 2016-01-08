@@ -39,7 +39,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   def onMoved() = {
     if (sortable) {
       save()
-      page.reindex()
+      updatePage()
     }
   }
   
@@ -81,7 +81,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
       // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
       $(editor.elem).replaceWith(newEditor.render)
       Gadgets.hookPendingGadgets()
-      Pages.findPageFor(this).map(_.reindex())
+      updatePage()
       after
     }
   }

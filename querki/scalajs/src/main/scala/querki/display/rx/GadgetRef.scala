@@ -49,9 +49,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] with EcologyMember {
-  
-  lazy val Pages = interface[querki.pages.Pages]
+class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] {
 
   def doRender = ???
   
@@ -131,12 +129,8 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
       
       opt() = Some(g)
 
-      // Since we're changing the page layout, reindex the tab order.
-      //
-      // TBD: yes, this is horrible. It's actually one of the more compelling
-      // arguments for a React-style approach, although to some degree that just
-      // sweeps the problem under the rug:
-      Pages.findPageFor(this).map(_.reindex())
+      // Since we're changing the page layout, update things:
+      updatePage()
     }
     this    
   }

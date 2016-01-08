@@ -37,9 +37,7 @@ object AfterLoading {
  * 
  * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
-  
-  lazy val Pages = interface[querki.pages.Pages]
+class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
   
   var contentsOpt:Option[dom.Element] = None
   
@@ -88,7 +86,7 @@ class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement
         $(elem).append(newContent)
         $(elem).change()
         onInserted()
-        Pages.findPageFor(this).map(_.reindex())
+        updatePage()
         this
       }
       case None => { this }

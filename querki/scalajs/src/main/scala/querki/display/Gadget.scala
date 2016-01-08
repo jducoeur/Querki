@@ -43,6 +43,15 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
       $(e).findFirst(canFocus(_)).map($(_).focus())
     }
   }
+  
+  /**
+   * Indicates that something has changed significantly to alter the page layout, so the
+   * Page should be recalculated as necessary.
+   */
+  def updatePage() = {
+    val Pages = interface[querki.pages.Pages]
+    Pages.findPageFor(this).map(_.reindex())
+  }
 }
 
 /**
