@@ -98,8 +98,8 @@ class ModelTypeTests extends QuerkiTests {
 
       processQText(thingAsContext[ComplexSpace](space, _.thingWithComplex), """[[Complex Prop]]""") should
         equal("""
-            |: Number in Model : 3
-            |: Text in Model : Text in Instance""".stripReturns)
+            |<dt>Number in Model</dt><dd>3</dd>
+            |<dt>Text in Model</dt><dd>Text in Instance</dd>""".stripReturns)
     }
     
     "be able to generate an Edit control" in {
