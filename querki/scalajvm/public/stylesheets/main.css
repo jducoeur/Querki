@@ -1,4 +1,16 @@
 /*
+ * General style overrides of Bootstrap.
+ */
+body {
+  margin: 0;
+}
+
+dd {
+  /* Yes, this is a bit ragged, but IMO it's easier to understand this way. */
+  margin-left: 10px;
+}
+
+/*
  * Styles for the top menubar.
  */
 
@@ -20,10 +32,6 @@
 .navbar-brand {
   padding-top: 5px;
   padding-bottom: 5px;
-}
-
-body {
-  margin: 0;
 }
 
 .guts {

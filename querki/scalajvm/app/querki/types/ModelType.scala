@@ -158,7 +158,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
             val (propId, propOpt, propVal) = pair
             val propText = propOpt match {
               case Some(prop) => {
-                propVal.wikify(context, displayOpt, lexicalThing) map { Wikitext(": " + prop.displayName + " : ") + _ } 
+                propVal.wikify(context, displayOpt, lexicalThing) map { Wikitext("<dt>" + prop.displayName + "</dt><dd>") + _ + Wikitext("</dd>") } 
               }
               case None => Future.successful(Wikitext("Unknown property " + propId))
             }
