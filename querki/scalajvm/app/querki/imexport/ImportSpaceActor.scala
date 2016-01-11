@@ -35,15 +35,12 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
   def buildSpaceState(rc:RequestContext):SpaceState = {
     importType match {
       case ImportXML => {
-//        QLog.spew("I've received the entire XML:")
         val xml = uploaded
-//        QLog.spew(xml)
         new RawXMLImport(rc)(ecology).readXML(xml)
       }
       
       case ImportMySQL => {
         val sql = uploaded
-        QLog.spew(sql)
         new MySQLImport(rc, name)(ecology).readDumpfile(sql)
       }
       
@@ -69,7 +66,7 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
           else
             ((thingOps.toFloat / totalThingOps) * 80).toInt + 20
             
-        QLog.spew(s"Reporting progress -- we are at $thingOps of $totalThingOps")
+//        QLog.spew(s"Reporting progress -- we are at $thingOps of $totalThingOps")
             
         sender ! ImportProgress(importMsg, processPercent, spaceInfo, failed)
       }
@@ -106,19 +103,33 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
     if (rc.requester.isEmpty)
       throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
     
-    val rawState = buildSpaceState(rc)
-    
-    loopback(buildSpace(rc.requesterOrAnon, name)(rawState)) onComplete { 
-      case Success(info) => {
-        // We don't actually do anything -- we wait for the client to request an update
-        // on the situation. So just note that we're done.
-        spaceInfo = Some(ClientApi.spaceInfo(info.info))
+    def handleError(ex:Throwable) = {
+      importMsg = ex match {
+        case pex:PublicException => pex.display(Some(rc))
+        case _ => "There was an error trying to upload that Space -- sorry! Please contact us, so we can look into it."
       }
       
-      case Failure(ex) => {
-        failed = true
-        QLog.error("Failure while processing uploaded Space", ex)
+      failed = true      
+    }
+    
+    try {
+      val rawState = buildSpaceState(rc)
+    
+      // TBD: Hmm. It's unfortunate that we have to duplicate the error clauses here. We'd like everything
+      // to compose neatly. How do we improve Requester or this code to make that possible?
+      loopback(buildSpace(rc.requesterOrAnon, name)(rawState)) onComplete { 
+        case Success(info) => {
+          // We don't actually do anything -- we wait for the client to request an update
+          // on the situation. So just note that we're done.
+          spaceInfo = Some(ClientApi.spaceInfo(info.info))
+        }
+        
+        // Caught an error from buildSpace():
+        case Failure(ex) => handleError(ex)
       }
+    } catch {
+      // Caught an error while trying to build the SpaceState:
+      case ex:Throwable => handleError(ex)
     }
     
     sender ! UploadProcessSuccessful("Processing in progress")

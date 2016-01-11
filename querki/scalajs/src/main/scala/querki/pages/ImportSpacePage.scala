@@ -68,9 +68,8 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
           
           case None if (progress.failed) => {
             // Failure!
-            // TODO: this needs better error support:
             finished()
-            StatusLine.showUntilChange("Error during processing")
+            progressMsg.jq.text(s"Error -- ${progress.msg}")
           }
           
           case _ => {

@@ -54,6 +54,8 @@ object ImportSpaceFunctions {
    * 
    * @param msg A user-visible message describing the current operation.
    * @param progress How far we are, in percent. (Approximate.)
+   * @param spaceInfo Iff the operation has completed successfully, the info about the newly-built Space.
+   * @param failed Set to true iff the import has crashed, in which case msg describes the error.
    */
   case class ImportProgress(msg:String, progress:Int, spaceInfo:Option[SpaceInfo], failed:Boolean = false)
 }

@@ -178,11 +178,15 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
   def buildInstance(state:SpaceState, node:XmlElement) = {
     implicit val n = node
     implicit val s = state
+    val tid = parseThingId(node.tagName.name)
+    val thingOpt = state.anything(tid)
+    if (thingOpt.isEmpty)
+      throw new PublicException("Imexport.unknownTag", s"${node.tagName.ns.map(ns => s"$ns:").getOrElse("")}${node.tagName.name}")
     val model = 
       ThingState(
         id.oid,
         state.id,
-        state.anything(parseThingId(node.tagName.name)).get,
+        thingOpt.get,
         buildProps,
         DateTime.now
       )
