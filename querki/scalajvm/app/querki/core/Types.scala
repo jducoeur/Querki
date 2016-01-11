@@ -547,17 +547,16 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
         setName("Root Type"),
         (querki.conventions.MOIDs.PropSummaryOID -> 
             ExactlyOne(ElemValue(
-                QLText("The Ur-Type, from which all others descend"), 
+                QLText("""[[_modelForType -> _if(_isNonEmpty, ""Based on Model ____"", ""The Ur-Type, from which all others descend."")]]"""), 
                 new DelegatingType(TextType)))),
         (querki.conventions.MOIDs.PropDetailsOID -> 
-        	ExactlyOne(ElemValue(QLText("""Querki Types are just like any other Things -- they have Models and Instances.
-        	    |The Root Type is essentially the Model for all the other Types. It must never be used directly.""".stripMargin),
+        	ExactlyOne(ElemValue(QLText("""""".stripMargin),
             new DelegatingType(LargeTextType)))),
         (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____**""]]
             |
             |[[Details]]
             |
-            |### Properties of [[Link Name]]
+            |### Properties that are based on [[Link Name]]
             |
             |[[_propsOfType -> _sort -> _bulleted]]""".stripMargin))),            
         setInternal))
