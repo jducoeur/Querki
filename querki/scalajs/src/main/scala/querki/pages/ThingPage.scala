@@ -34,6 +34,20 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   override def refresh() = PageManager.reload()
   
   def pageContent = {
+    // We do this in parallel, so that we can update the menu and title quickly if the
+    // full page takes a long time or hits an error.
+    // TODO: in principle, this is suspicious -- it's very side-effecty, and subject to
+    // race conditions if the user changes pages quickly. Think about whether there is
+    // a better way to do it. This code is *not* crucial, except in the edge case where
+    // getThingPage fails or is slow.
+    for {
+      info <- Client[ThingFunctions].getThingInfo(name).call()
+    }
+    {
+      DataSetting.setThing(Some(info))
+      PageManager.update(info.displayName)
+    }
+    
     for {
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
       rendered = pageDetails.rendered
