@@ -20,7 +20,7 @@ import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
 import querki.util.{Contributor, Publisher, QLog}
-import querki.util.ActorHelpers._
+import querki.util.ActorHelpers
 import querki.values.{QLContext, SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
@@ -251,10 +251,8 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         msg = UserValuePersistRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadThingPropValues(thingId, prop.id, inv.state))
-        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
-        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
-                 case ValuesForUser(uvs) => uvs
-               })
+        uvsFut <- inv.fut(SpaceOps.spaceManager.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
+        uv <- inv.iter(uvsFut.values)
         // Finally, transform the results into a QL-pipeline-friendly form:
         uvInstance = UserValueType(SimplePropertyBundle(
                        UVUserProp(uv.identity),
@@ -281,10 +279,8 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         msg = UserValuePersistRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadUserPropValues(identity, inv.state))
-        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
-        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
-                 case ValuesForUser(uvs) => uvs
-               })
+        uvsFut <- inv.fut(SpaceOps.spaceManager.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
+        uv <- inv.iter(uvsFut.values)
         // Finally, transform the results into a QL-pipeline-friendly form:
         uvInstance = UserValueType(SimplePropertyBundle(
                        UVUserProp(uv.identity),
