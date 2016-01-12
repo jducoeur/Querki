@@ -163,6 +163,8 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
             |  ""**Function**"",
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
             |  
+            |[[_if(Is User Value Property, ""**User Value Property** -- has a different value for each User"")]]
+            |  
             |[[_if(_and(Property Type -> _is(Internal Method Type), _isNonEmpty(_Function Signature)), 
             |""{{well well-sm:
             |**[[_Display Function Signature]]**
