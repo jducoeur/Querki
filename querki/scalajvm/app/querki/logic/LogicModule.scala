@@ -98,27 +98,52 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    toProps(
 	      setName("_if"),
 	      Summary("Choose what to produce, as directed"),
-	      Details("""    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
-	          |_if is one of the basic building blocks of programming. It applies the YESNO phrase to the received context.
-	          |If the result is Yes, it applies the IFCLAUSE to the received context and produces that. Otherwise, if there
-	          |is an ELSECLAUSE, it applies and produces that, or produces None if there is no ELSECLAUSE.
+        Signature(
+          expected = Some(Seq.empty, "Anything -- this will be passed into the predicate for testing"),
+          reqs = Seq(
+            ("predicate", YesNoType, "The question we're asking -- is this value true?"),
+            ("iftrue", AnyType, "What to produce if the predicate is true")
+          ),
+          opts = Seq(
+            ("iffalse", AnyType, Core.QNone, "What to produce if the predicate isn't true")
+          ),
+          returns = (AnyType, "The result from `iftrue` if the `predicate` was true, `iffalse` (or nothing) otherwise")
+        ),
+	      Details("""_if is one of the basic building blocks of programming. It applies the received value to the
+            |`predicate`. If the result is non-empty and is true, it applies the received value to `iftrue`. Otherwise,
+            |if there is an `iffalse` parameter, it applies the received value to that. (If there is no `iffalse`, it
+            |just produces the empty value.)
+            |
+            |For example, take this expression:
+            |```
+            |\[[My List -> _if(_isEmpty, \""Empty\"", \""Full\"")\]]
+            |```
+            |If `My List` is empty, this will print "Empty"; if not, it will print "Full".
+            |
+            |This is also an easy way to test TrueOrFalse flags. Say that our Space represents a library, and we
+            |want to print out whether a given book has the `Checked Out` flag set on it. We would say:
+            |```
+            |\[[My Book -> _if(Checked Out, \""Checked Out\"")\]]
+            |```
+            |So if `My Book -> Checked Out` is true, it will print "Checked Out". Since we didn't give an
+            |`iffalse` parameter, it doesn't print anything if the `Checked Out` flag isn't set.
+            |
+            |Note that, if `predicate` is empty, or the wrong type, that is treated as "false". If you're getting false
+            |answers and don't understand why, check what your `predicate` is actually producing.
 	          |
 	          |The syntax of _if is likely to evolve in the future, to something more like most programming languages. For now,
-	          |though, note that IFCLAUSE and ELSECLAUSE are *inside* the parentheses, rather than after them as most languages
+	          |though, note that `iftrue` and `iffalse` are *inside* the parentheses, rather than after them as most languages
 	          |have it.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
       for {
-        predicate <- inv.processParamFirstAs(0, YesNoType)
+        predicateOpt <- inv.processAsOpt("predicate", YesNoType)
+        predicate = predicateOpt.getOrElse(false)
         result <-
           if (predicate)
-            inv.processParam(1)
-          else if (inv.numParams > 2)
-            // There's an else clause
-            inv.processParam(2)
+            inv.process("iftrue")
           else
-            // No else clause
-            inv.wrap(Core.QNone)
+            inv.process("iffalse")
       }
         yield result
 	  }

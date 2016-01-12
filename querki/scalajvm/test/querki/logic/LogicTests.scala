@@ -141,10 +141,39 @@ class LogicTests extends QuerkiTests {
   // === _if ===
   "_if" should {
     "work correctly with True and False predicates" in {
-      processQText(commonThingAsContext(_.sandbox), """[[_if(True, ""Yes"", ""No"")]]""") should 
+      implicit val s = new CommonSpace
+      
+      pql("""[[_if(True, ""Yes"", ""No"")]]""") should 
         equal ("""Yes""")      
-      processQText(commonThingAsContext(_.sandbox), """[[_if(False, ""Yes"", ""No"")]]""") should 
+      pql("""[[_if(False, ""Yes"", ""No"")]]""") should 
         equal ("""No""")      
+    }
+    
+    "work correctly with a missing iffalse clause" in {
+      implicit val s = new CommonSpace
+      
+      pql("""[[_if(True, ""Yes"", ""No"")]]""") should 
+        equal ("""Yes""")      
+      pql("""[[_if(False, ""Yes"")]]""") should 
+        equal ("""""")
+    }
+    
+    "work correctly with flags" in {
+      class TSpace extends CommonSpace {
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "My Bool")
+        
+        val flagTrue = new SimpleTestThing("Flag True", boolProp(true))
+        val flagFalse = new SimpleTestThing("Flag False", boolProp(false))
+        val flagMissing = new SimpleTestThing("Flag Missing")
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Flag True -> _if(My Bool, ""Yes"", ""No"")]]""") should
+        equal ("Yes")
+      pql("""[[Flag False -> _if(My Bool, ""Yes"", ""No"")]]""") should
+        equal ("No")
+      pql("""[[Flag Missing -> _if(My Bool, ""Yes"", ""No"")]]""") should
+        equal ("No")
     }
     
     "propagate errors in the predicate" in {
