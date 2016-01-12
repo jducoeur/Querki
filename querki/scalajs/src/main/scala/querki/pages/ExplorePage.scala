@@ -86,7 +86,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
     val createFut = for {
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
       // TODO: we could get rid of this asInstanceOf by tweaking the type signature of showPage?
-      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"[[${qlInput.value}]]")
+      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"[[${thingId.underlying} -> ${qlInput.value}]]")
     }
       yield createPage
   })
