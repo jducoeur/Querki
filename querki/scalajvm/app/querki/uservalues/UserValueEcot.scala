@@ -226,17 +226,6 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
    * FUNCTIONS
    ***********************************************/
   
-  /**
-   * TODO: EEEEVIL! This function, and the one below it, involve blocking calls! This is horrible,
-   * but kind of necessary at the moment. The implication is that the QL pipeline needs to become
-   * asynchronous. That will be a *major* pain in the ass, but it's going to have to happen. The notion
-   * should probably be that each Stage results in a Future, which is *usually* immediately redeemed,
-   * but can be put off.
-   * 
-   * Moreover, this really drives home that the QL processing should happen inside of a worker Actor
-   * affiliated with the Space under normal circumstances. As it is, we have to drill a hole through
-   * to the stateful Actor side of the world, which is pretty serious stuff.
-   */
   lazy val UserValuesFunction = new InternalMethod(UserValuesFunctionOID,
     toProps(
       setName("_userValues"),
@@ -251,7 +240,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         msg = UserValuePersistRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadThingPropValues(thingId, prop.id, inv.state))
-        uvsFut <- inv.fut(SpaceOps.spaceManager.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
+        uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
         uv <- inv.iter(uvsFut.values)
         // Finally, transform the results into a QL-pipeline-friendly form:
         uvInstance = UserValueType(SimplePropertyBundle(
@@ -279,7 +268,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         msg = UserValuePersistRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadUserPropValues(identity, inv.state))
-        uvsFut <- inv.fut(SpaceOps.spaceManager.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
+        uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
         uv <- inv.iter(uvsFut.values)
         // Finally, transform the results into a QL-pipeline-friendly form:
         uvInstance = UserValueType(SimplePropertyBundle(
