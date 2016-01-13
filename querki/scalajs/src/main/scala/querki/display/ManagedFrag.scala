@@ -104,16 +104,17 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
       // Implication is that we've gone all the way to the top of the hierarchy without a match, so
       // give up:
       None
-      
-    val frags = findGadgets(node)
-    frags.find(pred(_)) match {
-      case Some(result) => Some(result)
-      case None => {
-        val parent = node.parent()
-        if (parent.length > 0 && parent.get(0).get == dom.document)
-          None
-        else
-          findParentGadgetRec(node.parent(), pred)
+    else {
+      val frags = findGadgets(node)
+      frags.find(pred(_)) match {
+        case Some(result) => Some(result)
+        case None => {
+          val parent = node.parent()
+          if (parent.length > 0 && parent.get(0).get == dom.document)
+            None
+          else
+            findParentGadgetRec(node.parent(), pred)
+        }
       }
     }
   }
