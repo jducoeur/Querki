@@ -20,6 +20,7 @@ class QLTests extends QuerkiTests {
   }
   
   "$_defining" should {
+    // This test is cognate to the way $_defining is used for Pronouns in the LARP App:
     "work from another local Function" in {
       class TSpace extends CommonSpace {
         val dropTwo = new TestProperty(Basic.QLType, ExactlyOne, "Drop Two")
