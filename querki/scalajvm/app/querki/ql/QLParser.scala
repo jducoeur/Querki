@@ -229,6 +229,15 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
     if (binding.name == "_context") {
       Future.successful(resolvingParser.initialContext)
+    } else if (binding.name == "_defining") {
+      // If this expression was invoked with a defining context, produce that:
+      val found = for {
+        inv <- invOpt
+        defining <- inv.definingContext
+      }
+        yield defining
+        
+      Future.successful(found.getOrElse(context.next(Core.emptyOpt(Core.LinkType))))
     } else {
       try {
         val rawParamNum = Integer.parseInt(binding.name.substring(1))
