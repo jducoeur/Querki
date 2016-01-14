@@ -7,6 +7,20 @@ import querki.test._
  * @author jducoeur
  */
 class TextTests extends QuerkiTests {
+  "_matchCase" should {
+    "work in simple cases" in {
+      class TSpace extends CommonSpace {
+        val matchFunc = new TestProperty(Basic.QLType, ExactlyOne, "Matcher")
+        val textThing = new SimpleTestThing("Text Thing", optTextProp("something"),
+            matchFunc("My Optional Text -> _matchCase"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Text Thing -> Matcher]]""") should equal("Something")
+      pql("""[[Text Thing -> matcher]]""") should equal("something")
+    }
+  }
+  
   "_substring" should {
     "allow oid manipulation" in {
       implicit val s = commonSpace
