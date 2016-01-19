@@ -19,6 +19,32 @@ class TextTests extends QuerkiTests {
       pql("""[[Text Thing -> Matcher]]""") should equal("Something")
       pql("""[[Text Thing -> matcher]]""") should equal("something")
     }
+    
+    "work with one explicit level" in {
+      class TSpace extends CommonSpace {
+        val matchFunc = new TestProperty(Basic.QLType, ExactlyOne, "Matcher")
+        val textThing = new SimpleTestThing("Text Thing", optTextProp("something"),
+            matchFunc("My Optional Text -> _matchCase(1)"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Text Thing -> Matcher]]""") should equal("Something")
+      pql("""[[Text Thing -> matcher]]""") should equal("something")
+    }
+    
+    "look up the stack a level" in {
+      class TSpace extends CommonSpace {
+        val matchFunc = new TestProperty(Basic.QLType, ExactlyOne, "Matcher")
+        val caller = new TestProperty(Basic.QLType, ExactlyOne, "Caller")
+        val textThing = new SimpleTestThing("Text Thing", optTextProp("something"),
+            caller("Matcher"),
+            matchFunc("My Optional Text -> _matchCase(2)"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Text Thing -> Caller]]""") should equal("Something")
+      pql("""[[Text Thing -> caller]]""") should equal("something")
+    }
   }
   
   "_substring" should {

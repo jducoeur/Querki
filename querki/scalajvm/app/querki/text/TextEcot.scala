@@ -177,14 +177,28 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
     }
   }
 	
+  // TODO: _matchCase() is really kind of deeply evil. It's *very* specialized, and we wouldn't have bothered with it
+  // if it wasn't necessary to support the gender-matching in the LARP App.
+  //
+  // What we *should* do is rewrite this as a proper QL function. At the moment, it's flatly impossible in several ways,
+  // but we should add enough machinery to make it possible. Prototype this in the LARP App. I suspect that performance
+  // will be unacceptable in practice, but that will provide a nice driver for optimizing the QL pipeline. When we can
+  // replace _matchCase as a pure-QL function built on top of more sensible primitives, we'll know that the pipeline is
+  // getting to a nice level of functionality and performance.
   lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
 	    toProps(
 	      setName("_matchCase"),
 	      SkillLevel(SkillLevelAdvanced),
 	      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
-	      Details("""    SOMETHING -> \""TEXT\"" -> _matchCase
-	          |
-	          |This is a very specialized function, designed for cases where you want to define a Text or Function
+        Signature(
+          expected = Some(Seq(TextType), "Some text, usually one word"),
+          reqs = Seq.empty,
+          opts = Seq(
+            ("levels", IntType, ExactlyOne(IntType(1)), "The number of levels up that this will look for the match")
+          ),
+          returns = (TextType, "The received text, capitalized if this Function was capitalized")
+        ),
+	      Details("""This is a very specialized function, designed for cases where you want to define a Text or Function
 	          |that results in some Text, but you want the *case* of that Text (upper or lower) to match the way
 	          |the Function was *invoked*.
 	          |
@@ -192,33 +206,54 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
 	          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
 	          |as \[[Mary -> Sie\]], I get "She".
+            |
+            |Occasionally, you want to use this in a Function that is intended for use inside *other* Functions.
+            |You can use the `levels` parameter to specify how far up to look. By default it is 1 (this Function);
+            |if you set it to 2 it will be the Function that called this one, and so on.
 	          |
 	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
   	override def qlApply(inv:Invocation):QFut = {
   	  for {
-  	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
-  	    call <- inv.opt(findCall(inv, lexicalProp))
+        levels <- inv.processAs("levels", IntType)
+  	    call <- inv.opt(findCall(inv, levels))
   	    text <- inv.contextAllAs(QL.ParsedTextType)
   	    adjusted = adjustCase(text, call)
   	  }
   	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
   	}
   	
-  	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
-  	  def findRec(context:QLContext):Option[QLCall] = {
-  	    val result = for {
-  	      // fromTransformOpt indicates the actual Thing being called inside each QLCall:
-  	      transformer <- context.fromTransformOpt
-  	      if (transformer.id == thing.id)
-  	      call <- context.withCallOpt
-  	    }
-  	      yield call
-  	      
-  	    result.orElse(context.parentOpt.flatMap(findRec(_)))
-  	  }
+    // This is a slightly scary recursive algorithm. Basically, we are looking up the stack for
+    // the call to the lexicalProp -- the Function that we're hunting. Making this more complex,
+    // we may have to do this multiple times, if levels > 1 -- that's why we have two levels of
+    // recursion. The outer recursion is the levels; the inner is hunting for the current level's
+    // Function name.
+  	private def findCall(inv:Invocation, levels:Int):Option[QLCall] = {
+      def findPropRec(outerContext:QLContext, remaining:Int):Option[QLCall] = {
+        outerContext.parser.flatMap(_.lexicalProp) flatMap { thing =>
+          def findRec(context:QLContext):Option[QLCall] = {
+            val result = for {
+              // fromTransformOpt indicates the actual Thing being called inside each QLCall:
+              transformer <- context.fromTransformOpt
+              if (transformer.id == thing.id)
+              call <- context.withCallOpt
+            }
+              yield call
+              
+            result.flatMap { call =>
+              if (remaining <= 1)
+                Some(call)
+              else
+                // Found one, but we are supposed to keep looking further up the stack, so keep going:
+                findPropRec(context, remaining - 1)
+            }.orElse(context.parentOpt.flatMap(findRec(_)))
+          }
+          
+          findRec(outerContext)
+        }
+      }
   	  
-  	  findRec(inv.context)
+  	  findPropRec(inv.context, levels)
   	}
   	
   	private def adjustCase(text:Wikitext, call:QLCall):String = {
