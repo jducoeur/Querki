@@ -161,17 +161,16 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       // If there are parameters to the call, they are a collection of phrases.
       val params = call.params
       val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-      val contextWithCall = context.withCall(call, t)
       methodOpt match {
         case Some(method) => {
           val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
           qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            method.qlApplyTop(InvocationImpl(t, method, contextWithCall, Some(definingContext), params), method)
+            method.qlApplyTop(InvocationImpl(t, method, context.withCall(call, method), Some(definingContext), params), method)
           }
         }
         case None => {
           qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            val inv = InvocationImpl(t, t, contextWithCall, None, params)
+            val inv = InvocationImpl(t, t, context.withCall(call, t), None, params)
             t.qlApplyTop(inv, t)
           }
         }

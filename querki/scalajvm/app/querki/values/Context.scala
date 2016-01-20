@@ -186,9 +186,6 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
     
   /**
    * Variant that notes which Call we are currently processing.
-   * 
-   * TBD: we're making fromTransformOpt indicate subtly different things depending on whether we're in
-   * nextFrom or withCall. That's convenient, but suspicious.
    */
   def withCall(call:QLCall, transform:Thing) = copy(depth = depth + 1, withCallOpt = Some(call), fromTransformOpt = Some(transform))
   
