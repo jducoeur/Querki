@@ -54,14 +54,14 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
   //
   // Note that this is a proof of concept for a binary tree. If we can do this, the sky's the limit.
   val nodeId = new TestProperty(TextType, Optional, "Node Id")
-  val initialNodeModel = new SimpleTestThing("Tree Node Model")
-  val nodeType = new ModelType(toid, initialNodeModel.id,
+  val nodeModelId = toid()
+  val nodeType = new ModelType(toid, nodeModelId,
       Core.toProps(
         Core.setName("Node Type")))
   registerType(nodeType)
   val leftProp = new TestProperty(nodeType, Optional, "Left")
   val rightProp = new TestProperty(nodeType, Optional, "Right")
-  val nodeModel = new TestThing(initialNodeModel.id, "Tree Node Model", leftProp(), rightProp(), nodeId())
+  val nodeModel = new TestThing(nodeModelId, "Tree Node Model", leftProp(), rightProp(), nodeId())
   
   val myTree = new TestThing("My Tree", nodeModel,
       leftProp(SimplePropertyBundle(

@@ -89,7 +89,13 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   class TestProperty[VT, RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
-  def registerThing(t:ThingState) = { things = things :+ t }
+  def registerThing(t:ThingState) = {
+    // Guard against accidental duplication:
+    things.find(_.id == t.id) match {
+      case Some(found) => throw new Exception(s"$t has the same OID as $found!")
+      case None => things = things :+ t 
+    }
+  }
   class TestThingBase(pid:OID, name:String, model:OID, pairs:(OID, QValue)*)
     extends ThingState(pid, spaceId, model, makePropFetcher(name, pairs)) 
   {
