@@ -1,6 +1,7 @@
 package querki.display
 
 import scala.scalajs.js
+import org.scalajs.{dom => fulldom}
 import org.scalajs.dom.{raw => dom}
 
 import scalatags.JsDom.all._
@@ -57,12 +58,18 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   
   trait Navigable
   
-  case class NavSection(val title:String, val links:Seq[Navigable], val index:Int) extends Navigable
+  case class NavSection(title:String, links:Seq[Navigable], index:Int, icon:Option[String] = None, iconOnly:Boolean = false) extends Navigable
 
   /**
    * Represents a single link to be shown in a menu.
    */
-  case class NavLink(display:String, url:URL = "#", id:Option[String] = None, enabled:Boolean = true, onClick:Option[() => Unit] = None) extends Navigable
+  case class NavLink(
+    display:String, 
+    url:URL = "#", 
+    id:Option[String] = None, 
+    enabled:Boolean = true, 
+    onClick:Option[() => Unit] = None,
+    newWindow:Boolean = false) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -178,29 +185,41 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       None
   }
   
+  def shareSection = {
+    thingOpt.map { thing =>
+      NavSection("Share", Seq(
+        NavLink("Share via...", enabled = false),
+        NavDivider,
+        NavLink("Email", url = s"mailto:?subject=${thing.displayName}&body=${js.URIUtils.encodeURI(fulldom.window.location.href)}", newWindow = true)
+      ), 1600, icon = Some("glyphicon glyphicon-share-alt"), iconOnly = true)
+    }
+  }
+  
   //////////////////////////////////////
   
-  def displayNavLink(display:String, url:URL, idStr:String, enabled:Boolean, onClick:Option[() => Unit]) = {
-    if (enabled) {
-      val link = onClick match {
-        case Some(cb) => {
-          a(id:=idStr,
-            href:=PageManager.currentHash,
-            onclick:=cb,
-            raw(display))
-        }
-        case _ => {
-          a(href:=url,
-            id:=idStr,
-            raw(display))
-        }
+  def displayNavLink(link:NavLink) = {
+    link match {
+      case NavLink(display, url, idOpt, enabled, onClick, newWindow) => {
+        val idStr = idOpt.getOrElse("")
+        if (enabled) {
+          li(
+            a(
+              id:=idStr,
+              onClick.map { cb => href:=PageManager.currentHash }.getOrElse { href:=url },
+              onClick.map { cb => onclick:= cb },
+              if (link.newWindow)
+                target:="_blank",
+              raw(display)
+            )
+          )
+        } else {
+          li(cls:="disabled",
+            a(raw(display))
+          )
+        }        
       }
-      li(link)
-    } else {
-      li(cls:="disabled",
-        a(raw(display))
-      )
     }
+
   }
 
   val displayNavDivider = li(cls:="divider")
@@ -214,34 +233,39 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   /**
    * Displays a NavSection == that is, a single menu.
    */
-  def displayNavSection(title:String, links:Seq[Navigable], index:Int):Frag = {
-    // Filter out characters that aren't legal in tag IDs, or the data-target will cause Bootstrap to choke:
-    val legalTitle = filterLegal(title)
-    li(cls:="dropdown",
-      tabindex:=index,
-      // The clickable drop-down head of the menu
-      a(cls:="dropdown-toggle",
-        data("target"):=s"#$legalTitle",
-        href:=s"#$legalTitle",
-        data("toggle"):="dropdown",
-        role:="button",
-        title + " ",
-        b(cls:="caret")
-      ),
-      // The menu itself
-      ul(cls:="dropdown-menu",
-        role:="menu",
-        for (link <- links)
-          yield displayNavigable(link)
-      )
-    )
+  def displayNavSection(section:NavSection):Frag = {
+    section match {
+      case NavSection(title, links, index, iconOpt, iconOnly) => {
+        // Filter out characters that aren't legal in tag IDs, or the data-target will cause Bootstrap to choke:
+        val legalTitle = filterLegal(title)
+        val linkClass = s"dropdown-toggle"
+        li(cls:="dropdown",
+          tabindex:=index,
+          // The clickable drop-down head of the menu
+          a(cls:=linkClass,
+            data("target"):=s"#$legalTitle",
+            href:=s"#$legalTitle",
+            data("toggle"):="dropdown",
+            role:="button",
+            iconOpt.map(classNames => i(cls:=classNames)),
+            if (!iconOnly) title + " ",
+            b(cls:="caret")
+          ),
+          // The menu itself
+          ul(cls:="dropdown-menu",
+            role:="menu",
+            for (link <- links)
+              yield displayNavigable(link)
+          )
+        )
+      }
+    }
   }
 
-  def displayNavigable(section:Navigable) = {
-    section match {
-      case NavLink(display, url, id, enabled, onClick) => 
-        displayNavLink(display, url, id.getOrElse(""), enabled, onClick)
-      case NavSection(title, links, index) => displayNavSection(title, links, index)
+  def displayNavigable(nav:Navigable) = {
+    nav match {
+      case link:NavLink => displayNavLink(link)
+      case section:NavSection => displayNavSection(section)
       case NavDivider => displayNavDivider
     }
   }
@@ -292,7 +316,13 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
                   tabindex:=1700,
                   li(new NotifierGadget)
                 )
-              }
+              },
+              
+              shareSection.map( section =>
+                ul(cls:="nav navbar-nav navbar-right",
+                  displayNavigable(section)
+                )
+              )
             )
           )
         )
