@@ -45,6 +45,29 @@ class TextTests extends QuerkiTests {
       pql("""[[Text Thing -> Caller]]""") should equal("Something")
       pql("""[[Text Thing -> caller]]""") should equal("something")
     }
+    
+    // This is the motivating use case, from the LARP App:
+    "go two levels including the defining context" in {
+      class TSpace extends CommonSpace {
+        val nominative = new TestProperty(TextType, ExactlyOne, "Nominative")
+        val gender = new SimpleTestThing("Gender")
+        val male = new TestThing("Male", gender, nominative("he"))
+        
+        val charGender = new TestProperty(LinkType, ExactlyOne, "Character Gender")
+        val pronoun = new TestProperty(Basic.QLType, ExactlyOne, "Pronoun")
+        val ze = new TestProperty(Basic.QLType, ExactlyOne, "Ze")
+        val character = 
+          new SimpleTestThing("Character",
+              charGender(),
+              pronoun("Character Gender -> $_defining -> _matchCase(2)"),
+              ze("Nominative.Pronoun"))
+        val joe = new TestThing("Joe", character, charGender(male))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Joe -> Ze]]""") should equal("He")
+      pql("""[[Joe -> ze]]""") should equal("he")
+    }
   }
   
   "_substring" should {
