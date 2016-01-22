@@ -162,7 +162,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       prop, 
       prop.linkName, 
       prop.displayName, 
-      prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt),
+      prop.getPropOpt(Core.AppliesToKindProp).map(_.rawList).getOrElse(Seq.empty),
       prop.cType,
       typeId,
       isShadow

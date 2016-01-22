@@ -45,7 +45,14 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
         // Filter out Properties that don't apply to this Thing, or are already in use:
         val props = 
           allProps.
-            filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).
+            filter { prop =>
+              if (prop.appliesTo.isEmpty)
+                // There's no appliesTo, so it is presumed to apply to all Kinds:
+                true
+              else
+                // Is this Kind in the appliesTo list?
+                prop.appliesTo.contains(thing.kind)
+            }.
             filter(prop => !existingPropIds().contains(prop.oid)).
             sortBy(_.linkName)
           

@@ -383,7 +383,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         PublicAllowedProp(true),
         // You specifically can *not* restrict visibility of Properties or Types, at least not yet:
         // that makes it way too easy to cause brokenness:
-        AppliesToKindProp(Kind.Thing)))
+        Core.AppliesToKindProp(Kind.Thing, Kind.Space)))
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(

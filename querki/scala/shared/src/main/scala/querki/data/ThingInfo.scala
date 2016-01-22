@@ -59,7 +59,7 @@ case class PropInfo(
   oid:TID,
   linkName:Option[String],
   displayName:String,
-  appliesTo:Option[Kind.Kind],
+  appliesTo:Seq[Kind.Kind],
   collId:TID,
   // Note that the typeId points to the Type if it's conventional, or to the Model
   // iff it's a Model Property:
