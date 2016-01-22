@@ -74,12 +74,13 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
       // refactor this somehow:
       li(cls:="_propListItem _instanceEditor",
         data("propid"):=propInfo,
-        div(cls:="row", width:="100%",
+        div(cls:="row _propValueGuts",
           new WithTooltip(label(cls:="_propPrompt col-md-2", 
             onclick:={ () => toggleDetails() },
             raw(s"$prompt ")),
             tooltip),
-          new RawDiv(info.editor, cls:="col-md-9"),
+          new RawDiv(info.editor, cls:="col-md-9 col-xs-11"),
+          i(cls:="_dragHandle col-xs-1 glyphicon glyphicon-move"),
           new DeleteInstanceButton({() => section.page.removeProperty(this)}) 
         ),
         if (propId == stdThings.basic.displayNameProp.oid)

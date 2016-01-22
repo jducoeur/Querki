@@ -297,6 +297,10 @@ dd {
   margin-bottom: 20px;
 }
 
+._propValueGuts {
+  width: 100%;
+}
+
 /*
  * Styles used in major Querki screens.
  */

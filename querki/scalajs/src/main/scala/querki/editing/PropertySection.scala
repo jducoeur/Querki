@@ -48,6 +48,10 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
       $(elem).sortable(SortableOptions.
         // That is, the two PropertySections are linked, and you can drag between them:
         connectWith("._propertySection").
+        // Only allow the sections to be  dragged by handles. This is necessary in order to make
+        // the duck-punching work on a phone without interfering with being able to click into a
+        // field:
+        handle("._dragHandle").
         // Stop gets called after a drag-and-drop event:
         stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
           val item = ui.item.get
