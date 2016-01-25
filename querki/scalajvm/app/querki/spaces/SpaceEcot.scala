@@ -128,9 +128,12 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       val linkBack = for {
         linkPropOpt <- inv.definingContextAsOptionalPropertyOf(LinkType)
         linkProp <- inv.opt(linkPropOpt)
+        // It's important to create the new value using the correct Collection, since that's about to
+        // get stored:
+        ctype = linkProp.cType
         lexicalThing <- inv.opt(inv.lexicalThing match { case Some(t:Thing) => Some(t); case _ => None })
        }
-        yield Map(linkProp(ExactlyOne(LinkType(lexicalThing))))
+        yield Map(linkProp(ctype(LinkType(lexicalThing))))
         
       linkBack.get.map(_.headOption.getOrElse(emptyProps))
     }
