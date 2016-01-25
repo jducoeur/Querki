@@ -133,7 +133,15 @@ trait CollectionBase { self:CoreEcot =>
     type implType = List[ElemValue]
     
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
-      val guts = ser.slice(1, ser.length() - 1).trim()
+      val guts = 
+        // Note: this is a bit of a hack. We've had at least one Issue (.3y28amy) where we accidentally
+        // stored Set data as ExactlyOne. As a result, the storage format was wrong. We don't want to
+        // lose data, so for now we're making this a bit forgiving. This is kind of awful, but given
+        // that this storage engine isn't long for this world anyway, we'll do it.
+        if (ser.head == '[' && ser.last == ']')
+          ser.slice(1, ser.length() - 1).trim()
+        else
+          ser
       if (guts.isEmpty())
         doDefault(elemT)
       else {
