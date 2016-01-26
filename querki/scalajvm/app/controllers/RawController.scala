@@ -30,7 +30,7 @@ class RawController extends ApplicationBase {
           val canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(false)(rc.request)
           val desc = thingPageDetails.rendered.plaintext
           val guts = thingPageDetails.rendered.display.toString
-          Ok(views.html.raw(title, canonical, desc, guts))
+          Ok(views.html.raw(title, canonical, desc, guts, rc.request))
         }
       }
     } recoverWith {

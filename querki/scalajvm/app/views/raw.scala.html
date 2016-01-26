@@ -1,5 +1,5 @@
 @* raw Template File *@
-@(title:String, canonical:String, desc:String, guts:String)
+@(title:String, canonical:String, desc:String, guts:String, request:play.api.mvc.RequestHeader)
 
 <!DOCTYPE html>
 
@@ -34,10 +34,17 @@
 		}
  	</style>
     
-    <meta property="og:url", content="@canonical"/>
+    <meta property="fb:app_id" content="1549424702039676"/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="@canonical"/>
     <meta property="og:title" content="@title"/>
     <meta property="og:description" content="@desc"/>
     <meta property="og:site_name" content="Querki"/>
+    <meta property="og:image" content="@routes.Assets.at("images/Logo-large-1.png").absoluteURL()(request)"/>
+    <meta property="og:image:secure_url" content="@routes.Assets.at("images/Logo-large-1.png").absoluteURL(true)(request)"/>
+    <meta property="og:image:type" content="image/png"/>
+    <meta property="og:image:width" content="1655"/>
+    <meta property="og:image:height" content="649"/>
   </head>
   
   <body>

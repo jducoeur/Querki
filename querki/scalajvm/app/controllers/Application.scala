@@ -42,6 +42,10 @@ class Application extends ApplicationBase {
         
 user-agent: *
 disallow: /
+      
+user-agent: facebookexternalhit/1.1
+disallow:
+allow: /
 """).as("text/plain")
   }
 }
