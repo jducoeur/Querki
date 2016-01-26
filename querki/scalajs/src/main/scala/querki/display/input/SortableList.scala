@@ -100,7 +100,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     val guts = $(li).children().first()
     guts.detach()
     // Add the three elements of the row: the move handle...
-    val moveHandle = span(cls:="glyphicon glyphicon-move col-md-1 text-right").render
+    val moveHandle = span(cls:="glyphicon glyphicon-move col-md-1 text-right _dragHandle").render
     // ... the wrapper for the guts...
     val content = span(cls:="col-md-10").render
     // ... and the delete button. Note that you intentionally can not tab to it:
@@ -157,6 +157,10 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     numberItems()
     
     $(elem).sortable(SortableOptions.
+      // Only allow the sections to be  dragged by handles. This is necessary in order to make
+      // the duck-punching work on a phone without interfering with being able to click into a
+      // field:
+      handle("._dragHandle").
       // Stop gets called after a drag-and-drop event:
       stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
         val item = ui.item.get
