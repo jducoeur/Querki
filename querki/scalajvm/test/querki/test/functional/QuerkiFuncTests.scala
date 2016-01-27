@@ -65,6 +65,12 @@ class QuerkiFuncTests
     // 19001 is the default port used for Play Functional Testing. We can and probably
     // should change at at some point, but it's fine for now:
     go to "http://localhost:19001/"
+    
+    // The strings below don't want to get checked it yet, until I have a test DB defined:
+    textField("name").value = "..."
+    pwdField("password").value = "..."
+    click on "login_button"
+    
     quit()
   }
 }

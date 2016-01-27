@@ -19,8 +19,8 @@
 		
 		@form(routes.LoginController.dologin, 'class -> "form-inline") {
 		  <input type="text" name="name" id="name" value="" placeholder="Email Address">
-		  <input type="password" name="password" value="" placeholder="Password">
-		  <input type="submit" value="Log in" class="btn btn-primary">
+		  <input type="password" name="password" id="password" value="" placeholder="Password">
+		  <input type="submit" value="Log in" id="login_button" class="btn btn-primary">
 		  <p class="col-md-12"><small><a href="@{routes.LoginController.sendPasswordReset}">I've forgotten my password</a></small></p>
 		}
 		
