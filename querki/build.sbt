@@ -122,6 +122,9 @@ lazy val sharedDependencies = Def.setting(Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 ))
 
+addCommandAlias("utst", """test-only -- -l "org.scalatest.tags.Slow"""")
+addCommandAlias("ftst", """test-only -- -n "org.scalatest.tags.Slow"""")
+
 onLoad in Global := (Command.process("project querkiServer", _: State)) compose (onLoad in Global).value
 
 // for Eclipse users

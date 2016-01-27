@@ -32,7 +32,7 @@ import querki.globals._
  *   
  * In order to run these tests headless, make sure that you have xvfb installed, with:
  * 
- *   sudo apt-get xvfb
+ *   sudo apt-get install xvfb
  *   
  * In your shell, say:
  * 
