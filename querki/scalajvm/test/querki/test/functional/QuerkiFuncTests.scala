@@ -10,6 +10,43 @@ import org.scalatestplus.play._
 import querki.globals._
 
 /**
+ * The root of Querki's Functional Tests.
+ * 
+ * IMPORTANT PREREQUISITES: you must first download the native ChromeDriver from
+ * 
+ *   https://sites.google.com/a/chromium.org/chromedriver/downloads
+ *   
+ * Install that on your path, such as /usr/bin/chromedriver, and make sure it has
+ * permissions 755. ("which chromedriver" should find it.) Or point the system
+ * property "webdriver.chrome.driver" to wherever that is installed.
+ * 
+ * Also, make sure you have a reasonably *current* version of Chrome installed.
+ * 
+ * If ScalaTest cancels these tests, saying it "was unable to create a Selenium
+ * ChromeDriver on this platform", it means the underlying ChromeDriver threw an
+ * exception. Uncomment the DriverTests below and use those to find out what that
+ * exception was in order to debug it. The source code for ChromeDriver can be found at:
+ * 
+ *   https://github.com/SeleniumHQ/selenium/tree/master/java/client/src/org/openqa/selenium/chrome
+ * 
+ *   
+ * In order to run these tests headless, make sure that you have xvfb installed, with:
+ * 
+ *   sudo apt-get xvfb
+ *   
+ * In your shell, say:
+ * 
+ *   Xvfb :1 -screen 5 1280x1024x8 &
+ *   
+ * (Note the capital "X" there.) That creates display 1, screen 5 as a virtual framebuffer.
+ * 
+ * In the shell say:
+ * 
+ *   export DISPLAY=:1.5
+ *   
+ * That tells the system to use this virtual screen for the output. Then start up
+ * sbt and run your test.
+ * 
  * @author jducoeur
  */
 @Slow
@@ -25,9 +62,6 @@ class QuerkiFuncTests
   with WebBrowser
 {
   "I should be able to open a web browser" in {
-    // Tell the underlying ChromeDriver where to find the native implementation
-    // TODO: this really belongs in a documented system property instead?
-    System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
     go to "http://www.google.com/"
     quit()
   }
