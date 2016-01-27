@@ -47,6 +47,13 @@ import querki.globals._
  * That tells the system to use this virtual screen for the output. Then start up
  * sbt and run your test.
  * 
+ * 
+ * In a perfect world, we should be using One[Server|Browser]PerSuite. Problem is, ScalaTest's exclusion
+ * mechanism works on *tests*, not *suites*. So even if we are excluding this suite using its tags, it
+ * still starts up both the server and the browser, though we don't want them. So instead, we're structuring
+ * this as one huge test. It's suboptimal, but adequate for now.
+ * 
+ * 
  * @author jducoeur
  */
 @Slow
@@ -54,8 +61,8 @@ class QuerkiFuncTests
   extends WordSpec
   with Matchers
   with BeforeAndAfterAll
-  with OneServerPerSuite
-  with OneBrowserPerSuite
+  with OneServerPerTest
+  with OneBrowserPerTest
   // For now, we're just going to target Chrome. Eventually, obviously, we should
   // test this stuff cross-browser:
   with ChromeFactory
