@@ -1,5 +1,7 @@
 # Create the Akka Persistence table
 # Note that this is taken from https://github.com/okumin/akka-persistence-sql-async
+#
+# DEPRECATED: do not use this! We've abandoned this plan, in favor of moving towards Cassandra instead.
 
 CREATE TABLE IF NOT EXISTS persist_journal (
   persistence_id VARCHAR(255) NOT NULL,
