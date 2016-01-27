@@ -62,7 +62,9 @@ class QuerkiFuncTests
   with WebBrowser
 {
   "I should be able to open a web browser" in {
-    go to "http://www.google.com/"
+    // 19001 is the default port used for Play Functional Testing. We can and probably
+    // should change at at some point, but it's fine for now:
+    go to "http://localhost:19001/"
     quit()
   }
 }
