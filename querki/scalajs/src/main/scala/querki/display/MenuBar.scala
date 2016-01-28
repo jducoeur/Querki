@@ -162,7 +162,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       case Some(user) => {
         NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
-          NavLink("Log out", controllers.LoginController.logout(), id=Some("_logoutButton"))
+          NavLink("Log out", controllers.LoginController.logout(), id=Some("logout_button"))
         ), 1900)  
       }
       case None => {
@@ -288,6 +288,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
               
               // Show the logo on the left-hand side:
               a(cls:="navbar-brand",
+                id:="_index_button",
                 tabindex:=1000,
                 // TODO: where should we define this call?
                 href:="/",
