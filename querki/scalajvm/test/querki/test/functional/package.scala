@@ -62,6 +62,31 @@ package querki.test
  * version of the system DB. You can load this from test_system_template.sql in Querki's git root.
  * 
  * 
+ * ==Writing Tests==
+ * 
+ * As a rule of thumb, individual functions in the functional test world shouldn't usually be more than
+ * 20 lines long. While exceptions are *possible*, they should be looked at with an acid eye.
+ * 
+ * In particular, always be on the lookout for duplication. Automated tests are still code, and Rule #1
+ * is still "Duplicate Data is the Root of all Evil". If you're duplicating more than a line or two
+ * across multiple places, that suggests refactoring. The actual code is trying to be very agile; to
+ * accomplish that, the tests need to be equally agile, and duplication hinders that.
+ * 
+ * Note that all top-level tests are run in QuerkiFuncTests, under runTests(). Feel free to add more
+ * modules to that. Keep those modules relatively decoupled from each other. You are allowed to add
+ * additional tests that depend on CommonSpace, but only if they don't do anything dramatic to it. If
+ * you need to do stranger stuff, add another test-specific Space.
+ * 
+ * `State` is the most important data structure in the harness. More or less every function should be
+ * taking the current State, and returning a new State that reflects the new reality. The State is
+ * basically the "virtual DOM" for the test harness, keeping track of our understanding of the browser
+ * and server. Feel free to enhance it, but be careful to be consistent.
+ * 
+ * Use the `run` function liberally, to encapsulate the pattern "run these functions, each of which
+ * takes a State and returns a State". If functions need additional parameters, they should usually
+ * be curried.
+ * 
+ * 
  * ==Notes and Future Plans==
  * 
  * In a perfect world, we should be using One[Server|Browser]PerSuite. Problem is, ScalaTest's exclusion

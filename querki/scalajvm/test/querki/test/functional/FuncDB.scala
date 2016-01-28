@@ -4,13 +4,14 @@ import anorm._
 
 import querki.db._
 import ShardKind._
+import querki.system.TOSModule
 
 /**
  * Mix-in trait that defines the database primitives for functional testing.
  * 
  * @author jducoeur
  */
-trait FuncDB {
+trait FuncDB { this:FuncMixin =>
   
   // This drops the existing test databases, and builds fresh ones based on test_system_template.
   // Note that, at the end of a test run, the test DBs will be left intact for forensic inspection.
@@ -35,10 +36,14 @@ trait FuncDB {
       makeTable("SpaceMembership")
       makeTable("Spaces")
       makeTable("User")
+      
+      // Mark any pre-existing members as being up-to-date on the Terms of Service:
+      cmd(s"UPDATE User SET tosVersion = ${TOSModule.currentVersion.version}")
     }
     
     QDB(User) { implicit conn =>
       SQL("CREATE TABLE OIDNexter LIKE test_system_template.OIDNexter").execute()
+      SQL("INSERT INTO OIDNexter SELECT * FROM test_system_template.OIDNexter").execute()
     }
   }
 

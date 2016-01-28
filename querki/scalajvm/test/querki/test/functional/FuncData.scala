@@ -1,39 +1,73 @@
 package querki.test.functional
 
+import querki.data.TID
+
 /**
  * Represents a user who exists in the test database.
  */
 case class TestUser(handle:String, display:String, password:String)
+object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing")
 
 /**
  * Represents a page that may be shown in the browser.
  */
 sealed trait Page
-case object LoginPage extends Page
-case object IndexPage extends Page
+/**
+ * The root page of Querki, which you see only when you aren't logged in.
+ */
+object LoginPage extends Page
+/**
+ * The "Your Spaces" page, which you only see if you *are* logged in.
+ */
+object IndexPage extends Page
+/**
+ * The root page of some Space. If this is showing, the Space had better be in the State.
+ */
+case class RootPage(space:TSpace) extends Page
+
+/**
+ * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that
+ * we can have operations that operate on the actual Kind.
+ */
+trait TThing[T <: TThing[T]] {
+  def display:String
+  def tid:TID
+  
+  def withTID(id:String):T
+}
+
+/**
+ * Represents a Space. This typically exists both as a static object, describing
+ * the Space to be created, and in the State once it has been created.
+ */
+case class TSpace(
+  // The display name we're giving this Space:
+  display:String,
+  // The OID of this Thing, as understood by the Client:
+  tid:TID = TID("")) extends TThing[TSpace]
+{
+  def withTID(id:String) = copy(tid = TID(id))
+}
 
 /**
  * Represents the *current* state of the test world, including where the client
  * currently is. Most interesting functions should take this and return it.
+ * 
+ * You can think of this as similar to a virtual DOM in the JavaScript world. It
+ * is our understanding of the state of the actual browser. Operations that alter
+ * the actual browser should alter this to match.
  */
-case class CurrentState(
+case class State(
   // The User who we believe is currently logged in
   currentUserOpt:Option[TestUser],
   // The Page that we believe is currently showing
-  currentPage:Page)
+  currentPage:Page,
+  // The Spaces that *actually* exist, that we have created
+  spaces:Seq[TSpace])
 {
-  def ->(page:Page):CurrentState = copy(currentPage = page)
+  def ->(page:Page):State = copy(currentPage = page)
 }
-
 /**
- * This defines common data that are used by a variety of tests, such as
- * the test users.
- * 
- * @author jducoeur
+ * The State at the beginning of time, before we've logged in or built anything.
  */
-trait FuncData {
-  /**
-   * The original Admin user, who exists when we start these tests.
-   */
-  val admin1 = TestUser("testadmin1", "Test Admin 1", "testing")
-}
+object InitialState extends State(None, LoginPage, Seq.empty)

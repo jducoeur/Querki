@@ -37,6 +37,9 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
       case _ => Logger.error("Got an unexpected result from QuerkiRoot.Initialize!!!")
     }
     
+    // Evil workaround, to give the functional test harness access to the running Ecology:
+    QuerkiRoot.ecology = ecology
+    
     Logger.info("Querki has started")
   }  
   

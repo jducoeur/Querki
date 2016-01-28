@@ -52,4 +52,10 @@ object QuerkiRoot {
   case class Initialized(ecology:Ecology)
   case object Terminate
   case object Terminated
+  
+  // DO NOT USE THIS UNLESS YOU KNOW WHAT YOU ARE DOING!!!
+  // This cheat exists solely to allow the functional tests to get at the real Ecology. It
+  // should *never* be used for any other purpose, including unit tests. (Which run in parallel,
+  // and have their own individual Ecologies.)
+  var ecology:Ecology = null
 }

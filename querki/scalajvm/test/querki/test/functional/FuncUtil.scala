@@ -1,16 +1,23 @@
 package querki.test.functional
 
+import querki.util.QLog
+
 /**
  * The definition of a test case.
  * 
+ * These are the high-level, relatively decoupled tests. Each one declares its preconditions, and
+ * it is up to the runTests() engine to get things to the right preconditions before the test
+ * runs. Keep in mind that that's not magic: you mustn't point to a user or page that doesn't yet
+ * exist in the State.
+ * 
  * @param desiredUser The User who needs to be logged in before this test begins.
  * @param desiredPage The Page that should be showing before this test begins. Should usually
- *   be either the index Page, or a specific Page in a Space that is known to the CurrentState.
+ *   be either the index Page, or a specific Page in a Space that is known to the State.
  * @param test The actual test function.
  */
-case class TestDef(desiredUser:Option[TestUser], desiredPage:Page)(test:CurrentState => CurrentState)
+case class TestDef(desiredUser:Option[TestUser], desiredPage:Page, desc:String)(test:State => State)
 {
-  def run(state:CurrentState) = test(state)
+  def run(state:State) = test(state)
 }
 
 /**
@@ -19,21 +26,74 @@ case class TestDef(desiredUser:Option[TestUser], desiredPage:Page)(test:CurrentS
  * @author jducoeur
  */
 trait FuncUtil { this:FuncMixin =>
-  def loginAs(state:CurrentState, user:TestUser):CurrentState = {
+  
+  /**
+   * This waits until the page title (IMPORTANT: *not* the header, the title in the tab) matches
+   * the given string.
+   * 
+   * TODO: this is fundamentally suspect, because we're hard-coding duplicate English strings. These
+   * really should be internationalizable strings a la messages, defined server-side and shipped to
+   * the client at startup. (Can we do this strongly-typed and avoid the stringly-typed messages approach?)
+   */
+  def waitForTitle(str:String) = {
+    eventually { pageTitle should be (str) }
+  }
+  
+  /**
+   * Spew some output, so that we can see what's going on. This is especially useful when you're
+   * running headless, which is the most common approach.
+   */
+  def spew(str: => String) = {
+    // TODO: make this config-selectable
+    QLog.spew(str)
+  }
+  
+  def loginAs(user:TestUser)(state:State):State = {
     textField("name").value = user.handle
     pwdField("password").value = user.password
     click on "login_button"
-    eventually { pageTitle should be ("Your Spaces") }
+    waitForTitle("Your Spaces")
+    spew(s"Logged in as ${user.display}")
     state -> IndexPage
   }
   
-  def logout(state:CurrentState):CurrentState = {
+  def logout(state:State):State = {
     click on "logout_button"
-    eventually { pageTitle should be ("Welcome to Querki") }
+    waitForTitle("Welcome to Querki")
+    spew(s"Logged out")
     state -> LoginPage
   }
   
-  def adjustUser(state:CurrentState, test:TestDef):CurrentState = {
+  /**
+   * After we're done creating a Thing, this waits until the ThingPage appears, fetches its TID, and
+   * returns the adjusted Thing.
+   * 
+   * This may not work if PageHeader is set!
+   */
+  def waitUntilCreated[T <: TThing[T]](t:T):T = {
+    waitForTitle(t.display)
+    val tid = find("_thingOID").map(_.text).getOrElse(fail(s"Couldn't find the OID on-page for ${t.display}"))
+    spew(s"Created ${t.display} as $tid")
+    t.withTID(tid)
+  }
+  
+  /**
+   * Creates the specified Space.
+   * 
+   * Precondition: you should already be at the IndexPage.
+   */
+  def createSpace(space:TSpace)(state:State):State = {
+    assert(state.currentPage == IndexPage)
+    spew(s"Creating Space ${space.display}")
+    click on "_createSpaceButton"
+    waitForTitle("Create a New Space")
+    textField("_newSpaceName").value = space.display
+    click on "_createSpaceButton"
+    val createdSpace = waitUntilCreated(space)
+    state.copy(spaces = state.spaces :+ createdSpace) -> RootPage(space)
+  }
+  
+  def adjustUser(state:State, test:TestDef):State = {
     if (test.desiredUser != state.currentUserOpt) {
       test.desiredUser match {
         case Some(targetUser) => {
@@ -42,7 +102,7 @@ trait FuncUtil { this:FuncMixin =>
             case Some(currentUser) => logout(state)
             case None => state
           }
-          loginAs(s, targetUser)
+          loginAs(targetUser)(s)
         }
         // We don't want to be logged-in, so log out:
         case None => logout(state)
@@ -51,29 +111,47 @@ trait FuncUtil { this:FuncMixin =>
       state    
   }
   
-  def adjustPage(state:CurrentState, test:TestDef):CurrentState = {
+  def adjustPage(state:State, test:TestDef):State = {
     if (test.desiredPage != state.currentPage) {
       test.desiredPage match {
         case IndexPage => {
           click on "_index_button"
-          eventually { pageTitle should be ("Your Spaces") }
+          waitForTitle("Your Spaces")
           state -> IndexPage
         }
         case LoginPage => fail("We appear to be looking for the LoginPage; should have gotten there by changing users?")
+        case RootPage(space) => {
+          fail("Not yet ready to give Spaces as test prerequisites. Write this!")
+        }
       }
     } else
       state
   }
   
   /**
-   * Runs the specified tests, adjusting as necessary between them.
+   * The top-level test runner, which starts out with an empty world and runs all the high-level tests.
+   * 
+   * Tests are frequently composed of Ops, but do not have to be.
    */
-  def runTests(tests:TestDef*):CurrentState = {
-    val initialState = CurrentState(None, LoginPage)
+  def runTests(tests:TestDef*):State = {
+    val initialState:State = InitialState
     (initialState /: tests) { (state, test) =>
-      val stateWithUser:CurrentState = adjustUser(state, test)
+      val stateWithUser:State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
+      spew(s"Running test ${test.desc}")
       test.run(stateWithPage)
+    }
+  }
+  
+  /**
+   * Runs a sequence of Ops -- functions that take the current State, do something, and return a new State.
+   * 
+   * As a general rule, functions that take additional parameters beyond the State should be curried, with
+   * the State at the end, so that you can feed them into here.
+   */
+  def run(initialState:State, ops:State => State*):State = {
+    (initialState /: ops) { (state, op) =>
+      op(state)
     }
   }
 }

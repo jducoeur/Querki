@@ -158,7 +158,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       modelOpt match {
         case Some(model) if (!thing.isTag) => {
           p(cls:="_smallSubtitle _noPrint",
-            "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid.underlying),
+            "(OID: ", a(href:=page.thingUrl(thing.oid), id:="_thingOID", thing.oid.underlying),
             thing.linkName.map { linkName =>
               MSeq(", Link Name: ", a(href:=page.thingUrl(thing.urlName), linkName))
             },

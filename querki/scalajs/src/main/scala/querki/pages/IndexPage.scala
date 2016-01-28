@@ -42,7 +42,7 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
           spaceSection("Spaces You Own", allSpaces.mySpaces),
           spaceSection("Spaces You are a Member of", allSpaces.memberOf)
         ),
-        p(new ButtonGadget(ButtonGadget.Normal, "Create a new Space", if (!canCreate) {disabled:=true})({ () =>
+        p(new ButtonGadget(ButtonGadget.Normal, "Create a new Space", id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
           Pages.createSpaceFactory.showPage()
         })),
         if (!canCreate) {

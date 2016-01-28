@@ -8,6 +8,7 @@ import play.api.test.Helpers._
 import org.scalatestplus.play._
 
 import querki.globals._
+import querki.system.QuerkiRoot
 
 /**
  * Self-trait that the elements of the cake should typically use to access all the utilities.
@@ -23,8 +24,8 @@ trait FuncMixin
   with OneBrowserPerTest
   with OneServerPerTest
   with FuncDB 
-  with FuncData 
   with FuncUtil
+  with EcologyMember
 
 /**
  * The actual test runner. This defines the functional-test "cake", and the tests to run.
@@ -45,9 +46,9 @@ class QuerkiFuncTests
   
   // Structural mix-ins for the tests:
   with FuncDB
-  with FuncData
   with FuncUtil
   with FuncMixin
+  with EcologyMember
   
   // And the tests themselves:
   with BuildCommonSpace
@@ -66,7 +67,12 @@ class QuerkiFuncTests
     )
   }
   
+  var ecology:Ecology = null
+  
   "I should be able to open a web browser" in {
+    // Fetch the actual running Ecology, so that tests can introspect into the system.
+    ecology = QuerkiRoot.ecology
+    
     setupDatabase()
     
     // Starting point: go to the Querki root page, not yet logged in.
@@ -75,7 +81,7 @@ class QuerkiFuncTests
     go to "http://localhost:19001/"
     
     runTests(
-      createCommonSpace
+      buildCommonSpace
     )
     
     quit()
