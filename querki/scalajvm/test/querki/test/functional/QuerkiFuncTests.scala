@@ -52,6 +52,13 @@ import querki.globals._
  * sbt and run your test.
  * 
  * 
+ * These tests assume that you have empty databases named "test_user" and "test_system", that can be
+ * accessed by the same user credentials as the usual system and user DBs.
+ * 
+ * They also assume that you have a local DB named "test_system_template", which is the empty template
+ * version of the system DB. You can load this from test_system_template.sql in Querki's git root.
+ * 
+ * 
  * In a perfect world, we should be using One[Server|Browser]PerSuite. Problem is, ScalaTest's exclusion
  * mechanism works on *tests*, not *suites*. So even if we are excluding this suite using its tags, it
  * still starts up both the server and the browser, though we don't want them. So instead, we're structuring

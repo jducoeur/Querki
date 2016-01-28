@@ -228,6 +228,13 @@ db.user.user=DB LOGIN
 db.user.password=DB PASSWORD
 db.user.logStatements=true
 
+# ... and for the Test Template database:
+db.template.driver=com.mysql.jdbc.Driver
+db.template.url="jdbc:mysql://localhost/test_system_template?characterEncoding=UTF-8"
+db.template.user=DB LOGIN
+db.template.password=DB PASSWORD
+db.template.logStatements=true
+
 # Logger
 # ~~~~~
 # You can also configure logback (http://logback.qos.ch/), by providing a logger.xml file in the conf directory .
