@@ -7,18 +7,47 @@ import play.api.test._
 import play.api.test.Helpers._
 import org.scalatestplus.play._
 
-import anorm._
-
-import querki.db._
-import ShardKind._
 import querki.globals._
+
+/**
+ * Self-trait that the elements of the cake should typically use to access all the utilities.
+ * 
+ * Note that we mix this in, *not* QuerkiFuncTests itself, to avoid circular dependency hell.
+ * This keep recompiles down to a manageable level.
+ */
+trait FuncMixin 
+  extends WordSpec 
+  with Matchers 
+  with org.scalatest.concurrent.Eventually 
+  with WebBrowser 
+  with OneBrowserPerTest
+  with OneServerPerTest
+  with FuncDB 
+  with FuncData 
+  with FuncUtil
 
 /**
  * The root of Querki's Functional Tests.
  * 
- * IMPORTANT PREREQUISITES: you must first download the native ChromeDriver from
+ * To run these tests, say `ftst` from sbt / Activator.
  * 
- *   https://sites.google.com/a/chromium.org/chromedriver/downloads
+ * 
+ * ==Structure==
+ * 
+ * This is currently defined as a gigantic cake. That's because (for reasons discussed below)
+ * we're currently running as one huge, long, functional test. That's not ideal -- it's
+ * not parallelizable, in particular -- but it's easier in many ways. So we're going to
+ * work this way for the time being, with an expectation of refactoring later when we have
+ * the resources. (Note, though, that we first need to figure out how to completely exclude
+ * the functional tests -- not even opening a browser window -- when running unit tests. So
+ * far, I don't have a solution.) 
+ * 
+ * 
+ * ==Prerequisites for running these tests==
+ * 
+ * You must first download the native ChromeDriver from
+ * 
+ *   [[https://sites.google.com/a/chromium.org/chromedriver/downloads]]
  *   
  * Install that on your path, such as /usr/bin/chromedriver, and make sure it has
  * permissions 755. ("which chromedriver" should find it.) Or point the system
@@ -31,23 +60,23 @@ import querki.globals._
  * exception. Uncomment the DriverTests below and use those to find out what that
  * exception was in order to debug it. The source code for ChromeDriver can be found at:
  * 
- *   https://github.com/SeleniumHQ/selenium/tree/master/java/client/src/org/openqa/selenium/chrome
+ *   [[https://github.com/SeleniumHQ/selenium/tree/master/java/client/src/org/openqa/selenium/chrome]]
  * 
  *   
  * In order to run these tests headless, make sure that you have xvfb installed, with:
- * 
+ * {{{
  *   sudo apt-get install xvfb
- *   
+ * }}}
  * In your shell, say:
- * 
+ * {{{
  *   Xvfb :1 -screen 5 1280x1024x8 &
- *   
+ * }}}
  * (Note the capital "X" there.) That creates display 1, screen 5 as a virtual framebuffer.
  * 
  * In the shell say:
- * 
+ * {{{
  *   export DISPLAY=:1.5
- *   
+ * }}}
  * That tells the system to use this virtual screen for the output. Then start up
  * sbt and run your test.
  * 
@@ -59,6 +88,8 @@ import querki.globals._
  * version of the system DB. You can load this from test_system_template.sql in Querki's git root.
  * 
  * 
+ * ==Notes and Future Plans==
+ * 
  * In a perfect world, we should be using One[Server|Browser]PerSuite. Problem is, ScalaTest's exclusion
  * mechanism works on *tests*, not *suites*. So even if we are excluding this suite using its tags, it
  * still starts up both the server and the browser, though we don't want them. So instead, we're structuring
@@ -69,6 +100,7 @@ import querki.globals._
  */
 @Slow
 class QuerkiFuncTests 
+  // Infrastructure mix-ins, from ScalaTest and Play:
   extends WordSpec
   with Matchers
   with OneServerPerTest
@@ -77,6 +109,12 @@ class QuerkiFuncTests
   // test this stuff cross-browser:
   with ChromeFactory
   with WebBrowser
+  
+  // Structural mix-ins for the tests:
+  with FuncDB
+  with FuncData
+  with FuncUtil
+  with FuncMixin
 {
   /**
    * This is where we override the standard Application settings.
@@ -92,48 +130,15 @@ class QuerkiFuncTests
     )
   }
   
-  // This drops the existing test databases, and builds fresh ones based on test_system_template.
-  // Note that, at the end of a test run, the test DBs will be left intact for forensic inspection.
-  def setupDatabase() = {
-    // First, create the test databases. We use the Template DB as the connection while we're doing so:
-    QDB(Template) { implicit conn =>
-      SQL("DROP DATABASE IF EXISTS test_system").execute()
-      SQL("DROP DATABASE IF EXISTS test_user").execute()
-      SQL("CREATE DATABASE test_system").execute()
-      SQL("CREATE DATABASE test_user").execute()
-    }
-    
-    QDB(System) { implicit conn =>
-      def cmd(str:String) = SQL(str).execute()
-      def makeTable(name:String) = {
-        cmd(s"CREATE TABLE $name LIKE test_system_template.$name")
-        cmd(s"INSERT INTO $name SELECT * FROM test_system_template.$name")
-      }
-      makeTable("Apps")
-      makeTable("Identity")
-      makeTable("OIDNexter")
-      makeTable("SpaceMembership")
-      makeTable("Spaces")
-      makeTable("User")
-    }
-    
-    QDB(User) { implicit conn =>
-      SQL("CREATE TABLE OIDNexter LIKE test_system_template.OIDNexter").execute()
-    }
-  }
-  
   "I should be able to open a web browser" in {
     setupDatabase()
     
+    // Starting point: go to the Querki root page, not yet logged in.
     // 19001 is the default port used for Play Functional Testing. We can and probably
     // should change at at some point, but it's fine for now:
     go to "http://localhost:19001/"
     
-    // Log in using the original Test Admin user:
-    textField("name").value = "testadmin1"
-    pwdField("password").value = "testing"
-    click on "login_button"
-    eventually { pageTitle should be ("Your Spaces") }
+    loginAs(admin1)
     
     quit()
   }
