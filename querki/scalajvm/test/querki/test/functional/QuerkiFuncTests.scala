@@ -84,17 +84,28 @@ class QuerkiFuncTests
   override def newAppForTest(td:TestData) = {
     FakeApplication(
       additionalConfiguration = Map(
+        // For the moment, the names of the test DBs are hardcoded. That will probably have to
+        // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",
         "db.user.url" -> "jdbc:mysql://localhost/test_user?characterEncoding=UTF-8"
       )
     )
   }
   
+  // This drops the existing test databases, and builds fresh ones based on test_system_template.
+  // Note that, at the end of a test run, the test DBs will be left intact for forensic inspection.
   def setupDatabase() = {
+    // First, create the test databases. We use the Template DB as the connection while we're doing so:
+    QDB(Template) { implicit conn =>
+      SQL("DROP DATABASE IF EXISTS test_system").execute()
+      SQL("DROP DATABASE IF EXISTS test_user").execute()
+      SQL("CREATE DATABASE test_system").execute()
+      SQL("CREATE DATABASE test_user").execute()
+    }
+    
     QDB(System) { implicit conn =>
       def cmd(str:String) = SQL(str).execute()
       def makeTable(name:String) = {
-        cmd(s"DROP TABLE IF EXISTS $name")
         cmd(s"CREATE TABLE $name LIKE test_system_template.$name")
         cmd(s"INSERT INTO $name SELECT * FROM test_system_template.$name")
       }
@@ -105,6 +116,10 @@ class QuerkiFuncTests
       makeTable("Spaces")
       makeTable("User")
     }
+    
+    QDB(User) { implicit conn =>
+      SQL("CREATE TABLE OIDNexter LIKE test_system_template.OIDNexter").execute()
+    }
   }
   
   "I should be able to open a web browser" in {
@@ -114,10 +129,11 @@ class QuerkiFuncTests
     // should change at at some point, but it's fine for now:
     go to "http://localhost:19001/"
     
-    // The strings below don't want to get checked it yet, until I have a test DB defined:
+    // Log in using the original Test Admin user:
     textField("name").value = "testadmin1"
     pwdField("password").value = "testing"
     click on "login_button"
+    eventually { pageTitle should be ("Your Spaces") }
     
     quit()
   }
