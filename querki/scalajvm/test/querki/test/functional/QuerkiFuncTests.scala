@@ -7,6 +7,10 @@ import play.api.test._
 import play.api.test.Helpers._
 import org.scalatestplus.play._
 
+import anorm._
+
+import querki.db._
+import ShardKind._
 import querki.globals._
 
 /**
@@ -60,7 +64,6 @@ import querki.globals._
 class QuerkiFuncTests 
   extends WordSpec
   with Matchers
-  with BeforeAndAfterAll
   with OneServerPerTest
   with OneBrowserPerTest
   // For now, we're just going to target Chrome. Eventually, obviously, we should
@@ -68,14 +71,45 @@ class QuerkiFuncTests
   with ChromeFactory
   with WebBrowser
 {
+  /**
+   * This is where we override the standard Application settings.
+   */
+  override def newAppForTest(td:TestData) = {
+    FakeApplication(
+      additionalConfiguration = Map(
+        "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",
+        "db.user.url" -> "jdbc:mysql://localhost/test_user?characterEncoding=UTF-8"
+      )
+    )
+  }
+  
+  def setupDatabase() = {
+    QDB(System) { implicit conn =>
+      def cmd(str:String) = SQL(str).execute()
+      def makeTable(name:String) = {
+        cmd(s"DROP TABLE IF EXISTS $name")
+        cmd(s"CREATE TABLE $name LIKE test_system_template.$name")
+        cmd(s"INSERT INTO $name SELECT * FROM test_system_template.$name")
+      }
+      makeTable("Apps")
+      makeTable("Identity")
+      makeTable("OIDNexter")
+      makeTable("SpaceMembership")
+      makeTable("Spaces")
+      makeTable("User")
+    }
+  }
+  
   "I should be able to open a web browser" in {
+    setupDatabase()
+    
     // 19001 is the default port used for Play Functional Testing. We can and probably
     // should change at at some point, but it's fine for now:
     go to "http://localhost:19001/"
     
     // The strings below don't want to get checked it yet, until I have a test DB defined:
-    textField("name").value = "..."
-    pwdField("password").value = "..."
+    textField("name").value = "testadmin1"
+    pwdField("password").value = "testing"
     click on "login_button"
     
     quit()
