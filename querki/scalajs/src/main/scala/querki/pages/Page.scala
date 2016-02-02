@@ -19,7 +19,7 @@ import querki.display.rx.RxDiv
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
 
-abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
+abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
   
   implicit val ecology = e
   
@@ -27,6 +27,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val Localization = interface[querki.local.Localization]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[Pages]
   
@@ -37,7 +38,14 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   private var _std:Option[StandardThings] = None
   def std = _std.get
-  def setStd:Future[Unit] = DataAccess.standardThings.map { s => _std = Some(s) }
+
+  lazy val messages = Localization.messages("pages").getPackage(pageName)
+  def msg(name:String, params:(String, String)*) = messages.msg(name, params:_*)
+
+  /**
+   * This is the "ready" trigger -- we don't start rendering until the core libraries are in place.
+   */
+  def setStd:Future[Unit] = DataAccess.standardThings.map { s => _std = Some(s) }.flatMap { _ => Localization.ready }
   
   /**
    * This is an optional method that Pages can fill in, to refresh their content.

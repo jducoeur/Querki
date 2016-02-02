@@ -1,0 +1,8 @@
+pages : {
+  createSpace : {
+	pageTitle : "Create a New Space"
+	namePlaceholder : "New Space Name"
+	createButton : "Create Space"
+	importButton : "Import a Space from a file"
+  }
+}

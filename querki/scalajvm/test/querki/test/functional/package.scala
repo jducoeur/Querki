@@ -87,6 +87,12 @@ package querki.test
  * be curried.
  * 
  * 
+ * The tests are EcologyMembers, and you *can* access the real Ecology. Please keep in mind that the
+ * tests are running in a separate thread from the real Actors, and watch for anything that might
+ * cause contention. (Since the Ecots are supposed to be stateless, they *should* be safe to use from
+ * the tests. But keep an eye open.)
+ * 
+ * 
  * ==Notes and Future Plans==
  * 
  * In a perfect world, we should be using One[Server|Browser]PerSuite. Problem is, ScalaTest's exclusion

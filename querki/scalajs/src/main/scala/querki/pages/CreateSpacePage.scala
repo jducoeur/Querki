@@ -19,7 +19,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e, "createSpace") with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   
   val spaceName = GadgetRef[RxInput]
@@ -40,17 +40,19 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
     
   // Weird -- I think it's a page that we can create without going to the server!
   def pageContent = {
+    val title = msg("pageTitle")
+    
     val guts =
       div(
-        h1("Create a New Space"),
+        h1(title),
         form(
           div(cls:="form-group col-md-12",
             div(cls:="input-group",
               spaceName <= new RxInput(
                   Some(InputUtils.spaceNameFilter _), "text", 
-                  id:="_newSpaceName", cls:="form-control", maxlength:=254, placeholder:="New Space Name", tabindex:=200),
+                  id:="_newSpaceName", cls:="form-control", maxlength:=254, placeholder:=msg("namePlaceholder"), tabindex:=200),
               span(cls:="input-group-btn",
-                new ButtonGadget(ButtonGadget.Normal, "Create Space", tabindex:=210, id:="_createSpaceButton", 
+                new ButtonGadget(ButtonGadget.Normal, msg("createButton"), tabindex:=210, id:="_createSpaceButton", 
                     disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
                 ({ () => createSpace()  })
               )
@@ -60,13 +62,13 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         hr(),
         h3("Or..."),
         p(
-          new ButtonGadget(ButtonGadget.Normal, "Import a Space from a file", id:="_importButton", tabindex:=300)({ () =>
+          new ButtonGadget(ButtonGadget.Normal, msg("importButton"), id:="_importButton", tabindex:=300)({ () =>
             Pages.importSpaceFactory.showPage()
           })
         )
       )
       
-    Future.successful(PageContents("Create a New Space", guts))
+    Future.successful(PageContents(title, guts))
   }
 }
 

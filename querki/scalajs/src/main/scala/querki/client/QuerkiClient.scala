@@ -56,6 +56,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.display.input.InputGadgetsEcot(ecology)
     new querki.editing.EditingEcot(ecology)
     new querki.identity.UserManagerEcot(ecology)
+    new querki.local.LocalizationEcot(ecology)
     new querki.notifications.NotificationsEcot(ecology)
     new querki.pages.PagesEcot(ecology)
     new querki.qtext.QTextUtilsEcot(ecology)
