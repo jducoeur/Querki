@@ -20,6 +20,7 @@ import SearchFunctions._
 import querki.test._
 import querki.util.ScalatagUtils
 
+/*
 object SearchResultsTests extends ThingPageTests {
   def tests = TestSuite {
     "The SearchGadget invokes the page and fetches the results" - {
@@ -104,3 +105,4 @@ object SearchResultsTests extends ThingPageTests {
     }
   }
 }
+*/

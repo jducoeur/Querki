@@ -10,6 +10,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+/*
 object HelloWorldTest extends TestSuite {
   def tests = TestSuite {
     'Hello {
@@ -28,3 +29,4 @@ object HelloWorldTest extends TestSuite {
     }
   }
 }
+*/

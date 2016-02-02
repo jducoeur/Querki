@@ -11,6 +11,7 @@ import querki.globals._
 import querki.api._
 import querki.test._
 
+/*
 object TextInputTests extends InputTestBase {
   val propPath = "v-textoid-MyThingId"
         
@@ -74,3 +75,4 @@ object TextInputTests extends InputTestBase {
     }
   }
 }
+*/

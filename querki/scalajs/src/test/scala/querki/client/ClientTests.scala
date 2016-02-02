@@ -11,6 +11,7 @@ import querki.comm._
 import querki.globals._
 import querki.test._
 
+/*
 object ClientTests extends QuerkiTests {
   
   lazy val Client = interface[querki.client.Client]
@@ -53,3 +54,4 @@ object ClientTests extends QuerkiTests {
     
   }
 }
+*/

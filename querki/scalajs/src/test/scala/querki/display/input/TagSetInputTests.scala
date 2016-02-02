@@ -14,6 +14,7 @@ import querki.test._
 
 import org.querki.facades.manifest._
  
+/*
 object TagSetInputTests extends InputTestBase {
         
   val propPath = "v-linksetpropoid-MyThingId"
@@ -54,3 +55,4 @@ object TagSetInputTests extends InputTestBase {
     
   }
 }
+*/
