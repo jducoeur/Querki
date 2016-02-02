@@ -14,7 +14,7 @@ import UserFunctions._
 /**
  * @author jducoeur
  */
-class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "index") with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
   
@@ -37,21 +37,20 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
     canCreate = (DataAccess.request.userLevel >= PendingUser)
     guts =
       div(
-        h1("Your Spaces"),
+        h1(pageTitle),
         div(cls:="row",
-          spaceSection("Spaces You Own", allSpaces.mySpaces),
-          spaceSection("Spaces You are a Member of", allSpaces.memberOf)
+          spaceSection(msg("ownSection"), allSpaces.mySpaces),
+          spaceSection(msg("memberSection"), allSpaces.memberOf)
         ),
-        p(new ButtonGadget(ButtonGadget.Normal, "Create a new Space", id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
+        p(new ButtonGadget(ButtonGadget.Normal, msg("createButton"), id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
           Pages.createSpaceFactory.showPage()
         })),
         if (!canCreate) {
-          p(cls:="_smallSubtitle", 
-            "As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days.")
+          p(cls:="_smallSubtitle", msg("notAllowedYet"))
         }
       )
   }
-    yield PageContents("Your Spaces", guts)
+    yield PageContents(guts)
 }
 
 object IndexPage {

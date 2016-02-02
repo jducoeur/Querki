@@ -5,4 +5,12 @@ pages : {
 	createButton : "Create Space"
 	importButton : "Import a Space from a file"
   }
+  
+  index : {
+    pageTitle : "Your Spaces"
+    ownSection : "Spaces You Own"
+    memberSection : "Spaces You are a Member of"
+    createButton : "Create a new Space"
+    notAllowedYet : "As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days."
+  }
 }

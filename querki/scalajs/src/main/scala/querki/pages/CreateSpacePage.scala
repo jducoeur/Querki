@@ -40,11 +40,9 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e, "crea
     
   // Weird -- I think it's a page that we can create without going to the server!
   def pageContent = {
-    val title = msg("pageTitle")
-    
     val guts =
       div(
-        h1(title),
+        h1(pageTitle),
         form(
           div(cls:="form-group col-md-12",
             div(cls:="input-group",
@@ -68,7 +66,7 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e, "crea
         )
       )
       
-    Future.successful(PageContents(title, guts))
+    Future.successful(PageContents(guts))
   }
 }
 

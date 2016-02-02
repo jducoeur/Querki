@@ -11,19 +11,33 @@ object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing")
 /**
  * Represents a page that may be shown in the browser.
  */
-sealed trait Page
+sealed trait QPage {
+  def name:String
+}
 /**
  * The root page of Querki, which you see only when you aren't logged in.
  */
-object LoginPage extends Page
+object LoginPage extends QPage {
+  val name = "login"
+}
 /**
  * The "Your Spaces" page, which you only see if you *are* logged in.
  */
-object IndexPage extends Page
+object IndexPage extends QPage {
+  val name = "index"
+}
+/**
+ * The "Create a New Space" page.
+ */
+object CreateSpace extends QPage {
+  val name = "createSpace"
+}
 /**
  * The root page of some Space. If this is showing, the Space had better be in the State.
  */
-case class RootPage(space:TSpace) extends Page
+case class RootPage(space:TSpace) extends QPage {
+  val name = "root"
+}
 
 /**
  * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that
@@ -61,11 +75,11 @@ case class State(
   // The User who we believe is currently logged in
   currentUserOpt:Option[TestUser],
   // The Page that we believe is currently showing
-  currentPage:Page,
+  currentPage:QPage,
   // The Spaces that *actually* exist, that we have created
   spaces:Seq[TSpace])
 {
-  def ->(page:Page):State = copy(currentPage = page)
+  def ->(page:QPage):State = copy(currentPage = page)
 }
 /**
  * The State at the beginning of time, before we've logged in or built anything.

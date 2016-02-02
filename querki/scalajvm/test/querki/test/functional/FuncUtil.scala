@@ -15,7 +15,7 @@ import querki.util.QLog
  *   be either the index Page, or a specific Page in a Space that is known to the State.
  * @param test The actual test function.
  */
-case class TestDef(desiredUser:Option[TestUser], desiredPage:Page, desc:String)(test:State => State)
+case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)(test:State => State)
 {
   def run(state:State) = test(state)
 }
@@ -28,15 +28,32 @@ case class TestDef(desiredUser:Option[TestUser], desiredPage:Page, desc:String)(
 trait FuncUtil { this:FuncMixin =>
   
   /**
+   * This loads the clientStrings and parses them, so we can compare against what we expect.
+   */
+  lazy val messages = new FuncMessages(app).messages
+  
+  /**
+   * Access the messages for a specific page.
+   */
+  def pageMsgs(pageName:String) = messages.getPackage("pages").getPackage(pageName)
+  def msgs(page:QPage):Messages = pageMsgs(page.name)
+  
+  implicit class PageWithMessages(page:QPage) {
+    def msg(name:String) = msgs(page).msg(name)
+  }
+  
+  /**
    * This waits until the page title (IMPORTANT: *not* the header, the title in the tab) matches
    * the given string.
    * 
-   * TODO: this is fundamentally suspect, because we're hard-coding duplicate English strings. These
-   * really should be internationalizable strings a la messages, defined server-side and shipped to
-   * the client at startup. (Can we do this strongly-typed and avoid the stringly-typed messages approach?)
+   * In general, favor the version of this that takes a Page when possible.
    */
-  def waitForTitle(str:String) = {
+  def waitForTitle(str:String):Unit = {
     eventually { pageTitle should be (str) }
+  }
+  
+  def waitForTitle(page:QPage):Unit = {
+    waitForTitle(page.msg("pageTitle"))
   }
   
   /**
@@ -52,13 +69,14 @@ trait FuncUtil { this:FuncMixin =>
     textField("name").value = user.handle
     pwdField("password").value = user.password
     click on "login_button"
-    waitForTitle("Your Spaces")
+    waitForTitle(IndexPage)
     spew(s"Logged in as ${user.display}")
     state -> IndexPage
   }
   
   def logout(state:State):State = {
     click on "logout_button"
+    // Note: the login page isn't yet part of the Client, so it doesn't yet use clientStrings:
     waitForTitle("Welcome to Querki")
     spew(s"Logged out")
     state -> LoginPage
@@ -86,7 +104,7 @@ trait FuncUtil { this:FuncMixin =>
     assert(state.currentPage == IndexPage)
     spew(s"Creating Space ${space.display}")
     click on "_createSpaceButton"
-    waitForTitle("Create a New Space")
+    waitForTitle(CreateSpace)
     textField("_newSpaceName").value = space.display
     click on "_createSpaceButton"
     val createdSpace = waitUntilCreated(space)
@@ -116,13 +134,14 @@ trait FuncUtil { this:FuncMixin =>
       test.desiredPage match {
         case IndexPage => {
           click on "_index_button"
-          waitForTitle("Your Spaces")
+          waitForTitle(IndexPage)
           state -> IndexPage
         }
         case LoginPage => fail("We appear to be looking for the LoginPage; should have gotten there by changing users?")
         case RootPage(space) => {
           fail("Not yet ready to give Spaces as test prerequisites. Write this!")
         }
+        case _ => fail(s"adjustPage tried to go to ${test.desiredPage}, and we're not ready for that yet.")
       }
     } else
       state

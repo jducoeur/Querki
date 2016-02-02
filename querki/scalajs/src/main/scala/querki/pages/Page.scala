@@ -17,7 +17,17 @@ import querki.data.ThingInfo
 import querki.display.{Gadget, WrapperDiv}
 import querki.display.rx.RxDiv
   
-case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
+case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
+  def titleOr(f: => String):String =
+    if (title == "")
+      f
+    else
+      title
+}
+
+object PageContents {
+  def apply(content:TypedTag[dom.HTMLDivElement]):PageContents = PageContents("", content)  
+}
 
 abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
   
@@ -41,6 +51,8 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
 
   lazy val messages = Localization.messages("pages").getPackage(pageName)
   def msg(name:String, params:(String, String)*) = messages.msg(name, params:_*)
+  // The standard location for a page's title is pages.name.pageTitle:
+  lazy val pageTitle = msg("pageTitle")
 
   /**
    * This is the "ready" trigger -- we don't start rendering until the core libraries are in place.
@@ -126,7 +138,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
     setStd.flatMap(_ => pageContent).notYet.foreach { content =>
       val fullyRendered = content.content.render
       renderedContent.replaceContents(fullyRendered)
-      PageManager.update(content.title)
+      PageManager.update(content.titleOr(pageTitle))
       Gadgets.hookPendingGadgets()
       reindex()
       renderedContentPromise.success(fullyRendered)
