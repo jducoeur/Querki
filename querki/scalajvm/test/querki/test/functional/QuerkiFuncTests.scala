@@ -84,7 +84,7 @@ class QuerkiFuncTests
       buildCommonSpace
     )
     
-    quit()
+//    quit()
   }
 }
 

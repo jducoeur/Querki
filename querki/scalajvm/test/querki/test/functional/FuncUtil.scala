@@ -90,6 +90,11 @@ trait FuncUtil { this:FuncMixin =>
    */
   def waitUntilCreated[T <: TThing[T]](t:T):T = {
     waitForTitle(t.display)
+    // TBD: why do we need this eventually? Without it, we seem to have a race condition under xvfb, where we are
+    // often getting the title, but _thingOID isn't yet displayed. That's disturbingly weird -- AFAIK, they're
+    // synchronous with each other? If we hit more instances of this, we may need to add something magical to the
+    // end of the rendering process, that sets a signal we can consistently wait on.
+    eventually { find("_thingOID") should not be empty }
     val tid = find("_thingOID").map(_.text).getOrElse(fail(s"Couldn't find the OID on-page for ${t.display}"))
     spew(s"Created ${t.display} as $tid")
     t.withTID(tid)

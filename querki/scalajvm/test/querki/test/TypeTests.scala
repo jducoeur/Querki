@@ -15,13 +15,13 @@ class TypeTests extends QuerkiTests {
       val space = new TSpace
       implicit val s = space.state
       
-      for (
-        propAndVal <- space.myThing.getPropOpt(space.textSetProp);
-        qv = propAndVal.v;
-        context = thingAsContext[TSpace](space, (_.myThing));
-        wikified = awaitIntentionally(qv.wikify(context, None))
-      )
-        println(wikified.display)
+//      for (
+//        propAndVal <- space.myThing.getPropOpt(space.textSetProp);
+//        qv = propAndVal.v;
+//        context = thingAsContext[TSpace](space, (_.myThing));
+//        wikified = awaitIntentionally(qv.wikify(context, None))
+//      )
+//        println(wikified.display)
       
       processQText(thingAsContext[TSpace](space, (_.myThing)), "[[My Text Set -> _bulleted]]") should
         equal ("""
