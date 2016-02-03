@@ -2,7 +2,7 @@ package querki.html
 
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
-import scalatags.Text.all.{id => idAttr, _}
+import scalatags.Text.all.{id => idAttr, i => iAttr, _}
 import scalatags.Text.TypedTag
 
 import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
@@ -64,7 +64,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    */
   lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, 
     toProps(
-      setName("Page contents"),
+      setName("Some HTML"),
       setInternal)) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
@@ -303,28 +303,64 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 
-	// TODO: once we have named parameters, both _iconButton and _mixedButton should be reprecated, and _linkButton
-	// should take named params of "icon=", "label=" and "tooltip=". That would be much cleaner and more consistent.
-	class LinkButtonMethod extends ButtonBase(LinkButtonOID,
+  /**
+   * TODO: add parameters to specify the common style decisions: size (btn-sm, btn-xs, etc) and color (btn-default,
+   * btn-warning, btn-danger, etc). These should each take a well-defined enumeration.
+   */
+	class LinkButtonMethod extends InternalMethod(LinkButtonOID,
 	    toProps(
 	      setName("_linkButton"),
 	      Summary("Displays a button that goes to a linked page when you press it."),
-	      Details("""    LINK -> _linkButton(LABEL)
-	          |_linkButton receives a Link or External Link, and displays that
-	          |link as a button. It expects one parameter, which will be the label of the button.""".stripMargin)))
+        Signature(
+          expected = Some((Seq(LinkType, ExternalLinkType), "The Thing or page to go to when this button is pressed")),
+          reqs = Seq.empty,
+          opts = Seq(
+            ("label", ParsedTextType, Core.QNone, "The text to display on this button, if any"),
+            ("icon", ParsedTextType, Core.QNone, "The icon to display on this button, if any"),
+            ("tooltip", ParsedTextType, Core.QNone, "The tooltip to show when the user hovers over this button"),
+            ("id", ParsedTextType, Core.QNone, "The HTML id to give to this button")
+          ),
+          returns = (RawHtmlType, "The button as requested")
+        ),
+	      Details("""_linkButton receives a Link or External Link, and displays that
+	          |link as a button. You should always provide at least a label or an icon.""".stripMargin)))
 	{
-	  val numParams = 1
-	  
-	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-	    <a class="btn btn-primary" href={url}>{params(0).raw}</a>
-	  }
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        pt <- inv.contextTypeAs[URLableType]
+        elemContext <- inv.contextElements
+        url <- inv.opt(pt.getURL(elemContext)(elemContext.value.first))
+        labelOpt <- inv.processAsOpt("label", ParsedTextType, elemContext)
+        iconOpt <- inv.processAsOpt("icon", ParsedTextType, elemContext)
+        tooltipOpt <- inv.processAsOpt("tooltip", ParsedTextType, elemContext)
+        idOpt <- inv.processAsOpt("id", ParsedTextType, elemContext)
+      }
+        yield {
+          HtmlValue(
+            a(
+              cls:="btn btn-primary",
+              href:=url,
+              idOpt.map { idStr => idAttr:=idStr.raw.toString },
+              tooltipOpt.map { tooltip => title:=tooltip.raw.toString },
+              iconOpt.map { icon => iAttr(cls:=s"glyphicon glyphicon-${icon.raw.toString}") },
+              if (iconOpt.isDefined && labelOpt.isDefined)
+                // Need a space between them:
+                " ",
+              labelOpt.map { label => label.raw.toString }
+            )
+          )
+        }
+    }
 	}
 	
 	class IconButtonMethod extends ButtonBase(IconButtonOID,
 	    toProps(
 	      setName("_iconButton"),
+        Basic.DeprecatedProp(true),
 	      Summary("Displays a button showing an icon, that goes to a linked page when you press it."),
 	      Details("""    LINK -> _iconButton(ICON, TOOLTIP)
+            |**DEPRECATED:** use _linkButton instead.
+            |
 	          |_iconButton receives a Link or External Link, and displays that
 	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
 	          |hover text to display as a tooltip. Both parameters are required.
@@ -342,8 +378,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	class MixedButtonMethod extends ButtonBase(MixedButtonOID,
 	    toProps(
 	      setName("_mixedButton"),
+        Basic.DeprecatedProp(true),
 	      Summary("Displays a button showing an icon and a text label, that goes to a linked page when you press it."),
 	      Details("""    LINK -> _mixedButton(ICON, LABEL)
+            |**DEPRECATED:** use _linkButton instead.
+            |
 	          |_mixedButton receives a Link or External Link, and displays that
 	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
 	          |text that follows the icon. Both parameters are required. This is essentially a combo of _iconButton
