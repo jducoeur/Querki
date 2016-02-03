@@ -39,7 +39,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
               p(b(s"""Property ${thing.displayName} is currently being used by ${usage.nModels} Models and 
                       |${usage.nInstances} Instances. If you delete it, it will be removed from all of those,
                       |and the values of ${thing.displayName} will be dropped. You can lose data this way!""".stripMargin)),
-              (s"Remove all values, then delete ${thing.displayName}" -> { dialog => 
+              (s"Remove all values, then delete ${thing.displayName}", "_removeAllConfirm", { dialog => 
                 println(s"I'm about to delete ${thing.displayName}");
                 // TODO: display a spinner
                 Client[EditFunctions].removePropertyFromAll(thing.oid).call().foreach { handle =>
@@ -51,7 +51,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                     StatusLine.showBriefly(s"Error while deleting ${thing.displayName}"))
                 }
               }),
-              ("Cancel" -> { dialog => dialog.done() })
+              ("Cancel", "_cancelDelete", { dialog => dialog.done() })
             )
           deleteDialog.show()
         } else {
@@ -81,7 +81,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         val deleteDialog:Dialog = 
           new Dialog("Confirm Delete", 300, 350,
             p(b(raw(msg))),
-            ("Delete" -> { dialog => 
+            ("Delete", "_confirmDelete", { dialog => 
               println(s"I'm about to delete ${thing.displayName}");
               // TODO: display a spinner
               Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
@@ -94,7 +94,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                 Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
               }
             }),
-            ("Cancel" -> { dialog => dialog.done() })
+            ("Cancel", "_cancelDelete", { dialog => dialog.done() })
           )
         deleteDialog.show()
       }
@@ -111,7 +111,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
         option(value:=stdThings.basic.simpleThing, "Simple Thing") +: modelOpts
       })
-      val selector = RxSelect(modelOptions)
+      val selector = RxSelect(modelOptions, id:="_modelSelector")
     
       val modelDialog:Dialog = 
         new Dialog(formTitle, 300, 350,
@@ -119,11 +119,11 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
             p(prompt),
             selector
           ),
-          (selectButton -> { dialog =>
+          (selectButton, "_modelSelected", { dialog =>
             onSelect(selector.selectedTID())
             dialog.done()
           }),
-          ("Cancel" -> { dialog => dialog.done() })
+          ("Cancel", "_modelCancel", { dialog => dialog.done() })
         )
     
       modelDialog.show()

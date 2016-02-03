@@ -27,9 +27,13 @@ class LocalizationEcot(e:Ecology) extends ClientEcot(e) with Localization {
     }
     
     def msg(msgName:String, params:(String, String)*):String = {
-      // TODO: deal with params if present
       msgs.vs.get(msgName) match {
-        case Some(child @ SimpleValue(text)) => text
+        case Some(child @ SimpleValue(text)) => {
+          (text /: params) { (current, param) =>
+            val (k,v) = param
+            current.replaceAllLiterally("$" + k, v)
+          }
+        }
         case _ => throw new Exception(s"In Messages package $name, failed to find message $msgName")
       }
     }

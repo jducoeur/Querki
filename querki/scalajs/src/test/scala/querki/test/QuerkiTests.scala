@@ -23,7 +23,7 @@ import querki.data.{TID => TIDdummy, _}
 import querki.ecology._
 import querki.identity.UserLevel
 import querki.pages.{Page, ThingPageDetails}
-
+/*
 trait QuerkiTests extends TestSuite with EcologyMember with querki.client.StandardTestEntryPoints {
   var ecology:EcologyImpl = null
 
@@ -146,3 +146,4 @@ trait ThingPageTests extends QuerkiTests {
     PageManager.setRoot(window, pageBody).withTimeout("Page failed to render")
   }
 }
+*/

@@ -58,7 +58,13 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   
   trait Navigable
   
-  case class NavSection(title:String, links:Seq[Navigable], index:Int, icon:Option[String] = None, iconOnly:Boolean = false) extends Navigable
+  case class NavSection(
+    title:String, 
+    links:Seq[Navigable], 
+    index:Int, 
+    icon:Option[String] = None, 
+    iconOnly:Boolean = false,
+    id:String = "") extends Navigable
 
   /**
    * Represents a single link to be shown in a menu.
@@ -66,7 +72,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   case class NavLink(
     display:String, 
     url:URL = "#", 
-    id:Option[String] = None, 
+    id:String = "", 
     enabled:Boolean = true, 
     onClick:Option[() => Unit] = None,
     newWindow:Boolean = false) extends Navigable
@@ -96,8 +102,8 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     spaceOpt.map { space =>
       Seq(
         NavDivider,
-        NavLink("Design a Model", id = Some("designAModel"), onClick = Some({ () => DataModel.designAModel() })),
-        NavLink("Create any Thing", onClick = Some({ () => DataModel.createAThing() })),
+        NavLink("Design a Model", id = "designAModel", onClick = Some({ () => DataModel.designAModel() })),
+        NavLink("Create any Thing", id = "_createAnyThing", onClick = Some({ () => DataModel.createAThing() })),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
         NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
@@ -137,7 +143,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       }
     }
     val allLinks = alwaysLinks ++ allSpaceLinks.getOrElse(Seq.empty)
-    Some(NavSection("Actions", allLinks, 1100))
+    Some(NavSection("Actions", allLinks, 1100, id="_actionsMenu"))
   }
   
   // Apps are a non-sequiteur if we're not in the context of a Space and fully running
@@ -162,7 +168,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       case Some(user) => {
         NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
-          NavLink("Log out", controllers.LoginController.logout(), id=Some("logout_button"))
+          NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
         ), 1900)  
       }
       case None => {
@@ -199,12 +205,11 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   
   def displayNavLink(link:NavLink) = {
     link match {
-      case NavLink(display, url, idOpt, enabled, onClick, newWindow) => {
-        val idStr = idOpt.getOrElse("")
+      case NavLink(display, url, idStr, enabled, onClick, newWindow) => {
         if (enabled) {
           li(
             a(
-              id:=idStr,
+              if (idStr.length > 0) id:=idStr,
               onClick.map { cb => href:=PageManager.currentHash }.getOrElse { href:=url },
               onClick.map { cb => onclick:= cb },
               if (link.newWindow)
@@ -235,7 +240,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
    */
   def displayNavSection(section:NavSection):Frag = {
     section match {
-      case NavSection(title, links, index, iconOpt, iconOnly) => {
+      case NavSection(title, links, index, iconOpt, iconOnly, idStr) => {
         // Filter out characters that aren't legal in tag IDs, or the data-target will cause Bootstrap to choke:
         val legalTitle = filterLegal(title)
         val linkClass = s"dropdown-toggle"
@@ -243,6 +248,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
           tabindex:=index,
           // The clickable drop-down head of the menu
           a(cls:=linkClass,
+            if (idStr.length > 0) id:=idStr,
             data("target"):=s"#$legalTitle",
             href:=s"#$legalTitle",
             data("toggle"):="dropdown",

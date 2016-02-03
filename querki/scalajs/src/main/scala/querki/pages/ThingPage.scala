@@ -70,7 +70,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
           convPane
         )
     }
-      yield PageContents(pageDetails.thingInfo.displayName, guts)
+      yield PageContents(pageDetails.thingInfo.unsafeName, guts)
   }
 }
 

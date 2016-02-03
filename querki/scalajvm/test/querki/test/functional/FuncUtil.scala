@@ -18,6 +18,12 @@ import querki.util.QLog
 case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)(test:State => State)
 {
   def run(state:State) = test(state)
+  
+  /**
+   * You can create recursively-nested "suites" by overriding subTests(). The subTests will be run
+   * *after* the guts of the higher-level test.
+   */
+  def subTests:Seq[TestDef] = Seq.empty
 }
 
 /**
@@ -25,7 +31,7 @@ case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)
  * 
  * @author jducoeur
  */
-trait FuncUtil { this:FuncMixin =>
+trait FuncUtil extends FuncMenu { this:FuncMixin =>
   
   /**
    * This loads the clientStrings and parses them, so we can compare against what we expect.
@@ -39,7 +45,14 @@ trait FuncUtil { this:FuncMixin =>
   def msgs(page:QPage):Messages = pageMsgs(page.name)
   
   implicit class PageWithMessages(page:QPage) {
-    def msg(name:String) = msgs(page).msg(name)
+    def msg(name:String) = msgs(page).msg(name, page.titleParams:_*)
+  }
+  
+  /**
+   * Waits until the element with the specified id actually exists
+   */
+  def waitFor(id:String) = {
+    eventually { find(id) should not be empty }
   }
   
   /**
@@ -71,7 +84,7 @@ trait FuncUtil { this:FuncMixin =>
     click on "login_button"
     waitForTitle(IndexPage)
     spew(s"Logged in as ${user.display}")
-    state -> IndexPage
+    state.copy(currentUserOpt = Some(user)) -> IndexPage
   }
   
   def logout(state:State):State = {
@@ -113,7 +126,32 @@ trait FuncUtil { this:FuncMixin =>
     textField("_newSpaceName").value = space.display
     click on "_createSpaceButton"
     val createdSpace = waitUntilCreated(space)
-    state.copy(spaces = state.spaces :+ createdSpace) -> RootPage(space)
+    state.copy(spaces = state.spaces + (createdSpace.tid -> createdSpace), currentSpace = Some(createdSpace)) -> RootPage(space)
+  }
+  
+  /**
+   * Creates an Instance, using the Create any Thing menu pick.
+   */
+  def createAnyThing(thing:TInstance)(state:State):State = {
+    // Choose "Create any Thing" from the menu, and select the correct Model from the popup dialog:
+    clickMenuItem(CreateThingItem)
+    waitFor("_modelSelected")
+    singleSel("_modelSelector").value = thing.model.tid.underlying
+    click on "_modelSelected"
+    
+    // Fill out the CreateAndEdit page:
+    waitForTitle(CreateAndEdit(thing.model))
+    val editor = find(className("_instanceEditor")).getOrElse(fail("Couldn't find instance editor for newly-created Thing!"))
+    val instanceTID = editor.attribute("data-thingid").getOrElse(fail("Couldn't find TID for newly-created Thing!"))
+    val thingWithTID = thing.withTID(instanceTID)
+    // Fill in the name property:
+    // TODO: create a more general mechanism for filling in the Properties
+    textField(s"v-${NameProp.oidStr}-${thingWithTID.oidStr}").value = thing.display
+    
+    // Click "Done", and update the State with the newly-created Thing:
+    click on "_editDoneButton"
+    val t = waitUntilCreated(thingWithTID)
+    state.updateSpace(space => space.copy(things = space.things :+ t))
   }
   
   def adjustUser(state:State, test:TestDef):State = {
@@ -135,35 +173,60 @@ trait FuncUtil { this:FuncMixin =>
   }
   
   def adjustPage(state:State, test:TestDef):State = {
-    if (test.desiredPage != state.currentPage) {
+    if (test.desiredPage is state.currentPage) {
+      state
+    } else {
       test.desiredPage match {
+        
         case IndexPage => {
           click on "_index_button"
           waitForTitle(IndexPage)
           state -> IndexPage
         }
+        
         case LoginPage => fail("We appear to be looking for the LoginPage; should have gotten there by changing users?")
+        
         case RootPage(space) => {
-          fail("Not yet ready to give Spaces as test prerequisites. Write this!")
+          // We want to be at the root of this specific Space
+          def rootThroughIndex() = {
+            click on "_index_button"
+            waitForTitle(IndexPage)
+            click on linkText(space.display)
+            waitForTitle(test.desiredPage)
+          }
+          
+          state.currentSpace match {
+            // Are we already in the desired Space?
+            case Some(curSpace) if (curSpace is space) => {
+              // Yes, so just click on the spaceLink:
+              click on "_spaceLink"
+              waitForTitle(test.desiredPage)
+            }
+            // Otherwise, go to the Index:
+            case _ => rootThroughIndex()
+          }
+          
+          state -> test.desiredPage
         }
+        
         case _ => fail(s"adjustPage tried to go to ${test.desiredPage}, and we're not ready for that yet.")
       }
-    } else
-      state
+    }
   }
   
   /**
-   * The top-level test runner, which starts out with an empty world and runs all the high-level tests.
+   * The top-level test runner, which runs through all the specified tests, starting with the given state.
    * 
    * Tests are frequently composed of Ops, but do not have to be.
    */
-  def runTests(tests:TestDef*):State = {
-    val initialState:State = InitialState
+  def runTests(tests:TestDef*)(initialState:State):State = {
     (initialState /: tests) { (state, test) =>
       val stateWithUser:State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
       spew(s"Running test ${test.desc}")
-      test.run(stateWithPage)
+      val topResult = test.run(stateWithPage)
+      // If this test has subTests, recurse into them:
+      runTests(test.subTests:_*)(topResult)
     }
   }
   

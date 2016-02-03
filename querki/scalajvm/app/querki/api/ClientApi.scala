@@ -51,7 +51,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
           None
         else
           spaceInfo(state.getApp(t.spaceId), rc)
-      t.nameOrComputed(rc, state) map { name =>
+      t.nameOrComputedWiki(rc, state) map { name =>
         ThingInfo(
           t, 
           t.linkName, 

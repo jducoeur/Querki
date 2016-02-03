@@ -6,6 +6,7 @@ import models.Kind
 
 import querki.data.{ThingInfo, TID}
 
+/*
 class CommonFunctionsEmpty extends CommonFunctions {
   // Note that we aren't even trying to use the actual OIDs for the standard Things. That's okay, since
   // TIDs are opaque to the Client anyway.
@@ -45,3 +46,4 @@ class CommonFunctionsEmpty extends CommonFunctions {
   def getProgress(handle:OperationHandle):Future[OperationProgress] = ???  
   def acknowledgeComplete(handle:OperationHandle):Unit = ???
 }
+*/

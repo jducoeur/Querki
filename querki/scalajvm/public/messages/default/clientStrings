@@ -1,4 +1,8 @@
 pages : {
+  createAndEdit : {
+    pageTitle : "Create a $modelName"
+  }
+
   createSpace : {
 	pageTitle : "Create a New Space"
 	namePlaceholder : "New Space Name"

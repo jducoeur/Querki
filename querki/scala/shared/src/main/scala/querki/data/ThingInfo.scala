@@ -34,8 +34,11 @@ trait BasicThingInfo {
  */
 case class ThingInfo(
   oid:TID, 
-  linkName:Option[String], 
-  displayName:String,
+  linkName:Option[String],
+  // We transmit the raw form, for the occasions where we need it.
+  // Use this with great care, and always be sure to escape it when needed!
+  // Use displayName instead in most cases.
+  wikiName:Wikitext,
   modelOid:TID,
   kind:Kind.Kind,
   isModel:Boolean,
@@ -45,6 +48,10 @@ case class ThingInfo(
   isInstantiatable:Boolean,
   isTag:Boolean,
   importedFrom:Option[SpaceInfo]) extends BasicThingInfo
+{
+  lazy val displayName = wikiName.strip.toString
+  lazy val unsafeName = wikiName.plaintext
+}
 
 case class SpaceInfo(
   oid:TID, 

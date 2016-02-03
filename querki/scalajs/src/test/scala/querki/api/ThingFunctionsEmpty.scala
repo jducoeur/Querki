@@ -7,6 +7,7 @@ import models.Wikitext
 import querki.data._
 import querki.pages.ThingPageDetails
 
+/*
 class ThingFunctionsEmpty extends ThingFunctions {
   def getRequestInfo():RequestInfo = ???
   def getThingPage(thingId:TID, propIdOpt:Option[TID]):Future[ThingPageDetails] = ???
@@ -20,3 +21,4 @@ class ThingFunctionsEmpty extends ThingFunctions {
   def getNumInstances(modelId:TID):Int = ???
   def getChildren(modelId:TID, includeModels:Boolean, includeInstances:Boolean):Future[Seq[ThingInfo]] = ???
 }
+*/

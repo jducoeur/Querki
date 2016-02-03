@@ -124,7 +124,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
           DataAccess.space match {
             case Some(space) =>
               div(cls:="_smallSubtitle _spaceLink _noPrint",
-                a(href:=thingUrl(DataAccess.spaceId), tabindex:=20000, space.displayName)
+                a(href:=thingUrl(DataAccess.spaceId), id:="_spaceLink", tabindex:=20000, space.displayName)
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },

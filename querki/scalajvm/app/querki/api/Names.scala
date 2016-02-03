@@ -1,6 +1,6 @@
 package querki.api
 
-import models.Kind
+import models.{Kind, Wikitext}
 
 import querki.data.{ThingInfo, TID}
 
@@ -36,7 +36,7 @@ private [api] object NamePassthroughHandler extends PassthroughHandlerBase {
     ThingInfo(
       tid,
       Some(name), 
-      "",
+      Wikitext(""),
       tid,
       Kind.Thing,
       false,

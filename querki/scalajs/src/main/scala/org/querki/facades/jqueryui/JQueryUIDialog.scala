@@ -1,7 +1,7 @@
 package org.querki.facades.jqueryui
 
 import scala.scalajs.js
-import js.{Dynamic, UndefOr, undefined => undef}
+import js.{|, Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 import org.querki.jquery._
 import org.querki.jsext._
@@ -56,9 +56,9 @@ class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions
    * Note that we are being very specific about the type, rather than just saying js.Object.
    * It is important that this be made up of js.Function0's, or jQuery will break obscurely deep down.
    * 
-   * @param v The keys are the button labels and the values are the callbacks for when the associated button is clicked.
+   * @param v The keys are the button labels and the values are DialogButton structures.
    */
-  def buttons(v:js.Dictionary[js.Function0[Any]]) = jsOpt("buttons", v)
+  def buttons(v:js.Dictionary[DialogButton]) = jsOpt("buttons", v)
   /**
    * Specifies which buttons should be displayed on the dialog. 
    * The context of the callback is the dialog element; if you need access to the button, 
@@ -69,7 +69,7 @@ class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions
    * 
    * @param v Each element of the array must be an object defining the attributes, properties, and event handlers to set on the button.
    */
-  def buttons(v:js.Array[js.Object]) = jsOpt("buttons", v)
+  def buttons(v:js.Array[DialogButton]) = jsOpt("buttons", v)
   
   /**
    * Specifies whether the dialog should close when it has focus and the user presses the escape (ESC) key.
@@ -232,4 +232,28 @@ class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions
    * Default: 300
    */
   def width(v:Int) = jsOpt("width", v)
+}
+
+/**
+ * This represents the configuration for the buttons in a Dialog. Note that this is based on fairly poor
+ * documentation; indeed, the fact that "id" works comes from StackOverflow.
+ */
+@js.native
+trait DialogButton extends js.Object 
+object DialogButton extends DialogButtonBuilder(noOpts)
+class DialogButtonBuilder(val dict:OptMap) extends JSOptionBuilder[DialogButton, DialogButtonBuilder](new DialogButtonBuilder(_)) {
+  /**
+   * The label to show on the button.
+   */
+  def text(v:String) = jsOpt("text", v)
+  
+  /**
+   * The id for this button.
+   */
+  def id(v:String) = jsOpt("id", v)
+  
+  /**
+   * The callback for when this button is clicked.
+   */
+  def click(v:js.Function0[Any]) = jsOpt("click", v)
 }

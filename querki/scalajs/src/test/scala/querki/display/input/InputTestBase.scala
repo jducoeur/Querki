@@ -12,6 +12,7 @@ import EditFunctions._
 import querki.test._
 import querki.util.ScalatagUtils
 
+/*
 trait InputTestBase extends ThingPageTests with ScalatagUtils {
 
   /**
@@ -73,3 +74,4 @@ trait InputTestBase extends ThingPageTests with ScalatagUtils {
     promise.future.withTimeout
   }
 }
+*/

@@ -1,5 +1,6 @@
 package querki.test.functional
 
+import querki.api.commonName
 import querki.data.TID
 
 /**
@@ -13,6 +14,23 @@ object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing")
  */
 sealed trait QPage {
   def name:String
+  
+  def titleParams:Seq[(String, String)] = Seq.empty
+  
+  /**
+   * Template-friendly version of ==
+   */
+  def is(other:QPage):Boolean = name == other.name
+}
+/**
+ * Solely for test specification purposes, this means "I don't care". Don't use this unless you've
+ * thought through what it means -- so far, the only use I've found is for a test suite that doesn't
+ * do anything but contain sub-tests.
+ */
+object AnyPage extends QPage {
+  def name = "Not an actual page"
+  
+  override def is(other:QPage) = true
 }
 /**
  * The root page of Querki, which you see only when you aren't logged in.
@@ -37,6 +55,19 @@ object CreateSpace extends QPage {
  */
 case class RootPage(space:TSpace) extends QPage {
   val name = "root"
+  
+  override def is(other:QPage) = other match {
+    case RootPage(otherSpace) => otherSpace is space
+    case _ => false
+  }
+}
+/**
+ * The page for creating Instances.
+ */
+case class CreateAndEdit[T <: TThing[T]](model:T) extends QPage {
+  val name = "createAndEdit"
+  
+  override def titleParams = Seq(("modelName" -> model.display))
 }
 
 /**
@@ -46,8 +77,17 @@ case class RootPage(space:TSpace) extends QPage {
 trait TThing[T <: TThing[T]] {
   def display:String
   def tid:TID
-  
+
+  // Is there any clean way to implement this up here? It's always the same, but uses the
+  // copy constructor of the children, so I don't see a way.
   def withTID(id:String):T
+  
+  /**
+   * Ugly but occasionally useful, to get at the stringified OID of this Thing.
+   */
+  def oidStr = tid.underlying.drop(1)
+  
+  def is(other:T) = tid == other.tid
 }
 
 /**
@@ -58,10 +98,43 @@ case class TSpace(
   // The display name we're giving this Space:
   display:String,
   // The OID of this Thing, as understood by the Client:
-  tid:TID = TID("")) extends TThing[TSpace]
+  tid:TID = TID(""),
+  // The Things that have *actually* been created in this Space:
+  things:Seq[TThing[_]] = Seq.empty) extends TThing[TSpace]
 {
   def withTID(id:String) = copy(tid = TID(id))
 }
+
+/**
+ * Represents a normal Instance. (Also used for Models.)
+ */
+case class TInstance(
+  display:String,
+  tid:TID = TID(""),
+  model:TInstance = SimpleThing) extends TThing[TInstance]
+{
+  def withTID(id:String) = copy(tid = TID(id))
+}
+
+/**
+ * Represents a Property.
+ */
+case class TProp(
+  display:String,
+  tid:TID = TID("")) extends TThing[TProp]
+{
+  def withTID(id:String) = copy(tid = TID(id))
+}
+
+/**
+ * The actual Simple Thing object.
+ */
+object SimpleThing extends TInstance("Simple Thing", TID(querki.basic.MOIDs.SimpleThingOID.toThingId))
+
+/**
+ * The Name Property.
+ */
+object NameProp extends TProp(commonName(_.basic.displayNameProp), TID(querki.basic.MOIDs.DisplayNameOID.toThingId))
 
 /**
  * Represents the *current* state of the test world, including where the client
@@ -76,12 +149,26 @@ case class State(
   currentUserOpt:Option[TestUser],
   // The Page that we believe is currently showing
   currentPage:QPage,
+  // The Space we're currently in
+  currentSpace:Option[TSpace],
   // The Spaces that *actually* exist, that we have created
-  spaces:Seq[TSpace])
+  spaces:Map[TID, TSpace])
 {
   def ->(page:QPage):State = copy(currentPage = page)
+  
+  /**
+   * TBD: for the moment, we're identifying Spaces by display name, since the prototypes don't have
+   * TIDs. Should we do something better, more guaranteed to be unique?
+   */
+  def getSpace(target:TSpace):TSpace = spaces.values.find(_.display == target.display).getOrElse(throw new Exception("Space ${target} hasn't been created yet?"))
+  
+  def updateSpace(f:TSpace => TSpace):State = {
+    val space = currentSpace.getOrElse(throw new Exception(s"Trying to update the Space in $this, but there isn't one!"))
+    val updated = f(space)
+    copy(currentSpace = Some(updated), spaces = spaces + (updated.tid -> updated))
+  }
 }
 /**
  * The State at the beginning of time, before we've logged in or built anything.
  */
-object InitialState extends State(None, LoginPage, Seq.empty)
+object InitialState extends State(None, LoginPage, None, Map.empty)

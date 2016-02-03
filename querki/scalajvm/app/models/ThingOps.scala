@@ -33,12 +33,16 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
       dispOpt
   }
   
+  def nameOrComputedWiki(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
+    Basic.nameOrComputedCore(this)
+  }
+  
   def nameOrComputed(implicit request:RequestContext, state:SpaceState):Future[DisplayText] = {
-    Basic.nameOrComputedCore(this).map(_.strip)
+    nameOrComputedWiki.map(_.strip)
   }
   
   def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):Future[String] = {
-    Basic.nameOrComputedCore(this).map(_.plaintext)
+    nameOrComputedWiki.map(_.plaintext)
   }
   
   /**

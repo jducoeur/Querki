@@ -1,5 +1,6 @@
 package querki.client
 
+/*
 import scala.concurrent.Future
 
 import scala.scalajs.js
@@ -169,3 +170,4 @@ trait StandardTestEntryPoints extends TestClientRouter {
   }
 
 }
+*/

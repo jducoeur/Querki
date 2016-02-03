@@ -16,12 +16,12 @@ import EditFunctions.{ChangePropertyValue, PropertyChange}
 object EditQL {
   def apply() = """""[[_edit]]
                     |
-                    |[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]
+                    |[[_oidLink -> _linkButton(icon=""share-alt"", label=""Done"", id=""_editDoneButton"")]]
                     |
                     |""""".stripMargin
 }
 
-class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "createAndEdit") with EcologyMember  {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
@@ -46,7 +46,7 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     editor <- Client[ThingFunctions].evaluateQL(thingInfo.oid, EditQL()).call()
     guts = div(new QText(editor))
   }
-    yield PageContents(s"Create a ${modelInfo.displayName}", guts)
+    yield PageContents(msg("pageTitle", ("modelName" -> modelInfo.unsafeName)), guts)
     
   def initialValues:Future[Seq[PropertyChange]] = {
     val otherParams = params - "model" - "reifyTag"

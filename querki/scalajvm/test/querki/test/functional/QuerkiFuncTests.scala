@@ -52,6 +52,7 @@ class QuerkiFuncTests
   
   // And the tests themselves:
   with BuildCommonSpace
+  with RegressionTests1
 {
   /**
    * This is where we override the standard Application settings.
@@ -69,7 +70,7 @@ class QuerkiFuncTests
   
   var ecology:Ecology = null
   
-  "I should be able to open a web browser" in {
+  "Run the main functional tests" in {
     // Fetch the actual running Ecology, so that tests can introspect into the system.
     ecology = QuerkiRoot.ecology
     
@@ -81,10 +82,11 @@ class QuerkiFuncTests
     go to "http://localhost:19001/"
     
     runTests(
-      buildCommonSpace
-    )
-    
-//    quit()
+      buildCommonSpace,
+      
+      // Regression Tests
+      regression1
+    )(InitialState)
   }
 }
 

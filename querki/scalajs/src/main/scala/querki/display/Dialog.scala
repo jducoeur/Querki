@@ -23,7 +23,7 @@ class Dialog(
   dialogTitle:String,
   height:Int, width:Int,
   guts:scalatags.JsDom.TypedTag[_],
-  buttonsIn:(String, Dialog => Unit)*
+  buttonsIn:(String, String, Dialog => Unit)*
   )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 
 {
   def doRender() = div(title:=dialogTitle, guts)
@@ -33,8 +33,13 @@ class Dialog(
     // We want to pass the dialog into callbacks; this gets around some recursive-definition
     // difficulties that you can otherwise have.
     val buttons = buttonsIn.map { pair =>
-      val (buttonName, cb) = pair
-      (buttonName -> ({ () => cb(this) } : js.Function0[Any]))
+      val (buttonName, idStr, cb) = pair
+      val button:DialogButton = 
+        DialogButton.
+          click(({ () => cb(this) } : js.Function0[Any])).
+          id(idStr).
+          text(buttonName)
+      (buttonName -> button)
     }
     val buttonMap = Map(buttons:_*).toJSDictionary
     val asDialog = $(elem).dialog(DialogOptions.
