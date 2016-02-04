@@ -17,4 +17,9 @@ pages : {
     createButton : "Create a new Space"
     notAllowedYet : "As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days."
   }
+  
+  modelDesigner : {
+    pageTitle : "Designing Model $modelName"
+    thingTitle : "Editing $modelName"
+  }
 }

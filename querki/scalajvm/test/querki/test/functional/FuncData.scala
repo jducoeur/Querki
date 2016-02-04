@@ -69,6 +69,11 @@ case class CreateAndEdit[T <: TThing[T]](model:T) extends QPage {
   
   override def titleParams = Seq(("modelName" -> model.display))
 }
+case class ModelDesigner(model:TInstance) extends QPage {
+  val name = "modelDesigner"
+  
+  override def titleParams = Seq(("modelName" -> model.display))
+}
 
 /**
  * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that
@@ -111,9 +116,34 @@ case class TSpace(
 case class TInstance(
   display:String,
   tid:TID = TID(""),
-  model:TInstance = SimpleThing) extends TThing[TInstance]
+  model:TInstance = SimpleThing,
+  isModel:Boolean = false) extends TThing[TInstance]
 {
   def withTID(id:String) = copy(tid = TID(id))
+}
+
+/**
+ * Enumeration of the PTypes that we can test.
+ */
+sealed trait TType {
+  def tid:TID
+  def display:String
+}
+/**
+ * Represents a single-line text field.
+ */
+case object TTextType extends TType {
+  def tid = querki.core.MOIDs.TextTypeOID
+  def display = "Text Type"
+}
+/**
+ * Represents a Tag
+ * 
+ * @param modelOpt The Model that this Tag should be constrained to.
+ */
+case class TTagType(modelOpt:Option[TInstance]) extends TType {
+  def tid = querki.tags.MOIDs.NewTagSetOID
+  def display = "Tag Type"
 }
 
 /**
@@ -121,6 +151,7 @@ case class TInstance(
  */
 case class TProp(
   display:String,
+  tpe:TType,
   tid:TID = TID("")) extends TThing[TProp]
 {
   def withTID(id:String) = copy(tid = TID(id))
@@ -129,12 +160,13 @@ case class TProp(
 /**
  * The actual Simple Thing object.
  */
-object SimpleThing extends TInstance("Simple Thing", TID(querki.basic.MOIDs.SimpleThingOID.toThingId))
+object SimpleThing extends TInstance("Simple Thing", querki.basic.MOIDs.SimpleThingOID)
 
 /**
  * The Name Property.
  */
-object NameProp extends TProp(commonName(_.basic.displayNameProp), TID(querki.basic.MOIDs.DisplayNameOID.toThingId))
+object NameProp 
+  extends TProp(commonName(_.basic.displayNameProp), TTextType, querki.basic.MOIDs.DisplayNameOID)
 
 /**
  * Represents the *current* state of the test world, including where the client

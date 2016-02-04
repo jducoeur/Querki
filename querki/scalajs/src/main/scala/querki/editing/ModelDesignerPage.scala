@@ -19,7 +19,7 @@ import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.display.rx.{RxThingSelector}
 import querki.pages._
 
-class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "modelDesigner") with EcologyMember  {
   
   lazy val modelId = TID(params.get("modelId").getOrElse(params("thingId")))
   
@@ -154,14 +154,14 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         }
       }
       pageTitle = {
-	    if (model.isModel)
-	      s"Designing Model ${model.displayName}"
-	    else
-	      s"Editing ${model.displayName}"
+  	    if (model.isModel)
+          msg("pageTitle", ("modelName" -> model.unsafeName))
+  	    else
+  	      msg("thingTitle", ("modelName" -> model.unsafeName))
       }
-	  guts = 
+	    guts = 
         div(cls:="_advancedEditor",
-          h1(raw(pageTitle)),
+          h1(pageTitle),
           p(cls:="_smallSubtitle", 
             s"Model: ${modelModel.displayName} -- ",
             a("Change Model", 
@@ -192,6 +192,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
             )
           },
           a(cls:="btn btn-primary",
+            id:="_doneDesigning",
             "Done",
             href:=thingUrl(model))
         )

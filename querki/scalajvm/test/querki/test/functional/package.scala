@@ -1,5 +1,8 @@
 package querki.test
 
+import models.OID
+import querki.data.TID
+
 /**
  * Querki's Functional Tests.
  * 
@@ -104,5 +107,5 @@ package querki.test
  * @author jducoeur
  */
 package object functional {
-
+  implicit def oid2tid(oid:OID):TID = TID(oid.toThingId)
 }

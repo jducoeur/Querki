@@ -7,6 +7,7 @@ sealed case class Menu(id:String)
 sealed case class MenuItem(id:String, menu:Menu)
 
 object ActionsMenu extends Menu("_actionsMenu")
+object DesignModelItem extends MenuItem("designAModel", ActionsMenu)
 object CreateThingItem extends MenuItem("_createAnyThing", ActionsMenu)
 
 trait FuncMenu { this:FuncMixin =>

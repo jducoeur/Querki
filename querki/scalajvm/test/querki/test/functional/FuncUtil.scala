@@ -31,7 +31,12 @@ case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)
  * 
  * @author jducoeur
  */
-trait FuncUtil extends FuncMenu { this:FuncMixin =>
+trait FuncUtil extends FuncMenu with FuncEditing { this:FuncMixin =>
+  
+  /**
+   * Note that this implicit is available pretty much throughout the mixins.
+   */
+  implicit val browser:org.scalatest.selenium.WebBrowser = this
   
   /**
    * This loads the clientStrings and parses them, so we can compare against what we expect.
@@ -45,7 +50,7 @@ trait FuncUtil extends FuncMenu { this:FuncMixin =>
   def msgs(page:QPage):Messages = pageMsgs(page.name)
   
   implicit class PageWithMessages(page:QPage) {
-    def msg(name:String) = msgs(page).msg(name, page.titleParams:_*)
+    def msg(name:String, params:(String, String)*) = msgs(page).msg(name, params:_*)
   }
   
   /**
@@ -66,7 +71,7 @@ trait FuncUtil extends FuncMenu { this:FuncMixin =>
   }
   
   def waitForTitle(page:QPage):Unit = {
-    waitForTitle(page.msg("pageTitle"))
+    waitForTitle(page.msg("pageTitle", page.titleParams:_*))
   }
   
   /**
@@ -127,31 +132,6 @@ trait FuncUtil extends FuncMenu { this:FuncMixin =>
     click on "_createSpaceButton"
     val createdSpace = waitUntilCreated(space)
     state.copy(spaces = state.spaces + (createdSpace.tid -> createdSpace), currentSpace = Some(createdSpace)) -> RootPage(space)
-  }
-  
-  /**
-   * Creates an Instance, using the Create any Thing menu pick.
-   */
-  def createAnyThing(thing:TInstance)(state:State):State = {
-    // Choose "Create any Thing" from the menu, and select the correct Model from the popup dialog:
-    clickMenuItem(CreateThingItem)
-    waitFor("_modelSelected")
-    singleSel("_modelSelector").value = thing.model.tid.underlying
-    click on "_modelSelected"
-    
-    // Fill out the CreateAndEdit page:
-    waitForTitle(CreateAndEdit(thing.model))
-    val editor = find(className("_instanceEditor")).getOrElse(fail("Couldn't find instance editor for newly-created Thing!"))
-    val instanceTID = editor.attribute("data-thingid").getOrElse(fail("Couldn't find TID for newly-created Thing!"))
-    val thingWithTID = thing.withTID(instanceTID)
-    // Fill in the name property:
-    // TODO: create a more general mechanism for filling in the Properties
-    textField(s"v-${NameProp.oidStr}-${thingWithTID.oidStr}").value = thing.display
-    
-    // Click "Done", and update the State with the newly-created Thing:
-    click on "_editDoneButton"
-    val t = waitUntilCreated(thingWithTID)
-    state.updateSpace(space => space.copy(things = space.things :+ t))
   }
   
   def adjustUser(state:State, test:TestDef):State = {
