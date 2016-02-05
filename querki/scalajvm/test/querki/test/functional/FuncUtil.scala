@@ -1,42 +1,66 @@
 package querki.test.functional
 
-import querki.util.QLog
+import scala.collection.JavaConverters._
 
-/**
- * The definition of a test case.
- * 
- * These are the high-level, relatively decoupled tests. Each one declares its preconditions, and
- * it is up to the runTests() engine to get things to the right preconditions before the test
- * runs. Keep in mind that that's not magic: you mustn't point to a user or page that doesn't yet
- * exist in the State.
- * 
- * @param desiredUser The User who needs to be logged in before this test begins.
- * @param desiredPage The Page that should be showing before this test begins. Should usually
- *   be either the index Page, or a specific Page in a Space that is known to the State.
- * @param test The actual test function.
- */
-case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)(test:State => State)
-{
-  def run(state:State) = test(state)
-  
-  /**
-   * You can create recursively-nested "suites" by overriding subTests(). The subTests will be run
-   * *after* the guts of the higher-level test.
-   */
-  def subTests:Seq[TestDef] = Seq.empty
-}
+import org.openqa.selenium.WebElement
+
+import querki.util.QLog
 
 /**
  * Common utility operations for the tests.
  * 
  * @author jducoeur
  */
-trait FuncUtil extends FuncMenu with FuncEditing { this:FuncMixin =>
-  
+trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin =>
+
+  /**
+   * The definition of a test case.
+   * 
+   * These are the high-level, relatively decoupled tests. Each one declares its preconditions, and
+   * it is up to the runTests() engine to get things to the right preconditions before the test
+   * runs. Keep in mind that that's not magic: you mustn't point to a user or page that doesn't yet
+   * exist in the State.
+   * 
+   * @param desiredUser The User who needs to be logged in before this test begins.
+   * @param desiredPage The Page that should be showing before this test begins. Should usually
+   *   be either the index Page, or a specific Page in a Space that is known to the State.
+   * @param test The actual test function.
+   */
+  case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)(test:State => State)
+  {
+    def run(state:State) = test(state)
+    
+    /**
+     * You can create recursively-nested "suites" by overriding subTests(). The subTests will be run
+     * *after* the guts of the higher-level test.
+     */
+    def subTests:Seq[TestDef] = Seq.empty
+  }
+
   /**
    * Note that this implicit is available pretty much throughout the mixins.
    */
   implicit val browser:org.scalatest.selenium.WebBrowser = this
+  
+  /**
+   * This works around the very unfortunate limitation that WebBrowser.Element doesn't allow
+   * searching *within* it, even though the underlying WebDriver does. Note that, due to
+   * ScalaTest being a little over-eager about private and sealed, we can't return an Element
+   * here; instead, we have to return a raw Selenium WebElement.
+   */
+  implicit class EnhancedElement(elem:Element) {
+    def find(q:Query):Option[WebElement] = {
+      try {
+        Some(elem.underlying.findElement(q.by))
+      } catch {
+        case e:NoSuchElementException => None
+      }
+    }
+    
+    def findAll(q:Query):Iterable[WebElement] = {
+      elem.underlying.findElements(q.by).asScala
+    }
+  }
   
   /**
    * This loads the clientStrings and parses them, so we can compare against what we expect.

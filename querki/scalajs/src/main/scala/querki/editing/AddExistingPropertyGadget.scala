@@ -92,7 +92,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
               })
           ),
           hr,
-          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.get.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
+          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead", id:="_createInstead")({ () => apg.mainDiv.get.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
         ),
         div(cls:="col-md-7", 
           new DescriptionDiv(page, propSelector.get.selectedWithTID)

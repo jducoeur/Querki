@@ -33,9 +33,12 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   val nameInput = GadgetRef[RxText]
   
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
+  def collBtn(coll:CollectionInfo, selected:Boolean):ButtonInfo = {
+    ButtonInfo(coll.oid.underlying, coll.displayName, selected, id:=s"_coll${coll.oid.underlying}")
+  }
   lazy val collButtons =
-    typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName, true) } ++
-    typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName) }
+    typeInfo.collections.headOption.map { collBtn(_, true) } ++
+    typeInfo.collections.tail.map { collBtn(_, false) }
   lazy val collSelector = GadgetRef[RxButtonGroup]
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
@@ -61,7 +64,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   lazy val addButton = 
     new ButtonGadget(Info, 
         disabled := Rx{ nameInput.get.textOpt().isEmpty || collSelector.get.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }, 
-        "Create")({ () =>
+        "Create", id:="_doCreatePropertyButton")({ () =>
       val name = nameInput.get.textOpt().get
       val coll = collSelector.get.selectedTIDOpt().get
       val (selector, oid) = selectedBasis().get
@@ -98,12 +101,12 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         div(cls:="col-md-6",
           div(cls:="row",
             div(cls:="col-md-12",
-              nameInput <= new RxText(cls:="col-md-6 form-control", placeholder:="Name (required)...")
+              nameInput <= new RxText(cls:="col-md-6 form-control", id:="_createPropName", placeholder:="Name (required)...")
             )
           ),
           div(cls:="row",
             div(cls:="col-md-12",
-              collSelector <= new RxButtonGroup(Var(collButtons.toSeq))
+              collSelector <= new RxButtonGroup(Var(collButtons.toSeq), id:="_collSelector")
             )
           ),
           div(cls:="row",
@@ -111,12 +114,14 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
               typeSelector <= RxSelect(
                 Var({typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))}), 
                 "Choose a Type...", 
+                id:="_typeSelector",
                 cls:="form-control")), 
             span(cls:="col-md-1", " or "), 
             div(cls:="col-md-5", 
               modelSelector <= RxSelect(
                 Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}), 
-                "Base it on a Model...", 
+                "Base it on a Model...",
+                id:="_modelSelector",
                 cls:="form-control"))
           )
         ),

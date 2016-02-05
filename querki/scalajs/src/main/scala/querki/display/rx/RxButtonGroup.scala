@@ -10,7 +10,7 @@ import querki.globals._
 
 import querki.display.Gadget
 
-case class ButtonInfo(value:String, display:String, initiallyActive:Boolean = false)
+case class ButtonInfo(value:String, display:String, initiallyActive:Boolean, labelMods:Modifier*)
 
 // TODO: this might get refactored together with RxSelect -- they share a lot of code. They may be an
 // underlying RxSelector to be pulled out of here.
@@ -28,7 +28,8 @@ class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ec
           if (buttonInfo.initiallyActive) checked:="checked",
           value:=buttonInfo.value),
         onclick:={ () => spew(s"Setting buttons to $buttonInfo"); select(buttonInfo) },
-        buttonInfo.display)
+        buttonInfo.display,
+        buttonInfo.labelMods)
     }    
   }
   

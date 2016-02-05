@@ -5,7 +5,7 @@ package querki.test.functional
  * 
  * @author jducoeur
  */
-trait RegressionTests1 { this:FuncMixin =>
+trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
   object regression1 extends TestDef(Some(Admin1), AnyPage, "Regression Suite 1")({ state => state }) {
     override def subTests = Seq(
         

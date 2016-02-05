@@ -55,6 +55,64 @@ trait FuncEditing { this:FuncMixin =>
     stateAfterOps
   }
   
+  def getInstanceSection():Element = eventually { 
+    val sec = find(xpath("//ul[contains(@class, '_propertySection')]"))
+    sec should not be empty
+    sec.get
+  }
+  
+  /**
+   * Create a Property inside the Model Designer.
+   * 
+   * This expects to be called as one of the ops inside designAModel().
+   */
+  def createProperty(prop:TProp)(state:State):State = {
+    spew(s"Creating Property ${prop.display}")
+    
+    val instanceSection = getInstanceSection()
+    
+    def countEditors():Int = {
+      val editors = instanceSection.findAll(xpath("./li[contains(@class, '_instanceEditor')]"))
+      editors.size
+    }
+    
+    // First, we need to look at the PropValueEditors already showing, since we'll
+    // need to wait until another one is added:
+    val nOrigEditors = countEditors()
+    
+    // What is currently showing?
+    if (find("_doCreatePropertyButton").isDefined) {
+      // Don't need to do anything -- the dialog's already open
+    } else if (find("_createInstead").isDefined) {
+      // The Add Existing Property dialog is open; switch boxes
+      click on "_createInstead"
+      waitFor("_doCreatePropertyButton")
+    } else if (find("_addPropertyButton").isDefined) {
+      click on "_addPropertyButton"
+      waitFor("_createInstead")
+      click on "_createInstead"
+      waitFor("_doCreatePropertyButton")
+    } else
+      fail(s"Couldn't figure out where we are when trying to create Property ${prop.display}")
+      
+    // Set the name...
+    textField("_createPropName").value = prop.display
+    // ... the collection...
+    click on s"_coll${prop.coll.tid.underlying}"
+    // ... the type...
+    singleSel("_typeSelector").value = prop.tpe.tid.underlying
+    // ... and actually create it:
+    click on "_doCreatePropertyButton"
+    
+    // Wait for the new PropValueEditor to be created:
+    eventually { countEditors() should equal (nOrigEditors + 1) }
+    // The new Property's TID can be found in it:
+    val newEditor = instanceSection.find(xpath("./li[last()]")).getOrElse(fail("Couldn't find PropValueEditor for newly-created Property!"))
+    val propTID = newEditor.getAttribute("data-propid")
+    spew(s"Created Property ${prop.display} as $propTID")
+    state
+  }
+  
   /**
    * Creates an Instance, using the Create any Thing menu pick.
    */

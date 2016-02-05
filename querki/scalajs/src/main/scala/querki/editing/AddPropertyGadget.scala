@@ -19,7 +19,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   val mainDiv = GadgetRef[WrapperDiv]
   val initButton = GadgetRef[ButtonGadget]
   
-  lazy val cancelButton = new ButtonGadget(Normal, "Cancel")({ () => reset() })
+  lazy val cancelButton = new ButtonGadget(Normal, page.msg("addPropertyCancel"))({ () => reset() })
   
   def reset() = {
     addExistingGadget.map(_.reset())
@@ -42,7 +42,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   def doRender() = {
     div(
       mainDiv <= (new WrapperDiv).initialContent(
-        initButton <= new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
+        initButton <= new ButtonGadget(Info, icon("plus"), id:="_addPropertyButton", page.msg("addPropertyButton"))({ () =>
           mainDiv.get.replaceContents(addExisting.rendered, true)
         })
       )
