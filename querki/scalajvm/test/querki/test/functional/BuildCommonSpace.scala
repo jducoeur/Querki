@@ -11,30 +11,13 @@ trait BuildCommonSpace { this:FuncMixin =>
   object CommonSpace extends TSpace(
     "Common Space"
   )
-  
-  /**
-   * An unconstrained Tag.
-   */
-  object SimpleTag extends TProp[TTagType.type](
-    "Simple Tag",
-    TSet,
-    TTagType
-  )
-  
-  /**
-   * A Model that just has a SimpleTag Property.
-   */
-  object ModelWithTag extends TInstance("Model with Tag")
 
   /**
    * This operation creates the Common Space itself.
    */
   val buildCommonSpace = TestDef(Some(Admin1), IndexPage, "Build the Common Space") { state =>
     run(state,
-      createSpace(CommonSpace),
-      
-      designAModel(ModelWithTag,
-        createProperty(SimpleTag))
+      createSpace(CommonSpace)
     )
   }
 }

@@ -28,7 +28,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
    */
   case class TestDef(desiredUser:Option[TestUser], desiredPage:QPage, desc:String)(test:State => State)
   {
-    def run(state:State) = test(state)
+    def runTest(state:State) = test(state)
     
     /**
      * You can create recursively-nested "suites" by overriding subTests(). The subTests will be run
@@ -80,9 +80,10 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   /**
    * Waits until the element with the specified id actually exists
    */
-  def waitFor(id:String) = {
-    eventually { find(id) should not be empty }
+  def waitFor(q:Query):Unit = {
+    eventually { find(q) should not be empty }
   }
+  def waitFor(idStr:String):Unit = waitFor(id(idStr))
   
   /**
    * This waits until the page title (IMPORTANT: *not* the header, the title in the tab) matches
@@ -228,7 +229,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
       val stateWithUser:State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
       spew(s"Running test ${test.desc}")
-      val topResult = test.run(stateWithPage)
+      val topResult = test.runTest(stateWithPage)
       // If this test has subTests, recurse into them:
       runTests(test.subTests:_*)(topResult)
     }

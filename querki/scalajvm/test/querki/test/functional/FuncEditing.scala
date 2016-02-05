@@ -7,9 +7,10 @@ package querki.test.functional
  */
 trait FuncEditing { this:FuncMixin =>
   
-  def chooseModel(thing:TInstance) = {
+  def chooseModel(thing:TInstance)(state:State) = {
     waitFor("_modelSelected")
-    singleSel("_modelSelector").value = thing.model.tid.underlying
+    val modelTid = state.tid(thing.model)
+    singleSel("_modelSelector").value = modelTid.underlying
     click on "_modelSelected"    
   }
   
@@ -25,7 +26,7 @@ trait FuncEditing { this:FuncMixin =>
     spew(s"Designing Model ${thing.display}")
     // Choose "Design a Model" from the menu, and select the correct Model from the popup dialog:
     clickMenuItem(DesignModelItem)
-    chooseModel(thing)
+    chooseModel(thing)(state)
     
     // Fill out the Model Designer, based on the specified properties:
     val page = ModelDesigner(thing)
@@ -39,11 +40,11 @@ trait FuncEditing { this:FuncMixin =>
     val instanceTID = pageTitle.drop(expectedTitle.length)
     val thingWithTID = thing.withTID(instanceTID).copy(isModel = true)
     val stateWithThing = state.updateSpace(space => space.copy(things = space.things :+ thingWithTID))
-    NameProp.setValue(thingWithTID, thing.display)
+    NameProp.setValue(thing.display)(thingWithTID, stateWithThing)
     val stateAfterOps = run(stateWithThing, ops:_*)
     click on "_doneDesigning"
     waitUntilCreated(thing)
-    stateAfterOps
+    stateAfterOps -> ThingPage(thingWithTID)
   }
   
   def getInstanceSection():Element = eventually { 
@@ -110,23 +111,27 @@ trait FuncEditing { this:FuncMixin =>
   /**
    * Creates an Instance, using the Create any Thing menu pick.
    */
-  def createAnyThing(thing:TInstance)(state:State):State = {
+  def createAnyThing(thing:TInstance, setters:(TThing[_], State) => Unit*)(state:State):State = {
     spew(s"Creating Instance ${thing.display}")
     // Choose "Create any Thing" from the menu, and select the correct Model from the popup dialog:
     clickMenuItem(CreateThingItem)
-    chooseModel(thing)
+    chooseModel(thing)(state)
     
     // Fill out the CreateAndEdit page:
     waitForTitle(CreateAndEdit(thing.model))
     val editor = find(className("_instanceEditor")).getOrElse(fail("Couldn't find instance editor for newly-created Thing!"))
     val instanceTID = editor.attribute("data-thingid").getOrElse(fail("Couldn't find TID for newly-created Thing!"))
     val thingWithTID = thing.withTID(instanceTID)
+    val stateWithThing = state.updateSpace(space => space.copy(things = space.things :+ thingWithTID))
     // Fill in the name property:
-    NameProp.setValue(thingWithTID, thing.display)
+    NameProp.setValue(thing.display)(thingWithTID, stateWithThing)
+    
+    // Do any additional operations (usually setting other Properties):
+    setters.map(f => f(thingWithTID, stateWithThing))
     
     // Click "Done", and update the State with the newly-created Thing:
     click on "_editDoneButton"
-    val t = waitUntilCreated(thingWithTID)
-    state.updateSpace(space => space.copy(things = space.things :+ t))
+    waitUntilCreated(thingWithTID)
+    stateWithThing -> ThingPage(thingWithTID)
   }
 }

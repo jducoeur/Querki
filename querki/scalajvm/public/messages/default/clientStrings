@@ -24,4 +24,8 @@ pages : {
     addPropertyButton : " Add a Property"
     addPropertyCancel : "Cancel"
   }
+  
+  thing : {
+    pageTitle : "$thingName"
+  }
 }

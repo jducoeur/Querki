@@ -57,12 +57,30 @@ trait FuncData { this:FuncMixin =>
    * The root page of some Space. If this is showing, the Space had better be in the State.
    */
   case class RootPage(space:TSpace) extends QPage {
-    val name = "root"
+    val name = "thing"
+    
+    override def titleParams = Seq(("thingName" -> space.display))
     
     override def is(other:QPage) = other match {
       case RootPage(otherSpace) => otherSpace is space
       case _ => false
     }
+  }
+  /**
+   * The page for some Thing.
+   */
+  case class ThingPage[T <: TThing[_]](thing:T) extends QPage {
+    val name = "thing"
+    
+    override def titleParams = Seq(("thingName" -> thing.display))
+  }
+  /**
+   * The page for some Tag.
+   */
+  case class TagPage(tag:String) extends QPage {
+    val name = "thing"
+    
+    override def titleParams = Seq(("thingName" -> tag))
   }
   /**
    * The page for creating Instances.
@@ -96,6 +114,12 @@ trait FuncData { this:FuncMixin =>
     def oidStr = tid.underlying.drop(1)
     
     def is(other:T) = tid == other.tid
+    
+    /**
+     * This is a craptastic definition of equality, but so far I don't have a better one without
+     * mutating things.
+     */
+    def matches(other:TThing[_]) = display == other.display
   }
   
   /**
@@ -115,7 +139,11 @@ trait FuncData { this:FuncMixin =>
     def withTID(id:String) = copy(tid = TID(id))
     
     def thing(t:TInstance):TInstance = {
-      things.find(_ is t).getOrElse(fail(s"Couldn't find $t among the existing Things!"))
+      things.find(_ matches t).getOrElse(fail(s"Couldn't find $t among the existing Things!"))
+    }
+    
+    def prop[TPE <: TType](p:TProp[TPE]):TProp[TPE] = {
+      props.find(_ matches p).getOrElse(fail(s"Couldn't find $p among the existing Props!")).asInstanceOf[TProp[TPE]]
     }
   }
   
@@ -170,7 +198,7 @@ trait FuncData { this:FuncMixin =>
     prop.extras.collect {
       case RestrictedToModel(modelProto) => {
         // HACK: for the moment, the options in the selector use OIDs, not TIDs:
-        val modelId = state.tid(modelProto).underlying.drop(1)
+        val modelId = state.thing(modelProto).oidStr
         singleSel(editorId(prop, RestrictToModelProp)).value = modelId
       }
     }
@@ -188,7 +216,11 @@ trait FuncData { this:FuncMixin =>
     def tid = querki.tags.MOIDs.NewTagSetOID
     def display = "Tag Type"
     
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
+      // While Tag Sets look funky on the outside, their add-a-tag input field is
+      // pretty conventional:
+      textField(editorId(thing, prop)).value = v
+    }
     
     override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
       setRestrictedToModel(prop)(state)
@@ -224,10 +256,17 @@ trait FuncData { this:FuncMixin =>
   {
     def withTID(id:String) = copy(tid = TID(id))
     
-    def setValue(thing:TThing[_], v:tpe.TSetter):Unit = {
+    def realProp(state:State) = {
+      if (tid.underlying.length > 0)
+        this
+      else
+        state.prop(this)
+    }
+    
+    def setValue(v:tpe.TSetter)(thing:TThing[_], state:State):Unit = {
       // The asInstanceOf below is horrible, but I'm having trouble getting the compiler
       // to accept this as legit, and it is:
-      tpe.setValue(thing, this.asInstanceOf[TProp[tpe.type]], v)
+      tpe.setValue(thing, realProp(state).asInstanceOf[TProp[tpe.type]], v)
     }
     
     /**
@@ -288,8 +327,16 @@ trait FuncData { this:FuncMixin =>
       currentSpace.getOrElse(fail(s"Trying to find a Thing, but we're not in a Space!")).thing(t)
     }
     
+    def prop[TPE <: TType](p:TProp[TPE]):TProp[TPE] = {
+      currentSpace.getOrElse(fail(s"Trying to find a Prop, but we're not in a Space!")).prop(p)
+    }
+    
     def tid(t:TInstance):TID = {
-      thing(t).tid
+      val original = t.tid
+      if (original.underlying.length > 0)
+        original
+      else
+        thing(t).tid
     }
   }
   /**
