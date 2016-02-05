@@ -15,10 +15,10 @@ trait BuildCommonSpace { this:FuncMixin =>
   /**
    * An unconstrained Tag.
    */
-  object SimpleTag extends TProp[TTagType](
+  object SimpleTag extends TProp[TTagType.type](
     "Simple Tag",
     TSet,
-    TTagType(None)
+    TTagType
   )
   
   /**

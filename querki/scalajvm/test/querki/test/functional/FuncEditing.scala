@@ -103,6 +103,7 @@ trait FuncEditing { this:FuncMixin =>
     val propWithTID = prop.withTID(propTID)
     spew(s"Created Property ${prop.display} as $propTID")
     val stateWithProp = state.updateSpace(space => space.copy(props = space.props :+ propWithTID))
+    propWithTID.fixupProp(stateWithProp)
     stateWithProp
   }
   

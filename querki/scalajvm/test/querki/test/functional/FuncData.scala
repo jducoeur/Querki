@@ -108,11 +108,15 @@ trait FuncData { this:FuncMixin =>
     // The OID of this Thing, as understood by the Client:
     tid:TID = TID(""),
     // The Things that have *actually* been created in this Space:
-    things:Seq[TThing[_]] = Seq.empty,
+    things:Seq[TInstance] = Seq.empty,
     // The Properties that have actually been created:
     props:Seq[TProp[_]] = Seq.empty) extends TThing[TSpace]
   {
     def withTID(id:String) = copy(tid = TID(id))
+    
+    def thing(t:TInstance):TInstance = {
+      things.find(_ is t).getOrElse(fail(s"Couldn't find $t among the existing Things!"))
+    }
   }
   
   /**
@@ -144,6 +148,8 @@ trait FuncData { this:FuncMixin =>
     def display:String
     
     def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit
+    
+    def fixupProp(prop:TProp[this.type])(state:State):Unit = {}
   }
   /**
    * Represents a single-line text field.
@@ -159,12 +165,23 @@ trait FuncData { this:FuncMixin =>
       textField(editorId(thing, prop)).value = v
     }
   }
+  
+  def setRestrictedToModel(prop:TProp[_])(state:State):Unit = {
+    prop.extras.collect {
+      case RestrictedToModel(modelProto) => {
+        // HACK: for the moment, the options in the selector use OIDs, not TIDs:
+        val modelId = state.tid(modelProto).underlying.drop(1)
+        singleSel(editorId(prop, RestrictToModelProp)).value = modelId
+      }
+    }
+  }
+  
   /**
    * Represents a Tag
    * 
    * @param modelOpt The Model that this Tag should be constrained to.
    */
-  case class TTagType(modelOpt:Option[TInstance]) extends TType {
+  case object TTagType extends TType {
     
     type TSetter = String
     
@@ -172,9 +189,13 @@ trait FuncData { this:FuncMixin =>
     def display = "Tag Type"
     
     def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
+    
+    override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
+      setRestrictedToModel(prop)(state)
+    }
   }
   
-  case class TLinkType(modelOpt:Option[TInstance]) extends TType {
+  case object TLinkType extends TType {
     
     type TSetter = TThing[_]
     
@@ -182,7 +203,14 @@ trait FuncData { this:FuncMixin =>
     def display = "Thing Type"
     
     def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
+    
+    override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
+      setRestrictedToModel(prop)(state)
+    }
   }
+  
+  sealed trait PropExtras
+  case class RestrictedToModel(model:TInstance) extends PropExtras
   
   /**
    * Represents a Property.
@@ -191,7 +219,8 @@ trait FuncData { this:FuncMixin =>
     display:String,
     coll:TColl,
     tpe:TPE,
-    tid:TID = TID("")) extends TThing[TProp[TPE]]
+    tid:TID = TID(""),
+    extras:Seq[PropExtras] = Seq.empty) extends TThing[TProp[TPE]]
   {
     def withTID(id:String) = copy(tid = TID(id))
     
@@ -199,6 +228,13 @@ trait FuncData { this:FuncMixin =>
       // The asInstanceOf below is horrible, but I'm having trouble getting the compiler
       // to accept this as legit, and it is:
       tpe.setValue(thing, this.asInstanceOf[TProp[tpe.type]], v)
+    }
+    
+    /**
+     * After creation, when we're in the PropertyEditor, make any needed tweaks.
+     */
+    def fixupProp(state:State):Unit = {
+      tpe.fixupProp(this.asInstanceOf[TProp[tpe.type]])(state)
     }
   }
   
@@ -214,8 +250,8 @@ trait FuncData { this:FuncMixin =>
     extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
   
   object RestrictToModelProp
-    extends TProp("Restrict to Model", TOptional, TLinkType(None), querki.links.PublicMOIDs.LinkModelOID)
-  
+    extends TProp("Restrict to Model", TOptional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
+
   /**
    * Represents the *current* state of the test world, including where the client
    * currently is. Most interesting functions should take this and return it.
@@ -246,6 +282,14 @@ trait FuncData { this:FuncMixin =>
       val space = currentSpace.getOrElse(throw new Exception(s"Trying to update the Space in $this, but there isn't one!"))
       val updated = f(space)
       copy(currentSpace = Some(updated), spaces = spaces + (updated.tid -> updated))
+    }
+    
+    def thing(t:TInstance):TInstance = {
+      currentSpace.getOrElse(fail(s"Trying to find a Thing, but we're not in a Space!")).thing(t)
+    }
+    
+    def tid(t:TInstance):TID = {
+      thing(t).tid
     }
   }
   /**
