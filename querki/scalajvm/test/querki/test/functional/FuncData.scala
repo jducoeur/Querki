@@ -1,5 +1,7 @@
 package querki.test.functional
 
+import org.openqa.selenium.WebElement
+
 import querki.api.commonName
 import querki.data.TID
 
@@ -106,7 +108,9 @@ trait FuncData { this:FuncMixin =>
     // The OID of this Thing, as understood by the Client:
     tid:TID = TID(""),
     // The Things that have *actually* been created in this Space:
-    things:Seq[TThing[_]] = Seq.empty) extends TThing[TSpace]
+    things:Seq[TThing[_]] = Seq.empty,
+    // The Properties that have actually been created:
+    props:Seq[TProp[_]] = Seq.empty) extends TThing[TSpace]
   {
     def withTID(id:String) = copy(tid = TID(id))
   }
@@ -133,15 +137,27 @@ trait FuncData { this:FuncMixin =>
    * Enumeration of the PTypes that we can test.
    */
   sealed trait TType {
+    
+    type TSetter
+    
     def tid:TID
     def display:String
+    
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit
   }
   /**
    * Represents a single-line text field.
    */
   case object TTextType extends TType {
+    
+    type TSetter = String
+    
     def tid = querki.core.MOIDs.TextTypeOID
     def display = "Text Type"
+    
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
+      textField(editorId(thing, prop)).value = v
+    }
   }
   /**
    * Represents a Tag
@@ -149,20 +165,41 @@ trait FuncData { this:FuncMixin =>
    * @param modelOpt The Model that this Tag should be constrained to.
    */
   case class TTagType(modelOpt:Option[TInstance]) extends TType {
+    
+    type TSetter = String
+    
     def tid = querki.tags.MOIDs.NewTagSetOID
     def display = "Tag Type"
+    
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
+  }
+  
+  case class TLinkType(modelOpt:Option[TInstance]) extends TType {
+    
+    type TSetter = TThing[_]
+    
+    def tid = querki.core.MOIDs.LinkTypeOID
+    def display = "Thing Type"
+    
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
   }
   
   /**
    * Represents a Property.
    */
-  case class TProp(
+  case class TProp[TPE <: TType](
     display:String,
     coll:TColl,
-    tpe:TType,
-    tid:TID = TID("")) extends TThing[TProp]
+    tpe:TPE,
+    tid:TID = TID("")) extends TThing[TProp[TPE]]
   {
     def withTID(id:String) = copy(tid = TID(id))
+    
+    def setValue(thing:TThing[_], v:tpe.TSetter):Unit = {
+      // The asInstanceOf below is horrible, but I'm having trouble getting the compiler
+      // to accept this as legit, and it is:
+      tpe.setValue(thing, this.asInstanceOf[TProp[tpe.type]], v)
+    }
   }
   
   /**
@@ -175,6 +212,9 @@ trait FuncData { this:FuncMixin =>
    */
   object NameProp 
     extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
+  
+  object RestrictToModelProp
+    extends TProp("Restrict to Model", TOptional, TLinkType(None), querki.links.PublicMOIDs.LinkModelOID)
   
   /**
    * Represents the *current* state of the test world, including where the client

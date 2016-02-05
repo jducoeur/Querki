@@ -13,16 +13,7 @@ trait FuncEditing { this:FuncMixin =>
     click on "_modelSelected"    
   }
   
-  def editorId(thing:TThing[_], prop:TProp):String = s"v-${prop.oidStr}-${thing.oidStr}"
-  
-  // TODO: I'm *sure* that this should be done with a typeclass instead, but it's kicking my butt, so
-  // we're just going to do it the primitive way for now.
-  def setValue(thing:TThing[_], prop:TProp, v:String) = {
-    prop.tpe match {
-      case TTextType => textField(editorId(thing, prop)).value = v
-      case _ => fail(s"Don't yet know how to set values for properties of type ${prop.tpe}")
-    }
-  }
+  def editorId(thing:TThing[_], prop:TProp[_]):String = s"v-${prop.oidStr}-${thing.oidStr}"
   
   /**
    * Design a new Model.
@@ -48,7 +39,7 @@ trait FuncEditing { this:FuncMixin =>
     val instanceTID = pageTitle.drop(expectedTitle.length)
     val thingWithTID = thing.withTID(instanceTID).copy(isModel = true)
     val stateWithThing = state.updateSpace(space => space.copy(things = space.things :+ thingWithTID))
-    setValue(thingWithTID, NameProp, thing.display)
+    NameProp.setValue(thingWithTID, thing.display)
     val stateAfterOps = run(stateWithThing, ops:_*)
     click on "_doneDesigning"
     waitUntilCreated(thing)
@@ -66,7 +57,7 @@ trait FuncEditing { this:FuncMixin =>
    * 
    * This expects to be called as one of the ops inside designAModel().
    */
-  def createProperty(prop:TProp)(state:State):State = {
+  def createProperty[TPE <: TType](prop:TProp[TPE])(state:State):State = {
     spew(s"Creating Property ${prop.display}")
     
     val instanceSection = getInstanceSection()
@@ -107,10 +98,12 @@ trait FuncEditing { this:FuncMixin =>
     // Wait for the new PropValueEditor to be created:
     eventually { countEditors() should equal (nOrigEditors + 1) }
     // The new Property's TID can be found in it:
-    val newEditor = instanceSection.find(xpath("./li[last()]")).getOrElse(fail("Couldn't find PropValueEditor for newly-created Property!"))
-    val propTID = newEditor.getAttribute("data-propid")
+    val propEditor = instanceSection.find(xpath("./li[last()]")).getOrElse(fail("Couldn't find PropValueEditor for newly-created Property!"))
+    val propTID = propEditor.getAttribute("data-propid")
+    val propWithTID = prop.withTID(propTID)
     spew(s"Created Property ${prop.display} as $propTID")
-    state
+    val stateWithProp = state.updateSpace(space => space.copy(props = space.props :+ propWithTID))
+    stateWithProp
   }
   
   /**
@@ -128,7 +121,7 @@ trait FuncEditing { this:FuncMixin =>
     val instanceTID = editor.attribute("data-thingid").getOrElse(fail("Couldn't find TID for newly-created Thing!"))
     val thingWithTID = thing.withTID(instanceTID)
     // Fill in the name property:
-    setValue(thingWithTID, NameProp, thing.display)
+    NameProp.setValue(thingWithTID, thing.display)
     
     // Click "Done", and update the State with the newly-created Thing:
     click on "_editDoneButton"
