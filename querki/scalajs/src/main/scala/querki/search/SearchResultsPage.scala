@@ -8,7 +8,7 @@ import autowire._
 import querki.globals._
 
 import SearchFunctions._
-import querki.display.Gadget
+import querki.display.HookedGadget
 import querki.pages.{Page, PageContents, ParamMap}
 import scala.scalajs.js.Any.fromFunction1
 
@@ -16,16 +16,16 @@ import scala.scalajs.js.Any.fromFunction1
  * The Gadget in the MenuBar, which initiates a Search. This mostly just leads to the
  * SearchResultsPage.
  */
-class SearchGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLInputElement] with EcologyMember {
+class SearchGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLInputElement](e) with EcologyMember {
   
   lazy val PageManager = interface[querki.display.PageManager]
   
   def doRender() = 
-    inp(cls:="search-query form-control", 
+    inp(cls:="search-query form-control _searchInput", 
       tpe:="text",
       placeholder:="Search")
   
-  override def onCreate(elem:dom.HTMLInputElement) = {
+  def hook() = {
     // For now, we're just going to deal with it when the user hits return.
     // TODO: in the long run, can we do prompting, a la Google?
     $(elem).keydown { (evt:JQueryEventObject) =>

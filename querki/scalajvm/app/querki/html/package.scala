@@ -6,7 +6,7 @@ import play.api.data.Form
 
 import scalatags.Text.TypedTag
 
-import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, ThingId, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, PType, Thing, ThingId, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -40,6 +40,8 @@ package object html {
   
   trait HtmlUI extends EcologyInterface {
     def PageHeaderProperty:Property[QLText,String]
+    
+    def RawHtmlType:PType[Wikitext]
     
     def HtmlValue(html:QHtml):QValue
     def HtmlValue(str:String):QValue
