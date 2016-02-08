@@ -167,6 +167,7 @@ trait FuncEditing { this:FuncMixin =>
     // Click "Done", and update the State with the newly-created Thing:
     click on "_editDoneButton"
     waitUntilCreated(thingWithTID)
+    waitForRendered()
     stateWithThing -> ThingPage(thingWithTID)
   }
 }

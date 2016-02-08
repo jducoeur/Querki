@@ -12,6 +12,26 @@ trait Search { this:FuncMixin =>
   
   object Sandbox1 extends TInstance("Sandbox 1")
   object Sandbox2 extends TInstance("Sandbox 2")
+  object SearchFrom extends TInstance("Search From")
+  
+  def searchFor(input:Query, term:String, nExpected:Int)(state:State):State = {
+    // We need to be a little explicit about how we do our entry, so we can hit Enter:
+    click on input
+    enter(term)
+    pressKeys("\uE007")
+    val searchPage = Search(term) 
+    waitFor(searchPage)    
+    
+    // Check that the header is correct:
+    if (nExpected > 0)
+      find(className("_searchResultHeader")).get.text should 
+        include (searchPage.msg("resultsHeader", ("numFound" -> nExpected.toString), ("query" -> term)))
+    else
+      find(className("_searchResultHeader")).get.text should
+        include (searchPage.msg("noResultsHeader", ("query" -> term)))
+    
+    state -> searchPage
+  }
 
   /**
    * This operation creates the Common Space itself.
@@ -24,22 +44,18 @@ trait Search { this:FuncMixin =>
       createAnyThing(Sandbox2),
       
       // Okay, now try searching from the main search box:
-      { state =>
-        val term = "sand"
-        
-        // We need to be a little explicit about how we do our entry, so we can hit Enter:
-        click on className("_searchInput")
-        enter(term)
-        pressKeys("\uE007")
-        val searchPage = Search(term) 
-        waitFor(searchPage)
-        
-        // Check that the header is correct:
-        find(className("_searchResultHeader")).get.text should 
-          include (searchPage.msg("resultsHeader", ("numFound" -> "2"), ("query" -> term)))
-        
-        state
-      }
+      searchFor(className("_searchInput"), "sand", 2),
+      
+      // Check that an unsuccessful search works as expected:
+      searchFor(className("_searchInput"), "fmarb", 0),
+      
+      // Now, add a page with its own search box:
+      createAnyThing(SearchFrom,
+        DefaultViewProp.setValue("Here is a search box: [[_searchInput]]")
+      ),
+      
+      // Now search via this element in the page:
+      searchFor(className("_userSearchInput"), "sand", 2)
     )
   }
 }

@@ -63,7 +63,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
           input(
             // TODO: in principle, this should be a form-control to make it look right. In practice,
             // making that work inline is a pain in the tuchus. Not sure what the right answer here is.
-            cls:="_searchInput search-query", 
+            cls:="_searchInput search-query _userSearchInput", 
             tpe:="text",
             placeholder:=place.strip.toString))
     }

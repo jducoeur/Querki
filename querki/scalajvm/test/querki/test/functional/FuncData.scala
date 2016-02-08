@@ -226,6 +226,18 @@ trait FuncData { this:FuncMixin =>
     }
   }
   
+  case object TLargeTextType extends TType {
+    
+    type TSetter = String
+    
+    def tid = querki.core.MOIDs.LargeTextTypeOID
+    def display = "Large Text Type"
+    
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
+      textArea(editorId(thing, prop)).value = v
+    }    
+  }
+  
   def setRestrictedToModel(prop:TProp[_])(state:State):Unit = {
     prop.extras.collect {
       case RestrictedToModel(modelProto) => {
@@ -320,6 +332,9 @@ trait FuncData { this:FuncMixin =>
    */
   object NameProp 
     extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
+  
+  object DefaultViewProp
+    extends TProp(commonName(_.basic.defaultView), TExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID) 
   
   object RestrictToModelProp
     extends TProp("Restrict to Model", TOptional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
