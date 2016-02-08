@@ -91,6 +91,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     new QLButtonGadget(
     	iconButton("edit", Seq("_qlInvoke"))(
                   title:=s"Edit $thingName",
+                  id:="_thingEdit",
                   data("thingid"):=thing,
                   data("target"):="_topEdit",
                   data("ql"):=EditQL(),
@@ -107,6 +108,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             if (thing.isEditable) {
               iconButton("edit")(
                 title:=s"Design $thingName",
+                id:="_thingEdit",
                 href:=Editing.modelDesignerFactory.pageUrl(thing))
             },
             if (thing.isInstantiatable) {

@@ -16,13 +16,48 @@ trait FuncEditing { this:FuncMixin =>
   
   def editorId(thing:TThing[_], prop:TProp[_]):String = s"v-${prop.oidStr}-${thing.oidStr}"
   
+  def runSetters(t:TThing[_], initialState:State, ops:(TThing[_], State) => State*):State = {
+    (initialState /: ops) { (state, op) =>
+      op(t, state)
+    }
+  }
+  
+  /**
+   * Edit an existing Model. Assumes that we are currently looking at that Model's Thing Page.
+   * 
+   * This is similar to designAModel(), but exists solely for the provided ops.
+   */
+  def editModel(setters:(TThing[_], State) => State*)(state:State):State = {
+    state.currentPage match {
+      case ThingPage(thing) if (thing.isInstanceOf[TInstance]) => {
+        // I *should* be able to do this as part of the above case, but I'm having trouble finding
+        // the right syntax:
+        val model = thing.asInstanceOf[TInstance]
+        spew(s"Editing Model $model")
+        if (!model.isModel)
+          fail(s"Called editModel on non-Model $model")
+          
+        // Open the Model Editor:
+        click on "_thingEdit"
+        val page = ModelDesigner(model)
+        waitForTitle(page)
+        val stateAfterOps = runSetters(model, state -> page, setters:_*)
+        // Take the setters into account before waitForThing():
+        val newModel = stateAfterOps.thing(model)
+        click on "_doneDesigning"
+        waitForThing(newModel)(stateAfterOps)
+      }
+      case _ => fail(s"editModel should be called from the Model's page, was called instead on ${state.currentPage}")
+    }
+  }
+  
   /**
    * Design a new Model.
    * 
    * @param ops Any number of operations to perform inside the Advanced Editor. Setting the Name is
    *   automatic, but everything else needs to be specified. 
    */
-  def designAModel(thing:TInstance, ops:State => State*)(state:State):State = {
+  def designAModel(thing:TInstance, setters:(TThing[_], State) => State*)(state:State):State = {
     spew(s"Designing Model ${thing.display}")
     // Choose "Design a Model" from the menu, and select the correct Model from the popup dialog:
     clickMenuItem(DesignModelItem)
@@ -39,9 +74,9 @@ trait FuncEditing { this:FuncMixin =>
     // may not survive in the long run.
     val instanceTID = pageTitle.drop(expectedTitle.length)
     val thingWithTID = thing.withTID(instanceTID).copy(isModel = true)
-    val stateWithThing = state.updateSpace(space => space.copy(things = space.things :+ thingWithTID))
+    val stateWithThing = state.updateSpace(space => space.copy(things = space.things + (thingWithTID.tid -> thingWithTID)))
     NameProp.setValue(thing.display)(thingWithTID, stateWithThing)
-    val stateAfterOps = run(stateWithThing, ops:_*)
+    val stateAfterOps = runSetters(thingWithTID, stateWithThing, setters:_*)
     click on "_doneDesigning"
     waitUntilCreated(thing)
     stateAfterOps -> ThingPage(thingWithTID)
@@ -58,7 +93,7 @@ trait FuncEditing { this:FuncMixin =>
    * 
    * This expects to be called as one of the ops inside designAModel().
    */
-  def createProperty[TPE <: TType](prop:TProp[TPE])(state:State):State = {
+  def createProperty[TPE <: TType](prop:TProp[TPE])(thing:TThing[_], state:State):State = {
     spew(s"Creating Property ${prop.display}")
     
     val instanceSection = getInstanceSection()
@@ -103,7 +138,7 @@ trait FuncEditing { this:FuncMixin =>
     val propTID = propEditor.getAttribute("data-propid")
     val propWithTID = prop.withTID(propTID)
     spew(s"Created Property ${prop.display} as $propTID")
-    val stateWithProp = state.updateSpace(space => space.copy(props = space.props :+ propWithTID))
+    val stateWithProp = state.updateSpace(space => space.copy(props = space.props + (propWithTID.tid -> propWithTID)))
     propWithTID.fixupProp(stateWithProp)
     stateWithProp
   }
@@ -111,7 +146,7 @@ trait FuncEditing { this:FuncMixin =>
   /**
    * Creates an Instance, using the Create any Thing menu pick.
    */
-  def createAnyThing(thing:TInstance, setters:(TThing[_], State) => Unit*)(state:State):State = {
+  def createAnyThing(thing:TInstance, setters:(TThing[_], State) => State*)(state:State):State = {
     spew(s"Creating Instance ${thing.display}")
     // Choose "Create any Thing" from the menu, and select the correct Model from the popup dialog:
     clickMenuItem(CreateThingItem)
@@ -122,7 +157,7 @@ trait FuncEditing { this:FuncMixin =>
     val editor = find(className("_instanceEditor")).getOrElse(fail("Couldn't find instance editor for newly-created Thing!"))
     val instanceTID = editor.attribute("data-thingid").getOrElse(fail("Couldn't find TID for newly-created Thing!"))
     val thingWithTID = thing.withTID(instanceTID)
-    val stateWithThing = state.updateSpace(space => space.copy(things = space.things :+ thingWithTID))
+    val stateWithThing = state.updateSpace(space => space.copy(things = space.things + (thingWithTID.tid -> thingWithTID)))
     // Fill in the name property:
     NameProp.setValue(thing.display)(thingWithTID, stateWithThing)
     

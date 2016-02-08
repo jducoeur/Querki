@@ -194,7 +194,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "mo
           a(cls:="btn btn-primary",
             id:="_doneDesigning",
             "Done",
-            href:=thingUrl(model))
+            href:=thingUrl(model.oid))
         )
     }
       yield PageContents(pageTitle, guts)

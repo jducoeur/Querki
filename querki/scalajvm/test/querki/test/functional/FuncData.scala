@@ -113,7 +113,7 @@ trait FuncData { this:FuncMixin =>
      */
     def oidStr = tid.underlying.drop(1)
     
-    def is(other:T) = tid == other.tid
+    def is(other:TThing[_]) = tid == other.tid
     
     /**
      * This is a craptastic definition of equality, but so far I don't have a better one without
@@ -132,18 +132,34 @@ trait FuncData { this:FuncMixin =>
     // The OID of this Thing, as understood by the Client:
     tid:TID = TID(""),
     // The Things that have *actually* been created in this Space:
-    things:Seq[TInstance] = Seq.empty,
+    things:Map[TID, TInstance] = Map.empty,
     // The Properties that have actually been created:
-    props:Seq[TProp[_]] = Seq.empty) extends TThing[TSpace]
+    props:Map[TID, TProp[_]] = Map.empty) extends TThing[TSpace]
   {
     def withTID(id:String) = copy(tid = TID(id))
     
+    def lookupIn[T <: TThing[T]](t:T, coll:Map[TID, T]):T = {
+      if (t.tid.underlying.length == 0)
+        // No OID -- we're trying to match against a prototype, so we have to just match by name:
+        coll.values.find(_ matches t).getOrElse(fail(s"Couldn't find $t among the created ones by name!"))
+      else
+        // There's an OID provided, so this is easier:
+        coll.get(t.tid).getOrElse(fail(s"Couldn't find $t among the created ones by oid!"))
+    }
+    
     def thing(t:TInstance):TInstance = {
-      things.find(_ matches t).getOrElse(fail(s"Couldn't find $t among the existing Things!"))
+      lookupIn(t, things)
     }
     
     def prop[TPE <: TType](p:TProp[TPE]):TProp[TPE] = {
-      props.find(_ matches p).getOrElse(fail(s"Couldn't find $p among the existing Props!")).asInstanceOf[TProp[TPE]]
+      // TODO: Why do I need to duplicate this code? This is evil and wrong. How do we call lookupIn()
+      // successfully here?
+      if (p.tid.underlying.length == 0)
+        // No OID -- we're trying to match against a prototype, so we have to just match by name:
+        props.values.find(_ matches p).getOrElse(fail(s"Couldn't find $p among the created ones by name!")).asInstanceOf[TProp[TPE]]
+      else
+        // There's an OID provided, so this is easier:
+        props.get(p.tid).getOrElse(fail(s"Couldn't find $p among the created ones by oid!")).asInstanceOf[TProp[TPE]]
     }
   }
   
@@ -263,10 +279,11 @@ trait FuncData { this:FuncMixin =>
         state.prop(this)
     }
     
-    def setValue(v:tpe.TSetter)(thing:TThing[_], state:State):Unit = {
+    def setValue(v:tpe.TSetter)(thing:TThing[_], state:State):State = {
       // The asInstanceOf below is horrible, but I'm having trouble getting the compiler
       // to accept this as legit, and it is:
       tpe.setValue(thing, realProp(state).asInstanceOf[TProp[tpe.type]], v)
+      state
     }
     
     /**

@@ -15,6 +15,7 @@ trait FuncMenu { this:FuncMixin =>
    * Chooses the specified item, by first opening the menu and then clicking on it.
    */
   def clickMenuItem(item:MenuItem) = {
+    waitFor(item.menu.id)
     click on item.menu.id
     waitFor(item.id)
     click on item.id

@@ -15,7 +15,7 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{Gadget, WrapperDiv}
-import querki.display.rx.RxDiv
+import querki.display.rx.{GadgetRef, RxDiv}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
   def titleOr(f: => String):String =
@@ -111,6 +111,8 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
   lazy val flashContents = Var[Seq[Gadget[_]]](Seq.empty)
   lazy val flashDiv = new RxDiv(flashContents)
   
+  lazy val renderSignal = GadgetRef.of[dom.HTMLSpanElement]
+  
   def doRender() = {
     val renderedContent = new WrapperDiv
     
@@ -130,7 +132,9 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
           },
           
           // TODO: replace this with something prettier:
-          renderedContent(p("Loading..."))
+          renderedContent(p("Loading...")),
+          
+          renderSignal <= span()
         )
       )
     )
@@ -143,6 +147,8 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
       reindex()
       renderedContentPromise.success(fullyRendered)
       PageManager.onPageRendered(this)
+      // This is really just a signal to the test harness that we're done rendering:
+      renderSignal <= span(id:="_pageRendered")
     }
     
     outerPage

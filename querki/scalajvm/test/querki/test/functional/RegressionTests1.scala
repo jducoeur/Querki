@@ -50,7 +50,32 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
             state -> page
           }
         )
+      },
+        
+      // .3y28ahw: when you edit the Name in the Advanced Editor, the "Done" button takes you to a Tag
+      // of the old Name instead of to the new Thing:
+      TestDef(Some(Admin1), RootPage(CommonSpace), ".3y28ahw") { state =>
+        object TheModel extends TInstance("Model for .3y28ahw")
+        
+        val newName = "Adjusted Model for .3y28ahw"
+        
+        run(state,
+          // Create the Model -- Name gets set automatically:
+          designAModel(TheModel),
+          
+          // Now edit it and change the name. It should fail when trying to leave the
+          // editor, because it won't find the correct name or OID:
+          editModel(
+            NameProp.setValue(newName),
+            // TODO: this is a horrible hack. The above setValue() should do this automatically:
+            { (tt, state) =>
+              val thing = tt.asInstanceOf[TInstance].copy(display = newName)
+              state.updateSpace(space => space.copy(things = space.things + (thing.tid -> thing)))
+            }
+          )
+        )
       }
+      
     )
   }
 }

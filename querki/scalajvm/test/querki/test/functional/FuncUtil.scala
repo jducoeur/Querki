@@ -81,7 +81,16 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
    * Waits until the element with the specified id actually exists
    */
   def waitFor(q:Query):Unit = {
-    eventually { find(q) should not be empty }
+    try {
+      eventually { find(q) should not be empty }
+    } catch {
+      // This is a common failure mode, and ScalaTest's report is unhelpful:
+      case ex:Exception => { 
+        spew(s"Query $q was never satisfied on page $pageTitle"); 
+        ex.printStackTrace();
+        throw ex 
+      }
+    }
   }
   def waitFor(idStr:String):Unit = waitFor(id(idStr))
   
@@ -92,11 +101,24 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
    * In general, favor the version of this that takes a Page when possible.
    */
   def waitForTitle(str:String):Unit = {
-    eventually { pageTitle should be (str) }
+    try {
+      eventually { pageTitle should be (str) }
+    } catch {
+      // This is a common failure mode, and ScalaTest's report is unhelpful:
+      case ex:Exception => { 
+        spew(s"Failed in waitForTitle -- looking for $str, but it is at $pageTitle"); 
+        ex.printStackTrace();
+        throw ex 
+      }      
+    }
   }
   
   def waitForTitle(page:QPage):Unit = {
     waitForTitle(page.msg("pageTitle", page.titleParams:_*))
+  }
+  
+  def waitForRendered():Unit = {
+    waitFor("_pageRendered")
   }
   
   /**
@@ -125,6 +147,16 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
     state -> LoginPage
   }
   
+  def waitForThing[T <: TThing[T]](t:T)(state:State):State = {
+    waitForTitle(t.display)
+    // TBD: why do we need this eventually? Without it, we seem to have a race condition under xvfb, where we are
+    // often getting the title, but _thingOID isn't yet displayed. That's disturbingly weird -- AFAIK, they're
+    // synchronous with each other? If we hit more instances of this, we may need to add something magical to the
+    // end of the rendering process, that sets a signal we can consistently wait on.
+    eventually { find("_thingOID") should not be empty }
+    state -> ThingPage(t)
+  }
+  
   /**
    * After we're done creating a Thing, this waits until the ThingPage appears, fetches its TID, and
    * returns the adjusted Thing.
@@ -139,6 +171,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
     // end of the rendering process, that sets a signal we can consistently wait on.
     eventually { find("_thingOID") should not be empty }
     val tid = find("_thingOID").map(_.text).getOrElse(fail(s"Couldn't find the OID on-page for ${t.display}"))
+    waitForRendered()
     spew(s"Created ${t.display} as $tid")
     t.withTID(tid)
   }
@@ -202,7 +235,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
           
           state.currentSpace match {
             // Are we already in the desired Space?
-            case Some(curSpace) if (curSpace is space) => {
+            case Some(curSpace) if (curSpace matches space) => {
               // Yes, so just click on the spaceLink:
               click on "_spaceLink"
               waitForTitle(test.desiredPage)
@@ -226,12 +259,14 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
    */
   def runTests(tests:TestDef*)(initialState:State):State = {
     (initialState /: tests) { (state, test) =>
+      spew(s"Running test ${test.desc}")
       val stateWithUser:State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
-      spew(s"Running test ${test.desc}")
       val topResult = test.runTest(stateWithPage)
       // If this test has subTests, recurse into them:
-      runTests(test.subTests:_*)(topResult)
+      val finalResult = runTests(test.subTests:_*)(topResult)
+      spew(s"Completed test ${test.desc}")
+      finalResult
     }
   }
   
