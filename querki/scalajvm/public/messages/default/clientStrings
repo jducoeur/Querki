@@ -25,6 +25,12 @@ pages : {
     addPropertyCancel : "Cancel"
   }
   
+  search : {
+    pageTitle : "Search results for $query"
+    resultsHeader : "Found $numFound matches for '$query'"
+    noResultsHeader : "Nothing found for '$query'"
+  }
+  
   thing : {
     pageTitle : "$thingName"
   }

@@ -53,6 +53,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
   def msg(name:String, params:(String, String)*) = messages.msg(name, params:_*)
   // The standard location for a page's title is pages.name.pageTitle:
   lazy val pageTitle = msg("pageTitle")
+  def pageTitleWith(params:(String, String)*) = msg("pageTitle", params:_*)
 
   /**
    * This is the "ready" trigger -- we don't start rendering until the core libraries are in place.

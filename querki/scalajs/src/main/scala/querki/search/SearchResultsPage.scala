@@ -38,7 +38,7 @@ class SearchGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLInputElement
   }
 }
 
-class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "search") with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
   
@@ -85,7 +85,11 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           resultsOpt match {
             case Some(results) if (results.results.size > 0) => {
               MSeq(
-                h4(cls:="_searchResultHeader", s"""Found ${results.results.size} matches for "$query""""),
+                h4(
+                  cls:="_searchResultHeader", 
+                  msg("resultsHeader", 
+                      ("numFound" -> results.results.size.toString),
+                      ("query" -> query))),
                 dl(
                   for { 
                     result <- results.results.sortBy(_.score).reverse 
@@ -94,10 +98,10 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 )
               )
             }
-            case _ => h4(cls:="_searchResultHeader", s"""Nothing found for "$query"""")
+            case _ => h4(cls:="_searchResultHeader", msg("noResultsHeader", ("query" -> query)))
           }
         )
     }
-      yield PageContents(s"Search results for $query", guts)
+      yield PageContents(pageTitleWith("query" -> query), guts)
   }
 }

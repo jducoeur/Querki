@@ -77,19 +77,24 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
     def msg(name:String, params:(String, String)*) = msgs(page).msg(name, params:_*)
   }
   
+  def trying[T](msg: => String)(f: => T):T = {
+    try {
+      f
+    } catch {
+      case ex:Exception => {
+        spew(msg)
+        ex.printStackTrace()
+        throw ex
+      }
+    }
+  }
+  
   /**
    * Waits until the element with the specified id actually exists
    */
   def waitFor(q:Query):Unit = {
-    try {
+    trying(s"Query $q was never satisfied on page $pageTitle") {
       eventually { find(q) should not be empty }
-    } catch {
-      // This is a common failure mode, and ScalaTest's report is unhelpful:
-      case ex:Exception => { 
-        spew(s"Query $q was never satisfied on page $pageTitle"); 
-        ex.printStackTrace();
-        throw ex 
-      }
     }
   }
   def waitFor(idStr:String):Unit = waitFor(id(idStr))
@@ -101,15 +106,8 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
    * In general, favor the version of this that takes a Page when possible.
    */
   def waitForTitle(str:String):Unit = {
-    try {
+    trying(s"Failed in waitForTitle -- looking for $str, but it is at $pageTitle") {
       eventually { pageTitle should be (str) }
-    } catch {
-      // This is a common failure mode, and ScalaTest's report is unhelpful:
-      case ex:Exception => { 
-        spew(s"Failed in waitForTitle -- looking for $str, but it is at $pageTitle"); 
-        ex.printStackTrace();
-        throw ex 
-      }      
     }
   }
   
@@ -119,6 +117,11 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   
   def waitForRendered():Unit = {
     waitFor("_pageRendered")
+  }
+  
+  def waitFor(page:QPage):Unit = {
+    waitForTitle(page)
+    waitForRendered()
   }
   
   /**
@@ -193,61 +196,66 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   }
   
   def adjustUser(state:State, test:TestDef):State = {
-    if (test.desiredUser != state.currentUserOpt) {
-      test.desiredUser match {
-        case Some(targetUser) => {
-          // We want to be logged-in as targetUser. Logout if we're logged in:
-          val s = state.currentUserOpt match {
-            case Some(currentUser) => logout(state)
-            case None => state
+    trying(s"Failed when trying to switch user from ${state.currentUserOpt} to ${test.desiredUser}") {
+      if (test.desiredUser != state.currentUserOpt) {
+        test.desiredUser match {
+          case Some(targetUser) => {
+            // We want to be logged-in as targetUser. Logout if we're logged in:
+            val s = state.currentUserOpt match {
+              case Some(currentUser) => logout(state)
+              case None => state
+            }
+            loginAs(targetUser)(s)
           }
-          loginAs(targetUser)(s)
+          // We don't want to be logged-in, so log out:
+          case None => logout(state)
         }
-        // We don't want to be logged-in, so log out:
-        case None => logout(state)
-      }
-    } else
-      state    
+      } else
+        state
+    }
   }
   
   def adjustPage(state:State, test:TestDef):State = {
-    if (test.desiredPage is state.currentPage) {
-      state
-    } else {
-      test.desiredPage match {
-        
-        case IndexPage => {
-          click on "_index_button"
-          waitForTitle(IndexPage)
-          state -> IndexPage
-        }
-        
-        case LoginPage => fail("We appear to be looking for the LoginPage; should have gotten there by changing users?")
-        
-        case RootPage(space) => {
-          // We want to be at the root of this specific Space
-          def rootThroughIndex() = {
+    trying (s"Failed while trying to switch page from ${state.currentPage} to ${test.desiredPage}") {
+      if (test.desiredPage is state.currentPage) {
+        state
+      } else {
+        test.desiredPage match {
+          
+          case IndexPage => {
             click on "_index_button"
             waitForTitle(IndexPage)
-            click on linkText(space.display)
-            waitForTitle(test.desiredPage)
+            state -> IndexPage
           }
           
-          state.currentSpace match {
-            // Are we already in the desired Space?
-            case Some(curSpace) if (curSpace matches space) => {
-              // Yes, so just click on the spaceLink:
-              click on "_spaceLink"
+          case LoginPage => fail("We appear to be looking for the LoginPage; should have gotten there by changing users?")
+          
+          case RootPage(space) => {
+            // We want to be at the root of this specific Space
+            def rootThroughIndex() = {
+              waitFor("_index_button")
+              click on "_index_button"
+              waitForTitle(IndexPage)
+              click on linkText(space.display)
               waitForTitle(test.desiredPage)
             }
-            // Otherwise, go to the Index:
-            case _ => rootThroughIndex()
+            
+            state.currentSpace match {
+              // Are we already in the desired Space?
+              case Some(curSpace) if (curSpace matches space) => {
+                // Yes, so just click on the spaceLink:
+                click on "_spaceLink"
+                waitForTitle(test.desiredPage)
+              }
+              // Otherwise, go to the Index:
+              case _ => rootThroughIndex()
+            }
+            
+            state -> test.desiredPage
           }
           
-          state -> test.desiredPage
+          case _ => fail(s"adjustPage tried to go to ${test.desiredPage}, and we're not ready for that yet.")
         }
-        
-        case _ => fail(s"adjustPage tried to go to ${test.desiredPage}, and we're not ready for that yet.")
       }
     }
   }

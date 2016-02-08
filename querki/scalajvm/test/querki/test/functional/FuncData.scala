@@ -62,7 +62,7 @@ trait FuncData { this:FuncMixin =>
     override def titleParams = Seq(("thingName" -> space.display))
     
     override def is(other:QPage) = other match {
-      case RootPage(otherSpace) => otherSpace is space
+      case RootPage(otherSpace) => otherSpace matches space
       case _ => false
     }
   }
@@ -73,6 +73,11 @@ trait FuncData { this:FuncMixin =>
     val name = "thing"
     
     override def titleParams = Seq(("thingName" -> thing.display))
+    
+    override def is(other:QPage) = other match {
+      case ThingPage(otherThing) => otherThing matches thing
+      case _ => false
+    }
   }
   /**
    * The page for some Tag.
@@ -81,6 +86,11 @@ trait FuncData { this:FuncMixin =>
     val name = "thing"
     
     override def titleParams = Seq(("thingName" -> tag))
+    
+    override def is(other:QPage) = other match {
+      case TagPage(otherTag) => otherTag matches tag
+      case _ => false
+    }
   }
   /**
    * The page for creating Instances.
@@ -94,6 +104,12 @@ trait FuncData { this:FuncMixin =>
     val name = "modelDesigner"
     
     override def titleParams = Seq(("modelName" -> model.display))
+  }
+  
+  case class Search(query:String) extends QPage {
+    val name = "search"
+    
+    override def titleParams = Seq(("query" -> query))
   }
   
   /**
