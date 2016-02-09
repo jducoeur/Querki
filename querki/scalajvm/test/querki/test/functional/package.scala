@@ -1,7 +1,6 @@
 package querki.test
 
 import models.OID
-import querki.data.TID
 
 /**
  * Querki's Functional Tests.
@@ -107,5 +106,13 @@ import querki.data.TID
  * @author jducoeur
  */
 package object functional {
-  implicit def oid2tid(oid:OID):TID = TID(oid.toThingId)
+  
+  /**
+   * Note that this is *not* the same as the Client's TID, mainly to avoid having to type
+   * .underlying pointlessly everywhere. Yes, we're sacrificing a bit of type-safety, but
+   * it shouldn't make much difference in practice.
+   */
+  type TID = String
+  
+  implicit def oid2tid(oid:OID):TID = oid.toThingId
 }

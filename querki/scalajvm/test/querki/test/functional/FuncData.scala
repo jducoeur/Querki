@@ -3,7 +3,10 @@ package querki.test.functional
 import org.openqa.selenium.WebElement
 
 import querki.api.commonName
-import querki.data.TID
+
+object TID {
+  def apply(s:String):TID = s
+}
 
 trait FuncData { this:FuncMixin =>
   /**
@@ -127,7 +130,7 @@ trait FuncData { this:FuncMixin =>
     /**
      * Ugly but occasionally useful, to get at the stringified OID of this Thing.
      */
-    def oidStr = tid.underlying.drop(1)
+    def oidStr = tid.drop(1)
     
     def is(other:TThing[_]) = tid == other.tid
     
@@ -155,7 +158,7 @@ trait FuncData { this:FuncMixin =>
     def withTID(id:String) = copy(tid = TID(id))
     
     def lookupIn[T <: TThing[T]](t:T, coll:Map[TID, T]):T = {
-      if (t.tid.underlying.length == 0)
+      if (t.tid.length == 0)
         // No OID -- we're trying to match against a prototype, so we have to just match by name:
         coll.values.find(_ matches t).getOrElse(fail(s"Couldn't find $t among the created ones by name!"))
       else
@@ -170,7 +173,7 @@ trait FuncData { this:FuncMixin =>
     def prop[TPE <: TType](p:TProp[TPE]):TProp[TPE] = {
       // TODO: Why do I need to duplicate this code? This is evil and wrong. How do we call lookupIn()
       // successfully here?
-      if (p.tid.underlying.length == 0)
+      if (p.tid.length == 0)
         // No OID -- we're trying to match against a prototype, so we have to just match by name:
         props.values.find(_ matches p).getOrElse(fail(s"Couldn't find $p among the created ones by name!")).asInstanceOf[TProp[TPE]]
       else
@@ -301,7 +304,7 @@ trait FuncData { this:FuncMixin =>
     def withTID(id:String) = copy(tid = TID(id))
     
     def realProp(state:State) = {
-      if (tid.underlying.length > 0)
+      if (tid.length > 0)
         this
       else
         state.prop(this)
@@ -334,7 +337,10 @@ trait FuncData { this:FuncMixin =>
     extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
   
   object DefaultViewProp
-    extends TProp(commonName(_.basic.defaultView), TExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID) 
+    extends TProp(commonName(_.basic.defaultView), TExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID)
+  
+  object PageHeaderProp
+    extends TProp("Page Header", TOptional, TLargeTextType, querki.html.UIMOIDs.PageHeaderPropOID)
   
   object RestrictToModelProp
     extends TProp("Restrict to Model", TOptional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
@@ -381,7 +387,7 @@ trait FuncData { this:FuncMixin =>
     
     def tid(t:TInstance):TID = {
       val original = t.tid
-      if (original.underlying.length > 0)
+      if (original.length > 0)
         original
       else
         thing(t).tid

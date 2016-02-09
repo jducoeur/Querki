@@ -82,11 +82,11 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
       div(cls:="row",
         div(cls:="col-md-4",
           p(
-            propSelector <= RxSelect(propOptions, cls:="form-control")
+            propSelector <= RxSelect(propOptions, cls:="form-control", id:="_existingPropSelector")
           ),
           p(
             addButton <= 
-              new ButtonGadget(ButtonGadget.Info, disabled := Rx{ selectedProperty().isEmpty }, "Add")({ () =>
+              new ButtonGadget(ButtonGadget.Info, disabled := Rx{ selectedProperty().isEmpty }, id:="_addExistingProperty", "Add")({ () =>
                 page.addProperty(selectedProperty().get)
                 reset()
               })

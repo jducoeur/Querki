@@ -133,6 +133,6 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         addButton
       ),
       hr,
-      p(new ButtonGadget(Info, "Add an Existing Property")({ () => apg.mainDiv.get.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
+      p(new ButtonGadget(Info, id:="_addExistingInstead", "Add an Existing Property")({ () => apg.mainDiv.get.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
     )
 }

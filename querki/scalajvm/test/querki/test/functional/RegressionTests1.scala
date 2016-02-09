@@ -51,6 +51,47 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
           }
         )
       },
+      
+      // .3y28asq: using ____ in the Page Header for the Model of an unrefied Tag doesn't work right:
+      TestDef(Some(Admin1), RootPage(CommonSpace), ".3y28asq") { state =>
+        val tagText = "Tag for 3y28asq"
+        
+        object TagModel extends TInstance("Model for Tag 3y28asq")
+        object SimpleTag extends TProp[TTagType.type]("Tag 3y28asq", TSet, TTagType,
+            extras = Seq(RestrictedToModel(TagModel)))
+        
+        object ModelWithTag extends TInstance("Model with Tag 3y28asq")
+        
+        object InstanceWithSimpleTag extends TInstance("Instance 3y28asq",
+          model = ModelWithTag
+        )
+        
+        run(state,
+          designAModel(TagModel,
+            addExistingProperty(PageHeaderProp),
+            PageHeaderProp.setValue("### {{testHeader:____}}")),
+            
+          // Create a Model with a Tag Property:
+          designAModel(ModelWithTag,
+            createProperty(SimpleTag)),
+            
+          // Create an Instance and set the Tag:
+          createAnyThing(InstanceWithSimpleTag,
+            SimpleTag.setValue(tagText)),
+            
+          // We should now be looking at the Thing. Click on the link:
+          { state =>
+            waitFor(linkText(tagText))
+            click on linkText(tagText)
+            val page = TagPage(tagText)
+            waitForTitle(page)
+            waitForRendered()
+            // This is the bit that fails in this bug: the text inside testHeader is wrong:
+            find(className("testHeader")).get.text should include (tagText)
+            state -> page
+          }
+        )
+      },
         
       // .3y28ahw: when you edit the Name in the Advanced Editor, the "Done" button takes you to a Tag
       // of the old Name instead of to the new Thing:

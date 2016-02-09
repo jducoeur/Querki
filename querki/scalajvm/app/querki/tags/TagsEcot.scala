@@ -227,6 +227,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     def name = tag.name
     def pseudoModel = preferredModelForTag(space, name)
     
+    override def thisAsQValue:QValue = Core.ExactlyOne(NewTagSetType(tag.name))
+    
     override def nameOrComputedWiki(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = Future.successful(Wikitext(name))
     override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(DisplayText(name))
     override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(name)

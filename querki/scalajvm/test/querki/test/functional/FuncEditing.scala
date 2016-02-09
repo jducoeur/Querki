@@ -10,7 +10,7 @@ trait FuncEditing { this:FuncMixin =>
   def chooseModel(thing:TInstance)(state:State) = {
     waitFor("_modelSelected")
     val modelTid = state.tid(thing.model)
-    singleSel("_modelSelector").value = modelTid.underlying
+    singleSel("_modelSelector").value = modelTid
     click on "_modelSelected"    
   }
   
@@ -89,6 +89,49 @@ trait FuncEditing { this:FuncMixin =>
   }
   
   /**
+   * Add a Property inside he Model Designer.
+   */
+  def addExistingProperty[TPE <: TType](prop:TProp[TPE])(thing:TThing[_], state:State):State = {
+    spew(s"Adding Property ${prop.display}")
+    
+    // TODO: can we merge the duplicate code between here and createProperty()? Probably.
+    
+    val instanceSection = getInstanceSection()
+    
+    def countEditors():Int = {
+      val editors = instanceSection.findAll(xpath("./li[contains(@class, '_instanceEditor')]"))
+      editors.size
+    }
+    
+    // First, we need to look at the PropValueEditors already showing, since we'll
+    // need to wait until another one is added:
+    val nOrigEditors = countEditors()
+    
+    // What is currently showing?
+    if (find("_addExistingProperty").isDefined) {
+      // Don't need to do anything -- the dialog's already open
+    } else if (find("_addExistingInstead").isDefined) {
+      // The Create New Property dialog is open; switch boxes
+      click on "_addExistingInstead"
+      waitFor("_addExistingProperty")
+    } else if (find("_addPropertyButton").isDefined) {
+      click on "_addPropertyButton"
+      waitFor("_createInstead")
+    } else
+      fail(s"Couldn't figure out where we are when trying to create Property ${prop.display}")
+      
+    // Pick the desired property...
+    singleSel("_existingPropSelector").value = prop.tid
+    // ... and actually add it:
+    click on "_addExistingProperty"
+    
+    // Wait for the new PropValueEditor to be created:
+    eventually { countEditors() should equal (nOrigEditors + 1) }
+    
+    state
+  }
+  
+  /**
    * Create a Property inside the Model Designer.
    * 
    * This expects to be called as one of the ops inside designAModel().
@@ -125,9 +168,9 @@ trait FuncEditing { this:FuncMixin =>
     // Set the name...
     textField("_createPropName").value = prop.display
     // ... the collection...
-    click on s"_coll${prop.coll.tid.underlying}"
+    click on s"_coll${prop.coll.tid}"
     // ... the type...
-    singleSel("_typeSelector").value = prop.tpe.tid.underlying
+    singleSel("_typeSelector").value = prop.tpe.tid
     // ... and actually create it:
     click on "_doCreatePropertyButton"
     
