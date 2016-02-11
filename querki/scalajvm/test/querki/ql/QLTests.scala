@@ -52,4 +52,21 @@ class QLTests extends QuerkiTests {
         equal("ooB")
     }  
   }
+  
+  "_self" should {
+    "work normally" in {
+      implicit val s = commonSpace
+      
+      // Silly test, but we're proving that My Optional Text does no dereference here:
+      pql("""[[My Instance -> My Optional Text._self]]""") should
+        equal(linkText(s.optTextProp))
+    }
+    
+    "throw a decent error if misused" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> My Optional Text -> _self]]""") should
+        equal(expectedWarning("QL.self.notDotted"))
+    }
+  }
 }

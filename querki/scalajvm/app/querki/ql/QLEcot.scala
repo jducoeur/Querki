@@ -201,10 +201,16 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	          |
 	          |More formally, \_self is the way to override the usual \[[\_apply\]] behaviour on a Thing, to get a
 	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when \_apply
-	          |has been defined on it.""".stripMargin)))
+	          |has been defined on it.
+            |
+            |_self can only be used in a dotted expression -- there must always be something before the dot, and
+            |that something is what gets produced.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
-	    Future.successful(inv.definingContext.get.value)
+      inv.definingContext match {
+        case Some(context) => Future.successful(context.value)
+        case _ => Future.successful(WarningValue("QL.self.notDotted")) 
+      }
 	  }
 	}
 	
