@@ -4,6 +4,9 @@ logLevel := Level.Warn
 // The Typesafe repository 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+// Needed for ConductR, according to https://github.com/typesafehub/conductr-lib
+//resolvers += bintrayRepo("typesafe", "maven-releases")
+
 // Needed for Actuarius
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
@@ -30,3 +33,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
 
 // So that the Play application can access the version and build date:
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")
+
+// To support building with ConductR:
+addSbtPlugin("com.typesafe.sbt" % "sbt-bundle" % "1.2.1")
+addSbtPlugin("com.typesafe.conductr" % "sbt-conductr" % "1.2.1")

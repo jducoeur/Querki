@@ -1,5 +1,7 @@
 import sbt.Project.projectToRef
 
+import ByteConversions._
+
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.7"
@@ -9,38 +11,53 @@ lazy val appV = "1.3.6"
 lazy val sharedSrcDir = "scala"
 
 lazy val querkiServer = (project in file("scalajvm")).settings(
-  scalaVersion := scalaV,
-  version := appV,
-  scalaJSProjects := clients,
-  pipelineStages := Seq(scalaJSProd, gzip),
-  // To prevent duplicate-artifact errors in Stage:
-  publishArtifact in (Compile, packageSrc) := false,
-  libraryDependencies ++= sharedDependencies.value ++ Seq(
-    // Main Play dependencies
-    jdbc,
-    anorm,
-    // Add your project dependencies here,
-    "mysql" % "mysql-connector-java" % "5.1.36",
-    "javax.mail" % "javax.mail-api" % "1.5.0",
-    "com.sun.mail" % "smtp" % "1.5.0",
-    "com.sun.mail" % "mailapi" % "1.5.0",
-    "com.github.nscala-time" %% "nscala-time" % "1.6.0",
-    "com.typesafe.akka" %% "akka-testkit" % akkaV,
-    "com.typesafe.akka" %% "akka-contrib" % akkaV,
-    "com.typesafe.akka" %% "akka-cluster" % akkaV,
-    "org.imgscalr" % "imgscalr-lib" % "4.2",
-    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
-    "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
-    "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "2.2",
-    "com.okumin" %% "akka-persistence-sql-async" % "0.2.1",
-    "com.github.mauricio" %% "mysql-async" % "0.2.16",
-    "org.scalatestplus" %% "play" % "1.2.0" % "test"
-  ),
-  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-  buildInfoPackage := "querki",
-  EclipseKeys.skipParents in ThisBuild := false).
-  enablePlugins(PlayScala, BuildInfoPlugin).
+    scalaVersion := scalaV,
+    version := appV,
+    scalaJSProjects := clients,
+  	pipelineStages := Seq(scalaJSProd, gzip),
+    // To prevent duplicate-artifact errors in Stage:
+    publishArtifact in (Compile, packageSrc) := false,
+    libraryDependencies ++= sharedDependencies.value ++ Seq(
+      // Main Play dependencies
+      jdbc,
+      anorm,
+      // Add your project dependencies here,
+      "mysql" % "mysql-connector-java" % "5.1.36",
+      "javax.mail" % "javax.mail-api" % "1.5.0",
+      "com.sun.mail" % "smtp" % "1.5.0",
+      "com.sun.mail" % "mailapi" % "1.5.0",
+      "com.github.nscala-time" %% "nscala-time" % "1.6.0",
+      "com.typesafe.akka" %% "akka-testkit" % akkaV,
+      "com.typesafe.akka" %% "akka-contrib" % akkaV,
+      "com.typesafe.akka" %% "akka-cluster" % akkaV,
+      "org.imgscalr" % "imgscalr-lib" % "4.2",
+      "com.amazonaws" % "aws-java-sdk" % "1.8.4",
+      "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
+      "com.lihaoyi" %% "utest" % "0.3.1",
+      "org.querki" %% "requester" % "2.2",
+      "com.okumin" %% "akka-persistence-sql-async" % "0.2.1",
+      "com.github.mauricio" %% "mysql-async" % "0.2.16",
+      "org.scalatestplus" %% "play" % "1.2.0" % "test",
+      "com.typesafe.conductr" %% "play23-conductr-bundle-lib" % "1.0.2"
+    ),
+    
+    // ConductR params
+    // TODO: these are very ad-hoc and suspicious! Re-examine them for real!
+    BundleKeys.nrOfCpus := 1.0,
+	BundleKeys.memory := 64.MiB,
+	BundleKeys.diskSpace := 5.MB,
+	BundleKeys.startCommand += "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
+	BundleKeys.system := "querki-server",
+	BundleKeys.endpoints := Map(
+ 	  "akka-remote" -> Endpoint("tcp"),
+      "web" -> Endpoint("http", services = Set(URI("http://:9000")))
+	),    
+    
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "querki",
+    EclipseKeys.skipParents in ThisBuild := false).
+  enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, ConductRPlugin).
+//  enablePlugins(PlayScala, BuildInfoPlugin).
   aggregate(clients.map(projectToRef): _*).
   dependsOn(querkiSharedJvm)
 
