@@ -70,6 +70,8 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
     val fut = akka.pattern.ask(_root, QuerkiRoot.Terminate)
     scala.concurrent.Await.result(fut, initTermDuration)
     
+    _appSystem.shutdown()
+    
     Logger.info("... Done")
   }
   
