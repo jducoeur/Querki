@@ -67,7 +67,8 @@ class PrintEcot(e:Ecology) extends ClientEcot(e) with Print {
   def print(thing:ThingInfo) = {
     for {
       std <- DataAccess.standardThings
-      printViewOpt <- Client[ThingFunctions].getPropertyDisplay(thing.oid, std.basic.printView.oid).call()
+      // Note that this must use thing.urlName, so that it will work correctly with Tags!
+      printViewOpt <- Client[ThingFunctions].getPropertyDisplay(thing.urlName, std.basic.printView.oid).call()
     }
       printViewOpt match {
         // There is a Print View on this Thing, so use that:
