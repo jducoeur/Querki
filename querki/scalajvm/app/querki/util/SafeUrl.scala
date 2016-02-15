@@ -7,4 +7,6 @@ object SafeUrl {
 
 object HtmlEscape {
   def escapeQuotes(str:String):String = str.replace("\"", "&quot;").replace("'", "&apos;")
+  def escapeAmp(str:String):String = str.replace("&", "&amp;")
+  def escapeAll(str:String):String = escapeQuotes(escapeAmp(str))
 }

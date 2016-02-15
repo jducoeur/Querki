@@ -10,7 +10,7 @@ import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasi
 import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
-import querki.util.SafeUrl
+import querki.util.{HtmlEscape, SafeUrl}
 import querki.values._
 
 /**
@@ -184,7 +184,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
   
     override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      val display = displayOpt.getOrElse(Wikitext(v.text))
+      val display = displayOpt.getOrElse(Wikitext(HtmlEscape.escapeAll(v.text)))
       // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
       // since that danger is there in ordinary QText as well.
       Future.successful(Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})")) 

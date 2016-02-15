@@ -62,6 +62,16 @@ class UITests extends QuerkiTests {
           |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
         equal ("""<span class="myClass otherClass">hello</span><span class="myClass otherClass">world</span>""")
     }
+    
+    "work with an ampersand in a Tag" in {
+      class TSpace extends CommonSpace {
+        val tagThing = new SimpleTestThing("Tag Thing", setTagsProp("Branch & Claw"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Tag Thing -> My Set of Tags -> ""____"" -> _class(""myClass"")]]""") should
+        equal ("""<span class="myClass"><a rel="nofollow" href="Branch+%26+Claw">Branch &amp; Claw</a></span>""")
+    }
   }
   
   def testBackLinkWith(cmd:String, parent:Thing, prop:AnyProp, f:Thing => String) = {
