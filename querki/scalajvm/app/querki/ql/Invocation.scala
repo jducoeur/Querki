@@ -94,6 +94,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   lazy val QL = interface[querki.ql.QL]
   lazy val Core = interface[querki.core.Core]
   lazy val SignatureInternal = interface[SignatureInternal]
+  lazy val Tags = interface[querki.tags.Tags]
   lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
@@ -283,6 +284,15 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
         val pairs = things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t)))))
         if (things.exists(_.hasProp(prop)))
           Some(InvocationValueImpl(pairs))
+        else
+          None
+      } else if (current.value.pType == Tags.NewTagSetType) {
+        // Tags do have one or two pseudo-properties, so we should turn them into pseudo-Things
+        // and treat them that way:
+        val tags = current.value.rawList(Tags.NewTagSetType)
+        val things = tags.map(tag => Tags.getTag(tag.text, state))
+        if (things.exists(_.hasProp(prop)))
+          Some(InvocationValueImpl(things.map(t => (t, context.next(Core.ExactlyOne(Tags.NewTagSetType(t.displayName)))))))
         else
           None
       } else current.value.pType match {

@@ -7,6 +7,19 @@ import querki.types.SimplePropertyBundle
 class TagTests extends QuerkiTests {
   lazy val Tags = interface[querki.tags.Tags]
   
+  // Test for .3y28auo
+  "Tags" should {
+    "be able to use the Name Property" in {
+      class TSpace extends CommonSpace {
+        val tagThing = new SimpleTestThing("Tag Thing", setTagsProp("Tag With a Name"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Tag Thing -> My Set of Tags -> Name]]""") should
+        equal("Tag With a Name")
+    }
+  }
+  
   // === _resolveTags ===
   "_resolveTags" should {
     "work normally" in {
