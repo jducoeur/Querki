@@ -414,7 +414,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
             |Note that this differs from the ordinary [[Who Can Edit._self]] Property, which says who can
             |edit *this* specific Thing.""".stripMargin)))
 
-  lazy val CanCreateProp = definePermission(CanCreatePropOID, "Who Can Create", "Who else can make new Things in this Space", Seq(OwnerTag), false)
+  lazy val CanCreateProp = definePermission(CanCreatePropOID, commonName(_.security.canCreatePerm), "Who else can make new Things in this Space", Seq(OwnerTag), false)
   
   lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
       toProps(

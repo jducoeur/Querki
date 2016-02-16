@@ -10,14 +10,26 @@ object ActionsMenu extends Menu("_actionsMenu")
 object DesignModelItem extends MenuItem("designAModel", ActionsMenu)
 object CreateThingItem extends MenuItem("_createAnyThing", ActionsMenu)
 
+object ProfileMenu extends Menu("_profile_menu")
+object LogoutItem extends MenuItem("logout_button", ProfileMenu)
+
 trait FuncMenu { this:FuncMixin =>
+  
+  /**
+   * Opens the menu that contains this item. You pass in an item *on* that menu so that
+   * we have something to wait for to know that it's open.
+   */
+  def openMenu(item:MenuItem) = {
+    waitFor(item.menu.id)
+    click on item.menu.id
+    waitFor(item.id)
+  }
+  
   /**
    * Chooses the specified item, by first opening the menu and then clicking on it.
    */
   def clickMenuItem(item:MenuItem) = {
-    waitFor(item.menu.id)
-    click on item.menu.id
-    waitFor(item.id)
+    openMenu(item)
     click on item.id
   }
 }

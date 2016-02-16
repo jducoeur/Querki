@@ -18,6 +18,23 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
         s2
       },
       
+      // .3y28auu: Anonymous shouldn't see the Design and Create menu picks as active:
+      TestDef(None, LoginPage, ".3y28auu") { state =>
+        run(state,
+          goTo(CommonSpace),
+          { state =>
+            // We need to go directly to the target Space, since we're Anonymous:
+            openMenu(DesignModelItem)
+            // Here's the bug -- these should be disabled:
+            // I'm honestly unsure why I have to specify this this way. I would expect to be
+            // able to use .isEnabled, but that just plain isn't working:
+            find(DesignModelItem.id).get.attribute("disabled") should be (Some("true"))
+            find(CreateThingItem.id).get.attribute("disabled") should be (Some("true"))
+            state
+          }
+        )
+      },
+      
       // .3y28aq5: the header for tags is coming out as ".-1":
       TestDef(Some(Admin1), RootPage(CommonSpace), ".3y28aq5") { state =>
         

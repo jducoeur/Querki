@@ -85,7 +85,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     val perms = 
       PermSet(state, state, user) + 
         Apps.CanManipulateAppsPerm +
-        Apps.CanUseAsAppPerm
+        Apps.CanUseAsAppPerm +
+        AccessControl.CanCreateProp
     
     SpaceInfo(
       state, 

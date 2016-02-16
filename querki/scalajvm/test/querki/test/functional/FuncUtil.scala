@@ -143,11 +143,11 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   }
   
   def logout(state:State):State = {
-    click on "logout_button"
+    clickMenuItem(LogoutItem)
     // Note: the login page isn't yet part of the Client, so it doesn't yet use clientStrings:
     waitForTitle("Welcome to Querki")
     spew(s"Logged out")
-    state -> LoginPage
+    state.copy(currentUserOpt = None) -> LoginPage
   }
   
   def waitForThing[T <: TThing[T]](t:T)(state:State):State = {
@@ -191,8 +191,20 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
     waitForTitle(CreateSpace)
     textField("_newSpaceName").value = space.display
     click on "_createSpaceButton"
-    val createdSpace = waitUntilCreated(space)
+    val createdSpace = waitUntilCreated(space).copy(url = currentUrl)
     state.copy(spaces = state.spaces + (createdSpace.tid -> createdSpace), currentSpace = Some(createdSpace)) -> RootPage(space)
+  }
+  
+  /**
+   * Go directly to this Space, without intervening clicking. This is faster but less realistic,
+   * so use it sparingly.
+   */
+  def goTo(space:TSpace)(state:State):State = {
+    val realSpace = state.getSpace(space)
+    go to realSpace.url
+    val page = RootPage(realSpace) 
+    waitFor(page)
+    state -> page
   }
   
   def adjustUser(state:State, test:TestDef):State = {
@@ -203,7 +215,18 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
             // We want to be logged-in as targetUser. Logout if we're logged in:
             val s = state.currentUserOpt match {
               case Some(currentUser) => logout(state)
-              case None => state
+              case None => {
+                if (state.currentPage is LoginPage)
+                  state
+                else {
+                  // We're not logged in, but also not at the login page. So click the index
+                  // button to get there:
+                  waitFor("_index_button")
+                  click on "_index_button"
+                  waitForTitle(LoginPage)
+                  state -> LoginPage
+                }
+              }
             }
             loginAs(targetUser)(s)
           }
@@ -276,6 +299,14 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
       spew(s"Completed test ${test.desc}")
       finalResult
     }
+  }
+  
+  /**
+   * Trivial wrapper, for using non-ops inside of run().
+   */
+  def wrap(f: => Unit)(state:State):State = {
+    f
+    state
   }
   
   /**

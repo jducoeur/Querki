@@ -18,6 +18,10 @@ pages : {
     notAllowedYet : "As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days."
   }
   
+  login : {
+    pageTitle : "Welcome to Querki"
+  }
+  
   modelDesigner : {
     pageTitle : "Designing Model $modelName"
     thingTitle : "Editing $modelName"

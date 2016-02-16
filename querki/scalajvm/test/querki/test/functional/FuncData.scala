@@ -150,6 +150,8 @@ trait FuncData { this:FuncMixin =>
     display:String,
     // The OID of this Thing, as understood by the Client:
     tid:TID = TID(""),
+    // The url of this Space, filled in once it has been created:
+    url:String = "",
     // The Things that have *actually* been created in this Space:
     things:Map[TID, TInstance] = Map.empty,
     // The Properties that have actually been created:

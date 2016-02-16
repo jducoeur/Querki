@@ -6,9 +6,9 @@ import org.scalajs.dom.{raw => dom}
 
 import scalatags.JsDom.all._
 
-import querki.globals._
-
+import querki.api.StandardThings
 import querki.comm._
+import querki.globals._
 import querki.identity.UserLevel
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
@@ -20,7 +20,7 @@ import querki.search.SearchGadget
  * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
  * overall ordering of the list?
  */
-class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
+class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val Admin = interface[querki.admin.Admin]
@@ -102,8 +102,16 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     spaceOpt.map { space =>
       Seq(
         NavDivider,
-        NavLink("Design a Model", id = "designAModel", onClick = Some({ () => DataModel.designAModel() })),
-        NavLink("Create any Thing", id = "_createAnyThing", onClick = Some({ () => DataModel.createAThing() })),
+        NavLink(
+          "Design a Model", 
+          id = "designAModel", 
+          onClick = Some({ () => DataModel.designAModel() }),
+          enabled = space.permissions.contains(std.security.canCreatePerm)),
+        NavLink(
+          "Create any Thing", 
+          id = "_createAnyThing", 
+          onClick = Some({ () => DataModel.createAThing() }),
+          enabled = space.permissions.contains(std.security.canCreatePerm)),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
         NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
@@ -149,19 +157,13 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   // Apps are a non-sequiteur if we're not in the context of a Space and fully running
   // TBD: this whole section arguably belongs in the Apps Ecot. Should we make this pluggable?
   def appsSection = 
-    for {
-      space <- spaceOpt
-      stdTry <- DataAccess.standardThings.value
-      std <- stdTry.toOption
+    spaceOpt.map { space =>
+      NavSection("Apps", Seq(
+        NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
+        NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
+        NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
+      ), 1200)
     }
-      yield 
-      {
-        NavSection("Apps", Seq(
-          NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
-          NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
-          NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
-        ), 1200)
-      }
   
   def loginSection = {
     UserAccess.user match {
@@ -169,7 +171,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
         NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
           NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
-        ), 1900)  
+        ), 1900, id="_profile_menu")  
       }
       case None => {
         NavSection("Not logged in", Seq(
@@ -219,7 +221,10 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
           )
         } else {
           li(cls:="disabled",
-            a(raw(display))
+            a(
+              if (idStr.length > 0) id:=idStr,
+              disabled:="disabled",
+              raw(display))
           )
         }        
       }

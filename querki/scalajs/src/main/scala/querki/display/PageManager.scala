@@ -53,7 +53,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   def update(title:String) = {
     _window.foreach { w => w.document.title = title }
-    menuHolder.replaceContents((new MenuBar).render)
+    menuHolder.replaceContents((new MenuBar(DataAccess.std)).render)
   }
   
   /**
@@ -214,19 +214,21 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def renderPage(page:Page):Future[Page] = {
     val fut = nextChangeFuture
     
-    beforePageLoads(page)
-    
-    val fullPage =
-      div(
-        StatusLineInternal.statusGadget,
-        menuHolder(new MenuBar), 
-        page, 
-        new StandardFooter)
-    
-    page.beforeRender()
-        
-    $(displayRoot).empty()
-    $(displayRoot).append(fullPage.render)
+    DataAccess.standardThings.foreach { std =>
+      beforePageLoads(page)
+      
+      val fullPage =
+        div(
+          StatusLineInternal.statusGadget,
+          menuHolder(new MenuBar(std)), 
+          page, 
+          new StandardFooter)
+      
+      page.beforeRender()
+          
+      $(displayRoot).empty()
+      $(displayRoot).append(fullPage.render)
+    }
     
     // Note that onPageRendered doesn't get called here, because most Pages involve
     // async calls to the server. When the Page is actually finished loading and
