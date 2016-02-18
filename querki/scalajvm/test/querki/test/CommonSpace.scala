@@ -46,6 +46,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
   val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
+  val singleTextProp = new TestProperty(TextType, ExactlyOne, "Single Text")
   val optTextProp = new TestProperty(TextType, Optional, "My Optional Text")
 
   /***********************************************

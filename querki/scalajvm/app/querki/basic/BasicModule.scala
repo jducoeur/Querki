@@ -41,23 +41,26 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
    */
   def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
     nameCache.getOrElseUpdate(tops.id, {
-      val localName = tops.fullLookupDisplayName
+      // If the name is "empty", for various definitions of empty, just use the TID:
       def fallback() = Wikitext(tops.id.toThingId.toString)
+      def checkLength(w:Wikitext):Wikitext = {
+        if (w.plaintext.length() > 0)
+          w
+        else
+          fallback()
+      }
+      
+      val localName = tops.fullLookupDisplayName
       if (localName.isEmpty) {
-        val computed = for {
+        val computed:Option[Future[Wikitext]] = for {
           pv <- tops.getPropOpt(ComputedNameProp)
           v <- pv.firstOpt
         }
           yield QL.process(v, tops.thisAsContext)
-        computed.getOrElse(Future.successful(fallback()))
+          
+        computed.map { fut => fut.map(checkLength(_)) }.getOrElse(Future.successful(fallback()))
       } else {
-        localName.get.renderPlain.map { rend =>
-          val rendered = rend
-          if (rendered.plaintext.length() > 0)
-            rendered
-          else
-            fallback()
-        }
+        localName.get.renderPlain.map(checkLength(_))
       }
     })
   }

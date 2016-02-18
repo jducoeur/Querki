@@ -67,19 +67,30 @@ class BasicTests extends QuerkiTests {
   
   // === Computed Name ===
   "Computed Name" should {
-    class TSpace extends CommonSpace {
-      val linkedTo = new SimpleTestThing("Thing to Link")
-      val compModel = new SimpleTestThing("Model With Computed", singleLinkProp(), Basic.ComputedNameProp("""Child of [[Single Link -> Link Name]]"""))
-      
-      val unnamed = new UnnamedThing(compModel, singleLinkProp(linkedTo))
-      val named = new TestThing("My Named Thing", compModel)
-    }
-    
     "be used iff there isn't a Display Name" in {
+      class TSpace extends CommonSpace {
+        val linkedTo = new SimpleTestThing("Thing to Link")
+        val compModel = new SimpleTestThing("Model With Computed", singleLinkProp(), Basic.ComputedNameProp("""Child of [[Single Link -> Link Name]]"""))
+        
+        val unnamed = new UnnamedThing(compModel, singleLinkProp(linkedTo))
+        val named = new TestThing("My Named Thing", compModel)
+      }
       implicit val s = new TSpace
 
       pql("""[[Model With Computed._instances -> _commas]]""") should
         equal (s"[Child of Thing to Link](${s.unnamed.id.toThingId.toString}), [My Named Thing](My-Named-Thing)")
+    }
+    
+    "default to OID if it is empty" in {
+      class TSpace extends CommonSpace {
+        val compModel = new SimpleTestThing("Model With Computed", singleTextProp(""), Basic.ComputedNameProp("""[[Single Text]]"""))
+        val veryUnnamed = new UnnamedThing(compModel)
+      }
+      implicit val s = new TSpace
+      
+      val tid = s.veryUnnamed.id.toThingId.toString
+      pql("""[[Model With Computed._instances]]""") should
+        equal(s"""\n[$tid]($tid)""")
     }
   }
 }
