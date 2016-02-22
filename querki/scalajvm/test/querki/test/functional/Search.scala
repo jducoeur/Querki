@@ -15,12 +15,13 @@ trait Search { this:FuncMixin =>
   object SearchFrom extends TInstance("Search From")
   
   def searchFor(input:Query, term:String, nExpected:Int)(state:State):State = {
+    spew(s"Searching for $term")
     // We need to be a little explicit about how we do our entry, so we can hit Enter:
     click on input
     enter(term)
     pressKeys("\uE007")
     val searchPage = Search(term) 
-    waitFor(searchPage)    
+    waitFor(searchPage)
     
     // Check that the header is correct:
     if (nExpected > 0)

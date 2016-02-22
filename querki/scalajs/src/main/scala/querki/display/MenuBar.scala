@@ -36,6 +36,11 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   def spaceOpt = DataAccess.space
   def thingOpt = DataAccess.mainThing
   
+  // There are a lot of items that are only displayed if the user have the Explore permission.
+  lazy val hasExplore = spaceOpt.map { space =>
+    space.permissions.contains(std.roles.canExplorePerm)
+  }.getOrElse(false)
+  
   val maxNameDisplay = 25
   def truncateName(name:String) = {
     if (name.length < maxNameDisplay)
@@ -75,7 +80,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
     id:String = "", 
     enabled:Boolean = true, 
     onClick:Option[() => Unit] = None,
-    newWindow:Boolean = false) extends Navigable
+    newWindow:Boolean = false,
+    requiresExplore:Boolean = false) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -94,28 +100,32 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def alwaysLinks:Seq[Navigable] = {
     Seq(
-      NavLink("Refresh", onClick = Some({ () => PageManager.reload() }))
+      NavLink("Refresh", id="_refreshMenuItem", onClick = Some({ () => PageManager.reload() }))
     )
   }
   
   def spaceLinks:Option[Seq[Navigable]] = {
     spaceOpt.map { space =>
-      Seq(
-        NavDivider,
-        NavLink(
-          "Design a Model", 
-          id = "designAModel", 
-          onClick = Some({ () => DataModel.designAModel() }),
-          enabled = space.permissions.contains(std.security.canCreatePerm)),
-        NavLink(
-          "Create any Thing", 
-          id = "_createAnyThing", 
-          onClick = Some({ () => DataModel.createAThing() }),
-          enabled = space.permissions.contains(std.security.canCreatePerm)),
-        NavLink("Show all Things", thing("All-Things")),
-        NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
-      )
+      // Everything in this section at least implicitly requires Explore:
+      if (hasExplore)
+        Seq(
+          NavDivider,
+          NavLink(
+            "Design a Model", 
+            id = "designAModel", 
+            onClick = Some({ () => DataModel.designAModel() }),
+            enabled = space.permissions.contains(std.security.canCreatePerm)),
+          NavLink(
+            "Create any Thing", 
+            id = "_createAnyThing", 
+            onClick = Some({ () => DataModel.createAThing() }),
+            enabled = space.permissions.contains(std.security.canCreatePerm)),
+          NavLink("Show all Things", thing("All-Things")),
+          NavLink("Show all Properties", thing("All-Properties")),
+          NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
+        )
+      else
+        Seq.empty
     }
   }
   
@@ -126,18 +136,31 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
         NavDivider,
         {
           if (thing.isModel)
-            NavLink("Design " + thing.displayName, Editing.modelDesignerFactory.pageUrl(thing), enabled = thing.isEditable)
+            NavLink(
+              "Design " + thing.displayName, 
+              Editing.modelDesignerFactory.pageUrl(thing), 
+              enabled = thing.isEditable,
+              requiresExplore = true)
            else
-            NavLink("Advanced Edit " + thing.displayName, Editing.advancedEditorFactory.pageUrl(thing), enabled = thing.isEditable)
+            NavLink(
+              "Advanced Edit " + thing.displayName, 
+              Editing.advancedEditorFactory.pageUrl(thing), 
+              id = "_advEditButton",
+              enabled = thing.isEditable,
+              requiresExplore = true)
         },
-        NavLink("View Source", Pages.viewFactory.pageUrl(thing)),
-        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing)),
-        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing)),
+        NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true),
+        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), requiresExplore = true),
+        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true),
         NavLink("Print...", onClick = Some({ () => Print.print(thing)})),
-        NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
+        NavLink(
+          "Delete " + thing.displayName, 
+          enabled = thing.isDeleteable, 
+          onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }),
+          requiresExplore = true)
       ) ++
       (if (thing.isModel)
-        Seq(NavLink("Create a " + thing.displayName, Pages.createAndEditFactory.pageUrl(thing)))
+        Seq(NavLink("Create a " + thing.displayName, Pages.createAndEditFactory.pageUrl(thing), requiresExplore = true))
        else
         Seq.empty)
     }
@@ -157,12 +180,15 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   // Apps are a non-sequiteur if we're not in the context of a Space and fully running
   // TBD: this whole section arguably belongs in the Apps Ecot. Should we make this pluggable?
   def appsSection = 
-    spaceOpt.map { space =>
-      NavSection("Apps", Seq(
-        NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
-        NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
-        NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
-      ), 1200)
+    if (!hasExplore)
+      None
+    else
+      spaceOpt.map { space =>
+        NavSection("Apps", Seq(
+          NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
+          NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
+          NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
+        ), 1200)
     }
   
   def loginSection = {
@@ -207,7 +233,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def displayNavLink(link:NavLink) = {
     link match {
-      case NavLink(display, url, idStr, enabled, onClick, newWindow) => {
+      case NavLink(display, url, idStr, enabled, onClick, newWindow, hidden) => {
         if (enabled) {
           li(
             a(
@@ -275,7 +301,12 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
 
   def displayNavigable(nav:Navigable) = {
     nav match {
-      case link:NavLink => displayNavLink(link)
+      case link:NavLink => {
+        if (link.requiresExplore && !hasExplore)
+          raw("")
+        else
+          displayNavLink(link)
+      }
       case section:NavSection => displayNavSection(section)
       case NavDivider => displayNavDivider
     }
@@ -316,7 +347,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
               ul(cls:="nav navbar-nav navbar-right", displayNavigable(loginSection)),
                 
               // Search only makes sense in the context of a Space, at least for now:
-              if (DataAccess.space.isDefined) {
+              if (DataAccess.space.isDefined && hasExplore) {
                 form(cls:="navbar-form navbar-right", role:="search",
                   tabindex:=1800,
                   div(cls:="form-group",

@@ -9,7 +9,7 @@ import querki.identity.{Identity, User}
 import querki.util._
 import querki.values._
   
-private object MOIDs extends EcotIds(4) {
+object MOIDs extends EcotIds(4) {
   val CanEditCustomOID = moid(1)
   val PublicTagOID = moid(2)
   val MembersTagOID = moid(3)

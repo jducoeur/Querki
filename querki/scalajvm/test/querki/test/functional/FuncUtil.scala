@@ -11,7 +11,7 @@ import querki.util.QLog
  * 
  * @author jducoeur
  */
-trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin =>
+trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes with FuncProps with FuncPages { this:FuncMixin =>
 
   /**
    * The definition of a test case.
@@ -75,6 +75,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   
   implicit class PageWithMessages(page:QPage) {
     def msg(name:String, params:(String, String)*) = msgs(page).msg(name, params:_*)
+    def title = msg("pageTitle", page.titleParams:_*)
   }
   
   def trying[T](msg: => String)(f: => T):T = {
@@ -112,7 +113,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
   }
   
   def waitForTitle(page:QPage):Unit = {
-    waitForTitle(page.msg("pageTitle", page.titleParams:_*))
+    waitForTitle(page.title)
   }
   
   def waitForRendered():Unit = {
@@ -192,7 +193,9 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
     textField("_newSpaceName").value = space.display
     click on "_createSpaceButton"
     val createdSpace = waitUntilCreated(space).copy(url = currentUrl)
-    state.copy(spaces = state.spaces + (createdSpace.tid -> createdSpace), currentSpace = Some(createdSpace)) -> RootPage(space)
+    val spaceThing = TInstance(createdSpace.display, createdSpace.tid)
+    val fullSpace = createdSpace + spaceThing
+    state.copy(spaces = state.spaces + (fullSpace.tid -> fullSpace), currentSpace = Some(fullSpace)) -> RootPage(fullSpace)
   }
   
   /**
@@ -267,6 +270,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing { this:FuncMixin 
               // Are we already in the desired Space?
               case Some(curSpace) if (curSpace matches space) => {
                 // Yes, so just click on the spaceLink:
+                waitFor("_spaceLink")
                 click on "_spaceLink"
                 waitForTitle(test.desiredPage)
               }

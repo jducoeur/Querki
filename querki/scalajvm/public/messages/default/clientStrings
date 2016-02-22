@@ -23,8 +23,9 @@ pages : {
   }
   
   modelDesigner : {
-    pageTitle : "Designing Model $modelName"
-    thingTitle : "Editing $modelName"
+    pageTitle : "$prefix $modelName"
+    modelPrefix : "Designing Model"
+    thingPrefix : "Editing"
     addPropertyButton : " Add a Property"
     addPropertyCancel : "Cancel"
   }

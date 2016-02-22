@@ -53,6 +53,7 @@ class QuerkiFuncTests
   // And the tests themselves:
   with BuildCommonSpace
   with Search
+  with Security
   with RegressionTests1
 {
   /**
@@ -85,6 +86,7 @@ class QuerkiFuncTests
     runTests(
       buildCommonSpace,
       runSearchTests,
+      runSecurityTests,
       
       // Regression Tests
       regression1

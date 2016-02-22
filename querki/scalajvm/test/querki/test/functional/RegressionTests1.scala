@@ -24,7 +24,7 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
           goTo(CommonSpace),
           { state =>
             // We need to go directly to the target Space, since we're Anonymous:
-            openMenu(DesignModelItem)
+            openMenuFor(DesignModelItem)
             // Here's the bug -- these should be disabled:
             // I'm honestly unsure why I have to specify this this way. I would expect to be
             // able to use .isEnabled, but that just plain isn't working:

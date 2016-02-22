@@ -7,8 +7,10 @@ sealed case class Menu(id:String)
 sealed case class MenuItem(id:String, menu:Menu)
 
 object ActionsMenu extends Menu("_actionsMenu")
+object RefreshItem extends MenuItem("_refreshMenuItem", ActionsMenu)
 object DesignModelItem extends MenuItem("designAModel", ActionsMenu)
 object CreateThingItem extends MenuItem("_createAnyThing", ActionsMenu)
+object AdvancedEditItem extends MenuItem("_advEditButton", ActionsMenu)
 
 object ProfileMenu extends Menu("_profile_menu")
 object LogoutItem extends MenuItem("logout_button", ProfileMenu)
@@ -19,7 +21,7 @@ trait FuncMenu { this:FuncMixin =>
    * Opens the menu that contains this item. You pass in an item *on* that menu so that
    * we have something to wait for to know that it's open.
    */
-  def openMenu(item:MenuItem) = {
+  def openMenuFor(item:MenuItem) = {
     waitFor(item.menu.id)
     click on item.menu.id
     waitFor(item.id)
@@ -29,7 +31,7 @@ trait FuncMenu { this:FuncMixin =>
    * Chooses the specified item, by first opening the menu and then clicking on it.
    */
   def clickMenuItem(item:MenuItem) = {
-    openMenu(item)
+    openMenuFor(item)
     click on item.id
   }
 }

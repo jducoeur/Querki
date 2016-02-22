@@ -2,8 +2,6 @@ package querki.test.functional
 
 import org.openqa.selenium.WebElement
 
-import querki.api.commonName
-
 object TID {
   def apply(s:String):TID = s
 }
@@ -14,106 +12,6 @@ trait FuncData { this:FuncMixin =>
    */
   case class TestUser(handle:String, display:String, password:String)
   object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing")
-  
-  /**
-   * Represents a page that may be shown in the browser.
-   */
-  sealed trait QPage {
-    def name:String
-    
-    def titleParams:Seq[(String, String)] = Seq.empty
-    
-    /**
-     * Template-friendly version of ==
-     */
-    def is(other:QPage):Boolean = name == other.name
-  }
-  /**
-   * Solely for test specification purposes, this means "I don't care". Don't use this unless you've
-   * thought through what it means -- so far, the only use I've found is for a test suite that doesn't
-   * do anything but contain sub-tests.
-   */
-  object AnyPage extends QPage {
-    def name = "Not an actual page"
-    
-    override def is(other:QPage) = true
-  }
-  /**
-   * The root page of Querki, which you see only when you aren't logged in.
-   */
-  object LoginPage extends QPage {
-    val name = "login"
-  }
-  /**
-   * The "Your Spaces" page, which you only see if you *are* logged in.
-   */
-  object IndexPage extends QPage {
-    val name = "index"
-  }
-  /**
-   * The "Create a New Space" page.
-   */
-  object CreateSpace extends QPage {
-    val name = "createSpace"
-  }
-  /**
-   * The root page of some Space. If this is showing, the Space had better be in the State.
-   */
-  case class RootPage(space:TSpace) extends QPage {
-    val name = "thing"
-    
-    override def titleParams = Seq(("thingName" -> space.display))
-    
-    override def is(other:QPage) = other match {
-      case RootPage(otherSpace) => otherSpace matches space
-      case _ => false
-    }
-  }
-  /**
-   * The page for some Thing.
-   */
-  case class ThingPage[T <: TThing[_]](thing:T) extends QPage {
-    val name = "thing"
-    
-    override def titleParams = Seq(("thingName" -> thing.display))
-    
-    override def is(other:QPage) = other match {
-      case ThingPage(otherThing) => otherThing matches thing
-      case _ => false
-    }
-  }
-  /**
-   * The page for some Tag.
-   */
-  case class TagPage(tag:String) extends QPage {
-    val name = "thing"
-    
-    override def titleParams = Seq(("thingName" -> tag))
-    
-    override def is(other:QPage) = other match {
-      case TagPage(otherTag) => otherTag matches tag
-      case _ => false
-    }
-  }
-  /**
-   * The page for creating Instances.
-   */
-  case class CreateAndEdit[T <: TThing[T]](model:T) extends QPage {
-    val name = "createAndEdit"
-    
-    override def titleParams = Seq(("modelName" -> model.display))
-  }
-  case class ModelDesigner(model:TInstance) extends QPage {
-    val name = "modelDesigner"
-    
-    override def titleParams = Seq(("modelName" -> model.display))
-  }
-  
-  case class Search(query:String) extends QPage {
-    val name = "search"
-    
-    override def titleParams = Seq(("query" -> query))
-  }
   
   /**
    * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that
@@ -159,6 +57,8 @@ trait FuncData { this:FuncMixin =>
   {
     def withTID(id:String) = copy(tid = TID(id))
     
+    def +(instance:TInstance) = copy(things = things + (instance.tid -> instance))
+    
     def lookupIn[T <: TThing[T]](t:T, coll:Map[TID, T]):T = {
       if (t.tid.length == 0)
         // No OID -- we're trying to match against a prototype, so we have to just match by name:
@@ -170,6 +70,10 @@ trait FuncData { this:FuncMixin =>
     
     def thing(t:TInstance):TInstance = {
       lookupIn(t, things)
+    }
+    
+    def spaceThing:TInstance = {
+      things.get(tid).getOrElse(fail(s"Couldn't find the spaceThing for $display"))
     }
     
     def prop[TPE <: TType](p:TProp[TPE]):TProp[TPE] = {
@@ -201,151 +105,6 @@ trait FuncData { this:FuncMixin =>
   object TOptional extends TColl(querki.core.MOIDs.OptionalOID)
   object TList extends TColl(querki.core.MOIDs.QListOID)
   object TSet extends TColl(querki.core.MOIDs.QSetOID)
-  
-  /**
-   * Enumeration of the PTypes that we can test.
-   */
-  sealed trait TType {
-    
-    type TSetter
-    
-    def tid:TID
-    def display:String
-    
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit
-    
-    def fixupProp(prop:TProp[this.type])(state:State):Unit = {}
-  }
-  /**
-   * Represents a single-line text field.
-   */
-  case object TTextType extends TType {
-    
-    type TSetter = String
-    
-    def tid = querki.core.MOIDs.TextTypeOID
-    def display = "Text Type"
-    
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
-      textField(editorId(thing, prop)).value = v
-    }
-  }
-  
-  case object TLargeTextType extends TType {
-    
-    type TSetter = String
-    
-    def tid = querki.core.MOIDs.LargeTextTypeOID
-    def display = "Large Text Type"
-    
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
-      textArea(editorId(thing, prop)).value = v
-    }    
-  }
-  
-  def setRestrictedToModel(prop:TProp[_])(state:State):Unit = {
-    prop.extras.collect {
-      case RestrictedToModel(modelProto) => {
-        // HACK: for the moment, the options in the selector use OIDs, not TIDs:
-        val modelId = state.thing(modelProto).oidStr
-        singleSel(editorId(prop, RestrictToModelProp)).value = modelId
-      }
-    }
-  }
-  
-  /**
-   * Represents a Tag
-   * 
-   * @param modelOpt The Model that this Tag should be constrained to.
-   */
-  case object TTagType extends TType {
-    
-    type TSetter = String
-    
-    def tid = querki.tags.MOIDs.NewTagSetOID
-    def display = "Tag Type"
-    
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = {
-      // While Tag Sets look funky on the outside, their add-a-tag input field is
-      // pretty conventional:
-      textField(editorId(thing, prop)).value = v
-    }
-    
-    override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
-      setRestrictedToModel(prop)(state)
-    }
-  }
-  
-  case object TLinkType extends TType {
-    
-    type TSetter = TThing[_]
-    
-    def tid = querki.core.MOIDs.LinkTypeOID
-    def display = "Thing Type"
-    
-    def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit = ???
-    
-    override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
-      setRestrictedToModel(prop)(state)
-    }
-  }
-  
-  sealed trait PropExtras
-  case class RestrictedToModel(model:TInstance) extends PropExtras
-  
-  /**
-   * Represents a Property.
-   */
-  case class TProp[TPE <: TType](
-    display:String,
-    coll:TColl,
-    tpe:TPE,
-    tid:TID = TID(""),
-    extras:Seq[PropExtras] = Seq.empty) extends TThing[TProp[TPE]]
-  {
-    def withTID(id:String) = copy(tid = TID(id))
-    
-    def realProp(state:State) = {
-      if (tid.length > 0)
-        this
-      else
-        state.prop(this)
-    }
-    
-    def setValue(v:tpe.TSetter)(thing:TThing[_], state:State):State = {
-      // The asInstanceOf below is horrible, but I'm having trouble getting the compiler
-      // to accept this as legit, and it is:
-      tpe.setValue(thing, realProp(state).asInstanceOf[TProp[tpe.type]], v)
-      state
-    }
-    
-    /**
-     * After creation, when we're in the PropertyEditor, make any needed tweaks.
-     */
-    def fixupProp(state:State):Unit = {
-      tpe.fixupProp(this.asInstanceOf[TProp[tpe.type]])(state)
-    }
-  }
-  
-  /**
-   * The actual Simple Thing object.
-   */
-  object SimpleThing extends TInstance("Simple Thing", querki.basic.MOIDs.SimpleThingOID, model = null)
-  
-  /**
-   * The Name Property.
-   */
-  object NameProp 
-    extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
-  
-  object DefaultViewProp
-    extends TProp(commonName(_.basic.defaultView), TExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID)
-  
-  object PageHeaderProp
-    extends TProp("Page Header", TOptional, TLargeTextType, querki.html.UIMOIDs.PageHeaderPropOID)
-  
-  object RestrictToModelProp
-    extends TProp("Restrict to Model", TOptional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
 
   /**
    * Represents the *current* state of the test world, including where the client

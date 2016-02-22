@@ -154,10 +154,12 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "mo
         }
       }
       pageTitle = {
-  	    if (model.isModel)
-          msg("pageTitle", ("modelName" -> model.unsafeName))
-  	    else
-  	      msg("thingTitle", ("modelName" -> model.unsafeName))
+        val prefix = 
+          if (model.isModel)
+            msg("modelPrefix")
+          else
+            msg("thingPrefix")
+        msg("pageTitle", ("modelName" -> model.unsafeName), ("prefix" -> prefix))
       }
 	    guts = 
         div(cls:="_advancedEditor",

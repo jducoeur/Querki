@@ -23,32 +23,51 @@ trait FuncEditing { this:FuncMixin =>
   }
   
   /**
-   * Edit an existing Model. Assumes that we are currently looking at that Model's Thing Page.
+   * Edit an existing Model or Thing. Assumes that we are currently looking at that Thing's Page.
    * 
    * This is similar to designAModel(), but exists solely for the provided ops.
    */
-  def editModel(setters:(TThing[_], State) => State*)(state:State):State = {
+  def editModelGuts(opener: => Unit, setters:(TThing[_], State) => State*)(state:State):State = {
+    def doEdit(thing:TInstance):State = {
+      spew(s"Editing thing")
+        
+      // Open the Model Editor:
+      opener
+      val page = ModelDesigner(thing)
+      waitForTitle(page)
+      val stateAfterOps = runSetters(thing, state -> page, setters:_*)
+      // Take the setters into account before waitForThing():
+      val newModel = stateAfterOps.thing(thing)
+      click on "_doneDesigning"
+      waitForThing(newModel)(stateAfterOps)      
+    }
+    
     state.currentPage match {
-      case ThingPage(thing) if (thing.isInstanceOf[TInstance]) => {
+      case ThingPage(inst) if (inst.isInstanceOf[TInstance]) => {
         // I *should* be able to do this as part of the above case, but I'm having trouble finding
         // the right syntax:
-        val model = thing.asInstanceOf[TInstance]
-        spew(s"Editing Model $model")
-        if (!model.isModel)
-          fail(s"Called editModel on non-Model $model")
-          
-        // Open the Model Editor:
-        click on "_thingEdit"
-        val page = ModelDesigner(model)
-        waitForTitle(page)
-        val stateAfterOps = runSetters(model, state -> page, setters:_*)
-        // Take the setters into account before waitForThing():
-        val newModel = stateAfterOps.thing(model)
-        click on "_doneDesigning"
-        waitForThing(newModel)(stateAfterOps)
+        val thing = inst.asInstanceOf[TInstance]
+        doEdit(thing)
       }
+      
+      case RootPage(space) => doEdit(space.spaceThing)
+      
       case _ => fail(s"editModel should be called from the Model's page, was called instead on ${state.currentPage}")
     }
+  }
+  
+  /**
+   * Edits the Model we are currently looking at.
+   */
+  def editModel(setters:(TThing[_], State) => State*)(state:State):State = {
+    editModelGuts({click on "_thingEdit"}, setters:_*)(state)
+  }
+  
+  /**
+   * Opens the Advanced Editor on the TInstance we are currently looking at.
+   */
+  def advancedEditThing(setters:(TThing[_], State) => State*)(state:State):State = {
+    editModelGuts({clickMenuItem(AdvancedEditItem)}, setters:_*)(state)
   }
   
   /**
@@ -57,22 +76,26 @@ trait FuncEditing { this:FuncMixin =>
    * @param ops Any number of operations to perform inside the Advanced Editor. Setting the Name is
    *   automatic, but everything else needs to be specified. 
    */
-  def designAModel(thing:TInstance, setters:(TThing[_], State) => State*)(state:State):State = {
+  def designAModel(modelBase:TInstance, setters:(TThing[_], State) => State*)(state:State):State = {
+    // In order to save having to specify isModel = true everywhere, we just make it implicit
+    // in calling this:
+    val thing = modelBase.copy(isModel = true)
     spew(s"Designing Model ${thing.display}")
     // Choose "Design a Model" from the menu, and select the correct Model from the popup dialog:
     clickMenuItem(DesignModelItem)
     chooseModel(thing)(state)
     
     // Fill out the Model Designer, based on the specified properties:
-    val page = ModelDesigner(thing)
-    // Note that this page sometimes uses thingTitle instead, but shouldn't when we get to it from here:
-    val expectedTitle = page.msg("pageTitle", ("modelName" -> ""))
+    val page = ModelDesigner(thing, newlyCreated = true)
+    // Note that this is *intentionally* duplicated: we don't yet know the TID for the model, so
+    // we're getting it from the title:
+    val partialTitle = page.msg("pageTitle", ("modelName" -> ""), ("prefix" -> page.prefix))
     // Note that we have to use include instead of be, because we haven't set the name yet, so it's
     // going to use the TID instead:
-    eventually { pageTitle should include (expectedTitle) }
+    eventually { pageTitle should include (partialTitle) }
     // Note the explicit assumption that the TID is at the end of the title here. That's suspicious, and
     // may not survive in the long run.
-    val instanceTID = pageTitle.drop(expectedTitle.length)
+    val instanceTID = pageTitle.drop(partialTitle.length)
     val thingWithTID = thing.withTID(instanceTID).copy(isModel = true)
     val stateWithThing = state.updateSpace(space => space.copy(things = space.things + (thingWithTID.tid -> thingWithTID)))
     NameProp.setValue(thing.display)(thingWithTID, stateWithThing)

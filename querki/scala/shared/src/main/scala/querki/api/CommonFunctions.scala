@@ -90,6 +90,10 @@ class StandardThings(h:PassthroughHandlerBase) {
     val instancePropsProp = h.pass("Instance Properties")
   }
   
+  object roles {
+    val canExplorePerm = h.pass("Who Can Explore")
+  }
+  
   object security {
     val canCreatePerm = h.pass("Who Can Create")
     val inviteTextProp = h.pass("Space Invitation Text")
@@ -109,6 +113,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(apps, core, css, basic, conventions, editing, security, tags, types)
+    Seq(apps, core, css, basic, conventions, editing, roles, security, tags, types)
   }
 }

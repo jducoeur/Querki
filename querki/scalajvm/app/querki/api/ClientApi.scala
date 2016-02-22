@@ -27,6 +27,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
+  lazy val Roles = interface[querki.security.Roles]
   
   var _anonHandler:Option[ActorRef] = None
   lazy val anonHandler = _anonHandler.get
@@ -86,7 +87,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       PermSet(state, state, user) + 
         Apps.CanManipulateAppsPerm +
         Apps.CanUseAsAppPerm +
-        AccessControl.CanCreateProp
+        AccessControl.CanCreateProp +
+        Roles.CanExplorePerm
     
     SpaceInfo(
       state, 

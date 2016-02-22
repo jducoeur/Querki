@@ -5,12 +5,13 @@ import models.ThingState
 import querki.ecology._
 import querki.values.SpaceState
 
-private [security] object RolesMOIDs extends EcotIds(51) {
+object RolesMOIDs extends EcotIds(51) {
   val CommentatorOID = moid(1)
   val ContributorOID = moid(2)
   val EditorOID = moid(3)
   val ManagerOID = moid(4)
   val BasicMemberOID = moid(5)
+  val CanExplorePermOID = moid(6)
 }
 
 /**
@@ -37,6 +38,24 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
     )
   }
     
+  /***********************************************
+   * PERMISSIONS
+   ***********************************************/
+  
+  /**
+   * This permission doesn't precisely belong here -- it's not specific to Roles per se -- but it's a decent place to
+   * put it.
+   */
+  lazy val CanExplorePerm = AccessControl.definePermission(CanExplorePermOID, 
+      querki.api.commonName(_.roles.canExplorePerm),
+      "These people are allowed to explore this Space, with functions like Search, Explore, All Things and so on. If disabled, these people will not see those features.",
+      Seq(AccessControl.PublicTag, AccessControl.OwnerTag),
+      true)
+      
+  override lazy val props = Seq(
+    CanExplorePerm
+  )
+
   /***********************************************
    * THINGS
    ***********************************************/
