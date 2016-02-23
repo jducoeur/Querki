@@ -1,5 +1,7 @@
 package querki.test.functional
 
+import models.PType
+
 /**
  * @author jducoeur
  */
@@ -19,6 +21,18 @@ trait FuncTypes { this:FuncMixin =>
     
     def fixupProp(prop:TProp[this.type])(state:State):Unit = {}
   }
+  
+  abstract class TSystemType[T](pt:PType[T]) extends TType {
+    def tid = pt.id
+    def display = pt.displayName
+  }
+  
+  trait StringSetter { this:TType =>
+    def setValue(thing:TThing[_], prop:TProp[this.type], v:String):Unit = {
+      textField(editorId(thing, prop)).value = v
+    }    
+  }
+  
   /**
    * Represents a single-line text field.
    */

@@ -100,11 +100,10 @@ trait FuncData { this:FuncMixin =>
     def withTID(id:String) = copy(tid = TID(id))
   }
   
-  sealed case class TColl(tid:TID)
-  object TExactlyOne extends TColl(querki.core.MOIDs.ExactlyOneOID)
-  object TOptional extends TColl(querki.core.MOIDs.OptionalOID)
-  object TList extends TColl(querki.core.MOIDs.QListOID)
-  object TSet extends TColl(querki.core.MOIDs.QSetOID)
+  lazy val ExactlyOne = ICore.ExactlyOne
+  lazy val Optional = ICore.Optional
+  lazy val QList = ICore.QList
+  lazy val QSet = ICore.QSet
 
   /**
    * Represents the *current* state of the test world, including where the client

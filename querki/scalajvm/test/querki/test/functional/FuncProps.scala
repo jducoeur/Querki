@@ -1,5 +1,7 @@
 package querki.test.functional
 
+import models.{AnyProp, Collection}
+
 import querki.api.commonName
 
 /**
@@ -15,7 +17,7 @@ trait FuncProps { this:FuncMixin =>
    */
   case class TProp[TPE <: TType](
     display:String,
-    coll:TColl,
+    coll:Collection,
     tpe:TPE,
     tid:TID = TID(""),
     extras:Seq[PropExtras] = Seq.empty) extends TThing[TProp[TPE]]
@@ -43,6 +45,12 @@ trait FuncProps { this:FuncMixin =>
       tpe.fixupProp(this.asInstanceOf[TProp[tpe.type]])(state)
     }
   }
+//  
+//  object TProp {
+//    def apply(real:AnyProp):TProp[_] = {
+//      
+//    }
+//  }
   
   /**
    * The actual Simple Thing object.
@@ -53,16 +61,16 @@ trait FuncProps { this:FuncMixin =>
    * The Name Property.
    */
   object NameProp 
-    extends TProp(commonName(_.basic.displayNameProp), TExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
+    extends TProp(commonName(_.basic.displayNameProp), ExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
   
   object DefaultViewProp
-    extends TProp(commonName(_.basic.defaultView), TExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID)
+    extends TProp(commonName(_.basic.defaultView), ExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID)
   
   object PageHeaderProp
-    extends TProp("Page Header", TOptional, TLargeTextType, querki.html.UIMOIDs.PageHeaderPropOID)
+    extends TProp("Page Header", Optional, TLargeTextType, querki.html.UIMOIDs.PageHeaderPropOID)
   
   object RestrictToModelProp
-    extends TProp("Restrict to Model", TOptional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
+    extends TProp("Restrict to Model", Optional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
   
   /* **********************************************
    * Permissions
@@ -72,5 +80,5 @@ trait FuncProps { this:FuncMixin =>
     extends TInstance("Members", querki.security.MOIDs.MembersTagOID)
 
   object WhoCanExplorePerm
-    extends TProp(commonName(_.roles.canExplorePerm), TSet, TLinkType, querki.security.RolesMOIDs.CanExplorePermOID)
+    extends TProp(commonName(_.roles.canExplorePerm), QSet, TLinkType, querki.security.RolesMOIDs.CanExplorePermOID)
 }

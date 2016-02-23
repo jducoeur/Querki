@@ -24,6 +24,7 @@ trait FuncMixin
   with OneBrowserPerTest
   with OneServerPerTest
   with FuncDB 
+  with FuncInterfaces
   with FuncUtil
   with EcologyMember
 
