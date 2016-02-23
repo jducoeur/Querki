@@ -40,7 +40,7 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
         
         val tagText = "Tag for 3y28aq5"
         
-        object SimpleTag extends TProp[TTagType.type]("Tag 3y28aq5", QSet, TTagType)
+        object SimpleTag extends TTestProp[TTagType.type]("Tag 3y28aq5", QSet, TTagType)
 
         object ModelWithTag extends TInstance("Model with Tag 3y28aq5")
         
@@ -74,7 +74,7 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
         val tagText = "Tag for 3y28asq"
         
         object TagModel extends TInstance("Model for Tag 3y28asq")
-        val SimpleTag = TProp("Tag 3y28asq", QSet, TTagType,
+        val SimpleTag = TTestProp("Tag 3y28asq", QSet, TTagType,
             extras = Seq(RestrictedToModel(TagModel)))
         
         object ModelWithTag extends TInstance("Model with Tag 3y28asq")

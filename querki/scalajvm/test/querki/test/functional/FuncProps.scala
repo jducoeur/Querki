@@ -1,6 +1,6 @@
 package querki.test.functional
 
-import models.{AnyProp, Collection}
+import models.{Collection, Property}
 
 import querki.api.commonName
 
@@ -13,17 +13,14 @@ trait FuncProps { this:FuncMixin =>
   case class RestrictedToModel(model:TInstance) extends PropExtras
   
   /**
-   * Represents a Property.
+   * Represents the test's view of a Property. This is mainly focused on how to manipulate and
+   * interpret it on-screen.
    */
-  case class TProp[TPE <: TType](
-    display:String,
-    coll:Collection,
-    tpe:TPE,
-    tid:TID = TID(""),
-    extras:Seq[PropExtras] = Seq.empty) extends TThing[TProp[TPE]]
-  {
-    def withTID(id:String) = copy(tid = TID(id))
-    
+  trait TProp[TPE <: TType] extends TThing[TProp[TPE]] {
+    val tpe:TPE
+    def coll:Collection
+    def extras:Seq[PropExtras]
+        
     def realProp(state:State) = {
       if (tid.length > 0)
         this
@@ -44,33 +41,49 @@ trait FuncProps { this:FuncMixin =>
     def fixupProp(state:State):Unit = {
       tpe.fixupProp(this.asInstanceOf[TProp[tpe.type]])(state)
     }
+
   }
-//  
-//  object TProp {
-//    def apply(real:AnyProp):TProp[_] = {
-//      
-//    }
-//  }
+  
+  /**
+   * Represents a Property that is being created by the test, so we need to specify the
+   * full details. TID gets filled in after creation.
+   */
+  case class TTestProp[TPE <: TType](
+    display:String,
+    coll:Collection,
+    tpe:TPE,
+    tid:TID = TID(""),
+    extras:Seq[PropExtras] = Seq.empty) extends TProp[TPE]
+  {
+    def withTID(id:String) = copy(tid = TID(id))
+  }
+  
+  /**
+   * A test representation of a system Property. Ideally, all this stuff should be handled with
+   * typeclasses, but since Properties and PTypes aren't Scala Types, I don't know how
+   * to do that.
+   * 
+   * We'd really like to be able to infer the tpe automatically, but it needs to be done at
+   * compile-time (in order to make setValue work right), and I don't see a way to do that
+   * yet.
+   */
+  class TSystemProp[VT, RT, TPE <: TType](realProp:Property[VT,RT], val tpe:TPE, val extras:Seq[PropExtras] = Seq.empty) extends TProp[TPE] {
+    def tid = realProp.id
+    def display = realProp.displayName
+    def coll = realProp.cType
+    
+    def withTID(id:String) = fail(s"Trying to set the tid of a System Property!")
+  }
   
   /**
    * The actual Simple Thing object.
    */
   object SimpleThing extends TInstance("Simple Thing", querki.basic.MOIDs.SimpleThingOID, model = null)
-  
-  /**
-   * The Name Property.
-   */
-  object NameProp 
-    extends TProp(commonName(_.basic.displayNameProp), ExactlyOne, TTextType, querki.basic.MOIDs.DisplayNameOID)
-  
-  object DefaultViewProp
-    extends TProp(commonName(_.basic.defaultView), ExactlyOne, TLargeTextType, querki.basic.MOIDs.DisplayTextOID)
-  
-  object PageHeaderProp
-    extends TProp("Page Header", Optional, TLargeTextType, querki.html.UIMOIDs.PageHeaderPropOID)
-  
-  object RestrictToModelProp
-    extends TProp("Restrict to Model", Optional, TLinkType, querki.links.PublicMOIDs.LinkModelOID)
+
+  lazy val DefaultViewProp = new TSystemProp(IBasic.DisplayTextProp, TLargeTextType)
+  lazy val NameProp = new TSystemProp(IBasic.DisplayNameProp, TTextType)
+  lazy val PageHeaderProp = new TSystemProp(IUI.PageHeaderProperty, TLargeTextType)
+  lazy val RestrictToModelProp = new TSystemProp(ILinks.LinkModelProp, TLinkType)
   
   /* **********************************************
    * Permissions
@@ -79,6 +92,5 @@ trait FuncProps { this:FuncMixin =>
   object MembersRole
     extends TInstance("Members", querki.security.MOIDs.MembersTagOID)
 
-  object WhoCanExplorePerm
-    extends TProp(commonName(_.roles.canExplorePerm), QSet, TLinkType, querki.security.RolesMOIDs.CanExplorePermOID)
+  lazy val WhoCanExplorePerm = new TSystemProp(IRoles.CanExplorePerm, TLinkType)
 }
