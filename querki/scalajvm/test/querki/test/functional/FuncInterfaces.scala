@@ -13,5 +13,5 @@ trait FuncInterfaces { this:FuncMixin =>
   // *only* be accessed from lazy vals!
   lazy val ICore = interface[querki.core.Core]
   lazy val IRoles = interface[querki.security.Roles]
-
+  lazy val ITags = interface[querki.tags.Tags]
 }
