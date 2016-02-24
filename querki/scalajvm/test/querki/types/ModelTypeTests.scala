@@ -61,7 +61,7 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
   registerType(nodeType)
   val leftProp = new TestProperty(nodeType, Optional, "Left")
   val rightProp = new TestProperty(nodeType, Optional, "Right")
-  val nodeModel = new TestThing(nodeModelId, "Tree Node Model", leftProp(), rightProp(), nodeId())
+  val nodeModel = new TestThing(nodeModelId, "Tree Node Model", Core.IsModelProp(true), leftProp(), rightProp(), nodeId())
   
   val myTree = new TestThing("My Tree", nodeModel,
       leftProp(SimplePropertyBundle(

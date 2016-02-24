@@ -2,7 +2,7 @@ package querki
 
 import scala.concurrent.Future
 
-import models.{Property, PType, PTypeBuilder, Thing, ThingOps, Wikitext}
+import models.{Property, PropertyBundle, PType, PTypeBuilder, Thing, ThingOps, Wikitext}
 
 import querki.ecology._
 
@@ -40,6 +40,7 @@ package object basic {
     val NewAllThingsOID = moid(7)
     val ShowModelTreeOID = moid(8)
     val KilledThingOID = moid(9)
+    val PropertyBundleTypeOID = moid(10)
   }
   
   /**
@@ -61,6 +62,7 @@ package object basic {
     
     def PlainTextType:PType[PlainText] with PTypeBuilder[PlainText, String]
     def QLType:PType[QLText] with PTypeBuilder[QLText,String]
+    def PropertyBundleType:PType[PropertyBundle] with PTypeBuilder[PropertyBundle, PropertyBundle]
     
     def ApplyMethod:Property[QLText,String]    
     def DeprecatedProp:Property[Boolean,Boolean]

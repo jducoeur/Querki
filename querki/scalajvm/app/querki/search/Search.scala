@@ -7,16 +7,24 @@ import scalatags.Text.all._
 import models._
 
 import querki.ecology._
-
+import querki.globals._
 import querki.identity.User
-
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values.{RequestContext, SpaceState}
 
 object MOIDs extends EcotIds(19) {
   val SearchInputOID = moid(1)
+  val SearchInlineOID = moid(2)
+  
+  val SearchResultThingOID = moid(3)
+  val SearchResultPropOID = moid(4)
+  val SearchResultPositionOID = moid(5)
+  val SearchResultScoreOID = moid(6)
+  val SearchResultModelOID = moid(7)
+  val SearchResultTypeOID = moid(8)
 }
 
-class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.MethodDefs {
+class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.MethodDefs with ModelTypeDefiner {
   
   import MOIDs._
   
@@ -25,15 +33,73 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val Tags = interface[querki.tags.Tags]
   
   lazy val ParsedTextType = QL.ParsedTextType
+  lazy val SystemOnly = Basic.SystemOnlyProp(true)
   
   override def postInit() = {
     // Search does not require login:
     ApiRegistry.registerApiImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false)
   }
+  
+  /*******************************************
+   * The Search Result Type
+   */
+  
+  lazy val SearchResultThing = new SystemProperty(SearchResultThingOID, Basic.PropertyBundleType, ExactlyOne,
+    toProps(
+      setName("_searchResultThing"),
+      SystemOnly,
+      Summary("The Thing or Tag that this Result points to")))
+  
+  lazy val SearchResultProp = new SystemProperty(SearchResultPropOID, LinkType, Optional,
+    toProps(
+      setName("_searchResultProperty"),
+      SystemOnly,
+      Summary("The Property that this Result was found in")))
+  
+  lazy val SearchResultPositions = new SystemProperty(SearchResultPositionOID, IntType, QList,
+    toProps(
+      setName("_searchResultPositions"),
+      SystemOnly,
+      Summary("Where in the _searchResultProperty the search query was found")))
+  
+  lazy val SearchResultScore = new SystemProperty(SearchResultScoreOID, Core.FloatType, ExactlyOne,
+    toProps(
+      setName("_searchResultScore"),
+      SystemOnly,
+      Summary("How good a match this Thing was for the search query")))
+  
+  lazy val SearchResultModel = ThingState(SearchResultModelOID, systemOID, RootOID,
+    toProps(
+      setName("_searchResultModel"),
+      SystemOnly,
+      Summary("This is the Model that gets produced when you call `_search()`"),
+      SearchResultThing(),
+      SearchResultProp(),
+      SearchResultPositions(),
+      SearchResultScore()))
+      
+  lazy val SearchResultType = new ModelType(SearchResultTypeOID, SearchResultModelOID,
+    toProps(
+      setName("_searchResultType"),
+      SystemOnly,
+      Summary("This is the Type that gets produced when you call `_search()`")))
+      
+  override lazy val things = Seq(
+    SearchResultModel
+  )
+  
+  override lazy val types = Seq(
+    SearchResultType
+  )
+  
+  /*******************************************
+   * Functions
+   */
   
   lazy val SearchInput = new InternalMethod(SearchInputOID,
     toProps(
@@ -69,13 +135,74 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     }
   }
   
+  lazy val SearchInline = new InternalMethod(SearchInlineOID,
+      toProps(
+        setName("_search"),
+        Summary("Searches for the specified text, and produces the matches"),
+        Signature(
+          expected = None,
+          reqs = Seq(
+            ("query", ParsedTextType, "The text to search for, minimum 3 characters")
+          ),
+          opts = Seq(
+            ("models", LinkType, Core.QNone, "If provided, the search will be restricted to Instances and Tags of these Models"),
+            ("properties", LinkType, Core.QNone, "If provided, only these Properties will be searched"),
+            ("searchTags", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Tag names will be searched only if this is true"),
+            ("searchThings", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Things (non-Tags) will be searched only if this is true")
+          ),
+          returns = (SearchResultType, "A List of search results.")
+        ),
+        Details("""Querki has built-in Search capabilities -- users can Search from the box in the menu bar, and the
+          |results are shown on the standard Search Results page. But sometimes you want more control over your searches:
+          |you want to show the results directly on a page, formatted the way you like. Or you want to control precisely what
+          |gets searched. The `_search()` function gives you that power.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        query <- inv.processAs("query", ParsedTextType)
+        searchTags <- inv.processAs("searchTags", YesNoType)
+        searchThings <- inv.processAs("searchThings", YesNoType)
+        modelId <- inv.processAsOpt("models", LinkType)
+        propertyId <- inv.processAsOpt("properties", LinkType)
+        fullResult <- inv.opt(search(query.plaintext, searchTags, searchThings, modelId, propertyId)(inv.state))
+        result <- inv.iter(fullResult.results)
+        // IMPORTANT: we mustn't return the Thing we're fetching this from, or the world will go recursive
+        // when we try to render!!!
+        if (inv.lexicalThing.isEmpty || inv.lexicalThing.get != result.thing)
+      }
+        yield 
+          ExactlyOne(SearchResultType(SimplePropertyBundle(
+            SearchResultThing(result.thing),
+            SearchResultProp(result.prop.id),
+            SearchResultPositions(result.positions:_*),
+            SearchResultScore(result.score)
+          )))
+    }
+  }
+  
   override lazy val props = Seq(
-    SearchInput
+    SearchInput,
+    SearchInline,
+    
+    SearchResultThing,
+    SearchResultProp,
+    SearchResultPositions,
+    SearchResultScore
   )
+  
+  /*************************************************
+   * Search Internals
+   */
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
-  def search(searchStr:String)(implicit state:SpaceState):Option[SearchResultsInternal] = {
+  def search(
+    searchStr:String, 
+    searchTags:Boolean = true, 
+    searchThings:Boolean = true,
+    modelIdOpt:Option[OID] = None,
+    propertyIdOpt:Option[OID] = None)(implicit state:SpaceState):Option[SearchResultsInternal] = 
+  {
     if (searchStr.length() < 3)
       None
     else {
@@ -97,14 +224,20 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
         if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
           Seq(SearchResultInternal(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
         } else {
-          // For now, we're only going to deal with Text types.
-          // TODO: cope with Links, Tags, and things like that!
-          // TODO: this currently only takes the first elem from the QValue; it should work on
-          // all of them!
-          val tResults:Iterable[Option[SearchResultInternal]] = t.props.map { pair =>
+          // If the request specified a particular Property, only use that one; otherwise, check all
+          // Properties:
+          val props = propertyIdOpt match {
+            case Some(propertyId) => t.props.get(propertyId).map((propertyId, _)).toSeq
+            case None => t.props.toSeq
+          }
+          val tResults:Iterable[Option[SearchResultInternal]] = props.map { pair =>
             val (propId, propValue) = pair
             propValue.pType match {
+              // For now, we're only going to deal with Text types.
+              // TODO: cope with Links, Tags, and things like that!
               case textType:querki.core.TextTypeBasis#TextTypeBase => {
+                // TODO: this currently only takes the first elem from the QValue; it should work on
+                // all of them!
                 val firstVal = propValue.firstAs(textType)
                 firstVal.flatMap { qtext => 
                   val propComp = qtext.text.toLowerCase()
@@ -121,14 +254,33 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
         }
       }
       
-      val thingResults = state.everythingLocal.map(checkOne(_)).flatten.toSeq
+      val thingResults =
+        if (searchThings) {
+          val things = modelIdOpt match {
+            case Some(modelId) => state.descendants(modelId, false, true, false)
+            case None => state.everythingLocal
+          }
+          things.map(checkOne(_)).flatten.toSeq
+        } else
+          Seq.empty
+          
       val tagResults:Seq[SearchResultInternal] =
-        Tags
-          .fetchAllTags(state)
-          .filter(_.toLowerCase.contains(searchComp))
-          .map(Tags.getTag(_, state))
-          .map(tag => SearchResultInternal(tag, DisplayNameProp, 0.7, tag.displayName, matchLocs(tag.displayName.toLowerCase)))
-          .toSeq
+        if (searchTags)
+          Tags
+            .fetchAllTags(state)
+            .filter(_.toLowerCase.contains(searchComp))
+            .filter { tag =>
+              modelIdOpt match {
+                // If a particular model has been specified, then only return Tags for that Model:
+                case Some(modelId) => Tags.preferredModelForTag(state, tag).id == modelId
+                case None => true
+              }
+            }
+            .map(Tags.getTag(_, state))
+            .map(tag => SearchResultInternal(tag, DisplayNameProp, 0.7, tag.displayName, matchLocs(tag.displayName.toLowerCase)))
+            .toSeq
+        else
+          Seq.empty
     
       Some(SearchResultsInternal(searchStr, thingResults ++ tagResults))      
     }
