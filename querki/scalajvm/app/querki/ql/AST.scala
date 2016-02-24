@@ -1,5 +1,7 @@
 package querki.ql
 
+import querki.values.QLContext
+
 // **************************************************
 //
 // QL Abstract Syntax Tree
@@ -19,7 +21,7 @@ case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }
 
-case class QLParam(name:Option[String], phrase:QLPhrase) {
+case class QLParam(name:Option[String], phrase:QLPhrase, immediate:Boolean = false, resolved:Option[QLContext] = None) {
   def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${phrase.reconstructString}"
   def ops = phrase.ops
   def isNamed = name.isDefined

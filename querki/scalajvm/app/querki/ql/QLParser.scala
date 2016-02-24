@@ -125,7 +125,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
   def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
-  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ qlPhrase ^^ { case nameOpt ~ phrase => QLParam(nameOpt, phrase) }
+  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlPhrase ^^ { 
+    case nameOpt ~ immediateOpt ~ phrase => QLParam(nameOpt, phrase, immediateOpt.isDefined) 
+  }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
@@ -186,19 +188,37 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
     
     def processThing(t:Thing):Future[QLContext] = qlProfilers.processThing.profile {
-      // If there are parameters to the call, they are a collection of phrases.
-      val params = call.params
-      lookupMethod().flatMap {
-        case Some(method) => {
-          val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
-          qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            method.qlApplyTop(InvocationImpl(t, method, context.withCall(call, method), Some(definingContext), params), method)
-          }
+      // If there are parameters to the call, they are a collection of phrases. If any are marked immediate
+      // (prefixed with "!"), they gets processed *now*, rather than meta-programmed later:
+      val paramsFOpt:Option[Seq[Future[QLParam]]] = call.params map { params =>
+        params.map { param =>
+          if (param.immediate) {
+            processPhrase(param.phrase.ops, context).map { processed =>
+              param.copy(resolved = Some(processed))
+            }
+          } else
+            Future.successful(param)
         }
-        case None => {
-          qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            val inv = InvocationImpl(t, t, context.withCall(call, t), None, params)
-            t.qlApplyTop(inv, t)
+      }
+      val paramsFut:Future[Option[Seq[QLParam]]] = paramsFOpt match {
+        case Some(paramsSeq) => {
+          Future.sequence(paramsSeq).map(Some(_))
+        }
+        case None => Future.successful(None)
+      }
+      paramsFut.flatMap { params =>
+        lookupMethod().flatMap {
+          case Some(method) => {
+            val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
+            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+              method.qlApplyTop(InvocationImpl(t, method, context.withCall(call, method), Some(definingContext), params), method)
+            }
+          }
+          case None => {
+            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+              val inv = InvocationImpl(t, t, context.withCall(call, t), None, params)
+              t.qlApplyTop(inv, t)
+            }
           }
         }
       }
@@ -268,11 +288,18 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       try {
         val rawParamNum = Integer.parseInt(binding.name.substring(1))
         val paramNum = rawParamNum - 1
-        val resultOpt = for (
-          params <- resolvingParser.paramsOpt;
+        val resultOpt = for {
+          params <- resolvingParser.paramsOpt
           param = params(paramNum)
-            )
-          yield processPhrase(param.phrase.ops, context, true)
+        }
+          yield {
+            param.resolved match {
+              // This parameter was resolved at the call site ("!")
+              case Some(resolved) => Future.successful(resolved)
+              // Normal parameter -- resolve it here:
+              case None => processPhrase(param.phrase.ops, context, true)
+            }
+          }
         
         resultOpt.getOrElse(warningFut(context,"No parameters passed in"))
       } catch {
@@ -323,7 +350,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
-  private def processPhrase(ops:Seq[QLStage], context:QLContext, isParam:Boolean):Future[QLContext] = {
+  def processPhrase(ops:Seq[QLStage], context:QLContext, isParam:Boolean = false):Future[QLContext] = {
     if (context.isCut)
       // Setting the "cut" flag means that we're just stopping processing here. Usually
       // used for warnings:
@@ -334,11 +361,6 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       else
         processStage(ops.head, context, isParam) flatMap { next => processPhrase(ops.tail, next, isParam) }
     }
-  }
-  // This is the entry point that is currently visible to the outside. We believe this is only used for
-  // dealing with parameters.
-  def processPhrase(ops:Seq[QLStage], startContext:QLContext):Future[QLContext] = {
-    processPhrase(ops, startContext, false)
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {

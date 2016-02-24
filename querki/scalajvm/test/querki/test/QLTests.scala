@@ -227,6 +227,31 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "! params" should {
+    // Note that this test is intentionally similar to "work in the method position" above. But it deals
+    // with the weirder and more complex case where we really, really want to evaluate the param immediately.
+    // It is loosely modeled on the _search() problem that led to the creation of the "!" syntax in the first place.
+    "work properly" in {
+      class TSpace extends CommonSpace {
+        val myFunc = new TestProperty(QLType, ExactlyOne, "My Method")
+        val propHolder = new TestProperty(LinkType, ExactlyOne, "Prop Holder")
+        
+        val holderThing = new SimpleTestThing("Holder Thing", propHolder(listTagsProp))
+        val examinedThing = new SimpleTestThing("Examined Thing", listTagsProp("hello", "there"))
+        
+        val methodTestThing = 
+          new SimpleTestThing(
+            "Method Test", 
+            singleTextProp("[[Holder Thing -> My Method(Examined Thing, !Prop Holder)]]"),
+            myFunc("$_1 -> $_1.$_2"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Method Test -> Single Text]]""") should
+        equal (listOfTags("hello", "there"))
+    }
+  }
+  
   "Comments" should {
     "work as the whole body" in {
       processQText(commonThingAsContext(_.sandbox), "[[// This is a comment, which does nothing]]") should
