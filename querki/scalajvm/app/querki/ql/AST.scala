@@ -25,10 +25,10 @@ case class QLParam(name:Option[String], phrase:QLPhrase) {
   def isNamed = name.isDefined
 }
 
-case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLParam]], collFlag:Option[String]) extends QLStage(collFlag) {
+case class QLCall(name:QLName, methodName:Option[QLName], params:Option[Seq[QLParam]], collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") +
     name.reconstructString +
-    methodName.map(str => "." + str).getOrElse("") +
+    methodName.map(method => "." + method.reconstructString).getOrElse("") +
     params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
 }
 

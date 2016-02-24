@@ -285,7 +285,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	              case Some(methodName) => {
 	                val resultOpt = for (
 	                  thing <- space.anythingByName(thingName);
-	                  propThing <- space.anythingByName(methodName);
+	                  propThing <- space.anythingByName(methodName.name);
 	                  encoded <- encodeThingAndProp(thing, propThing)
 	                )
 	                  yield encoded

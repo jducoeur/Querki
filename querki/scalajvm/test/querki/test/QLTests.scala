@@ -206,6 +206,24 @@ class QLTests extends QuerkiTests {
       processQText(thingAsContext[TSpace](space, (_.thingWithMethod)), "[[Methodical.My Method(Enum 1, With Enum 2)]]") should
         equal ("Wrong value!")            
     }
+    
+    "work in the method position" in {
+      class TSpace extends CommonSpace {
+        val myFunc = new TestProperty(QLType, ExactlyOne, "My Method")
+        
+        val examinedThing = new SimpleTestThing("Examined Thing", listTagsProp("hello", "there"))
+        
+        val methodTestThing = 
+          new SimpleTestThing(
+            "Method Test",
+            singleTextProp("[[My Method(Examined Thing, My List of Tags._self)]]"),
+            myFunc("$_1.$_2"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Method Test -> Single Text]]""") should
+        equal (listOfTags("hello", "there"))
+    }
   }
   
   "Comments" should {

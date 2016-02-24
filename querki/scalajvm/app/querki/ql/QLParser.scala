@@ -118,7 +118,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
   def qlName:Parser[QLName] = qlBinding | qlThingId | qlSafeName | qlDisplayName
-  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
@@ -157,11 +157,38 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):Future[QLContext] = {
+    
+    def lookupMethod():Future[Option[Thing]] = {
+      call.methodName match {
+        case Some(qlName) => {
+          qlName match {
+            case binding:QLBinding => {
+              processBinding(binding, context, isParam) map { resolvedBinding =>
+                if (resolvedBinding.value.matchesType(Core.LinkType)) {
+                  for {
+                    // TODO: for now, we don't cope with multiple resolved results here. I'm not even
+                    // sure why you'd ever want that:
+                    oid <- resolvedBinding.value.rawList(Core.LinkType).headOption
+                    thing <- context.state.anything(oid)
+                  }
+                    yield thing
+                } else {
+                  None
+                }                
+              }
+            }
+            case tid:QLThingId => Future.successful(context.state.anything(ThingId(tid.name)))
+            case _ => Future.successful(context.state.anythingByName(qlName.name))
+          }
+        }
+        case None => Future.successful(None)
+      }
+    }
+    
     def processThing(t:Thing):Future[QLContext] = qlProfilers.processThing.profile {
       // If there are parameters to the call, they are a collection of phrases.
       val params = call.params
-      val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-      methodOpt match {
+      lookupMethod().flatMap {
         case Some(method) => {
           val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
           qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
