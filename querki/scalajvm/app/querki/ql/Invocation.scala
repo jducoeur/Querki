@@ -91,13 +91,15 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   (implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
-  lazy val QL = interface[querki.ql.QL]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
+  lazy val QL = interface[querki.ql.QL]
   lazy val SignatureInternal = interface[SignatureInternal]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
+  lazy val ExactlyOne = Core.ExactlyOne
   lazy val LinkType = Core.LinkType
   
   implicit val inv = this
@@ -292,12 +294,19 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
         val tags = current.value.rawList(Tags.NewTagSetType)
         val things = tags.map(tag => Tags.getTag(tag.text, state))
         if (things.exists(_.hasProp(prop)))
-          Some(InvocationValueImpl(things.map(t => (t, context.next(Core.ExactlyOne(Tags.NewTagSetType(t.displayName)))))))
+          Some(InvocationValueImpl(things.map(t => (t, context.next(ExactlyOne(Tags.NewTagSetType(t.displayName)))))))
         else
           None
+      } else if (current.value.pType == Basic.PropertyBundleType) {
+        val bundles = current.value.flatMap(Basic.PropertyBundleType)(Some(_))
+        val pairs = bundles.filter(_.hasProp(prop)).map(bundle => (bundle, context.next(ExactlyOne(Basic.PropertyBundleType(bundle)))))
+        if (pairs.isEmpty)
+          None
+        else
+          Some(InvocationValueImpl(pairs))
       } else current.value.pType match {
         case mt:ModelTypeBase => {
-          val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
+          val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(ExactlyOne(elem))))
           if (pairs.exists(_._1.hasProp(prop)))
             Some(InvocationValueImpl(pairs))
           else
