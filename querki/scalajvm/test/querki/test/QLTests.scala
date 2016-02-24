@@ -210,14 +210,15 @@ class QLTests extends QuerkiTests {
     "work in the method position" in {
       class TSpace extends CommonSpace {
         val myFunc = new TestProperty(QLType, ExactlyOne, "My Method")
+        val propHolder = new TestProperty(LinkType, ExactlyOne, "Prop Holder")
         
-        val examinedThing = new SimpleTestThing("Examined Thing", listTagsProp("hello", "there"))
+        val examinedThing = new SimpleTestThing("Examined Thing", listTagsProp("hello", "there"), propHolder(listTagsProp))
         
         val methodTestThing = 
           new SimpleTestThing(
             "Method Test",
-            singleTextProp("[[My Method(Examined Thing, My List of Tags._self)]]"),
-            myFunc("$_1.$_2"))
+            singleTextProp("[[My Method(Examined Thing, Prop Holder)]]"),
+            myFunc("$_1 -> $_1.$_2"))
       }
       implicit val s = new TSpace
       
