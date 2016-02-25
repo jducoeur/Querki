@@ -29,7 +29,7 @@ object SignatureMOIDs extends EcotIds(61) {
 
 private [ql] trait ParamResult {
   def process(parser:QLParser, context:QLContext):Future[QLContext]
-  def phrase:Option[QLPhrase]
+  def exp:Option[QLExp]
 }
 
 /**
@@ -132,9 +132,9 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   case class SignatureMapImpl(t:Thing, state:SpaceState, paramsOpt:Option[Seq[QLParam]]) extends SignatureMap {
     implicit val s = state
     
-    case class ParamResultImpl(phraseOpt:Option[QLPhrase], formal:ModeledPropertyBundle) extends ParamResult {
+    case class ParamResultImpl(expOpt:Option[QLExp], formal:ModeledPropertyBundle) extends ParamResult {
       def name = formal.getProp(Core.NameProp).first
-      def phrase = phraseOpt
+      def exp = expOpt
       
       def default = {
         formal.getPropOpt(Types.DefaultValueProp).map(_.v) match {
@@ -144,22 +144,22 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       }
       
       def process(parser:QLParser, context:QLContext):Future[QLContext] = {
-        phraseOpt match {
-          case Some(phrase) => parser.processPhraseAsScope(phrase.ops, context)
+        expOpt match {
+          case Some(exp) => parser.processExpAsScope(exp, context)
           case _ => Future.successful(context.next(default))
         }
       }
     }
     
-    case class SpecialParam(name:String, phraseActual:QLPhrase) extends ParamResult {
-      def phrase = Some(phraseActual)
+    case class SpecialParam(name:String, expActual:QLExp) extends ParamResult {
+      def exp = Some(expActual)
       def process(parser:QLParser, context:QLContext):Future[QLContext] = {
-        parser.processPhraseAsScope(phraseActual.ops, context)
+        parser.processExpAsScope(expActual, context)
       }
     }
     
     case class EmptyParamResult(name:String) extends ParamResult {
-      def phrase = None
+      def exp = None
       def process(parser:QLParser, context:QLContext):Future[QLContext] = ???
     }
   
@@ -188,7 +188,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             params <- paramsOpt
             param <- params.find(_.name.map(_.toLowerCase == name).getOrElse(false))
           }
-            yield SpecialParam(name, param.phrase)
+            yield SpecialParam(name, param.exp)
             
           result.getOrElse(EmptyParamResult(name))
         }
@@ -210,12 +210,12 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             case Some(params) => {
               // First see if there is a named actual parameter...
               params.find(_.name.map(_.toLowerCase == name).getOrElse(false)) match {
-                case Some(named) => ParamResultImpl(Some(named.phrase), formal)
+                case Some(named) => ParamResultImpl(Some(named.exp), formal)
                 case _ => {
                   // ... otherwise, find it positionally, removing the named parameters:
                   val plainParams = params.takeWhile { !_.isNamed }
                   if (plainParams.length >= (index + 1))
-                    ParamResultImpl(Some(plainParams(index).phrase), formal)
+                    ParamResultImpl(Some(plainParams(index).exp), formal)
                   // ... and if that fails, use the default, assuming there is one:
                   else
                     returnDefault

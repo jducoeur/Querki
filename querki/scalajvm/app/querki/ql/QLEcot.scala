@@ -274,8 +274,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	        // we *mostly* don't want to process this. Specifically, we don't want to process the last step of this.
 	        // For the moment, we're hard-codedly checking the first stage of the phrase and using that, but it should
 	        // probably process everything until the last stage, and return that stage.
-	        val phrase = params.head
-	        val stage = phrase.ops.head
+	        val param = params.head
+	        val stage = param.exp.phrases.head.ops.head
 	        stage match {
 	          case QLTextStage(contents, _) => encodeString(contents.reconstructString)
 	          case QLNumber(num) => encodeString(stage.reconstructString)
@@ -290,7 +290,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	                )
 	                  yield encoded
 	                  
-	                resultOpt.getOrElse(encodeString(phrase.reconstructString))
+	                resultOpt.getOrElse(encodeString(param.reconstructString))
 	              }
 	              case None => {
 	                val propOpt = space.anythingByName(thingName)
@@ -298,11 +298,11 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	                  case Some(propThing) => {
 	                    for {
 	                      thing <- inv.contextAllThings
-                        res <- inv.fut(encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString)))
+                        res <- inv.fut(encodeThingAndProp(thing, propThing).getOrElse(encodeString(param.reconstructString)))
 	                    }
 	                      yield res
 	                  }
-	                  case None => encodeString(phrase.reconstructString)
+	                  case None => encodeString(param.reconstructString)
 	                }
 	              }
 	            }

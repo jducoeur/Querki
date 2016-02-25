@@ -237,12 +237,12 @@ package object ql {
      * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
      * are operating at the syntactic level, which aren't simply processing the parameter as usual.
      */
-    def rawParam(name:String):InvocationValue[Option[QLPhrase]]
+    def rawParam(name:String):InvocationValue[Option[QLExp]]
     
     /**
      * Similar to rawParam(), but produces an error if the parameter is not found.
      */
-    def rawRequiredParam(name:String):InvocationValue[QLPhrase]
+    def rawRequiredParam(name:String):InvocationValue[QLExp]
     
     /**
      * DEPRECATED
@@ -289,7 +289,7 @@ package object ql {
      * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
      * are operating at the syntactic level, which aren't simply processing the parameter as usual.
      */
-    def rawParam(paramNum:Int):InvocationValue[QLPhrase]
+    def rawParam(paramNum:Int):InvocationValue[QLExp]
     
     //////////////
     //

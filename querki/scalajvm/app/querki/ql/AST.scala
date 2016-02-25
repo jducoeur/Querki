@@ -21,9 +21,9 @@ case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }
 
-case class QLParam(name:Option[String], phrase:QLPhrase, immediate:Boolean = false, resolved:Option[QLContext] = None) {
-  def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${phrase.reconstructString}"
-  def ops = phrase.ops
+case class QLParam(name:Option[String], exp:QLExp, immediate:Boolean = false, resolved:Option[QLContext] = None) {
+  def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${exp.reconstructString}"
+  def firstOps = exp.phrases.head.ops
   def isNamed = name.isDefined
 }
 
@@ -73,8 +73,9 @@ private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String
   
   override def clearUseCollection = collFlag.isEmpty
 }
-private[ql] case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
-  def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"
+case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
+  def reconstructStandalone = phrases.map(_.reconstructString).mkString("\n")
+  def reconstructString = "[[" + reconstructStandalone + "]]"
 }
 private[ql] case class QLLink(contents:ParsedQLText) extends QLTextPart {
   def reconstructString = "__" + contents.reconstructString + "__"

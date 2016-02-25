@@ -372,9 +372,10 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     override def qlApply(inv:Invocation):QFut = {
       inv.paramsOpt match {
         // First version of this function: if there is a parameter, it should be the name of a Kind:
+        // TODO: rewrite this horror:
         case Some(params) => {
           val param = params(0);
-          val QLCall(kindName, _, _, _) = param.phrase.ops(0)
+          val QLCall(kindName, _, _, _) = param.exp.phrases.head.ops(0)
           Future.successful(Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(QL.WarningValue("Unknown Kind: " + kindName)))
         }
       

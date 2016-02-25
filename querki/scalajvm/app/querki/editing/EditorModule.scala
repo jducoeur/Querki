@@ -309,7 +309,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       // This user isn't allowed to edit, so display the fallback
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
-          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
+          context.parser.get.processPhrase(params(0).firstOps, context).map(_.value)
         }
         case _ => Future.successful(QL.WarningValue("_editOrElse requires a parameter"))
       }
@@ -356,7 +356,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         params <- paramsOpt;
         if (params.length > 0);
         param = params(0);
-        QLCall(addName, _, _, _) = param.ops(0);
+        QLCall(addName, _, _, _) = param.firstOps(0);
         if (addName.name.toLowerCase() == "withadd")
           )
         yield true
@@ -381,9 +381,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get
           for {
-            label <- context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
+            label <- context.parser.get.processPhrase(params(0).firstOps, context).map(_.value)
             labelWiki <- label.wikify(context)
-            control <- context.parser.get.processPhrase(params(1).phrase.ops, context).map(_.value)
+            control <- context.parser.get.processPhrase(params(1).firstOps, context).map(_.value)
             controlWiki <- control.wikify(context)
           }
 	          yield QL.WikitextValue(

@@ -461,13 +461,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     processAsBase(name, pt.displayName, (qv => Some(qv.firstAs(pt)).toSeq), processContext)
   }
   
-  def rawParam(name:String):InvocationValue[Option[QLPhrase]] = {
-    InvocationValueImpl(inv, Future.successful(IVData(Some(sig.getParam(name).phrase))))
+  def rawParam(name:String):InvocationValue[Option[QLExp]] = {
+    InvocationValueImpl(inv, Future.successful(IVData(Some(sig.getParam(name).exp))))
   }
   
-  def rawRequiredParam(name:String):InvocationValue[QLPhrase] = {
-    sig.getParam(name).phrase match {
-      case Some(phrase) => InvocationValueImpl(inv, Future.successful(IVData(Some(phrase))))
+  def rawRequiredParam(name:String):InvocationValue[QLExp] = {
+    sig.getParam(name).exp match {
+      case Some(exp) => InvocationValueImpl(inv, Future.successful(IVData(Some(exp))))
       case None => error("Func.missingNamedParam", displayName, name)
     }
   }
@@ -476,7 +476,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val resultFut = context.parser.get.processPhrase(params(paramNum).phrase.ops, processContext).flatMap { raw =>
+        val resultFut = context.parser.get.processExp(params(paramNum).exp, processContext).flatMap { raw =>
           val processed = raw.value
           processed.firstAs(QL.ErrorTextType) match {
             // If there was an error, keep the error, and stop processing:
@@ -494,7 +494,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val resultFut:Future[Iterable[VT]] = context.parser.get.processPhrase(params(paramNum).phrase.ops, processContext).flatMap { raw =>
+        val resultFut:Future[Iterable[VT]] = context.parser.get.processExp(params(paramNum).exp, processContext).flatMap { raw =>
           val processed = raw.value
           if (processed.isEmpty)
             onEmpty
@@ -542,9 +542,9 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     }
   }
   
-  def rawParam(paramNum:Int):InvocationValue[QLPhrase] = {
+  def rawParam(paramNum:Int):InvocationValue[QLExp] = {
     paramsOpt match {
-      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(Some(params(paramNum).phrase))
+      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(Some(params(paramNum).exp))
       case _ => error("Func.missingParam", displayName)
     }
   }
@@ -559,8 +559,8 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   
   implicit lazy val state:SpaceState = {
     val param = sig.getParam("_space")
-    param.phrase match {
-      case Some(phrase) => {
+    param.exp match {
+      case Some(exp) => {
         // HACK: is there any decent way around this? We don't really want to force inv.state to
         // always be a Future, and 99.99% of the time when we use _space it's going to be synchronous,
         // but we can't actually guarantee that. Hmm. Is there any way to force synchrony here -- to

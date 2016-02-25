@@ -11,7 +11,7 @@ import models.Thing.PropMap
 import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLParam, QLPhrase}
+import querki.ql.{InvocationValue, QLExp, QLParam}
 import querki.util.{HtmlEscape, SafeUrl, XmlHelpers}
 import querki.values._
 
@@ -194,7 +194,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         throw new PublicException("UI.transform.dataRequired")
       
       for {
-        processed <- context.parser.get.processPhrase(params(1).ops, context)
+        processed <- context.parser.get.processExp(params(1).exp, context)
         dataBlock = processed.value.firstTyped(ParsedTextType).getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
       }
         yield XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
@@ -242,23 +242,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
-          val header = params(0).phrase
-          val details = if (params.length > 1) Some(params(1).phrase) else None
-          val empty = if (params.length > 2) Some(params(2).phrase) else None
+          val header = params(0).exp
+          val details = if (params.length > 1) Some(params(1).exp) else None
+          val empty = if (params.length > 2) Some(params(2).exp) else None
           buildSection(context, header, details, empty)
         }
         case _ => Future.successful(QL.ErrorValue("_section requires at least one parameter"))
       }
     }
-  
-    def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QFut = {
+
+    def buildSection(context:QLContext, header:QLExp, detailsOpt:Option[QLExp], emptyOpt:Option[QLExp]):QFut = {
       val parser = context.parser.get
       val wikitextFut = if (context.isEmpty) {
-        parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
+        parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processExp(empty, context.root))).getOrElse(Seq.empty))
       } else {
         for {
-          processedHeader <- parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.forceAsCollection)))
-          processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
+          processedHeader <- parser.contextsToWikitext(Seq(parser.processExp(header, context.forceAsCollection)))
+          processedDetails = detailsOpt.map(details => Seq(parser.processExp(details, context)))
           detailContents <- processedDetails.map(parser.contextsToWikitext(_, true)).getOrElse(Future.successful(Wikitext("")))
         }
           yield processedHeader + detailContents
@@ -288,7 +288,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          case Some(url) => {
               Future.sequence(
                 params.map(param => 
-                  context.parser.get.processPhrase(param.phrase.ops, context).flatMap(_.value.wikify(context))))
+                  context.parser.get.processExp(param.exp, context).flatMap(_.value.wikify(context))))
               .map { paramTexts =>
 	              HtmlValue(QHtml(generateButton(url, paramTexts).toString))
               }
@@ -558,7 +558,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         labelWiki <- inv.processAs("label", ParsedTextType)
         label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
         qlRaw <- inv.rawRequiredParam("ql")
-        ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
+        ql = HtmlEscape.escapeQuotes(qlRaw.reconstructStandalone)
         targetOpt <- inv.processAsOpt("target", ParsedTextType)
         (targetName, targetDiv) =
           targetOpt match {

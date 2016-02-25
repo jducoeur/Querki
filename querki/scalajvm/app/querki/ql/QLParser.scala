@@ -149,8 +149,8 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
   def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
-  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlPhrase ^^ { 
-    case nameOpt ~ immediateOpt ~ phrase => QLParam(nameOpt, phrase, immediateOpt.isDefined) 
+  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlExp ^^ { 
+    case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n\\s*|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
@@ -217,7 +217,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       val paramsFOpt:Option[Seq[Future[QLParam]]] = call.params map { params =>
         params.map { param =>
           if (param.immediate) {
-            processPhrase(param.phrase.ops, context).map { processed =>
+            processExp(param.exp, context).map { processed =>
               param.copy(resolved = Some(processed))
             }
           } else
@@ -341,7 +341,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
               // This parameter was resolved at the call site ("!")
               case Some(resolved) => Future.successful(resolved)
               // Normal parameter -- resolve it here:
-              case None => processPhrase(param.phrase.ops, context, true)
+              // TODO: the isParam parameter we're using here is a horrible, opaque hack.
+              // Disentangle it, and figure out a better approach:
+              case None => processExp(param.exp, context, true)
             }
           }
         
@@ -427,13 +429,13 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     withScope(contextIn, processPhrase(ops, _, isParam))
   }
   
-  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {
+  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext, isParam:Boolean = false):Seq[Future[QLContext]] = {
     val (lastContext, futs) = ((fut(context), Seq.empty[Future[QLContext]]) /: phrases) { (inp, phrase) =>
       val (prevContextFut, results) = inp
       val nextContext = prevContextFut.flatMap { prevContext =>
         // We process the next phrase *mainly* with the original context, but we need to swap in
         // any accumulated bindings:
-        processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), false)
+        processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), isParam)
       }
       val fixedContext = phrase.ops.last match {
         case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
@@ -446,6 +448,18 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       (fixedContext, results :+ fixedContext)
     }
     futs
+  }
+  
+  def processExp(exp:QLExp, context:QLContext, isParam:Boolean = false):Future[QLContext] = {
+    // TODO: for the moment, we're only coping with the final resulting Context here. That is
+    // *usually* what you want, but certainly more restrictive than the official semantics of QL.
+    // Figure out how to make the callers of this cope with Seq[Future[QLContext]] (or Future[Seq[QLContext]]),
+    // and adjust this to produce that.
+    processPhrases(exp.phrases, context, isParam).last
+  }
+  
+  def processExpAsScope(exp:QLExp, context:QLContext):Future[QLContext] = {
+    withScope(context, processExp(exp, _))
   }
 
   def contextsToWikitext(contexts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {

@@ -7,7 +7,7 @@ import querki.ecology._
 import models.Wikitext
 
 import querki.core.QLText
-import querki.ql.{QLCall, QLParam, QLPhrase}
+import querki.ql.{QLCall, QLParam, QLExp}
 import querki.values.{QFut, QLContext}
 
 object MOIDs extends EcotIds(23) {
@@ -43,21 +43,21 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
-	    def chooseParam(params:Seq[QLParam]):QLPhrase = {
+	    def chooseParam(params:Seq[QLParam]):QLExp = {
 	      val received = context.value
 	      if (received.isEmpty || received.size > 1)
-	        params(1).phrase
+	        params(1).exp
 	      else
-	        params(0).phrase
+	        params(0).exp
 	    }
 	    
 	    val result = for
 	    (
 	      params <- paramsOpt if params.length == 2;
-	      phrase = chooseParam(params);
+	      exp = chooseParam(params);
 	      parser <- context.parser
 	    )
-	      yield parser.processPhrase(phrase.ops, context.asCollection).map(_.value)
+	      yield parser.processExp(exp, context.asCollection).map(_.value)
 	      
 	    result.getOrElse(QL.WarningFut("_pluralize requires exactly two parameters"))
 	  }
@@ -106,7 +106,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	        case Some(param) => {
 	          val collContext = context.asCollection
             for {
-	            paramVal <- context.parser.get.processPhrase(param.ops, collContext).map(_.value)
+	            paramVal <- context.parser.get.processExp(param.exp, collContext).map(_.value)
 	            renderedParam <- paramVal.firstOpt.map(elem => paramVal.pType.wikify(context)(elem)).getOrElse(Future.successful(Wikitext.empty))
             }
 	            yield renderedParam
