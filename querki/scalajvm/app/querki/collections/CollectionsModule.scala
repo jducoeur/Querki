@@ -423,7 +423,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
               yield for {
                 // Do some calculations and get a Future...
                 // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-                tCalc <- context.parser.get.processPhrase(param.phrase.ops, context.next(ExactlyOne(LinkType(t)))).map(_.value)
+                tCalc <- context.parser.get.processExp(param.exp, context.next(ExactlyOne(LinkType(t)))).map(_.value)
                 tRawResultOpt = tCalc.firstOpt
                 // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
                 // is very common iff the sort expression including a Property not defined on the received Bundle.)
