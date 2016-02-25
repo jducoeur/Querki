@@ -79,6 +79,7 @@ class QLTests extends QuerkiTests {
       val paper = new TestThing("Paper", toy, myInt(2))
       val scissors = new TestThing("Scissors", toy, myInt(3))
     }
+    
     "work inside _foreach" in {
       implicit val s = new TSpace
       
@@ -87,6 +88,15 @@ class QLTests extends QuerkiTests {
           $toy -> My Int -> +$int ->
           ""[[$name]]: [[$int]]"")]]""") should
         equal ("\nPaper: 2\nRock: 1\nScissors: 3")
+    }
+    
+    "be passed from phrase to phrase within an expression" in {
+      implicit val s = new TSpace
+      
+      pql("""[[""Hello"" -> +$greeting
+            |  ""there!"" -> +$greeting2
+            |  ""[[$greeting]] [[$greeting2]]""]]""".stripMargin) should
+        equal("Hello there!")
     }
   }
 }
