@@ -226,6 +226,8 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   
   def withState(newState:SpaceState) = copy()(newState, ecology)
   
+  def withScopes(p:QLParser, newScopes:QLScopes) = copy(scopes = scopes + (p -> newScopes))
+  
   /**
    * The Text Property that we are currently processing. Mainly used for error reporting, currently.
    */

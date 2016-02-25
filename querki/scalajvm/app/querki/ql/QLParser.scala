@@ -296,7 +296,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       } else {
         // Okay -- we are legally attempting to bind this name to the received value:
         val newScopes = scopes.bind((binding.name -> context.value))
-        val newContext = context.copy(scopes = context.scopes + (this -> newScopes))(context.state, context.ecology)
+        val newContext = context.withScopes(this, newScopes)
         fut(newContext)
       }
     } else {
@@ -415,7 +415,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     val allScopes = contextIn.scopes + (this -> newScopes)
     val context = contextIn.copy(scopes = allScopes)(contextIn.state, contextIn.ecology)
     f(context).map { contextOut =>
-      contextOut.copy(scopes = contextOut.scopes + (this -> contextOut.scopes(this).pop))(contextOut.state, contextOut.ecology)
+      contextOut.withScopes(this, contextOut.scopes(this).pop)
     }
   }
   
@@ -428,7 +428,24 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {
-    phrases map (phrase => processPhrase(phrase.ops, context, false))
+    val (lastContext, futs) = ((fut(context), Seq.empty[Future[QLContext]]) /: phrases) { (inp, phrase) =>
+      val (prevContextFut, results) = inp
+      val nextContext = prevContextFut.flatMap { prevContext =>
+        // We process the next phrase *mainly* with the original context, but we need to swap in
+        // any accumulated bindings:
+        processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), false)
+      }
+      val fixedContext = phrase.ops.last match {
+        case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
+          // The last Stage of this Phrase was an assignment; in this very special case, we
+          // suppress the output:
+          nextContext.map { _.next(Core.QNone) }
+        }
+        case _ => nextContext
+      }
+      (fixedContext, results :+ fixedContext)
+    }
+    futs
   }
 
   def contextsToWikitext(contexts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
