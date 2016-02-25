@@ -145,7 +145,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       
       def process(parser:QLParser, context:QLContext):Future[QLContext] = {
         phraseOpt match {
-          case Some(phrase) => parser.processPhrase(phrase.ops, context)
+          case Some(phrase) => parser.processPhraseAsScope(phrase.ops, context)
           case _ => Future.successful(context.next(default))
         }
       }
@@ -154,7 +154,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     case class SpecialParam(name:String, phraseActual:QLPhrase) extends ParamResult {
       def phrase = Some(phraseActual)
       def process(parser:QLParser, context:QLContext):Future[QLContext] = {
-        parser.processPhrase(phraseActual.ops, context)
+        parser.processPhraseAsScope(phraseActual.ops, context)
       }
     }
     
