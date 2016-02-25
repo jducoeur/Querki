@@ -69,4 +69,24 @@ class QLTests extends QuerkiTests {
         equal(expectedWarning("QL.self.notDotted"))
     }
   }
+  
+  "bound names" should {
+    class TSpace extends CommonSpace {
+      val myInt = new TestProperty(Core.IntType, ExactlyOne, "My Int")
+      
+      val toy = new SimpleTestThing("Toy", myInt())
+      val rock = new TestThing("Rock", toy, myInt(1))
+      val paper = new TestThing("Paper", toy, myInt(2))
+      val scissors = new TestThing("Scissors", toy, myInt(3))
+    }
+    "work inside _foreach" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Toy._instances -> _foreach(+$toy ->
+          Link Name -> +$name ->
+          $toy -> My Int -> +$int ->
+          ""[[$name]]: [[$int]]"")]]""") should
+        equal ("\nPaper: 2\nRock: 1\nScissors: 3")
+    }
+  }
 }

@@ -44,8 +44,8 @@ private[ql] case class QLSafeName(n:String) extends QLName(n) {
 private[ql] case class QLDisplayName(n:String) extends QLName(n) {
   def reconstructString:String = "`" + n + "`"
 }
-private[ql] case class QLBinding(n:String) extends QLName(n) {
-  def reconstructString = "$" + n
+private[ql] case class QLBinding(n:String, assign:Boolean = false) extends QLName(n) {
+  def reconstructString = (if (assign) "+" else "") + "$" + n
 }
 private[ql] case class QLThingId(n:String) extends QLName(n) {
   def reconstructString = n

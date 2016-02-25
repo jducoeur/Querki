@@ -30,14 +30,38 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
   lazy val wikify = Profiler.createHandle("QLParser.wikify")
 }
 
+case class QLScope(bindings:Map[String, QValue] = Map.empty) {
+  def bind(pair:(String, QValue)) = copy(bindings = bindings + pair)
+  def lookup(name:String) = bindings.get(name)
+}
+case class QLScopes(scopes:List[QLScope] = List.empty) {
+  // Add the specified binding to the current scope:
+  def bind(pair:(String, QValue)) = {
+    val newScopes = (scopes.head.bind(pair)) :: scopes.tail
+    copy(scopes = newScopes)
+  }
+  
+  def lookup(name:String):Option[QValue] = {
+    (Option.empty[QValue] /: scopes) { (result, scope) =>
+      result match {
+        case Some(r) => result
+        case None => scope.lookup(name)
+      }
+    }
+  }
+  
+  def push = copy(scopes = QLScope() :: scopes)
+  def pop = copy(scopes = scopes.tail)
+}
+
 class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
   val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None)(implicit val ecology:Ecology) 
   extends RegexParsers with EcologyMember 
 {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
-  // a modification, rather than another level of depth:
-  val initialContext = ci.copy(parser = Some(this))(ci.state, ecology)
+  // a modification, rather than another level of depth. We also provide an initial scope for this parser:
+  val initialContext = ci.copy(parser = Some(this), scopes = ci.scopes + (this -> QLScopes().push))(ci.state, ecology)
   
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
   
@@ -123,7 +147,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
-  def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
+  def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
   def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
   def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlPhrase ^^ { 
     case nameOpt ~ immediateOpt ~ phrase => QLParam(nameOpt, phrase, immediateOpt.isDefined) 
@@ -187,7 +211,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       }
     }
     
-    def processThing(t:Thing):Future[QLContext] = qlProfilers.processThing.profile {
+    def processThing(t:Thing, context:QLContext):Future[QLContext] = qlProfilers.processThing.profile {
       // If there are parameters to the call, they are a collection of phrases. If any are marked immediate
       // (prefixed with "!"), they gets processed *now*, rather than meta-programmed later:
       val paramsFOpt:Option[Seq[Future[QLParam]]] = call.params map { params =>
@@ -224,9 +248,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       }
     }
     
-    def handleThing(tOpt:Option[Thing]) = {
+    def handleThing(tOpt:Option[Thing], context:QLContext) = {
       tOpt.map { t =>
-        processThing(t)
+        processThing(t, context)
       }.getOrElse(Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name)))))
     }
     
@@ -237,12 +261,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             val resultFuts = for {
               oid <- resolvedBinding.value.rawList(Core.LinkType)
               thing <- context.state.anything(oid)
-              fut = processThing(thing)
+              fut = processThing(thing, context)
             }
               yield fut
               
             val resultFut = Future.sequence(resultFuts)
-            resultFut.map(results => context.concat(results))
+            resultFut.map(results => resolvedBinding.concat(results))
           } else {
             Future.successful(resolvedBinding)
           }
@@ -250,11 +274,11 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       }
       case tid:QLThingId => {
         val tOpt = context.state.anything(ThingId(tid.name))
-        handleThing(tOpt)
+        handleThing(tOpt, context)
       }
       case _ => {
         val tOpt = context.state.anythingByName(call.name.name)
-        handleThing(tOpt)
+        handleThing(tOpt, context)
       }
     }
   }
@@ -264,11 +288,31 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
-    // TODO: deal with proper value bindings here
-    // Is this value bound in the request? (That is, is it a page param?)
-    context.requestParams.get(binding.name) match {
-      case Some(phrase) => processPhrase(phrase.ops, context, true)
-      case None => warningFut(context, s"Didn't find a value for ${binding.name}")
+    val scopes = context.scopes(this)
+    val boundOpt = scopes.lookup(binding.name)
+    if (binding.assign) {
+      if (boundOpt.isDefined) {
+        warningFut(context, s"Attempting to reassign ${binding.name}")
+      } else {
+        // Okay -- we are legally attempting to bind this name to the received value:
+        val newScopes = scopes.bind((binding.name -> context.value))
+        val newContext = context.copy(scopes = context.scopes + (this -> newScopes))(context.state, context.ecology)
+        fut(newContext)
+      }
+    } else {
+      boundOpt match {
+        // Fetching an already-bound value
+        case Some(bound) => fut(context.next(bound))
+        case None => {
+          // It's not bound lexically. Does it exist in the page's query parameters?
+          context.requestParams.get(binding.name) match {
+            // Yep -- process that
+            case Some(phrase) => processPhrase(phrase.ops, context, true)
+            // Okay, this really seems to be an unbound value, so give an error:
+            case None => warningFut(context, s"Didn't find a value for ${binding.name}")
+          }          
+        }
+      }
     }
   }
   
@@ -361,6 +405,26 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       else
         processStage(ops.head, context, isParam) flatMap { next => processPhrase(ops.tail, next, isParam) }
     }
+  }
+  
+  /**
+   * Wraps the given function in a new scope, which will get popped once the operation completes.
+   */
+  def withScope(contextIn:QLContext, f: QLContext => Future[QLContext]):Future[QLContext] = {
+    val newScopes = contextIn.scopes(this).push
+    val allScopes = contextIn.scopes + (this -> newScopes)
+    val context = contextIn.copy(scopes = allScopes)(contextIn.state, contextIn.ecology)
+    f(context).map { contextOut =>
+      contextOut.copy(scopes = contextOut.scopes + (this -> contextOut.scopes(this).pop))(contextOut.state, contextOut.ecology)
+    }
+  }
+  
+  /**
+   * Variant of processPhrase that treats the phrase as its own distinct scope, which will be discarded when
+   * we reach the end of processing.
+   */
+  def processPhraseAsScope(ops:Seq[QLStage], contextIn:QLContext, isParam:Boolean = false):Future[QLContext] = {
+    withScope(contextIn, processPhrase(ops, _, isParam))
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {

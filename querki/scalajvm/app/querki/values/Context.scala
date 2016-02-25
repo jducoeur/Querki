@@ -5,13 +5,14 @@ import models._
 import querki.ecology._
 
 // TODO: this is a bad smell! Can we hide the parser better behind the Context?
-import querki.ql.{QLCall, QLPhrase, QLParser}
+import querki.ql.{QLCall, QLPhrase, QLParser, QLScopes}
 import querki.util.DebugRenderable
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
-                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None,
+                     scopes:Map[QLParser,QLScopes] = Map.empty)
                      (implicit val state:SpaceState, val ecology:Ecology)
   extends DebugRenderable with EcologyMember
 {
