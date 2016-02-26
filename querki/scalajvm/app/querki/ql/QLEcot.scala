@@ -113,6 +113,13 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
     parserProcessMethodProfiler.profile { parser.processMethod.map(_.value) }
   }
   
+  def processMethodToWikitext(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext] = 
+  {
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
+    parserProcessMethodProfiler.profile { parser.processMethodToWikitext }
+  }
+  
   def parseMethod(input:String):Option[QLPhrase] =
   {
     // Since we're just parsing, we shouldn't need a context:

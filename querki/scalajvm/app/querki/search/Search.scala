@@ -9,6 +9,7 @@ import models._
 import querki.ecology._
 import querki.globals._
 import querki.identity.User
+import querki.tags.IsTag
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values.{RequestContext, SpaceState}
 
@@ -22,6 +23,8 @@ object MOIDs extends EcotIds(19) {
   val SearchResultScoreOID = moid(6)
   val SearchResultModelOID = moid(7)
   val SearchResultTypeOID = moid(8)
+  val SearchResultTagOID = moid(9)
+  val SearchResultIsTagOID = moid(10)
 }
 
 class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.MethodDefs with ModelTypeDefiner {
@@ -49,11 +52,23 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
    * The Search Result Type
    */
   
-  lazy val SearchResultThing = new SystemProperty(SearchResultThingOID, Basic.PropertyBundleType, ExactlyOne,
+  lazy val SearchResultThing = new SystemProperty(SearchResultThingOID, LinkType, Optional,
     toProps(
       setName("_searchResultThing"),
       SystemOnly,
-      Summary("The Thing or Tag that this Result points to")))
+      Summary("The Thing that this Result points to, if any")))
+  
+  lazy val SearchResultTag = new SystemProperty(SearchResultTagOID, Tags.NewTagSetType, Optional,
+    toProps(
+      setName("_searchResultTag"),
+      SystemOnly,
+      Summary("The Tag that this Result points to, if any")))
+  
+  lazy val SearchResultIsTag = new SystemProperty(SearchResultIsTagOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("_searchResultIsTag"),
+      SystemOnly,
+      Summary("True if this result is a Tag; False if it is a Thing")))
   
   lazy val SearchResultProp = new SystemProperty(SearchResultPropOID, LinkType, Optional,
     toProps(
@@ -79,6 +94,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
       SystemOnly,
       Summary("This is the Model that gets produced when you call `_search()`"),
       SearchResultThing(),
+      SearchResultTag(),
+      SearchResultIsTag(),
       SearchResultProp(),
       SearchResultPositions(),
       SearchResultScore()))
@@ -170,13 +187,27 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
         // when we try to render!!!
         if (inv.lexicalThing.isEmpty || inv.lexicalThing.get != result.thing)
       }
-        yield 
-          ExactlyOne(SearchResultType(SimplePropertyBundle(
-            SearchResultThing(result.thing),
-            SearchResultProp(result.prop.id),
-            SearchResultPositions(result.positions:_*),
-            SearchResultScore(result.score)
-          )))
+        yield {
+          result.thing match {
+            case tag:IsTag => 
+              ExactlyOne(SearchResultType(SimplePropertyBundle(
+                SearchResultTag(result.thing.displayName),
+                SearchResultIsTag(true),
+                SearchResultProp(result.prop.id),
+                SearchResultPositions(result.positions:_*),
+                SearchResultScore(result.score)
+              )))              
+            case _ => 
+              ExactlyOne(SearchResultType(SimplePropertyBundle(
+                SearchResultThing(result.thing),
+                SearchResultIsTag(false),
+                SearchResultProp(result.prop.id),
+                SearchResultPositions(result.positions:_*),
+                SearchResultScore(result.score)
+              )))
+          }
+
+        }
     }
   }
   
@@ -185,6 +216,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     SearchInline,
     
     SearchResultThing,
+    SearchResultTag,
+    SearchResultIsTag,
     SearchResultProp,
     SearchResultPositions,
     SearchResultScore

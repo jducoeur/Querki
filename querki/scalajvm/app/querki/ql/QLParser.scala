@@ -586,6 +586,21 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
+  private[ql] def processMethodToWikitext:Future[Wikitext] = {
+    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlExp, input.text) }
+    parseResult match {
+      case Success(result, _) => 
+        qlProfilers.processMethod.profile { 
+          contextsToWikitext(processExpAll(result, initialContext, false), false)
+          .recoverWith {
+            case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt)).flatMap(_.value.wikify(initialContext))
+          }
+        }
+      case Failure(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
+      case Error(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
+    }
+  }
+  
   private[ql] def processMethod:Future[QLContext] = {
     val parseResult = qlProfilers.parseMethod.profile { parseAll(qlExp, input.text) }
     parseResult match {

@@ -359,9 +359,20 @@ package object ql {
      * 
      * The input text should be a block of QL (with any text on the "inside"). This parses that,
      * uses the given context and params to process it, and returns the resulting QValue.
+     * 
+     * IMPORTANT: by its nature, this one only returns *one* QValue, from the last phrase. This should eventually become
+     * a Seq of them instead.
      */
     def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
         lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[QValue]
+    
+    /**
+     * Process a QL Function all the way to Wikitext.
+     * 
+     * Note that this version copes with the entire Expression, not just the last phrase.
+     */
+    def processMethodToWikitext(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext] 
         
     /**
      * Just parses the given text, with no further processing.
