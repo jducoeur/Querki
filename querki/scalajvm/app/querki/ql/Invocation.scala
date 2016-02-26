@@ -297,13 +297,6 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
           Some(InvocationValueImpl(things.map(t => (t, context.next(ExactlyOne(Tags.NewTagSetType(t.displayName)))))))
         else
           None
-      } else if (current.value.pType == Basic.PropertyBundleType) {
-        val bundles = current.value.flatMap(Basic.PropertyBundleType)(Some(_))
-        val pairs = bundles.filter(_.hasProp(prop)).map(bundle => (bundle, context.next(ExactlyOne(Basic.PropertyBundleType(bundle)))))
-        if (pairs.isEmpty)
-          None
-        else
-          Some(InvocationValueImpl(pairs))
       } else current.value.pType match {
         case mt:ModelTypeBase => {
           val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(ExactlyOne(elem))))

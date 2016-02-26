@@ -177,35 +177,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     }
   }
   
-  lazy val PropertyBundleType = new SystemType[PropertyBundle](PropertyBundleTypeOID,
-    toProps(
-      setName("_Property Bundle Type"),
-      SystemOnlyProp(true),
-      Summary("A bundle of Property Values, which may or may not come from a Thing"))) with SimplePTypeBuilder[PropertyBundle]
-  {
-    def doDeserialize(v:String)(implicit state:SpaceState) = ???
-    def doSerialize(v:PropertyBundle)(implicit state:SpaceState) = ???
-    def doWikify(context:QLContext)(v:PropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      val futs = for {
-        pair <- v.props.toSeq
-        prop <- context.state.prop(pair._1)
-        propName = prop.displayName
-        vFut = pair._2.wikify(context, displayOpt, lexicalThing)
-      }
-        yield vFut.map { vWiki =>
-          HtmlWikitext(s"<dt>${prop.displayName}</dt><dd>") + vWiki + HtmlWikitext("</dd>")
-        }
-        
-      val fut = Future.sequence(futs)
-      fut.map(_.reduce(_ + _))
-    }
-    def doDefault(implicit state:SpaceState) = ???
-    def doComputeMemSize(v:PropertyBundle):Int = ???
-  }
-  
   override lazy val types = Seq(
     PlainTextType,
-    PropertyBundleType,
     QLType
   )
   
