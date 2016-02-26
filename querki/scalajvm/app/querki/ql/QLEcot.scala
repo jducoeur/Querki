@@ -6,6 +6,7 @@ import querki.ecology._
 
 import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
+import querki.basic.PlainText
 import querki.core.QLText
 import querki.html.QHtml
 import querki.tools.ProfileHandle
@@ -24,6 +25,7 @@ private [ql] trait QLInternals extends EcologyInterface {
 class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
   with querki.core.CollectionBase
   with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
+  with querki.basic.PlainTextBaseType
 {
   import MOIDs._
   
@@ -127,10 +129,10 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   }
   def EmptyListCut() = EmptyListCutColl()
 
-  object ErrorTextType extends TextTypeBase(UnknownOID,
+  object ErrorTextType extends PlainTextType(UnknownOID,
     toProps(
       setName("Error Text")
-    )) with PTypeBuilder[QLText,String] with IsErrorType {
+    )) with PTypeBuilder[PlainText,String] with IsErrorType {
   }
 
   def WarningValue(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))

@@ -433,9 +433,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     val (lastContext, futs) = ((fut(context), Seq.empty[Future[QLContext]]) /: phrases) { (inp, phrase) =>
       val (prevContextFut, results) = inp
       val nextContext = prevContextFut.flatMap { prevContext =>
-        // We process the next phrase *mainly* with the original context, but we need to swap in
-        // any accumulated bindings:
-        processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), isParam)
+        if (prevContext.isError) {
+          // Errors override attempts to process subsequent phrases. This is important, since only
+          // the final result comes out of processExp()!
+          fut(prevContext)
+        } else
+          // We process the next phrase *mainly* with the original context, but we need to swap in
+          // any accumulated bindings:
+          processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), isParam)
       }
       val fixedContext = phrase.ops.last match {
         case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {

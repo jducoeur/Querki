@@ -428,7 +428,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
       val processed = raw.value
       processed.firstAs(QL.ErrorTextType) match {
         // If there was an error, keep the error, and stop processing:
-        case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
+        case Some(errorText) => Future.failed(new PublicException("General.public", errorText.text))
         case None => Future.successful(Some(processed))
       }
     }
