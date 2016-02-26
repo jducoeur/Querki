@@ -429,35 +429,47 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     withScope(contextIn, processPhrase(ops, _, isParam))
   }
   
-  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext, isParam:Boolean = false):Seq[Future[QLContext]] = {
-    val (lastContext, futs) = ((fut(context), Seq.empty[Future[QLContext]]) /: phrases) { (inp, phrase) =>
-      val (prevContextFut, results) = inp
-      val nextContext = prevContextFut.flatMap { prevContext =>
-        if (prevContext.isError) {
-          // Errors override attempts to process subsequent phrases. This is important, since only
-          // the final result comes out of processExp()!
-          fut(prevContext)
-        } else
-          // We process the next phrase *mainly* with the original context, but we need to swap in
-          // any accumulated bindings:
-          processPhrase(phrase.ops, context.withScopes(this, prevContext.scopes.get(this).getOrElse(QLScopes())), isParam)
-      }
-      val fixedContext = phrase.ops.last match {
-        case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
-          // The last Stage of this Phrase was an assignment; in this very special case, we
-          // suppress the output *unless* it was an error:
-          nextContext.map { c =>
-            if (c.isError)
-              c
-            else
-              c.next(Core.QNone) 
+  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext, isParam:Boolean = false):Future[Seq[QLContext]] = {
+    val defaultScopes = context.scopes.get(this).getOrElse(QLScopes())
+    (fut(Seq.empty[QLContext]) /: phrases) { (prev, phrase) =>
+      prev.flatMap { contexts =>
+        val prevContextOpt = contexts.lastOption
+        prevContextOpt match {
+          case Some(last) if (last.isError) => {
+            // We've already gotten an error, so just ignore everything else and return what
+            // we had up until there:
+            fut(contexts)
+          }
+          case _ => {
+            // Normal situation -- process the next context
+            // Pull in the accumulated bindings from the last context, if there are any:
+            val prevScopes = prevContextOpt.flatMap(_.scopes.get(this)).getOrElse(defaultScopes)
+            // Actually process this phrase:
+            val processedFut = processPhrase(phrase.ops, context.withScopes(this, prevScopes), isParam)
+            processedFut.map { processed =>
+              val thisContext = phrase.ops.last match {
+                case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
+                  // The last Stage of this Phrase was an assignment; in this very special case, we
+                  // suppress the output *unless* it was an error:
+                  if (processed.isError)
+                    processed
+                  else
+                    processed.next(Core.QNone) 
+                }
+                // Normal result: just return what we just processed:
+                case _ => processed
+              }
+              // Tack it onto the list, and we're ready to go...
+              contexts :+ thisContext
+            }
           }
         }
-        case _ => nextContext
       }
-      (fixedContext, results :+ fixedContext)
     }
-    futs
+  }
+  
+  def processExpAll(exp:QLExp, context:QLContext, isParam:Boolean = false):Future[Seq[QLContext]] = {
+    processPhrases(exp.phrases, context, isParam)
   }
   
   def processExp(exp:QLExp, context:QLContext, isParam:Boolean = false):Future[QLContext] = {
@@ -465,26 +477,16 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     // *usually* what you want, but certainly more restrictive than the official semantics of QL.
     // Figure out how to make the callers of this cope with Seq[Future[QLContext]] (or Future[Seq[QLContext]]),
     // and adjust this to produce that.
-    processPhrases(exp.phrases, context, isParam).last
+    processExpAll(exp, context, isParam).map(_.last)
   }
   
   def processExpAsScope(exp:QLExp, context:QLContext):Future[QLContext] = {
     withScope(context, processExp(exp, _))
   }
 
-  def contextsToWikitext(contextFuts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
-    // Turn it all into one Future, to make it easier to handle:
-    // TODO: this really ought to happen much earlier in the process, before this is called:
-    val contextsFut = Future.sequence(contextFuts)
-    // If one of the results is an error, drop everything after it:
-    val contextsTrimmed = contextsFut.map { contexts =>
-      contexts.indexWhere(_.isError) match {
-        case -1 => contexts
-        case n => contexts.take(n + 1)
-      }
-    }
+  def contextsToWikitext(contextsFut:Future[Seq[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
     // Wikify each of them:
-    val wikified = contextsTrimmed.flatMap { contexts =>
+    val wikified = contextsFut.flatMap { contexts =>
       Future.sequence(contexts.map(context => context.value.wikify(context.parent)))
     }
     // And merge them together:

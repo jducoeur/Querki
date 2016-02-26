@@ -254,11 +254,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     def buildSection(context:QLContext, header:QLExp, detailsOpt:Option[QLExp], emptyOpt:Option[QLExp]):QFut = {
       val parser = context.parser.get
       val wikitextFut = if (context.isEmpty) {
-        parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processExp(empty, context.root))).getOrElse(Seq.empty))
+        emptyOpt match {
+          case Some(empty) => parser.contextsToWikitext(parser.processExpAll(empty, context.root))
+          case _ => fut(Wikitext(""))
+        }
       } else {
         for {
-          processedHeader <- parser.contextsToWikitext(Seq(parser.processExp(header, context.forceAsCollection)))
-          processedDetails = detailsOpt.map(details => Seq(parser.processExp(details, context)))
+          processedHeader <- parser.contextsToWikitext(parser.processExpAll(header, context.forceAsCollection))
+          processedDetails = detailsOpt.map(details => parser.processExpAll(details, context))
           detailContents <- processedDetails.map(parser.contextsToWikitext(_, true)).getOrElse(Future.successful(Wikitext("")))
         }
           yield processedHeader + detailContents
