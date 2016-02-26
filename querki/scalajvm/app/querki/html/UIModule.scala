@@ -669,7 +669,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         textOpt <- inv.processAsOpt("text", ParsedTextType, elem)
         text <- inv.fut(textOpt.map(Future.successful(_)).getOrElse(elem.value.wikify(elem)))
         phraseOpt <- inv.rawParam("children")
-        qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
+        qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructStandalone))
         iconOpt <- inv.processAsOpt("icon", ParsedTextType, elem)
         idOpt <- inv.processAsOpt("id", ParsedTextType, elem)
         opened <- inv.processAs("opened", YesNoType, elem)
@@ -777,7 +777,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 msg.raw.toString,
                 data.thingId := s"${thing.toThingId}",
                 data.target := nextDiv,
-                data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructString},${rawAll.reconstructString},${rawDisplay.reconstructString})")))
+                data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructStandalone},${rawAll.reconstructStandalone},${rawDisplay.reconstructStandalone})")))
             ).toString
           }
         complete =

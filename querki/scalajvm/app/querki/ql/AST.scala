@@ -22,7 +22,7 @@ case class QLPhrase(ops:Seq[QLStage]) {
 }
 
 case class QLParam(name:Option[String], exp:QLExp, immediate:Boolean = false, resolved:Option[QLContext] = None) {
-  def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${exp.reconstructString}"
+  def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${exp.reconstructStandalone}"
   def firstOps = exp.phrases.head.ops
   def isNamed = name.isDefined
 }
