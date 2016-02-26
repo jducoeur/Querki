@@ -569,11 +569,11 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private[ql] def processMethod:Future[QLContext] = {
-    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlPhrase, input.text) }
+    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlExp, input.text) }
     parseResult match {
       case Success(result, _) => 
         qlProfilers.processMethod.profile { 
-          processPhrase(result.ops, initialContext, false) 
+          processExp(result, initialContext, false)
           .recoverWith {
             case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt))
           }
