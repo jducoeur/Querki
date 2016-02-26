@@ -292,7 +292,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     val boundOpt = scopes.lookup(binding.name)
     if (binding.assign) {
       if (boundOpt.isDefined) {
-        warningFut(context, s"Attempting to reassign ${binding.name}")
+        warningFut(context, s"Attempting to reassign ${"$" + binding.name} -- you may only say ${"+$" + binding.name} once")
       } else {
         // Okay -- we are legally attempting to bind this name to the received value:
         val newScopes = scopes.bind((binding.name -> context.value))
@@ -440,8 +440,13 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       val fixedContext = phrase.ops.last match {
         case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
           // The last Stage of this Phrase was an assignment; in this very special case, we
-          // suppress the output:
-          nextContext.map { _.next(Core.QNone) }
+          // suppress the output *unless* it was an error:
+          nextContext.map { c =>
+            if (c.isError)
+              c
+            else
+              c.next(Core.QNone) 
+          }
         }
         case _ => nextContext
       }

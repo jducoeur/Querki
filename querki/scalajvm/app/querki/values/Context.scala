@@ -267,6 +267,8 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   }
       
   def isCut = value.cut
+  
+  def isError = value.pType == QL.ErrorTextType
 }
 
 /**
