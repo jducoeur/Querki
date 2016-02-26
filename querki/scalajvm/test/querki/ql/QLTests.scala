@@ -98,5 +98,18 @@ class QLTests extends QuerkiTests {
             |  ""[[$greeting]] [[$greeting2]]""]]""".stripMargin) should
         equal("Hello there!")
     }
+    
+    "work inside of a QText block" in {
+      implicit val s = new TSpace
+      
+      // This is a bit contrived, but proves the expectation:
+      pql("""[[Toy._instances -> 
+        |""[[
+        |    Link Name -> +$name
+        |    My Int -> +$int
+        |    ""[[$name]]: [[$int]]""
+        |]]""]]""".stripMargin) should
+        equal ("\nPaper: 2\nRock: 1\nScissors: 3")
+    }
   }
 }
