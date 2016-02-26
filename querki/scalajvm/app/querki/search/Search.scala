@@ -33,12 +33,12 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
   
   val HtmlUI = initRequires[querki.html.HtmlUI]
   val QL = initRequires[querki.ql.QL]
+  val Tags = initRequires[querki.tags.Tags]
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
-  lazy val Tags = interface[querki.tags.Tags]
   
   lazy val ParsedTextType = QL.ParsedTextType
   lazy val SystemOnly = Basic.SystemOnlyProp(true)
@@ -163,7 +163,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
           ),
           opts = Seq(
             ("models", LinkType, Core.QNone, "If provided, the search will be restricted to Instances and Tags of these Models"),
-            ("properties", LinkType, Core.QNone, "If provided, only these Properties will be searched"),
+            ("properties", LinkType, Core.QNone, "If provided, only these Properties will be searched. Remember to use _self on each of these!"),
             ("searchTags", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Tag names will be searched only if this is true"),
             ("searchThings", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Things (non-Tags) will be searched only if this is true")
           ),

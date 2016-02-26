@@ -171,6 +171,10 @@ class QuerkiTests
     lines.mkString
   }
   
+  def oneTag(tag:String):String = {
+    s"[$tag](${tag.replace(" ", "+")})"
+  }
+  
   def listOfTags(tags:String*):String = {
     val lines = tags.map(tag => s"\n[$tag](${tag.replace(" ", "+")})")
     lines.mkString

@@ -70,4 +70,37 @@ class SearchTests extends QuerkiTests {
       results.shouldntHave(res => res.text == "But this is not")
     }
   }
+  
+  "_search" should {
+    class TSpace extends CommonSpace {
+      val model1 = new SimpleTestThing("Model 1")
+      val model2 = new SimpleTestThing("Model 2")
+      
+      val myTagProp = new TestProperty(TagType, ExactlyOne, "Modeled Tag", Links.LinkModelProp(model2))
+      
+      val thing1 = new TestThing("Thing 1", model1, singleTextProp("Some random text"), optTextProp("Something else"))
+      val thing2 = new TestThing("Thing 2", model1, singleTextProp("Blurdy-blurdy-blur"))
+      val thing3 = new TestThing("Thing 3", model2, singleTextProp("Also random!"))
+      val thing6 = new TestThing("Thing 6", model1, optTextProp("My randomness knows no bounds"))
+      
+      val thing4 = new SimpleTestThing("Thing 4", myTagProp("And I too am random"))
+      val thing5 = new SimpleTestThing("Thing 5", singleTagProp("Abounding in randomness"))
+    }
+    
+    "use the models parameter" in {
+      implicit val s = new TSpace
+      
+      pql("""[[_search(query=""random"", searchTags=false, models=Model 2) -> _searchResultThing -> Link Name]]""") should
+        equal("Thing 3")
+      pql("""[[_search(query=""random"", searchThings=false, models=Model 2) -> _searchResultTag]]""") should
+        equal(oneTag("And I too am random"))
+    }
+    
+    "use the properties parameter" in {
+      implicit val s = new TSpace
+      
+      pql("""[[_search(query=""random"", searchTags=false, properties=My Optional Text._self) -> _searchResultThing -> Link Name]]""") should
+        equal("Thing 6")      
+    }
+  }
 }
