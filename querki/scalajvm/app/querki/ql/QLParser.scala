@@ -472,12 +472,23 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     withScope(context, processExp(exp, _))
   }
 
-  def contextsToWikitext(contexts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
-    // Each of the received contexts gets treated separately.
-    // TODO: this will almost certainly change once we introduce local bindings! At that point, the
-    // phrases in a given expression need to be closely linked!
-    val wikified = contexts.map { _.flatMap( context => context.value.wikify(context.parent)) }
-    Future.fold(wikified)(Wikitext(""))(_.+(_, insertNewlines))
+  def contextsToWikitext(contextFuts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
+    // Turn it all into one Future, to make it easier to handle:
+    // TODO: this really ought to happen much earlier in the process, before this is called:
+    val contextsFut = Future.sequence(contextFuts)
+    // If one of the results is an error, drop everything after it:
+    val contextsTrimmed = contextsFut.map { contexts =>
+      contexts.indexWhere(_.isError) match {
+        case -1 => contexts
+        case n => contexts.take(n + 1)
+      }
+    }
+    // Wikify each of them:
+    val wikified = contextsTrimmed.flatMap { contexts =>
+      Future.sequence(contexts.map(context => context.value.wikify(context.parent)))
+    }
+    // And merge them together:
+    wikified.map { contexts => (Wikitext("") /: contexts) (_.+(_, insertNewlines)) }
   }
   
   /**

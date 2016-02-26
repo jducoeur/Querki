@@ -111,5 +111,16 @@ class QLTests extends QuerkiTests {
         |]]""]]""".stripMargin) should
         equal ("\nPaper: 2\nRock: 1\nScissors: 3")
     }
+    
+    "show an error if you reassign a name inside an expression" in {
+      implicit val s = new TSpace
+      
+      pql("""[[
+        |""foo"" -> +$name
+        |""bar"" -> +$name
+        |""[[$name]]""]]""".stripMargin) should
+        // TODO: This is ugly and hardcoded. We should have a better way: 
+        equal (expectedWarning("Attempting to reassign $name -- you may only say +$name once"))
+    }
   }
 }
