@@ -122,5 +122,19 @@ class QLTests extends QuerkiTests {
         // TODO: This is ugly and hardcoded. We should have a better way: 
         equal (expectedWarning("Attempting to reassign $name -- you may only say +$name once"))
     }
+    
+    // This demonstrates the fix to a bug, that $_context was stomping the bindings before it:
+    "work despite $_context" in {
+      implicit val s = new TSpace
+      
+      // This is a bit contrived, but proves the expectation:
+      pql("""[[Toy._instances -> 
+        |""[[
+        |    Link Name -> +$name
+        |    My Int -> +$int
+        |    $_context -> ""[[$name]]: [[$int]]""
+        |]]""]]""".stripMargin) should
+        equal ("\nPaper: 2\nRock: 1\nScissors: 3")
+    }    
   }
 }

@@ -318,7 +318,8 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   
   private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
     if (binding.name == "_context") {
-      Future.successful(resolvingParser.initialContext)
+      val scopes = context.scopes(this)
+      Future.successful(resolvingParser.initialContext.withScopes(this, scopes))
     } else if (binding.name == "_defining") {
       // If this expression was invoked with a defining context, produce that:
       val found = for {
