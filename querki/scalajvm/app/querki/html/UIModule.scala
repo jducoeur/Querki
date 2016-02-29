@@ -573,10 +573,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             }
           }
         append <- inv.processAs("append", YesNoType)
+        replace <- inv.processAs("replace", YesNoType)
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" data-append="$append" href="#" """) + targetDiv)
+            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
     }
   }
 
@@ -594,7 +595,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |is not given, the results will be displayed below the button.""".stripMargin),
           ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing the button again runs
                 |the QL again, and appends the result to the target div. Otherwise, pressing the button again
-                |closes the div.""".stripMargin)
+                |closes the div.""".stripMargin),
+          ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing the button again re-runs
+                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin)
         ),
         returns = (RawHtmlType, "The button")
       ),
@@ -628,7 +631,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |is not given, the results will be displayed below the button.""".stripMargin),
           ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, clicking the link again runs
                 |the QL again, and appends the result to the target div. Otherwise, clicking the link again
-                |closes the div.""".stripMargin)
+                |closes the div.""".stripMargin),
+          ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, clicking the link again re-runs
+                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin)
         ),
         returns = (RawHtmlType, "The link, ready for the page")
       ),
@@ -662,7 +667,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |is not given, the results will be displayed below the input.""".stripMargin),
           ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, entering something else runs
                 |the QL again, and appends the result to the target div. Otherwise, pressing Enter again
-                |closes the div.""".stripMargin)
+                |closes the div.""".stripMargin),
+          ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing Enter again re-runs
+                |the QL with the new value of the input field, and replaces the previous result in the target div.""".stripMargin)
         ),
         returns = (RawHtmlType, "The input field, ready for the page")
       ),

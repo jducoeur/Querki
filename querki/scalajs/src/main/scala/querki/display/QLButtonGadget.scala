@@ -24,6 +24,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
+    val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     
     $(elem).addClass("btn-xs")
     
@@ -47,7 +48,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
       }
       
       if ($(elem).hasClass("open")) {
-        if (append) {
+        if (append || replace) {
           runQL()
         } else {
           targetJQ.hide()
