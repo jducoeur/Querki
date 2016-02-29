@@ -19,6 +19,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
   
   def hook() = {
     val jq = $(elem)
+    val isTextInput:Boolean = (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
     val thingId = jq.tidString("thingid")
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
@@ -26,12 +27,12 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     
     $(elem).addClass("btn-xs")
     
-    jq.click { (evt:JQueryEventObject) =>
+    def activate(evt:JQueryEventObject, actualQL:String) = {
       val targetJQ = $(s"#$target")
       def runQL() = {
         $(elem).addClass("running")
         $(elem).attr("disabled", true)
-        Client[ThingFunctions].evaluateQL(thingId, ql).call().foreach { result =>
+        Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach { result =>
           val qtext = new QText(result)
           if (!append) {
             targetJQ.empty()
@@ -58,7 +59,30 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
         runQL()
       }
       
-      evt.preventDefault()
+      evt.preventDefault()      
     }
+    
+    if (isTextInput)
+      // If it's a text input, we're listening for the Enter key:
+      jq.keydown { (evt:JQueryEventObject) =>
+        val which = evt.which
+        if (which == 13 && jq.valueString.length() > 0) {
+          // They pressed Enter
+          val input = jq.valueString
+          // We need to inject the entered text as the $input binding. We do this simply by
+          // tweaking the QL.
+          // First, make sure there are no internal ""s, which could allow for code injection:
+          val escaped = input.replaceAll("\"\"", "\\\"\"")
+          val actualQL = 
+            s"""""$escaped"" -> +$$input
+$$_context -> $ql"""
+          activate(evt, actualQL)
+        }
+      }
+    else
+      // Normal button or link -- we're listening for a click:
+      jq.click { (evt:JQueryEventObject) =>
+        activate(evt, ql)
+      }
   }
 }

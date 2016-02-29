@@ -34,6 +34,7 @@ object UIMOIDs extends EcotIds(11) {
   val QLLinkOID = moid(9)
   val QLTreeOID = moid(10)
   val MenuButtonOID = moid(11)
+  val QLInputOID = moid(12)
 }
 
 /**
@@ -646,6 +647,37 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       s"""<a class="_qlInvoke" $core>$label</a>"""
     }
   }
+
+  lazy val QLInput = new ClickableQLBase(QLInputOID,
+    toProps(
+      setName("_QLInput"),
+      Signature(
+        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
+        reqs = Seq(
+          ("label", ParsedTextType, "The text to display, greyed-out, in the input, to prompt the user."),
+          ("ql", Basic.QLType, "The QL to execute when the user presses Enter.")
+        ),
+        opts = Seq(
+          ("target", ParsedTextType, Core.QNone, """The id of a div or span to put the results into; if it
+                |is not given, the results will be displayed below the input.""".stripMargin),
+          ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, entering something else runs
+                |the QL again, and appends the result to the target div. Otherwise, pressing Enter again
+                |closes the div.""".stripMargin)
+        ),
+        returns = (RawHtmlType, "The input field, ready for the page")
+      ),
+      Summary("Shows an input field that, when the user types some text and presses Enter, executes some QL and can show the result"),
+      SkillLevel(SkillLevelAdvanced),
+      Details("""This function is unusual, in that it is a way to do something only if the user enters some text.
+          |It displays an input with the given **placeholder**; if the user clicks that, it evaluates the given **ql**
+          |(using the received Thing as its context).
+          |
+          |The entered input text is available in the QL expression as $input.""".stripMargin)))
+  {
+    def buildHtml(label:String, core:String):String = {
+      s"""<input type="text" class="_qlInvoke" placeholder="$label" $core></input>"""
+    }
+  }
   
   lazy val ThingTree = new InternalMethod(QLTreeOID,
     toProps(
@@ -808,6 +840,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     CreateButtonFunction,
     QLButton,
     QLLink,
+    QLInput,
     ThingTree,
     new MixedButtonMethod,
     ShowSomeFunction,
