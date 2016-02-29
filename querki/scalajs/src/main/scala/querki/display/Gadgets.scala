@@ -33,6 +33,7 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
     registerSimpleGadget("._tree", { new TreeGadget })
     registerSimpleGadget("._qlTree", { new QLTree })
     registerSimpleGadget("._menuButton", { new MenuButton })
+    registerSimpleGadget("._navigateImmediately", { new NavigateGadget })
     
     PageManager.beforePageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {

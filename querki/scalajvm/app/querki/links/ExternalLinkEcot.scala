@@ -2,6 +2,8 @@ package querki.links
 
 import scala.concurrent.Future
 
+import scalatags.Text.all._
+
 import models.{PropertyBundle, ThingState, Wikitext}
 
 import querki.core.URLableType
@@ -17,6 +19,7 @@ object ExternalLinkMOIDs extends EcotIds(46) {
   val ExternalLinkUrlOID = moid(3)
   val WithParamFunctionOID = moid(4)
   val OIDLinkOID = moid(5)
+  val NavigateToOID = moid(6)
 }
 
 class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.types.ModelTypeDefiner with EcologyMember {
@@ -25,6 +28,8 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   val Basic = initRequires[querki.basic.Basic]
   val Editor = initRequires[querki.editing.Editor]
   val Links = initRequires[Links]
+  
+  lazy val HtmlUI = interface[querki.html.HtmlUI]
 
   /***********************************************
    * TYPES
@@ -188,10 +193,37 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
                 Basic.DisplayNameProp(t.displayName))))
     }
   }
+  
+  lazy val NavigateTo = new InternalMethod(NavigateToOID,
+    toProps(
+      setName("_navigateTo"),
+      Summary("This receives a URL, and *immediately* changes pages to that URL"),
+      Signature(
+        expected = Some(Seq(Links.URLType, LinkType), "The page to go to"),
+        reqs = Seq(),
+        opts = Seq(),
+        returns = (AnyType, "HTML that tells the Querki Client to change pages")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        pt <- inv.contextTypeAs[URLableType]
+        elemContext <- inv.contextElements
+        elemV <- inv.opt(elemContext.value.firstOpt)
+        urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
+      }
+        yield HtmlUI.HtmlValue(
+          a(
+            cls:="_navigateImmediately",
+            href:=urlStr
+          ))
+    }
+  }
 
   override lazy val props = Seq(
     ExternalLinkUrlProp,
     WithParamFunction,
-    OIDLinkFunction
+    OIDLinkFunction,
+    NavigateTo
   )
 }
