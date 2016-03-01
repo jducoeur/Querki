@@ -148,7 +148,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
-  def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
+  def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList
   def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlExp ^^ { 
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
@@ -157,6 +157,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 
     ParsedQLText(_) }
+  def qlList:Parser[QLListLiteral] = "<" ~> rep1sep(qlExp, qlSpace ~ "," ~ qlSpace) <~ qlSpace ~ ">" ^^ { QLListLiteral(_) }
   
   /**
    * Note that the output here is nominally a new Context, but the underlying type is
@@ -378,6 +379,22 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     context.next(Core.ExactlyOne(Core.IntType(num.n)))
   }
   
+  private def processListLiteral(list:QLListLiteral, context:QLContext):Future[QLContext] = {
+    // Process all of the list elements, in parallel:
+    val futs:Seq[Future[Seq[QLContext]]] = list.exps.map(processExpAll(_, context))
+    val fut:Future[Seq[QLContext]] = Future.sequence(futs).map(_.flatten)
+    // Extract all the elements, and merge them into one list
+    // TODO: we're not doing any type-checking here, which means that you could get weird errors
+    // downstream if the elements aren't all compatible. We *should* be using a version of matchType
+    // to reduce everything to a single type here, or throwing an exception.
+    fut.map { contexts =>
+      val qvs = contexts.map(_.value)
+      val elems = qvs.flatMap(_.elems)
+      val qv = Core.QList.makePropValue(elems, elems.head.pType)
+      context.next(qv)
+    }
+  }
+  
   private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):Future[QLContext] = {
     logStage(stage, contextIn) {
       val context = 
@@ -393,6 +410,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         case name:QLCall => processCall(name, context, isParam)
         case subText:QLTextStage => processTextStage(subText, context)
         case num:QLNumber => Future.successful(processNumber(num, context))
+        case list:QLListLiteral => processListLiteral(list, context)
       }
     }
   }

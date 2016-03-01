@@ -288,6 +288,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	        stage match {
 	          case QLTextStage(contents, _) => encodeString(contents.reconstructString)
 	          case QLNumber(num) => encodeString(stage.reconstructString)
+            case lit:QLListLiteral => encodeString(lit.reconstructString) 
 	          case QLCall(name, methodNameOpt, _, _) => {
 	            val thingName = name.name
 	            methodNameOpt match {

@@ -135,6 +135,22 @@ class QLTests extends QuerkiTests {
         |    $_context -> ""[[$name]]: [[$int]]""
         |]]""]]""".stripMargin) should
         equal ("\nPaper: 2\nRock: 1\nScissors: 3")
-    }    
+    }
+  }
+  
+  "List Literals" should {
+    "work with text" in {
+      implicit val s = new CommonSpace
+      
+      pql("""[[<""hello"", "" there""> -> _join]]""") should
+        equal("hello there")
+    }
+    
+    "work with Things" in {
+      implicit val s = new CommonSpace
+      
+      pql("""[[<Trivial, My Instance>]]""") should
+        equal(listOfLinkText(s.trivialThing, s.instance))
+    }
   }
 }

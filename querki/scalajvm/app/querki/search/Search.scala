@@ -162,8 +162,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
             ("query", ParsedTextType, "The text to search for, minimum 3 characters")
           ),
           opts = Seq(
-            ("models", LinkType, Core.QNone, "If provided, the search will be restricted to Instances and Tags of these Models"),
-            ("properties", LinkType, Core.QNone, "If provided, only these Properties will be searched. Remember to use _self on each of these!"),
+            ("models", LinkType, ExactlyOne(LinkType(UnknownOID)), "If provided, the search will be restricted to Instances and Tags of these Models"),
+            ("properties", LinkType, ExactlyOne(LinkType(UnknownOID)), "If provided, only these Properties will be searched. Remember to use _self on each of these!"),
             ("searchTags", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Tag names will be searched only if this is true"),
             ("searchThings", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Things (non-Tags) will be searched only if this is true")
           ),
@@ -179,8 +179,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
         query <- inv.processAs("query", ParsedTextType)
         searchTags <- inv.processAs("searchTags", YesNoType)
         searchThings <- inv.processAs("searchThings", YesNoType)
-        modelId <- inv.processAsOpt("models", LinkType)
-        propertyId <- inv.processAsOpt("properties", LinkType)
+        modelId <- inv.processAs("models", LinkType)
+        propertyId <- inv.processAs("properties", LinkType)
         fullResult <- inv.opt(search(query.plaintext, searchTags, searchThings, modelId, propertyId)(inv.state))
         result <- inv.iter(fullResult.results)
         // IMPORTANT: we mustn't return the Thing we're fetching this from, or the world will go recursive
@@ -233,8 +233,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     searchStr:String, 
     searchTags:Boolean = true, 
     searchThings:Boolean = true,
-    modelIdOpt:Option[OID] = None,
-    propertyIdOpt:Option[OID] = None)(implicit state:SpaceState):Option[SearchResultsInternal] = 
+    modelId:OID = UnknownOID,
+    propertyId:OID = UnknownOID)(implicit state:SpaceState):Option[SearchResultsInternal] = 
   {
     if (searchStr.length() < 3)
       None
@@ -254,15 +254,17 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
       }
       
       def checkOne(t:Thing):Seq[SearchResultInternal] = {
-        if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
+        if ((propertyId == UnknownOID || propertyId == querki.basic.MOIDs.DisplayNameOID) && t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
           Seq(SearchResultInternal(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
         } else {
           // If the request specified a particular Property, only use that one; otherwise, check all
           // Properties:
-          val props = propertyIdOpt match {
-            case Some(propertyId) => t.props.get(propertyId).map((propertyId, _)).toSeq
-            case None => t.props.toSeq
-          }
+          val props =
+            if (propertyId == UnknownOID)
+              t.props.toSeq
+            else
+              t.props.get(propertyId).map((propertyId, _)).toSeq
+              
           val tResults:Iterable[Option[SearchResultInternal]] = props.map { pair =>
             val (propId, propValue) = pair
             propValue.pType match {
@@ -289,10 +291,11 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
       
       val thingResults =
         if (searchThings) {
-          val things = modelIdOpt match {
-            case Some(modelId) => state.descendants(modelId, false, true, false)
-            case None => state.everythingLocal
-          }
+          val things =
+            if (modelId == UnknownOID)
+              state.everythingLocal
+            else
+              state.descendants(modelId, false, true, false)
           things.map(checkOne(_)).flatten.toSeq
         } else
           Seq.empty
@@ -303,11 +306,11 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
             .fetchAllTags(state)
             .filter(_.toLowerCase.contains(searchComp))
             .filter { tag =>
-              modelIdOpt match {
+              if (modelId == UnknownOID)
+                true
+              else
                 // If a particular model has been specified, then only return Tags for that Model:
-                case Some(modelId) => Tags.preferredModelForTag(state, tag).id == modelId
-                case None => true
-              }
+                Tags.preferredModelForTag(state, tag).id == modelId
             }
             .map(Tags.getTag(_, state))
             .map(tag => SearchResultInternal(tag, DisplayNameProp, 0.7, tag.displayName, matchLocs(tag.displayName.toLowerCase)))

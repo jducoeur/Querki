@@ -34,7 +34,6 @@ case class QLCall(name:QLName, methodName:Option[QLName], params:Option[Seq[QLPa
     params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
 }
 
-
 private[ql] sealed abstract class QLName(val name:String) {
   def reconstructString:String
 }
@@ -84,3 +83,7 @@ private[ql] case class ParsedQLText(parts:Seq[QLTextPart]) {
   def reconstructString = parts.map(_.reconstructString).mkString
 }
 private[ql] case class QLSpace(text:String)
+
+private[ql] case class QLListLiteral(exps:Seq[QLExp]) extends QLStage(None) {
+  def reconstructString = "<" + exps.map(_.reconstructStandalone).mkString(", ") + ">"
+}
