@@ -321,7 +321,9 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    */
   def run(initialState:State, ops:State => State*):State = {
     (initialState /: ops) { (state, op) =>
-      op(state)
+      trying (s"Failed while running an operation in State $state") {
+        op(state)
+      }
     }
   }
 }
