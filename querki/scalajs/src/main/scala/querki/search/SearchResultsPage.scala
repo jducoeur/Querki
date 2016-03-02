@@ -19,6 +19,7 @@ import scala.scalajs.js.Any.fromFunction1
 class SearchGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLInputElement](e) with EcologyMember {
   
   lazy val PageManager = interface[querki.display.PageManager]
+  lazy val Search = interface[Search]
   
   def doRender() = 
     inp(cls:="search-query form-control _searchInput", 
@@ -31,7 +32,7 @@ class SearchGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLInputElement
     $(elem).keydown { (evt:JQueryEventObject) =>
       if (evt.which == 13) {
         val query = $(elem).value.asInstanceOf[String]
-        PageManager.showPage("_search", Map("query" -> query))
+        Search.searchResultsFactory.showPage(("query" -> query))
         false
       }
     }
