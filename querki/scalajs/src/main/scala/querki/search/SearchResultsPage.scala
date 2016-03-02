@@ -9,7 +9,7 @@ import querki.globals._
 
 import SearchFunctions._
 import querki.display.HookedGadget
-import querki.pages.{Page, PageContents, ParamMap}
+import querki.pages.{Page, PageContents, PageParamOps, ParamMap}
 import scala.scalajs.js.Any.fromFunction1
 
 /**
@@ -42,7 +42,7 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "se
   
   lazy val Client = interface[querki.client.Client]
   
-  val query = params("query")
+  val query = params.requiredParam("query")
   val queryLen = query.length
   
   def boldfaceResult(result:SearchResult):Modifier = {
