@@ -203,6 +203,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       case ex:Exception => {
         println(s"Exception trying to render page $pageName")
         ex.printStackTrace()
+        StatusLine.showUntilChange(s"Error while trying to display page $pageName")
         Future.failed(ex)
       }
     }
