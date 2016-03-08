@@ -77,7 +77,7 @@ package object security {
     /**
      * Fetches all of the Roles defined for this Space, in display order.
      */
-    def allRoles(state:SpaceState):Seq[Thing]
+    def allRoles(state:SpaceState):(Seq[Thing], Seq[Thing])
     
     def BasicMemberRole:Thing
     def CommentatorRole:Thing

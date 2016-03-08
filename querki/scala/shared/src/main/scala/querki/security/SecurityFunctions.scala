@@ -15,7 +15,7 @@ trait SecurityFunctions {
   /**
    * Fetch all of the Roles known to this Space, in their "usual" display order.
    */
-  def getRoles():Future[Seq[ThingInfo]]
+  def getRoles():Future[(Seq[ThingInfo], Seq[ThingInfo])]
   
   /**
    * Fetch all of the members and invitees of this Space.

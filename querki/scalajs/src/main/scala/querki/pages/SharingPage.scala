@@ -36,7 +36,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
   
     
-  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
+  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
     val role = Var(initialRole)
     val roleName = Rx(role().displayName)
       
@@ -86,7 +86,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   }
   
   
-  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
+  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     def ecology = SharingPage.this.ecology
     
     val initPersonRole = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
@@ -97,7 +97,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	      MSeq(
 	        person.person.displayName, 
 	        " -- ",
-	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo)
+	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo, customInfo)
 	      )
 	    })
 	  )
@@ -152,9 +152,10 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   def pageContent = for {
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
-    roles <- Client[SecurityFunctions].getRoles().call()
+    (roles, custom) <- Client[SecurityFunctions].getRoles().call()
     inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
     roleMap = makeRoleMap(roles)
+    customMap = makeRoleMap(custom)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
     guts =
       div(
@@ -193,7 +194,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               "These people should be invited as ",
-              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap)
+              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap, customMap)
             )
           ),
         
@@ -237,7 +238,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           table(cls:="table table-hover",
             tbody(
               for (member <- invitees) 
-                yield new PersonDisplay("warning", member, roleMap)
+                yield new PersonDisplay("warning", member, roleMap, customMap)
             )
           )          
         ),
@@ -249,10 +250,17 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           table(cls:="table table-hover",
             tbody(
               for (member <- members) 
-                yield new PersonDisplay("info", member, roleMap)
+                yield new PersonDisplay("info", member, roleMap, customMap)
             )
           )
-        )
+        ),
+        
+        section(id:="custom",
+          h2("Custom Roles"),
+          p("""You can define special custom Roles for your Space, if you need more control. For the moment, you
+              |can only use these Roles in the fine-grained permission system (that is, using them for permissions
+              |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
+              |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin))
       )
   }
     yield PageContents(s"Sharing for ${space.displayName}", guts)

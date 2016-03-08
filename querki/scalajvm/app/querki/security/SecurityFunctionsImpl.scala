@@ -39,9 +39,13 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     SpaceSecurityInfo(Email.from, currentDefault.id)
   }
   
-  def getRoles():Future[Seq[ThingInfo]] = {
-    val roles = Roles.allRoles(state)
-    Future.sequence(roles.map(ClientApi.thingInfo(_, rc)))
+  def getRoles():Future[(Seq[ThingInfo], Seq[ThingInfo])] = {
+    val (std, custom) = Roles.allRoles(state)
+    val stdFut = Future.sequence(std.map(ClientApi.thingInfo(_, rc)))
+    val customFut = Future.sequence(custom.map(ClientApi.thingInfo(_, rc)))
+    Future.sequence(Seq(stdFut, customFut)).map {
+      case head :: tail :: _ => (head, tail)
+    }
   }
   
   def getMembers():Future[(Seq[PersonInfo], Seq[PersonInfo])] = {

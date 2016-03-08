@@ -12,6 +12,7 @@ object RolesMOIDs extends EcotIds(51) {
   val ManagerOID = moid(4)
   val BasicMemberOID = moid(5)
   val CanExplorePermOID = moid(6)
+  val CustomRoleModelOID = moid(7)
 }
 
 /**
@@ -28,14 +29,15 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   val Conversations = initRequires[querki.conversations.Conversations]
   val UserValues = initRequires[querki.uservalues.UserValues]
   
-  def allRoles(state:SpaceState):Seq[Thing] = {
-    Seq(
+  def allRoles(state:SpaceState):(Seq[Thing], Seq[Thing]) = {
+    (Seq(
       BasicMemberRole,
       CommentatorRole,
       ContributorRole,
       EditorRole,
       ManagerRole
-    )
+     ),
+     state.descendants(CustomRoleModel, false, true, false).toSeq)
   }
     
   /***********************************************
@@ -103,10 +105,18 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
         |someone a Manager if you trust them completely, because they can do anything to the Space except to give it away or delete it.""".stripMargin,
       managerPerms)
       
+  lazy val CustomRoleModel = ThingState(CustomRoleModelOID, systemOID, AccessControl.RoleModel,
+    toProps(
+      setName("_customRoleModel"),
+      Summary("The model underlying custom user-defined Roles"),
+      Core.IsModelProp(true),
+      SkillLevel(SkillLevelAdvanced)))
+      
   override lazy val things = Seq(
     CommentatorRole,
     ContributorRole,
     EditorRole,
-    ManagerRole
+    ManagerRole,
+    CustomRoleModel
   )
 }
