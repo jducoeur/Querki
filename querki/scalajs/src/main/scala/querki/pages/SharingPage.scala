@@ -36,7 +36,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
   
     
-  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
+  class RoleDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
+    val initialRole:ThingInfo = roleInfo.roles.find(role => initialRoles.contains(role.oid)).getOrElse(roleInfo.default) 
     val role = Var(initialRole)
     val roleName = Rx(role().displayName)
       
@@ -89,15 +90,13 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     def ecology = SharingPage.this.ecology
     
-    val initPersonRole = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
-    
     def doRender() =
       tr(cls:=showCls,
 	    td({
 	      MSeq(
 	        person.person.displayName, 
 	        " -- ",
-	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo, customInfo)
+	        new RoleDisplay(person.roles, person.person.oid, roleInfo, customInfo)
 	      )
 	    })
 	  )
@@ -222,7 +221,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               "These people should be invited as ",
-              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap, customMap)
+              new RoleDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
             )
           ),
         
