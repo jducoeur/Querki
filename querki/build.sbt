@@ -75,6 +75,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
   
+  jsDependencies += "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" minified "jquery-ui-1.10.0.custom.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.manifest.js" minified "jquery.manifest.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" minified "jquery.ui.touch-punch.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
@@ -99,7 +100,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "org.querki" %%% "querki-jsext" % "0.6",
-    "org.querki" %%% "jquery-facade" % "0.11",
+    "org.querki" %%% "jquery-facade" % "1.0-RC2",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.5",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0",
     "org.querki" %%% "jstree-facade" % "0.2"
