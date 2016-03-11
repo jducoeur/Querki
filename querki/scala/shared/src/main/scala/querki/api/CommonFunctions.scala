@@ -98,6 +98,7 @@ class StandardThings(h:PassthroughHandlerBase) {
     val canCreatePerm = h.pass("Who Can Create")
     val inviteTextProp = h.pass("Space Invitation Text")
     val personRolesProp = h.pass("Person Roles")
+    val customRoleModel = h.pass("_customRoleModel")
   }
   
   object tags {

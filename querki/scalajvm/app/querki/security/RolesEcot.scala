@@ -107,7 +107,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   lazy val CustomRoleModel = ThingState(CustomRoleModelOID, systemOID, AccessControl.RoleModel,
     toProps(
-      setName("_customRoleModel"),
+      setName(querki.api.commonName(_.security.customRoleModel)),
       Summary("The model underlying custom user-defined Roles"),
       Core.IsModelProp(true),
       SkillLevel(SkillLevelAdvanced)))

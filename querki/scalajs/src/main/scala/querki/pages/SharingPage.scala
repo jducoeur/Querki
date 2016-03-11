@@ -18,7 +18,7 @@ import querki.api._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, Gadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
-import querki.display.rx.{RunButton, RxTextFrag}
+import querki.display.rx._
 import querki.editing.EditFunctions
 import querki.security.{PersonInfo, SecurityFunctions}
 
@@ -150,6 +150,34 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   }
   lazy val collaboratorInput = new CollaboratorInput
   
+  class CustomRoleManager(customRoles:RoleInfo) extends Gadget[dom.HTMLDivElement] {
+    def ecology = SharingPage.this.ecology
+    val roleAdder = GadgetRef[RxText]
+    
+    def createRole(name:String) = {
+      val change = Seq(EditFunctions.ChangePropertyValue(Editing.propPath(std.basic.displayNameProp), List(name)))
+      
+      for {
+        role <- Client[EditFunctions].create(std.security.customRoleModel, change).call()
+      }
+        // For now, we're just going to reload, instead of trying to do anything clever:
+        yield PageManager.reload()
+    }
+    
+    def doRender() =
+      div(
+        h4("Existing Roles"),
+        for (role <- customRoles.roles)
+          yield p(role.displayName),
+        h4("Create a new Custom Role"),
+        roleAdder <= new RxText(cls:="form-control col-md-3"),
+        " ", 
+        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := Rx { roleAdder.map(_.length == 0).getOrElse(true) }) ({ () =>
+          createRole(roleAdder.get.text())
+        })
+      )
+  }
+  
   def pageContent = for {
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
     (roles, custom) <- Client[SecurityFunctions].getRoles().call()
@@ -260,7 +288,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           p("""You can define special custom Roles for your Space, if you need more control. For the moment, you
               |can only use these Roles in the fine-grained permission system (that is, using them for permissions
               |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
-              |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin))
+              |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin)),
+          new CustomRoleManager(customMap)
       )
   }
     yield PageContents(s"Sharing for ${space.displayName}", guts)
