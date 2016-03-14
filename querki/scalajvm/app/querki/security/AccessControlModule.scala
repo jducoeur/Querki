@@ -97,6 +97,16 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         
         val isLocalUser = isMember(identityId, state)
         
+        val personRoles:Seq[OID] = {
+          val raw = for {
+            person <- Person.localPerson(identityId)
+            rolesPV <- person.getPropOpt(PersonRolesProp)
+          }
+            yield rolesPV.rawList
+            
+          raw.getOrElse(Seq.empty)
+        }
+        
         val thingPermsOpt = {
           thingOpt.flatMap(_.localProp(aclProp)) match {
             case Some(local) => Some(local)  // The property is directly on this Thing
@@ -121,6 +131,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             true
           else if (perms.exists(Person.isPerson(identityId, _)))
             true
+          else if (perms.exists(personRoles.contains(_)))
+            true // One of the Roles this person has is in the list
           else
             // *NOT* default. If the properly exists, and is left unset, then we
             // always default to false!
@@ -142,16 +154,10 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
          * easier to use.
          */
         def hasRole:Option[Boolean] = {  
-          val result = for {
-            person <- Person.localPerson(identityId)
-            rolesPV <- person.getPropOpt(PersonRolesProp)
-          }
-            yield rolesPV.exists(roleHasPerm(_))
-            
-          result match {
-            case Some(b) => if (b) Some(true) else None
-            case _ => None
-          }
+          if (personRoles.exists(roleHasPerm(_)))
+            Some(true)
+          else
+            None
         }
         
         // Try the permissions directly on this Thing...
@@ -190,89 +196,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     else
       hasPermission(CanEditProp, state, who, thingId)
   }
-/*  
-  def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
-    hasPermissionProfile.profile {
-    
-    // Sadly, Edit turns out to be more complex than Create and Read -- simple inheritance of the value,
-    // while conceptually elegant, doesn't actually work in practice. So we need to juggle two properties
-    // instead.
-    // TODO: refactor this with the hasPermission() method above.
-    // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
-    val thingId = { if (thingIdIn == UnknownOID) state.id else thingIdIn}
-    val thing = state.anything(thingId)
-    if (thing.isDefined && (thing.get.spaceId == querki.ecology.SystemIds.systemOID))
-      // The System Space is not runtime-editable, regardless of who is asking:
-      false
-    else if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
-      true
-    else {
-      implicit val s = state
-      val (isLocalUser, whoId) = who match {
-        case _ => (isMember(who, state), who.id)        
-      }
-      
-      
-      // We check Who Can Edit on the Thing itself...
-      val thingPermsOpt = thing.flatMap(_.localProp(CanEditProp))
-       
-      def checkPerms(perms:PropAndVal[OID]):Boolean = {
-        /* if (publicAllowed && perms.contains(MOIDs.PublicTagOID))
-          true
-        else */ if (isLocalUser && perms.contains(MembersTagOID))
-          true
-        else if (perms.exists(Person.hasPerson(who, _)))
-          true
-        else
-          // *NOT* default. If the properly exists, and is left unset, then we
-          // always default to false!
-          false          
-      }
-      
-      def roleHasPerm(roleId:OID):Boolean = {
-        val result = for {
-          role <- state.anything(roleId)
-          perms <- role.getPropOpt(RolePermissionsProp)
-        }
-          yield perms.contains(CanEditChildrenProp)
-            
-        result.getOrElse(false)
-      }
-        
-      /**
-       * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
-       * easier to use.
-       */
-      def hasRole:Option[Boolean] = {  
-        val result = for {
-          identity <- Person.localIdentities(who).headOption
-          person <- Person.localPerson(identity.id)
-          rolesPV <- person.getPropOpt(PersonRolesProp)
-        }
-          yield rolesPV.exists(roleHasPerm(_))
-          
-        result match {
-          case Some(b) => if (b) Some(true) else None
-          case _ => None
-        }
-      }
-      
-      // TODO: wow, that's a horror. Can we turn this into a well-behaved for comprehension or something?
-      // Would Scalaz's "|" (or) operator help?
-      thingPermsOpt.map(checkPerms(_)).getOrElse(
-        thing.flatMap(_.getModelOpt.flatMap(_.getPropOpt(CanEditChildrenProp)).map(checkPerms(_))).getOrElse(
-          if (thingId == state.id)
-            // Don't consider the Space to be its own child:
-            false 
-          else
-            hasRole.getOrElse(
-            state.getPropOpt(CanEditChildrenProp).map(checkPerms(_)).getOrElse(
-              false))))
-    }    
-    
-    }
-  }
-*/  
+
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
     implicit val s = state
     // TODO: for the time being, this is very simplistic: if the property is a permission,

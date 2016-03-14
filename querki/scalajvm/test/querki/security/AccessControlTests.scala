@@ -274,6 +274,9 @@ class AccessControlTests extends QuerkiTests {
       val editableByCustom = new SimpleTestThing("Editable", AccessControl.CanEditProp(customRole))
       val readableByCustom = new SimpleTestThing("Readable", AccessControl.CanReadProp(customRole))
       val createableByCustom = new SimpleTestThing("Createable", AccessControl.CanCreateProp(customRole))
+      
+      val childEditableByCustom = new SimpleTestThing("Editable Model", AccessControl.CanEditChildrenProp(customRole))
+      val editableChild = new TestThing("Editable child", childEditableByCustom)
     }
     
     "allow the Owner to open Read Access on a Thing only to a custom Role" in {
@@ -281,6 +284,27 @@ class AccessControlTests extends QuerkiTests {
       
       assert(!AccessControl.canRead(space.state, space.member1.user, space.readableByCustom))
       assert(AccessControl.canRead(space.state, space.customMember.user, space.readableByCustom))
+    }
+    
+    "allow the Owner to open Edit Access on a Thing only to a custom Role" in {
+      implicit val space = new CustomSpace
+      
+      assert(!AccessControl.canEdit(space.state, space.member1.user, space.editableByCustom))
+      assert(AccessControl.canEdit(space.state, space.customMember.user, space.editableByCustom))
+    }
+    
+    "allow the Owner to open Edit Access on an Instance only to a custom Role" in {
+      implicit val space = new CustomSpace
+      
+      assert(!AccessControl.canEdit(space.state, space.member1.user, space.editableChild))
+      assert(AccessControl.canEdit(space.state, space.customMember.user, space.editableChild))
+    }
+    
+    "allow the Owner to open Create Access on a Thing only to a custom Role" in {
+      implicit val space = new CustomSpace
+      
+      assert(!AccessControl.canCreate(space.state, space.member1.user, space.createableByCustom))
+      assert(AccessControl.canCreate(space.state, space.customMember.user, space.createableByCustom))
     }
   }
 }
