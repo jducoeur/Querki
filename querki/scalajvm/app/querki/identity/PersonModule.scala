@@ -284,14 +284,16 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     // TODO: this is much too arbitrary:
     implicit val timeout = Timeout(30 seconds)
     
-    val inviteeRole = {
-	  val currentDefaultOpt = for {
-	    rolesPV <- originalState.getPropOpt(AccessControl.PersonRolesProp)(originalState)
-	    roleId <- rolesPV.firstOpt
-	  }
-	    yield roleId
-	      
-	  currentDefaultOpt.getOrElse(Roles.BasicMemberRole.id)
+    val inviteeRoles:Seq[OID] = {
+      val actual = originalState.
+        getPropOpt(AccessControl.PersonRolesProp)(originalState).
+        map(_.rawList).
+        getOrElse(Seq())
+        
+      if (actual.isEmpty)
+        Seq(Roles.BasicMemberRole.id)
+      else
+        actual
     }
     
     // Filter out any of these email addresses that have already been invited:
@@ -360,7 +362,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	          toProps(
 	            EmailAddressProp(invitee.email.addr),
 	            DisplayNameProp(invitee.display),
-	            AccessControl.PersonRolesProp(inviteeRole),
+	            AccessControl.PersonRolesProp(inviteeRoles:_*),
 	            AccessControl.CanReadProp(AccessControl.OwnerTag))
 	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
 	        val nextFuture = SpaceOps.spaceRegion ? msg

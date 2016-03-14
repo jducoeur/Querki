@@ -16,7 +16,7 @@ import querki.globals._
 
 import querki.api._
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, Gadget, RawDiv}
+import querki.display.{ButtonGadget, Gadget, HookedGadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx._
 import querki.editing.EditFunctions
@@ -30,25 +30,52 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   lazy val space = DataAccess.space.get
   
+  val noRole = ThingInfo(
+    TID(""),
+    Some("None"),
+    models.QWikitext("No Custom Role"),
+    TID(""),
+    models.Kind.Thing,
+    false, false, false, false, false,
+    None
+  )
+  
   case class RoleInfo(map:Map[TID, ThingInfo], roles:Seq[ThingInfo]) {
     def default = roles.head
+    def isEmpty = roles.find(_.oid.underlying.length > 0).isEmpty
   }
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
-  
+      
+  // TODO: this should probably become an RxSelect instead?
+  class RoleSelector(parent:RoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
+    def ecology = SharingPage.this.ecology
     
-  class RoleDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
-    val initialRole:ThingInfo = roleInfo.roles.find(role => initialRoles.contains(role.oid)).getOrElse(roleInfo.default) 
-    val role = Var(initialRole)
     val roleName = Rx(role().displayName)
+    
+    override def onCreate(e:dom.HTMLSelectElement) = {
+      $(elem).value(role().oid.underlying)
+        
+      $(elem).change({ evt:JQueryEventObject =>
+        val chosen = $(elem).find(":selected").valueString
+        role() = info.map(TID(chosen))
+        parent.roleChosen()
+      })
+    }
       
-    override lazy val thingId = tid
-    override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-    def values = List(role().oid.underlying)
+    def doRender() =
+      select(
+        for (r <- info.roles)
+          yield option(value:=r.oid.underlying,
+            r.displayName)
+      )
+  }
+  
+  class RoleDisplay(parent:RolesDisplay, initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
+    def findInitial(info:RoleInfo):ThingInfo = info.roles.find(role => initialRoles.contains(role.oid)).getOrElse(info.default)
       
-    def roleChosen(roleId:String) = {
-      role() = roleInfo.map(TID(roleId))
+    def roleChosen() = {
       $(selector).detachReplaceWith(elem)
-      save()
+      parent.save()
     }
       
     def hook() = {
@@ -59,33 +86,42 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	        
     def doRender() =
       span(cls:="_chooseRole label label-info",
-        data("personid"):=thingId.underlying,
-        new RxTextFrag(roleName)
+        data("personid"):=tid.underlying,
+        new RxTextFrag(roleSelector.roleName)
       )
         
-    lazy val selector = (new RoleSelector).render
-        
-    class RoleSelector extends Gadget[dom.HTMLSelectElement] {
-      def ecology = SharingPage.this.ecology
-      
-      override def onCreate(e:dom.HTMLSelectElement) = {
-        $(elem).value(role().oid.underlying)
-          
-        $(elem).change({ evt:JQueryEventObject =>
-          val chosen = $(elem).find(":selected").valueString
-          roleChosen(chosen)
-        })
-      }
-        
-      def doRender() =
-        select(
-          for (r <- roleInfo.roles)
-            yield option(value:=r.oid.underlying,
-              r.displayName)
-        )
+    val roleSelector = new RoleSelector(this, roleInfo, Var(findInitial(roleInfo)))
+    lazy val selector = (roleSelector).render
+    
+    def curValue:Option[String] = {
+      val raw = roleSelector.role().oid.underlying
+      if (raw.length == 0)
+        None
+      else
+        Some(raw)
     }
   }
   
+  class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
+    override lazy val thingId = tid
+    override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
+    def values = List(roleDisplay.curValue, customDisplayRef.opt().flatMap(_.curValue)).flatten
+    
+    val roleDisplay = new RoleDisplay(this, initialRoles, tid, roleInfo)
+    val customDisplayRef = GadgetRef[RoleDisplay](ecology)
+    
+    def doRender() =
+      span(
+        roleDisplay,
+        if (!customInfo.isEmpty) {
+          MSeq(
+            " and ",
+            customDisplayRef <= new RoleDisplay(this, initialRoles, tid, customInfo))
+        }
+      )
+      
+    def hook() = {}
+  }
   
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     def ecology = SharingPage.this.ecology
@@ -96,7 +132,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	      MSeq(
 	        person.person.displayName, 
 	        " -- ",
-	        new RoleDisplay(person.roles, person.person.oid, roleInfo, customInfo)
+	        new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo)
 	      )
 	    })
 	  )
@@ -166,7 +202,10 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     def doRender() =
       div(
         h4("Existing Roles"),
-        for (role <- customRoles.roles)
+        for {
+          role <- customRoles.roles
+          if (role.oid.underlying.length > 0)
+        }
           yield p(role.displayName),
         h4("Create a new Custom Role"),
         roleAdder <= new RxText(cls:="form-control col-md-3"),
@@ -182,7 +221,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     (roles, custom) <- Client[SecurityFunctions].getRoles().call()
     inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
     roleMap = makeRoleMap(roles)
-    customMap = makeRoleMap(custom)
+    customMap = makeRoleMap(noRole +: custom)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
     guts =
       div(
@@ -221,7 +260,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               "These people should be invited as ",
-              new RoleDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
+              new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
             )
           ),
         
@@ -284,7 +323,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         
         section(id:="custom",
           h2("Custom Roles"),
-          p("""You can define special custom Roles for your Space, if you need more control. For the moment, you
+          p(b("Advanced: "),
+            """You can define special custom Roles for your Space, if you need more control. For the moment, you
               |can only use these Roles in the fine-grained permission system (that is, using them for permissions
               |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
               |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin)),
