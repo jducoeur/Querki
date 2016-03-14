@@ -25,6 +25,7 @@ object MOIDs extends EcotIds(4) {
   val RoleModelOID = moid(13)
   val RolePermissionsOID = moid(14)
   val PersonRolesOID = moid(15)
+  val ChildPermissionsPropOID = moid(16)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -75,77 +76,98 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
     hasPermissionProfile.profile {
-    
-    if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
-      true
-    else {
-      implicit val s = state
-      val isLocalUser = isMember(identityId, state)
-      
-      val thingPermsOpt =
-        if (thingId == UnknownOID)
-          None
-        else {
-          val thing = state.anything(thingId)
-          thing.flatMap(_.getPropOpt(aclProp))
-        }
-      
-      val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
-      
-      def checkPerms(perms:PropAndVal[OID]):Boolean = {
-        if (publicAllowed && perms.contains(PublicTagOID))
-          true
-        else if (isLocalUser && perms.contains(MembersTagOID))
-          true
-        else if (perms.exists(Person.isPerson(identityId, _)))
-          true
-        else
-          // *NOT* default. If the properly exists, and is left unset, then we
-          // always default to false!
-          false          
-      }
-      
-      def roleHasPerm(roleId:OID):Boolean = {
-        val result = for {
-          role <- state.anything(roleId)
-          perms <- role.getPropOpt(RolePermissionsProp)
-        }
-          yield perms.contains(aclProp)
+      if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
+        true
+      else {
+        implicit val s = state
+        // This exists mainly so that we can check Who Can Edit on this Thing, but Who Can Edit Children
+        // on its children. "childProp" is what we look at if we're looking up the inheritance chain:
+        lazy val childProp = {
+          val opt = for {
+            childPV <- aclProp.getPropOpt(ChildPermissionsProp)
+            childId <- childPV.firstOpt
+            childPropRaw <- state.prop(childId)
+            cp <- childPropRaw.confirmType(LinkType)
+          }
+            yield cp
             
-        result.getOrElse(false)
-      }
+          opt.getOrElse(aclProp)
+        }
+        val thingOpt = state.anything(thingId)
         
-      /**
-       * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
-       * easier to use.
-       */
-      def hasRole:Option[Boolean] = {  
-        val result = for {
-          person <- Person.localPerson(identityId)
-          rolesPV <- person.getPropOpt(PersonRolesProp)
+        val isLocalUser = isMember(identityId, state)
+        
+        val thingPermsOpt = {
+          thingOpt.flatMap(_.localProp(aclProp)) match {
+            case Some(local) => Some(local)  // The property is directly on this Thing
+            case None => {
+              // The property isn't on the Thing, so check whether *childProp* is on its *model*
+              for {
+                thing <- thingOpt
+                model <- thing.getModelOpt
+                pv <- model.getPropOpt(childProp)
+              }
+                yield pv
+            }
+          }
         }
-          yield rolesPV.exists(roleHasPerm(_))
+        
+        val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
+        
+        def checkPerms(perms:PropAndVal[OID]):Boolean = {
+          if (publicAllowed && perms.contains(PublicTagOID))
+            true
+          else if (isLocalUser && perms.contains(MembersTagOID))
+            true
+          else if (perms.exists(Person.isPerson(identityId, _)))
+            true
+          else
+            // *NOT* default. If the properly exists, and is left unset, then we
+            // always default to false!
+            false          
+        }
+        
+        def roleHasPerm(roleId:OID):Boolean = {
+          val result = for {
+            role <- state.anything(roleId)
+            perms <- role.getPropOpt(RolePermissionsProp)
+          }
+            yield perms.contains(childProp)
+              
+          result.getOrElse(false)
+        }
           
-        result match {
-          case Some(b) => if (b) Some(true) else None
-          case _ => None
+        /**
+         * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
+         * easier to use.
+         */
+        def hasRole:Option[Boolean] = {  
+          val result = for {
+            person <- Person.localPerson(identityId)
+            rolesPV <- person.getPropOpt(PersonRolesProp)
+          }
+            yield rolesPV.exists(roleHasPerm(_))
+            
+          result match {
+            case Some(b) => if (b) Some(true) else None
+            case _ => None
+          }
         }
+        
+        // Try the permissions directly on this Thing...
+        thingPermsOpt.map(checkPerms(_)).getOrElse(
+            // ... or the Person has a Role that gives them the permission...
+            // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
+            // the Space settings, but are overridden by Thing/Model.
+            hasRole.getOrElse(
+            // ... or the permissions on the Space (note that this uses childProp rather than aclProp, and that we
+            // don't apply this clause if we're actually looking *at* the Space)...
+            {if (thingId != state.id) state.getPropOpt(childProp).map{checkPerms(_)} else None}.getOrElse(
+            // ... or the default permissions for this ACL...
+            aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
+            // ... or just give up and say no.
+            false))))
       }
-      
-      // Try the permissions directly on this Thing...
-      thingPermsOpt.map(checkPerms(_)).getOrElse(
-          // ... or the Person has a Role that gives them the permission...
-          // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
-          // the Space settings, but are overridden by Thing/Model.
-          hasRole.getOrElse(
-          // ... or the permissions on the Space...
-          state.getPropOpt(aclProp).map{checkPerms(_)}.getOrElse(
-          // ... or the default permissions for this ACL...
-          aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
-          // ... or just give up and say no.
-          false))))
-    }
-    
     }
   }
   
@@ -160,7 +182,15 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   def canRead(state:SpaceState, who:User, thingId:OID):Boolean = {
     hasPermission(CanReadProp, state, who, thingId)    
   }
-  
+
+  def canEdit(state:SpaceState, who:User, thingId:OID):Boolean = {
+    if (state.id == querki.ecology.SystemIds.systemOID)
+      // You can't edit anything in the System Space:
+      false
+    else
+      hasPermission(CanEditProp, state, who, thingId)
+  }
+/*  
   def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
     hasPermissionProfile.profile {
     
@@ -242,7 +272,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     
     }
   }
-  
+*/  
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
     implicit val s = state
     // TODO: for the time being, this is very simplistic: if the property is a permission,
@@ -389,8 +419,10 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit"),
         isPermissionProp(true),
+        PublicAllowedProp(false),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
+        ChildPermissionsProp(CanEditChildrenPropOID),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
             |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
@@ -451,6 +483,21 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         Summary("""This Property is only useful on Persons. It defines the Roles that this Person has.
             |You do not assign it directly; use the Sharing and Security page to manage which Roles each Person has.""".stripMargin)))
   
+  lazy val ChildPermissionsProp = new SystemProperty(ChildPermissionsPropOID, LinkType, Optional,
+    toProps(
+      setName("Child Permissions Property"),
+      setInternal,
+      Links.LinkKindProp(Kind.Property),
+      Summary("""Points from a Permission on *this* Thing to the one to check for its children."""),
+      Details("""There are a small number of Permissions (as of this writing, only `Who Can Edit`), which are split
+        |into one Property that you check on this specific Thing, and a related one that you check for its instances.
+        |For example, `Who Can Edit`, on a Model, says who can edit the Model itself; `Who Can Edit Children` on that Model
+        |says who can edit the "children" (usually the Instances) of that Model. In such cases, this meta-Property
+        |points from, eg, `Who Can Edit` to `Who Can Edit Children`.
+        |
+        |This approach is a bit over-elaborate, and might yet evolve a bit. But for now, make sure to keep this
+        |different in mind.""".stripMargin)))
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -495,6 +542,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     DefaultPermissionProp,
     RolePermissionsProp,
     PersonRolesProp,
+    ChildPermissionsProp,
     
     HasPermissionFunction
   )

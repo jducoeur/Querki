@@ -118,6 +118,10 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
       val credentials = new BasicAWSCredentials(AWS.accessKeyId, AWS.secretAccessKey)
       val s3client = new AmazonS3Client(credentials)
       s3client.setRegion(Region.getRegion(Regions.US_WEST_2))
+      // TODO: EEEEVIL! This is currently synchronous, and presumably takes A Long Time. We need to either
+      // find an async version of these entry points, or do these operations in an Actor that uses a
+      // different Dispatcher, to avoid blocking the world! See whether TransferManager can help:
+      // http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/transfer/TransferManager.html
       def uploadToS3(stream:ByteArrayOutputStream, name:String) = {
         val metadata = new ObjectMetadata()
         metadata.setContentType(mimeType)

@@ -84,6 +84,7 @@ package object security {
     def ContributorRole:Thing
     def EditorRole:Thing
     def ManagerRole:Thing
+    def CustomRoleModel:Thing
     
     def CanExplorePerm:Property[OID,OID]
   }

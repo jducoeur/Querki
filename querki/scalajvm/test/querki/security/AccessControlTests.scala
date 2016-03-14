@@ -192,7 +192,6 @@ class AccessControlTests extends QuerkiTests {
       assert(AccessControl.canEdit(space.state, space.member1.user, space.instance))
       assert(AccessControl.canEdit(space.state, space.member2.user, space.instance))
       assert(!AccessControl.canEdit(space.state, space.nonMember, space.instance))
-      assert(!AccessControl.canEdit(space.state, space.member1.user, UnknownOID))
       assert(!AccessControl.canEdit(space.state, space.member1.user, space.state.id))
     }
     
@@ -204,9 +203,7 @@ class AccessControlTests extends QuerkiTests {
 
       assert(!AccessControl.canEdit(space.state, space.member1.user, space.instance))
       assert(!AccessControl.canEdit(space.state, space.nonMember, space.instance))
-      assert(AccessControl.canEdit(space.state, space.member1.user, UnknownOID))
       assert(AccessControl.canEdit(space.state, space.member1.user, space.state.id))      
-      assert(!AccessControl.canEdit(space.state, space.member2.user, UnknownOID))
     }
     
     lazy val Conversations = interface[querki.conversations.Conversations]
@@ -267,6 +264,23 @@ class AccessControlTests extends QuerkiTests {
       assert(AccessControl.canEdit(space.state, space.contributor.user, space.instance))
       assert(AccessControl.canEdit(space.state, space.editor.user, space.instance))
       assert(AccessControl.canEdit(space.state, space.manager.user, space.instance))
+    }
+    
+    class CustomSpace extends CommonSpace {
+      val customRole = new TestThing("Custom Role", Roles.CustomRoleModel)
+      
+      val customMember = member("Custom Member", "customMemberHandle", PaidUser, PersonRolesProp(customRole))
+      
+      val editableByCustom = new SimpleTestThing("Editable", AccessControl.CanEditProp(customRole))
+      val readableByCustom = new SimpleTestThing("Readable", AccessControl.CanReadProp(customRole))
+      val createableByCustom = new SimpleTestThing("Createable", AccessControl.CanCreateProp(customRole))
+    }
+    
+    "allow the Owner to open Read Access on a Thing only to a custom Role" in {
+      implicit val space = new CustomSpace
+      
+      assert(!AccessControl.canRead(space.state, space.member1.user, space.readableByCustom))
+      assert(AccessControl.canRead(space.state, space.customMember.user, space.readableByCustom))
     }
   }
 }
