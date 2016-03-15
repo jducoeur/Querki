@@ -236,6 +236,12 @@ trait BaseParsers extends RegexParsers {
     }
     
     /**
+     * Very specific hack to allow only the one true usage of the "target" attribute. See User
+     * Story .3y28awg.
+     */
+    def anchorTargetHack:Parser[String] = ws ~ """target="_blank"""" ^^ { case w ~ v => w + v }
+    
+    /**
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
      * legal tags and attributes), but attributes are, again, whitelisted.
      */
@@ -251,7 +257,7 @@ trait BaseParsers extends RegexParsers {
     }
     /** Parses an xml start or empty tag, attribute values are escaped.
      */
-    def xmlStartOrEmptyTag:Parser[String] = '<' ~> xmlName ~ (xmlAttr*) ~ ows ~ (">" | "/>") ^^ {
+    def xmlStartOrEmptyTag:Parser[String] = '<' ~> xmlName ~ ((xmlAttr | anchorTargetHack)*) ~ ows ~ (">" | "/>") ^^ {
         case name ~ attrs ~ w ~ e => '<' + name + attrs.mkString  + w + e
     }
 

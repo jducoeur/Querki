@@ -190,4 +190,12 @@ Foo foo
           |""".stripReturns)
     }
   }
+  
+  "Anchor tags" should {
+    "cope with opening in a new tab" in {
+      apply("""<a target="_blank" href="http://www.google.com/">floob</a>""") should
+        equal("""<p><a target="_blank" href="http://www.google.com/">floob</a></p>
+          |""".stripReturns)
+    }
+  }
 }
