@@ -213,7 +213,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
         preferredModelForTag(space, SafeUrl.decode(nameIn)), 
         Kind.Thing, 
         toProps(
-          Basic.DisplayNameProp(SafeUrl.decode(nameIn))
+          Basic.DisplayNameProp(HtmlEscape.escapeAll(SafeUrl.decode(nameIn)))
         ),
         querki.time.epoch)
     with IsTag
