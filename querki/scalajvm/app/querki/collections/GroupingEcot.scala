@@ -5,6 +5,7 @@ import models.ThingState
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
+import querki.values.EmptyValue
 
 object GroupingMOIDs extends EcotIds(36) {
   val GroupModelOID = moid(1)
@@ -123,16 +124,32 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         
       
       def sortFunc(left:(QValue, OID), right:(QValue, OID)):Boolean = {
-        val pt = left._1.pType
-        val sortResult =
-	      for {
-	        leftVal <- left._1.firstOpt
-	        rightVal <- right._1.firstOpt
-	      }
-            yield pt.comp(inv.context)(leftVal, rightVal)
-
-        sortResult.getOrElse(false)
+        if (left._1.isEmpty && !right._1.isEmpty)
+          // *Strictly* less-than, so it's only true iff only the left is empty:
+          true
+        else if (right._1.isEmpty)
+          false
+        else {
+          val pt = left._1.pType
+          val sortResult =
+    	      for {
+    	        leftVal <- left._1.firstOpt
+    	        rightVal <- right._1.firstOpt
+    	      }
+              yield pt.comp(inv.context)(leftVal, rightVal)
+  
+          sortResult.getOrElse(false)
+        }
 	    }
+        
+      def keysMatch(curKey:QValue, nextKey:QValue):Boolean = {
+        if (curKey.isEmpty)
+          nextKey.isEmpty
+        else if (nextKey.isEmpty)
+          curKey.isEmpty
+        else
+          curKey.pType.matches(curKey.first, nextKey.first)
+      }
         
       for {
         keyThingPairs <- keyThingsWrapped.get.map(_.toSeq)
@@ -143,7 +160,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
           case Some(pt) => keyThingPairs.map { pair =>
             val (key, id) = pair
             if (key.isEmpty)
-              (ExactlyOne(pt.default(inv.state)), id)
+              (EmptyValue(pt), id)
             else
               (key, id)
           }
@@ -157,7 +174,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
           else {
             val current = seqs.last
             val (curKey, curIds) = current
-            if (curKey.pType.matches(curKey.first, key.first))
+            if (keysMatch(curKey, key))
               seqs.dropRight(1) :+ (curKey, curIds :+ id)
             else
               seqs :+ (key, Seq(id))

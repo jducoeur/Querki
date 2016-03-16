@@ -49,14 +49,15 @@ class GroupingTests extends QuerkiTests {
         val thing7 = new TestThing("Thing 7", myModel, keyProp(1))
         val thing8 = new TestThing("Thing 8", myModel, keyProp(9))
         val thing9 = new TestThing("Thing 9", myModel, keyProp(12))
+        val thing10 = new TestThing("Thing 10", myModel)
       }
       implicit val s = new TSpace
       
       pql("""[[Grouping Model._instances -> _groupBy(My Key) -> ""
-          |Key: [[_groupKey]] [[_groupElements -> _sort]]""]]""".stripReturns) should 
+          |Key: [[_if(_groupKey -> _isEmpty, ""empty"", _groupKey)]] [[_groupElements -> _sort]]""]]""".stripReturns) should 
         equal(s"""
           |
-          |Key: 0 ${listOfLinkText(s.thing5)}
+          |Key: empty ${listOfLinkText(s.thing10, s.thing5)}
           |
           |Key: 1 ${listOfLinkText(s.thing1, s.thing6, s.thing7)}
           |
