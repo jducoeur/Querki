@@ -253,7 +253,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     SearchResultIsTag,
     SearchResultProp,
     SearchResultPositions,
-    SearchResultScore
+    SearchResultScore,
+    SearchResultElements
   )
   
   /*************************************************
