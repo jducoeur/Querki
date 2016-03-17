@@ -503,6 +503,10 @@ dd {
   background-color: #FAD2DF;
 }
 
+._searchPropName {
+  margin-bottom: 0px;
+}
+
 /*******************************
  * Explorer styles
  */

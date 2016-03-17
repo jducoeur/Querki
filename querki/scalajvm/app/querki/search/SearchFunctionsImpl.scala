@@ -23,10 +23,14 @@ class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Space
           ClientApi.thingInfo(result.thing, rc) map { tInfo =>
             SearchResult(
               tInfo,
-              result.prop.displayName,
               result.score,
-              result.text,
-              result.positions
+              result.elements.map { elem =>
+                SearchResultElement(
+                  elem.prop.displayName,
+                  elem.score,
+                  elem.text,
+                  elem.positions)
+              }
             )
           }
         }

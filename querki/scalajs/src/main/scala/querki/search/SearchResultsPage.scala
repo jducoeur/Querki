@@ -46,7 +46,7 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "se
   val query = params.requiredParam("query")
   val queryLen = query.length
   
-  def boldfaceResult(result:SearchResult):Modifier = {
+  def boldfaceResult(result:SearchResultElement):Modifier = {
     val text = result.text
   
     // We iterate through this via recursion, mostly because it comes out
@@ -73,8 +73,14 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "se
   
   def showResult(result:SearchResult):Modifier = {
     MSeq(
-      dt(b(a(href:=thingUrl(result.thing), raw(result.thing.displayName))), s" (${result.propName})"),
-      dd(cls:="_searchResult", pre(code(boldfaceResult(result))))
+      dt(b(a(href:=thingUrl(result.thing), raw(result.thing.displayName)))),
+      dd(
+        for (element <- result.elements)
+          yield 
+            MSeq(
+              p(cls:="_searchPropName", b(element.propName)),
+              p(cls:="_searchResult", pre(code(boldfaceResult(element)))))
+      )
     )
   }
 
