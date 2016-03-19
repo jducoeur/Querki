@@ -11,7 +11,7 @@ structured, fluid, evolving, involving small amounts of data, but nonetheless *d
 
 These tend to get ignored by the engineering community, because each problem seems so *simple* -- they're 
 the sort of things that a competent programmer could toss off in Rails in less than a day. But why would 
-I want to spend a day on a problem like that? I should be able to toss it off in *minutes*.
+I want to spend a day on a problem like that? I should be able to set it up in *minutes*.
 
 Or to put it another way: Querki is to Rails essentially as a wiki is to a static website. It's not as 
 powerful as Rails, but it's a *heck* of a lot easier and quicker to use for the sorts of problems it can 
