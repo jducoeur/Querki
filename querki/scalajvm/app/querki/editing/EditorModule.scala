@@ -401,6 +401,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val CheckListMethod = new InternalMethod(CheckListOID,
     toProps(
       setName("_checkList"),
+      setInternal,
       Summary("""Display a checklist of items to add or remove from a Set."""),
       Signature(
         expected = Some(Seq(LinkType), "The items to choose from."),
