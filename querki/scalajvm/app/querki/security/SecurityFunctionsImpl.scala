@@ -7,7 +7,7 @@ import querki.api._
 import querki.data._
 import querki.globals._
 import querki.identity.InvitationResult
-import querki.spaces.messages.{Archived, ArchiveSpace}
+import querki.spaces.messages.{Archived, ArchiveSpace, InviteRequest, SpaceMembersMessage}
 
 import SecurityFunctions._
 
@@ -71,10 +71,14 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     
     if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers)
       throw new MaxMembersPerSpaceException(maxMembers)
-	
-    Person.inviteMembers(rc, inviteeEmails, collabs, state).map { case InvitationResult(invited, alreadyInvited) =>
-      InviteResponse(invited, alreadyInvited)
+
+    // We need to route the request through the SpaceMembersActor, for security reasons: the invitation
+    // itself needs to be done with elevated security, so that it has access to peoples' email addresses.
+    val msg = SpaceMembersMessage(user, state.id, InviteRequest(rc, inviteeEmails, collabs))
+    for {
+      InvitationResult(invited, alreadyInvited) <- spaceRouter ? msg
     }
+      yield InviteResponse(invited, alreadyInvited)
   }
   
   def archiveThisSpace():Future[Boolean] = {

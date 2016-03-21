@@ -4,12 +4,14 @@ import akka.actor._
 import akka.event.LoggingReceive
 import akka.pattern.pipe
 
-import querki.globals._
+import org.querki.requester._
 
+import querki.globals._
+import querki.identity.InvitationResult
 import querki.spaces.messages._
 
 private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
-  extends Actor with Stash with EcologyMember
+  extends Actor with Requester with Stash with EcologyMember
 {
   implicit val ecology = e
   
@@ -48,28 +50,15 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	    
   	  case InviteRequest(rc, inviteeEmails, collabs) => {
   	    val nCurrentMembers = Person.people(state).size
-  	    val resultFut = 
-  	      if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
-  	        Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
-  	      } else {
-  	        Person.inviteMembers(rc, inviteeEmails, collabs, state).map { result =>
-  	        val resultStr = 
-  	          (
-  	            if (result.invited.length > 0)
-  	               result.invited.mkString("Sent invitations to ", ", ", ". ")
-  	            else
-  	               ""
-  	          ) + (
-  	            if (result.alreadyInvited.length > 0)
-  	               result.alreadyInvited.mkString("Resent to ", ", ", ".") 
-  	            else
-  	               ""
-  	            )
-  	        resultStr
-  	      }
-  	    }
-  	    
-  	    pipe(resultFut.map(InviteResult(_))) to sender
+	      if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
+          // This is just a belt-and-suspenders check -- SecurityFunctionImpl should already have screened for this:
+	        sender ! InvitationResult(Seq.empty, Seq.empty)
+	      } else {
+          for {
+            result <- loopback(Person.inviteMembers(rc, inviteeEmails, collabs, state))
+          }
+            sender ! result
+        }
   	  }
       
       case IsSpaceMemberP(rc) => {
