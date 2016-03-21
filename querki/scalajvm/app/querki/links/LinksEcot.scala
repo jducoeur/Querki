@@ -135,6 +135,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val ChoiceType = new LinkTypeBase(ChoiceTypeOID,
     toProps(
       setName("Multiple Choice"),
+      // TODO: this is marked Internal until it is ready for prime time:
+      setInternal,
       Summary("A choice between several specific options"),
       Details("""Sometimes, you want to be able to specify a few pre-defined values to choose between
         |in a Property. For example, in a comic-book Space, you might have a Condition Property that let
