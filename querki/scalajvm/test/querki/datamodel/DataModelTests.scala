@@ -223,6 +223,39 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _isA
+  "_isA" should {
+    class TSpace extends CommonSpace {
+      val topModel = new SimpleTestThing("Top Model")
+      val thing1 = new TestThing("Thing 1", topModel)
+      val middleModel = new TestThing("Middle Model", topModel)
+      val thing2 = new TestThing("Thing 2", middleModel)
+      val bottomModel = new TestThing("Bottom Model", middleModel)
+      val thing3 = new TestThing("Thing 3", bottomModel)
+      
+      val otherModel = new SimpleTestThing("Other Model")
+      val thing4 = new TestThing("Thing 4", otherModel)
+      
+      val thing5 = new SimpleTestThing("Thing Without Model")
+    }
+    
+    "work normally" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Thing 3 -> _isA(Bottom Model)]]""") should equal ("true")
+      pql("""[[Thing 3 -> _isA(Middle Model)]]""") should equal ("true")
+      pql("""[[Thing 3 -> _isA(Top Model)]]""") should equal ("true")
+      pql("""[[Thing 3 -> _isA(Other Model)]]""") should equal ("false")
+      
+      pql("""[[Thing 4 -> _isA(Top Model)]]""") should equal ("false")
+      
+      pql("""[[Thing Without Model -> _isA(Top Model)]]""") should equal ("false")
+      
+      pql("""[[Bottom Model -> _isA(Top Model)]]""") should equal ("true")
+      pql("""[[Top Model -> _isA(Bottom Model)]]""") should equal ("false")
+    }
+  }
+  
   // === _isDefined
   "_isDefined" should {
     "work in dotted position with something that does exist" in {

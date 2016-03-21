@@ -33,6 +33,7 @@ object MOIDs extends EcotIds(21) {
   val AsTypeMethodOID = moid(5)
   val ModelFunctionOID = moid(6)
   val OrphanedInstancesOID = moid(7)
+  val IsAFunctionOID = moid(8)
 }
 
 
@@ -416,6 +417,28 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
+  lazy val IsAFunction = new InternalMethod(IsAFunctionOID,
+    toProps(
+      setName("_isA"),
+      Summary("Allows you to test whether this Thing is descended from a given Model"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Thing - either a Model or an Instance"),
+        reqs = Seq(
+          ("model", LinkType, "The Model that this might be descended from.")
+        ),
+        opts = Seq.empty,
+        returns = (YesNoType, "True iff the Thing is descended from the Model, false otherwise")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+        modelId <- inv.processAs("model", LinkType)
+      }
+        yield ExactlyOne(thing.isAncestor(modelId)(inv.state))
+    }
+  }
+  
   lazy val PropsOfTypeMethod = new InternalMethod(PropsOfTypeOID,
     toProps(
       setName("_propsOfType"),
@@ -556,6 +579,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     new IsMethod,
     PropsOfTypeMethod,
     IsFunctionProp,
+    IsAFunction,
     HasPropertyMethod,
     AllThingsMethod,
     AsTypeMethod,
