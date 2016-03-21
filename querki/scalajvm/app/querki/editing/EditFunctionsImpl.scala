@@ -423,6 +423,10 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     implicit val s = state
     state.anything(newModelId.toThingId) match {
       case Some(newModel) => {
+        // The UI should be checking this, but belt and suspenders:
+        if (!AccessControl.canCreate(state, user, newModel.id))
+          throw new Exception(s"You aren't allowed to create a $newModelId!")
+        
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
         // likely to once we put Experiment Mode into place.
         val spaceMsg = ModifyThing(user, state.id, thing.id.toThingId, newModel.id, thing.props)

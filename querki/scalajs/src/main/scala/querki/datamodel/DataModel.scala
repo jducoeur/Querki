@@ -108,7 +108,12 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     }
     {
       val modelOptions = Var({
-        val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
+        val modelOpts = 
+          typeInfo.
+          models.
+          filter(_.isInstantiatable).
+          sortBy(_.displayName).
+          map(model => option(value:=model, model.displayName))
         option(value:=stdThings.basic.simpleThing, "Simple Thing") +: modelOpts
       })
       val selector = RxSelect(modelOptions, id:="_modelSelector")
