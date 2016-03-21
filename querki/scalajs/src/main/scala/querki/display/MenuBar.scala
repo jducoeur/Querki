@@ -6,6 +6,8 @@ import org.scalajs.dom.{raw => dom}
 
 import scalatags.JsDom.all._
 
+import org.querki.jquery._
+
 import querki.api.StandardThings
 import querki.comm._
 import querki.globals._
@@ -103,6 +105,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       NavLink("Refresh", id="_refreshMenuItem", onClick = Some({ () => PageManager.reload() }))
     )
   }
+  
+  def closeMiniMenu() = $(".querki-navbar-collapse").removeClass("in")
   
   def spaceLinks:Option[Seq[Navigable]] = {
     spaceOpt.map { space =>
@@ -239,7 +243,14 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
             a(
               if (idStr.length > 0) id:=idStr,
               onClick.map { cb => href:=PageManager.currentHash }.getOrElse { href:=url },
-              onClick.map { cb => onclick:= cb },
+              onClick.map { cb => 
+                onclick:= { () =>
+                  // If something doesn't actually change pages, we need to manually close the
+                  // "miniMenu" -- the hamburger menu that shows on a narrow screen:
+                  closeMiniMenu()
+                  cb() 
+                }
+              },
               if (link.newWindow)
                 target:="_blank",
               raw(display)
