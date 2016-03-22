@@ -116,7 +116,7 @@ case class SpaceState(
    * @param f A function that takes a SpaceState and produces an R result.
    * @param accum A fold function that takes two R's and flattens them into one.
    * 
-   * @returns The accumulated values from all of the SpaceStates.
+   * @return The accumulated values from all of the SpaceStates.
    */
   def accumulateAll[R](f:SpaceState => R, accum:(R, R) => R):R = 
   {
