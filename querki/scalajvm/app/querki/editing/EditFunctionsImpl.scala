@@ -183,7 +183,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   
   def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
     implicit val s = state
-    val props = (emptyProps /: initialProps) { (map, change) =>
+    val propsFromClient = (emptyProps /: initialProps) { (map, change) =>
       change match {
         case ChangePropertyValue(path, vs) => changeToProps(None, path, vs) match {
           case Some(p) => map ++ p
@@ -192,6 +192,23 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         case _ => throw new Exception(s"Invalid change for create $change")
       }
     }
+    
+    val creatingModel = propsFromClient.get(querki.core.MOIDs.IsModelOID) match {
+      case Some(qv) => qv.firstAs(Core.YesNoType).getOrElse(false)
+      case _ => false
+    }
+    
+    val props = 
+      if (creatingModel) {
+        // When creating a sub-Model, copy its parent's Instance Properties:
+        model.getPropOpt(Editor.InstanceProps) match {
+          case Some(instanceProps) => propsFromClient + (Editor.InstanceProps.id -> instanceProps.v)
+          // The parent didn't have any Instance Properties, so create the minimal list:
+          case None => propsFromClient + (Editor.InstanceProps(Basic.DisplayNameProp.id))
+        }
+      } else
+        // Creating an Instance, so don't do anything special:
+        propsFromClient
     
     spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) flatMap {
       case ThingFound(thingId, newState) => {
