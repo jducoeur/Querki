@@ -17,7 +17,18 @@ import MOIDs._
 /**
  * Trivial marker trait, that simply identifies the "Text Types" that are similarly serializable.
  */
-trait IsTextType
+trait IsTextType {
+  /**
+   * Fetch the stringified value of this text. Used for coercion. Text types should implement this.
+   */
+  def rawString(elem:ElemValue):String
+  
+  /**
+   * Create an element of this type. Mainly intended to allow the Text types to coerce to each other.
+   * Note that PType always has this, so you don't need to implement it separately.
+   */
+  def apply(raw:String):ElemValue
+}
 
 /**
  * Trivial marker trait, that identifies the "Link Types".
@@ -45,7 +56,7 @@ trait LinkCandidateProvider {
 }
 
 trait TextTypeBasis { self:CoreEcot with WithQL =>
-  trait TextTypeUtils { self:SystemType[_] =>
+  trait TextTypeUtils { self:SystemType[_] with IsTextType =>
     def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
         minLengthVal <- prop.getPropOpt(Types.MinTextLengthProp)(state);
@@ -53,7 +64,27 @@ trait TextTypeBasis { self:CoreEcot with WithQL =>
         if (v.trim().length() < minLength)
           )
         throw new PublicException("Types.Text.tooShort", prop.displayName, minLength)
-    }  
+    }
+    
+    // All Text Types (except errors) should be coerceable to each other:
+    override def canCoerceTo(other:PType[_]):Boolean = {
+      other match {
+        case et:querki.values.IsErrorType => false
+        case itt:IsTextType => true
+        case _ => false
+      }
+    }
+    
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      other match {
+        case et:querki.values.IsErrorType => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+        case itt:IsTextType => {
+          val str = rawString(elem)
+          itt(str)
+        }
+        case _ => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+      }
+    }
   }
   
   abstract class TextTypeBase(oid:OID, pf:PropMap) extends SystemType[QLText](oid, pf
@@ -106,6 +137,12 @@ trait TextTypeBasis { self:CoreEcot with WithQL =>
     }
     
     def doComputeMemSize(v:QLText):Int = v.text.length
+    
+    def rawString(elem:ElemValue):String = {
+      val v = get(elem)
+      // TBD: does v need to go through the wikitext-processing machinery here?
+      v.text
+    }
   }
 }
   

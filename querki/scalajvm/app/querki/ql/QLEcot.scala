@@ -7,7 +7,7 @@ import querki.ecology._
 import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
 import querki.basic.PlainText
-import querki.core.QLText
+import querki.core.{IsTextType, QLText}
 import querki.html.QHtml
 import querki.tools.ProfileHandle
 import querki.util.{QLog, UnexpectedPublicException}
@@ -192,6 +192,26 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
     def wrap(raw:String):valType = Wikitext(raw)
     // This is a transient PType, so we don't care:
     def doComputeMemSize(v:Wikitext):Int = 0
+    
+    // Parsed Text can be coerced to conventional Text types:
+    override def canCoerceTo(other:PType[_]):Boolean = {
+      other match {
+        case et:IsErrorType => false
+        case itt:IsTextType => true
+        case _ => false
+      }
+    }
+    
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      other match {
+        case et:IsErrorType => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+        case itt:IsTextType => {
+          val wiki = get(elem)
+          itt(wiki.strip)
+        }
+        case _ => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+      }
+    }
   }
   
   /***********************************************

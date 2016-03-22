@@ -7,8 +7,8 @@ import querki.types.SimplePropertyBundle
 class TagTests extends QuerkiTests {
   lazy val Tags = interface[querki.tags.Tags]
   
-  // Test for .3y28auo
   "Tags" should {
+    // Test for .3y28auo
     "be able to use the Name Property" in {
       class TSpace extends CommonSpace {
         val tagThing = new SimpleTestThing("Tag Thing", setTagsProp("Tag With a Name"))
@@ -17,6 +17,21 @@ class TagTests extends QuerkiTests {
       
       pql("""[[Tag Thing -> My Set of Tags -> Name]]""") should
         equal("Tag With a Name")
+    }
+    
+    // Test for .3y28b1a
+    "be comparable to Text" in {
+      class TSpace extends CommonSpace {
+        val thing1 = new SimpleTestThing("Thing 1", singleTagProp("My Tag"))
+      }
+      implicit val s = new TSpace
+      
+      // This worked from the beginning:
+      pql("""[[_equals(Thing 1 -> Single Tag -> ""[[Name]]"", ""My Tag"")]]""") should equal ("true")
+      // This requires coercion from Plain Text to Parsed Text:
+      pql("""[[_equals(Thing 1 -> Single Tag -> Name, ""My Tag"")]]""") should equal ("true")
+      // This requires coercion from Tag Type to Parsed Text:
+      pql("""[[_equals(Thing 1 -> Single Tag, ""My Tag"")]]""") should equal ("true")
     }
   }
   

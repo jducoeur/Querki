@@ -207,6 +207,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
   /**
    * Turn the given element of this Type into the other Type. This should only be called if you have
    * previously checked canCoerceTo!
+   * 
+   * TODO: this and canCoerceTo really ought to be in a typeclass!
    */
   def coerceTo(other:PType[_], elem:ElemValue):ElemValue = throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
   
