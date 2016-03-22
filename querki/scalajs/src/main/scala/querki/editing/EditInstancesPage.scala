@@ -70,6 +70,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           $(newEditor).insertBefore($(elem))
           Gadgets.hookPendingGadgets()
           PageManager.instantScrollToBottom()
+          updatePage()
           // TODO: is this the right way to do this in the new world? It begs for an abstraction: 
           $(newEditor).find(".propEditor").first().focus()
         }
