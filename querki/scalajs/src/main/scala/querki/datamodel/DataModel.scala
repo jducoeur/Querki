@@ -144,9 +144,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         DataAccess.standardThings.foreach { stdThings =>
           val initProps = 
             Seq(
-              ChangePropertyValue(Editing.propPath(stdThings.core.isModelProp), Seq("true")),
-              // The Display Name is usually an Instance Property:
-              ChangePropertyValue(Editing.propPath(stdThings.editing.instancePropsProp), Seq(stdThings.basic.displayNameProp.oid.underlying))
+              ChangePropertyValue(Editing.propPath(stdThings.core.isModelProp), Seq("true"))
             )
           Client[EditFunctions].create(selection, initProps).call().foreach { modelInfo =>
             Editing.modelDesignerFactory.showPage(modelInfo)
