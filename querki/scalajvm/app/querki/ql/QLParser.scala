@@ -137,7 +137,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       // If we haven't use the backslash for that, then just eat it as a normal character:
       "\\\\".r | 
       partialDelimiterRegex) ^^ { UnQLText(_) }
-  def qlNumber[QLNumber] = "\\s*".r ~> "\\d+".r ^^ { intStr => QLNumber(java.lang.Integer.parseInt(intStr)) }
+  def qlNumber[QLNumber] = "\\s*".r ~> "\\-?\\d+".r ^^ { intStr => QLNumber(java.lang.Integer.parseInt(intStr)) }
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }

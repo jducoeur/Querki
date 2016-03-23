@@ -298,6 +298,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
+        // TODO: AddableType should be a Querki-level Typeclass. We should probably call it Addable, but
+        // think about whether Monoid should be a concept unto itself.
         typ <- inv.contextTypeAs[AddableType]
         result <- inv.fut(typ.qlApplyAdd(inv))
       }

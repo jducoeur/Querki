@@ -13,7 +13,7 @@ package object logic {
    * Mix-in for a PType that provides a definition of _add.
    * 
    * TODO: this is a nasty hack. Figure out how we're actually going to deal with generic function
-   * signatures and specializations.
+   * signatures and specializations. This is basically the camel's nose in the tent of QL-level typeclasses.
    */
   trait AddableType {
     /**

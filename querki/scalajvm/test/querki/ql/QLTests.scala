@@ -175,4 +175,14 @@ class QLTests extends QuerkiTests {
         equal(listOfLinkText(s.trivialThing, s.instance))
     }
   }
+  
+  "Numeric Literals" should {
+    "work normally" in {
+      implicit val s = commonSpace
+      
+      pql("""[[5 -> _plus(7)]]""") should equal ("12")
+      pql("""[[-5 -> _plus(7)]]""") should equal ("2")
+      pql("""[[5 -> _plus(-2)]]""") should equal ("3")
+    }
+  }
 }
