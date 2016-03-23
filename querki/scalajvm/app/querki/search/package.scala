@@ -12,7 +12,7 @@ package object search {
       searchStr:String, 
       searchTags:Boolean = true, 
       searchThings:Boolean = true,
-      modelId:OID = UnknownOID,
-      propertyId:OID = UnknownOID)(implicit state:SpaceState):Option[SearchResultsInternal]
+      modelId:Seq[OID] = Seq.empty,
+      propertyId:Seq[OID] = Seq.empty)(implicit state:SpaceState):Option[SearchResultsInternal]
   }
 }

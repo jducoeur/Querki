@@ -74,6 +74,13 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[
   def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(f)
     
   def get:Future[Iterable[T]] = fut.map(_.vs)
+  
+  def all:InvocationValue[Iterable[T]] = {
+    val allFut = fut.map { ivd =>
+      IVData(List(ivd.vs), ivd.metadata)
+    }
+    InvocationValueImpl(inv, allFut)
+  }
 }
 
 object InvocationValueImpl {

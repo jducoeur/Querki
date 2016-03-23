@@ -56,6 +56,13 @@ package object ql {
     // Access to the results of the computation. Most calling code should ignore this, and allow
     // inv2QValue to tie it all back together again.
     def get:Future[Iterable[T]]
+    
+    /**
+     * Normally, when you map over an InvocationValue, it will iterate over the results, one at a time.
+     * But occasionally, you want to get *all* of the results as a lump for processing. Use .all to
+     * get that.
+     */
+    def all:InvocationValue[Iterable[T]]
   }
   
   /**

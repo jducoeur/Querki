@@ -77,30 +77,51 @@ class SearchTests extends QuerkiTests {
       val model2 = new SimpleTestThing("Model 2")
       
       val myTagProp = new TestProperty(TagType, ExactlyOne, "Modeled Tag", Links.LinkModelProp(model2))
+      val myTextProp = new TestProperty(TextType, ExactlyOne, "My Text")
       
       val thing1 = new TestThing("Thing 1", model1, singleTextProp("Some random text"), optTextProp("Something else"))
       val thing2 = new TestThing("Thing 2", model1, singleTextProp("Blurdy-blurdy-blur"))
       val thing3 = new TestThing("Thing 3", model2, singleTextProp("Also random!"))
-      val thing6 = new TestThing("Thing 6", model1, optTextProp("My randomness knows no bounds"))
+      val thing6 = new TestThing("Thing 6", model1, optTextProp("My randomness knows no bounds"), myTextProp("Also random"))
       
       val thing4 = new SimpleTestThing("Thing 4", myTagProp("And I too am random"))
       val thing5 = new SimpleTestThing("Thing 5", singleTagProp("Abounding in randomness"))
     }
     
+    "find all results" in {
+      implicit val s = new TSpace
+      
+      pql("""[[_search(query=""random"", searchTags=false) -> _foreach(_searchResultThing) -> _sort]]""") should
+        equal(listOfLinkText(s.thing1, s.thing3, s.thing6))
+    }
+    
     "use the models parameter" in {
       implicit val s = new TSpace
       
-      pql("""[[_search(query=""random"", searchTags=false, models=Model 2) -> _searchResultThing -> Link Name]]""") should
-        equal("Thing 3")
       pql("""[[_search(query=""random"", searchThings=false, models=Model 2) -> _searchResultTag]]""") should
         equal(oneTag("And I too am random"))
+      
+      pql("""[[_search(query=""random"", searchTags=false, models=Model 2) -> _searchResultThing -> Link Name]]""") should
+        equal("Thing 3")
+      pql("""[[_search(query=""random"", searchTags=false, models=<Model 1, Model 2>) -> _foreach(_searchResultThing) -> _sort]]""") should
+        equal(listOfLinkText(s.thing1, s.thing3, s.thing6))
     }
     
     "use the properties parameter" in {
       implicit val s = new TSpace
       
-      pql("""[[_search(query=""random"", searchTags=false, properties=My Optional Text._self) -> _searchResultThing -> Link Name]]""") should
-        equal("Thing 6")      
+      pql("""[[_search(query=""random"", searchTags=false, properties=My Text._self) -> +$result
+              | $result -> _count
+              | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
+        equal("1Thing 6")
+      pql("""[[_search(query=""random"", searchTags=false, properties=My Optional Text._self) -> +$result
+              | $result -> _count
+              | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
+        equal("1Thing 6")
+      pql("""[[_search(query=""random"", searchTags=false, properties=<My Text._self, My Optional Text._self>) -> +$result
+              | $result -> _count
+              | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
+        equal("1Thing 6")
     }
   }
 }
