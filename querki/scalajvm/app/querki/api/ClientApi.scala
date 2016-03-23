@@ -15,6 +15,7 @@ import querki.ecology._
 import querki.identity.{PublicIdentity, User}
 import querki.tags.IsTag
 import querki.types.ModelTypeBase
+import querki.util.XmlEscape
 import querki.values.{QLRequestContext, RequestContext}
 
 class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
@@ -177,7 +178,9 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       val prompt = futOpt(prop.getPropOpt(Editor.PromptProp).map(_.renderPlain))
       val renderedV =
         if (v.pType.isInstanceOf[querki.core.IsTextType]) {
-          Future.successful(HtmlWikitext(s"<pre><code>${v.cv.map(v.pType.toUser(_)).mkString("\n")}</code></pre>"))
+          // These are heading for View Source, where they are used pretty literally, so we need to
+          // pre-escape them:
+          Future.successful(HtmlWikitext(s"<pre><code>${v.cv.map(elem => XmlEscape.escapeForXml(v.pType.toUser(elem))).mkString("\n")}</code></pre>"))
         } else {
           v.wikify(QLRequestContext(rc))
       }
