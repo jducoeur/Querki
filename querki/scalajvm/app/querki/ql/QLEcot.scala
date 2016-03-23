@@ -16,6 +16,8 @@ import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLCon
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
   val CodeMethodOID = sysId(77)
+  
+  val IsBoundFunctionOID = moid(1)
 }
 
 private [ql] trait QLInternals extends EcologyInterface {
@@ -242,6 +244,41 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
       }
 	  }
 	}
+  
+  lazy val IsBoundFunction = new InternalMethod(IsBoundFunctionOID,
+    toProps(
+      setName("_isBound"),
+      Summary("Is the specified name currently bound?"),
+      Signature(
+        expected = None,
+        reqs = Seq(
+          ("name", AnyType, "A name that might be bound, like $query.")
+        ),
+        opts = Seq.empty,
+        returns = (YesNoType, "True iff the given name is currently bound, false otherwise.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      lazy val errOpt = Some(new PublicException("QL.isBound.notABinding"))
+      for {
+        param <- inv.rawRequiredParam("name")
+        phrase <- inv.opt(param.phrases.headOption, errOpt)
+        stage <- inv.opt(phrase.ops.headOption, errOpt)
+        QLCall(binding, _, _, _) = stage
+        QLBinding(name, _) = binding
+        parser <- inv.opt(inv.context.parser)
+        scopes <- inv.opt(inv.context.scopes.get(parser))
+        answer = {
+          // Look in the lexical scope first...
+          scopes.lookup(name).orElse {
+            // ... not there. Is there a request, and if so, is it defined as a param there?
+            inv.context.requestOpt.flatMap(_.parsedParams.get(name))
+          }.isDefined
+        }
+      }
+        yield ExactlyOne(YesNoType(answer))
+    }
+  }
 	
 	lazy val CodeMethod = new InternalMethod(CodeMethodOID,
 	    toProps(
@@ -348,6 +385,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 
   override lazy val props = Seq(
     SelfMethod,
-    CodeMethod
+    CodeMethod,
+    IsBoundFunction
   )
 }

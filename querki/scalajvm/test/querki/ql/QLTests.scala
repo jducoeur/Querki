@@ -70,6 +70,28 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "_isBound" should {
+    "work with bound names" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_isBound($thingy)]]""") should equal ("false")
+      pql("""[[""blah"" -> +$thingy; _isBound($thingy)]]""") should equal ("true")
+    }
+    
+    "work with query parameters" in {
+      implicit val s = commonSpace
+      
+      // A bit more involved than usual, since we have to fake a real request with query params:
+      val metadata = querki.api.RequestMetadata("1.0", Map("foo" -> "12"))
+      val rc = SimpleTestRequestContext(s.owner.mainIdentity.id, Some(metadata))
+      val context = s.state.thisAsContext(rc, s.state, ecology)
+      
+      processQText(context, """[[$foo]]""") should equal ("12")
+      processQText(context, """[[_isBound($bar)]]""") should equal ("false")
+      processQText(context, """[[_isBound($foo)]]""") should equal ("true")
+    }
+  }
+  
   "bound names" should {
     class TSpace extends CommonSpace {
       val myInt = new TestProperty(Core.IntType, ExactlyOne, "My Int")

@@ -19,5 +19,6 @@ case object BasicTestUser extends User {
 }
 
 object SimpleTestRequestContext{
-  def apply(o:OID)(implicit requester:User = BasicTestUser) = RequestContext(Some(requester), o)
+  def apply(o:OID, metadataOpt:Option[querki.api.RequestMetadata] = None)(implicit requester:User = BasicTestUser) = 
+    RequestContext(Some(requester), o, metadataOpt = metadataOpt)
 }

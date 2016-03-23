@@ -53,14 +53,14 @@ case class RequestContext(
       case Some(params) => params
       case None => {
         val QL = ecology.api[querki.ql.QL]
-        _parsedParams = Some(metadata.pageParams.map { pair =>
+        _parsedParams = metadataOpt.map(_.pageParams.map { pair =>
           val (name, raw) = pair
           val p = QL.parseMethod(raw)
           (name, p)
         }.collect {
           case (name, Some(p)) => (name, p)
         })
-        _parsedParams.get
+        _parsedParams.getOrElse(Map.empty)
       }
     }
   }
