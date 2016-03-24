@@ -36,9 +36,12 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
           }
           
           try {
+            // TODO: Argh! these dummy values are needed in order to hint the read system to pick up
+            // on the subtypes, but this is a gigantic code smell. Is there any way around it?
             val dummy1 = upickle.Reader.macroR[EditException]
             val dummy2 = upickle.Reader.macroR[SecurityException]
             val dummy3 = upickle.Reader.macroR[AdminException]
+            val dummy4 = upickle.Reader.macroR[ImportException]
             val aex = read[ApiException](jqXHR.responseText)
             throw aex
           } catch {

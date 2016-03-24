@@ -57,18 +57,25 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   
   implicit val stdTimeout = Timeout(10 seconds)
   
-  def getSpaceId(ownerId:OID, spaceId:String):Future[OID] = {
+  def spaceIdGuts[R](ownerId:OID, spaceId:String, onSuccess:OID => R, onFailure:ThingError => R):Future[R] = {
     ThingId(spaceId) match {
-      case AsOID(oid) => Future.successful(oid)
+      case AsOID(oid) => Future.successful(onSuccess(oid))
       case AsName(name) => {
         val canonName = NameUtils.canonicalize(name)
         ask(spaceManager, PersistMessages.GetSpaceByName(ownerId, canonName)).map {
-          case SpaceId(spaceId) => spaceId
-          // TODO: this should really be a PublicException, I think:
-          case err:ThingError => throw new PublicException("Space.get.notFound", spaceId)
+          case SpaceId(spaceId) => onSuccess(spaceId)
+          case err:ThingError => onFailure(err)
         }
       }
     }
+  }
+  
+  def getSpaceId(ownerId:OID, spaceId:String):Future[OID] = {
+    spaceIdGuts(ownerId, spaceId, oid => oid, err => throw new PublicException("Space.get.notFound", spaceId))
+  }
+  
+  def spaceExists(ownerId:OID, spaceId:String):Future[Boolean] = {
+    spaceIdGuts(ownerId, spaceId, oid => true, err => false)
   }
     
   def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B] = {

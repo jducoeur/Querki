@@ -42,6 +42,11 @@ package object spaces {
     def getSpaceId(ownerId:OID, spaceId:String):Future[OID]
     
     /**
+     * Finds out whether this name is currently used as a Space by this User.
+     */
+    def spaceExists(ownerId:OID, spaceId:String):Future[Boolean]
+    
+    /**
      * Send a message to the SpaceManager, expecting a return of type A to be 
      * passed into the callback. This wraps up the messy logic to go from a
      * non-actor-based Play environment to the SpaceManager. We'll likely

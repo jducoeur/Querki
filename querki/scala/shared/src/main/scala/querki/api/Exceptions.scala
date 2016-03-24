@@ -72,3 +72,13 @@ sealed trait AdminException extends ApiException
  * You tried to perform an Admin function from a non-Admin account.
  */
 case class NotAnAdminException() extends AdminException
+
+
+/**
+ * Expected exceptions from the Import / Export functions.
+ */
+sealed trait ImportException extends ApiException
+/**
+ * Tried to create a Space using a name that you already have in use.
+ */
+case class SpaceExistsException(name:String) extends ImportException

@@ -2,6 +2,8 @@ package querki.pages
 
 import java.util.regex.Pattern
 
+import scala.util.{Failure, Success}
+
 import scala.scalajs.js.timers._
 import org.scalajs.dom
 import dom.raw.File
@@ -13,6 +15,7 @@ import rx._
 import org.querki.facades.fileupload._
 import org.querki.jquery._
 
+import querki.api.SpaceExistsException
 import querki.comm._
 import querki.data.SpaceInfo
 import querki.display.rx._
@@ -89,18 +92,24 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         .add({ (e:JQueryEventObject, data:FileUploadData) =>
           val file = data.files(0)
           if (testFile(file)) {
-            fBeginUpload(file) foreach { path =>
-              data.url = controllers.ClientController.upload(path).url
-              val deferred = data.submit()
-              buttonSection.jq.hide()
-              spinnerSection.jq.show()
-              startProgressTimer(path)
-              // We no longer care about this; we're polling the state instead:
-              // deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => }
-              deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
-                println(s"ImportSpacePage got error $errorThrown")
-                StatusLine.showUntilChange(s"Error during uploading")
+            fBeginUpload(file) onComplete { 
+              case Success(path) => {
+                data.url = controllers.ClientController.upload(path).url
+                val deferred = data.submit()
+                buttonSection.jq.hide()
+                spinnerSection.jq.show()
+                startProgressTimer(path)
+                // We no longer care about this; we're polling the state instead:
+                // deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => }
+                deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
+                  println(s"ImportSpacePage got error $errorThrown")
+                  StatusLine.showUntilChange(s"Error during uploading")
+                }
               }
+              case Failure(SpaceExistsException(name)) => {
+                StatusLine.showBriefly(s"You already have a Space named $name")
+              }
+              case Failure(_) => StatusLine.showUntilChange(s"Error during uploading")
             }
           } else {
             StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
