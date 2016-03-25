@@ -432,7 +432,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
    * Wraps the given function in a new scope, which will get popped once the operation completes.
    */
   def withScope(contextIn:QLContext, f: QLContext => Future[QLContext]):Future[QLContext] = {
-    val newScopes = contextIn.scopes(this).push
+    val newScopes = contextIn.scopes.get(this).getOrElse(QLScopes()).push
     val allScopes = contextIn.scopes + (this -> newScopes)
     val context = contextIn.copy(scopes = allScopes)(contextIn.state, contextIn.ecology)
     f(context).map { contextOut =>
