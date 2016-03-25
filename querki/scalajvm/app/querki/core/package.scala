@@ -44,12 +44,6 @@ package object core {
     val ModelOnlyPropOID = moid(2)
     val LongTypeOID = moid(3)
     val FloatTypeOID = moid(4)
-    val ImplementationModelOID = moid(5)
-    val ImplementsFunctionPropOID = moid(6)
-    val ImplementsTypePropOID = moid(7)
-    val AbstractOverPropOID = moid(8)
-    val AbstractOverModelOID = moid(9)
-    val AbstractOverReceivedOID = moid(10)
   }
     
   /**
@@ -96,7 +90,6 @@ package object core {
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
     def followLink(context:QLContext):Option[Thing]
-    def implMap(state:SpaceState):FunctionImpls
     
     // Ecots have these built-in, but non-Ecots can use this:
     def setName(str:String):(OID,QValue)
@@ -111,16 +104,21 @@ package object core {
     def InternalProp:Property[Boolean,Boolean]
     def AppliesToKindProp:Property[Int,Int]
     def ModelOnlyProp:Property[Boolean,Boolean]
-    def ImplementationModel:Property[Boolean,Boolean]
-    def ImplementsFunctionProp:Property[OID,OID]
-    def AbstractOverProp:Property[OID,OID]
-    def ImplementsTypesProp:Property[OID,OID]
     
     def QNone:QValue
     // Empty Optional -- essentially the typed QNone. Use instead of QNone when possible:
     def emptyOpt(pType:PType[_]):QValue
     def emptyListOf(pType:PType[_]):QValue
     def emptyList:QValue
+  }
+  
+  trait Functions extends EcologyInterface {
+    def ImplementationModel:Property[Boolean,Boolean]
+    def ImplementsFunctionProp:Property[OID,OID]
+    def AbstractOverProp:Property[OID,OID]
+    def ImplementsTypesProp:Property[OID,OID]
+    
+    def implMap(state:SpaceState):FunctionImpls
   }
   
   type PropList = TreeMap[Property[_,_], DisplayPropVal]

@@ -14,6 +14,7 @@ trait MethodDefs { self:QuerkiEcot =>
   
   // Since Methods usually declare Summaries, we need to depend on Conventions:
   val Conventions = initRequires[querki.conventions.Conventions]
+  val Functions = initRequires[querki.core.Functions]
   val Signature = initRequires[querki.ql.Signature]
   
   lazy val AnyType = Signature.AnyType
@@ -104,14 +105,12 @@ trait MethodDefs { self:QuerkiEcot =>
    * Received -- the received value -- but could potentially be the defining value or the
    * first parameter. (Both to-be-implemented when we care.)
    * 
-   * Arguably all of this should get pulled out into its own Ecot and Trait, not in Core. Hmm...
-   * 
    ********************************************************/
   
   sealed trait AbstractsOver {
     def over:OID
   }
-  case object Received extends AbstractsOver { val over = MOIDs.AbstractOverReceivedOID }
+  case object Received extends AbstractsOver { val over = FunctionMOIDs.AbstractOverReceivedOID }
   
   /**
    * A Function that doesn't actually define the functionality itself. Instead,
@@ -119,7 +118,7 @@ trait MethodDefs { self:QuerkiEcot =>
    * a FunctionImpl that matches that Type.
    */
   class AbstractFunction(tid:OID, over:AbstractsOver, p:PropMap)
-    extends InternalMethod(tid, p + Core.AbstractOverProp(over.over))
+    extends InternalMethod(tid, p + Functions.AbstractOverProp(over.over))
   {
     def findImpl(inv:Invocation, myImpls:FunctionImplsForOne):Option[AnyProp] = {
       if (over == Received) {
@@ -140,7 +139,7 @@ trait MethodDefs { self:QuerkiEcot =>
     }
     
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
-      val implMap = Core.implMap(inv.state)
+      val implMap = Functions.implMap(inv.state)
       val result = for {
         myImpls <- implMap.map.get(id)
         impl <- findImpl(inv, myImpls)
@@ -167,13 +166,13 @@ trait MethodDefs { self:QuerkiEcot =>
   class FunctionImpl(pid:OID, implementsFunction:MethodDefs#AbstractFunction, implementsTypes:Seq[OID])
     extends InternalMethod(pid,
       toProps(
-        Core.ImplementsFunctionProp(implementsFunction.id),
-        Core.ImplementsTypesProp(implementsTypes:_*))
+        Functions.ImplementsFunctionProp(implementsFunction.id),
+        Functions.ImplementsTypesProp(implementsTypes:_*))
       ++ {
         implementsFunction.props.get(querki.ql.SignatureMOIDs.SignaturePropOID) match {
           case Some(sig) => toProps((querki.ql.SignatureMOIDs.SignaturePropOID -> sig))
           case _ => toProps()
         }
       },
-      querki.core.MOIDs.ImplementationModelOID)
+      FunctionMOIDs.ImplementationModelOID)
 }
