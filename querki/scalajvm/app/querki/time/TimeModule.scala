@@ -8,7 +8,6 @@ import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.logic.AddableType
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 /**
@@ -52,7 +51,6 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
             |In the long time, we will probably add functions corresponding to most of the capabilities
             |of Joda-Time. If there are specific functions or features that you need, please ask for them.""".stripMargin)))
      with SimplePTypeBuilder[DateTime]
-     with AddableType
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)
     def doSerialize(v:DateTime)(implicit state:SpaceState) = v.getMillis().toString
@@ -94,22 +92,6 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     def doDefault(implicit state:SpaceState) = epoch
     
     def doComputeMemSize(v:DateTime):Int = 8
-    
-    /**
-     * You can add a Duration to a Date, and get another Date.
-     */
-    def qlApplyAdd(inv:Invocation):QFut = doAdd(inv)
-  }
-  
-  // Annoyingly, this definition needs to live outside of QDate itself, or we get recursive-definition problems.
-  def doAdd(inv:Invocation):QFut = {
-    for {
-      date <- inv.contextAllAs(QDate)
-      duration <- inv.processParamFirstAs(0, QDuration.DurationType)
-      period = QDuration.toPeriod(duration, inv.state)
-      result = date + period
-    }
-      yield ExactlyOne(QDate(result))
   }
     
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
