@@ -30,6 +30,8 @@ package object logic {
      */
     def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean
     
+    def PlusMethod:querki.core.MethodDefs#AbstractFunction
+    
     def True:ElemValue
     def False:ElemValue
   }
