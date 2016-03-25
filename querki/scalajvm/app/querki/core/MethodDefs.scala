@@ -35,8 +35,8 @@ trait MethodDefs { self:QuerkiEcot =>
    * Internal methods -- functions defined in-code that can be assigned as properties -- should
    * inherit from this.
    */
-  class InternalMethod(tid:OID, p:PropMap)
-    extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, (p + (querki.datamodel.MOIDs.IsFunctionOID  -> ExactlyOne(YesNoType(true)))))
+  class InternalMethod(tid:OID, p:PropMap, modelId:OID = querki.core.MOIDs.UrPropOID)
+    extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, (p + (querki.datamodel.MOIDs.IsFunctionOID  -> ExactlyOne(YesNoType(true)))), modelId)
   {
     /**
      * Methods should override this to implement their own functionality, if they just
@@ -89,4 +89,91 @@ trait MethodDefs { self:QuerkiEcot =>
      */
     def handleThing(t:Thing, context:QLContext):QValue = action(t, context)
   }
+  
+  /********************************************************
+   * 
+   * Abstract Functions and Implementations
+   * 
+   * If you define a Function as an AbstractFunction, that means you can separately define
+   * FunctionImpls that say how to implement it for various Types. This is *highly* recommended
+   * when in any doubt at all about the required Type. It is basically Querki's simplified
+   * version of a typeclass -- not as powerful, but all you need most of the time.
+   * 
+   * As part of the declaration of the AbstractFunction, you declare what it "abstract over" --
+   * that is, what do you inspect to determine the type of the Function. This is usually
+   * Received -- the received value -- but could potentially be the defining value or the
+   * first parameter. (Both to-be-implemented when we care.)
+   * 
+   * Arguably all of this should get pulled out into its own Ecot and Trait, not in Core. Hmm...
+   * 
+   ********************************************************/
+  
+  sealed trait AbstractsOver {
+    def over:OID
+  }
+  case object Received extends AbstractsOver { val over = MOIDs.AbstractOverReceivedOID }
+  
+  /**
+   * A Function that doesn't actually define the functionality itself. Instead,
+   * this is generic over the received value (or another element), and the system looks up
+   * a FunctionImpl that matches that Type.
+   */
+  class AbstractFunction(tid:OID, over:AbstractsOver, p:PropMap)
+    extends InternalMethod(tid, p + Core.AbstractOverProp(over.over))
+  {
+    def findImpl(inv:Invocation, myImpls:FunctionImplsForOne):Option[AnyProp] = {
+      if (over == Received) {
+        val pt = inv.context.value.pType
+        
+        if (pt == Core.LinkType) {
+          // TODO: look it up by Model instead:
+          ???
+        } else {
+          // Look for an implementation by Type
+          // For now, we only allow exact matches. We *might* extend this to coercions down the
+          // line, but let's not bother yet.
+          myImpls.map.get(pt.id)
+        }
+      } else
+        // To be implemented:
+        ???
+    }
+    
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val implMap = Core.implMap(inv.state)
+      val result = for {
+        myImpls <- implMap.map.get(id)
+        impl <- findImpl(inv, myImpls)
+      }
+        yield impl.qlApplyTop(inv, transformThing)
+        
+      result.getOrElse(throw new Exception(s"Didn't find an implementation of $displayName for ${inv.context}!"))
+    }
+  }
+  
+  /**
+   * The implementation of a previously-defined AbstractFunction.
+   * 
+   * Note that implementations do not bother to have names -- they're just specialized implementations.
+   * 
+   * The implementation should define a qlApply().
+   * 
+   * Implementations, unlike most Functions, have a specific parent, the Implementation Model. This is
+   * mainly so that we can efficiently locate all of the Implementations in the Space.
+   * 
+   * The implementation copies the Signature of the function that it is implementing, if there is one,
+   * so that it can use the parameters consistently.
+   */
+  class FunctionImpl(pid:OID, implementsFunction:MethodDefs#AbstractFunction, implementsTypes:Seq[OID])
+    extends InternalMethod(pid,
+      toProps(
+        Core.ImplementsFunctionProp(implementsFunction.id),
+        Core.ImplementsTypesProp(implementsTypes:_*))
+      ++ {
+        implementsFunction.props.get(querki.ql.SignatureMOIDs.SignaturePropOID) match {
+          case Some(sig) => toProps((querki.ql.SignatureMOIDs.SignaturePropOID -> sig))
+          case _ => toProps()
+        }
+      },
+      querki.core.MOIDs.ImplementationModelOID)
 }

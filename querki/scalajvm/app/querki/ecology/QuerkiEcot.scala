@@ -73,8 +73,8 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   }
   
   // The standard convenience sugar for defining a Property in an Ecot:
-  class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap) 
-    extends Property[VT, RT](pid, systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
+  class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap, modelId:OID = querki.core.MOIDs.UrPropOID) 
+    extends Property[VT, RT](pid, systemOID, modelId, t, c, p, querki.time.epoch)
 }
 
 /**

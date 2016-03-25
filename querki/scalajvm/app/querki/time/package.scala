@@ -21,6 +21,7 @@ package object time extends Imports with Implicits {
     val MonthMethodOID = moid(5)
     val DayMethodOID = moid(6)
     val TodayFunctionOID = moid(7)
+    val PlusDateImplOID = moid(8)
   }
   
   // The epoch, typically used for "We don't really have a time for this":

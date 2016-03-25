@@ -230,6 +230,7 @@ trait IntTypeBasis { self:CoreEcot =>
     def fromStr(v:String):T 
     def doDefault(implicit state:SpaceState):T
     def toT(i:Int):T
+    type nType = T
     lazy val numeric = implicitly[Numeric[T]]
     
     def doDeserialize(v:String)(implicit state:SpaceState):T = try {

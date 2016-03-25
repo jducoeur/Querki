@@ -22,6 +22,7 @@ object MOIDs extends EcotIds(9) {
   val GreaterThanMethodOID = moid(6)
   
   val AddMethodOID = moid(7)
+  val AddNumericMethodOID = moid(8)
 }
 
 /**
@@ -288,22 +289,37 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     }
   }
   
-  lazy val PlusMethod = new InternalMethod(AddMethodOID,
+  /**
+   * The abstraction of "plus".
+   * 
+   * TBD: this arguably belongs in a "math" Ecot that doesn't exist yet.
+   * 
+   * When we get around to writing the Signature for this, note that OTHER is *not* necessarily the same type --
+   * you can add a QDate and a Duration. So we're going to have to be fairly smart about how the signatures work.
+   * This probably implies that we need to be able to declare AbstractFunctions with unbound type parameters, and
+   * only bind them in the implementations. (Really, it implies that we need to be able to handle binding on
+   * multiple types, to automatically catch errors at "compile" time.)
+   */
+  lazy val PlusMethod = new AbstractFunction(AddMethodOID, Received,
       toProps(
         setName("_plus"),
         Summary("Add two values together"),
         Details("""    VALUE -> _plus(OTHER) -> RESULT
           |This pretty much does what you would expect. However, note that it is only implemented for one
           |or two Types yet. If you have a case where you expect and need _add to work, please drop us a note!""".stripMargin)))
+  
+  lazy val plusNumericImpl = new FunctionImpl(AddNumericMethodOID, PlusMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
     override def qlApply(inv:Invocation):QFut = {
+      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
+      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
       for {
-        // TODO: AddableType should be a Querki-level Typeclass. We should probably call it Addable, but
-        // think about whether Monoid should be a concept unto itself.
-        typ <- inv.contextTypeAs[AddableType]
-        result <- inv.fut(typ.qlApplyAdd(inv))
+        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
+        n <- inv.contextAllAs(typ)
+        m <- inv.processParamFirstAs(0, typ)
+        result = typ.numeric.plus(n, m)
       }
-        yield result
+        yield ExactlyOne(typ(result))
     }
   }
 	
@@ -316,7 +332,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     GreaterThanMethod,
     OrMethod,
     AndMethod,
-    PlusMethod
+    PlusMethod,
+    plusNumericImpl
   )
 
   /******************************************

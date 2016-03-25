@@ -28,6 +28,8 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
  
   import MOIDs._
   
+  val Logic = initRequires[querki.logic.Logic]
+  
   lazy val QDuration = interface[QDuration]
     
   /******************************************
@@ -199,12 +201,29 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       Future.successful(ExactlyOne(QDate(DateTime.now)))
     }    
   }
+  
+  /**
+   * You can apply _plus() to a QDate, with a Duration as the parameter.
+   */
+  lazy val plusDateImpl = new FunctionImpl(PlusDateImplOID, Logic.PlusMethod, Seq(QDate))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        date <- inv.contextAllAs(QDate)
+        duration <- inv.processParamFirstAs(0, QDuration.DurationType)
+        period = QDuration.toPeriod(duration, inv.state)
+        result = date + period
+      }
+        yield ExactlyOne(QDate(result))
+    }
+  }
 
   override lazy val props = Seq(
     modTimeMethod,
     yearMethod,
     monthMethod,
     dayMethod,
-    todayFunction
+    todayFunction,
+    plusDateImpl
   )
 }
