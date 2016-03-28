@@ -1,6 +1,6 @@
 package querki.core
 
-import models.Kind
+import models.{Kind, Thing}
 
 import querki.ecology._
 import querki.globals._
@@ -18,9 +18,9 @@ object FunctionMOIDs extends EcotIds(62) {
 /**
  * Used by the Abstract Function and Function Implementation system.
  */
-case class FunctionImplsForOne(map:Map[OID, AnyProp]) extends AnyVal
+case class FunctionImplsForOne(map:Map[OID, Thing]) extends AnyVal
 case class FunctionImpls(map:Map[OID, FunctionImplsForOne]) extends AnyVal {
-  def +(prop:AnyProp, implements:OID, types:List[OID]):FunctionImpls = {
+  def +(prop:Thing, implements:OID, types:List[OID]):FunctionImpls = {
     val theseTypes = Map(types.map((_, prop)):_*)
     
     val newImpls = map.get(implements) match {
@@ -106,7 +106,9 @@ class FunctionEcot(e:Ecology) extends QuerkiEcot(e) with Functions {
   val funcImplCacheKey = StateCacheKey(MOIDs.ecotId, "FunctionImpls")
   
   def computeImplMap(state:SpaceState):FunctionImpls = {
-    val impls = state.allProps.values.filter(_.model == ImplementationModelOID)
+    val impls = 
+      state.allProps.values.filter(_.model == ImplementationModelOID) ++
+      state.allThings.filter(_.model == ImplementationModelOID)
     (FunctionImpls(Map.empty) /: impls) { (impls, prop) => 
       val propInfo = for {
         implementsPV <- prop.getPropOpt(ImplementsFunctionProp)(state)

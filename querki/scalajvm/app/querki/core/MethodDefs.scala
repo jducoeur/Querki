@@ -120,13 +120,28 @@ trait MethodDefs { self:QuerkiEcot =>
   class AbstractFunction(tid:OID, over:AbstractsOver, p:PropMap)
     extends InternalMethod(tid, p + Functions.AbstractOverProp(over.over))
   {
-    def findImpl(inv:Invocation, myImpls:FunctionImplsForOne):Option[AnyProp] = {
+    /**
+     * Looks for an implementation of this AbstractFunction for a given Thing or one of its Models.
+     */
+    def findImplForThing(t:Thing, myImpls:FunctionImplsForOne)(implicit state:SpaceState):Option[Thing] = {
+      if (t.id == MOIDs.RootOID)
+        None
+      else {
+        myImpls.map.get(t.id) orElse findImplForThing(t.getModel, myImpls)
+      }
+    }
+    
+    def findImpl(inv:Invocation, myImpls:FunctionImplsForOne)(implicit state:SpaceState):Option[Thing] = {
       if (over == Received) {
         val pt = inv.context.value.pType
         
         if (pt == Core.LinkType) {
-          // TODO: look it up by Model instead:
-          ???
+          for {
+            oid <- inv.context.value.firstAs(Core.LinkType)
+            t <- inv.state.anything(oid)
+            result <- findImplForThing(t, myImpls)
+          }
+            yield result
         } else {
           // Look for an implementation by Type
           // For now, we only allow exact matches. We *might* extend this to coercions down the
@@ -134,7 +149,7 @@ trait MethodDefs { self:QuerkiEcot =>
           myImpls.map.get(pt.id)
         }
       } else
-        // To be implemented:
+        // To be implemented -- eventually, we want to allow for at least Defining in the AbstractsOver:
         ???
     }
     
@@ -142,7 +157,7 @@ trait MethodDefs { self:QuerkiEcot =>
       val implMap = Functions.implMap(inv.state)
       val result = for {
         myImpls <- implMap.map.get(id)
-        impl <- findImpl(inv, myImpls)
+        impl <- findImpl(inv, myImpls)(inv.state)
       }
         yield impl.qlApplyTop(inv, transformThing)
         
