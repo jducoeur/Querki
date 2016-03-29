@@ -142,13 +142,32 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
   def qlName:Parser[QLName] = qlBinding | qlThingId | qlSafeName | qlDisplayName
+  def qlOp:Parser[String] = ("&" | "|")
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
-  def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList
+  def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList
+  def qlStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
+    case left ~ operation => {
+      operation match {
+        case Some(op ~ right) => {
+          val funcName = op match {
+            case "&" => "_and"
+            case "|" => "_or"
+            case _ => throw new Exception(s"qlBinaryOperation got unknown operator $op")
+          }
+          QLCall(QLSafeName(funcName), None, 
+              Some(Seq(QLParam(None, QLExp(Seq(QLPhrase(Seq(left))))),
+                       QLParam(None, QLExp(Seq(QLPhrase(Seq(right))))))),
+              None)
+        }
+        case None => left
+      }
+    }
+  }
   def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlExp ^^ { 
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }

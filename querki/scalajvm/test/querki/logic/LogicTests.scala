@@ -25,6 +25,19 @@ class LogicTests extends QuerkiTests {
       
       pql("""[[My Thing -> _and(Boolean Prop, false)]]""") should equal ("false")
     }
+    
+    "work correct using the & operator" in {
+      class TSpace extends CommonSpace {
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Boolean Prop")
+        
+        val theThing = new SimpleTestThing("My Thing")
+        val otherThing = new SimpleTestThing("Other Thing", boolProp(true))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> Boolean Prop & false]]""") should equal ("false")
+      pql("""[[Other Thing -> Boolean Prop & true]]""") should equal ("true")
+    }
   }
   
   // === _equals ===
@@ -236,6 +249,20 @@ class LogicTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[My Thing -> _or(Boolean Prop, true)]]""") should equal ("true")
+    }
+    
+    "work correctly with the | operator" in {
+      class TSpace extends CommonSpace {
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Boolean Prop")
+        
+        val falseThing = new SimpleTestThing("F Thing", boolProp(false))
+        val falseThing2 = new SimpleTestThing("F Thing 2", boolProp(false))
+        val trueThing = new SimpleTestThing("T Thing", boolProp(true))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[F Thing -> Boolean Prop | true]]""") should equal ("true")      
+      pql("""[[F Thing -> Boolean Prop | false]]""") should equal ("false")      
     }
   }
 }
