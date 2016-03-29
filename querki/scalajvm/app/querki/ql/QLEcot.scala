@@ -374,6 +374,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
 	              }
 	            }
 	          }
+            case exp:QLExpStage => encodeString(exp.reconstructString)
 	        }
 	      }
 	      case None => {

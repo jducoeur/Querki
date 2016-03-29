@@ -262,7 +262,23 @@ class LogicTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[F Thing -> Boolean Prop | true]]""") should equal ("true")      
-      pql("""[[F Thing -> Boolean Prop | false]]""") should equal ("false")      
+      pql("""[[F Thing -> Boolean Prop | false]]""") should equal ("false")
+      pql("""[[(F Thing -> Boolean Prop) | (T Thing -> Boolean Prop)]]""") should equal ("true")
+    }
+    
+    "combine in complex ways with &" in {
+      class TSpace extends CommonSpace {
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Boolean Prop")
+        
+        val falseThing = new SimpleTestThing("F Thing", boolProp(false))
+        val falseThing2 = new SimpleTestThing("F Thing 2", boolProp(false))
+        val trueThing = new SimpleTestThing("T Thing", boolProp(true))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[(F Thing -> Boolean Prop) & (T Thing -> Boolean Prop)]]""") should equal ("false")      
+      pql("""[[((F Thing -> Boolean Prop) & (T Thing -> Boolean Prop))
+             | (T Thing -> Boolean Prop)]]""") should equal ("true")      
     }
   }
 }

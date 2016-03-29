@@ -148,8 +148,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
+  def qlExpStage:Parser[QLStage] = "(" ~> qlExp <~ ")" ^^ { QLExpStage(_) }
   def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
-  def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList
+  def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
   def qlStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
     case left ~ operation => {
       operation match {
@@ -430,6 +431,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         case subText:QLTextStage => processTextStage(subText, context)
         case num:QLNumber => Future.successful(processNumber(num, context))
         case list:QLListLiteral => processListLiteral(list, context)
+        case QLExpStage(exp) => processExp(exp, context)
       }
     }
   }

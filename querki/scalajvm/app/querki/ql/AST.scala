@@ -72,6 +72,9 @@ private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String
   
   override def clearUseCollection = collFlag.isEmpty
 }
+case class QLExpStage(exp:QLExp) extends QLStage(None) {
+  def reconstructString = "(" + exp.reconstructString + ")"
+}
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
   def reconstructStandalone = phrases.map(_.reconstructString).mkString("\n")
   def reconstructString = "[[" + reconstructStandalone + "]]"
