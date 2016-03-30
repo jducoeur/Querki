@@ -70,7 +70,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
    * restructured to have a Map of factories by name instead. The current approach is
    * mostly a historical artifact.
    */
-  def constructPage(name:String, params:ParamMap):Page = {
+  def constructPage(name:String, params:ParamMap):Option[Page] = {
     val pageOpt = (Option.empty[Page] /: factories) { (opt, factory) =>
       opt match {
         case Some(page) => opt
@@ -78,8 +78,14 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
       }
     }
     
-    // Fall back to ThingPage if nothing else claims ownership:
-    pageOpt.getOrElse(new ThingPage(TID(name), params))
+    // If we haven't found a Page with that name, then it's naming a Thing. Go to that
+    // Thing's Page *if* we're in a legit Space; otherwise, fall back to the Index.
+    pageOpt orElse {
+      if (DataAccess.space.isDefined)
+        Some(new ThingPage(TID(name), params))
+      else
+        None
+    }
   }
   
   def findPageFor(node:ManagedFrag[_]):Option[Page] = {

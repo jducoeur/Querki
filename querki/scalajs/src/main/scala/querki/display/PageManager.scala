@@ -193,8 +193,15 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def renderPage(pageName:String, paramMap:ParamMap):Future[Page] = {
     try {
       currentParams = paramMap
-      val page = Pages.constructPage(pageName, paramMap)
-      renderPage(page)
+      Pages.constructPage(pageName, paramMap) match {
+        case Some(page) => renderPage(page)
+        // This happens when we have a ThingPage's name, but we're not actually in a Space.
+        // So fall back to Index:
+        case None => Pages.indexFactory.showPage().andThen {
+          case util.Success(p:Page) => 
+            StatusLine.showBriefly(s"Either that Space doesn't exist, or you aren't allowed to read it.")
+        }
+      }
     } catch {
       case MissingPageParameterException(paramName) => {
         StatusLine.showUntilChange(s"Missing required page parameter '$paramName'")

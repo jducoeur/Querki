@@ -69,7 +69,7 @@ package object pages {
     /**
      * Given the name and parameters to a Page, build a new instance.
      */
-    def constructPage(name:String, params:ParamMap):Page
+    def constructPage(name:String, params:ParamMap):Option[Page]
     
     def exploreFactory:ThingPageFactory
     def viewFactory:ThingPageFactory

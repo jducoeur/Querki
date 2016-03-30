@@ -75,6 +75,8 @@ class ClientController extends ApplicationBase with StreamController {
       if (requestInfo.forbidden) {
         unknownSpace(spaceIdStr)
       } else {
+        // This is coming from, eg, Facebook or Google, and the #! fragment has become _escaped_fragment_.
+        // Flip it over to the RawController instead.
         if (rc.request.queryString.contains("_escaped_fragment_")) {
           val thingIdStr = rc.request.queryString("_escaped_fragment_").head
           Redirect(routes.RawController.thing(ownerId, spaceIdStr, thingIdStr))
