@@ -205,7 +205,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       }
       case None => {
         NavSection("Not logged in", Seq(
-          NavLink("Log in", controllers.ClientController.index())
+          NavLink("Log in", onClick = Some({ () => UserAccess.login() }))
         ), 1900)
       }
     }

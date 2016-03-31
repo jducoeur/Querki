@@ -36,6 +36,7 @@ GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo
 POST    /_upload                    @controllers.ClientController.upload(targetActorPath)
 
 POST    /dologin                    @controllers.LoginController.dologin
+POST    /clientlogin                @controllers.LoginController.clientlogin
 GET     /logout                     @controllers.LoginController.logout
 
 GET     /sendPasswordReset          @controllers.LoginController.sendPasswordReset

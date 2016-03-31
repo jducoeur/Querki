@@ -11,5 +11,7 @@ package object identity {
     def user:Option[UserInfo]
     
     def name:String
+    
+    def login():Future[UserInfo]
   }
 }

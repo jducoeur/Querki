@@ -27,6 +27,7 @@ class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String,
   
   lazy val textOpt = Var[Option[String]](curValue)
   lazy val text = Rx { textOpt().getOrElse("") }
+  lazy val isEmpty = Rx { textOpt().isEmpty }
   
   def doRender() = input(tpe:=inputType, mods)
   

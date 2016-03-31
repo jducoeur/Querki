@@ -8,6 +8,8 @@ import play.api.data.format.Formats._
 import play.api.data.validation.Constraints._
 import play.api.mvc._
 
+import upickle._
+
 import models._
 
 import querki.ecology._
@@ -22,6 +24,7 @@ case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAg
 
 class LoginController extends ApplicationBase {
 
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Email = interface[querki.email.Email]
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val Person = interface[querki.identity.Person]
@@ -319,6 +322,24 @@ class LoginController extends ApplicationBase {
       }
     )
   }
+
+  /**
+   * A simplified version of login, intended for client / API use.
+   */
+  def clientlogin = Action.async { implicit request =>
+    val rc = PlayRequestContextFull(request, None, UnknownOID)
+    userForm.bindFromRequest.fold(
+      errors => Ok("failed"),
+      form => {
+        val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
+        userOpt match {
+          case Some(user) => Ok(write(ClientApi.userInfo(Some(user)).get)).withSession(user.toSession:_*)
+          case None => Ok("failed")
+        }
+      }
+    )
+  }
+
   
   def logout = Action {
     Redirect(indexRoute).withNewSession
