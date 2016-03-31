@@ -44,7 +44,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // ConductR params
     // TODO: these are very ad-hoc and suspicious! Re-examine them for real!
     BundleKeys.nrOfCpus := 1.0,
-	BundleKeys.memory := 2.GiB,
+	BundleKeys.memory := 1.GiB,
 	BundleKeys.diskSpace := 5.MB,
 	BundleKeys.startCommand ++= Seq(
 	  "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
