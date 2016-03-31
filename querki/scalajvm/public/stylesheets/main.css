@@ -619,3 +619,7 @@ dd {
 ._root-well h3 {
   margin-top: 0;
 }
+
+._querkiDialog ._guts {
+  margin: 10px;
+}

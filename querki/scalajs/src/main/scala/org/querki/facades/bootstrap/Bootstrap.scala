@@ -15,7 +15,7 @@ import org.querki.jquery._
  */
 @js.native
 trait BootstrapFacade extends js.Object {
-  def modal(cmd:ModalCommand.ModalCommand):Any = js.native
+  def modal(cmd:ModalCommand.ModalCommand):JQuery = js.native
   
   def popover(options:PopoverOptions):Any = js.native
   def popover(cmd:PopoverCommand.PopoverCommand):Any = js.native

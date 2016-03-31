@@ -33,7 +33,6 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     
     val loginDialog = new Dialog("Log in to Querki", 250, 350,
       div(
-        h3("Log in to Querki"),
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
         passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
         p(""),

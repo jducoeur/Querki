@@ -4,7 +4,7 @@ import scala.scalajs.js
 import js.JSConverters._
 import org.querki.jquery._
 import org.scalajs.dom.{raw => dom}
-import org.querki.facades.jqueryui._
+import org.querki.facades.bootstrap._
 
 import scalatags.JsDom.all._
 
@@ -26,37 +26,52 @@ class Dialog(
   buttonsIn:(String, String, Dialog => Unit)*
   )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 
 {
-  def doRender() = div(title:=dialogTitle, guts)
-  
+  def doRender() = 
+    div(
+      cls := "modal fade",
+      tabindex := -1,
+      role := "dialog",
+      aria.labelledby := dialogTitle,
+      div(
+        cls := "modal-dialog _querkiDialog", role := "document",
+        div(
+          cls := "modal-content",
+          
+          // The header:
+          div(
+            cls := "modal-header",
+            button(tpe := "button", cls := "close", data("dismiss") := "modal", aria.label := "Close",
+              span(aria.hidden := true, raw("&times;"))
+            ),
+            h4(cls := "modal-title", dialogTitle)
+          ),
+          
+          // The content, as provided:
+          div(
+            cls := "_guts",
+            guts
+          ),
+          
+          // The footer, with the buttons:
+          div(
+            cls := "modal-footer",
+            buttonsIn.map { btnInfo =>
+              val (buttonName, idStr, cb) = btnInfo
+              new ButtonGadget(ButtonGadget.Normal, id := idStr, buttonName)({() => cb(this) })
+            }
+          )
+        )
+      )
+    )
+    
   def show() = {
     render
-    // We want to pass the dialog into callbacks; this gets around some recursive-definition
-    // difficulties that you can otherwise have.
-    val buttons = buttonsIn.map { pair =>
-      val (buttonName, idStr, cb) = pair
-      val button:DialogButton = 
-        DialogButton.
-          click(({ () => cb(this) } : js.Function0[Any])).
-          id(idStr).
-          text(buttonName)
-      (buttonName -> button)
-    }
-    val buttonMap = Map(buttons:_*).toJSDictionary
-    val asDialog = $(elem).dialog(DialogOptions.
-      title(dialogTitle).
-      height(height).width(width).
-      buttons(buttonMap)
-    )
+    // TODO: this likely requires a hack to work correctly with iOS. See:
+    //   http://www.abeautifulsite.net/bootstrap-3-modals-and-the-ios-virtual-keyboard/
+    // The issue is that, if the guts contain input fields, so it brings up the virtual keyboard,
+    // it doesn't move the dialog. So it might get obscured by the keyboard.
+    $(elem).modal(ModalCommand.show)
   }
   
-  /**
-   * Finish with this dialog.
-   * 
-   * IMPORTANT: this removes the underlying DOM elements! This Gadget should be considered dead
-   * after this call!
-   */
-  def done() = {
-    $(elem).dialog("destroy")
-    $(elem).remove
-  }
+  def done() = $(elem).modal(ModalCommand.hide)
 }
