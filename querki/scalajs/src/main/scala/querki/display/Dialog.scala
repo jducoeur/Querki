@@ -22,7 +22,7 @@ import querki.globals._
 class Dialog(
   dialogTitle:String,
   guts:scalatags.JsDom.TypedTag[_],
-  buttonsIn:(String, String, Dialog => Unit)*
+  buttonsIn:(ButtonGadget.ButtonKind, Seq[Modifier], Dialog => Unit)*
   )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 
 {
   def doRender() = 
@@ -55,8 +55,8 @@ class Dialog(
           div(
             cls := "modal-footer",
             buttonsIn.map { btnInfo =>
-              val (buttonName, idStr, cb) = btnInfo
-              new ButtonGadget(ButtonGadget.Normal, id := idStr, buttonName)({() => cb(this) })
+              val (kind, mods, cb) = btnInfo
+              new ButtonGadget(kind, mods)({() => cb(this) })
             }
           )
         )

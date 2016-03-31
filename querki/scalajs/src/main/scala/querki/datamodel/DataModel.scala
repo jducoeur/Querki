@@ -11,7 +11,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.Dialog
+import querki.display.{ButtonGadget, Dialog}
 import querki.display.rx.RxSelect
 import querki.editing.EditFunctions
 import EditFunctions.ChangePropertyValue
@@ -39,7 +39,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
               p(b(s"""Property ${thing.displayName} is currently being used by ${usage.nModels} Models and 
                       |${usage.nInstances} Instances. If you delete it, it will be removed from all of those,
                       |and the values of ${thing.displayName} will be dropped. You can lose data this way!""".stripMargin)),
-              (s"Remove all values, then delete ${thing.displayName}", "_removeAllConfirm", { dialog => 
+              (ButtonGadget.Warning, Seq(s"Remove all values, then delete ${thing.displayName}", id := "_removeAllConfirm"), { dialog => 
                 println(s"I'm about to delete ${thing.displayName}");
                 // TODO: display a spinner
                 Client[EditFunctions].removePropertyFromAll(thing.oid).call().foreach { handle =>
@@ -51,7 +51,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                     StatusLine.showBriefly(s"Error while deleting ${thing.displayName}"))
                 }
               }),
-              ("Cancel", "_cancelDelete", { dialog => dialog.done() })
+              (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })
             )
           deleteDialog.show()
         } else {
@@ -81,8 +81,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         val deleteDialog:Dialog = 
           new Dialog("Confirm Delete",
             p(b(raw(msg))),
-            ("Delete", "_confirmDelete", { dialog => 
-              println(s"I'm about to delete ${thing.displayName}");
+            (ButtonGadget.Warning, Seq("Delete", id := "_confirmDelete"), { dialog => 
               // TODO: display a spinner
               Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
                 dialog.done()
@@ -94,7 +93,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                 Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
               }
             }),
-            ("Cancel", "_cancelDelete", { dialog => dialog.done() })
+            (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })
           )
         deleteDialog.show()
       }
@@ -124,11 +123,11 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
             p(prompt),
             selector
           ),
-          (selectButton, "_modelSelected", { dialog =>
+          (ButtonGadget.Primary, Seq(selectButton, id := "_modelSelected"), { dialog =>
             onSelect(selector.selectedTID())
             dialog.done()
           }),
-          ("Cancel", "_modelCancel", { dialog => dialog.done() })
+          (ButtonGadget.Normal, Seq("Cancel", id := "_modelCancel"), { dialog => dialog.done() })
         )
     
       modelDialog.show()

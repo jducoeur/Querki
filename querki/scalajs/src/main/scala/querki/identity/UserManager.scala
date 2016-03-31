@@ -34,25 +34,24 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     val loginDialog = new Dialog("Log in to Querki",
       div(
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
-        passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
-        p(""),
-        new ButtonGadget(ButtonGadget.Normal, "Log in", disabled := Rx{ handleInput.get.isEmpty() || passwordInput.get.isEmpty() }, tabindex := 3)({ () =>
-          // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
-          val fut:Future[String] = 
-            controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text(), "password" -> passwordInput.get.text())
-          fut.foreach { result =>
-            if (result == "failed") {
-              StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
-              loginPromise.failure(new Exception("Wasn't a legal login"))
-            } else {
-              val info = read[UserInfo](result)
-              _user = Some(info)
-              loginPromise.success(info)
-              PageManager.reload()
-            }
+        passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2)
+      ),
+      (ButtonGadget.Primary, Seq("Log in", disabled := Rx{ handleInput.get.isEmpty() || passwordInput.get.isEmpty() }, tabindex := 3), { dialog =>
+        // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
+        val fut:Future[String] = 
+          controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text(), "password" -> passwordInput.get.text())
+        fut.foreach { result =>
+          if (result == "failed") {
+            StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
+            loginPromise.failure(new Exception("Wasn't a legal login"))
+          } else {
+            val info = read[UserInfo](result)
+            _user = Some(info)
+            loginPromise.success(info)
+            PageManager.reload()
           }
-        })
-      )
+        }
+      })
     )
     loginDialog.show()
     
