@@ -35,7 +35,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         // TODO: we might soften this for Models, but for now we're going to be hardcore.
         if (usage.nModels > 0 || usage.nInstances > 0) {
           val deleteDialog:Dialog = 
-            new Dialog("Confirm Delete", 350, 350,
+            new Dialog("Confirm Delete",
               p(b(s"""Property ${thing.displayName} is currently being used by ${usage.nModels} Models and 
                       |${usage.nInstances} Instances. If you delete it, it will be removed from all of those,
                       |and the values of ${thing.displayName} will be dropped. You can lose data this way!""".stripMargin)),
@@ -79,7 +79,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
       fut foreach { contents =>
         val (msg, nInstances) = contents
         val deleteDialog:Dialog = 
-          new Dialog("Confirm Delete", 300, 350,
+          new Dialog("Confirm Delete",
             p(b(raw(msg))),
             ("Delete", "_confirmDelete", { dialog => 
               println(s"I'm about to delete ${thing.displayName}");
@@ -119,7 +119,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
       val selector = RxSelect(modelOptions, id:="_modelSelector")
     
       val modelDialog:Dialog = 
-        new Dialog(formTitle, 300, 350,
+        new Dialog(formTitle,
           div(
             p(prompt),
             selector

@@ -21,7 +21,6 @@ import querki.globals._
  */
 class Dialog(
   dialogTitle:String,
-  height:Int, width:Int,
   guts:scalatags.JsDom.TypedTag[_],
   buttonsIn:(String, String, Dialog => Unit)*
   )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 

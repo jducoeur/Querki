@@ -24,7 +24,7 @@ class ProgressDialogEcot(e:Ecology) extends ClientEcot(e) with ProgressDialog {
     val progressMsg = GadgetRef.of[dom.html.Paragraph]
     
     val dialog:Dialog = 
-      new Dialog(s"Progress on $processName", 200, 350,
+      new Dialog(s"Progress on $processName",
         div(
           div(cls:="progress",
             progressBar <= div(cls:="progress-bar progress-bar-striped active", role:="progressbar", 

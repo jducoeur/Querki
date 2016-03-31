@@ -23,7 +23,7 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
   
   def archiveAfterConfirm(info:SpaceInfo) = {
     val archiveDialog:Dialog = 
-      new Dialog("Confirm Archive", 200, 350,
+      new Dialog("Confirm Archive",
         p(b(s"Are you sure you want to archive the entire Space ${info.displayName}? It may be a number of months before you can retrieve it!")),
         ("Archive", "_archiveConfirm", { dialog => 
           // TODO: display a spinner
