@@ -46,7 +46,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     BundleKeys.nrOfCpus := 1.0,
 	BundleKeys.memory := 2.GiB,
 	BundleKeys.diskSpace := 5.MB,
-	BundleKeys.startCommand += "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
+	BundleKeys.startCommand ++= Seq(
+	  "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
+	  "-java-home /apps/java"
+	)
 	BundleKeys.system := "querki-server",
 	BundleKeys.endpoints := Map(
  	  "akka-remote" -> Endpoint("tcp"),
