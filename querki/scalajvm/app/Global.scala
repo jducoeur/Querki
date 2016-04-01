@@ -49,6 +49,8 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
     QLog.spew(s"Querki starting...")
     def env(name:String) = sys.env.getOrElse(name, "(none)")
     QLog.spew(s"WEB_BIND_IP: ${env("WEB_BIND_IP")}; WEB_BIND_PORT: ${env("WEB_BIND_PORT")}")
+    QLog.spew(s"WEB_HOST: ${env("WEB_HOST")}")
+    QLog.spew(s"WEB_OTHER_PORTS: ${env("WEB_OTHER_PORTS")}")
     
     // Tell the QuerkiRoot to initialize and wait for it to be ready. Yes, this is one of those
     // very rare times when we really and for true want to block, because we don't want to consider
