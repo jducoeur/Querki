@@ -33,7 +33,7 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
   implicit val initTermTimeout = Timeout(initTermDuration)
   
   // Incorporate ConductR's configuration:
-  val totalConfiguration = super.configuration ++ Configuration(PlayEnv.asConfig)
+  val totalConfiguration = super.configuration ++ Configuration(AkkaEnv.asConfig) ++ Configuration(PlayEnv.asConfig)
   override def configuration: Configuration = totalConfiguration
   
   override def onStart(app: Application) {
