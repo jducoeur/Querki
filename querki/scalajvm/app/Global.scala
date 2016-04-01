@@ -21,6 +21,7 @@ import models._
 import querki.ecology.Ecology
 import querki.system.QuerkiRoot
 import querki.system.QuerkiRoot._
+import querki.util.QLog
 
 object Global extends WithFilters(LoggingFilter) with GlobalSettings {
   
@@ -43,6 +44,11 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
     // get errors. It really feels like there are internals that are looking for "application".
     val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "application")
     _appSystem = ActorSystem(systemName, config.withFallback(ConfigFactory.load()))
+    
+    // TEMP: some startup debugging, to see what I can do:
+    QLog.spew(s"Querki starting...")
+    def env(name:String) = sys.env.getOrElse(name, "(none)")
+    QLog.spew(s"WEB_BIND_IP: ${env("WEB_BIND_IP")}; WEB_BIND_PORT: ${env("WEB_BIND_PORT")}")
     
     // Tell the QuerkiRoot to initialize and wait for it to be ready. Yes, this is one of those
     // very rare times when we really and for true want to block, because we don't want to consider
