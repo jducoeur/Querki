@@ -488,12 +488,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_createInstanceLink"),
       Summary("Given a received Model, this produces a Link to create an instance of that Model."),
-      Details("""    MODEL -> _createInstanceLink -> _linkButton(LABEL)
-	    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
-	    |
-	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
-        |
-        |    MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
+      Details("""```
+        |MODEL -> _createInstanceLink -> _linkButton(LABEL)
+        |```
+	      |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
+	      |
+	      |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
+        |```
+        |MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
+        |```
         |
         |You may optionally specify a Link Property with _createInstanceLink. That means that the newly-created Instance
         |should point back to *this* Thing -- the one where you have the button -- through the specified Link Property.
@@ -779,7 +782,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       setName("_showSome"),
       Summary("Show some of the contents at a time"),
       SkillLevel(SkillLevelAdvanced),
-      Details("""THING -> _showSome(START, LEN, MSG, ALL, DISPLAY)
+      Details("""```
+        |THING -> _showSome(START, LEN, MSG, ALL, DISPLAY)
+        |```
         |
         |This is a useful but complex function for dealing with long lists. Given the incoming THING,
         |it runs the expression in ALL to compute a bunch of expressions. It produces a LIST of LEN of them

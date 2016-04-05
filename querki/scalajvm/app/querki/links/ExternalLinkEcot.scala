@@ -119,7 +119,9 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     toProps(
       setName("_withParam"),
       Summary("Adds the specified query parameter to a Link or URL"),
-      Details("""    LINK or URL -> _withParam(PARAMNAME, VALUE, RAW) -> URL
+      Details("""```
+        |LINK or URL -> _withParam(PARAMNAME, VALUE, RAW) -> URL
+        |```
         |
         |By and large, the VALUE is translated in such a way that, if the LINK points to a Querki page,
         |the page can use that parameter as $PARAMNAME in QL expressions.
@@ -166,7 +168,9 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       setName("_oidLink"),
       SkillLevel(SkillLevelAdvanced),
       Summary("Get the OID Link from a Thing"),
-      Details("""    THING -> _oidLink -> External Link
+      Details("""```
+          |THING -> _oidLink -> External Link
+          |```
           |
           |Most of the time, you create a link to a Thing simply by naming the Thing. The resulting link is by the
           |"ThingId" -- the Link Name if it has one, otherwise the OID. Occasionally, though, you may want to specifically

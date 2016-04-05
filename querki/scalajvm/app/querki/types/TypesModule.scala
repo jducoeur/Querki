@@ -202,12 +202,15 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
   // causes a dependency loop with Signature.)
   object TypeFunctions extends QuerkiEcot(e) with querki.core.MethodDefs {
   
+    // TODO: does this actually work? _withProperty's documentation isn't showing up, which is odd:
     lazy val WithPropertyFunction = new InternalMethod(WithPropertyOID, 
         toProps(
           setName("_withProperty"),
           SkillLevel(SkillLevelAdvanced),
           Summary("Add a Property to a Model Value"),
-          Details("""    MODEL VALUE -> PROP._withProperty(VALUE) -> MODEL VALUE
+          Details("""```
+              |MODEL VALUE -> PROP._withProperty(VALUE) -> MODEL VALUE
+              |```
               |This allows you to add another Property to a complex Value as you are working with it.
               |This is just for rendering -- the added value does not get saved anywhere.
               |

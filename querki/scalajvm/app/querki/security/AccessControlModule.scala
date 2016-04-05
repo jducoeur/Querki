@@ -430,7 +430,9 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     toProps(
       setName("_hasPermission"),
       Summary("Produces true if the current user has the named permission on the received Thing"),
-      Details("""    THING -> _hasPermission(PERMISSION._self) -> true or false
+      Details("""```
+          |THING -> _hasPermission(PERMISSION._self) -> true or false
+          |```
           |
           |Permission should be any Permission Property, such as Can Edit or Can Have User Values. It
           |is usually safe to assume that the current user Can Read, since they have already gotten to

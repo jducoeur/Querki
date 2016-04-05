@@ -27,15 +27,18 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
    * FUNCTIONS
    ***********************************************/
 	
+  // TODO: this should be rewritten in QL
 	lazy val PluralizeMethod = new InternalMethod(PluralizeOID,
 	    toProps(
 	      setName("_pluralize"),
 	      Summary("Produces the right word depending on how many elements are in a collection."),
-	      Details("""    RECEIVED -> _pluralize(SINGULAR,PLURAL)
+	      Details("""```
+            |RECEIVED -> _pluralize(SINGULAR,PLURAL)
+            |```
 	          |This is a convenient method for choosing different text depending on a Property. The RECEIVED
 	          |Context should usually be a List. If it contains a single element, _pluralize produces
 	          |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
-	    	  |
+	    	    |
 	          |Note that this behaviour is pretty English-specific. We expect that other variations will
 	          |be needed for other languages in the long run.""".stripMargin)))
 	{
@@ -67,24 +70,34 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    toProps(
 	      setName("_join"),
 	      Summary("Combine a list of Text values together"),
-	      Details("""    LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
+	      Details("""```
+            |LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
+            |```
 	          |_join takes the given LIST, and turns it into a single line. For example, if My List was "Cat", "Dog", "Horse",
 	          |then
-	          |    My List -> _join
+            |```
+	          |My List -> _join
+            |```
 	          |would come out as "CatDogHorse".
 	          |
 	          |Of course, that probably isn't what you want -- most of the time, you want some separators at the beginning,
 	          |middle and end. Those are the parameters; how many parameters you give define how they are used. If there is
 	          |only one, then it is SEP, the separator in between elements. So
-	          |    My List -> _join(", ")
+            |```
+	          |My List -> _join(", ")
+            |```
 	          |would come out as "Cat, Dog, Horse" -- more reasonable.
 	          |
 	          |If there are two parameters, then they are OPEN and SEP. So for example, if I wanted to include dashes at the
 	          |beginning, that would be:
-	          |    My List -> _join("-- ", ", ")
+            |```
+	          |My List -> _join("-- ", ", ")
+            |```
 	          |which would come out as "-- Cat, Dog, Horse". And if I wanted parentheses around the entire list, I'd use all
 	          |three parameters -- OPEN, SEP and CLOSE -- as:
-	          |    My List -> _join("(", ", ", ")")
+            |```
+	          |My List -> _join("(", ", ", ")")
+            |```
 	          |to get "(Cat, Dog, Horse)".
 	          |
 	          |Note that you can use _join with anything, not just Text -- if the received values aren't Text, then they will

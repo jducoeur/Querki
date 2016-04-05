@@ -90,14 +90,18 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     toProps(
       setName("_foreachProperty"),
       Summary("Applies the given function to each Property in the received Thing or Model Value"),
-      Details("""    THING or MODEL VALUE -> _foreachProperty(... code ...) -> RESULTS
+      Details("""```
+          |THING or MODEL VALUE -> _foreachProperty(... code ...) -> RESULTS
+          |```
           |
           |This function is appropriate if you want to do something to each Property in a given Thing or Model Value.
           |It takes all of the Properties found in there, turns each into a PropAndValue, and hands it off to the
           |code contained in the parameter. The results are then bundled back up as a collection, and produced together.
           |
           |Alternate Usage:
-          |    THING or MODEL VALUE -> _foreachProperty -> LIST OF PROPANDVALUES
+          |```
+          |THING or MODEL VALUE -> _foreachProperty -> LIST OF PROPANDVALUES
+          |```
           |
           |If you use _foreachProperty with no parameter, it simply produces the list of PropAndValues, for later code
           |to use. These render reasonably sensibly, so this is a convenient way to simply display all the Properties
@@ -143,8 +147,9 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         Summary("Produces a raw, unprocessed value"),
         Details("""This advanced function prevents the usual QL and QText processing of a value. It
             |is typically used with something like _foreachProperty, like this:
-            |
-            |    THING -> _foreachProperty -> _val -> _rawVal
+            |```
+            |THING -> _foreachProperty -> _val -> _rawVal
+            |```
             |
             |This mainly affects Text types. Whereas the output of _val would usually be further
             |processed if it contained any QL, feeding it into _rawVal turns it into simple text,

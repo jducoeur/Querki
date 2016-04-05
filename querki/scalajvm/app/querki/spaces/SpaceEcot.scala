@@ -105,7 +105,9 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     toProps(
       setName("_createHere"),
       Summary("Create a nw Thing as part of displaying this expression"),
-      Details("""    MODEL -> LINK PROPERTY._createHere -> THING
+      Details("""```
+        |MODEL -> LINK PROPERTY._createHere -> THING
+        |```
         |
         |This allows you to create a new Thing, right here on the page, as part of 
         |displaying. It is useful to put inside of a _QLButton, so that you can create something

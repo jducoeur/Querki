@@ -54,7 +54,8 @@ class LineTokenizerTest extends LineTokenizer with FlatSpecLike with Matchers{
             }
         }
         p("a line")          should equal (new OtherLine("a line"))
-        p("    a code line") should equal (new CodeLine("    ", "a code line"))
+        // Space-indented code lines are now deliberately killed:
+//        p("    a code line") should equal (new CodeLine("    ", "a code line"))
         p("#a header#")      should equal (new AtxHeaderLine("#", "a header#"))
         p("> a quote")       should equal (new BlockQuoteLine("> ", "a quote"))
         p(" \t ")            should equal (new EmptyLine(" \t "))

@@ -334,7 +334,7 @@ trait LineParsers extends InlineParsers {
     val rulerOrUItem:Parser[MarkdownLine] = ruler | uItemStartLine
     /** First tries if the line is empty, if not tries for a code line.
      */
-    val emptyOrCode:Parser[MarkdownLine] = emptyLine | codeLine
+    val emptyOrCode:Parser[MarkdownLine] = emptyLine// | codeLine
     
     /** Parses one of the fenced code lines
      */

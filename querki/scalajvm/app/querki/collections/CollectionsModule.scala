@@ -521,7 +521,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           returns = (IntType, "How many elements are in that List")
         ),        
 	      Details("""This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
-	          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
+            |```
+	          |\[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]
+            |```""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    Future.successful(ExactlyOne(IntType(inv.context.value.cv.size)))

@@ -190,12 +190,16 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  toProps(
 	    setName("_equals"),
 	    Summary("Do these parameters match?"),
-	    Details("""    _equals(EXP1, EXP2) -> YES OR NO
+	    Details("""```
+          |_equals(EXP1, EXP2) -> YES OR NO
+          |```
 	        |_equals produces Yes iff the expressions in the two parameters match each other. The definition
 	        |of "match" is type-dependent, but by and large is similar to == in most programming languages.
 	        |
 	        |Alternate version:
-	        |    VALUE -> _equals(EXP) -> YES OR NO
+          |```
+	        |VALUE -> _equals(EXP) -> YES OR NO
+          |```
 	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
@@ -207,12 +211,16 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  toProps(
 	    setName("_lessThan"),
 	    Summary("Is the first parameter less than the second?"),
-	    Details("""    _lessThan(EXP1, EXP2) -> YES OR NO
+	    Details("""```
+          |_lessThan(EXP1, EXP2) -> YES OR NO
+          |```
 	        |_lessThan produces Yes iff the value in the first expression is less than the second. The definition
 	        |of "less than" is type-dependent, but by and large is similar to < in most programming languages.
 	        |
 	        |Alternate version:
-	        |    VALUE -> _lessThan(EXP) -> YES OR NO
+          |```
+	        |VALUE -> _lessThan(EXP) -> YES OR NO
+          |```
 	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
@@ -224,12 +232,16 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  toProps(
 	    setName("_greaterThan"),
 	    Summary("Is the first parameter greater than the second?"),
-	    Details("""    _greaterThan(EXP1, EXP2) -> YES OR NO
+	    Details("""```
+          |_greaterThan(EXP1, EXP2) -> YES OR NO
+          |```
 	        |_lessThan produces Yes iff the value in the first expression is greater than the second. The definition
 	        |of "greater than" is type-dependent, but by and large is similar to > in most programming languages.
 	        |
 	        |Alternate version:
-	        |    VALUE -> _greaterThan(EXP) -> YES OR NO
+          |```
+	        |VALUE -> _greaterThan(EXP) -> YES OR NO
+          |```
 	        |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
@@ -263,7 +275,9 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       toProps(
         setName("_or"),
         Summary("Produces true iff any of the parameters are true"),
-        Details("""    _if(_or(VAL1, VAL2, VAL3...), RESULTS)
+        Details("""```
+            |_if(_or(VAL1, VAL2, VAL3...), RESULTS)
+            |```
             |_or takes one or more parameters, and produces true if and only if at least one of those parameters
             |is true.""".stripMargin)))
   {
@@ -278,7 +292,9 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       toProps(
         setName("_and"),
         Summary("Produces true iff all of the parameters are true"),
-        Details("""    _if(_and(VAL1, VAL2, VAL3...), RESULTS)
+        Details("""```
+            |_if(_and(VAL1, VAL2, VAL3...), RESULTS)
+            |```
             |_and takes one or more parameters, and produces true if and only if all of those parameters
             |are true.""".stripMargin)))
   {

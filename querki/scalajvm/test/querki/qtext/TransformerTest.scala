@@ -33,13 +33,17 @@ class TransformerTest extends FlatSpec with Matchers with Transformer {
               "<p>Paragraph1</p>\n")
     }
 
-    it should "parse code blocks" in {
-        apply("    foo\n") should equal ("<pre><code>foo\n</code></pre>\n")
-        apply("\tfoo\n")   should equal ("<pre><code>foo\n</code></pre>\n")
-        apply("    foo\n    bar\n") should equal ("<pre><code>foo\nbar\n</code></pre>\n")
-        apply("    foo\n  \n    bar\n") should equal ("<pre><code>foo\n  \nbar\n</code></pre>\n")
-        apply("    foo\n\tbaz\n  \n    bar\n") should equal ("<pre><code>foo\nbaz\n  \nbar\n</code></pre>\n")
-        apply("    public static void main(String[] args)\n") should equal ("<pre><code>public static void main(String[] args)\n</code></pre>\n")
+    it should "not parse code blocks any more" in {
+        apply("    foo\n") should equal ("<p>    foo</p>\n")
+        apply("\tfoo\n")   should equal ("<p>\tfoo</p>\n")
+        apply("    foo\n    bar\n") should equal ("<p>    foo\n    bar</p>\n")
+        apply("    foo\n  \n    bar\n") should equal ("<p>    foo</p>\n<p>    bar</p>\n")
+//        apply("    foo\n") should equal ("<pre><code>foo\n</code></pre>\n")
+//        apply("\tfoo\n")   should equal ("<pre><code>foo\n</code></pre>\n")
+//        apply("    foo\n    bar\n") should equal ("<pre><code>foo\nbar\n</code></pre>\n")
+//        apply("    foo\n  \n    bar\n") should equal ("<pre><code>foo\n  \nbar\n</code></pre>\n")
+//        apply("    foo\n\tbaz\n  \n    bar\n") should equal ("<pre><code>foo\nbaz\n  \nbar\n</code></pre>\n")
+//        apply("    public static void main(String[] args)\n") should equal ("<pre><code>public static void main(String[] args)\n</code></pre>\n")
     }
     
     it should "parse a trivial paragraph" in {
@@ -365,9 +369,8 @@ And now to something completely different.
 ) should equal (
 """<pre><code>System.out.println(&quot;Hello World!&quot;);
 </code></pre>
-<p>And now to something completely different.</p>
-<pre><code>old style code
-</code></pre>
+<p>And now to something completely different.
+    old style code</p>
 """.stripReturns    
 )
 

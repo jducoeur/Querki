@@ -163,7 +163,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
 	toProps(
 	  setName("_thumbnail"),
 	  Summary("Show the thumbnail version of the received photos"),
-	  Details("""    PHOTOS -> _thumbnail -> SMALL PHOTOS
+	  Details("""```
+            |PHOTOS -> _thumbnail -> SMALL PHOTOS
+            |```
 	          |
 	          |Each photo in Querki automatically has a "thumbnail" version, which is much smaller and quicker
 	          |to load. It is usually appropriate to show the thumbnail when you are listing a bunch of photos,
@@ -182,7 +184,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     toProps(
       setName("_photoTarget"),
       Summary("The target location to show one of a List of Photos"),
-      Details("""    LIST OF PHOTOS PROPERTY -> _photoTarget
+      Details("""```
+          |LIST OF PHOTOS PROPERTY -> _photoTarget
+          |```
           |
           |When you have a List of Photos, you usually don't want to show all of them full-sized on the page. Instead,
           |you usually want to show one full-sized Photo somewhere and some thumbnails; when you click on a thumbnail, it
@@ -190,9 +194,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           |
           |When you pass a List of Photos into _photoTarget, it displays only the *first* Photo in that list. But if you
           |display the thumbnails somewhere else on the page like this --
-          |
-          |    LIST OF PHOTOS PROPERTY -> _thumbnail
-          |
+          |```
+          |LIST OF PHOTOS PROPERTY -> _thumbnail
+          |```
           |Then whenever a user clicks on a thumbnail, it will replace the full-sized picture. This way, you can have a
           |lot of Photos, but only take up a bit of display space on the page.
           |

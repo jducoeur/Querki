@@ -230,7 +230,9 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     toProps(
       setName("_userValues"),
       Summary("Fetch all of the User Values for this Property on this Thing, for all Users"),
-      Details("""    THING -> PROP._userValues -> USER VALUES""".stripMargin)))
+      Details("""```
+        |THING -> PROP._userValues -> USER VALUES
+        |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
@@ -257,7 +259,9 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     toProps(
       setName("_thingValues"),
       Summary("Fetch all of this User's User Values"),
-      Details("""    IDENTITY -> _thingValues -> USER VALUES
+      Details("""```
+          |IDENTITY -> _thingValues -> USER VALUES
+          |```
           |
           |Note that, for the moment, this fetches all of the User Values for *all* Properties. We will
           |probably add a Property-specific variant eventually, but this seems more generally useful.""".stripMargin)))

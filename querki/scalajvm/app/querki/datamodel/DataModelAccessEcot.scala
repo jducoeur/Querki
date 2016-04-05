@@ -483,7 +483,9 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       setName("_hasProperty"),
       SkillLevel(SkillLevelAdvanced),
       Summary("Allows you to test whether this Thing has a specified Property"),
-      Details("""    THING -> _hasProperty(PROP._self) -> Yes or No
+      Details("""```
+    |THING -> _hasProperty(PROP._self) -> Yes or No
+    |```
     |
     |This function produces Yes iff the parameter is a Property of the received THING, and No otherwise.
     |Note that you must specify _self on the Property's name -- the parameter is the Property itself,

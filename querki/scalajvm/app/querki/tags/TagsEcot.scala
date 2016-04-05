@@ -386,14 +386,19 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     toProps(
       setName("_tagRefs"),
       Summary("Produces a List of all Things that have the received Thing or Name as a Tag"),
-      Details("""    NAME -> _tagRefs -> THINGS
+      Details("""```
+          |NAME -> _tagRefs -> THINGS
+          |```
           |_tagRefs is usually the right way to answer the question "what points to this?" For example, if I wanted to
           |show a bullet list of everything that points to the current Thing, I would simply say:
-          |    _tagRefs -> _bulleted
+          |```
+          |_tagRefs -> _bulleted
+          |```
           |_tagRefs is designed to receive a "name" (which is what a Tag is). If you send it a Thing, then it will use
           |the Name of that Thing.
-          |
-          |    NAME -> PROPERTY._tagRefs -> THINGS
+          |```
+          |NAME -> PROPERTY._tagRefs -> THINGS
+          |```
           |
           |If you specify a PROPERTY like this, it will only produce Things that point to this through that
           |*specific* Tag Property.
@@ -477,7 +482,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     toProps(
       setName("_resolveTags"),
       Summary("Turns any of the received Tags that name actual Things into Links to those Things"),
-      Details("""    TAGS -> _resolveTags -> LINKS
+      Details("""```
+          |TAGS -> _resolveTags -> LINKS
+          |```
           |A Tag is essentially a name -- it may or may not be the name of an actual Thing.
           |Occasionally, you want to be able to get to those Things -- for example, you might want
           |to use one of the Properties of the Thing if it exists. This function helps you do that.
