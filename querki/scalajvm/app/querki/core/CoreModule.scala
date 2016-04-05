@@ -307,6 +307,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
       toProps(
         setName(commonName(_.core.isModelProp)),
         NotInherited,
+        setInternal,
         // TBD: we might allow Property Models down the road, but not yet:
         AppliesToKindProp(Kind.Thing),
         SkillLevel(SkillLevelAdvanced),

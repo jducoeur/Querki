@@ -187,6 +187,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
       setName(commonName(_.types.deriveNameProp)),
       Links.LinkModelProp(deriveModel),
       Links.LinkAllowAppsProp(true),
+      setInternal,
       SkillLevel(SkillLevelAdvanced),
       Summary("Should this Thing's Link Name be automatically derived from its Name?"),
       Details("""Querki has two different kinds of "name". Both are important, but they are

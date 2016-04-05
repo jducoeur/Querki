@@ -83,6 +83,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	      setName(commonName(_.editing.instancePropsProp)),
 	      Links.LinkAllowAppsProp(true),
 	      Links.LinkKindProp(Kind.Property),
+        setInternal,
 	      Summary("Which Properties are relevant for Instances of this Model?"),
 	      Details("""This Property defines which of the Properties on this Model will show in
           |the editor for its Instances, and in what order.

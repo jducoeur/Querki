@@ -115,24 +115,50 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
   // for this code.
   def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Future[Wikitext] = {
-    val text = """
-        |<dl>
-        |[[_foreachProperty -> 
+    val isModel = thing.ifSet(Core.IsModelProp)(state)
+    val guts = """
+        |  _filter(_not(_prop -> Internal Property)) ->
+        |  _filter(_not((_prop -> _is(Name._self)) | ((_prop -> _is(Link Name._self)) | (_prop -> _is(Is a Model._self))))) ->
         |  _sort -> 
         |  ""<dt>[[_prop]]</dt><dd>[[
         |    _if(_prop -> Property Type -> _is(Thing Type), 
         |        _val -> _rawVal -> _commas, 
         |        _val -> _rawVal)]]</dd>""
-        |]]
-        |</dl>""".stripMargin
+      """
+    
+    val text =
+      if (isModel)
+        s"""### Instance Properties
+          |<dl>
+          |[[+$$thing
+          |  _foreachProperty -> _foreach(
+          |    +$$propInfo
+          |    _filter($$thing -> Instance Properties -> _contains($$propInfo -> _prop)) ->
+          |$guts 
+          |)]]
+          |</dl>
+          |
+          |### Model Properties
+          |<dl>
+          |[[+$$thing
+          |  _foreachProperty -> _foreach(
+          |    +$$propInfo
+          |    _filter($$thing -> Instance Properties -> _not(_contains($$propInfo -> _prop))) ->
+          |$guts 
+          |)]]
+          |</dl>""".stripMargin
+      else
+        s"""
+          |<dl>
+          |[[_foreachProperty ->
+          |$guts 
+          |]]
+          |</dl>""".stripMargin
+          
     val fullText =
-      if (thing.ifSet(Core.IsModelProp)(state)) {
+      if (isModel) {
         text + """
-        |------
-        |
-        |#### Instances of ____
-        |
-        |[[_showSome(0, 50, ""Show More"", _instances -> _sort, _bulleted)]]""".stripMargin
+        |[[_QLButton(""Show Instances"", ql=_instances -> _sort -> _bulleted)]]""".stripMargin
       } else
         text
     QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
