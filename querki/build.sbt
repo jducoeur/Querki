@@ -42,8 +42,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     ),
     
     // ConductR params
-    // TODO: these are very ad-hoc and suspicious! Re-examine them for real!
     BundleKeys.nrOfCpus := 1.0,
+    // We have 4GB nodes. This allows for 2 simultaneous bundles per node during release, plus
+    // overhead for ConductR and system. Might be able to increase it to 1.5GB per bundle.
 	BundleKeys.memory := 1.GiB,
 	BundleKeys.diskSpace := 5.MB,
 	BundleKeys.startCommand ++= Seq(
