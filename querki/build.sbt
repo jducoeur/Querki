@@ -104,7 +104,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "org.querki" %%% "querki-jsext" % "0.6",
-    "org.querki" %%% "jquery-facade" % "1.0-RC2",
+    "org.querki" %%% "jquery-facade" % "1.0-RC3",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.5",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0",
     "org.querki" %%% "jstree-facade" % "0.2"
