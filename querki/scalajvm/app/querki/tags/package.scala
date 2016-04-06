@@ -30,7 +30,8 @@ package object tags {
 
   trait Tags extends EcologyInterface {
     def TagSetType:PType[String] with PTypeBuilder[String,String]
-    def NewTagSetType:PType[PlainText] with PTypeBuilder[PlainText, String]
+    // Deprecated: this is now an alias for Core.TagType:
+    def NewTagSetType:querki.basic.PlainTextBaseType#PlainTextType
     
     def ShowUnknownProp:Property[QLText,String]
     def IsReifiedTagProp:Property[Boolean,Boolean]

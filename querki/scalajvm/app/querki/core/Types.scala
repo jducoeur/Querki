@@ -5,6 +5,7 @@ import scala.xml.NodeSeq
 import models.{Collection, DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropMap
 
+import querki.basic.PlainTextBaseType
 import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
@@ -544,7 +545,9 @@ trait CoreExtra {
   def setInternal:(OID, QValue)
 }
 
-trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with IntTypeBasis with LinkUtils with NameUtils with Core with CoreExtra =>
+trait TypeCreation { 
+  self:CoreEcot with TextTypeBasis with NameTypeBasis with IntTypeBasis with LinkUtils with NameUtils with PlainTextBaseType with WithQL 
+  with Core with CoreExtra =>
 
   /**
    * Marker type, used to signify "no real type" in empty collections.
@@ -888,5 +891,49 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     }
     
     def doComputeMemSize(v:Boolean):Int = 1
+  }
+  
+  class TagType extends PlainTextType(querki.tags.MOIDs.NewTagSetOID, 
+      toProps(
+        setName("Tag Type"),
+        Summary("A collection of arbitrary Tags that apply to this Thing"),
+        Details("""A Tag Set is a way to add a bunch of "tags" to a Thing. It is typically used to
+            |list the characteristics of this Thing.
+            |
+            |Note that a Tag is, technically just a Plain Text value, and can contain almost anything.
+            |However, if it matches the Name or Link Name of a Thing, it will generally display as a link to that
+            |Thing if you simply show it, and if it doesn't match a Thing, clicking on it will allow you to
+            |create a Thing by that name. This way, you can add additional details about what this Tag means.
+            |
+            |It is strongly recommended that you create Sets of Tags -- there is special UI support for this,
+            |and we've found that Sets of Tags are one of the most useful sorts of data in Querki. But you
+            |are not required to do so -- in particular, if you really only want one value here, create an
+            |Optional Tag.
+            |
+            |When you select Tag Type, the Editor will ask you if you want to Restrict to a Model. This is optional,
+            |but can be very useful -- if it is set, it restricts the Tags that get offered to you when you are
+            |doing data entry. If this Property has any sort of meaning -- if the Tag isn't completely open-ended
+            |and arbitrary -- consider first creating a Model (which doesn't need anything more than a Name),
+            |and using it in Restrict to Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 12
+    
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
+      fut(renderAnyText(prop, context, currentValue, v, this) { cv =>
+        <input type="text" class="_tagInput" data-isnames="true" value={cv}/>
+      })
+    }
+  
+    override def doWikify(context:QLContext)(v:querki.basic.PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      val display = displayOpt.getOrElse(Wikitext(querki.util.HtmlEscape.escapeAll(v.text)))
+      // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
+      // since that danger is there in ordinary QText as well.
+      Future.successful(Wikitext("[") + display + Wikitext(s"](${querki.util.SafeUrl(v.text)})")) 
+    }
+    
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
+      Some(QL.process(QLText("""These tags are currently being used:
+        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext))
+    }
   }
 }

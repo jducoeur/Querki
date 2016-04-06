@@ -3,6 +3,7 @@ package querki.core
 import models._
 
 import querki.api.commonName
+import querki.basic.PlainTextBaseType
 import querki.conventions
 import querki.ecology._
 import querki.globals._
@@ -10,7 +11,8 @@ import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
 class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
   with CollectionBase with CollectionCreation with CoreExtra
-  with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation
+  with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with PlainTextBaseType 
+  with TypeCreation
 {
   import MOIDs._
   
@@ -116,6 +118,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
   lazy val YesNoType = new YesNoType
   lazy val LongType = new LongType
   lazy val FloatType = new FloatType
+  lazy val TagType = new TagType
   
   lazy val LinkFromThingBuilder = new PTypeBuilderBase[OID, Thing] {
     def pType = LinkType
@@ -134,7 +137,8 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
     IntType,
     YesNoType,
     LongType,
-    FloatType
+    FloatType,
+    TagType
   )
   
   /***********************************************

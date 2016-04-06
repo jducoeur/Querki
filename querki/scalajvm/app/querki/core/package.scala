@@ -4,8 +4,8 @@ import collection.immutable.TreeMap
 
 import models.{Collection, DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, Thing}
 
+import querki.basic.PlainText
 import querki.ecology._
-
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
 /**
@@ -83,6 +83,7 @@ package object core {
     def YesNoType:PType[Boolean] with PTypeBuilder[Boolean,Boolean]
     def LongType:PType[Long] with PTypeBuilder[Long,Long]
     def FloatType:PType[Double] with PTypeBuilder[Double,Double]
+    def TagType:querki.basic.PlainTextBaseType#PlainTextType
     
     def LinkFromThingBuilder:PTypeBuilderBase[OID, Thing]
     

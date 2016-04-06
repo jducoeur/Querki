@@ -14,7 +14,7 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 
 import MOIDs._
 
-trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
+trait PlainTextBaseType { self:CoreEcot with TextTypeBasis =>
   abstract class PlainTextType(tid:OID, pf:PropMap) extends SystemType[PlainText](tid, pf) 
     with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
   {
