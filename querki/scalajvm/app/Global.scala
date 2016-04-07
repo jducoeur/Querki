@@ -12,7 +12,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.conductr.bundlelib.akka.{ Env => AkkaEnv }
 import com.typesafe.conductr.bundlelib.play.{ Env => PlayEnv }
 import com.typesafe.conductr.bundlelib.play.StatusService
-import com.typesafe.conductr.bundlelib.play.ConnectionContext.Implicits.defaultContext
+import com.typesafe.conductr.lib.play.ConnectionContext.Implicits.defaultContext
 
 import controllers.LoggingFilter
 

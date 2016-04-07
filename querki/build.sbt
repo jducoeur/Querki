@@ -38,7 +38,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.okumin" %% "akka-persistence-sql-async" % "0.2.1",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus" %% "play" % "1.2.0" % "test",
-      "com.typesafe.conductr" %% "play23-conductr-bundle-lib" % "1.0.2"
+      "com.typesafe.conductr" %% "play23-conductr-bundle-lib" % "1.4.2"
     ),
     
     // ConductR params
