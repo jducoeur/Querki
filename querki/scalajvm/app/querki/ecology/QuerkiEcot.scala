@@ -129,6 +129,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   lazy val LinkType = Core.LinkType
   lazy val TextType = Core.TextType
   lazy val YesNoType = Core.YesNoType
+  lazy val TagType = Core.TagType
   
   override def setName(str:String):(OID,QValue) = Core.setName(str)
   
@@ -138,6 +139,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   // dependencies:
   def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
   def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text)))
+  def Categories(cats:String*) = (querki.conventions.MOIDs.PropCategoriesOID -> QSet.makePropValue(cats.map(TagType(_)), TagType))
   def AppliesToKindProp(kind:Int) = (querki.core.MOIDs.AppliesToKindOID -> QList(IntType(kind)))
   def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
   

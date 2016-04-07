@@ -25,6 +25,8 @@ package object editing {
     val NotEditableOID = moid(4)
     val CheckListOID = moid(5)
   }
+  
+  val EditingTag = "Editing"
 
   trait Editor extends EcologyInterface {
     /**

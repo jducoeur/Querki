@@ -43,6 +43,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_first"),
 	      Summary("""Grabs just the first thing from the received context."""),
+        Categories(CollTag),
         Signature(
           expected = Some(Seq(AnyType), "A List of anything"),
           reqs = Seq.empty,
@@ -70,6 +71,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val RestMethod = new InternalMethod(RestMethodOID,
 	    toProps(
 	      setName("_rest"),
+        Categories(CollTag),
 	      Summary("""Produces everything but the first thing from the received context."""),
         Signature(
           expected = Some(Seq.empty, "A List of anything"),
@@ -98,6 +100,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val TakeMethod = new InternalMethod(TakeOID,
 	    toProps(
 	      setName("_take"),
+        Categories(CollTag),
 	      Summary("""Produces the first N values from the received context."""),
         Signature(
           expected = Some(Seq.empty, "A List of anything"),
@@ -124,6 +127,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val DropMethod = new InternalMethod(DropOID,
 	    toProps(
 	      setName("_drop"),
+        Categories(CollTag),
 	      Summary("""Produces all but the first N values from the received context."""),
         Signature(
           expected = Some(Seq.empty, "A List of anything"),
@@ -168,6 +172,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val IsNonEmptyMethod = new InternalMethod(IsNonEmptyOID,
 	    toProps(
 	      setName("_isNonEmpty"),
+        Categories(CollTag),
 	      Summary("Tests whether the provided value is non-empty"),
         Signature(
           expected = Some(Seq.empty, "A Thing, or a List"),
@@ -216,6 +221,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val IsEmptyMethod = new InternalMethod(IsEmptyOID,
 	    toProps(
 	      setName("_isEmpty"),
+        Categories(CollTag),
 	      Summary("Tests whether the provided value is empty"),
         Signature(
           expected = Some(Seq.empty, "A Thing, or a List"),
@@ -264,6 +270,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val FilterMethod = new InternalMethod(FilterOID,
 	    toProps(
 	      setName("_filter"),
+        Categories(CollTag),
 	      Summary("Filter out non-matching elements of a collection"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
@@ -296,6 +303,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val SortMethod = new InternalMethod(SortMethodOID,
 	    toProps(
 	      setName("_sort"),
+        Categories(CollTag),
 	      Summary("Sort the received list"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
@@ -484,6 +492,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val DescMethod = new InternalMethod(DescMethodOID,
 	    toProps(
 	      setName("_desc"),
+        Categories(CollTag),
 	      Summary("Sort this list in descending order"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
@@ -513,6 +522,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val CountMethod = new InternalMethod(CountMethodOID,
 	    toProps(
 	      setName("_count"),
+        Categories(CollTag),
 	      Summary("Produces the number of elements in the received Collection"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
@@ -533,6 +543,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	lazy val ReverseMethod = new InternalMethod(ReverseMethodOID,
 	    toProps(
 	      setName("_reverse"),
+        Categories(CollTag),
 	      Summary("Produces the same Collection it receives, as a List, in reverse order"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
@@ -558,6 +569,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val prevInListMethod = new InternalMethod(PrevInListOID,
       toProps(
         setName("_prevInList"),
+        Categories(CollTag),
         SkillLevel(SkillLevelAdvanced),
         Summary("Fetch the previous value to this one from the given List"),
         Signature(
@@ -599,6 +611,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val nextInListMethod = new InternalMethod(NextInListOID,
       toProps(
         setName("_nextInList"),
+        Categories(CollTag),
         SkillLevel(SkillLevelAdvanced),
         Summary("Fetch the next value to this one from the given List"),
         Signature(
@@ -640,6 +653,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val foreachMethod = new InternalMethod(ForeachMethodOID,
       toProps(
         setName("_foreach"),
+        Categories(CollTag),
         Summary("Applies the parameter to each element in the received collection, and produces a collection of the results"),
         Signature(
           expected = Some(Seq.empty, "A List or Set of any sort"),
@@ -662,6 +676,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val containsMethod = new InternalMethod(ContainsMethodOID,
     toProps(
       setName("_contains"),
+      Categories(CollTag),
       Summary("Produces true if the received List contains the specified value"),
       Signature(
         expected = Some(Seq.empty, "A List (or Set) of any sort"),
@@ -686,6 +701,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val ConcatMethod = new InternalMethod(ConcatOID,
     toProps(
       setName("_concat"),
+      Categories(CollTag),
       Summary("Concatenates the Lists given as parameters"),
       Signature(
         expected = None,
@@ -716,6 +732,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val RandomMethod = new InternalMethod(RandomOID,
     toProps(
       setName("_random"),
+      Categories(CollTag),
       Summary("Select an item at random from a list"),
       Signature(
         expected = Some(Seq.empty, "A List"),

@@ -12,7 +12,8 @@ package object conventions {
     val PropSummaryOID = sysId(85)
     val PropDetailsOID = sysId(86)
     
-    val PropDescriptionOID = moid(1)    
+    val PropDescriptionOID = moid(1)
+    val PropCategoriesOID = moid(2)
   }
   
   trait Conventions extends EcologyInterface {  

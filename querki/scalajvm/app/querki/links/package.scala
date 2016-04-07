@@ -18,6 +18,8 @@ package object links {
     
     // See also MOIDs!
   }
+  
+  val LinksTag = "Linking to Things and External URLs"
 
   // Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
   // to wind up with an absolute URL. But that's silly: we frequently want a relative URL, and specifically

@@ -10,6 +10,7 @@ Apps.notASpace=That isn't a valid Space Id.
 Collections.concat.mismatchedTypes=The parameters of _concat() must all be the same type; this contains both {0} and {1}
 
 DataModel.propsOfType.notAType=The _propsOfType function expects a Type; {0} is not one
+DataModel.usingSpace.notAnApp=The parameter of _usingSpace must be this Space or one of its Apps
 
 Edit.checklist.propMissing={0} doesn't have the Property {1}
 

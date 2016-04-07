@@ -24,6 +24,8 @@ package object time extends Imports with Implicits {
     val PlusDateImplOID = moid(8)
   }
   
+  val TimeTag = "Times and Dates"
+  
   // The epoch, typically used for "We don't really have a time for this":
   val epoch = new DateTime(0)
   

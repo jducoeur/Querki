@@ -42,6 +42,8 @@ package object identity {
     val PersonIdentityFunctionOID = moid(10)
   }
   
+  val IdentityTag = "Users, Identities and Invitations"
+  
   /**
    * The values that can be put into the SpaceMembership table.
    * 

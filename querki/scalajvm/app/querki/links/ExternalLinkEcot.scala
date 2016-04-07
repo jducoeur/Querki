@@ -41,6 +41,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       setInternal,
       Summary("The Model underlying the External Link Type."),
       ExternalLinkUrlProp(),
+      Categories(LinksTag),
       Basic.DisplayNameProp(),
       Editor.InstanceProps(ExternalLinkUrlProp, Basic.DisplayNameProp)))
       
@@ -52,6 +53,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     toProps(
       setName("External Link Type"),
       Basic.ExplicitProp(true),
+      Categories(LinksTag),
       Summary("A proper link to an external website, including both the URL and display text.")))
     with URLableType
   {
@@ -108,6 +110,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       setName("_url"),
       setInternal,
       Editor.PromptProp("URL"),
+      Categories(LinksTag),
       Summary("The URL of a webpage, usually outside Querki"),
       Details("This is usually used inside of an External Link Type Property.")))
       
@@ -118,6 +121,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   lazy val WithParamFunction = new InternalMethod(WithParamFunctionOID,
     toProps(
       setName("_withParam"),
+      Categories(LinksTag),
       Summary("Adds the specified query parameter to a Link or URL"),
       Details("""```
         |LINK or URL -> _withParam(PARAMNAME, VALUE, RAW) -> URL
@@ -167,6 +171,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     toProps(
       setName("_oidLink"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(LinksTag),
       Summary("Get the OID Link from a Thing"),
       Details("""```
           |THING -> _oidLink -> External Link
@@ -201,6 +206,8 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   lazy val NavigateTo = new InternalMethod(NavigateToOID,
     toProps(
       setName("_navigateTo"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(LinksTag),
       Summary("This receives a URL, and *immediately* changes pages to that URL"),
       Signature(
         expected = Some(Seq(Links.URLType, LinkType), "The page to go to"),

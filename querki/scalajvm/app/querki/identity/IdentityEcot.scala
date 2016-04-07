@@ -205,9 +205,6 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
    * FUNCTIONS
    ***********************************************/
   
-  /**
-   * TODO: EEEEVIL! Contains a blocking call!
-   */
   lazy val ResolveIdentity = new InternalMethod(ResolveIdentityOID,
     toProps(
       setName("_resolveIdentity"),

@@ -22,6 +22,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   
   lazy val IsModelProp = Core.IsModelProp
   
+  val BasicTag = querki.core.CoreTag
+  
   /***********************************************
    * API
    ***********************************************/
@@ -74,6 +76,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       setName("Plain Text Type"),
       setInternal,
       SkillLevel(SkillLevelAdvanced),
+      Categories(BasicTag),
       Summary("A short text that does not contain any QL"),
       Details("""Plain Text is a special, restricted sort of Text. It can contains all of the
           |formatting described in the [QText Reference](http://www.querki.net/u/systemUser/documentation/QText-Reference),
@@ -105,6 +108,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     toProps(
       setName("Function"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(BasicTag),
       Summary("A QL Expression, that you can use from other expressions"),
       Details("""Functions are basically how you do serious programming in Querki. They are, therefore,
           |very advanced, and are not recommended for anyone aside from programmers.
@@ -193,6 +197,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     toProps(
       setName("_apply"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(BasicTag),
       Summary("A QL Expression that will be run when you name this Thing."),
       Details("""_apply is an advanced function, and most users will not use it directly. But it is probably
           |the most important Property in Querki, and advanced users may want to play with it.
@@ -238,6 +243,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       setName(commonName(_.basic.displayNameProp)),
       NotInherited,
       Types.MinTextLengthProp(1),
+      Categories(BasicTag),
       Summary("This Thing's usual Name"),
       Details("""When you create a Thing in Querki, you will usually be asked to provide a Name.
         |This is *not* generally required -- you can generally leave it off if there isn't a sensible
@@ -256,6 +262,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     toProps(
       setName("Computed Name"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(BasicTag),
       Summary("How to compute a name, for Things that don't have their own names"),
       Details("""Most Things in Querki use the Name Property to set a name for this specific Thing.
           |But that sometimes isn't appropriate, especially for "child" Things that are providing more detail
@@ -274,40 +281,43 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   
   // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   lazy val DisplayTextProp = new SystemProperty(DisplayTextOID, LargeTextType, Optional,
-      toProps(
-        setName(commonName(_.basic.defaultView)),
-        Summary("How this Thing will be displayed"),
-        Details("""Default View is one of the most important Properties in Querki,
-        		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
-        		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
-        		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)
-            |
-            |If you define the Default View on a Model, and then use that Model for creating a Property, the
-            |Default View says how to display values of that Property.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.basic.defaultView)),
+      Categories(BasicTag),
+      Summary("How this Thing will be displayed"),
+      Details("""Default View is one of the most important Properties in Querki,
+      		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
+      		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
+      		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)
+          |
+          |If you define the Default View on a Model, and then use that Model for creating a Property, the
+          |Default View says how to display values of that Property.""".stripMargin)
+      ))
   
   lazy val ModelViewProp = new SystemProperty(ModelViewOID, LargeTextType, Optional,
-      toProps(
-        setName("Model View"),
-        SkillLevel(SkillLevelAdvanced),
-        NotInherited,
-        Core.ModelOnlyProp(true),
-        Summary("How this Model will be displayed"),
-        Details("""One of the most important Properties in Querki is [[Default View._self]], which says how Instances should be
-            |displayed. However, you usually do not want to look at a Model the same way you do its Instances: the fields
-            |are usually empty, and it simply isn't very useful.
-            |
-            |So Models use the Model View Property instead. If you set Model View, that says how to display this specific
-            |Model. It is not inherited to the Instances.
-            |
-            |You can usually ignore Model View -- the default serves reasonably well most of the time. But it is available
-            |if you would like to do something different.""".stripMargin)))
+    toProps(
+      setName("Model View"),
+      SkillLevel(SkillLevelAdvanced),
+      NotInherited,
+      Core.ModelOnlyProp(true),
+      Categories(BasicTag),
+      Summary("How this Model will be displayed"),
+      Details("""One of the most important Properties in Querki is [[Default View._self]], which says how Instances should be
+          |displayed. However, you usually do not want to look at a Model the same way you do its Instances: the fields
+          |are usually empty, and it simply isn't very useful.
+          |
+          |So Models use the Model View Property instead. If you set Model View, that says how to display this specific
+          |Model. It is not inherited to the Instances.
+          |
+          |You can usually ignore Model View -- the default serves reasonably well most of the time. But it is available
+          |if you would like to do something different.""".stripMargin)))
 
   lazy val DeprecatedProp = new SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
     toProps(
       setName("Deprecated"),
       NotInherited,
       SkillLevel(SkillLevelAdvanced),
+      Categories(BasicTag),
       Summary("True iff this Thing is Deprecated."),
       Details("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
           |be used any more.
@@ -323,61 +333,62 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       Summary("The next step after Deprecated -- marks something that is considered formally dead.")))
   
   lazy val ExplicitProp = new SystemProperty(ExplicitPropOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("_explicitlyShown"),
-        setInternal,
-        Summary("The inverse of InternalProp -- says that this *is* specifically to be shown to users, even though it otherwise wouldn't be.")))
+    toProps(
+      setName("_explicitlyShown"),
+      setInternal,
+      Summary("The inverse of InternalProp -- says that this *is* specifically to be shown to users, even though it otherwise wouldn't be.")))
   
   lazy val SystemOnlyProp = new SystemProperty(SystemOnlyPropOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("System Only Property"),
-        (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
-        AppliesToKindProp(Kind.Property),
-        Summary("A sort of weak version of InternalProp -- this is a Property that users can not add to Things, but you can read and use it.")))
+    toProps(
+      setName("System Only Property"),
+      (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
+      AppliesToKindProp(Kind.Property),
+      Summary("A sort of weak version of InternalProp -- this is a Property that users can not add to Things, but you can read and use it.")))
   
   lazy val SystemHiddenProp = new SystemProperty(SystemHiddenPropOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("System Hidden Property"),
-        (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
-        AppliesToKindProp(Kind.Property),
-        Summary("An extreme version of InternalProp -- this is a Property that is not even visible in user space.")))
+    toProps(
+      setName("System Hidden Property"),
+      (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
+      AppliesToKindProp(Kind.Property),
+      Summary("An extreme version of InternalProp -- this is a Property that is not even visible in user space.")))
   
   lazy val PrintViewProp = new SystemProperty(PrintViewOID, LargeTextType, Optional,
-      toProps(
-        setName(commonName(_.basic.printView)),
-        Summary("How this Thing will be printed"),
-        Details("""Most of the time, you can just print Querki pages, and they will work as you want. But in some
-            |cases, you may want to print a Thing differently from how you look at it on the page -- you may want
-            |to show different fields, summarize differently, and so on. When that is the case, add the Print View
-            |Property. This is another Large Text, and works very much like Default View, but will only be used for
-            |printing.
-            |
-            |**Important:** the Print View will only be used when you select Print... from the Querki Actions menu;
-            |it will not be used if you say Print Page or something like that from the browser itself. This is a
-            |technical limitation of browsers that is difficult to work around. So if you want to use Print View,
-            |print from the Actions menu.
-            |
-            |**Advanced:** To make printing look *exactly* like you want, you may need to fiddle with CSS. The Print
-            |View will be wrapped in the class "\_printView", so you can use .\_printView in CSS to define styles that
-            |only happen in the Print View.
-            |
-            |To hide the page headers and footers, you can do something like this:
-            |```
-            |@media print {
-            |  @page {
-            |    margin-top: 0mm;
-            |    margin-bottom: 0mm;
-            |  }
-            |
-            |  body {
-            |    padding-top: 0.25in;
-            |    padding-bottom: 0.25in;
-            |  }
-            |}
-            |```
-            |Unfortunately, there is currently no consistent way to control the headers and footers the way you
-            |would like. This is a browser limitation, which hopefully will one day get fixed.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.basic.printView)),
+      Categories(BasicTag),
+      Summary("How this Thing will be printed"),
+      Details("""Most of the time, you can just print Querki pages, and they will work as you want. But in some
+          |cases, you may want to print a Thing differently from how you look at it on the page -- you may want
+          |to show different fields, summarize differently, and so on. When that is the case, add the Print View
+          |Property. This is another Large Text, and works very much like Default View, but will only be used for
+          |printing.
+          |
+          |**Important:** the Print View will only be used when you select Print... from the Querki Actions menu;
+          |it will not be used if you say Print Page or something like that from the browser itself. This is a
+          |technical limitation of browsers that is difficult to work around. So if you want to use Print View,
+          |print from the Actions menu.
+          |
+          |**Advanced:** To make printing look *exactly* like you want, you may need to fiddle with CSS. The Print
+          |View will be wrapped in the class "\_printView", so you can use .\_printView in CSS to define styles that
+          |only happen in the Print View.
+          |
+          |To hide the page headers and footers, you can do something like this:
+          |```
+          |@media print {
+          |  @page {
+          |    margin-top: 0mm;
+          |    margin-bottom: 0mm;
+          |  }
+          |
+          |  body {
+          |    padding-top: 0.25in;
+          |    padding-bottom: 0.25in;
+          |  }
+          |}
+          |```
+          |Unfortunately, there is currently no consistent way to control the headers and footers the way you
+          |would like. This is a browser limitation, which hopefully will one day get fixed.""".stripMargin)
+      ))
 
   override lazy val props = Seq(
     ApplyMethod,
@@ -415,25 +426,32 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
+      Categories(BasicTag),
       ApplyMethod("""* ""<ul>[[""<li class="_bullet">
           |____
           |</li>""]]
           |</ul>""""".stripMargin),
-      DisplayTextProp("""    LIST -> _bulleted
+      DisplayTextProp("""```
+          |LIST -> _bulleted
+          |```
           |This method takes a LIST, and render its elements as a bullet list, one per line. It is simply syntactic sugar for
           |    LIST -> \""* \____\"" """.stripMargin)))
 
 object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
     toProps(
       setName("_commas"),
+      Categories(BasicTag),
       ApplyMethod("""_join("", "")"""),
-      DisplayTextProp("""    LIST -> _commas
+      DisplayTextProp("""```
+          |LIST -> _commas
+          |```
           |This method takes a LIST, and render its elements comma-separated. It is simply syntactic sugar for
           |    LIST -> _join(\"", \"")""".stripMargin)))
 
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(
       setName("_displayThingTree"),
+      Categories(BasicTag),
       ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, "" }}"")]]""" +
           """[[_if(_and(_isModel, _hasPermission(Who Can Create._self)), _createInstanceLink -> _iconButton(""plus"", ""Create an Instance""))]]
 {{indent:[[_children -> 
@@ -448,6 +466,7 @@ object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootO
 object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
     toProps(
       setName("Old All Things"),
+      DeprecatedProp(true),
       DisplayTextProp("[[Old All Things]]"),
       ApplyMethod("""""{{_thingTree:
 [[_currentSpace ->

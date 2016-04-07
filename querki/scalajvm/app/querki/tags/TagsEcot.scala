@@ -115,6 +115,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       }
     )
   }
+  
+  val TagsTag = "Tags"
 
   /***********************************************
    * TYPES
@@ -296,6 +298,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val ShowUnknownProp = new SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(
       setName("Undefined Tag View"),
+      Categories(TagsTag),
       Summary("What should be displayed when you click on a Tag that isn't a Thing?"),
       Details("""In Querki, it is entirely legal to refer to the name of something you haven't written yet --
           |for instance, Tags are often names with no definition. So the question becomes, what should be
@@ -318,6 +321,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       setName(commonName(_.tags.isReifiedTag)),
       Core.InternalProp(true),
       Editor.NotEditableProp(true),
+      Categories(TagsTag),
       Summary("Set automatically when you turn a Tag into a real Thing"),
       Details("""You should usually not need to worry about this. This Property mainly controls the way the
         |reified tag displays, if its Model doesn't have a Default View.""".stripMargin)))
@@ -343,6 +347,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val TagRefsMethod = new InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
+      Categories(TagsTag),
       Summary("Produces a List of all Things that have the received Thing or Name as a Tag"),
       Details("""```
           |NAME -> _tagRefs -> THINGS
@@ -390,6 +395,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val TagsForPropertyMethod = new InternalMethod(TagsForPropertyOID,
     toProps(
       setName("_tagsForProperty"),
+      Categories(TagsTag),
       Summary("Show all the Tags that are defined for this Property"),
       Signature(
         expected = Some(Seq(LinkType), "A Tag Property (if it is not in the defining context)"),
@@ -439,6 +445,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val resolveTagsMethod = new InternalMethod(ResolveTagsOID,
     toProps(
       setName("_resolveTags"),
+      Categories(TagsTag),
       Summary("Turns any of the received Tags that name actual Things into Links to those Things"),
       Details("""```
           |TAGS -> _resolveTags -> LINKS

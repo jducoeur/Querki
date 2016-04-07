@@ -8,6 +8,9 @@ import querki.ecology._
 import querki.values.{QValue, SpaceState}
 
 package object uservalues {
+  
+  val UserValuesTag = "User Values"
+  
   trait UserValues extends EcologyInterface {
     /**
      * The Link from a User Value Property to its Summary Property.

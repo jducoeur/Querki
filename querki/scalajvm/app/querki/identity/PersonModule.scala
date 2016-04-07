@@ -155,30 +155,32 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         Summary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
   
   lazy val InviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
-      toProps(
-        setName(commonName(_.security.inviteTextProp)),
-        AppliesToKindProp(Kind.Space),
-        Summary("The text to use when inviting people to join your Space"),
-        Details("""This is the content of the invitation email, to go along with the standard Querki
-            |invitation text.
-            |
-            |This is included in the Sharing and Security page, so you don't usually need to do anything
-            |directly with it.""".stripMargin)))
+    toProps(
+      setName(commonName(_.security.inviteTextProp)),
+      AppliesToKindProp(Kind.Space),
+      Categories(IdentityTag),
+      Summary("The text to use when inviting people to join your Space"),
+      Details("""This is the content of the invitation email, to go along with the standard Querki
+          |invitation text.
+          |
+          |This is included in the Sharing and Security page, so you don't usually need to do anything
+          |directly with it.""".stripMargin)))
       
   /***********************************************
    * FUNCTIONS
    ***********************************************/
 
   lazy val meMethod = new InternalMethod(MeMethodOID,
-      toProps(
-        setName("_me"),
-        Summary("If the current user is a Person in the current Space, return that Person"),
-        Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
-            |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
-            |logged in, or isn't a Member, this will produce a Warning.
-            |
-            |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
-            |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
+    toProps(
+      setName("_me"),
+      Categories(IdentityTag),
+      Summary("If the current user is a Person in the current Space, return that Person"),
+      Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
+          |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
+          |logged in, or isn't a Member, this will produce a Warning.
+          |
+          |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
+          |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
@@ -232,12 +234,12 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   def decodeURL(url:String):String = java.net.URLDecoder.decode(url, "UTF-8")
   
   lazy val spaceInvite = new InternalMethod(SpaceInviteOID,
-      toProps(
-        setName("_spaceInvitation"), 
-        Core.InternalProp(true),
-        Summary("Generate a Link to invite someone to join this Space."), 
-        Details("""This is intended for internal use only. It is used to generate
-            |the link that is sent to invitees to your Space""".stripMargin)))
+    toProps(
+      setName("_spaceInvitation"), 
+      Core.InternalProp(true),
+      Summary("Generate a Link to invite someone to join this Space."), 
+      Details("""This is intended for internal use only. It is used to generate
+          |the link that is sent to invitees to your Space""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val mainContext = inv.context

@@ -52,6 +52,8 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     ApiRegistry.registerApiImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false)
   }
   
+  val SearchTag = "Search"
+  
   /*******************************************
    * The Search Result Type
    */
@@ -60,48 +62,56 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     toProps(
       setName("_searchResultThing"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("The Thing that this Result points to, if any")))
   
   lazy val SearchResultTag = new SystemProperty(SearchResultTagOID, Tags.NewTagSetType, Optional,
     toProps(
       setName("_searchResultTag"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("The Tag that this Result points to, if any")))
   
   lazy val SearchResultIsTag = new SystemProperty(SearchResultIsTagOID, YesNoType, ExactlyOne,
     toProps(
       setName("_searchResultIsTag"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("True if this result is a Tag; False if it is a Thing")))
   
   lazy val SearchResultProp = new SystemProperty(SearchResultPropOID, LinkType, Optional,
     toProps(
       setName("_searchResultProperty"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("The Property that this Result was found in")))
   
   lazy val SearchResultPositions = new SystemProperty(SearchResultPositionOID, IntType, QList,
     toProps(
       setName("_searchResultPositions"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("Where in the _searchResultProperty the search query was found")))
   
   lazy val SearchResultScore = new SystemProperty(SearchResultScoreOID, Core.FloatType, ExactlyOne,
     toProps(
       setName("_searchResultScore"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("How good a match this Thing was for the search query")))
   
   lazy val SearchResultElements = new SystemProperty(SearchResultElementsOID, SearchResultElementType, QList,
     toProps(
       setName("_searchResultElements"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("The actual Properties that matched the search query, the quality of each match, and the positions of the matches")))
   
   lazy val SearchResultModel = ThingState(SearchResultModelOID, systemOID, RootOID,
     toProps(
       setName("_searchResultModel"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("This is the Model that gets produced when you call `_search()`"),
       SearchResultThing(),
       SearchResultTag(),
@@ -113,6 +123,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     toProps(
       setName("_searchResultElementModel"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("One Element of a search result"),
       SearchResultProp(),
       SearchResultScore(),
@@ -122,12 +133,14 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
     toProps(
       setName("_searchResultType"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("This is the Type that gets produced when you call `_search()`")))
   
   lazy val SearchResultElementType = new ModelType(SearchResultElementTypeOID, SearchResultElementModelOID,
     toProps(
       setName("_searchResultElementType"),
       SystemOnly,
+      Categories(SearchTag),
       Summary("This is the Type of a single Element within a search result.")))
       
   override lazy val things = Seq(
@@ -147,6 +160,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
   lazy val SearchInput = new InternalMethod(SearchInputOID,
     toProps(
       setName("_searchInput"),
+      Categories(SearchTag),
       Summary("Displays a Search input box here"),
       Signature(
         expected = None,
@@ -179,29 +193,30 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
   }
   
   lazy val SearchInline = new InternalMethod(SearchInlineOID,
-      toProps(
-        setName("_search"),
-        Summary("Searches for the specified text, and produces the matches"),
-        Signature(
-          expected = None,
-          reqs = Seq(
-            ("query", ParsedTextType, "The text to search for, minimum 3 characters")
-          ),
-          opts = Seq(
-            ("models", LinkType, Core.emptyListOf(LinkType), "If provided, the search will be restricted to Instances and Tags of these Models"),
-            ("properties", LinkType, Core.emptyListOf(LinkType), "If provided, only these Properties will be searched. Remember to use _self on each of these!"),
-            ("searchTags", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Tag names will be searched only if this is true"),
-            ("searchThings", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Things (non-Tags) will be searched only if this is true")
-          ),
-          returns = (SearchResultType, "A List of search results.")
+    toProps(
+      setName("_search"),
+      Categories(SearchTag),
+      Summary("Searches for the specified text, and produces the matches"),
+      Signature(
+        expected = None,
+        reqs = Seq(
+          ("query", ParsedTextType, "The text to search for, minimum 3 characters")
         ),
-        Details("""Querki has built-in Search capabilities -- users can Search from the box in the menu bar, and the
-          |results are shown on the standard Search Results page. But sometimes you want more control over your searches:
-          |you want to show the results directly on a page, formatted the way you like. Or you want to control precisely what
-          |gets searched. The `_search()` function gives you that power.
-          |
-          |*Note:* _search will never return the Thing that it is defined on. That's necessary in order to prevent
-          |infinitely-recursive results.""".stripMargin)))
+        opts = Seq(
+          ("models", LinkType, Core.emptyListOf(LinkType), "If provided, the search will be restricted to Instances and Tags of these Models"),
+          ("properties", LinkType, Core.emptyListOf(LinkType), "If provided, only these Properties will be searched. Remember to use _self on each of these!"),
+          ("searchTags", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Tag names will be searched only if this is true"),
+          ("searchThings", YesNoType, ExactlyOne(YesNoType(true)), "(default true) Things (non-Tags) will be searched only if this is true")
+        ),
+        returns = (SearchResultType, "A List of search results.")
+      ),
+      Details("""Querki has built-in Search capabilities -- users can Search from the box in the menu bar, and the
+        |results are shown on the standard Search Results page. But sometimes you want more control over your searches:
+        |you want to show the results directly on a page, formatted the way you like. Or you want to control precisely what
+        |gets searched. The `_search()` function gives you that power.
+        |
+        |*Note:* _search will never return the Thing that it is defined on. That's necessary in order to prevent
+        |infinitely-recursive results.""".stripMargin)))
   {
     def createElements(result:SearchResultInternal):QValue = {
       val bundles = result.elements.map { elem =>

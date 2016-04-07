@@ -59,37 +59,6 @@ trait MethodDefs { self:QuerkiEcot =>
     
     override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)
   }
-
-  /**
-   * Convenience class for internal methods that expect to work with a single Thing -- for example,
-   * a method that operates on the Thing it is attached to. This is probably going to be the most
-   * common type of method.
-   * 
-   * TBD: action really ought to be a separate parameter list, but for some reason I'm having trouble
-   * instantiating it that way. Figure out the syntax and do that.
-   */
-  class SingleThingMethod(tid:OID, name:String, summary:String, details:String, action:(Thing, QLContext) => QValue) extends InternalMethod(tid,
-    toProps(
-      setName(name),
-      Summary(summary),
-      Details(details)
-    ))
-  {
-    override def qlApply(inv:Invocation):QFut = {
-      for {
-        thing <- inv.contextFirstThing
-      }
-        yield handleThing(thing, inv.context)
-    }
-  
-    /**
-     * Definition of the method needs to define this -- take the incoming Thing (most often, the
-     * Thing that the Method is defined upon) and do whatever is appropriate.
-     * 
-     * Pure side-effecting methods should typically just return the value from the context.
-     */
-    def handleThing(t:Thing, context:QLContext):QValue = action(t, context)
-  }
   
   /********************************************************
    * 

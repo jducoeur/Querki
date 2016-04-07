@@ -232,60 +232,60 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // order-of-initialization conflicts.
   
   lazy val SecurityPrincipal = ThingState(querki.identity.MOIDs.SecurityPrincipalOID, systemOID, RootOID,
-      toProps(
-        setName("Security Principal"),
-        Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
+    toProps(
+      setName("Security Principal"),
+      Categories(SecurityTag),
+      Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
   
   lazy val PersonModel = ThingState(querki.identity.MOIDs.PersonOID, systemOID, querki.identity.MOIDs.SecurityPrincipalOID,
-      toProps(
-        setName("Person"),
-        Core.InternalProp(true),
-        Core.IsModelProp(true),
-        // TODO: it is fundamentally suspicious that Email Address even exists on Person. It is convenient, and used in
-        // PersonModule, but is (a) an information leak waiting to happen and (b) duplicate data. We really should always
-        // be getting it from the Identity.
-        //
-        // The only real problem is that the Identity doesn't exist until the recipient *accepts* the invitation; that is
-        // why it lives on the Person initially. But that's arguably a bug: we really should create an Identity for an
-        // email address as soon as we first send an email to it, so that the owner of that email address can block all
-        // further communications. (Unfortunately, but it needs to be an option.)
-        Email.EmailAddressProp(Core.QNone),
-        Summary("""This represents a Member of this Space.""")))
+    toProps(
+      setName("Person"),
+      Core.InternalProp(true),
+      Core.IsModelProp(true),
+      // TODO: it is fundamentally suspicious that Email Address even exists on Person. It is convenient, and used in
+      // PersonModule, but is (a) an information leak waiting to happen and (b) duplicate data. We really should always
+      // be getting it from the Identity.
+      //
+      // The only real problem is that the Identity doesn't exist until the recipient *accepts* the invitation; that is
+      // why it lives on the Person initially. But that's arguably a bug: we really should create an Identity for an
+      // email address as soon as we first send an email to it, so that the owner of that email address can block all
+      // further communications. (Unfortunately, but it needs to be an option.)
+      Email.EmailAddressProp(Core.QNone),
+      Categories(SecurityTag),
+      Summary("""This represents a Member of this Space.""")))
   
   lazy val PublicTag = ThingState(PublicTagOID, systemOID, SecurityPrincipal,
-      toProps(
-        setName("Public"),
-        Summary("""
-Use this Tag in Can Read if you want your Space or Thing to be readable by everybody.
-""")))
+    toProps(
+      setName("Public"),
+      Categories(SecurityTag),
+      Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable by everybody.""")))
     
   lazy val MembersTag = ThingState(MembersTagOID, systemOID, SecurityPrincipal,
-      toProps(
-        setName("Members"),
-        Summary("""
-Use this Tag in Can Read if you want your Space or Thing to be readable by members of the Space.
-""")))
+    toProps(
+      setName("Members"),
+      Categories(SecurityTag),
+      Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable by members of the Space.""")))
     
   lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, SecurityPrincipal,
-      toProps(
-        setName("Owner"),
-        Summary("""
-Use this Tag in Can Read if you want your Space or Thing to be readable only by the owner and specific other people.
-""")))
+    toProps(
+      setName("Owner"),
+      Categories(SecurityTag),
+      Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable only by the owner and specific other people.""")))
 
   lazy val RoleModel = ThingState(RoleModelOID, systemOID, SecurityPrincipal,
-      toProps(
-        setName("Role"),
-        Core.IsModelProp(true),
-        SkillLevel(SkillLevelAdvanced),
-        // Concrete Roles should define their RolePermissions:
-        RolePermissionsProp(),
-        Summary("""Defines a Role that a Member of this Space can take, such as Contributor or Editor.
-            |Each Role defines certain actions that the Member can take, such as commenting on Things or
-            |contributing new ones.
-            |
-            |The built in Roles should suffice for most purposes, but if you need a new one, create a child
-            |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
+    toProps(
+      setName("Role"),
+      Core.IsModelProp(true),
+      SkillLevel(SkillLevelAdvanced),
+      // Concrete Roles should define their RolePermissions:
+      RolePermissionsProp(),
+      Categories(SecurityTag),
+      Summary("""Defines a Role that a Member of this Space can take, such as Contributor or Editor.
+          |Each Role defines certain actions that the Member can take, such as commenting on Things or
+          |contributing new ones.
+          |
+          |The built in Roles should suffice for most purposes, but if you need a new one, create a child
+          |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
     
   override lazy val things = Seq(
     SecurityPrincipal,
@@ -307,6 +307,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
+        Categories(SecurityTag),
         Summary(summary),
         DefaultPermissionProp(defaults:_*),
         PublicAllowedProp(publicAllowed)))
@@ -332,6 +333,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
+        Categories(SecurityTag),
         Summary("Who else can read Things in this Space"),
         DefaultPermissionProp(PublicTag, OwnerTag),
         PublicAllowedProp(true),
@@ -347,6 +349,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
         ChildPermissionsProp(CanEditChildrenPropOID),
+        Categories(SecurityTag),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
             |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
@@ -357,6 +360,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
+        Categories(SecurityTag),
         Summary("Who else can edit children of this Thing"),
         Details("""This Property is useful on Models and Spaces, and works as follows.
             |
@@ -380,6 +384,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setInternal,
         // TODO: ideally, we'd like it to only apply to permissions:
         AppliesToKindProp(Kind.Property),
+        Categories(SecurityTag),
         Summary("Iff this Permission Property isn't set at all for a Thing, what values should be used?")))
   
   lazy val PublicAllowedProp = new SystemProperty(PublicAllowedPropOID, YesNoType, Optional,
@@ -387,6 +392,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("_publicAllowed"),
         setInternal,
         AppliesToKindProp(Kind.Property),
+        Categories(SecurityTag),
         Summary("Set this on a Permission Property to allow Public as a legal value; otherwise, it will not be.")))
   
   lazy val RolePermissionsProp = new SystemProperty(RolePermissionsOID, LinkType, QSet,
@@ -396,6 +402,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         // TODO: this really should set LinkModel to a Model that all Permissions are under, but we
         // don't have that concept yet:
         Links.LinkKindProp(Kind.Property),
+        Categories(SecurityTag),
         Summary("""This Property is only relevant to Roles. It defines the Permissions that are granted to all Members
             |of this Role.""".stripMargin)))
   
@@ -404,6 +411,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName(commonName(_.security.personRolesProp)),
         SkillLevel(SkillLevelAdvanced),
         Links.LinkModelProp(RoleModel),
+        Categories(SecurityTag),
         Summary("""This Property is only useful on Persons. It defines the Roles that this Person has.
             |You do not assign it directly; use the Sharing and Security page to manage which Roles each Person has.""".stripMargin)))
   
@@ -412,6 +420,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       setName("Child Permissions Property"),
       setInternal,
       Links.LinkKindProp(Kind.Property),
+      Categories(SecurityTag),
       Summary("""Points from a Permission on *this* Thing to the one to check for its children."""),
       Details("""There are a small number of Permissions (as of this writing, only `Who Can Edit`), which are split
         |into one Property that you check on this specific Thing, and a related one that you check for its instances.
@@ -429,6 +438,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val HasPermissionFunction = new InternalMethod(HasPermissionFunctionOID,
     toProps(
       setName("_hasPermission"),
+      Categories(SecurityTag),
       Summary("Produces true if the current user has the named permission on the received Thing"),
       Details("""```
           |THING -> _hasPermission(PERMISSION._self) -> true or false

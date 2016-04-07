@@ -7,6 +7,8 @@ import querki.identity.User
 import querki.values.SpaceState
 
 package object security {
+  
+  val SecurityTag = "Security and Roles"
 
   trait AccessControl extends EcologyInterface {
     def PersonModel:Thing

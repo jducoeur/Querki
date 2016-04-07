@@ -175,6 +175,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       UVThingProp(),
       UVPropProp(),
       UVValProp(),
+      Categories(UserValuesTag),
       Summary("The _userValues and _thingValues functions return Sets of _userValueModel."),
       Details("""This contains these Properties:
           |* _userValueUser -- who set this value
@@ -195,6 +196,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     toProps(
       setName("_userValueType"),
       setInternal,
+      Categories(UserValuesTag),
       Summary("The Type you get from the _userValues and _thingValues functions.")))
   {
     override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
@@ -229,6 +231,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   lazy val UserValuesFunction = new InternalMethod(UserValuesFunctionOID,
     toProps(
       setName("_userValues"),
+      Categories(UserValuesTag),
       Summary("Fetch all of the User Values for this Property on this Thing, for all Users"),
       Details("""```
         |THING -> PROP._userValues -> USER VALUES
@@ -258,6 +261,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   lazy val ThingValuesFunction = new InternalMethod(ThingValuesFunctionOID,
     toProps(
       setName("_thingValues"),
+      Categories(UserValuesTag),
       Summary("Fetch all of this User's User Values"),
       Details("""```
           |IDENTITY -> _thingValues -> USER VALUES
@@ -289,6 +293,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     toProps(
       setName("_updatePropSumaries"),
       setInternal,
+      Categories(UserValuesTag),
       Summary("Check the Summaries for all of the User Values for this Property, for all Things."),
       Details("""This function is expensive, and should not be called unless you have reason to believe that
           |something has gotten out of sync. It is usually invoked from a button on the Property's own page.""".stripMargin)))
@@ -329,71 +334,78 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       Seq(AccessControl.OwnerTag, AccessControl.MembersTag), false)
       
   lazy val IsUserValueFlag = new SystemProperty(IsUserValueFlagOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("Is User Value Property"),
-        AppliesToKindProp(Kind.Property),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Add this flag to a Property, and set it to true, if this Property should have a separate value for each user.")))
+    toProps(
+      setName("Is User Value Property"),
+      AppliesToKindProp(Kind.Property),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UserValuesTag),
+      Summary("Add this flag to a Property, and set it to true, if this Property should have a separate value for each user.")))
   
   lazy val SummaryLink = new SystemProperty(SummaryLinkOID, LinkType, ExactlyOne,
-      toProps(
-        setName("Summary Link"),
-        AppliesToKindProp(Kind.Property),
-        Links.LinkKindProp(Kind.Property),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Link to the Summary of this User Value"),
-        Details("""A User Value Property contains a separate value for each User. For instance, the Rating Property
-            |allows each User to give their own Rating to a given Thing. That is useful, but you often want to be
-            |able to look at the statistics about those Ratings. That is where the Summary comes in.
-            |
-            |The Summary stores the aggregate information about the User Value that points to it, and provides you
-            |with functions such as _average to use with that information.
-            |
-            |This is a very advanced Property, and you should only use it if you know what you are doing. The Summary's
-            |Type must be compatible with that of the User Value it is summarizing. In the long run, we will wrap all
-            |of this in an easier-to-use UI.""".stripMargin)))
+    toProps(
+      setName("Summary Link"),
+      AppliesToKindProp(Kind.Property),
+      Links.LinkKindProp(Kind.Property),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UserValuesTag),
+      Summary("Link to the Summary of this User Value"),
+      Details("""A User Value Property contains a separate value for each User. For instance, the Rating Property
+          |allows each User to give their own Rating to a given Thing. That is useful, but you often want to be
+          |able to look at the statistics about those Ratings. That is where the Summary comes in.
+          |
+          |The Summary stores the aggregate information about the User Value that points to it, and provides you
+          |with functions such as _average to use with that information.
+          |
+          |This is a very advanced Property, and you should only use it if you know what you are doing. The Summary's
+          |Type must be compatible with that of the User Value it is summarizing. In the long run, we will wrap all
+          |of this in an easier-to-use UI.""".stripMargin)))
   
   lazy val SummarizesPropertyLink = new SystemProperty(SummarizesPropertyLinkOID, LinkType, ExactlyOne,
-      toProps(
-        setName("Summarizes Property"),
-        AppliesToKindProp(Kind.Property),
-        Links.LinkKindProp(Kind.Property),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Optional pointer from a Summary Property to the Property that it summarizes"),
-        Details("""This link is sometimes necessary when you have a User Value Property that is a Model Type.
-            |If you want to summarize such a Property (in order to examine its statistics), you aren't actually
-            |summarizing the entire Property -- you're just summarizing a Property *inside* that Model Type.
-            |This lets you specify *which* Property of the Model Type should be summarized.
-            |
-            |For example, take the Review Property. The summary for that isn't based on the entire Review -- it
-            |is based on the Rating Property *inside* the Review. So the Summary needs to point to Rating, to
-            |know what to do.
-            |
-            |This is a very advanced Property, intended only for people who are building complex User Value Properties.""".stripMargin)))
+    toProps(
+      setName("Summarizes Property"),
+      AppliesToKindProp(Kind.Property),
+      Links.LinkKindProp(Kind.Property),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UserValuesTag),
+      Summary("Optional pointer from a Summary Property to the Property that it summarizes"),
+      Details("""This link is sometimes necessary when you have a User Value Property that is a Model Type.
+          |If you want to summarize such a Property (in order to examine its statistics), you aren't actually
+          |summarizing the entire Property -- you're just summarizing a Property *inside* that Model Type.
+          |This lets you specify *which* Property of the Model Type should be summarized.
+          |
+          |For example, take the Review Property. The summary for that isn't based on the entire Review -- it
+          |is based on the Rating Property *inside* the Review. So the Summary needs to point to Rating, to
+          |know what to do.
+          |
+          |This is a very advanced Property, intended only for people who are building complex User Value Properties.""".stripMargin)))
   
   lazy val UVUserProp = new SystemProperty(UVUserPropOID, IdentityAccess.IdentityType, ExactlyOne,
-      toProps(
-        setName("_userValueUser"),
-        setInternal,
-        Summary("The User who set a particular User Value")))
+    toProps(
+      setName("_userValueUser"),
+      setInternal,
+      Categories(UserValuesTag),
+      Summary("The User who set a particular User Value")))
   
   lazy val UVThingProp = new SystemProperty(UVThingPropOID, LinkType, ExactlyOne,
-      toProps(
-        setName("_userValueThing"),
-        setInternal,
-        Summary("The Thing that a User Value is set on")))
+    toProps(
+      setName("_userValueThing"),
+      setInternal,
+      Categories(UserValuesTag),
+      Summary("The Thing that a User Value is set on")))
   
   lazy val UVValProp = new SystemProperty(UVValPropOID, Types.WrappedValueType, ExactlyOne,
-      toProps(
-        setName("_userValueValue"),
-        setInternal,
-        Summary("The actual value of a User Value")))
+    toProps(
+      setName("_userValueValue"),
+      setInternal,
+      Categories(UserValuesTag),
+      Summary("The actual value of a User Value")))
   
   lazy val UVPropProp = new SystemProperty(UVPropPropOID, LinkType, ExactlyOne,
-      toProps(
-        setName("_userValueProperty"),
-        setInternal,
-        Summary("The Property of a User Value")))
+    toProps(
+      setName("_userValueProperty"),
+      setInternal,
+      Categories(UserValuesTag),
+      Summary("The Property of a User Value")))
 
   override lazy val props = Seq(
     UserValuesFunction,

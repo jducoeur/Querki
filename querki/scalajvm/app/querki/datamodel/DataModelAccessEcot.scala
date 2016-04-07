@@ -134,26 +134,27 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
    ***********************************************/  
   
   lazy val CopyIntoInstances = new SystemProperty(CopyIntoInstancesOID, YesNoType, ExactlyOne, 
-      toProps(
-        setName("Copy into Instances"),
-        SkillLevel(SkillLevelAdvanced),
-        Core.AppliesToKindProp(Kind.Property),
-        Summary("If set, this Property's values will always be copied from the Model into newly-created Instances"),
-        Details("""Usually, Querki's Properties are inherited from the Model to the Instance -- that is, if the
-            |Instance doesn't have the Property set, it will use the value from the Model. 99% of the time, that is
-            |what you want -- it is flexible, and allows you to make changes to the Model and have them immediately
-            |picked up by the Instances.
-            |
-            |Very occasionally, however, you have a Property that doesn't want this -- that wants to nail down the
-            |value permanently when you create the Instance. For such Properties, set this flag. When the Instance
-            |is created, the Model's value for this Property will be copied into the Instance, so that the Instance
-            |permanently has its own value, and will not change if the Model does.
-            |
-            |This was mainly created for certain bulk-data-entry situations, where you want to set the value to something,
-            |create a bunch of Instances with that value, then change it to something else and create a bunch of Instances
-            |with that. This is reasonable, but keep in mind that creating sub-Models with the different values is
-            |sometimes an easier and better way to deal with it.""".stripMargin)
-        ))
+    toProps(
+      setName("Copy into Instances"),
+      SkillLevel(SkillLevelAdvanced),
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(DataModelTag),
+      Summary("If set, this Property's values will always be copied from the Model into newly-created Instances"),
+      Details("""Usually, Querki's Properties are inherited from the Model to the Instance -- that is, if the
+          |Instance doesn't have the Property set, it will use the value from the Model. 99% of the time, that is
+          |what you want -- it is flexible, and allows you to make changes to the Model and have them immediately
+          |picked up by the Instances.
+          |
+          |Very occasionally, however, you have a Property that doesn't want this -- that wants to nail down the
+          |value permanently when you create the Instance. For such Properties, set this flag. When the Instance
+          |is created, the Model's value for this Property will be copied into the Instance, so that the Instance
+          |permanently has its own value, and will not change if the Model does.
+          |
+          |This was mainly created for certain bulk-data-entry situations, where you want to set the value to something,
+          |create a bunch of Instances with that value, then change it to something else and create a bunch of Instances
+          |with that. This is reasonable, but keep in mind that creating sub-Models with the different values is
+          |sometimes an easier and better way to deal with it.""".stripMargin)
+      ))
   
   /***********************************************
    * FUNCTIONS
@@ -162,6 +163,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   class InstancesMethod extends InternalMethod(InstancesMethodOID,
     toProps(
       setName("_instances"),
+      Categories(DataModelTag),
       Summary("Returns all of the non-Model Things that are based on this"),
       Details("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
           |
@@ -201,6 +203,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   class RefsMethod extends InternalMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
+      Categories(DataModelTag),
       Summary("""Returns all of the Things that use this Property to point to this Thing."""),
       Details("""    THING -> PROPERTY._refs -> REFERRING THINGS
           |Say that my Space is listing my CD collection. I have a Model *Album* for individual discs,
@@ -237,6 +240,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val UsingSpace = new InternalMethod(UsingSpaceOID, 
     toProps(
       setName("_usingSpace"),
+      Categories(DataModelTag),
       Summary("Sets the Space to use for the rest of this QL phrase"),
       SkillLevel(SkillLevelAdvanced),
       Signature(
@@ -266,56 +270,104 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  class SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", "What Space is this Thing in?", 
-    """    RECEIVED -> _space -> SPACE
-    |
-    |This function produces the Space that the received Thing is contained in.""".stripMargin,
-  { (thing, context) => Links.LinkValue(thing.spaceId) })
-
-  class ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", "What are the ancestor Things for this Space?", 
-    """    SPACE -> _externalRoots -> ROOTS
-    |
-    |Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
-    |by that Space.
-    |
-    |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin,
-  { (thing, context) => 
-    implicit val state = context.state
-    val thingRoots:Iterable[OID] = {
-      ((Set.empty[OID] /: state.localThings) ((set, t) => set + state.root(t))).
-        filterNot(oid => state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false))
+  class SpaceMethod extends InternalMethod(SpaceMethodOID, 
+    toProps(
+      setName("_space"), 
+      Categories(DataModelTag),
+      Summary("What Space is this Thing in?"), 
+      Details("""```
+        |RECEIVED -> _space -> SPACE
+        |```
+        |
+        |This function produces the Space that the received Thing is contained in.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextFirstThing
+      }
+        yield Links.LinkValue(thing.spaceId)
     }
-    
-    Core.listFrom(thingRoots, LinkType) 
-  })
+  }
 
-  class AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", "What are the Properties in this Space?", 
-    """    SPACE -> _allProps -> PROPS
-    |
-    |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin,
-  { (thing, context) => 
-    thing match {
-      case s:SpaceState => Core.listFrom(s.propList.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
-      case _ => QL.WarningValue("_allProps must be used with a Space")
+  class ExternalRootsMethod extends InternalMethod(ExternalRootsOID, 
+    toProps(
+      setName("_externalRoots"), 
+      Categories(DataModelTag),
+      Summary("What are the ancestor Things for this Space?"), 
+      Details("""```
+        |SPACE -> _externalRoots -> ROOTS
+        |```
+        |
+        |Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
+        |by that Space.
+        |
+        |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val state = inv.state
+      for {
+        thing <- inv.contextFirstThing
+        thingRoots = {
+          ((Set.empty[OID] /: state.localThings) ((set, t) => set + state.root(t))).
+            filterNot(oid => state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false))
+        }
+      }
+        yield Core.listFrom(thingRoots, LinkType)
     }
-  
-  })
+  }
 
-  lazy val AllTypesMethod = new SingleThingMethod(AllTypesMethodOID, "_allTypes", "What are the Types in this Space?", 
-    """    SPACE -> _allTypes -> TYPES
-    |
-    |This receives a link to a Space, and produces all of the Types defined in that Space.""".stripMargin,
-  { (thing, context) => 
-    thing match {
-      case s:SpaceState => Core.listFrom(s.types.values.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
-      case _ => QL.WarningValue("_allTypes must receive a Space")
+  class AllPropsMethod extends InternalMethod(AllPropsMethodOID, 
+    toProps(
+      setName("_allProps"), 
+      Categories(DataModelTag),
+      Summary("What are the Properties in this Space?"), 
+      Details("""```
+        |SPACE -> _allProps -> PROPS
+        |```
+        |
+        |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextFirstThing
+      }
+        yield {
+          thing match {
+            case s:SpaceState => Core.listFrom(s.propList.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
+            case _ => QL.WarningValue("_allProps must be used with a Space")
+          }
+        }
     }
-  
-  })
+  }
+
+  lazy val AllTypesMethod = new InternalMethod(AllTypesMethodOID, 
+    toProps(
+      setName("_allTypes"), 
+      Categories(DataModelTag),
+      Summary("What are the Types in this Space?"), 
+      Details("""```
+        |SPACE -> _allTypes -> TYPES
+        |```
+        |
+        |This receives a link to a Space, and produces all of the Types defined in that Space.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextFirstThing
+      }
+        yield {
+          thing match {
+            case s:SpaceState => Core.listFrom(s.types.values.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
+            case _ => QL.WarningValue("_allTypes must receive a Space")
+          }
+        }
+    }
+  }
   
   class ChildrenMethod extends InternalMethod(ChildrenMethodOID,
     toProps(
       setName("_children"),
+      Categories(DataModelTag),
       Summary("This produces the immediate children of the received Model."),
       Signature(
         expected = Some(Seq(LinkType), "A Model"),
@@ -333,13 +385,25 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
 
-  class IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
-    """    THING -> _isModel -> Yes or No""".stripMargin,
-  { (thing, context) => ExactlyOne(thing.isModel(context.state)) })
+  class IsModelMethod extends InternalMethod(IsModelMethodOID, 
+    toProps(
+      setName("_isModel"), 
+      Categories(DataModelTag),
+      Summary("This produces Yes if the received Thing is a Model."),
+      Details("""    THING -> _isModel -> Yes or No""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+      }
+        yield ExactlyOne(thing.isModel(inv.state))
+    }
+  }
 
   class IsDefinedMethod extends InternalMethod(IsDefinedOID,
     toProps(
       setName("_isDefined"),
+      Categories(DataModelTag),
       Summary("Produces Yes if the name passed into it is a real Thing"),
       Details("""    NAME -> _isDefined -> YES or NO
           |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
@@ -368,19 +432,33 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
 
-  class OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", "Get the unique global id of this Thing", 
-    """    THING -> _oid -> Text
-    |
-    |This function produces the unique Object ID (which will generally be a period followed by some letters and numbers)
-    |of the received Thing.
-    |
-    |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
-    |ambiguous -- it always refers to one specific Thing.""".stripMargin,
-  { (thing, context) => Basic.TextValue(thing.id.toThingId) })
+  class OIDMethod extends InternalMethod(OIDMethodOID, 
+    toProps(
+      setName("_oid"), 
+      Categories(DataModelTag),
+      Summary("Get the unique global id of this Thing"), 
+      Details("""```
+        |THING -> _oid -> Text
+        |```
+        |
+        |This function produces the unique Object ID (which will generally be a period followed by some letters and numbers)
+        |of the received Thing.
+        |
+        |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
+        |ambiguous -- it always refers to one specific Thing.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+      }
+        yield Basic.TextValue(thing.id.toThingId)
+    }
+  }
 
   class KindMethod extends InternalMethod(KindMethodOID,
     toProps(
       setName("_kind"), 
+      Categories(DataModelTag),
       Summary("What kind of Thing is this?"), 
       Details("""There are two ways to use _kind:
           |    THING -> _kind -> Number
@@ -424,15 +502,26 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
 
-  class CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", "What Space are we looking at?", 
-    """THING -> _currentSpace -> SPACE
-    |
-    |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
-  { (thing, context) => Links.LinkValue(context.root.state) })
+  class CurrentSpaceMethod extends InternalMethod(CurrentSpaceMethodOID, 
+    toProps(
+      setName("_currentSpace"), 
+      Categories(DataModelTag),
+      Summary("What Space are we looking at?"), 
+      Details("""```
+        |_currentSpace -> SPACE
+        |```
+        |
+        |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      fut(Links.LinkValue(inv.context.root.state))
+    }
+  }
 
   class IsMethod extends InternalMethod(IsMethodOID,
     toProps(
       setName("_is"),
+      Categories(DataModelTag),
       Summary("Allows you to test whether you have a specific Thing"),
       Details("""    THING -> _is(THING) -> Yes or No
     |
@@ -453,6 +542,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val IsAFunction = new InternalMethod(IsAFunctionOID,
     toProps(
       setName("_isA"),
+      Categories(DataModelTag),
       Summary("Allows you to test whether this Thing is descended from a given Model"),
       Signature(
         expected = Some(Seq(LinkType), "A Thing - either a Model or an Instance"),
@@ -475,6 +565,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val PropsOfTypeMethod = new InternalMethod(PropsOfTypeOID,
     toProps(
       setName("_propsOfType"),
+      Categories(DataModelTag),
       Summary("This receives a Type, and produces all of the Properties in this Space with that Type"),
       Signature(
         expected = Some(Seq(LinkType), "A Type"),
@@ -498,6 +589,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val IsFunctionProp = new SystemProperty(IsFunctionOID, YesNoType, ExactlyOne,
     toProps(
       setName("Is Function"),
+      Categories(DataModelTag),
       SkillLevel(SkillLevelAdvanced),
       Summary("True iff this Thing is a Function."),
       Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
@@ -514,6 +606,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val HasPropertyMethod = new InternalMethod(HasPropertyMethodOID,
     toProps(
       setName("_hasProperty"),
+      Categories(DataModelTag),
       SkillLevel(SkillLevelAdvanced),
       Summary("Allows you to test whether this Thing has a specified Property"),
       Details("""```
@@ -524,28 +617,42 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |Note that you must specify _self on the Property's name -- the parameter is the Property itself,
     |not its value on this Thing.""".stripMargin)))
   { 
-	override def qlApply(inv:Invocation):QFut = {
-	  for {
-	    thing <- inv.contextAllBundles
-	    propOid <- inv.processParamFirstAs(0, LinkType)
-    }
-	    yield ExactlyOne(thing.props.contains(propOid))
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  for {
+  	    thing <- inv.contextAllBundles
+  	    propOid <- inv.processParamFirstAs(0, LinkType)
+      }
+  	    yield ExactlyOne(thing.props.contains(propOid))
+  	}
   }
 
 
-  lazy val AllThingsMethod = new SingleThingMethod(AllThingsOID, "_allThings", "This receives a Space, and produces all of the Things in that Space",
-	    """    SPACE -> _allThings -> LIST OF THINGS""".stripMargin,
-	{ (thing, context) =>
-	  thing match {
-	    case s:SpaceState => Core.listFrom(s.localThings.map(_.id), LinkType)
-	    case _ => QL.WarningValue("_allThings can only be used on a Space")
-	  }
-	})
+  lazy val AllThingsMethod = new InternalMethod(AllThingsOID, 
+    toProps(
+      setName("_allThings"), 
+      Categories(DataModelTag),
+      Summary("This receives a Space, and produces all of the Things in that Space"),
+	    Details("""```
+        |SPACE -> _allThings -> LIST OF THINGS
+        |```""".stripMargin)))
+	{ 
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+      }
+        yield {
+          thing match {
+            case s:SpaceState => Core.listFrom(s.localThings.map(_.id), LinkType)
+            case _ => QL.WarningValue("_allThings can only be used on a Space")
+          }          
+        }
+    }
+  }
   
   lazy val AsTypeMethod = new InternalMethod(AsTypeMethodOID,
     toProps(
       setName("_asType"),
+      Categories(DataModelTag),
       SkillLevel(SkillLevelAdvanced),
       Summary("Convert one or more values of one Type to another Type"),
       Details("""This will not work for every possible conversion -- at the moment, it depends on whether
@@ -568,6 +675,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val ModelFunction = new InternalMethod(ModelFunctionOID,
     toProps(
       setName("_model"),
+      Categories(DataModelTag),
       Summary("Produces the Model of the received Thing")))
   {
     override def qlApply(inv:Invocation):QFut = {
@@ -581,6 +689,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val OrphanedInstancesFunction = new InternalMethod(OrphanedInstancesOID,
     toProps(
       setName("_orphanedInstances"),
+      Categories(DataModelTag),
       SkillLevel(SkillLevelAdvanced),
       Summary("Lists all of the Instances in this Space (if any) whose Models have been deleted"),
       Details("""The results of this are available from the Advanced page, so you probably will never

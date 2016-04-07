@@ -68,7 +68,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   
   lazy val RatingType:PType[Int] with SimplePTypeBuilder[Int] = new IntTypeBase(RatingTypeOID,
     toProps(
-      setName("Rating Type"))) with DiscreteType[Int]
+      setName("Rating Type"),
+      Categories(UserValuesTag))) with DiscreteType[Int]
   {
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       implicit val s = context.state
@@ -108,6 +109,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   lazy val ReviewType = new ModelType(ReviewTypeOID, ReviewModelOID,
     toProps(
       setName("Review Type"),
+      Categories(UserValuesTag),
       // We want to display this in the Editor, even though it is a Model Type:
       Basic.ExplicitProp(true)))
   {
@@ -137,6 +139,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   lazy val RatingAverageType = new SystemType[RatingAverage](RatingAverageTypeOID,
     toProps(
       setName("_ratingAverageType"),
+      Categories(UserValuesTag),
       setInternal)) with SimplePTypeBuilder[RatingAverage]
   {
     def doWikify(context:QLContext)(v:RatingAverage, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
@@ -166,6 +169,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   lazy val RatingSummarizer = new DiscreteSummarizer(RatingSummarizerOID, RatingType,
     toProps(
       setName("Rating Summarizer"),
+      Categories(UserValuesTag),
       Summary("Given a User Value Property made of numbers (such as Ratings), this provides functions such as _average.")))
   {
   	override def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:Int):Future[Wikitext] = {
@@ -204,6 +208,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   lazy val AverageFunction = new InternalMethod(AverageFunctionOID,
     toProps(
       setName("_average"),
+      Categories(UserValuesTag),
       Summary("Calculate the average of some Ratings"),
       Details("""When you have a Rating or Review Property, you often want to know the average value
           |of those ratings. This function is how you get those.
@@ -249,105 +254,111 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
    ***********************************************/
   
   lazy val LabelsProp = new SystemProperty(LabelsPropOID, PlainTextType, QList,
-      toProps(
-        setName("Chart Labels"),
-        AppliesToKindProp(Kind.Property),
-        Types.AppliesToTypesProp(RatingType, ReviewType),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Gives the labels for each element of a Rating or Chart"),
-        Details("""When used on a Rating, this gives the hover-text label for each of a stars, in order.
-            |It will also be used to display the summary of the total of the User Ratings. The number of
-            |Labels given dictates how many stars will be displayed.
-            |
-            |If a Rating Type Property does not have Chart Labels set on it, it will display five stars,
-            |labeled "Poor", "Fair", "Good", "Great" and "Excellent".""".stripMargin),
-        Types.DefaultValueProp(
-            QList.makePropValue(Seq(
-                PlainTextType("Poor"),
-                PlainTextType("Fair"),
-                PlainTextType("Good"),
-                PlainTextType("Great"),
-                PlainTextType("Excellent")), PlainTextType))))
+    toProps(
+      setName("Chart Labels"),
+      AppliesToKindProp(Kind.Property),
+      Types.AppliesToTypesProp(RatingType, ReviewType),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UserValuesTag),
+      Summary("Gives the labels for each element of a Rating or Chart"),
+      Details("""When used on a Rating, this gives the hover-text label for each of a stars, in order.
+          |It will also be used to display the summary of the total of the User Ratings. The number of
+          |Labels given dictates how many stars will be displayed.
+          |
+          |If a Rating Type Property does not have Chart Labels set on it, it will display five stars,
+          |labeled "Poor", "Fair", "Good", "Great" and "Excellent".""".stripMargin),
+      Types.DefaultValueProp(
+          QList.makePropValue(Seq(
+              PlainTextType("Poor"),
+              PlainTextType("Fair"),
+              PlainTextType("Good"),
+              PlainTextType("Great"),
+              PlainTextType("Excellent")), PlainTextType))))
   
   lazy val RatingSummaryProperty = new SystemProperty(RatingSummaryPropOID, RatingSummarizer, ExactlyOne,
-      toProps(
-        setName("Rating Summary"),
-        // Need to declare this the hard way, to avoid initialization loops. This needs
-        // to be declared here so that the summary will work for Review as well as Rating.
-        (MOIDs.SummarizesPropertyLinkOID -> ExactlyOne(LinkType(RatingPropOID))),
-        Summary("Collects the ratings from the Rating or Review Property"),
-        Details("""If you have the Rating or Review Property on a Model or Thing, it will wind
-            |up also adding Rating Summary (after someone actually gives a Rating).
-            |
-            |You can say `\[[Rating Summary\]]` to display a small bar chart
-            |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
-            |to show the overall average of the ratings.""".stripMargin)))
+    toProps(
+      setName("Rating Summary"),
+      // Need to declare this the hard way, to avoid initialization loops. This needs
+      // to be declared here so that the summary will work for Review as well as Rating.
+      (MOIDs.SummarizesPropertyLinkOID -> ExactlyOne(LinkType(RatingPropOID))),
+      Categories(UserValuesTag),
+      Summary("Collects the ratings from the Rating or Review Property"),
+      Details("""If you have the Rating or Review Property on a Model or Thing, it will wind
+          |up also adding Rating Summary (after someone actually gives a Rating).
+          |
+          |You can say `\[[Rating Summary\]]` to display a small bar chart
+          |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
+          |to show the overall average of the ratings.""".stripMargin)))
   
   lazy val RatingProperty:Property[Int,Int] = new SystemProperty(RatingPropOID, RatingType, ExactlyOne,
-      toProps(
-        setName("Rating"),
-        IsUserValueFlag(true),
-        SummaryLink(RatingSummaryProperty),
-        Editor.PromptProp(Core.QNone),
-        Summary("Allows many people to rate how much they like this Thing"),
-        Details("""If you put this Property on a Thing or Model, you can simply say
-            |`\[[Rating._edit\]]` in your Default View, and it will allow you to rate
-            |how much you like this Thing, as 1-5 stars.
-            |
-            |Rating is a User Value Property -- each Member can give their own answer.
-            |
-            |By adding this Property, you will also wind up adding the Rating Summary Property
-            |on each Thing. You can say `\[[Rating Summary\]]` to display a small bar chart
-            |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
-            |to show the overall average of the ratings.
-            |
-            |If you want to let people give a comment with their rating, use the Review Property
-            |instead -- that combines Rating with a comment field. (Do not use Rating and Review
-            |on the same Thing -- it will cause confusion.)
-            |
-            |If you want to do more sophisticated things (for instance, having multiple different
-            |Ratings or Reviews for different purposes on the same Thing), you can define your
-            |own Properties of Rating Type and Rating Summarizer. However, this is fairly complicated,
-            |and is only for advanced users for the time being. For most purposes, the built in
-            |Rating and Review Properties should do fine.""".stripMargin)))
+    toProps(
+      setName("Rating"),
+      IsUserValueFlag(true),
+      SummaryLink(RatingSummaryProperty),
+      Editor.PromptProp(Core.QNone),
+      Categories(UserValuesTag),
+      Summary("Allows many people to rate how much they like this Thing"),
+      Details("""If you put this Property on a Thing or Model, you can simply say
+          |`\[[Rating._edit\]]` in your Default View, and it will allow you to rate
+          |how much you like this Thing, as 1-5 stars.
+          |
+          |Rating is a User Value Property -- each Member can give their own answer.
+          |
+          |By adding this Property, you will also wind up adding the Rating Summary Property
+          |on each Thing. You can say `\[[Rating Summary\]]` to display a small bar chart
+          |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
+          |to show the overall average of the ratings.
+          |
+          |If you want to let people give a comment with their rating, use the Review Property
+          |instead -- that combines Rating with a comment field. (Do not use Rating and Review
+          |on the same Thing -- it will cause confusion.)
+          |
+          |If you want to do more sophisticated things (for instance, having multiple different
+          |Ratings or Reviews for different purposes on the same Thing), you can define your
+          |own Properties of Rating Type and Rating Summarizer. However, this is fairly complicated,
+          |and is only for advanced users for the time being. For most purposes, the built in
+          |Rating and Review Properties should do fine.""".stripMargin)))
   
   lazy val ReviewCommentsProperty = new SystemProperty(ReviewCommentsPropOID, LargeTextType, ExactlyOne,
-      toProps(
-        setName("Review Comments"),
-        setInternal,
-        Editor.PromptProp("Comments:"),
-        Summary("The text part of a Review. Not intended for use on its own.")))
+    toProps(
+      setName("Review Comments"),
+      setInternal,
+      Editor.PromptProp("Comments:"),
+      Categories(UserValuesTag),
+      Summary("The text part of a Review")))
   
   lazy val ReviewProperty = new SystemProperty(ReviewPropOID, ReviewType, ExactlyOne,
-      toProps(
-        setName("Review"),
-        IsUserValueFlag(true),
-        SummaryLink(RatingSummaryProperty),
-        Summary("Allows people to provide their own reviews of this Thing."),
-        Details("""If you put this Property on a Thing or Model, you can simply say
-            |`\[[Review._edit\]]` in your Default View, and it will allow you to provide
-            |a Rating and a comment about this Thing.
-            |
-            |Review is a User Value Property -- each Member can give their own answer.
-            |
-            |By adding this Property, you will also wind up adding the Rating Summary Property
-            |on each Thing. You can say `\[[Rating Summary\]]` to display a small bar chart
-            |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
-            |to show the overall average of the ratings.
-            |
-            |If you just want a simple 1-5 star rating, use the Rating Property instead. (Do not use Rating and Review
-            |on the same Thing -- it will cause confusion.)
-            |
-            |If you want to do more sophisticated things (for instance, having multiple different
-            |Ratings or Reviews for different purposes on the same Thing), you can define your
-            |own Properties of Rating Type and Rating Summarizer. However, this is fairly complicated,
-            |and is only for advanced users for the time being. For most purposes, the built in
-            |Rating and Review Properties should do fine.""".stripMargin)))
+    toProps(
+      setName("Review"),
+      IsUserValueFlag(true),
+      SummaryLink(RatingSummaryProperty),
+      Categories(UserValuesTag),
+      Summary("Allows people to provide their own reviews of this Thing."),
+      Details("""If you put this Property on a Thing or Model, you can simply say
+          |`\[[Review._edit\]]` in your Default View, and it will allow you to provide
+          |a Rating and a comment about this Thing.
+          |
+          |Review is a User Value Property -- each Member can give their own answer.
+          |
+          |By adding this Property, you will also wind up adding the Rating Summary Property
+          |on each Thing. You can say `\[[Rating Summary\]]` to display a small bar chart
+          |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
+          |to show the overall average of the ratings.
+          |
+          |If you just want a simple 1-5 star rating, use the Rating Property instead. (Do not use Rating and Review
+          |on the same Thing -- it will cause confusion.)
+          |
+          |If you want to do more sophisticated things (for instance, having multiple different
+          |Ratings or Reviews for different purposes on the same Thing), you can define your
+          |own Properties of Rating Type and Rating Summarizer. However, this is fairly complicated,
+          |and is only for advanced users for the time being. For most purposes, the built in
+          |Rating and Review Properties should do fine.""".stripMargin)))
   
   lazy val RatingShowTargetProperty = new SystemProperty(RatingShowTargetOID, YesNoType, ExactlyOne,
     toProps(
       setName("Show External Rating Hint"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(UserValuesTag),
       Summary("Displays the current Rating Hint in its own text field, on the side."),
       Details("""Every Rating Property includes "hints", defined by the Chart Labels property -- basically text
           |descriptions of what each star means, such as "Poor" or "Excellent". Normally, these are shown as hover

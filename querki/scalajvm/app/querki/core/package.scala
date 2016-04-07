@@ -45,6 +45,8 @@ package object core {
     val LongTypeOID = moid(3)
     val FloatTypeOID = moid(4)
   }
+  
+  val CoreTag = "Querki Core"
     
   /**
    * QLText is a String that may contain both Wikitext and QL expressions. It must go through two

@@ -157,6 +157,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   
   def WikitextValue(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))
   
+  val QLTag = "QL -- Parsing and Running Expressions"
+  
   /***********************************************
    * TYPES
    ***********************************************/
@@ -164,7 +166,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   /**
    * This is a fake PType, used when we encounter a name we don't know.
    */
-  lazy val UnknownNameType = new NameTypeBase(UnknownOID, toProps(setName("_unknownNameType"))) {
+  lazy val UnknownNameType = new NameTypeBase(UnknownOID, 
+    toProps(
+      setName("_unknownNameType"),
+      Categories(QLTag),
+      Summary("This is an error type produced when your expression contains an unknown name"))) 
+  {
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       Future.successful(Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}"))
     }
@@ -173,7 +180,11 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   /**
    * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
    */
-  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, toProps(setName("Parsed Text Type"))) with SimplePTypeBuilder[Wikitext]
+  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, 
+    toProps(
+      setName("Parsed Text Type"),
+      Categories(QLTag),
+      Summary("This is an internal Text Type that results from the system parsing some Text"))) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
@@ -221,21 +232,22 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
    ***********************************************/
 	
 	lazy val SelfMethod = new InternalMethod(SelfMethodOID,
-	    toProps(
-	      setName("_self"),
-	      Summary("Get a Link to this Thing"),
-	      Details("""*thing*._self simply produces *thing*.
-	          |
-	          |This seems silly, but it is useful for overriding the usual \_apply behavior. In particular,
-	          |*property*.\_self is the way to get a link to the property itself, instead of fetching the value
-	          |of the property on the received Thing.
-	          |
-	          |More formally, \_self is the way to override the usual \[[\_apply\]] behaviour on a Thing, to get a
-	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when \_apply
-	          |has been defined on it.
-            |
-            |_self can only be used in a dotted expression -- there must always be something before the dot, and
-            |that something is what gets produced.""".stripMargin)))
+    toProps(
+      setName("_self"),
+      Categories(QLTag),
+      Summary("Get a Link to this Thing"),
+      Details("""*thing*._self simply produces *thing*.
+          |
+          |This seems silly, but it is useful for overriding the usual \_apply behavior. In particular,
+          |*property*.\_self is the way to get a link to the property itself, instead of fetching the value
+          |of the property on the received Thing.
+          |
+          |More formally, \_self is the way to override the usual \[[\_apply\]] behaviour on a Thing, to get a
+          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when \_apply
+          |has been defined on it.
+          |
+          |_self can only be used in a dotted expression -- there must always be something before the dot, and
+          |that something is what gets produced.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
       inv.definingContext match {
@@ -248,6 +260,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   lazy val IsBoundFunction = new InternalMethod(IsBoundFunctionOID,
     toProps(
       setName("_isBound"),
+      Categories(QLTag),
       Summary("Is the specified name currently bound?"),
       Signature(
         expected = None,
@@ -281,24 +294,25 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   }
 	
 	lazy val CodeMethod = new InternalMethod(CodeMethodOID,
-	    toProps(
-	      setName("_code"),
-	      Summary("Display a block of QL code"),
-	      Details("""_code() displays the raw code of a value or property, pretty flexibly.
-	          |
-	          |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
-	          |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
-	          |
-	          |You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
-	          |
-	          |Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
-	          |
-	          |If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
-	          |
-	          |The results are displayed in an inset block, in monospaced type, so that it looks "codish".
-	          |
-	          |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
-	          |considered a work in progress.""".stripMargin)))
+    toProps(
+      setName("_code"),
+      Categories(QLTag),
+      Summary("Display a block of QL code"),
+      Details("""_code() displays the raw code of a value or property, pretty flexibly.
+          |
+          |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
+          |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
+          |
+          |You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
+          |
+          |Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
+          |
+          |If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
+          |
+          |The results are displayed in an inset block, in monospaced type, so that it looks "codish".
+          |
+          |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
+          |considered a work in progress.""".stripMargin)))
 	{
 	  def encodeString(str:String):QFut = {
 	    val escaped = scala.xml.Utility.escape(str)

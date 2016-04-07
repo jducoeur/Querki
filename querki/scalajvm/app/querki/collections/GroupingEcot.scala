@@ -34,6 +34,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       toProps(
         setName("_groupKey"),
         setInternal,
+        Categories(CollTag),
         Summary("The key of a single grouping that comes from _groupBy")))
   
   /**
@@ -45,6 +46,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       toProps(
         setName("_groupElements"),
         setInternal,
+        Categories(CollTag),
         Summary("The Things in a single grouping from _groupBy")))
   
   /***********************************************
@@ -55,6 +57,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
     toProps(
       setName("_groupModel"),
       setInternal,
+      Categories(CollTag),
       Summary("The Model of the values you get from _groupBy"),
       groupKeyProperty(Core.QNone),
       groupMembersProperty()))
@@ -67,6 +70,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
     toProps(
       setName("_groupType"),
       setInternal,
+      Categories(CollTag),
       Summary("The Type of the values you get from _groupBy")))
   
   override lazy val types = Seq(
@@ -81,6 +85,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       toProps(
         setName("_groupBy"),
         SkillLevel(SkillLevelAdvanced),
+        Categories(CollTag),
         Summary("Groups the received Things by the specified Property or Expression"),
         Signature(
           expected = Some(Seq(LinkType), "A List of Things to be grouped"),

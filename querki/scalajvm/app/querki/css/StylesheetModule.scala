@@ -38,6 +38,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
   val PageEventManager = initRequires[controllers.PageEventManager]
   
   lazy val PlainTextType = Basic.PlainTextType
+  
+  val StylesheetsTag = "Stylesheets"
 
   /******************************************
    * PUBLIC API
@@ -74,23 +76,23 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
    */
   class CSSTextType(tid:OID) extends SystemType[String](tid,
     toProps(
-        setName("CSS Type"),
-        Core.InternalProp(true),
-        Summary("Give the actual CSS for a Stylesheet"),
-        Details("""A CSS Property is a large text block, which must contain only CSS. If you
-            |don't know CSS, you probably don't want to worry about this Type -- suffice it to
-            |say, it is the standard Web programming language for managing the fine details of
-            |the look and feel of a Webpage.
-            |
-            |IMPORTANT: the CSS Property only matters on a Stylesheet! You fill in the CSS for a
-            |Stylesheet, and then point your Instances, Models or Space to that Stylesheet in order
-            |to use it. Adding the CSS Property to anything other than a Stylesheet doesn't so anything.
-            |
-            |Note that we plan to begin white-listing CSS constructs in the near future. In the medium
-            |term, we expect to allow nearly all of CSS, but it will be with certain constraints on what
-            |you can apply the CSS to, and some constructs will be forbidden. Do *not* assume that absolutely
-            |all of CSS is legal to use! If you need a specific CSS construct, and aren't sure whether it
-            |will be legal, please ask.""".stripMargin))
+      setName("CSS Type"),
+      Core.InternalProp(true),
+      Summary("Give the actual CSS for a Stylesheet"),
+      Details("""A CSS Property is a large text block, which must contain only CSS. If you
+          |don't know CSS, you probably don't want to worry about this Type -- suffice it to
+          |say, it is the standard Web programming language for managing the fine details of
+          |the look and feel of a Webpage.
+          |
+          |IMPORTANT: the CSS Property only matters on a Stylesheet! You fill in the CSS for a
+          |Stylesheet, and then point your Instances, Models or Space to that Stylesheet in order
+          |to use it. Adding the CSS Property to anything other than a Stylesheet doesn't so anything.
+          |
+          |Note that we plan to begin white-listing CSS constructs in the near future. In the medium
+          |term, we expect to allow nearly all of CSS, but it will be with certain constraints on what
+          |you can apply the CSS to, and some constructs will be forbidden. Do *not* assume that absolutely
+          |all of CSS is legal to use! If you need a specific CSS construct, and aren't sure whether it
+          |will be legal, please ask.""".stripMargin))
     ) with SimplePTypeBuilder[String] with CodeType
   {
     // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
@@ -123,6 +125,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
     toProps(
       setName("Stylesheet Link"),
       Links.LinkModelProp(StylesheetBase),
+      Categories(StylesheetsTag),
       Summary("Describes how to render Things when displaying them in the browser"),
       Details("""If you add the Stylesheet Link Property to a Thing, it should point to a
           |Stylesheet whose CSS describes some page layout. That CSS will be used when displaying
@@ -143,6 +146,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       setName("CSS"),
       Core.InternalProp(true),
       SkillLevel(SkillLevelAdvanced),
+      Categories(StylesheetsTag),
       Summary("The actual CSS for a Stylesheet"),
       Details("""This is the main property on a Stylesheet. It can contain more or less
           |any arbitrary CSS, with just a few security-related exceptions.
@@ -181,6 +185,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       // TODO: in fact, this only applies to Stylesheets:
       AppliesToKindProp(Kind.Thing),
       SkillLevel(SkillLevelAdvanced),
+      Categories(StylesheetsTag),
       Summary("The name of a Google Font to use in these styles"),
       Details("""Google provides a [large number of webfonts](http://www.google.com/fonts/) for public use.
           |We find them useful, so we've made them available through Querki.
@@ -214,6 +219,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       Core.IsModelProp(true),
       Editor.InstanceProps(Basic.DisplayNameProp, CSSProp),
       Basic.DisplayTextProp("[[_code(CSS)]]"),
+      Categories(StylesheetsTag),
       CSSProp("")))
   
   override lazy val things = Seq(StylesheetBase)

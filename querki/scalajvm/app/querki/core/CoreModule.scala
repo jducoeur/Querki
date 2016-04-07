@@ -148,6 +148,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
   // Our own Core-safe versions of a few QuerkiEcot shadows:
   def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
   def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text))) 
+  def Categories(cats:String*) = (querki.conventions.MOIDs.PropCategoriesOID -> QSet.makePropValue(cats.map(TagType(_)), TagType))
   def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
   lazy val SkillLevelBasic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID
   lazy val SkillLevelStandard = querki.identity.skilllevel.MOIDs.SkillLevelStandardOID
@@ -203,6 +204,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
       (InternalPropOID -> bootCollection(ElemValue(false, new DelegatingType({YesNoType})))),
       AppliesToKindProp(Kind.Property),
       SkillLevel(SkillLevelAdvanced),
+      Categories(CoreTag),
       Summary("Should this Property be inherited from ancestors?"),
       Details("""All Things in Querki are part of a big inheritance tree. Instances inherit from their Models,
           |which in turn usually inherit from higher-level Models.
@@ -224,6 +226,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
     toProps(
       setName("Model Only Property"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(CoreTag),
       Summary("Set this flag on a Property if that Property should be defined *only* on the Model, not on Instances"),
       Details("""This is very advanced, and rarely useful in user code. In most cases, you should achieve the same
           |effect simply by setting the Instance Properties appropriately.""".stripMargin)))
@@ -233,101 +236,106 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    * ExactlyOne, to avoid initialization loops.
    */
   lazy val NameProp = new SystemProperty(NameOID, NameType, ExactlyOne,
-      toProps(
-        setName(commonName(_.core.nameProp)),
-        NotInherited,
-        Summary("The name used to point to this Thing"),
-        Details("""The Link Name for a Thing is usually derived automatically from its normal Name.
-            |It is the official identifier for that Thing, and is always unique within this Space.
-            |So it is used, for instance, in the URL for this Thing, and it is the name you usually
-            |use when referring to the Thing in QL, like \[[My Thing\]]. 
-            |
-            |Link Names should consist mainly of letters and numbers; they may also include dashes
-        		|and spaces. They should usually start with a letter, and they shouldn't be
-        		|excessively long.
-            |
-            |If the Thing's Name already follows these rules, and is unique within the Space, the
-            |Link Name will be identical to the Name. If the Name contains illegal characters like
-            |commas, quotes and so on, they will be removed when figuring out the Link Name. If the
-            |result isn't unique within the Space, a number will be added to the end to make it unique.
-            |
-            |This usually works fine, but if you want to define your own Link Name for a Thing, rather
-            |than letting it be derived automatically, uncheck the "Derive the Link Name from the Name" 
-            |box in the Advanced Editor.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.core.nameProp)),
+      NotInherited,
+      Categories(CoreTag),
+      Summary("The name used to point to this Thing"),
+      Details("""The Link Name for a Thing is usually derived automatically from its normal Name.
+          |It is the official identifier for that Thing, and is always unique within this Space.
+          |So it is used, for instance, in the URL for this Thing, and it is the name you usually
+          |use when referring to the Thing in QL, like \[[My Thing\]]. 
+          |
+          |Link Names should consist mainly of letters and numbers; they may also include dashes
+      		|and spaces. They should usually start with a letter, and they shouldn't be
+      		|excessively long.
+          |
+          |If the Thing's Name already follows these rules, and is unique within the Space, the
+          |Link Name will be identical to the Name. If the Name contains illegal characters like
+          |commas, quotes and so on, they will be removed when figuring out the Link Name. If the
+          |result isn't unique within the Space, a number will be added to the end to make it unique.
+          |
+          |This usually works fine, but if you want to define your own Link Name for a Thing, rather
+          |than letting it be derived automatically, uncheck the "Derive the Link Name from the Name" 
+          |box in the Advanced Editor.""".stripMargin)
+      ))
 
   /**
    * The Property that points from a Property to its Type.
    */
   lazy val TypeProp = new SystemProperty(TypePropOID, LinkType, ExactlyOne,
-      toProps(
-        setName(commonName(_.core.typeProp)),
-        LinkKindProp(Kind.Type),
-        LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property),
-        NotInherited,
-        Summary("The Type that this Property can hold"),
-        Details("""A Type is something like "Text" or "Number" or "Tag". Every Property must be designed for
-        		|exactly one Type, and only values of that Type can be placed in it.
-        		|
-        		|Most Properties are of type Text or Large Text (which is the same thing, but can have multiple lines);
-        		|if you don't know what to use, that's usually your best bet.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.core.typeProp)),
+      LinkKindProp(Kind.Type),
+      LinkAllowAppsProp(true),
+      AppliesToKindProp(Kind.Property),
+      NotInherited,
+      Categories(CoreTag),
+      Summary("The Type that this Property can hold"),
+      Details("""A Type is something like "Text" or "Number" or "Tag". Every Property must be designed for
+      		|exactly one Type, and only values of that Type can be placed in it.
+      		|
+      		|Most Properties are of type Text or Large Text (which is the same thing, but can have multiple lines);
+      		|if you don't know what to use, that's usually your best bet.""".stripMargin)
+      ))
   
   /**
    * The Property that points from a Property to its Collection.
    */
   lazy val CollectionProp = new SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
-      toProps(
-        setName(commonName(_.core.collectionProp)),
-        LinkKindProp(Kind.Collection),
-        LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property),
-        NotInherited,
-        Summary("How much this Property holds"),
-        Details("""Collection is a subtle but important concept. A Property Value isn't necessarily *one* of a
-            |Type -- it can take several forms, and you have to say which one it is. As of this writing, the
-            |available Collections are:
-            |
-            |* Exactly One -- the most common case, where the Property holds one of this Type. Note that this means
-            |    that it *always* holds one of this type; if you don't give it a value, it will be set to a default.
-            |* Optional -- the Property may or may not hold a value of this Type. Use Optional when it makes sense
-            |    for a Thing to have the Property but not have it filled in. It is very common for a Model to have an
-            |    Optional Property, which its Instances can choose to fill in when it makes sense.
-            |* List -- the Property holds an ordered list of this Type. You most often use List with Links. Note that
-            |    you can rearrange the List using drag-and-drop, and duplicates are allowed.
-            |* Set -- the Property holds an unordered set of this Type. You most often use Set with Tags. Duplicates
-            |    will be silently thrown away, and order is not preserved; Sets are usually shown in alphabetical order.
-            |
-            |When you create a Property, you must choose which Collection it uses. If you aren't sure, it is usually
-            |best to go for Exactly One, but you should use any of these when they make sense.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.core.collectionProp)),
+      LinkKindProp(Kind.Collection),
+      LinkAllowAppsProp(true),
+      AppliesToKindProp(Kind.Property),
+      NotInherited,
+      Categories(CoreTag),
+      Summary("How much this Property holds"),
+      Details("""Collection is a subtle but important concept. A Property Value isn't necessarily *one* of a
+          |Type -- it can take several forms, and you have to say which one it is. As of this writing, the
+          |available Collections are:
+          |
+          |* Exactly One -- the most common case, where the Property holds one of this Type. Note that this means
+          |    that it *always* holds one of this type; if you don't give it a value, it will be set to a default.
+          |* Optional -- the Property may or may not hold a value of this Type. Use Optional when it makes sense
+          |    for a Thing to have the Property but not have it filled in. It is very common for a Model to have an
+          |    Optional Property, which its Instances can choose to fill in when it makes sense.
+          |* List -- the Property holds an ordered list of this Type. You most often use List with Links. Note that
+          |    you can rearrange the List using drag-and-drop, and duplicates are allowed.
+          |* Set -- the Property holds an unordered set of this Type. You most often use Set with Tags. Duplicates
+          |    will be silently thrown away, and order is not preserved; Sets are usually shown in alphabetical order.
+          |
+          |When you create a Property, you must choose which Collection it uses. If you aren't sure, it is usually
+          |best to go for Exactly One, but you should use any of these when they make sense.""".stripMargin)
+      ))
 
   /**
    * A flag set on a Thing to indicate that it should be used as a Model. Note that this
    * Property is not inherited: the child of a Model is not usually a Model.
    */
   lazy val IsModelProp = new SystemProperty(IsModelOID, YesNoType, ExactlyOne,
-      toProps(
-        setName(commonName(_.core.isModelProp)),
-        NotInherited,
-        setInternal,
-        // TBD: we might allow Property Models down the road, but not yet:
-        AppliesToKindProp(Kind.Thing),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Is this Thing a Model?"),
-        Details("""All Things can be used as Models if you would like -- in Querki, unlike most programming
-            |languages, the difference between a Model and an Instance is pretty small. But this flag indicates
-            |that this Thing should *normally* be considered a Model. If you set it, then this Model will be
-            |offered as a possibility when you go to create a Thing, it will be displayed a bit differently in
-            |the Space's list of its Things, and in general will be handled a little differently.""".stripMargin)
-        ))
+    toProps(
+      setName(commonName(_.core.isModelProp)),
+      NotInherited,
+      setInternal,
+      // TBD: we might allow Property Models down the road, but not yet:
+      AppliesToKindProp(Kind.Thing),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(CoreTag),
+      Summary("Is this Thing a Model?"),
+      Details("""All Things can be used as Models if you would like -- in Querki, unlike most programming
+          |languages, the difference between a Model and an Instance is pretty small. But this flag indicates
+          |that this Thing should *normally* be considered a Model. If you set it, then this Model will be
+          |offered as a possibility when you go to create a Thing, it will be displayed a bit differently in
+          |the Space's list of its Things, and in general will be handled a little differently.""".stripMargin)
+      ))
 
   lazy val AppliesToKindProp = new SystemProperty(AppliesToKindOID, IntType, QList,
     toProps(
       setName("Applies To"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
       (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
+      Categories(CoreTag),
       Summary("Which Kinds of Things can this Property be used on?"),
       Details("""By default, a Property can be used on anything -- even when
           |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of

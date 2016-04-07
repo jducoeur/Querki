@@ -13,11 +13,14 @@ import querki.types.MOIDs._
  */
 class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
   import MOIDs._
+  
+  val ConventionsTag = querki.core.CoreTag
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,
     toProps(
       setName(commonName(_.conventions.summaryProp)),
       (DefaultValuePropOID -> ExactlyOne(TextType("""____"""))),
+      (PropCategoriesOID -> ExactlyOne(TagType(ConventionsTag))),
       (PropSummaryOID -> Optional(TextType("This is an optional one-line description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
           |part of that definition. It will be displayed in mouseover hovering and things like that, to help
@@ -33,6 +36,7 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
   lazy val PropDetails = new SystemProperty(PropDetailsOID, LargeTextType, Optional,
     toProps(
       setName(commonName(_.conventions.detailsProp)),
+      (PropCategoriesOID -> ExactlyOne(TagType(ConventionsTag))),
       (PropSummaryOID -> Optional(TextType("This is an optional detailed description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add whatever description
           |or documentation you see fit in the Details. This is the place to say what this Property is for, what
@@ -45,6 +49,7 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
   lazy val PropDescription = new SystemProperty(PropDescriptionOID, LargeTextType, ExactlyOne,
     toProps(
       setName("Description"),
+      (PropCategoriesOID -> ExactlyOne(TagType(ConventionsTag))),
       (DefaultValuePropOID -> ExactlyOne(LargeTextType("""[[Summary]] [[Details -> ""
           |
           |____""]]""".stripMargin))),
@@ -55,9 +60,18 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
           |In general, you should probably use Description *or* Summary plus Details, depending on what makes most
           |sense for your case. By default, Description will show the Summary, followed by the Details.""".stripMargin)))))
   
+  lazy val PropCategories = new SystemProperty(PropCategoriesOID, TagType, QSet,
+    toProps(
+      setName("_System Categories"),
+      (PropCategoriesOID -> ExactlyOne(TagType(ConventionsTag))),
+      NotInherited,
+      setInternal,
+      (PropSummaryOID -> ExactlyOne(TextType("Categorization of Querki's System-level Things")))))
+  
   override lazy val props = Seq(
     PropSummary,
     PropDetails,
-    PropDescription
+    PropDescription,
+    PropCategories
   )
 }

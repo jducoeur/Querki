@@ -67,6 +67,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       setName(name),
       Basic.DisplayNameProp(display),
       AccessControl.RolePermissionsProp(perms.map(_.id):_*),
+      Categories(SecurityTag),
       Summary(desc)))
       
   lazy val basicMemberPerms = Seq.empty[Property[OID,OID]]
@@ -108,6 +109,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   lazy val CustomRoleModel = ThingState(CustomRoleModelOID, systemOID, AccessControl.RoleModel,
     toProps(
       setName(querki.api.commonName(_.security.customRoleModel)),
+      Categories(SecurityTag),
       Summary("The model underlying custom user-defined Roles"),
       Core.IsModelProp(true),
       SkillLevel(SkillLevelAdvanced)))

@@ -99,12 +99,11 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
    * FUNCTIONS
    ***********************************************/
   
-  // TODO: this function needs to be rewritten as asynchonrous; at the moment, it does an evil
-  // blocking function!
   lazy val CreateHere = new InternalMethod(CreateHereOID,
     toProps(
       setName("_createHere"),
-      Summary("Create a nw Thing as part of displaying this expression"),
+      Categories(querki.datamodel.DataModelTag),
+      Summary("Create a new Thing as part of displaying this expression"),
       Details("""```
         |MODEL -> LINK PROPERTY._createHere -> THING
         |```

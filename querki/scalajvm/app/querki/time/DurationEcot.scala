@@ -96,6 +96,7 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
       SkillLevel(SkillLevelAdvanced),
       // List this Type even though it's based on a Model:
       Basic.ExplicitProp(true),
+      Categories(TimeTag),
       Summary("Represents a length of time"),
       Details("""This type is available in case you want to build your own Duration properties. In
         |most cases, though, you should just use the built-in Duration Property, which is good enough
@@ -105,6 +106,7 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
     toProps(
       setName("Duration"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(TimeTag),
       Summary("Lets you define a length of time"),
       Details("""This property lets you choose years, months, weeks or days, and how many of them.
         |You can then add a Duration to a Date using _add, to get another Date.

@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import models.{DisplayPropVal, HtmlWikitext, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
+import querki.datamodel.DataModelTag
 import querki.ecology._
 import querki.ql.CodeType
 import querki.util.{PublicException, QLog, XmlEscape}
@@ -89,6 +90,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val foreachPropertyMethod = new InternalMethod(ForeachPropertyMethodOID,
     toProps(
       setName("_foreachProperty"),
+      Categories(DataModelTag),
       Summary("Applies the given function to each Property in the received Thing or Model Value"),
       Details("""```
           |THING or MODEL VALUE -> _foreachProperty(... code ...) -> RESULTS
@@ -127,6 +129,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val valMethod = new InternalMethod(ValMethodOID,
       toProps(
         setName("_val"),
+        Categories(DataModelTag),
         Summary("Fetch the Value part, inside of _foreachProperty")))
   {
     override def qlApply(inv:Invocation):QFut = {
@@ -144,6 +147,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       toProps(
         setName("_rawVal"),
         SkillLevel(SkillLevelAdvanced),
+        Categories(DataModelTag),
         Summary("Produces a raw, unprocessed value"),
         Details("""This advanced function prevents the usual QL and QText processing of a value. It
             |is typically used with something like _foreachProperty, like this:
@@ -181,6 +185,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val propMethod = new InternalMethod(PropMethodOID,
       toProps(
         setName("_prop"),
+        Categories(DataModelTag),
         Summary("Fetch the current Property, inside of _foreachProperty")))
   {
     override def qlApply(inv:Invocation):QFut = {
@@ -194,6 +199,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val definedOnMethod = new InternalMethod(DefinedOnMethodOID,
       toProps(
         setName("_definedOn"),
+        Categories(DataModelTag),
         Summary("Fetch the Thing or Model Value that the current Property was defined on, inside of _foreachProperty"),
         Details("""Keep in mind that this returns the *immediate* container of the Property, though. If you have a
             |complex nested Model, this might not return the value you expect.""".stripMargin)))
@@ -216,6 +222,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val isInheritedMethod = new InternalMethod(IsInheritedMethodOID,
       toProps(
         setName("_isInherited"),
+        Categories(DataModelTag),
         Summary("Says whether the current Property's value is locally defined or was inherited from the Model, inside of _foreachProperty")))
   {
     override def qlApply(inv:Invocation):QFut = {

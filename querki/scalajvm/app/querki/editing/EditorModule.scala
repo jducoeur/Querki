@@ -57,39 +57,41 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
    ***********************************************/
     
   lazy val PlaceholderTextProp = new SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
-      toProps(
-        setName("Placeholder Text"),
-        AppliesToKindProp(Kind.Property),
-        Basic.DeprecatedProp(true),
-        Summary("Placeholder text for input boxes"),
-        Details("""In Text Properties, it is often helpful to have a prompt that displays inside the input
-            |field until the user begins to type something there. If the Property has a Placeholder Text, that
-            |will be displayed in grey when the input is first shown.""".stripMargin)
-        ))
+    toProps(
+      setName("Placeholder Text"),
+      AppliesToKindProp(Kind.Property),
+      Basic.DeprecatedProp(true),
+      Summary("Placeholder text for input boxes"),
+      Details("""In Text Properties, it is often helpful to have a prompt that displays inside the input
+          |field until the user begins to type something there. If the Property has a Placeholder Text, that
+          |will be displayed in grey when the input is first shown.""".stripMargin)
+      ))
   
   lazy val PromptProp = new SystemProperty(PromptOID, PlainTextType, Optional,
-      toProps(
-        setName("Prompt"),
-        AppliesToKindProp(Kind.Property),
-        Summary("Prompt to use in the Editor"),
-        Details("""In the Editor, Properties are usually displayed with their Name. If you want to show something
-            |other than the Name, set the Prompt Property to say what you would like to show instead.""".stripMargin)
-        ))
+    toProps(
+      setName("Prompt"),
+      AppliesToKindProp(Kind.Property),
+      Categories(EditingTag),
+      Summary("Prompt to use in the Editor"),
+      Details("""In the Editor, Properties are usually displayed with their Name. If you want to show something
+          |other than the Name, set the Prompt Property to say what you would like to show instead.""".stripMargin)
+      ))
 	
 	// TODO: this should really only allow the properties that are defined on this Model:
     // TODO: this has broadened in scope, and really doesn't belong in Editor any more:
 	lazy val InstanceProps = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
-	    toProps(
-	      setName(commonName(_.editing.instancePropsProp)),
-	      Links.LinkAllowAppsProp(true),
-	      Links.LinkKindProp(Kind.Property),
-        setInternal,
-	      Summary("Which Properties are relevant for Instances of this Model?"),
-	      Details("""This Property defines which of the Properties on this Model will show in
-          |the editor for its Instances, and in what order.
-          |
-          |You usually should not need to set this manually; it is changed by dragging-and-dropping
-          |Properties in the Model Editor.""".stripMargin))) with LinkCandidateProvider
+    toProps(
+      setName(commonName(_.editing.instancePropsProp)),
+      Links.LinkAllowAppsProp(true),
+      Links.LinkKindProp(Kind.Property),
+      setInternal,
+      Categories(EditingTag),
+      Summary("Which Properties are relevant for Instances of this Model?"),
+      Details("""This Property defines which of the Properties on this Model will show in
+        |the editor for its Instances, and in what order.
+        |
+        |You usually should not need to set this manually; it is changed by dragging-and-dropping
+        |Properties in the Model Editor.""".stripMargin))) with LinkCandidateProvider
 	{
 	  def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
 	    currentValue.on match {
@@ -103,29 +105,31 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	}
 
   lazy val InstanceEditViewProp = new SystemProperty(InstanceEditViewOID, LargeTextType, ExactlyOne,
-      toProps(
-        setName("Instance Edit View"),
-        Summary("Defines the Edit View for Instances of this Model"),
-        Details("""Sometimes, you want to customize your editing experience -- to make things easier or more
-            |efficient, or prettier for your users. Regardless of the reason, this Property gives you complete
-            |control.
-            |
-            |This is an arbitrary Large Text, which is shown whenever you say
-            |[[_code(""[[My Instance._edit]]"")]]
-            |The contents are up to you, but it should usually contain _edit functions for each Property you
-            |want to be editable.""".stripMargin)))
+    toProps(
+      setName("Instance Edit View"),
+      Categories(EditingTag),
+      Summary("Defines the Edit View for Instances of this Model"),
+      Details("""Sometimes, you want to customize your editing experience -- to make things easier or more
+          |efficient, or prettier for your users. Regardless of the reason, this Property gives you complete
+          |control.
+          |
+          |This is an arbitrary Large Text, which is shown whenever you say
+          |[[_code(""[[My Instance._edit]]"")]]
+          |The contents are up to you, but it should usually contain _edit functions for each Property you
+          |want to be editable.""".stripMargin)))
   
   lazy val EditWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
-      toProps(
-        setName("Edit Width"),
-        Types.MinIntValueProp(1),
-        Types.MaxIntValueProp(12),
-        Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
-        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).
-          |
-          |You do not have to set this -- if you leave it alone, each Type has a default width. But you will
-          |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
-          |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
+    toProps(
+      setName("Edit Width"),
+      Types.MinIntValueProp(1),
+      Types.MaxIntValueProp(12),
+      Categories(EditingTag),
+      Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
+      Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).
+        |
+        |You do not have to set this -- if you leave it alone, each Type has a default width. But you will
+        |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
+        |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
   
   lazy val NotEditableProp = new SystemProperty(NotEditableOID, YesNoType, ExactlyOne,
     toProps(
@@ -258,6 +262,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val editMethod = new EditMethodBase(EditMethodOID, 
     toProps(
       setName("_edit"),
+      Categories(EditingTag),
       Summary("Puts an editor for the specified Property into the page"),
       Details("""Sometimes, you want to make it easy to edit a Thing, without having to go into the Editor
           |page. For instance, there may be a single button, or a few fields, that should be more easily editable
@@ -295,10 +300,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val editOrElseMethod = new EditMethodBase(EditOrElseMethodOID, 
     toProps(
       setName("_editOrElse"),
+      Categories(EditingTag),
       Summary("Like [[_edit._self]], but you can say what to show if the user can't edit this Property"),
       Details("""See [[_edit._self]] for the full details of how edit control works. This is just like that,
           |but with an additional parameter:
-          |    THING -> PROPERTY._editOrElse(FALLBACK)
+          |```
+          |THING -> PROPERTY._editOrElse(FALLBACK)
+          |```
           |If the current user isn't allowed to edit THING, then FALLBACK is produced instead.""".stripMargin),
       AppliesToKindProp(Kind.Property)
     )) 
@@ -326,6 +334,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val editAsPicklistMethod = new EditMethodBase(EditAsPickListOID, 
     toProps(
       setName("_editAsPickList"),
+      Categories(EditingTag),
       Summary("Edits a Tag or Link Set as a Pick List"),
       Details("""This is broadly similar to [[_edit._self]], but displays in a way that is sometimes more useful.
           |
@@ -370,12 +379,14 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	// replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
 	// that rewrites it appropriately for the UI in use.
 	lazy val FormLineMethod = new InternalMethod(FormLineMethodOID,
-	    toProps(
-	      setName("_formLine"),
-	      Summary("Display a label/control pair for an input form"),
-	      Details("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
-	          |
-	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
+    toProps(
+      setName("_formLine"),
+      Categories(EditingTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Display a label/control pair for an input form"),
+      Details("""`_formLine(LABEL,CONTROL)` displays the LABEL/CONTROL pair as a standard full-width line. 
+          |
+          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    inv.paramsOpt match {

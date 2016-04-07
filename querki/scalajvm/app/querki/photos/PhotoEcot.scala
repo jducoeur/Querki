@@ -72,6 +72,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
 
   lazy val bucketUrl = Config.getString("querki.aws.bucketUrl")
   
+  val PhotosTag = "Photos and Images"
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -80,55 +82,73 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     toProps(
       setName("Image Height"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The height of this Image")))
   
   lazy val ImageWidthProp = new SystemProperty(ImageWidthOID, IntType, Optional,
     toProps(
       setName("Image Width"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The width of this Image")))
   
   lazy val ImageMIMETypeProp = new SystemProperty(ImageMIMETypeOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image MIME Type"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The type of Image this is (eg, JPEG, PNG)")))
   
   lazy val ImageFilenameProp = new SystemProperty(ImageFilenameOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image Filename"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property))) 
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The name of this Image's file, which is used to fetch it"))) 
   
   lazy val ImageTimestampProp = new SystemProperty(ImageTimestampOID, Time.QDateTime, Optional,
     toProps(
       setName("Image Timestamp"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("When this Image was loaded")))
   
   lazy val ImageSizeProp = new SystemProperty(ImageSizeOID, IntType, Optional,
     toProps(
       setName("Image Size"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The size of this image on disc")))
   
   lazy val ImageThumbnailFilenameProp = new SystemProperty(ImageThumbnailFilenameOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image Thumbnail Filename"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The name of this Image's thumbnail file")))
   
   lazy val ImageThumbnailHeightProp = new SystemProperty(ImageThumbnailHeightOID, IntType, Optional,
     toProps(
       setName("Image Thumbnail Height"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The height of this Image's thumbnail")))
   
   lazy val ImageThumbnailWidthProp = new SystemProperty(ImageThumbnailWidthOID, IntType, Optional,
     toProps(
       setName("Image Thumbnail Width"),
       SystemOnly,
-      Core.AppliesToKindProp(Kind.Property)))
+      Core.AppliesToKindProp(Kind.Property),
+      Categories(PhotosTag),
+      Summary("The width of this Image's thumbnail")))
   
   lazy val PreferredImageSizeProp = new SystemProperty(PreferredImageSizeOID, IntType, Optional,
     toProps(
@@ -136,6 +156,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
       Types.MaxIntValueProp(1000),
       Core.AppliesToKindProp(Kind.Property),
       Types.AppliesToTypesProp(PhotoType),
+      Categories(PhotosTag),
       Summary("Add this to a Photo Property in order to say how big photos should come out"),
       Details("""Querki is designed for "web resolution" photographs -- that is, photos should fit on a webpage.
           |To that end, we limit photos to no bigger than 1000 pixels on a side. (1 "Megapixel") But that is still
@@ -160,29 +181,31 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
    ***********************************************/
   
   lazy val ThumbnailFunction = new InternalMethod(ThumbnailFuncOID,
-	toProps(
-	  setName("_thumbnail"),
-	  Summary("Show the thumbnail version of the received photos"),
-	  Details("""```
-            |PHOTOS -> _thumbnail -> SMALL PHOTOS
-            |```
-	          |
-	          |Each photo in Querki automatically has a "thumbnail" version, which is much smaller and quicker
-	          |to load. It is usually appropriate to show the thumbnail when you are listing a bunch of photos,
-	          |instead of each full-sized one.""".stripMargin)))
+  	toProps(
+  	  setName("_thumbnail"),
+      Categories(PhotosTag),
+  	  Summary("Show the thumbnail version of the received photos"),
+  	  Details("""```
+              |PHOTOS -> _thumbnail -> SMALL PHOTOS
+              |```
+  	          |
+  	          |Each photo in Querki automatically has a "thumbnail" version, which is much smaller and quicker
+  	          |to load. It is usually appropriate to show the thumbnail when you are listing a bunch of photos,
+  	          |instead of each full-sized one.""".stripMargin)))
   {
-	override def qlApply(inv:Invocation):QFut = {
-	  for {
-	    dummy <- inv.returnsType(PhotoType)
-	    bundle <- inv.contextAllBundles
-	  }
-	    yield ExactlyOne(ElemValue(bundle, ThumbnailType))
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  for {
+  	    dummy <- inv.returnsType(PhotoType)
+  	    bundle <- inv.contextAllBundles
+  	  }
+  	    yield ExactlyOne(ElemValue(bundle, ThumbnailType))
+  	}
   }
   
   lazy val PhotoTargetFunction = new InternalMethod(PhotoTargetFuncOID,
     toProps(
       setName("_photoTarget"),
+      Categories(PhotosTag),
       Summary("The target location to show one of a List of Photos"),
       Details("""```
           |LIST OF PHOTOS PROPERTY -> _photoTarget
@@ -238,7 +261,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   
   lazy val PhotoModel = ThingState(PhotoModelOID, systemOID, RootOID,
     toProps(
-      setName("Photo Model")))
+      setName("Photo Model"),
+      Categories(PhotosTag)))
       
   override lazy val things = Seq(
     PhotoModel
@@ -248,6 +272,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     toProps(
       setName("Photo Type"),
       Basic.ExplicitProp(true),
+      Categories(PhotosTag),
       Summary("A single Photograph in Querki"))) with FullInputRendering
   {
     override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {

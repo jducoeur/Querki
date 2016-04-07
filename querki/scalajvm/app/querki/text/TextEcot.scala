@@ -22,6 +22,8 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
   
   lazy val QL = interface[querki.ql.QL]
+  
+  val TextTag = "Text"
 
   /***********************************************
    * FUNCTIONS
@@ -29,18 +31,19 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	
   // TODO: this should be rewritten in QL
 	lazy val PluralizeMethod = new InternalMethod(PluralizeOID,
-	    toProps(
-	      setName("_pluralize"),
-	      Summary("Produces the right word depending on how many elements are in a collection."),
-	      Details("""```
-            |RECEIVED -> _pluralize(SINGULAR,PLURAL)
-            |```
-	          |This is a convenient method for choosing different text depending on a Property. The RECEIVED
-	          |Context should usually be a List. If it contains a single element, _pluralize produces
-	          |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
-	    	    |
-	          |Note that this behaviour is pretty English-specific. We expect that other variations will
-	          |be needed for other languages in the long run.""".stripMargin)))
+    toProps(
+      setName("_pluralize"),
+      Categories(TextTag),
+      Summary("Produces the right word depending on how many elements are in a collection."),
+      Details("""```
+          |RECEIVED -> _pluralize(SINGULAR,PLURAL)
+          |```
+          |This is a convenient method for choosing different text depending on a Property. The RECEIVED
+          |Context should usually be a List. If it contains a single element, _pluralize produces
+          |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
+    	    |
+          |Note that this behaviour is pretty English-specific. We expect that other variations will
+          |be needed for other languages in the long run.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -67,42 +70,43 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	}
 	
 	lazy val JoinMethod = new InternalMethod(JoinMethodOID,
-	    toProps(
-	      setName("_join"),
-	      Summary("Combine a list of Text values together"),
-	      Details("""```
-            |LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
-            |```
-	          |_join takes the given LIST, and turns it into a single line. For example, if My List was "Cat", "Dog", "Horse",
-	          |then
-            |```
-	          |My List -> _join
-            |```
-	          |would come out as "CatDogHorse".
-	          |
-	          |Of course, that probably isn't what you want -- most of the time, you want some separators at the beginning,
-	          |middle and end. Those are the parameters; how many parameters you give define how they are used. If there is
-	          |only one, then it is SEP, the separator in between elements. So
-            |```
-	          |My List -> _join(", ")
-            |```
-	          |would come out as "Cat, Dog, Horse" -- more reasonable.
-	          |
-	          |If there are two parameters, then they are OPEN and SEP. So for example, if I wanted to include dashes at the
-	          |beginning, that would be:
-            |```
-	          |My List -> _join("-- ", ", ")
-            |```
-	          |which would come out as "-- Cat, Dog, Horse". And if I wanted parentheses around the entire list, I'd use all
-	          |three parameters -- OPEN, SEP and CLOSE -- as:
-            |```
-	          |My List -> _join("(", ", ", ")")
-            |```
-	          |to get "(Cat, Dog, Horse)".
-	          |
-	          |Note that you can use _join with anything, not just Text -- if the received values aren't Text, then they will
-	          |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
-	          |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
+    toProps(
+      setName("_join"),
+      Categories(TextTag),
+      Summary("Combine a list of Text values together"),
+      Details("""```
+          |LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
+          |```
+          |_join takes the given LIST, and turns it into a single line. For example, if My List was "Cat", "Dog", "Horse",
+          |then
+          |```
+          |My List -> _join
+          |```
+          |would come out as "CatDogHorse".
+          |
+          |Of course, that probably isn't what you want -- most of the time, you want some separators at the beginning,
+          |middle and end. Those are the parameters; how many parameters you give define how they are used. If there is
+          |only one, then it is SEP, the separator in between elements. So
+          |```
+          |My List -> _join(", ")
+          |```
+          |would come out as "Cat, Dog, Horse" -- more reasonable.
+          |
+          |If there are two parameters, then they are OPEN and SEP. So for example, if I wanted to include dashes at the
+          |beginning, that would be:
+          |```
+          |My List -> _join("-- ", ", ")
+          |```
+          |which would come out as "-- Cat, Dog, Horse". And if I wanted parentheses around the entire list, I'd use all
+          |three parameters -- OPEN, SEP and CLOSE -- as:
+          |```
+          |My List -> _join("(", ", ", ")")
+          |```
+          |to get "(Cat, Dog, Horse)".
+          |
+          |Note that you can use _join with anything, not just Text -- if the received values aren't Text, then they will
+          |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
+          |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -157,6 +161,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
                 "The zero-based index of the end of the substring -- if omitted, takes the rest of the string")),
         returns = (TextType, "The specified chunk out of the received text")
       ),
+      Categories(TextTag),
       Summary("Extracts part of a Text or Large Text"),
       Details("""Given some text, this extracts the portion of it beginning at
         |character **start**, and running through **end** - 1.
@@ -199,32 +204,33 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   // replace _matchCase as a pure-QL function built on top of more sensible primitives, we'll know that the pipeline is
   // getting to a nice level of functionality and performance.
   lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
-	    toProps(
-	      setName("_matchCase"),
-	      SkillLevel(SkillLevelAdvanced),
-	      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
-        Signature(
-          expected = Some(Seq(TextType), "Some text, usually one word"),
-          reqs = Seq.empty,
-          opts = Seq(
-            ("levels", IntType, ExactlyOne(IntType(1)), "The number of levels up that this will look for the match")
-          ),
-          returns = (TextType, "The received text, capitalized if this Function was capitalized")
+    toProps(
+      setName("_matchCase"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(TextTag),
+      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
+      Signature(
+        expected = Some(Seq(TextType), "Some text, usually one word"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("levels", IntType, ExactlyOne(IntType(1)), "The number of levels up that this will look for the match")
         ),
-	      Details("""This is a very specialized function, designed for cases where you want to define a Text or Function
-	          |that results in some Text, but you want the *case* of that Text (upper or lower) to match the way
-	          |the Function was *invoked*.
-	          |
-	          |So for example, if you have a Function named Sie (one of the common choices for a gender-neutral
-	          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
-	          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
-	          |as \[[Mary -> Sie\]], I get "She".
-            |
-            |Occasionally, you want to use this in a Function that is intended for use inside *other* Functions.
-            |You can use the `levels` parameter to specify how far up to look. By default it is 1 (this Function);
-            |if you set it to 2 it will be the Function that called this one, and so on.
-	          |
-	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
+        returns = (TextType, "The received text, capitalized if this Function was capitalized")
+      ),
+      Details("""This is a very specialized function, designed for cases where you want to define a Text or Function
+          |that results in some Text, but you want the *case* of that Text (upper or lower) to match the way
+          |the Function was *invoked*.
+          |
+          |So for example, if you have a Function named Sie (one of the common choices for a gender-neutral
+          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
+          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
+          |as \[[Mary -> Sie\]], I get "She".
+          |
+          |Occasionally, you want to use this in a Function that is intended for use inside *other* Functions.
+          |You can use the `levels` parameter to specify how far up to look. By default it is 1 (this Function);
+          |if you set it to 2 it will be the Function that called this one, and so on.
+          |
+          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
   	override def qlApply(inv:Invocation):QFut = {
   	  for {

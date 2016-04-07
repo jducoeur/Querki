@@ -84,7 +84,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val ChoiceBaseModel = new ThingState(ChoiceModelOID, systemOID, querki.basic.MOIDs.SimpleThingOID, 
     toProps(
       setName("Multiple Choice Options"),
-      Summary("This is simply the base Model for all Multiple Choice Models"),
+      Categories(LinksTag),
+      Summary("This is simply the base Model for all Multiple Choice Models. (Coming soon.)"),
       Core.IsModelProp(true),
       NoCreateThroughLinkProp(true)))
   
@@ -99,6 +100,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val URLType = new SystemType[QURL](URLTypeOID,
     toProps(
       setName("URL Type"),
+      Categories(LinksTag),
       Summary("The URL of a web page"),
       Details("""This Property holds simply a pointer to a webpage, any webpage. The syntax is currently
           |pretty forgiving, but don't count on that -- it may get stricter about requiring a well-formed URL
@@ -137,6 +139,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
       setName("Multiple Choice"),
       // TODO: this is marked Internal until it is ready for prime time:
       setInternal,
+      Categories(LinksTag),
       Summary("A choice between several specific options"),
       Details("""Sometimes, you want to be able to specify a few pre-defined values to choose between
         |in a Property. For example, in a comic-book Space, you might have a Condition Property that let
@@ -185,94 +188,97 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	 * Meta-property, set on Properties of LinkType, to filter what to Link to.
 	 */
 	lazy val LinkKindProp = new SystemProperty(LinkKindOID, IntType, QList,
-	    toProps(
-	      setName("Link Kind"),
-	      SkillLevel(SkillLevelAdvanced),
-	      Summary("The Kind that this Property can contain"),
-	      Details("""When you create a Thing Property, if you do *not* set the `Restrict to Model` Property on it,
-	          |you may want to at least specify which *Kind* of Thing this can contain. There are five Kinds of
-	          |Things in Querki:
-	          |
-	          |* Ordinary Thing
-	          |* Property
-	          |* Space
-	          |* Type
-	          |* Collection
-	          |
-	          |99% of the time, you will want to contain ordinary Things. (And most of those times, you should set
-	          |Restrict to Model.) Occasionally, for very complex systems, you may want to contain a Property
-	          |or Space instead. You are not likely to ever want Type or Collection, but it is possible to do so.
-	          |
-	          |This is an extremely advanced property, and not intended for casual use.""".stripMargin),
-	      AppliesToKindProp(Kind.Property)
-	      ))
+    toProps(
+      setName("Link Kind"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(LinksTag),
+      Summary("The Kind that this Property can contain"),
+      Details("""When you create a Thing Property, if you do *not* set the `Restrict to Model` Property on it,
+          |you may want to at least specify which *Kind* of Thing this can contain. There are five Kinds of
+          |Things in Querki:
+          |
+          |* Ordinary Thing
+          |* Property
+          |* Space
+          |* Type
+          |* Collection
+          |
+          |99% of the time, you will want to contain ordinary Things. (And most of those times, you should set
+          |Restrict to Model.) Occasionally, for very complex systems, you may want to contain a Property
+          |or Space instead. You are not likely to ever want Type or Collection, but it is possible to do so.
+          |
+          |This is an extremely advanced property, and not intended for casual use.""".stripMargin),
+      AppliesToKindProp(Kind.Property)
+      ))
 	
 	lazy val LinkAllowAppsProp = new SystemProperty(LinkAllowAppsOID, YesNoType, Optional,
-	    toProps(
-	      setName("Allow Links to Apps"),
-	      Summary("Should this Property allow Links to Things in Apps?"),
-	      Details("""Normally, links are only to other Things in this Space. But if this flag is set, this
-	          |says that this Property should allow linking to Things in Apps of this Space.
-	          |
-	          |This is an advanced property, and not intended for casual use.""".stripMargin),
-	      AppliesToKindProp(Kind.Property),
-	      SkillLevel(SkillLevelAdvanced)
-	      ))
+    toProps(
+      setName("Allow Links to Apps"),
+      Categories(LinksTag),
+      Summary("Should this Property allow Links to Things in Apps?"),
+      Details("""Normally, links are only to other Things in this Space. But if this flag is set, this
+          |says that this Property should allow linking to Things in Apps of this Space.
+          |
+          |This is an advanced property, and not intended for casual use.""".stripMargin),
+      AppliesToKindProp(Kind.Property),
+      SkillLevel(SkillLevelAdvanced)
+      ))
 	
 	lazy val LinkModelProp = new SystemProperty(LinkModelOID, LinkType, Optional,
-	    toProps(
-	      setName("Restrict to Model"),
-	      Summary("Which Things can this Property contain?"),
-	      Details("""By default, Link Properties can contain *anything*. This usually isn't what
-	          |you want, though -- most often, you're looking for Instances of a specific Model. For example,
-	          |if you specify the Stylesheet Property, you only want to give Stylesheets as options:
-	          |it would be meaningless to have the Stylesheet contain something like a recipe or a to-do list.
-	          |
-	          |So this is a meta-Property: when you create a Thing Property, you can add this to say
-	          |exactly *which* Things it can contain. It is strongly recommended that you set this on all Thing Properties
-	          |you create -- it makes them easier to use, and tends to prevent confusing errors.
-	          |
-	          |Note that this is only enforced loosely, and you can't absolutely count upon this restriction
-	          |always being true. But used properly, it will steer folks in the right direction.""".stripMargin),
-	      AppliesToKindProp(Kind.Property),
-	      Types.AppliesToTypesProp(LinkType, querki.tags.MOIDs.NewTagSetOID),
-	      LinkToModelsOnlyProp(true)
-	      ))
+    toProps(
+      setName("Restrict to Model"),
+      Categories(LinksTag),
+      Summary("Which Things can this Property contain?"),
+      Details("""By default, Link Properties can contain *anything*. This usually isn't what
+          |you want, though -- most often, you're looking for Instances of a specific Model. For example,
+          |if you specify the Stylesheet Property, you only want to give Stylesheets as options:
+          |it would be meaningless to have the Stylesheet contain something like a recipe or a to-do list.
+          |
+          |So this is a meta-Property: when you create a Thing Property, you can add this to say
+          |exactly *which* Things it can contain. It is strongly recommended that you set this on all Thing Properties
+          |you create -- it makes them easier to use, and tends to prevent confusing errors.
+          |
+          |Note that this is only enforced loosely, and you can't absolutely count upon this restriction
+          |always being true. But used properly, it will steer folks in the right direction.""".stripMargin),
+      AppliesToKindProp(Kind.Property),
+      Types.AppliesToTypesProp(LinkType, querki.tags.MOIDs.NewTagSetOID),
+      LinkToModelsOnlyProp(true)
+      ))
 	
 	// TODO: As it says, replace this with a more general Link Filter property. That will need bigger
 	// refactorings, though: I started to build that, only to discover that SpaceState.linkCandidates
 	// doesn't have all the request-context information needed to resolve a QL Expression.
 	lazy val LinkToModelsOnlyProp = new SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
-	    toProps(
-	      setName("Link to Models Only"),
-	      AppliesToKindProp(Kind.Property),
-	      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
-	      Summary("Only allow this Property to Link to Models"),
-	      Details("""If set to true, this Link Property will only show Models as options to link to in the editor.
-	          |
-	          |This is an advanced property, and something of a hack -- don't get too comfortable with it. In the
-	          |medium term, it should get replaced by a more general LinkFilter property that lets you specify which
-	          |Things to link to.""".stripMargin)))
+    toProps(
+      setName("Link to Models Only"),
+      AppliesToKindProp(Kind.Property),
+      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
+      Categories(LinksTag),
+      Summary("Only allow this Property to Link to Models"),
+      Details("""If set to true, this Link Property will only show Models as options to link to in the editor.
+          |
+          |This is an advanced property, and something of a hack -- don't get too comfortable with it. In the
+          |medium term, it should get replaced by a more general LinkFilter property that lets you specify which
+          |Things to link to.""".stripMargin)))
 	
 	lazy val NoCreateThroughLinkProp = new SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
-	    toProps(
-	      setName("Is a Choice"),
-	      NotInherited,
-	      Core.ModelOnlyProp(true),
-	      Summary("Set this to declare that this Model is a Choice, and its Instances are the options to choose from."),
-        // TODO: this documentation is out of date. Rewrite it:
-	      Details("""When you create a Thing Property in the Editor, you can set "Restrict to Model" -- the sort of Thing
-	          |that this Property contains. The Editor then lets you choose from all of the existing Instances of that
-	          |Model, and also lets you create a new one.
-	          |
-	          |Sometimes, though, you don't want to create any new ones from the Editor. In particular, if you've already
-	          |created all of the Instances of this Model that you ever expect to want, then it is simply annoying to have
-	          |that option. In that case, put this Property on your Model, and set it to True -- it will make that option
-	          |in the Editor go away.""".stripMargin)))
+    toProps(
+      setName("Is a Choice"),
+      NotInherited,
+      Core.ModelOnlyProp(true),
+      Categories(LinksTag),
+      Summary("Set this to declare that this Model is a Choice, and its Instances are the options to choose from."),
+      Details("""If you set this to True on a Model, it means that this Model is special -- its Instances are an
+        |exclusive list of options to choose from. In this case, the Editor will know not to offer to create new
+        |Instances when you are choosing one.
+        |
+        |In the near future, this will become automatic with the new Multiple Choice Type, and you
+        |won't need to use it manually.""".stripMargin)))
   
   lazy val ChoiceOrderProp = new SystemProperty(ChoiceOrderOID, LinkType, QList,
     toProps(
       setName("Choice Order"),
+      Categories(LinksTag),
       Summary("If this is set on a Choice Model, it declares the order in which the options should be listed."),
       Types.AppliesToTypesProp(ChoiceType)))
     with LinkCandidateProvider

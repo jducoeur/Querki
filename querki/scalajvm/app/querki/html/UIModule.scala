@@ -89,6 +89,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   override lazy val types = Seq(
     RawHtmlType
   )
+  
+  val UITag = "UI and HTML"
 
   /***********************************************
    * PROPERTIES
@@ -101,6 +103,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   abstract class HtmlModifier(oid:OID, name:String, summary:String, details:String) extends InternalMethod(oid, 
     toProps(
       setName(name),
+      Categories(UITag),
       Summary(summary),
       Details(details))) 
   {
@@ -206,6 +209,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("Page Header"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(UITag),
       Summary("Allows you to define the top of the page when looking at this Thing"),
       Details("""Normally, Querki displays each Thing with a fairly complex predefined header,
           |which includes its Name, Space, Model, edit buttons and so on. This works well
@@ -219,6 +223,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   class SectionMethod extends InternalMethod(SectionMethodOID,
     toProps(
       setName("_section"),
+      Categories(UITag),
       Summary("Display a List as a Header, followed by its contents"),
       Details("""_section is intended for the common case where you want to display a section
           |on the page if and only if a specific List is non-empty. It looks like this:
@@ -312,22 +317,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    * btn-warning, btn-danger, etc). These should each take a well-defined enumeration.
    */
 	class LinkButtonMethod extends InternalMethod(LinkButtonOID,
-	    toProps(
-	      setName("_linkButton"),
-	      Summary("Displays a button that goes to a linked page when you press it."),
-        Signature(
-          expected = Some((Seq(LinkType, ExternalLinkType), "The Thing or page to go to when this button is pressed")),
-          reqs = Seq.empty,
-          opts = Seq(
-            ("label", ParsedTextType, Core.QNone, "The text to display on this button, if any"),
-            ("icon", ParsedTextType, Core.QNone, "The icon to display on this button, if any"),
-            ("tooltip", ParsedTextType, Core.QNone, "The tooltip to show when the user hovers over this button"),
-            ("id", ParsedTextType, Core.QNone, "The HTML id to give to this button")
-          ),
-          returns = (RawHtmlType, "The button as requested")
+    toProps(
+      setName("_linkButton"),
+      Categories(UITag),
+      Summary("Displays a button that goes to a linked page when you press it."),
+      Signature(
+        expected = Some((Seq(LinkType, ExternalLinkType), "The Thing or page to go to when this button is pressed")),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("label", ParsedTextType, Core.QNone, "The text to display on this button, if any"),
+          ("icon", ParsedTextType, Core.QNone, "The icon to display on this button, if any"),
+          ("tooltip", ParsedTextType, Core.QNone, "The tooltip to show when the user hovers over this button"),
+          ("id", ParsedTextType, Core.QNone, "The HTML id to give to this button")
         ),
-	      Details("""_linkButton receives a Link or External Link, and displays that
-	          |link as a button. You should always provide at least a label or an icon.""".stripMargin)))
+        returns = (RawHtmlType, "The button as requested")
+      ),
+      Details("""_linkButton receives a Link or External Link, and displays that
+          |link as a button. You should always provide at least a label or an icon.""".stripMargin)))
 	{
     override def qlApply(inv:Invocation):QFut = {
       for {
@@ -358,20 +364,20 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	}
 	
 	class IconButtonMethod extends ButtonBase(IconButtonOID,
-	    toProps(
-	      setName("_iconButton"),
-        Basic.DeprecatedProp(true),
-	      Summary("Displays a button showing an icon, that goes to a linked page when you press it."),
-	      Details("""    LINK -> _iconButton(ICON, TOOLTIP)
-            |**DEPRECATED:** use _linkButton instead.
-            |
-	          |_iconButton receives a Link or External Link, and displays that
-	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
-	          |hover text to display as a tooltip. Both parameters are required.
-	          |
-	          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
-	          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
-	  {
+    toProps(
+      setName("_iconButton"),
+      Basic.DeprecatedProp(true),
+      Summary("Displays a button showing an icon, that goes to a linked page when you press it."),
+      Details("""    LINK -> _iconButton(ICON, TOOLTIP)
+          |**DEPRECATED:** use _linkButton instead.
+          |
+          |_iconButton receives a Link or External Link, and displays that
+          |link as a button. The first parameter identifies the icon to use for the button; the second is the
+          |hover text to display as a tooltip. Both parameters are required.
+          |
+          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
+          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
+  {
 	  val numParams = 2
 	  
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
@@ -380,21 +386,21 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	}
 	
 	class MixedButtonMethod extends ButtonBase(MixedButtonOID,
-	    toProps(
-	      setName("_mixedButton"),
-        Basic.DeprecatedProp(true),
-	      Summary("Displays a button showing an icon and a text label, that goes to a linked page when you press it."),
-	      Details("""    LINK -> _mixedButton(ICON, LABEL)
-            |**DEPRECATED:** use _linkButton instead.
-            |
-	          |_mixedButton receives a Link or External Link, and displays that
-	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
-	          |text that follows the icon. Both parameters are required. This is essentially a combo of _iconButton
-	          |and _linkButton.
-	          |
-	          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
-	          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
-	  {
+    toProps(
+      setName("_mixedButton"),
+      Basic.DeprecatedProp(true),
+      Summary("Displays a button showing an icon and a text label, that goes to a linked page when you press it."),
+      Details("""    LINK -> _mixedButton(ICON, LABEL)
+          |**DEPRECATED:** use _linkButton instead.
+          |
+          |_mixedButton receives a Link or External Link, and displays that
+          |link as a button. The first parameter identifies the icon to use for the button; the second is the
+          |text that follows the icon. Both parameters are required. This is essentially a combo of _iconButton
+          |and _linkButton.
+          |
+          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
+          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
+  {
 	  val numParams = 2
 	  
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
@@ -404,15 +410,16 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	
 	// TODO: this is very similar to _linkButton, and should be refactored.
 	class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
-	    toProps(
-	      setName("_showLink"),
-	      Summary("Displays a Link or External Link as a normal HTML link."),
-	      Details("""    LINK -> _showLink(LABEL)
-	          |This is the most normal way to display a Link or External Link with a chosen label. The
-	          |label may be any expression you choose.
-	          |
-	          |The default behaviour of a Link, if you don't do anything with it, is effectively
-	          |"_showLink(Default View)".""".stripMargin)))
+    toProps(
+      setName("_showLink"),
+      Categories(UITag),
+      Summary("Displays a Link or External Link as a normal HTML link."),
+      Details("""    LINK -> _showLink(LABEL)
+          |This is the most normal way to display a Link or External Link with a chosen label. The
+          |label may be any expression you choose.
+          |
+          |The default behaviour of a Link, if you don't do anything with it, is effectively
+          |"_showLink(Default View)".""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    for {
@@ -429,21 +436,22 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	}
 		
 	class PropLinkMethod extends InternalMethod(PropLinkMethodOID, 
-	    toProps(
-	      setName("_propLink"),
-	      Summary("""Produces a Link to a specific Property on a Thing."""),
-	      Details("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
-	          |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
-	          |Typically, you do this by creating another Large Text Property (separate from Default View), which contains
-	          |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
-	          |and PROPERTY into _propLink, and the result is an EXTERNAL LINK which you can then pass to _showLink,
-	          |_linkButton or _iconButton.
-	          |
-	          |NOTE: this currently only works for Things in the local Space, and probably does *not* work correctly in
-	          |sub-Spaces yet.
-	          |
-	          |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
-	          |of care!""".stripMargin)))
+    toProps(
+      setName("_propLink"),
+      Categories(UITag),
+      Summary("""Produces a Link to a specific Property on a Thing."""),
+      Details("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
+          |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
+          |Typically, you do this by creating another Large Text Property (separate from Default View), which contains
+          |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
+          |and PROPERTY into _propLink, and the result is an EXTERNAL LINK which you can then pass to _showLink,
+          |_linkButton or _iconButton.
+          |
+          |NOTE: this currently only works for Things in the local Space, and probably does *not* work correctly in
+          |sub-Spaces yet.
+          |
+          |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
+          |of care!""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    for (
@@ -487,6 +495,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val CreateInstanceLinkMethod = new InternalMethod(CreateInstanceLinkOID,
     toProps(
       setName("_createInstanceLink"),
+      Categories(UITag),
       Summary("Given a received Model, this produces a Link to create an instance of that Model."),
       Details("""```
         |MODEL -> _createInstanceLink -> _linkButton(LABEL)
@@ -513,6 +522,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val CreateButtonFunction = new InternalMethod(CreateButtonOID,
     toProps(
       setName("_createButton"),
+      Categories(UITag),
       Summary("Becomes a Create button for the received Model"),
       Signature(
         expected = Some((Seq(LinkType), "The Model to instantiate")),
@@ -587,6 +597,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val QLButton = new ClickableQLBase(QLButtonOID,
     toProps(
       setName("_QLButton"),
+      Categories(UITag),
       Signature(
         expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
         reqs = Seq(
@@ -640,6 +651,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         ),
         returns = (RawHtmlType, "The link, ready for the page")
       ),
+      Categories(UITag),
       Summary("Shows a link that, when clicked, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
       Details("""This function is unusual, in that it is a way to do something only if the user clicks a link.
@@ -676,6 +688,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         ),
         returns = (RawHtmlType, "The input field, ready for the page")
       ),
+      Categories(UITag),
       Summary("Shows an input field that, when the user types some text and presses Enter, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
       Details("""This function is unusual, in that it is a way to do something only if the user enters some text.
@@ -693,6 +706,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_thingTree"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(UITag),
       Signature(
         expected = Some((Seq(LinkType), "One or more Things to display as equal nodes in a tree")),
         reqs = Seq(),
@@ -738,6 +752,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_menuButton"),
       SkillLevel(SkillLevelAdvanced),
+      Categories(UITag),
       Summary("Use this to define a button that, when pressed, will mimic the effect of the specified menu item"),
       Signature(
         expected = None,
@@ -780,6 +795,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val ShowSomeFunction = new InternalMethod(ShowSomeOID,
     toProps(
       setName("_showSome"),
+      Categories(UITag),
       Summary("Show some of the contents at a time"),
       SkillLevel(SkillLevelAdvanced),
       Details("""```
