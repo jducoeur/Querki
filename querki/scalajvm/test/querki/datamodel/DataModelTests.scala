@@ -376,4 +376,17 @@ class DataModelTests extends QuerkiTests {
         equal(listOfLinkText(s.instance2, s.instance3))
     }
   }
+  
+  // === _usingSpace ===
+  "_usingSpace" should {
+    "affect _tagRefs" in {
+      class TSpace extends CommonSpace {
+        val childThing = new SimpleTestThing("Child Thing", singleTagProp("Child Tag"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Child Tag -> _tagRefs]]""") should equal (listOfLinkText(s.childThing))
+      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal ("")
+    }
+  }
 }

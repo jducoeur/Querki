@@ -34,6 +34,7 @@ object MOIDs extends EcotIds(21) {
   val ModelFunctionOID = moid(6)
   val OrphanedInstancesOID = moid(7)
   val IsAFunctionOID = moid(8)
+  val UsingSpaceOID = moid(9)
 }
 
 
@@ -230,6 +231,38 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         if (propAndVal.contains(thing.id))
       }
         yield ExactlyOne(LinkType(candidateThing.id))
+    }
+  }
+  
+  lazy val UsingSpace = new InternalMethod(UsingSpaceOID, 
+    toProps(
+      setName("_usingSpace"),
+      Summary("Sets the Space to use for the rest of this QL phrase"),
+      SkillLevel(SkillLevelAdvanced),
+      Signature(
+        expected = None,
+        reqs = Seq(("space", LinkType, "The Space to use")),
+        opts = Seq.empty,
+        returns = (AnyType, "The selected Space")
+      ),
+      Details("""When doing high-level meta-programming in Querki, you may find that you want to do
+        |something not in the context of the current Space, but with one of its Apps instead. In this
+        |case, the `_usingSpace` function allows you to switch to that App for the remainder of this
+        |phrase.""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val result = for {
+        appId <- inv.processAs("space", LinkType)
+        state <- inv.opt(inv.state.getApp(appId))
+      }
+        yield state
+        
+      result.get.map { it =>
+        if (it.isEmpty)
+          throw new PublicException("DataModel.usingSpace.notAnApp")
+        else
+          inv.context.copy()(it.head, ecology)
+      }
     }
   }
   
@@ -568,6 +601,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       
     new InstancesMethod,
     new RefsMethod,
+    UsingSpace,
     new SpaceMethod,
     new ExternalRootsMethod,
     new AllPropsMethod,
