@@ -275,6 +275,7 @@ case class SpaceState(
   def allThings = accumulateAll[Set[Thing]]((_.things.values.toSet), (_ ++ _))
   
   def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
+  def everything = accumulateAll[Set[Thing]]((_.everythingLocal.toSet), (_ ++ _))
   
   def propList:Iterable[Property[_,_]] = spaceProps.values
   def allProps:Map[OID, Property[_,_]] = accumulateMaps(_.spaceProps)   

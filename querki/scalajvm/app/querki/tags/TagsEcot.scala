@@ -79,7 +79,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           val tagMap = new scala.collection.mutable.HashMap[String, scala.collection.mutable.Set[Thing]] with scala.collection.mutable.MultiMap[String, Thing]
           for {
   	        path <- PropPaths.pathsToProperty(prop)(state)
-  	        thing <- state.allThings
+  	        thing <- state.everything
   	        pv <- path.getPropOpt(thing)(state)
   	        text <- pv.rawList
   	        raw = getTag(text)

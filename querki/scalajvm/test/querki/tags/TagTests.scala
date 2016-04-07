@@ -146,6 +146,17 @@ class TagTests extends QuerkiTests {
       pql("""[[My Link Name -> _tagRefs]]""") should
         equal(listOfLinkText(s.pointer))
     }
+    
+    // Test for Issue .3y28b65
+    "find tags on Properties" in {
+      class TSpace extends CommonSpace {
+        val propTagProp = new TestProperty(TagType, ExactlyOne, "Prop Categories")
+        val myProp = new TestProperty(TextType, ExactlyOne, "Prop With a Tag", propTagProp("My Prop Tag"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Prop Categories._self -> _tagsForProperty -> _tagRefs]]""") should equal (listOfLinkText(s.myProp))
+    }
   }
   
   // === _tagsForProperty ===
