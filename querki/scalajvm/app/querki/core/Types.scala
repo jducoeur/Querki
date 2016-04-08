@@ -57,6 +57,9 @@ trait LinkCandidateProvider {
 
 trait TextTypeBasis { self:CoreEcot with WithQL =>
   trait TextTypeUtils { self:SystemType[_] with IsTextType =>
+    
+    lazy val ParsedTextType = QL.ParsedTextType
+    
     def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
         minLengthVal <- prop.getPropOpt(Types.MinTextLengthProp)(state);
@@ -71,6 +74,11 @@ trait TextTypeBasis { self:CoreEcot with WithQL =>
       other match {
         case et:querki.values.IsErrorType => false
         case itt:IsTextType => true
+        // We can use Text as ParsedText (that is, Wikitext output). This is safe, because ParsedText
+        // is assumed to be pre-rendering, and the output will get neutered if someone does something
+        // nasty. Note that the reverse is *not* universally true, but so far we don't have any use
+        // cases where we need to treat ParsedText as, eg, PlainText.
+        case ParsedTextType => true
         case _ => false
       }
     }
@@ -81,6 +89,10 @@ trait TextTypeBasis { self:CoreEcot with WithQL =>
         case itt:IsTextType => {
           val str = rawString(elem)
           itt(str)
+        }
+        case ParsedTextType => {
+          val str = rawString(elem)
+          ParsedTextType(Wikitext(str))
         }
         case _ => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
       }

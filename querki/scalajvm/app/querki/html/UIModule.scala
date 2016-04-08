@@ -35,6 +35,7 @@ object UIMOIDs extends EcotIds(11) {
   val QLTreeOID = moid(10)
   val MenuButtonOID = moid(11)
   val QLInputOID = moid(12)
+  val UniqueHtmlIdOID = moid(13)
 }
 
 /**
@@ -569,9 +570,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     
     override def qlApply(inv:Invocation):QFut = {
       for {
-        // TODO: this should work with AllThings; however, that will require also getting the Thing
-        // context and passing it down.
-        thing <- inv.contextFirstThing
+        qv <- inv.contextValue
+        v <- inv.opt(qv.cv.headOption)
+        pt = qv.pType
+        serialized = HtmlEscape.escapeAll(pt.serialize(v)(inv.state))
         labelWiki <- inv.processAs("label", ParsedTextType)
         label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
         qlRaw <- inv.rawRequiredParam("ql")
@@ -590,7 +592,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
+            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context="$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
     }
   }
 
@@ -599,7 +601,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       setName("_QLButton"),
       Categories(UITag),
       Signature(
-        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
+        expected = Some((Seq(AnyType), "The value that will be passed to the QL.")),
         reqs = Seq(
           ("label", ParsedTextType, "The text to display on the button."),
           ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
@@ -635,7 +637,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_QLLink"),
       Signature(
-        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
+        expected = Some((Seq(AnyType), "The value that will be passed to the QL.")),
         reqs = Seq(
           ("label", ParsedTextType, "The text to display on the button."),
           ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
@@ -672,7 +674,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_QLInput"),
       Signature(
-        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
+        expected = Some((Seq(AnyType), "The value that will be passed to the QL.")),
         reqs = Seq(
           ("label", ParsedTextType, "The text to display, greyed-out, in the input, to prompt the user."),
           ("ql", Basic.QLType, "The QL to execute when the user presses Enter.")
@@ -853,6 +855,39 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
+  lazy val UniqueHtmlId = new InternalMethod(UniqueHtmlIdOID,
+    toProps(
+      setName("_uniqueHtmlId"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UITag),
+      Summary("Generate an ID suitable for using on tags in this page."),
+      Details("""It is fairly common, especially when doing complex things with _QLButton, to find that you want a
+        |distinct ID for the target of the button, separately for each button on the page. If the _QLButton is
+        |being used with a Thing, you can often use `_oid` to create that ID, but otherwise it can be tricky.
+        |
+        |So the `_uniqueHtmlId` function simply generates a random ID string, suitable for use on the page.
+        |
+        |You typically use this something like:
+        |```
+        |My Things -> _foreach(
+        |_uniqueHtmlId -> +$displayId
+        |\""\[[_QLButton(label=..., target=$displayId, ql=...)\]]
+        |...
+        |<div id="$displayId"></div>
+        |\""
+        |)
+        |```
+        |
+        |*Note*: at the moment, these IDs are generated randomly, so they are not absolutely guaranteed to be
+        |unique -- there is a very small, but non-zero, chance of an ID collision on the page.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      // The input is actually irrelevant:
+      val n = (scala.math.random * Long.MaxValue).toLong
+      fut(QL.WikitextValue(models.Wikitext(s"_rndid${n.toString}")))
+    }
+  }
+  
   override lazy val props = Seq(
     classMethod,
     tooltipMethod,
@@ -872,6 +907,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     ThingTree,
     new MixedButtonMethod,
     ShowSomeFunction,
-    MenuButton
+    MenuButton,
+    UniqueHtmlId
   )
 }

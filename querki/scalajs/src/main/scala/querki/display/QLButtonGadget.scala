@@ -20,20 +20,27 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
   def hook() = {
     val jq = $(elem)
     val isTextInput:Boolean = (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
-    val thingId = jq.tidString("thingid")
+    val thingIdOpt = jq.data("thingid").toOption.map(v => TID(v.asInstanceOf[String]))
+    val (typeIdOpt, contextOpt) =
+      if (thingIdOpt.isEmpty)
+        (Some(jq.tidString("ptype")), Some(jq.data("context").asInstanceOf[String]))
+      else
+        (None, None)
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     
-    $(elem).addClass("btn-xs")
+    if ($(elem).hasClass("btn"))
+      $(elem).addClass("btn-xs")
     
     def activate(evt:JQueryEventObject, actualQL:String) = {
       val targetJQ = $(s"#$target")
       def runQL() = {
         $(elem).addClass("running")
         $(elem).attr("disabled", true)
-        Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach { result =>
+        
+        def handleResult(result:models.Wikitext) = {
           val qtext = new QText(result)
           if (!append) {
             targetJQ.empty()
@@ -44,7 +51,12 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           $(elem).removeClass("running")
           $(elem).addClass("open")
           Gadgets.hookPendingGadgets()
-        }        
+        }
+        
+        thingIdOpt match {
+          case Some(thingId) => Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach(handleResult)
+          case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, actualQL).call().foreach(handleResult)
+        }   
       }
       
       if ($(elem).hasClass("open")) {

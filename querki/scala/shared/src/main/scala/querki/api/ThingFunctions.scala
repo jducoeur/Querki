@@ -31,6 +31,11 @@ trait ThingFunctions {
   def evaluateQL(thingId:TID, ql:String):Future[Wikitext]
   
   /**
+   * Evaluate the given QL with an arbitrary context, and return the resulting Wikitext. 
+   */
+  def evaluateQLWithContext(typeId:TID, context:String, ql:String):Future[Wikitext]
+  
+  /**
    * Fetch the raw values of the Properties on this Thing.
    */
   def getProperties(thingId:TID):Future[Seq[PropValInfo]]

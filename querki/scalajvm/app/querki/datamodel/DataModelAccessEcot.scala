@@ -247,7 +247,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         expected = None,
         reqs = Seq(("space", LinkType, "The Space to use")),
         opts = Seq.empty,
-        returns = (AnyType, "The selected Space")
+        returns = (AnyType, "The original received value")
       ),
       Details("""When doing high-level meta-programming in Querki, you may find that you want to do
         |something not in the context of the current Space, but with one of its Apps instead. In this
