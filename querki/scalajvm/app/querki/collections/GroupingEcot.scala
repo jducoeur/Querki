@@ -13,6 +13,7 @@ object GroupingMOIDs extends EcotIds(36) {
   val GroupMembersPropOID = moid(3)
   val GroupTypeOID = moid(4)
   val GroupByFunctionOID = moid(5)  
+  val GroupGetOID = moid(6)
 }
 import GroupingMOIDs._
 
@@ -195,11 +196,42 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         yield QList.makePropValue(groupings, groupType)
     }
   }
+  
+  lazy val groupGet = new InternalMethod(GroupGetOID,
+    toProps(
+      setName("_groupGet"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(CollTag),
+      Summary("Produces the Things from the specified group."),
+      Signature(
+        expected = Some(Seq(groupType), "The results from _groupBy"),
+        reqs = Seq(("key", AnyType, "The key of the group you want to fetch")),
+        opts = Seq.empty,
+        returns = (AnyType, "The Things that match that key.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val s = inv.state
+      for {
+        targetKey <- inv.process("key")
+        group <- inv.contextAllAs(groupType)
+        groupKeyPV <- inv.opt(group.getPropOpt(groupKeyProperty))
+        // Note that we can't use the usual PV.firstOpt here. That's for type-matching reasons: the
+        // Property is WrappedValueType, but the actual value is of the real, underlying type.
+        groupKey = groupKeyPV.v
+        if (groupKey.matches(targetKey))
+        memberPV <- inv.opt(group.getPropOpt(groupMembersProperty))
+        member <- inv.iter(memberPV.rawList)
+      }
+        yield ExactlyOne(LinkType(member))
+    }
+  }
 
   override lazy val props = Seq(
     groupKeyProperty,
     groupMembersProperty,
-    groupByFunction
+    groupByFunction,
+    groupGet
   )
 
 }

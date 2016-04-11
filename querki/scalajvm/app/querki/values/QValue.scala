@@ -83,11 +83,12 @@ trait QValue {
    * TODO: this is probably subject to the same subclassing problems as == in Scala. Think it through
    * more carefully, and see if this logic makes sense in terms of subclassing.
    * 
-   * TODO: this is current very strict in terms of matching cTypes, probably moreso than it needs to be.
-   * Re-examine how we can loosen this while keeping it accurate.
+   * TODO: this was originally very strict about matching cType and pType. I've loosened it all the way
+   * to the other end -- we are completely loose about cType, and as loose as possible about pType. Let's
+   * see if that introduces any problems.
    */
   def matches(other:QValue):Boolean = {
-    if (other.cType != cType || other.pType != pType)
+    if (!matchesType(other.pType))
       false
     else if (cv.size != other.cv.size)
       false

@@ -49,6 +49,18 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     def doDefault(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDefault") }
     
     def doComputeMemSize(v:QValue):Int = v.memsize
+    
+    /**
+     * In principle, a WrappedValueType can be viewed as any other type. However, note that this will throw an
+     * exception in coerce if you try to do with it an incorrect value.
+     */
+    override def canCoerceTo(other:PType[_]):Boolean = true
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      if (elem.pType.canCoerceTo(other))
+        elem.pType.coerceTo(other, elem)
+      else
+        throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+    }
   }
   lazy val WrappedValueType = new WrappedValueType(WrappedValueTypeOID)
   
