@@ -160,6 +160,17 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "local functions" should {
+    "work in a simple case" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Album._instances -> _groupBy(Artists) -> +$byArtist
+               _def $Show Artist = _first -> Link Name
+               $byArtist -> _groupGet(Blackmores Night) -> $Show Artist
+             ]]""".stripReturns) should equal ("Fires at Midnight")
+    }
+  }
+  
   "List Literals" should {
     "work with text" in {
       implicit val s = new CommonSpace

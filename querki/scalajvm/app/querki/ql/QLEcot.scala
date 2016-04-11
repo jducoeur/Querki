@@ -23,6 +23,17 @@ object MOIDs extends EcotIds(24) {
 private [ql] trait QLInternals extends EcologyInterface {
   def qlProfilers:QLProfilers
 }
+  
+/**
+ * Represents a Closure, more or less -- a QL Expression that is wrapped up so that it can be
+ * evaluated later. Doesn't yet exist at the user level, but we use it internally for bound local functions.
+ * 
+ * For now, we aren't capturing the Scopes as of the point of definition. This potentially allows the
+ * function to refer to values that are bound after its definition but before the call site. Do we care?
+ * 
+ * @param phrase The guts of the local function.
+ */
+case class QLClosure(phrase:QLPhrase)
 
 class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
   with querki.core.CollectionBase
@@ -227,6 +238,19 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
     }
   }
   
+  lazy val ClosureType = new SystemType[QLClosure](UnknownOID,
+    toProps(
+      setName("_QL Closure"),
+      setInternal)) with SimplePTypeBuilder[QLClosure]
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = ???
+    def doSerialize(v:QLClosure)(implicit state:SpaceState) = ???
+    def doWikify(context:QLContext)(v:QLClosure, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = ???
+    def doDefault(implicit state:SpaceState) = ???
+    // This is a transient PType, so we don't care:
+    def doComputeMemSize(v:QLClosure):Int = 0
+  }
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -278,7 +302,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
         phrase <- inv.opt(param.phrases.headOption, errOpt)
         stage <- inv.opt(phrase.ops.headOption, errOpt)
         QLCall(binding, _, _, _) = stage
-        QLBinding(name, _) = binding
+        QLBinding(name, _, _) = binding
         parser <- inv.opt(inv.context.parser)
         scopes <- inv.opt(inv.context.scopes.get(parser))
         answer = {

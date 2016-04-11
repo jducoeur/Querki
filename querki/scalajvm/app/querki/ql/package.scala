@@ -392,6 +392,7 @@ package object ql {
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]
     def ErrorTextType:PType[PlainText] with PTypeBuilder[PlainText,String]
+    def ClosureType:PType[QLClosure] with PTypeBuilder[QLClosure,QLClosure]
     
     def WarningValue(msg:String):QValue
     def ErrorValue(msg:String):QValue

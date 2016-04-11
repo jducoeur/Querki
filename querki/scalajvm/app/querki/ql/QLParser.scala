@@ -141,7 +141,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
-  def qlName:Parser[QLName] = qlBinding | qlThingId | qlSafeName | qlDisplayName
+  def qlName:Parser[QLName] = qlDef | qlBinding | qlThingId | qlSafeName | qlDisplayName
   def qlOp:Parser[String] = ("&" | "|")
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
@@ -149,6 +149,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlExpStage:Parser[QLStage] = "(" ~> qlExp <~ ")" ^^ { QLExpStage(_) }
+  def qlDef:Parser[QLBinding] = "\\s*_def\\s+\\$".r ~> name ~ ("\\s+=\\s+".r ~> qlPhrase) ^^ {
+    case name ~ phrase => QLBinding(name, true, Some(phrase))
+  }
   def qlBinding:Parser[QLBinding] = "\\s*".r ~> (opt("+") <~ "\\$".r) ~ name ^^ { case assignOpt ~ name => QLBinding(name, assignOpt.isDefined) } 
   def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
   def qlStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
@@ -316,14 +319,32 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         warningFut(context, s"Attempting to reassign ${"$" + binding.name} -- you may only say ${"+$" + binding.name} once")
       } else {
         // Okay -- we are legally attempting to bind this name to the received value:
-        val newScopes = scopes.bind((binding.name -> context.value))
+        val newScopes:QLScopes =
+          binding.func match {
+            case Some(func) => {
+              // We're binding a local function, so we ignore the context and instead just use that:
+              val closure = QLClosure(func)
+              val v = ExactlyOne(QL.ClosureType(closure))
+              scopes.bind((binding.name -> v))
+            } 
+            // Ordinary binding, so we just bind the current context to this name:
+            case _ => scopes.bind((binding.name -> context.value))
+          }
         val newContext = context.withScopes(this, newScopes)
         fut(newContext)
       }
     } else {
       boundOpt match {
         // Fetching an already-bound value
-        case Some(bound) => fut(context.next(bound))
+        case Some(bound) => {
+          if (bound.pType == QL.ClosureType) {
+            // We're invoking a local function, so process that:
+            val closure = bound.firstAs(QL.ClosureType).get
+            processPhrase(closure.phrase.ops, context)
+          } else {
+            fut(context.next(bound))
+          }
+        }
         case None => {
           // It's not bound lexically. Does it exist in the page's query parameters?
           context.requestParams.get(binding.name) match {
@@ -488,7 +509,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             val processedFut = processPhrase(phrase.ops, context.withScopes(this, prevScopes), isParam)
             processedFut.map { processed =>
               val thisContext = phrase.ops.last match {
-                case QLCall(QLBinding(n, assign), _, _, _) if (assign) => {
+                case QLCall(QLBinding(n, assign, _), _, _, _) if (assign) => {
                   // The last Stage of this Phrase was an assignment; in this very special case, we
                   // suppress the output *unless* it was an error:
                   if (processed.isError)
