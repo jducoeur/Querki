@@ -342,6 +342,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             val closure = bound.firstAs(QL.ClosureType).get
             processPhrase(closure.phrase.ops, context)
           } else {
+            // Normal value -- just stick it in:
             fut(context.next(bound))
           }
         }

@@ -44,7 +44,12 @@ private[ql] case class QLDisplayName(n:String) extends QLName(n) {
   def reconstructString:String = "`" + n + "`"
 }
 private[ql] case class QLBinding(n:String, assign:Boolean = false, func:Option[QLPhrase] = None) extends QLName(n) {
-  def reconstructString = (if (assign) "+" else "") + "$" + n
+  def reconstructString = {
+    func match {
+      case Some(f) => s"_def $$$n = ${f.reconstructString}"
+      case _ => (if (assign) "+" else "") + "$" + n
+    }
+  }
 }
 private[ql] case class QLThingId(n:String) extends QLName(n) {
   def reconstructString = n
