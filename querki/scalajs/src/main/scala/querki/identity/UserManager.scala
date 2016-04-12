@@ -45,6 +45,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
             StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
             loginPromise.failure(new Exception("Wasn't a legal login"))
           } else {
+            dialog.done()
             val info = read[UserInfo](result)
             _user = Some(info)
             loginPromise.success(info)
