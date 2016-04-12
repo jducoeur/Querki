@@ -32,8 +32,9 @@ private [ql] trait QLInternals extends EcologyInterface {
  * function to refer to values that are bound after its definition but before the call site. Do we care?
  * 
  * @param phrase The guts of the local function.
+ * @param params The formal parameters of this function.
  */
-case class QLClosure(phrase:QLPhrase)
+case class QLClosure(phrase:QLPhrase, params:Option[Seq[String]])
 
 class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
   with querki.core.CollectionBase
@@ -302,7 +303,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
         phrase <- inv.opt(param.phrases.headOption, errOpt)
         stage <- inv.opt(phrase.ops.headOption, errOpt)
         QLCall(binding, _, _, _) = stage
-        QLBinding(name, _, _) = binding
+        QLBinding(name) = binding
         parser <- inv.opt(inv.context.parser)
         scopes <- inv.opt(inv.context.scopes.get(parser))
         answer = {
