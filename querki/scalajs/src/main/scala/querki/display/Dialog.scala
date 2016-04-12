@@ -72,5 +72,10 @@ class Dialog(
     $(elem).modal(ModalCommand.show)
   }
   
-  def done() = $(elem).modal(ModalCommand.hide)
+  def done() = {
+    // We need to remove the fade, to make it hide instantly. Otherwise, really bad stuff can happen
+    // if the page flips before it finishes fading. (Specifically, the scrollbars tend to get lost.)
+    $(elem).removeClass("fade")
+    $(elem).modal(ModalCommand.hide)
+  }
 }
