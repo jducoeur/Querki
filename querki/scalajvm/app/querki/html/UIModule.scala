@@ -589,10 +589,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           }
         append <- inv.processAs("append", YesNoType)
         replace <- inv.processAs("replace", YesNoType)
+        noIcon <- inv.processAs("noIcon", YesNoType)
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
+            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" data-noicon="$noIcon" href="#" """) + targetDiv)
     }
   }
 
@@ -613,7 +614,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL again, and appends the result to the target div. Otherwise, pressing the button again
                 |closes the div.""".stripMargin),
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing the button again re-runs
-                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin)
+                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin),
+          ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the button,
+                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin)
         ),
         returns = (RawHtmlType, "The button")
       ),
@@ -629,7 +632,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |    \[[_QLButton(\""Edit My Model Property\"", My Model Property._edit)\]]""".stripMargin)))
 	{
     def buildHtml(label:String, core:String):String = {
-      s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" $core></input>"""
+      s"""<a class="btn btn-primary _qlInvoke" $core>$label</a>"""
     }
 	}
 
@@ -649,7 +652,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL again, and appends the result to the target div. Otherwise, clicking the link again
                 |closes the div.""".stripMargin),
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, clicking the link again re-runs
-                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin)
+                |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin),
+          ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the link,
+                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin)
         ),
         returns = (RawHtmlType, "The link, ready for the page")
       ),
@@ -842,6 +847,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 msg.raw.toString,
                 data.thingId := s"${thing.toThingId}",
                 data.target := nextDiv,
+                data.noicon := true,
                 data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructStandalone},${rawAll.reconstructStandalone},${rawDisplay.reconstructStandalone})")))
             ).toString
           }

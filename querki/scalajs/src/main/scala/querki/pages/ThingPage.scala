@@ -94,6 +94,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                   id:="_thingEdit",
                   data("thingid"):=thing,
                   data("target"):="_topEdit",
+                  data("noicon"):="true",
                   data("ql"):=EditQL(),
                   href:=page.thingUrl(thing))
     )

@@ -32,9 +32,35 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     val target = jq.data("target").asInstanceOf[String]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
+    val noIcon = jq.data("noicon").map(_.asInstanceOf[Boolean]).getOrElse(false)
+    val (useIcons, openicon, closeicon) =
+      if (noIcon || isTextInput || append || replace)
+        (false, "", "")
+      else
+        (true, "glyphicon glyphicon-chevron-down", "glyphicon glyphicon-chevron-up")
     
     if ($(elem).hasClass("btn"))
       $(elem).addClass("btn-xs")
+      
+    if (useIcons) {
+      $(elem).text($(elem).text() + " ")
+      $(elem).append(i(cls := "_openaffordance").render)
+    }
+    
+    def setIcon(open:Boolean) = {
+      if (useIcons) {
+        val afford = $(elem).find("._openaffordance")
+        if (open) {          
+          afford.removeClass(closeicon)
+          afford.addClass(openicon)
+        } else {
+          afford.removeClass(openicon)
+          afford.addClass(closeicon)
+        }
+      }
+    }
+    
+    setIcon(true)
     
     def activate(evt:JQueryEventObject, actualQL:String) = {
       val targetJQ = $(s"#$target")
@@ -52,6 +78,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           $(elem).attr("disabled", false)
           $(elem).removeClass("running")
           $(elem).addClass("open")
+          setIcon(false)
           Gadgets.hookPendingGadgets()
         }
         
@@ -67,6 +94,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
         } else {
           targetJQ.hide()
           $(elem).removeClass("open")
+          setIcon(true)
         }
       } else if ($(elem).hasClass("running")) {
         // Query in progress -- don't do anything
