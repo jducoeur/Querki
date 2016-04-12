@@ -218,7 +218,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         case Some(qlName) => {
           qlName match {
             case binding:QLBinding => {
-              processBinding(binding, context, isParam) map { resolvedBinding =>
+              processBinding(binding, context, isParam, call) map { resolvedBinding =>
                 if (resolvedBinding.value.matchesType(Core.LinkType)) {
                   for {
                     // TODO: for now, we don't cope with multiple resolved results here. I'm not even
@@ -285,7 +285,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     
     call.name match {
       case binding:QLBinding => { 
-        processBinding(binding, context, isParam).flatMap { resolvedBinding =>  
+        processBinding(binding, context, isParam, call).flatMap { resolvedBinding =>  
           if (resolvedBinding.value.matchesType(Core.LinkType)) {
             val resultFuts = for {
               oid <- resolvedBinding.value.rawList(Core.LinkType)
@@ -330,7 +330,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         binding.func match {
           case Some(func) => {
             // We're binding a local function, so we ignore the context and instead just use that:
-            val closure = QLClosure(func, binding.params)
+            val closure = QLClosure(QLExp(Seq(func)), binding.params)
             val v = ExactlyOne(QL.ClosureType(closure))
             scopes.bind((binding.name -> v))
           } 
@@ -342,7 +342,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }    
   }
   
-  private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
+  private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser, call:QLCall):Future[QLContext] = {
     val scopes = context.scopes(this)
     val boundOpt = scopes.lookup(binding.name)
     boundOpt match {
@@ -351,15 +351,25 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         if (bound.pType == QL.ClosureType) {
           // We're invoking a local function, so process that:
           val closure = bound.firstAs(QL.ClosureType).get
-//            closure.params match {
-//              case Some(params) => {
-//                withScope(context, { scopedContext =>
-//                  
-//                })
-//              }
-//              case None =>
-//            }       
-          processPhrase(closure.phrase.ops, context)
+          closure.params match {
+            case Some(formals) => {
+              // There are formal parameters for the function, so we need to bind those to the actuals:
+              val actuals = call.params.getOrElse(throw new Exception(s"Locally-defined function ${binding.name} requires parameters."))
+              // The number of params must match exactly, since we don't have optional params yet:
+              if (formals.length != actuals.length)
+                throw new Exception(s"Locally-defined function ${binding.name} requires ${formals.length} parameters.")
+              val actualVs = actuals.map { actual => ExactlyOne(QL.ClosureType(QLClosure(actual.exp, None))) }
+              val pairs = formals zip actualVs
+              withScope(context, { scopedContext =>
+                val newScopes = (scopedContext.scopes(this) /: pairs) { (scopes, pair) =>
+                  scopes.bind(pair)
+                }
+                processExp(closure.exp, scopedContext.withScopes(this, newScopes))
+              })
+            }
+            // An ordinary closure value, which just gets evaluated with the context:
+            case None => processExp(closure.exp, context)
+          }
         } else {
           // Normal value -- just stick it in:
           fut(context.next(bound))
@@ -417,7 +427,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
-  private def processBinding(binding:QLBinding, context:QLContext, isParam:Boolean):Future[QLContext] = {
+  private def processBinding(binding:QLBinding, context:QLContext, isParam:Boolean, call:QLCall):Future[QLContext] = {
     // What is this? The thing is, bindings are complicated. Iff we are in a subparser, *and* we are resolving
     // the parameters from that subparser, then we need to be resolving the bindings against the *parent*, not
     // against this parser. That is, "myMethod($_1)"'s parameter is parameter 1 from the *caller*. Our normal
@@ -432,7 +442,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     if (binding.name.startsWith("_"))
       processInternalBinding(binding, context, isParam, resolvingParser)
     else
-      processNormalBinding(binding, context, isParam, resolvingParser)
+      processNormalBinding(binding, context, isParam, resolvingParser, call)
   }
   
   private def processNumber(num:QLNumber, context:QLContext):QLContext = {

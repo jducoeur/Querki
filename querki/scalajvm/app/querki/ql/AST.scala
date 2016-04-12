@@ -100,3 +100,15 @@ private[ql] case class QLSpace(text:String)
 private[ql] case class QLListLiteral(exps:Seq[QLExp]) extends QLStage(None) {
   def reconstructString = "<" + exps.map(_.reconstructStandalone).mkString(", ") + ">"
 }
+  
+/**
+ * Represents a Closure, more or less -- a QL Expression that is wrapped up so that it can be
+ * evaluated later. Doesn't yet exist at the user level, but we use it internally for bound local functions.
+ * 
+ * For now, we aren't capturing the Scopes as of the point of definition. This potentially allows the
+ * function to refer to values that are bound after its definition but before the call site. Do we care?
+ * 
+ * @param exp The guts of the local function.
+ * @param params The formal parameters of this function.
+ */
+case class QLClosure(exp:QLExp, params:Option[Seq[String]])

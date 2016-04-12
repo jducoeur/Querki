@@ -169,6 +169,16 @@ class QLTests extends QuerkiTests {
                $byArtist -> _groupGet(Blackmores Night) -> $Show Artist
              ]]""".stripReturns) should equal ("Fires at Midnight")
     }
+    
+    "work with parameters" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Album._instances -> _groupBy(Artists) -> +$byArtist
+               _def $From First Album($artist, $field) = $byArtist -> _groupGet($artist) -> _first -> $field
+               $From First Album(Blackmores Night, Link Name)
+               $From First Album(Eurythmics, Artists -> Genres)
+             ]]""".stripReturns) should equal ("Fires at Midnight\n[Rock](Rock)")
+    }
   }
   
   "List Literals" should {

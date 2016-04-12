@@ -23,18 +23,6 @@ object MOIDs extends EcotIds(24) {
 private [ql] trait QLInternals extends EcologyInterface {
   def qlProfilers:QLProfilers
 }
-  
-/**
- * Represents a Closure, more or less -- a QL Expression that is wrapped up so that it can be
- * evaluated later. Doesn't yet exist at the user level, but we use it internally for bound local functions.
- * 
- * For now, we aren't capturing the Scopes as of the point of definition. This potentially allows the
- * function to refer to values that are bound after its definition but before the call site. Do we care?
- * 
- * @param phrase The guts of the local function.
- * @param params The formal parameters of this function.
- */
-case class QLClosure(phrase:QLPhrase, params:Option[Seq[String]])
 
 class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
   with querki.core.CollectionBase
