@@ -23,7 +23,9 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     val thingIdOpt = jq.data("thingid").toOption.map(v => TID(v.asInstanceOf[String]))
     val (typeIdOpt, contextOpt) =
       if (thingIdOpt.isEmpty)
-        (Some(jq.tidString("ptype")), Some(jq.data("context").asInstanceOf[String]))
+        // Note that the server intentionally prepends a junk char in front of context, to make sure
+        // this registers as a "string" in the JavaScript layer. So we drop that:
+        (Some(jq.tidString("ptype")), Some(jq.data("context").asInstanceOf[String].drop(1)))
       else
         (None, None)
     val ql = jq.data("ql").asInstanceOf[String]

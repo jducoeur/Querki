@@ -592,7 +592,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context="$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
+            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" href="#" """) + targetDiv)
     }
   }
 
