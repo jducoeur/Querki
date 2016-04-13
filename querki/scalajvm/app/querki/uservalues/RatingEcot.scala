@@ -69,7 +69,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   lazy val RatingType:PType[Int] with SimplePTypeBuilder[Int] = new IntTypeBase(RatingTypeOID,
     toProps(
       setName("Rating Type"),
-      Categories(UserValuesTag))) with DiscreteType[Int]
+      Categories(UserValuesTag),
+      Summary("Lets you rate Things with stars. Usually, you can just use the built-in [[Rating._self]] Property."))) with DiscreteType[Int]
   {
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       implicit val s = context.state
@@ -110,6 +111,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
     toProps(
       setName("Review Type"),
       Categories(UserValuesTag),
+      Summary("Lets you rate Things and provide opinions. Usually used through the built-in [[Review._self]] Property."),
       // We want to display this in the Editor, even though it is a Model Type:
       Basic.ExplicitProp(true)))
   {
