@@ -149,19 +149,19 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       Categories(StylesheetsTag),
       Summary("The actual CSS for a Stylesheet"),
       Details("""This is the main property on a Stylesheet. It can contain more or less
-          |any arbitrary CSS, with just a few security-related exceptions.
-          |
-          |For the time being, we're not providing any fancy UI for making it easier to write
-          |CSS. This will likely happen someday, but for now, you should only use this property
-          |if you are comfortable with CSS and know what you are doing. (We recommend editing
-          |the Stylesheet in one tab, and having a page that uses it in another -- this makes it
-          |quick and easy to check your work as you go.)
-          |
-          |Note that Querki is based on Twitter Bootstrap -- you can assume that all Bootstrap
-          |styles are already available.
-          |
-          |You should not add this Property to Things. Instead, create a
-          |Stylesheet, and edit the CSS Property on that.
+            |any arbitrary CSS, with just a few security-related exceptions.
+            |
+            |For the time being, we're not providing any fancy UI for making it easier to write
+            |CSS. This will likely happen someday, but for now, you should only use this property
+            |if you are comfortable with CSS and know what you are doing. (We recommend editing
+            |the Stylesheet in one tab, and having a page that uses it in another -- this makes it
+            |quick and easy to check your work as you go.)
+            |
+            |Note that Querki is based on Twitter Bootstrap -- you can assume that all Bootstrap
+            |styles are already available.
+            |
+            |You should not add this Property to Things. Instead, create a
+            |Stylesheet, and edit the CSS Property on that.
             |
             |Note that we plan to begin white-listing CSS constructs in the near future. In the medium
             |term, we expect to allow nearly all of CSS, but it will be with certain constraints on what
@@ -218,6 +218,9 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       setName(commonName(_.css.stylesheet)),
       Core.IsModelProp(true),
       Editor.InstanceProps(Basic.DisplayNameProp, CSSProp),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("""The Model for describing Stylesheets in Querki. Create a Stylesheet, fill in its CSS Property, and set a
+                |Stylesheet Link from a Model or Space to point to it.""".stripMargin),
       Basic.DisplayTextProp("[[_code(CSS)]]"),
       Categories(StylesheetsTag),
       CSSProp("")))

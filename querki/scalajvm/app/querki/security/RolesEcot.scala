@@ -93,8 +93,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   lazy val editorPerms = Seq(AccessControl.CanEditProp) ++ contributorPerms
   lazy val EditorRole =
     defineRole(EditorOID, "Editor Role", "Editor",
-      """Editor / Designer -- can do everything a Contributor can, plus design Models and moderate contributions from non-Members
-        |
+      """Editor / Designer -- can do everything a Contributor can, plus design Models and moderate contributions from non-Members.
         |As of this writing, Editor doesn't do anything special, since neither of its permissions actually exist. But they
         |will be added in the not-too-distant future.""".stripMargin,
       editorPerms)
