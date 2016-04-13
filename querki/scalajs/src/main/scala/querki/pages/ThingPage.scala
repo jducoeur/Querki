@@ -135,10 +135,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                       modelOpt.getOrElse(std.basic.simpleThing),
                       (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                       "reifyTag" -> "true"))
-              } else if (thing.kind == Kind.Property) {
-			    iconButton("edit")(
-			      title:=s"Edit $thingName",
-			      href:=Editing.advancedEditorFactory.pageUrl(thing))
+              } else if (thing.kind == Kind.Property || thing.kind == Kind.Space) {
+      			    iconButton("edit")(
+      			      title:=s"Edit $thingName",
+      			      href:=Editing.advancedEditorFactory.pageUrl(thing))
               } else {
                 topEditButton
               }
