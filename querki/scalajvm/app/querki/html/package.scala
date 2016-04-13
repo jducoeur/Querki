@@ -15,6 +15,9 @@ import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
 package object html {
+  
+  val UITag = "UI and HTML"
+  
   object RenderSpecialization extends Enumeration {
     type RenderSpecialization = Value
   

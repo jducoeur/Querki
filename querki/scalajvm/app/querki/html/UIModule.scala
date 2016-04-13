@@ -90,8 +90,6 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   override lazy val types = Seq(
     RawHtmlType
   )
-  
-  val UITag = "UI and HTML"
 
   /***********************************************
    * PROPERTIES

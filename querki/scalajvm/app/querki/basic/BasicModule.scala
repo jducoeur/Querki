@@ -422,36 +422,50 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       IsModelProp(true),
       DeprecatedProp(true),
       KilledThing(true)))
+  
+  def UITag = querki.html.UITag
 
-object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
+  object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
-      Categories(BasicTag),
+      Categories(UITag),
+      Summary("Displays the received values as a bullet list"),
       ApplyMethod("""* ""<ul>[[""<li class="_bullet">
           |____
           |</li>""]]
           |</ul>""""".stripMargin),
-      DisplayTextProp("""```
+      DisplayTextProp("""
+          |```
           |LIST -> _bulleted
           |```
-          |This method takes a LIST, and render its elements as a bullet list, one per line. It is simply syntactic sugar for
-          |    LIST -> \""* \____\"" """.stripMargin)))
+          |This method takes a LIST, and render its elements as a bullet list, one per line. It is roughly the same as
+          |```
+          |LIST -> \""* \____\""
+          |```
+          |You can nest _bulleted lists within each other, and they will display properly nested.""".stripMargin)))
 
-object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
+  object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
     toProps(
       setName("_commas"),
-      Categories(BasicTag),
+      Categories(UITag),
+      Summary("Displays the received values as a comma-separated list"),
       ApplyMethod("""_join("", "")"""),
-      DisplayTextProp("""```
+      DisplayTextProp("""
+          |```
           |LIST -> _commas
           |```
           |This method takes a LIST, and render its elements comma-separated. It is simply syntactic sugar for
-          |    LIST -> _join(\"", \"")""".stripMargin)))
+          |```
+          |LIST -> _join(\"", \"")
+          |```
+          |""".stripMargin)))
 
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(
       setName("_displayThingTree"),
-      Categories(BasicTag),
+      Categories(UITag),
+      setInternal,
+      Summary("This receives a Thing, displays it, and if it is a Model displays a subtree for its children."),
       ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, "" }}"")]]""" +
           """[[_if(_and(_isModel, _hasPermission(Who Can Create._self)), _createInstanceLink -> _iconButton(""plus"", ""Create an Instance""))]]
 {{indent:[[_children -> 
