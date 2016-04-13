@@ -280,8 +280,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       // Concrete Roles should define their RolePermissions:
       RolePermissionsProp(),
       Categories(SecurityTag),
-      Summary("""Defines a Role that a Member of this Space can take, such as Contributor or Editor.
-          |Each Role defines certain actions that the Member can take, such as commenting on Things or
+      Summary("Defines a Role that a Member of this Space can take, such as Contributor or Editor."),
+      Basic.DisplayTextProp("""Each Role defines certain actions that the Member can take, such as commenting on Things or
           |contributing new ones.
           |
           |The built in Roles should suffice for most purposes, but if you need a new one, create a child
