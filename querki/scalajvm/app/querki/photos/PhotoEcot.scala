@@ -262,6 +262,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   lazy val PhotoModel = ThingState(PhotoModelOID, systemOID, RootOID,
     toProps(
       setName("Photo Model"),
+      setInternal,
       Categories(PhotosTag)))
       
   override lazy val things = Seq(
