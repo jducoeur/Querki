@@ -588,10 +588,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         append <- inv.processAs("append", YesNoType)
         replace <- inv.processAs("replace", YesNoType)
         noIcon <- inv.processAs("noIcon", YesNoType)
+        lexicalBundleOpt = inv.context.parser.flatMap(_.lexicalThing)
+        lexicalThingOpt = lexicalBundleOpt.flatMap(_ match { case t:Thing => Some(t); case _ => None }) 
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" data-replace="$replace" data-noicon="$noIcon" href="#" """) + targetDiv)
+            buildHtml(label, 
+              s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" """ +
+              s"""data-replace="$replace" data-noicon="$noIcon" ${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) + targetDiv)
     }
   }
 

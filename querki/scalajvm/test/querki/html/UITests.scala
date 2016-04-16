@@ -173,19 +173,20 @@ class UITests extends QuerkiTests {
     }
   }
   
+  // === _QLButton ===
   "_QLButton" should {
     "produce the right button" in {
       implicit val s = commonSpace
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false" href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
     }
     
     "use append properly" in {
       implicit val s = commonSpace
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"", append=True)]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false" href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
     }
   }
   

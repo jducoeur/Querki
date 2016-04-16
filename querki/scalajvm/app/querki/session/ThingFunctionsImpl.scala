@@ -72,13 +72,16 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     QL.processMethodToWikitext(QLText(ql), context, None, Some(thing))
   }
   
-  def evaluateQLWithContext(typeId:TID, serializedContext:String, ql:String):Future[Wikitext] = withThing(typeId) { case pt:PType[_] =>
+  def evaluateQLWithContext(typeId:TID, serializedContext:String, lexicalOpt:Option[TID], ql:String):Future[Wikitext] = withThing(typeId) { case pt:PType[_] =>
     implicit val r = rc
     implicit val s = state
     val qv = Core.ExactlyOne(pt.deserialize(serializedContext))
     val context = querki.values.QLContext(qv, Some(rc))
-    // TODO: should we be preserving the original lexical context of the _QLButton, and passing it into here?
-    QL.processMethodToWikitext(QLText(ql), context, None, None)
+    val lexicalContext = lexicalOpt.flatMap { lex =>
+      val oid = ThingId(lex.underlying)
+      state.anything(oid)
+    }
+    QL.processMethodToWikitext(QLText(ql), context, None, lexicalContext)
   }
   
   def getProperties(thingId:TID):Future[Seq[PropValInfo]] = withThing(thingId) { thing =>

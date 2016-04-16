@@ -19,8 +19,9 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
   
   def hook() = {
     val jq = $(elem)
+    def tidOpt(name:String) = jq.data(name).toOption.map(v => TID(v.asInstanceOf[String]))
     val isTextInput:Boolean = (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
-    val thingIdOpt = jq.data("thingid").toOption.map(v => TID(v.asInstanceOf[String]))
+    val thingIdOpt = tidOpt("thingid")
     val (typeIdOpt, contextOpt) =
       if (thingIdOpt.isEmpty)
         // Note that the server intentionally prepends a junk char in front of context, to make sure
@@ -33,6 +34,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val noIcon = jq.data("noicon").map(_.asInstanceOf[Boolean]).getOrElse(false)
+    val lexicalOpt = tidOpt("lexical")
     val (useIcons, openicon, closeicon) =
       if (noIcon || isTextInput || append || replace)
         (false, "", "")
@@ -84,7 +86,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
         
         thingIdOpt match {
           case Some(thingId) => Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach(handleResult)
-          case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, actualQL).call().foreach(handleResult)
+          case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, lexicalOpt, actualQL).call().foreach(handleResult)
         }   
       }
       

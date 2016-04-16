@@ -33,7 +33,7 @@ trait ThingFunctions {
   /**
    * Evaluate the given QL with an arbitrary context, and return the resulting Wikitext. 
    */
-  def evaluateQLWithContext(typeId:TID, context:String, ql:String):Future[Wikitext]
+  def evaluateQLWithContext(typeId:TID, context:String, lexical:Option[TID], ql:String):Future[Wikitext]
   
   /**
    * Fetch the raw values of the Properties on this Thing.
