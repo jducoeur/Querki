@@ -101,6 +101,22 @@ trait PropertyBundle {
    * Fetches the values of the given Property on this Thing, or None if it isn't defined.
    */
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]]
+
+  /**
+   * Allows you to iterate over the values of this Property on this Bundle, if there are any.
+   * 
+   * If this Bundle doesn't define this Property, this will silently produce an empty List. Note
+   * that there is no way, using this function, to distinguish between the Property not being set
+   * at all, or being set to an empty Optional, QList or QSet!
+   * 
+   * This is simply a convenience function, but a common enough use case to be useful.
+   */
+  def getPropAll[VT](prop:Property[VT, _])(implicit state:SpaceState):List[VT] = {
+    getPropOpt(prop) match {
+      case Some(pv) => pv.rawList
+      case None => List.empty[VT]
+    }
+  }
   
   /**
    * Fetches the first value of the given Property on this Thing, if there is one.

@@ -102,6 +102,7 @@ object SystemCreator {
                                      // 60
     new querki.ql.SignatureEcot(ecology)                           // 61
     new querki.core.FunctionEcot(ecology)                          // 62
+    new querki.location.LocationEcot(ecology)                      // 63
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {
