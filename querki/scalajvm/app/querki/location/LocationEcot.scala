@@ -74,8 +74,7 @@ class LocationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       TownProp(),
       StateProp(),
       Editing.InstanceProps(StreetAddressProp, TownProp, StateProp),
-      Basic.DisplayTextProp(
-        """[[_Location Street Address]][[_Location Town -> "", ____""]][[_Location State -> "", ____""]][[_mapLink -> "" (__map__)""]]""".stripMargin)))
+      Basic.DisplayTextProp("""[[<_Location Street Address, _Location Town, _Location State> -> _join("", "")]][[_mapLink -> "" (__map__)""]]""".stripMargin)))
       
   override lazy val things = Seq(
     LocationModel
