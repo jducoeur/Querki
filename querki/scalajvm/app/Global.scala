@@ -42,8 +42,14 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
     val config = AkkaEnv.asConfig
     // I suspect this fallback shouldn't be "application", but if I set to it anything else I
     // get errors. It really feels like there are internals that are looking for "application".
-    val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "application")
-    _appSystem = ActorSystem(systemName, config.withFallback(ConfigFactory.load()))
+    val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "")
+    val systemVersion = sys.env.getOrElse("BUNDLE_SYSTEM_VERSION", "1")
+    val fullSystemName =
+      if (systemName.length > 0)
+        s"$systemName-$systemVersion"
+      else
+        "application"
+    _appSystem = ActorSystem(fullSystemName, config.withFallback(ConfigFactory.load()))
     
     // TEMP: some startup debugging, to see what I can do:
     QLog.spew(s"Querki starting...")

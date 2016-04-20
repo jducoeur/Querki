@@ -35,5 +35,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")
 
 // To support building with ConductR:
-addSbtPlugin("com.typesafe.sbt" % "sbt-bundle" % "1.2.1")
-addSbtPlugin("com.typesafe.conductr" % "sbt-conductr" % "1.2.1")
+//addSbtPlugin("com.typesafe.sbt" % "sbt-bundle" % "1.2.1")
+//addSbtPlugin("com.typesafe.conductr" % "sbt-conductr" % "1.2.1")
+addSbtPlugin("com.typesafe.conductr" % "sbt-conductr-sandbox" % "1.4.2")
