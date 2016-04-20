@@ -7,6 +7,7 @@ import org.scalajs.dom.{raw => dom}
 import org.querki.facades.bootstrap._
 
 import scalatags.JsDom.all._
+import scalatags.JsDom.TypedTag
 
 import querki.globals._
 
@@ -21,7 +22,7 @@ import querki.globals._
  */
 class Dialog(
   dialogTitle:String,
-  guts:scalatags.JsDom.TypedTag[_],
+  guts:TypedTag[_],
   buttonsIn:(ButtonGadget.ButtonKind, Seq[Modifier], Dialog => Unit)*
   )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] 
 {
@@ -65,6 +66,8 @@ class Dialog(
     
   def show() = {
     render
+    // When the dialog is finished displaying, focus on the first input in its content area, if there is one:
+    $(elem).on("shown.bs.modal", { e:dom.Element => $(elem).find("._guts :input:visible:first").focus() })
     // TODO: this likely requires a hack to work correctly with iOS. See:
     //   http://www.abeautifulsite.net/bootstrap-3-modals-and-the-ios-virtual-keyboard/
     // The issue is that, if the guts contain input fields, so it brings up the virtual keyboard,
