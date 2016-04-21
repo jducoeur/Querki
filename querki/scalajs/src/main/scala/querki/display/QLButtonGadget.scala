@@ -35,11 +35,11 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val noIcon = jq.data("noicon").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val lexicalOpt = tidOpt("lexical")
-    val (useIcons, openicon, closeicon) =
+    val (useIcons, openicon, closeicon, thinkingicon) =
       if (noIcon || isTextInput || append || replace)
-        (false, "", "")
+        (false, "", "", "")
       else
-        (true, "glyphicon glyphicon-chevron-down", "glyphicon glyphicon-chevron-up")
+        (true, "glyphicon glyphicon-chevron-down", "glyphicon glyphicon-chevron-up", "fa fa-spinner fa-pulse")
     
     if ($(elem).hasClass("btn"))
       $(elem).addClass("btn-xs")
@@ -49,25 +49,25 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
       $(elem).append(i(cls := "_openaffordance").render)
     }
     
-    def setIcon(open:Boolean) = {
+    def setIcon(icon:String) = {
       if (useIcons) {
         val afford = $(elem).find("._openaffordance")
-        if (open) {          
-          afford.removeClass(closeicon)
-          afford.addClass(openicon)
-        } else {
-          afford.removeClass(openicon)
-          afford.addClass(closeicon)
-        }
+        
+        afford.removeClass(openicon)
+        afford.removeClass(closeicon)
+        afford.removeClass(thinkingicon)
+        
+        afford.addClass(icon)
       }
     }
     
-    setIcon(true)
+    setIcon(openicon)
     
     def activate(evt:JQueryEventObject, actualQL:String) = {
       val targetJQ = $(s"#$target")
       def runQL() = {
         $(elem).addClass("running")
+        setIcon(thinkingicon)
         $(elem).attr("disabled", true)
         
         def handleResult(result:models.Wikitext) = {
@@ -80,7 +80,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           $(elem).attr("disabled", false)
           $(elem).removeClass("running")
           $(elem).addClass("open")
-          setIcon(false)
+          setIcon(closeicon)
           Gadgets.hookPendingGadgets()
         }
         
@@ -96,7 +96,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
         } else {
           targetJQ.hide()
           $(elem).removeClass("open")
-          setIcon(true)
+          setIcon(openicon)
         }
       } else if ($(elem).hasClass("running")) {
         // Query in progress -- don't do anything
