@@ -31,6 +31,10 @@ class LocationTests extends QuerkiTests {
         SimplePropertyBundle(
           Location.TownProp("Cambridge"),
           Location.StateProp("MA"))))
+    
+    val emptyLoc = new SimpleTestThing("Empty Location",
+      locProp(
+        SimplePropertyBundle()))
   }
   
   "Location text display" should {
@@ -53,6 +57,13 @@ class LocationTests extends QuerkiTests {
       
       pql("""[[Without address -> My Location]]""") should
         equal("Cambridge, MA")
+    }
+    
+    "show a properly empty text if the Location is empty" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Empty Location -> My Location]]""") should
+        equal("")
     }
   }
   

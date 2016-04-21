@@ -454,13 +454,11 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     val futs:Seq[Future[Seq[QLContext]]] = list.exps.map(processExpAll(_, context))
     val fut:Future[Seq[QLContext]] = Future.sequence(futs).map(_.flatten)
     // Extract all the elements, and merge them into one list
-    // TODO: we're not doing any type-checking here, which means that you could get weird errors
-    // downstream if the elements aren't all compatible. We *should* be using a version of matchType
-    // to reduce everything to a single type here, or throwing an exception.
     fut.map { contexts =>
       val qvs = contexts.map(_.value)
+      val pt = qvs.headOption.map(_.pType).getOrElse(Core.UnknownType)
       val elems = qvs.flatMap(_.elems)
-      val qv = Core.QList.makePropValue(elems, elems.head.pType)
+      val qv = Core.QList.makePropValue(elems, pt)
       context.next(qv)
     }
   }
