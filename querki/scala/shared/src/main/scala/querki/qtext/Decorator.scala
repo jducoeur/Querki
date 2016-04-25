@@ -51,9 +51,18 @@ trait Decorator {
       else
         url  
     }
-    def decorateLink(text:String, url:String, title:Option[String]):String = title match {
-        case None    => "<a href=\"" + javascriptNeutralized(url) + "\" rel=\"nofollow\">" + text + "</a>"
-        case Some(t) => "<a href=\"" + javascriptNeutralized(url) + "\" title=\"" + t + "\" rel=\"nofollow\">" + text + "</a>"
+    def decorateLink(text:String, url:String, title:Option[String]):String = {
+      val nurl = javascriptNeutralized(url)
+      val nurlLower = nurl.toLowerCase()
+      val isExternal = (nurlLower.startsWith("http:") || nurlLower.startsWith("https:") | nurlLower.startsWith("./") | nurlLower.startsWith("/"))
+      val extAttrs =
+        if (isExternal)
+          """ rel="nofollow" target="_blank""""
+        else
+          ""
+      val titleAttr = title.map(t => s""" title="$t"""").getOrElse("")
+      
+      s"""<a href="$nurl"$titleAttr$extAttrs>$text</a>"""
     }
     /** Used to print image elements (default: <img ...)
      */

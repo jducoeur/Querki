@@ -57,15 +57,15 @@ class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with I
 
     val linkTests = List(
         ("""[link text](http://example.com "link title")""",
-         """<a href="http://example.com" title="link title" rel="nofollow">link text</a>"""),
+         """<a href="http://example.com" title="link title" rel="nofollow" target="_blank">link text</a>"""),
         ("""[link text](http://example.com )""",
-         """<a href="http://example.com" rel="nofollow">link text</a>"""),
+         """<a href="http://example.com" rel="nofollow" target="_blank">link text</a>"""),
         ("""[link text](  http://example.com  "link title"  )""",
-         """<a href="http://example.com" title="link title" rel="nofollow">link text</a>"""),
+         """<a href="http://example.com" title="link title" rel="nofollow" target="_blank">link text</a>"""),
         ("""[link text](  http://example.com  "li)nk" title"  )""",
-         """<a href="http://example.com" title="li)nk&quot; title" rel="nofollow">link text</a>"""),
+         """<a href="http://example.com" title="li)nk&quot; title" rel="nofollow" target="_blank">link text</a>"""),
         ("""[_localName](_localName)""",
-         """<a href="_localName" rel="nofollow">_localName</a>""")
+         """<a href="_localName">_localName</a>""")
     )
 //
 //    val fastLinkTests = List(
@@ -212,16 +212,16 @@ class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with I
 
     it should "resolve reference links" in {
         val p  = inline(map)
-        apply(p, "[text][id]")  should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">text</a>""")
-        apply(p, "[text] [id]") should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">text</a>""")
-        apply(p, "[id][]")      should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">id</a>""")
-        apply(p, "[id] []")     should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">id</a>""")
-        apply(p, "[id]")        should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">id</a>""")
-        apply(p, "[Id]")        should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow">Id</a>""")
+        apply(p, "[text][id]")  should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">text</a>""")
+        apply(p, "[text] [id]") should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">text</a>""")
+        apply(p, "[id][]")      should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">id</a>""")
+        apply(p, "[id] []")     should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">id</a>""")
+        apply(p, "[id]")        should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">id</a>""")
+        apply(p, "[Id]")        should equal ("""<a href="http://www.example.com" title="Title" rel="nofollow" target="_blank">Id</a>""")
 
-        apply(p, "[id] [Id 2]")        should equal ("""<a href="http://other.example.com" title="Title 2" rel="nofollow">id</a>""")
-        apply(p, "[id 3]")             should equal ("""<a href="http://none.example.com" rel="nofollow">id 3</a>""")
-        apply(p, "[foo \"bar\"][id 3]")             should equal ("""<a href="http://none.example.com" rel="nofollow">foo &quot;bar&quot;</a>""")
+        apply(p, "[id] [Id 2]")        should equal ("""<a href="http://other.example.com" title="Title 2" rel="nofollow" target="_blank">id</a>""")
+        apply(p, "[id 3]")             should equal ("""<a href="http://none.example.com" rel="nofollow" target="_blank">id 3</a>""")
+        apply(p, "[foo \"bar\"][id 3]")             should equal ("""<a href="http://none.example.com" rel="nofollow" target="_blank">foo &quot;bar&quot;</a>""")
     }
 
     it should "resolve reference images" in {

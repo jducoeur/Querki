@@ -70,7 +70,7 @@ class UITests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[Tag Thing -> My Set of Tags -> ""____"" -> _class(""myClass"")]]""") should
-        equal ("""<span class="myClass"><a rel="nofollow" href="Branch+%26+Claw">Branch &amp; Claw</a></span>""")
+        equal ("""<span class="myClass"><a href="Branch+%26+Claw">Branch &amp; Claw</a></span>""")
     }
   }
   
