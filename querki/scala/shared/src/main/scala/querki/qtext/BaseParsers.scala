@@ -239,7 +239,7 @@ trait BaseParsers extends RegexParsers {
      * Very specific hack to allow only the one true usage of the "target" attribute. See User
      * Story .3y28awg.
      */
-    def anchorTargetHack:Parser[String] = ws ~ """target="_blank"""" ^^ { case w ~ v => w + v }
+    def anchorTargetHack:Parser[(String, String)] = ws ~ """target="_blank"""" ^^ { case w ~ v => ("target", "_blank") }
     
     /**
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
@@ -252,13 +252,49 @@ trait BaseParsers extends RegexParsers {
     
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.
      */
-    def xmlAttr:Parser[String] = ws ~ xmlAttrName ~ '=' ~ xmlAttrVal ^^ {
-        case w ~ name ~ _ ~ value => w + name + '=' + value
+    def xmlAttr:Parser[(String, String)] = ws ~ xmlAttrName ~ '=' ~ xmlAttrVal ^^ {
+        case w ~ name ~ _ ~ value => (name, value)
     }
     /** Parses an xml start or empty tag, attribute values are escaped.
+     *  
+     *  This is quite elaborate, entirely in order to detect external links and decorate them appropriately. This
+     *  pretty much suggests that the entire String-focused approach is corrupt. We should be building up Tags instead,
+     *  unifying the architecture with the markup side, and decorating the resulting Tags as necessary.
      */
     def xmlStartOrEmptyTag:Parser[String] = '<' ~> xmlName ~ ((xmlAttr | anchorTargetHack)*) ~ ows ~ (">" | "/>") ^^ {
-        case name ~ attrs ~ w ~ e => '<' + name + attrs.mkString  + w + e
+        case name ~ attrs ~ w ~ e => {
+          val allAttrs = {
+            if (name.toLowerCase() == "a") {
+              attrs.find(_._1 == "href") match {
+                case Some(pair) => {
+                  val withoutQuote =
+                    if (pair._2.startsWith("\"") | pair._2.startsWith("\'"))
+                      pair._2.substring(1)
+                    else
+                      pair._2
+                  val nurlLower = withoutQuote.toLowerCase()
+                  val isExternal = (nurlLower.startsWith("http:") || nurlLower.startsWith("https:") || nurlLower.startsWith("./") || nurlLower.startsWith("/"))
+                  if (isExternal)
+                    attrs ++ List(("rel" -> "nofollow"), ("target" -> "_blank"))
+                  else
+                    attrs
+                }
+                case _ => attrs
+              }
+            } else
+              attrs
+          }
+          
+          def quotify(s:String):String = {
+            if (!s.startsWith("\"") && !s.startsWith("\'"))
+              "\"" + s + "\""
+            else
+              s
+          }
+          
+          val attrStr = allAttrs.map(pair => s""" ${pair._1}=${quotify(pair._2)}""").mkString
+          '<' + name + attrStr  + w + e
+        }
     }
 
     /** Parses closing xml tags.

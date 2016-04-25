@@ -191,10 +191,17 @@ Foo foo
     }
   }
   
-  "Anchor tags" should {
+  "External anchor tags" should {
     "cope with opening in a new tab" in {
+      // Yes, this edge case currently winds up with two targets. We'll live:
       apply("""<a target="_blank" href="http://www.google.com/">floob</a>""") should
-        equal("""<p><a target="_blank" href="http://www.google.com/">floob</a></p>
+        equal("""<p><a target="_blank" href="http://www.google.com/" rel="nofollow" target="_blank">floob</a></p>
+          |""".stripReturns)
+    }
+    
+    "force a new tab" in {
+      apply("""<a href="http://www.google.com/">floob</a>""") should
+        equal("""<p><a href="http://www.google.com/" rel="nofollow" target="_blank">floob</a></p>
           |""".stripReturns)
     }
   }
