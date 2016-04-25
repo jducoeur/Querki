@@ -39,7 +39,7 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   
   val faveDisplayProp = new TestProperty(TextType, ExactlyOne, "Show Favorites")
   
-  new SimpleTestThing("My Favorites", 
+  val faves = new SimpleTestThing("My Favorites", 
     favoriteArtistsProp(tmbg, blackmores),
     interestingArtistsProp(eurythmics),
     faveDisplayProp("My favorite bands are: [[My Favorites -> _bulleted]]"))

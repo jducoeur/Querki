@@ -347,6 +347,13 @@ class DataModelTests extends QuerkiTests {
         equal (listOfLinkText(space.factoryShowroom, space.firesAtMight, space.flood, space.ghostOfARose, space.shadowOfTheMoon))        
     }
     
+    "cope without a specific Property" in {
+      implicit val space = new CDSpace
+      
+      pql("""[[They Might Be Giants -> _refs -> _sort]]""") should
+        equal (listOfLinkText(space.factoryShowroom, space.flood, space.faves))      
+    }
+    
     // Test for Issue .3y285gi
     "find references from inside Model Types" in {
       class TSpace extends CommonSpace with ModelTypeDefiner {

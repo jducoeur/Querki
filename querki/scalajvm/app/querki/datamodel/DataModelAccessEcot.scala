@@ -224,7 +224,23 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     override def qlApply(inv:Invocation):QFut = {
       for {
         dummy <- inv.preferCollection(QList)
-        prop <- inv.definingContextAsPropertyOf(LinkType)
+        definingProp <- inv.definingContextAsOptionalPropertyOf(LinkType)
+        // Note that we presume that the received list is all of the same Model:
+        firstThing <- inv.contextFirstThing
+        linkProps = definingProp match {
+          case Some(prop) => List(prop)
+          case _ => {
+            val modelOID = firstThing.model
+            
+            inv.state.
+            propList.
+            filter(prop => prop.pType == LinkType).
+            // filter this to just the Properties with the right Restricted To:
+            filter(prop => prop.getPropVal(Links.LinkModelProp)(inv.state).contains(LinkType, modelOID)).
+            map(_.confirmType(LinkType).get)
+          }
+        }
+        prop <- inv.iter(linkProps)
         // Build the list of possible paths once, since it's a fairly intensive process:
         paths = PropPaths.pathsToProperty(prop)(inv.state)
         thing <- inv.contextAllThings
