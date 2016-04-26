@@ -17,6 +17,18 @@ dd {
 #querkiBar { margin: 0 0 0 0; }
 
 /*
+ * Disable the hardcoded sizing in Bootstrap's navbar container. This is having the result that
+ * we are kicking into two lines of navbar when the size is between 750 and 992 px, pretty
+ * arbitrarily. By disabling this, we don't *entirely* prevent that effect, but we make it
+ * only happens when we completely run out of room.
+ */
+@media (min-width:768px) {
+  .navbar .container {
+    width: auto;
+  }
+}
+
+/*
  * Workaround for what seems to be a bug in Bootstrap's theming: this is the text color for the
  * links in the collapsed menus. Bootstrap produces this as grayDark, and I can't figure out how
  * to make it right. 

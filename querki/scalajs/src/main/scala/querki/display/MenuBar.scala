@@ -198,7 +198,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   def loginSection = {
     UserAccess.user match {
       case Some(user) => {
-        NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
+        NavSection(truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
           NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
         ), 1900, id="_profile_menu")  
