@@ -16,6 +16,7 @@ package object security {
     def MembersTag:Thing
     def OwnerTag:Thing
     def RoleModel:Thing
+    def PermDefaultsModel:Thing
     
     // Checks whether this User *has* an Identity that is a Member of the Space. Use with caution!
     // Usage of this suggests a design bug!
@@ -60,6 +61,8 @@ package object security {
     def CanEditProp:Property[OID,OID]
     def CanEditChildrenProp:Property[OID,OID]
     def CanReadProp:Property[OID,OID]
+    
+    def PermDefaultsProp:Property[OID,OID]
   }
   
   trait Encryption extends EcologyInterface {

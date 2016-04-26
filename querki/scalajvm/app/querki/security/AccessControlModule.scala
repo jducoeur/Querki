@@ -26,6 +26,8 @@ object MOIDs extends EcotIds(4) {
   val RolePermissionsOID = moid(14)
   val PersonRolesOID = moid(15)
   val ChildPermissionsPropOID = moid(16)
+  val PermDefaultsOID = moid(17)
+  val PermDefaultsModelOID = moid(18)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -286,6 +288,12 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           |
           |The built in Roles should suffice for most purposes, but if you need a new one, create a child
           |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
+          
+  lazy val PermDefaultsModel = ThingState(PermDefaultsModelOID, systemOID, RootOID,
+    toProps(
+      setName("_Permission Defaults Model"),
+      setInternal,
+      Summary("This is the Model for the Things that hold Default Permissions.")))
     
   override lazy val things = Seq(
     SecurityPrincipal,
@@ -293,7 +301,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     PublicTag,
     MembersTag,
     OwnerTag,
-    RoleModel
+    RoleModel,
+    PermDefaultsModel
   )
   
   /***********************************************
@@ -431,6 +440,18 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         |This approach is a bit over-elaborate, and might yet evolve a bit. But for now, make sure to keep this
         |different in mind.""".stripMargin)))
   
+  lazy val PermDefaultsProp = new SystemProperty(PermDefaultsOID, LinkType, ExactlyOne,
+    toProps(
+      setName("Permission Defaults"),
+      // TODO: this will become Internal (indeed, hidden) once we have a proper UI in place:
+//      setInternal,
+      Categories(SecurityTag),
+      Summary("Points to the Thing that holds the default Permissions for this Space"),
+      Details("""This Property points to a Thing where you place any Space-wide Permissions.
+        |
+        |This is only temporarily visible -- it will shortly be covered by a UI that deals with this
+        |stuff.""".stripMargin)))
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -479,6 +500,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     RolePermissionsProp,
     PersonRolesProp,
     ChildPermissionsProp,
+    PermDefaultsProp,
     
     HasPermissionFunction
   )
