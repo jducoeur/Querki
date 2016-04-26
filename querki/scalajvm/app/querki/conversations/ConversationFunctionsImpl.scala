@@ -79,6 +79,23 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def localIdentity = Person.localIdentities(user)(state).headOption
+
+  /**
+   * If a thread is completely deleted, just ignore it entirely, so it doesn't clog up the UI.
+   * 
+   * It isn't clear that this is the long-term approach to this problem, but we need the user
+   * to be able to clear out bad threads from the UI.
+   */
+  def filterDeadThreads(convs:Seq[ConversationNode]):Seq[ConversationNode] = {
+    (Seq.empty[ConversationNode] /: convs) { (seq, conv) =>
+      if (conv.comment.isDeleted && filterDeadThreads(conv.responses).isEmpty)
+        // This node is kaput -- move on
+        seq
+      else
+        // Recurse into the replies
+        seq :+ conv.copy(responses = filterDeadThreads(conv.responses))
+    }
+  }
   
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
     implicit val s = state
@@ -94,7 +111,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    for {
         ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
         identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
-        apiConvs <- Future.sequence(convs.map(toApi(thing, _)(identities, theRc)))
+        apiConvs <- Future.sequence(filterDeadThreads(convs).map(toApi(thing, _)(identities, theRc)))
       }
         yield ConversationInfo(canComment, canReadComments, apiConvs)
 	  } else {
