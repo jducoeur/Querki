@@ -146,22 +146,18 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           |    _filter($$thing -> Instance Properties -> _not(_contains($$propInfo -> _prop))) ->
           |$guts 
           |)]]
-          |</dl>""".stripMargin
-      else
+          |</dl>
+          |[[_QLButton(""Show Instances"", ql=_instances -> _sort -> _bulleted)]]""".stripMargin
+      else 
         s"""
           |<dl>
           |[[_foreachProperty ->
           |$guts 
           |]]
-          |</dl>""".stripMargin
+          |</dl>
+          |[[_QLButton(""Things that use [[Name]]"", ql=_allRefs -> _sort -> _bulleted)]]""".stripMargin
           
-    val fullText =
-      if (isModel) {
-        text + """
-        |[[_QLButton(""Show Instances"", ql=_instances -> _sort -> _bulleted)]]""".stripMargin
-      } else
-        text
-    QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
+    QL.process(QLText(text), thing.thisAsContext, None, Some(thing))
   }
   
   /*********************************
