@@ -35,6 +35,7 @@ object MOIDs extends EcotIds(21) {
   val OrphanedInstancesOID = moid(7)
   val IsAFunctionOID = moid(8)
   val UsingSpaceOID = moid(9)
+  val AllRefsOID = moid(10)
 }
 
 
@@ -200,6 +201,38 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
+  // The Links side of _refs, which gets combined with the Tags side:
+  def refs(inv:Invocation):QFut = {
+    for {
+      dummy <- inv.preferCollection(QList)
+      definingProp <- inv.definingContextAsOptionalPropertyOf(LinkType)
+      // Note that we presume that the received list is all of the same Model:
+      firstThing <- inv.contextFirstThing
+      linkProps = definingProp match {
+        case Some(prop) => List(prop)
+        case _ => {
+          val modelOID = firstThing.model
+          
+          inv.state.
+          propList.
+          filter(prop => prop.pType == LinkType).
+          // filter this to just the Properties with the right Restricted To:
+          filter(prop => prop.getPropVal(Links.LinkModelProp)(inv.state).contains(LinkType, modelOID)).
+          map(_.confirmType(LinkType).get)
+        }
+      }
+      prop <- inv.iter(linkProps)
+      // Build the list of possible paths once, since it's a fairly intensive process:
+      paths = PropPaths.pathsToProperty(prop)(inv.state)
+      thing <- inv.contextAllThings
+      candidateThing <- inv.iter(inv.state.allThings)
+      path <- inv.iter(paths)
+      propAndVal <- inv.iter(path.getPropOpt(candidateThing)(inv.state))
+      if (propAndVal.contains(thing.id))
+    }
+      yield ExactlyOne(LinkType(candidateThing.id))
+  }
+  
   class RefsMethod extends InternalMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
@@ -219,37 +252,37 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |This method is enormously useful -- most Models that get pointed to like this will probably
           |want to use it.
           |
-          |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
+          |Note that this always returns a List, since any number of Things could be pointing to this.
+          |
+          |**Note:** `_refs` only produces the "hard" references, through Thing Properties. Most of the
+          |time, you should use `_allRefs` instead -- that includes references through Tags as well.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      refs(inv)
+    }
+  }
+  
+  lazy val AllRefsMethod = new InternalMethod(AllRefsOID,
+    toProps(
+      setName("_allRefs"),
+      Categories(DataModelTag),
+      Summary("""Produces all references to this Thing, whether in Thing or Tag Properties"""),
+      Signature(
+        expected = Some((Seq(LinkType), "The Thing to fetch the references to")),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (LinkType, "The Things that refer to the received Thing")),
+      Details("""`_allRefs` is more or less exactly the combination of `_refs` and `_tagRefs`. It is
+        |generally the function to use unless you specifically want just Thing or Tag Properties.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        dummy <- inv.preferCollection(QList)
-        definingProp <- inv.definingContextAsOptionalPropertyOf(LinkType)
-        // Note that we presume that the received list is all of the same Model:
-        firstThing <- inv.contextFirstThing
-        linkProps = definingProp match {
-          case Some(prop) => List(prop)
-          case _ => {
-            val modelOID = firstThing.model
-            
-            inv.state.
-            propList.
-            filter(prop => prop.pType == LinkType).
-            // filter this to just the Properties with the right Restricted To:
-            filter(prop => prop.getPropVal(Links.LinkModelProp)(inv.state).contains(LinkType, modelOID)).
-            map(_.confirmType(LinkType).get)
-          }
-        }
-        prop <- inv.iter(linkProps)
-        // Build the list of possible paths once, since it's a fairly intensive process:
-        paths = PropPaths.pathsToProperty(prop)(inv.state)
-        thing <- inv.contextAllThings
-        candidateThing <- inv.iter(inv.state.allThings)
-        path <- inv.iter(paths)
-        propAndVal <- inv.iter(path.getPropOpt(candidateThing)(inv.state))
-        if (propAndVal.contains(thing.id))
+        linkRefs <- refs(inv)
+        tagRefs <- Tags.tagRefs(inv)
+        allOIDs = linkRefs.rawList(LinkType) ++ tagRefs.rawList(LinkType)
+        allElems = allOIDs.map(LinkType(_))
       }
-        yield ExactlyOne(LinkType(candidateThing.id))
+        yield QList.makePropValue(allElems, LinkType)
     }
   }
   
@@ -726,6 +759,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       
     new InstancesMethod,
     new RefsMethod,
+    AllRefsMethod,
     UsingSpace,
     new SpaceMethod,
     new ExternalRootsMethod,

@@ -43,6 +43,16 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _allRefs ===
+  "_allRefs" should {
+    "work normally" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Weird Al -> _allRefs -> _sort]]""") should
+        equal(listOfLinkText(s.mandatoryFun, s.faves, s.runningWithScissors))
+    }
+  }
+  
   // === _asType ===
   "_asType" should {
     "convert one PlainText OID to a Link" in {

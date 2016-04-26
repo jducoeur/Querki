@@ -50,5 +50,10 @@ package object tags {
      */
     def isTaggableProperty(prop:AnyProp)(implicit state:SpaceState):Boolean
     def getUndefinedTagView(modelId:OID)(implicit state:SpaceState):QLText
+    
+    /**
+     * Exposed so that _refs can use it.
+     */
+    def tagRefs(inv:querki.ql.Invocation):Future[querki.values.QValue]
   }
 }

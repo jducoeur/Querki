@@ -10,12 +10,13 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val artistModel = new SimpleTestThing("Artist")
   val genreModel = new SimpleTestThing("Genre")
   
-  val genres = new TestProperty(interface[querki.tags.Tags].NewTagSetType, QSet, "Genres")
+  val genres = new TestProperty(Tags.NewTagSetType, QSet, "Genres")
     
   val eurythmics = new TestThing("Eurythmics", artistModel, genres("Rock"))
   val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"))
   val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"))
   val whitney = new TestThing("Whitney Houston", artistModel, genres("Pop"))
+  val weirdAl = new TestThing("Weird Al", artistModel, genres("Parody"))
     
   val artistsProp = new TestProperty(LinkType, QSet, "Artists", Links.LinkModelProp(artistModel))
     
@@ -28,6 +29,9 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val flood = new TestThing("Flood", albumModel, artistsProp(tmbg))
   val factoryShowroom = new TestThing("Factory Showroom", albumModel, artistsProp(tmbg))
   
+  val runningWithScissors = new TestThing("Running with Scissors", albumModel, artistsProp(weirdAl))
+  val mandatoryFun = new TestThing("Mandatory Fun", albumModel, artistsProp(weirdAl))
+  
   val randomCollection = new TestThing("Classical Randomness", albumModel)
     
   new TestThing("Be Yourself Tonight", albumModel, artistsProp(eurythmics))
@@ -36,11 +40,13 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   
   val favoriteArtistsProp = new TestProperty(LinkType, QList, "Favorite Artists", Links.LinkModelProp(artistModel))
   val interestingArtistsProp = new TestProperty(LinkType, QList, "Interesting Artists", Links.LinkModelProp(artistModel))
+  val otherArtistsProp = new TestProperty(Tags.NewTagSetType, QSet, "Other Artists", Links.LinkModelProp(artistModel))
   
   val faveDisplayProp = new TestProperty(TextType, ExactlyOne, "Show Favorites")
   
   val faves = new SimpleTestThing("My Favorites", 
     favoriteArtistsProp(tmbg, blackmores),
     interestingArtistsProp(eurythmics),
+    otherArtistsProp("Weird Al"),
     faveDisplayProp("My favorite bands are: [[My Favorites -> _bulleted]]"))
 }

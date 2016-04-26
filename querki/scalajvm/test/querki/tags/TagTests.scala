@@ -165,14 +165,14 @@ class TagTests extends QuerkiTests {
       implicit val s = new CDSpace
       
       pql("""[[Genres._tagsForProperty -> _sort -> _commas]]""") should
-        equal("[Folk](Folk), [Pop](Pop), [Rock](Rock), [Weird](Weird)")
+        equal("[Folk](Folk), [Parody](Parody), [Pop](Pop), [Rock](Rock), [Weird](Weird)")
     }
     
     "work with a received context" in {
       implicit val s = new CDSpace
       
       pql("""[[Genres._self -> _tagsForProperty -> _sort -> _commas]]""") should
-        equal("[Folk](Folk), [Pop](Pop), [Rock](Rock), [Weird](Weird)")      
+        equal("[Folk](Folk), [Parody](Parody), [Pop](Pop), [Rock](Rock), [Weird](Weird)")
     }
     
     // Test for Issue .3y286so

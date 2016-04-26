@@ -343,6 +343,31 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       }
     }
   }
+  
+  /**
+   * Note that this is called from both _tagRefs and _refs.
+   */
+  def tagRefs(inv:Invocation):QFut = {
+    implicit val s = inv.state
+    for {
+      dummy <- inv.preferCollection(QSet)
+      nameableType <- inv.contextTypeAs[NameableType]
+      definingProp <- inv.definingContextAsOptionalPropertyOf(NewTagSetType)
+      tagProps =
+        definingProp match {
+          case Some(p) => Iterable(p)
+          // There was no property specified, so use all Tag Properties
+          case None => inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+        }
+      prop <- inv.iter(tagProps)
+      refMap = cachedTagRefsFor(prop)
+      tagElem <- inv.contextElements
+      name <- inv.iter(nameableType.getNames(inv.context)(tagElem.value.first))
+      refs = refMap.get(name).getOrElse(Set.empty[Thing])
+      candidate <- inv.iter(refs)
+    }
+      yield ExactlyOne(LinkType(candidate))
+  }
 
   lazy val TagRefsMethod = new InternalMethod(TagRefsOID,
     toProps(
@@ -366,29 +391,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |If you specify a PROPERTY like this, it will only produce Things that point to this through that
           |*specific* Tag Property.
           |
-          |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
-          |at some point combine them for simplicity.""".stripMargin)))
+          |**Note:** use '_tagRefs' only if you specifically have a Tag Property. If you have a Thing, and want to get
+          |*all* of the references to it, both through Tag and Thing Properties, use `_allRefs` instead.""".stripMargin)))
   { 
     override def qlApply(inv:Invocation):QFut = {
-      implicit val s = inv.state
-      for {
-        dummy <- inv.preferCollection(QSet)
-        nameableType <- inv.contextTypeAs[NameableType]
-        definingProp <- inv.definingContextAsOptionalPropertyOf(NewTagSetType)
-        tagProps =
-          definingProp match {
-            case Some(p) => Iterable(p)
-            // There was no property specified, so use all Tag Properties
-            case None => inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
-          }
-        prop <- inv.iter(tagProps)
-        refMap = cachedTagRefsFor(prop)
-        tagElem <- inv.contextElements
-        name <- inv.iter(nameableType.getNames(inv.context)(tagElem.value.first))
-        refs = refMap.get(name).getOrElse(Set.empty[Thing])
-        candidate <- inv.iter(refs)
-      }
-        yield ExactlyOne(LinkType(candidate))
+      tagRefs(inv)
     }
   }
 
