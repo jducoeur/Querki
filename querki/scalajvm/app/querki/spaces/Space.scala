@@ -163,27 +163,39 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     }
   }
   
+  /**
+   * Make sure that this Space has an Instance Permissions object. If it is an old Space, and already has some instance permissions
+   * set on the Space itself, transition those.
+   */
   def checkSpaceDefaultProp():RequestM[Unit] = {
-    state.getPropOpt(AccessControl.PermDefaultsProp)(state) match {
+    state.getPropOpt(AccessControl.InstancePermissionsProp)(state) match {
       case Some(pv) => RequestM.successful(()) // Nothing to do here -- the property exists, which is what we care about
       case _ => {
+        implicit val s = state
         // There isn't a Space Default Thing yet, so create one. It starts out with the permissions on the
         // Space itself, if any (this is for transitioning from the old model, where the defaults were the
         // permissions on the Space):
-        def addPerm(perm:Property[OID,OID]):Option[(OID, QValue)] = {
-          state.getPropOpt(perm)(state).map { pv =>
+        def addPerm(perm:Property[OID,_]):Option[(OID, QValue)] = {
+          // Account for the way we used to use CanEditChildrenProp, but should transition to
+          // CanEditProp on the Instance Permissions:
+          val oldPerm = perm.getPropOpt(AccessControl.ChildPermissionsProp) match {
+            case Some(pv) => state.prop(pv.first).get
+            case _ => perm
+          }
+
+          state.getPropOpt(oldPerm).map { pv =>
             (perm.id -> pv.v)
           }
         }
         
-        val props = Thing.emptyProps ++
-          addPerm(AccessControl.CanReadProp) ++
-          addPerm(AccessControl.CanCreateProp) ++
-          addPerm(AccessControl.CanEditChildrenProp)
+        val instancePermissions = AccessControl.allPermissions(state).filter(_.thingOps(ecology).ifSet(AccessControl.IsInstancePermissionProp))
+        val props = (Thing.emptyProps /: instancePermissions) { (map, perm) => 
+          map ++ addPerm(perm)
+        } 
           
         for {
-          ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.PermDefaultsModel.id, props, Kind.Thing)
-          propsWithPerms = state.props + AccessControl.PermDefaultsProp(permThingId)
+          ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.InstancePermissionsModel.id, props, Kind.Thing)
+          propsWithPerms = state.props + AccessControl.InstancePermissionsProp(permThingId)
           _ <- modifyThingGuts(SystemUser, id, None, (_ => propsWithPerms), true)
         }
           yield ()

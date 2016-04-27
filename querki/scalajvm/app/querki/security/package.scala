@@ -16,7 +16,7 @@ package object security {
     def MembersTag:Thing
     def OwnerTag:Thing
     def RoleModel:Thing
-    def PermDefaultsModel:Thing
+    def InstancePermissionsModel:Thing
     
     // Checks whether this User *has* an Identity that is a Member of the Space. Use with caution!
     // Usage of this suggests a design bug!
@@ -32,7 +32,12 @@ package object security {
      * the definition of a lazy val, that gets referenced in your props collection, as usual for defining a
      * Property.
      */
-    def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], publicAllowed:Boolean):Property[OID,OID]
+    def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], isInstance:Boolean, publicAllowed:Boolean):Property[OID,OID]
+    
+    /**
+     * Fetch all of the Permissions in this Space and its Apps.
+     */
+    def allPermissions(state:SpaceState):Iterable[Property[OID,_]]
 
     def canCreate(state:SpaceState, who:User, modelId:OID):Boolean
     def canRead(state:SpaceState, who:User, thingId:OID):Boolean
@@ -62,7 +67,11 @@ package object security {
     def CanEditChildrenProp:Property[OID,OID]
     def CanReadProp:Property[OID,OID]
     
-    def PermDefaultsProp:Property[OID,OID]
+    // TODO: ChildPermissionsProp is deprecated, and should eventually go away. It is no
+    // longer needed in the InstancePermissions world:
+    def ChildPermissionsProp:Property[OID,OID]   
+    def InstancePermissionsProp:Property[OID,OID]
+    def IsInstancePermissionProp:Property[Boolean,Boolean]
   }
   
   trait Encryption extends EcologyInterface {

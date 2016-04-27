@@ -65,12 +65,14 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       commonName(_.apps.canUseAsAppPerm),
       "These people are allowed to use this Space as an App. **Use with caution! These people will be able to see everything in this Space!**",
       Seq(AccessControl.OwnerTag),
+      false,
       true)
   
   lazy val CanManipulateAppsPerm = AccessControl.definePermission(CanManipulateAppsOID, 
       commonName(_.apps.canManipulateAppsPerm),
       "These people are allowed to add or remove Apps from this Space",
       Seq(AccessControl.OwnerTag),
+      false,
       true)
       
   lazy val ShadowFlag = new SystemProperty(ShadowFlagOID, YesNoType, ExactlyOne,

@@ -26,8 +26,9 @@ object MOIDs extends EcotIds(4) {
   val RolePermissionsOID = moid(14)
   val PersonRolesOID = moid(15)
   val ChildPermissionsPropOID = moid(16)
-  val PermDefaultsOID = moid(17)
-  val PermDefaultsModelOID = moid(18)
+  val InstancePermissionsPropOID = moid(17)
+  val InstancePermissionsModelOID = moid(18)
+  val IsInstancePermissionOID = moid(19)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -226,6 +227,15 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     rolesOpt.getOrElse(Seq.empty[Thing])
   }
   
+  def allPermissions(state:SpaceState):Iterable[Property[OID,_]] = {
+    implicit val s = state
+    state.
+      allProps.
+      map(_._2).
+      filter(_.ifSet(isPermissionProp)).
+      map(_.confirmType(LinkType).get)
+  }
+  
   /***********************************************
    * THINGS
    ***********************************************/
@@ -289,9 +299,9 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           |The built in Roles should suffice for most purposes, but if you need a new one, create a child
           |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
           
-  lazy val PermDefaultsModel = ThingState(PermDefaultsModelOID, systemOID, RootOID,
+  lazy val InstancePermissionsModel = ThingState(InstancePermissionsModelOID, systemOID, RootOID,
     toProps(
-      setName("_Permission Defaults Model"),
+      setName("_Instance Permissions Model"),
       setInternal,
       Summary("This is the Model for the Things that hold Default Permissions.")))
     
@@ -302,18 +312,19 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     MembersTag,
     OwnerTag,
     RoleModel,
-    PermDefaultsModel
+    InstancePermissionsModel
   )
   
   /***********************************************
    * PROPERTIES
    ***********************************************/
   
-  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], publicAllowed:Boolean = false):Property[OID,OID] = {
+  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], isInstance:Boolean, publicAllowed:Boolean = false):Property[OID,OID] = {
     new SystemProperty(id, LinkType, QSet,
       toProps(
         setName(name),
         isPermissionProp(true),
+        IsInstancePermissionProp(isInstance),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
         Categories(SecurityTag),
@@ -328,6 +339,12 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         Core.InternalProp(true),
         Summary("This Property is a Permission")))
   
+  lazy val IsInstancePermissionProp = new SystemProperty(IsInstancePermissionOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("_isInstancePermission"),
+        setInternal,
+        Summary("This Property is an Instance Permission")))
+  
   lazy val CanEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,
       toProps(
         setName("Who Can Edit Custom"),
@@ -340,6 +357,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       toProps(
         setName("Who Can Read"),
         isPermissionProp(true),
+        IsInstancePermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
         Categories(SecurityTag),
@@ -354,6 +372,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       toProps(
         setName("Who Can Edit"),
         isPermissionProp(true),
+        IsInstancePermissionProp(true),
         PublicAllowedProp(false),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
@@ -383,7 +402,12 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             |Note that this differs from the ordinary [[Who Can Edit._self]] Property, which says who can
             |edit *this* specific Thing.""".stripMargin)))
 
-  lazy val CanCreateProp = definePermission(CanCreatePropOID, commonName(_.security.canCreatePerm), "Who else can make new Things in this Space", Seq(OwnerTag), false)
+  lazy val CanCreateProp = definePermission(CanCreatePropOID, 
+      commonName(_.security.canCreatePerm), 
+      "Who else can make new Things in this Space", 
+      Seq(OwnerTag),
+      false,
+      false)
   
   lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
       toProps(
@@ -440,14 +464,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         |This approach is a bit over-elaborate, and might yet evolve a bit. But for now, make sure to keep this
         |different in mind.""".stripMargin)))
   
-  lazy val PermDefaultsProp = new SystemProperty(PermDefaultsOID, LinkType, ExactlyOne,
+  lazy val InstancePermissionsProp = new SystemProperty(InstancePermissionsPropOID, LinkType, ExactlyOne,
     toProps(
-      setName("Permission Defaults"),
+      setName("_Instance Permissions"),
       // TODO: this will become Internal (indeed, hidden) once we have a proper UI in place:
 //      setInternal,
       Categories(SecurityTag),
-      Summary("Points to the Thing that holds the default Permissions for this Space"),
-      Details("""This Property points to a Thing where you place any Space-wide Permissions.
+      Summary("Points to the Thing that holds the Instance Permissions for this Space"),
+      Details("""This Property points to a Thing where you place any default Permissions for all Instances.
         |
         |This is only temporarily visible -- it will shortly be covered by a UI that deals with this
         |stuff.""".stripMargin)))
@@ -500,7 +524,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     RolePermissionsProp,
     PersonRolesProp,
     ChildPermissionsProp,
-    PermDefaultsProp,
+    InstancePermissionsProp,
+    IsInstancePermissionProp,
     
     HasPermissionFunction
   )
