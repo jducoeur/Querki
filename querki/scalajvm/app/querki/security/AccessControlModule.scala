@@ -210,7 +210,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       isPermission <- permissionVal.firstOpt;
       if isPermission
         )
-      yield who.hasIdentity(state.owner)
+      yield who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID
       
     hasPermissionOpt.getOrElse(true)
   }

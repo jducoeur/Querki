@@ -162,30 +162,34 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
       }
     }
   }
-//  
-//  def checkSpaceDefaultProp():RequestM[Unit] = {
-//    state.getPropOpt(AccessControl.PermDefaultsProp)(state) match {
-//      case Some(pv) => RequestM.successful(()) // Nothing to do here -- the property exists, which is what we care about
-//      case _ => {
-//        // There isn't a Space Default Thing yet, so create one. It starts out with the permissions on the
-//        // Space itself, if any (this is for transitioning from the old model, where the defaults were the
-//        // permissions on the Space):
-//        def addPerm(perm:Property[OID,OID]):Option[(OID, QValue)] = {
-//          state.getPropOpt(perm)(state).map { pv =>
-//            (perm.id -> pv.v)
-//          }
-//        }
-//        
-//        val props = Thing.emptyProps ++
-//          addPerm(AccessControl.CanReadProp) ++
-//          addPerm(AccessControl.CanCreateProp) ++
-//          addPerm(AccessControl.CanEditChildrenProp)
-//          
-//        createSomethingGuts(id, SystemUser, AccessControl.PermDefaultsModel.id,
-//          props, Kind.Thing)
-//      }
-//    }
-//  }
+  
+  def checkSpaceDefaultProp():RequestM[Unit] = {
+    state.getPropOpt(AccessControl.PermDefaultsProp)(state) match {
+      case Some(pv) => RequestM.successful(()) // Nothing to do here -- the property exists, which is what we care about
+      case _ => {
+        // There isn't a Space Default Thing yet, so create one. It starts out with the permissions on the
+        // Space itself, if any (this is for transitioning from the old model, where the defaults were the
+        // permissions on the Space):
+        def addPerm(perm:Property[OID,OID]):Option[(OID, QValue)] = {
+          state.getPropOpt(perm)(state).map { pv =>
+            (perm.id -> pv.v)
+          }
+        }
+        
+        val props = Thing.emptyProps ++
+          addPerm(AccessControl.CanReadProp) ++
+          addPerm(AccessControl.CanCreateProp) ++
+          addPerm(AccessControl.CanEditChildrenProp)
+          
+        for {
+          ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.PermDefaultsModel.id, props, Kind.Thing)
+          propsWithPerms = state.props + AccessControl.PermDefaultsProp(permThingId)
+          _ <- modifyThingGuts(SystemUser, id, None, (_ => propsWithPerms), true)
+        }
+          yield ()
+      }
+    }
+  }
   
   override def preStart() = {
     self ! BootSpace
@@ -439,6 +443,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id, this))).map(_.flatten)
         Loaded(s) <- persister ? Load(apps)
         _ = updateState(s)
+        _ <- checkSpaceDefaultProp()
       }
       {
         checkOwnerIsMember()
