@@ -67,7 +67,8 @@ class AccessControlTests extends QuerkiTests {
     
     "allow the Owner to restrict Read access to the entire Space to just Members" in {
       class TSpace extends CommonSpace {
-        override def otherSpaceProps = Seq(AccessControl.CanReadProp(AccessControl.MembersTag))
+        override def otherSpaceProps = 
+          Seq(instancePermissions(AccessControl.CanReadProp(AccessControl.MembersTag)))
       }
       val space = new TSpace
       
@@ -103,7 +104,7 @@ class AccessControlTests extends QuerkiTests {
     
     "allow the Owner to let Members create anything" in {
       class TSpace extends CommonSpace {
-        override def otherSpaceProps = Seq(AccessControl.CanCreateProp(AccessControl.MembersTag))
+        override def otherSpaceProps = Seq(instancePermissions(AccessControl.CanCreateProp(AccessControl.MembersTag)))
       }
       val space = new TSpace
       
@@ -169,10 +170,10 @@ class AccessControlTests extends QuerkiTests {
       assert(!AccessControl.canEdit(space.state, space.nonMember, space.allowedThing))
     }
     
-    "allow Edit of a Model's children, but not the Model, with Can Edit Children" in {
+    "allow Edit of a Model's children, but not the Model, with Can Edit on the Instance Permissions" in {
       class TSpace extends CommonSpace {
         // A simple default Model and Instance.
-        val testModel2 = new SimpleTestThing("My Model", Core.IsModelProp(true), AccessControl.CanEditChildrenProp(member1.person.id))
+        val testModel2 = new SimpleTestThing("My Model", Core.IsModelProp(true), instancePermissions(AccessControl.CanEditProp(member1.person.id)))
         val instance2 = new TestThing("My Instance", testModel2) 
       }
       val space = new TSpace
@@ -183,9 +184,9 @@ class AccessControlTests extends QuerkiTests {
       assert(!AccessControl.canEdit(space.state, space.member1.user, space.testModel2))
     }
     
-    "allow Edit of a Space's Things, but not the Space, with Can Edit Children" in {
+    "allow Edit of a Space's Things, but not the Space, with Can Edit on Instance Permissions" in {
       class TSpace extends CommonSpace {
-        override lazy val otherSpaceProps = Seq(AccessControl.CanEditChildrenProp(AccessControl.MembersTag))
+        override lazy val otherSpaceProps = Seq(instancePermissions(AccessControl.CanEditProp(AccessControl.MembersTag)))
       }
       val space = new TSpace
 
@@ -216,11 +217,11 @@ class AccessControlTests extends QuerkiTests {
       val manager = member("My Manager", "managerHandle", PaidUser, PersonRolesProp(ManagerRole))
       
       // No one can read unless they have an appropriate Role:
-      override def otherSpaceProps = Seq(
+      override def otherSpaceProps = Seq(instancePermissions(
           AccessControl.CanReadProp(AccessControl.OwnerTag),
           AccessControl.CanCreateProp(AccessControl.OwnerTag),
-          AccessControl.CanEditChildrenProp(AccessControl.OwnerTag),
-          Conversations.CanComment(AccessControl.OwnerTag))
+          AccessControl.CanEditProp(AccessControl.OwnerTag),
+          Conversations.CanComment(AccessControl.OwnerTag)))
     }
     
     "allow only the appropriate Roles to comment" in {
@@ -275,7 +276,7 @@ class AccessControlTests extends QuerkiTests {
       val readableByCustom = new SimpleTestThing("Readable", AccessControl.CanReadProp(customRole))
       val createableByCustom = new SimpleTestThing("Createable", AccessControl.CanCreateProp(customRole))
       
-      val childEditableByCustom = new SimpleTestThing("Editable Model", AccessControl.CanEditChildrenProp(customRole))
+      val childEditableByCustom = new SimpleTestThing("Editable Model", instancePermissions(AccessControl.CanEditProp(customRole)))
       val editableChild = new TestThing("Editable child", childEditableByCustom)
     }
     

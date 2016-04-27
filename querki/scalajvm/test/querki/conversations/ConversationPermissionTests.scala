@@ -38,7 +38,7 @@ class ConversationPermissionTests extends QuerkiTests {
     
     "be able to prevent anyone from commenting" in {
       class TSpace extends CommonSpace {
-        override def otherSpaceProps = Seq(Conversations.CanComment(AccessControl.OwnerTag))
+        override def otherSpaceProps = Seq(instancePermissions(Conversations.CanComment(AccessControl.OwnerTag)))
       }
       implicit val s = new TSpace
       
@@ -53,7 +53,7 @@ class ConversationPermissionTests extends QuerkiTests {
     
     "be able to prevent non-Members from reading Comments" in {
       class TSpace extends CommonSpace {
-        override def otherSpaceProps = Seq(Conversations.CanReadComments(AccessControl.MembersTag))
+        override def otherSpaceProps = Seq(instancePermissions(Conversations.CanReadComments(AccessControl.MembersTag)))
       }
       implicit val s = new TSpace
       

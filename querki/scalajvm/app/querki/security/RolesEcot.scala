@@ -83,7 +83,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       """Commentator -- can read Things, leave Comments, and provide Ratings and Reviews""".stripMargin,
       commentatorPerms)
       
-  lazy val contributorPerms = Seq(AccessControl.CanCreateProp, AccessControl.CanEditChildrenProp) ++ commentatorPerms
+  lazy val contributorPerms = Seq(AccessControl.CanCreateProp, AccessControl.CanEditProp) ++ commentatorPerms
   lazy val ContributorRole =
     defineRole(ContributorOID, "Contributor Role", "Contributor",
       """Contributor -- can do everything a Commentator can, plus create and edit Instances.""".stripMargin,

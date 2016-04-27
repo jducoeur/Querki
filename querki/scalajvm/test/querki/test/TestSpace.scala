@@ -119,6 +119,13 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
     extends TestThing(toid, name, pairs:_*)
   
+  // Add this to the pairs for a Model or the otherSpaceProps in order to set up Instance Permissions
+  // for it:
+  def instancePermissions(pairs:(OID, QValue)*):(OID, QValue) = {
+    val permThing = new UnnamedThing(AccessControl.InstancePermissionsModel, pairs:_*)
+    AccessControl.InstancePermissionsProp(permThing)
+  }
+  
   object TestModelProperty {
     def apply(name:String, model:Thing, coll:Collection):TestProperty[ModeledPropertyBundle,SimplePropertyBundle] = {
       val modelType = new ModelType(toid, model.id, 

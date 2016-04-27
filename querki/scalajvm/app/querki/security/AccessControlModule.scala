@@ -6,7 +6,6 @@ import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.identity.{Identity, User}
-import querki.util._
 import querki.values._
   
 object MOIDs extends EcotIds(4) {
@@ -83,23 +82,15 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         true
       else {
         implicit val s = state
-        // This exists mainly so that we can check Who Can Edit on this Thing, but Who Can Edit Children
-        // on its children. "childProp" is what we look at if we're looking up the inheritance chain:
-        lazy val childProp = {
-          val opt = for {
-            childPV <- aclProp.getPropOpt(ChildPermissionsProp)
-            childId <- childPV.firstOpt
-            childPropRaw <- state.prop(childId)
-            cp <- childPropRaw.confirmType(LinkType)
-          }
-            yield cp
-            
-          opt.getOrElse(aclProp)
-        }
         val thingOpt = state.anything(thingId)
         
         val isLocalUser = isMember(identityId, state)
         
+        /**
+         * Note that we check the Roles in two different ways: if a Role is explicitly named
+         * in the ACL for this permission somewhere (fine-grained), or if this Role grants this
+         * Permission space-wide (coarse-grained).
+         */
         val personRoles:Seq[OID] = {
           val raw = for {
             person <- Person.localPerson(identityId)
@@ -110,36 +101,42 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           raw.getOrElse(Seq.empty)
         }
         
-        val thingPermsOpt = {
-          thingOpt.flatMap(_.localProp(aclProp)) match {
-            case Some(local) => Some(local)  // The property is directly on this Thing
-            case None => {
-              // The property isn't on the Thing, so check whether *childProp* is on its *model*
-              for {
-                thing <- thingOpt
-                model <- thing.getModelOpt
-                pv <- model.getPropOpt(childProp)
-              }
-                yield pv
-            }
-          }
-        }
-        
         val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
         
+        /**
+         * We've found the permission defined somewhere along the chain, so we're going to use this
+         * setting. Does it let this person do this?
+         */
         def checkPerms(perms:PropAndVal[OID]):Boolean = {
           if (publicAllowed && perms.contains(PublicTagOID))
+            // Anybody's allowed, so just do it
             true
           else if (isLocalUser && perms.contains(MembersTagOID))
+            // This person is allowed because they're a Member
             true
           else if (perms.exists(Person.isPerson(identityId, _)))
+            // This person is explicitly named
             true
           else if (perms.exists(personRoles.contains(_)))
-            true // One of the Roles this person has is in the list
+            // One of the Roles this person has is named
+            true 
           else
             // *NOT* default. If the properly exists, and is left unset, then we
-            // always default to false!
+            // always default to false! The default is only used if the permission
+            // isn't specified anywhere!
             false          
+        }
+
+        /**
+         * This deals with checking the default Instance Permissions on the Space or the Model.
+         */
+        def checkInstancePermsFrom(t:Thing):Option[Boolean] = {
+          for {
+            instancePermsOID <- t.getFirstOpt(InstancePermissionsProp)
+            instanceThing <- state.anything(instancePermsOID)
+            perms <- instanceThing.getPropOpt(aclProp)
+          }
+            yield checkPerms(perms)
         }
         
         def roleHasPerm(roleId:OID):Boolean = {
@@ -147,7 +144,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             role <- state.anything(roleId)
             perms <- role.getPropOpt(RolePermissionsProp)
           }
-            yield perms.contains(childProp)
+            yield perms.contains(aclProp)
               
           result.getOrElse(false)
         }
@@ -164,18 +161,19 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         }
         
         // Try the permissions directly on this Thing...
-        thingPermsOpt.map(checkPerms(_)).getOrElse(
+        thingOpt.flatMap(_.localProp(aclProp)).map(checkPerms(_)).getOrElse(
+            // ... or try the Instance Permissions on its Model...
+            thingOpt.flatMap(thing => thing.getModelOpt.flatMap(checkInstancePermsFrom(_))).getOrElse(
             // ... or the Person has a Role that gives them the permission...
             // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
             // the Space settings, but are overridden by Thing/Model.
             hasRole.getOrElse(
-            // ... or the permissions on the Space (note that this uses childProp rather than aclProp, and that we
-            // don't apply this clause if we're actually looking *at* the Space)...
-            {if (thingId != state.id) state.getPropOpt(childProp).map{checkPerms(_)} else None}.getOrElse(
+            // ... or the Instance Permissions on the Space, if that's not what we're looking at...
+            {if (thingId == state.id) None else checkInstancePermsFrom(state)}.getOrElse(
             // ... or the default permissions for this ACL...
             aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
             // ... or just give up and say no.
-            false))))
+            false)))))
       }
     }
   }
@@ -406,7 +404,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       commonName(_.security.canCreatePerm), 
       "Who else can make new Things in this Space", 
       Seq(OwnerTag),
-      false,
+      true,
       false)
   
   lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
