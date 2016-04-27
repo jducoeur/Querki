@@ -164,41 +164,64 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   }
   
   /**
+   * Make sure that the specified Thing (the Space or one of its Models) has Instance Permissions if it either had some
+   * in the old world, or if forceCreate is specified.
+   */
+  def checkInstancePermissionsOn(t:Thing, instancePermissions:Iterable[Property[OID,_]], forceCreate:Boolean):RequestM[Unit] = {
+    implicit val s = state
+    
+    def addPerm(perm:Property[OID,_]):Option[(OID, QValue)] = {
+      // If this Permissions had a separate "children" version, read from that instead. (This
+      // only applies to Can Edit.)
+      val oldPerm = perm.getPropOpt(AccessControl.ChildPermissionsProp) match {
+        case Some(pv) => state.prop(pv.first).get
+        case _ => perm
+      }
+
+      t.getPropOpt(oldPerm).map { pv =>
+        (perm.id -> pv.v)
+      }
+    }
+
+    // Gather up the Instance Permissions on this Thing, if any:
+    val props = (Thing.emptyProps /: instancePermissions) { (map, perm) => 
+      map ++ addPerm(perm)
+    } 
+      
+    if (!props.isEmpty || forceCreate)
+      // Okay, we actually need to create the Instance Permissions Thing:
+      for {
+        ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.InstancePermissionsModel.id, props, Kind.Thing)
+        propsWithPerms = t.props + AccessControl.InstancePermissionsProp(permThingId)
+        _ <- modifyThingGuts(SystemUser, t.id, None, (_ => propsWithPerms), true)
+      }
+        yield ()
+    else
+      // There weren't any Instance Permissions, and we aren't forcing the issue, so just let it be:
+      RequestM.successful(())
+  }
+  
+  /**
    * Make sure that this Space has an Instance Permissions object. If it is an old Space, and already has some instance permissions
    * set on the Space itself, transition those.
    */
-  def checkSpaceDefaultProp():RequestM[Unit] = {
+  def checkInstancePermissions():RequestM[Unit] = {
     state.getPropOpt(AccessControl.InstancePermissionsProp)(state) match {
       case Some(pv) => RequestM.successful(()) // Nothing to do here -- the property exists, which is what we care about
       case _ => {
         implicit val s = state
-        // There isn't a Space Default Thing yet, so create one. It starts out with the permissions on the
-        // Space itself, if any (this is for transitioning from the old model, where the defaults were the
-        // permissions on the Space):
-        def addPerm(perm:Property[OID,_]):Option[(OID, QValue)] = {
-          // Account for the way we used to use CanEditChildrenProp, but should transition to
-          // CanEditProp on the Instance Permissions:
-          val oldPerm = perm.getPropOpt(AccessControl.ChildPermissionsProp) match {
-            case Some(pv) => state.prop(pv.first).get
-            case _ => perm
-          }
-
-          state.getPropOpt(oldPerm).map { pv =>
-            (perm.id -> pv.v)
-          }
-        }
+        implicit val e = ecology
         
-        val instancePermissions = AccessControl.allPermissions(state).filter(_.thingOps(ecology).ifSet(AccessControl.IsInstancePermissionProp))
-        val props = (Thing.emptyProps /: instancePermissions) { (map, perm) => 
-          map ++ addPerm(perm)
-        } 
-          
-        for {
-          ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.InstancePermissionsModel.id, props, Kind.Thing)
-          propsWithPerms = state.props + AccessControl.InstancePermissionsProp(permThingId)
-          _ <- modifyThingGuts(SystemUser, id, None, (_ => propsWithPerms), true)
+        val instancePermissions = AccessControl.allPermissions(state).filter(_.ifSet(AccessControl.IsInstancePermissionProp))
+        val models = state.models
+
+        // We force the creation of Instance Permissions on the Space, and then do it for any Models
+        // that need it. Note that, since we're flatMapping over RequestM, this will be synchronous and
+        // in-order. But checkInstancePermissionsOn() is smart enough to only do a loopback if it needs
+        // to actually *do* something:
+        (checkInstancePermissionsOn(state, instancePermissions, true) /: models) { (reqm, model) =>
+          reqm.flatMap(_ => checkInstancePermissionsOn(model, instancePermissions, false))
         }
-          yield ()
       }
     }
   }
@@ -455,7 +478,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id, this))).map(_.flatten)
         Loaded(s) <- persister ? Load(apps)
         _ = updateState(s)
-        _ <- checkSpaceDefaultProp()
+        _ <- checkInstancePermissions()
       }
       {
         checkOwnerIsMember()
