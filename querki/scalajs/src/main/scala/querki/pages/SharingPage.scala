@@ -225,110 +225,120 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
     guts =
       div(
-        section(id:="sendInvitations",
-          h2("Send Invitations to Join this Space"),
+        h2("Sharing"),
+        p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
-          p("""Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
-          |including [[]]-style expressions; however, links may not yet work quite the way you expect.""".stripMargin),
+        ul(cls:="nav nav-tabs", role:="tablist",
+          li(role:="presentation", cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
+          li(role:="presentation", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
+          li(role:="presentation", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
+        ),
           
+        div(cls:="tab-content",
+          section(role:="tabpanel", cls:="tab-pane active", id:="sendInvitations",
+            h3("Send Invitations to Join this Space"),
+            
+            p("""Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
+            |including [[]]-style expressions; however, links may not yet work quite the way you expect.""".stripMargin),
+            
           p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
           |twice, doing so excessively is frowned upon, as is sending unwelcome invitations.""".stripMargin, br(), 
             b("Either of these is considered spam, and is grounds for removal from Querki.")),
+            
+            p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
+            |to add that address to their Contacts.""".stripMargin),
+            
+            p("""Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
+            |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
+            
+            new RawDiv(inviteEditInfo.editor),
+            
+            div(cls:="control-group",
+              label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
+              div(cls:="controls",
+                inviteeInput
+              )
+            ),
+            
+            div(cls:="control-group",
+              label(cls:="control-label", "Or give the names or handles of collaborators you know from other Spaces:"),
+              div(cls:="controls",
+                collaboratorInput
+              )
+            ),
           
-          p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
-          |to add that address to their Contacts.""".stripMargin),
+            div(cls:="control-group",
+              div(cls:="controls",
+                "These people should be invited as ",
+                new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
+              )
+            ),
           
-          p("""Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
-          |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
-          
-          new RawDiv(inviteEditInfo.editor),
-          
-          div(cls:="control-group",
-            label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
-            div(cls:="controls",
-              inviteeInput
-            )
-          ),
-          
-          div(cls:="control-group",
-            label(cls:="control-label", "Or give the names or handles of collaborators you know from other Spaces:"),
-            div(cls:="controls",
-              collaboratorInput
-            )
-          ),
-        
-          div(cls:="control-group",
-            div(cls:="controls",
-              "These people should be invited as ",
-              new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
-            )
-          ),
-        
-          div(cls:="control-group",
-            div(cls:="controls",
-              new RunButton(
-                ButtonGadget.Normal, 
-                "Invite Members",
-                "Inviting...")
-              ({ btn =>
-                val emails = inviteeInput.values
-                val collabs = collaboratorInput.values.map(TID(_))
-                Client[SecurityFunctions].invite(emails, collabs).call().onComplete {
-                  case Success(response) => {
-                    // TODO: we really want to make a prettier display for this message, probably as part
-                    // of a general rewrite of StatusLine:
-                    val allInvites = response.newInvites ++ response.resends
-                    PageManager.reload().flashing(false, s"Sent invites to ${allInvites.mkString(", ")}")
-                  }
-                  case Failure(ex) => {
-                    btn.done()
-                    ex match {
-                      case MaxMembersPerSpaceException(maxMembers) => {
-                        StatusLine.showUntilChange(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
-                      }
-                      case _ => {
-                        StatusLine.showUntilChange(s"Error while trying to invite members!")
+            div(cls:="control-group",
+              div(cls:="controls",
+                new RunButton(
+                  ButtonGadget.Normal, 
+                  "Invite Members",
+                  "Inviting...")
+                ({ btn =>
+                  val emails = inviteeInput.values
+                  val collabs = collaboratorInput.values.map(TID(_))
+                  Client[SecurityFunctions].invite(emails, collabs).call().onComplete {
+                    case Success(response) => {
+                      // TODO: we really want to make a prettier display for this message, probably as part
+                      // of a general rewrite of StatusLine:
+                      val allInvites = response.newInvites ++ response.resends
+                      PageManager.reload().flashing(false, s"Sent invites to ${allInvites.mkString(", ")}")
+                    }
+                    case Failure(ex) => {
+                      btn.done()
+                      ex match {
+                        case MaxMembersPerSpaceException(maxMembers) => {
+                          StatusLine.showUntilChange(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
+                        }
+                        case _ => {
+                          StatusLine.showUntilChange(s"Error while trying to invite members!")
+                        }
                       }
                     }
                   }
-                }
-              })
+                })
+              )
+            ),
+             
+            h3("Outstanding Invitations"),
+            p("The following invitations have been sent but not yet accepted."),
+            
+            table(cls:="table table-hover",
+              tbody(
+                for (member <- invitees) 
+                  yield new PersonDisplay("warning", member, roleMap, customMap)
+              )
             )
-          )
-        ),
+          ),
         
-        section(id:="invitees",
-          h2("Outstanding Invitations"),
-          p("The following invitations have been sent but not yet accepted."),
-          
-          table(cls:="table table-hover",
-            tbody(
-              for (member <- invitees) 
-                yield new PersonDisplay("warning", member, roleMap, customMap)
+          section(role:="tabpanel", cls:="tab-pane", id:="members",
+            h3("Members"),
+            p("The following people are members of this Space. Click on a member's Role in order to change it."),
+            
+            table(cls:="table table-hover",
+              tbody(
+                for (member <- members) 
+                  yield new PersonDisplay("info", member, roleMap, customMap)
+              )
             )
-          )          
-        ),
+          ),
         
-        section(id:="members",
-          h2("Members"),
-          p("The following people are members of this Space. Click on a member's Role in order to change it."),
-          
-          table(cls:="table table-hover",
-            tbody(
-              for (member <- members) 
-                yield new PersonDisplay("info", member, roleMap, customMap)
-            )
-          )
-        ),
-        
-        section(id:="custom",
-          h2("Custom Roles"),
-          p(b("Advanced: "),
-            """You can define special custom Roles for your Space, if you need more control. For the moment, you
-              |can only use these Roles in the fine-grained permission system (that is, using them for permissions
-              |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
-              |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin)),
-          new CustomRoleManager(customMap)
+          section(role:="tabpanel", cls:="tab-pane", id:="custom",
+            h3("Custom Roles"),
+            p(b("Advanced: "),
+              """You can define special custom Roles for your Space, if you need more control. For the moment, you
+                |can only use these Roles in the fine-grained permission system (that is, using them for permissions
+                |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
+                |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin),
+            new CustomRoleManager(customMap)
+          ) 
+        )
       )
   }
     yield PageContents(s"Sharing for ${space.displayName}", guts)
