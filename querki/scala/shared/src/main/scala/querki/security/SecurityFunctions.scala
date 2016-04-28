@@ -38,6 +38,12 @@ trait SecurityFunctions {
    * This never actually returns false; it will throw an Exception if it can't archive.
    */
   def archiveThisSpace():Future[Boolean]
+  
+  /**
+   * Fetches the Instance Permissions for the specified Space or Model. Will create the
+   * Instance Permissions Thing if it doesn't already exist.
+   */
+  def instancePermsFor(thing:TID):Future[InstancePermissions]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])
@@ -53,4 +59,13 @@ case class SpaceSecurityInfo(fromEmail:String, defaultRoles:Seq[TID])
 
 object SecurityFunctions {
   case class InviteResponse(newInvites:Seq[String], resends:Seq[String])
+  
+  sealed trait SecurityLevel
+  case object SecPublic extends SecurityLevel
+  case object SecMembers extends SecurityLevel
+  case object SecOwner extends SecurityLevel
+  case object SecCustom extends SecurityLevel
+  
+  case class InstancePerm(permId:TID, currently:SecurityLevel)
+  case class InstancePermissions(permThing:ThingInfo, perms:Seq[InstancePerm])
 }

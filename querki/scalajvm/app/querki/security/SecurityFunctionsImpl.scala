@@ -2,12 +2,12 @@ package querki.security
 
 import scala.concurrent.Future
 
-import models.{AsOID, Thing, ThingId}
+import models.{AsOID, Kind, Thing, ThingId}
 import querki.api._
 import querki.data._
 import querki.globals._
 import querki.identity.InvitationResult
-import querki.spaces.messages.{Archived, ArchiveSpace, InviteRequest, SpaceMembersMessage}
+import querki.spaces.messages._
 
 import SecurityFunctions._
 
@@ -93,5 +93,36 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       }
       case _ => throw new CanNotArchiveException()
     }
+  }
+  
+  def instancePermsFor(thing:TID):Future[InstancePermissions] = withThing(thing) { thing =>
+    val permThingOpt = for {
+      oid <- thing.getFirstOpt(AccessControl.InstancePermissionsProp)(state)
+      t <- state.anything(oid)
+    }
+      yield t
+
+    // Either we have the Instance Permissions Thing, or we create it:
+    val permThingFut:Future[(Thing, SpaceState)] = 
+      permThingOpt.map(t => Future.successful((t, state))).getOrElse {
+        val createMsg = CreateThing(user, state.id, Kind.Thing, MOIDs.InstancePermissionsModelOID, Thing.emptyProps)
+        for {
+          // Create the Permissions Thing:
+          ThingFound(permThingId, _) <- spaceRouter ? createMsg
+          // And point the main Thing to it:
+          changeMsg = ChangeProps(user, state.id, thing.id, Map(AccessControl.InstancePermissionsProp(permThingId)))
+          ThingFound(_, newState) <- spaceRouter ? changeMsg
+          t = newState.anything(permThingId).get
+        }
+          yield (t, newState)
+      }
+      
+    // thingInfo() also produces a Future, so comprehension time:
+    for {
+      (t, s) <- permThingFut
+      thingInfo <- ClientApi.thingInfo(t, rc)(s)
+    }
+      // TODO: summarize the actual permissions
+      yield InstancePermissions(thingInfo, Seq.empty)
   }
 }
