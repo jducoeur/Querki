@@ -89,7 +89,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         Apps.CanManipulateAppsPerm +
         Apps.CanUseAsAppPerm +
         AccessControl.CanCreateProp +
-        Roles.CanExplorePerm
+        Roles.CanExplorePerm +
+        AccessControl.CanDesignPerm
     
     SpaceInfo(
       state, 

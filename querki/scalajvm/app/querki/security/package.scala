@@ -40,6 +40,7 @@ package object security {
     def allPermissions(state:SpaceState):Iterable[Property[OID,_]]
 
     def canCreate(state:SpaceState, who:User, modelId:OID):Boolean
+    def canDesign(state:SpaceState, who:User, modelId:OID):Boolean
     def canRead(state:SpaceState, who:User, thingId:OID):Boolean
     def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean
     def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean
@@ -62,7 +63,10 @@ package object security {
     def RolePermissionsProp:Property[OID,OID]
     def PersonRolesProp:Property[OID,OID]
     
+    // TODO: note "CanDesignPerm". We should change the name scheme in general to match that, so that
+    // Permissions are a bit more obvious.
     def CanCreateProp:Property[OID,OID]
+    def CanDesignPerm:Property[OID,OID]
     def CanEditProp:Property[OID,OID]
     def CanEditChildrenProp:Property[OID,OID]
     def CanReadProp:Property[OID,OID]

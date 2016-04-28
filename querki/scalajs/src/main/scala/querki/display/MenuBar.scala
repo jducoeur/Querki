@@ -118,7 +118,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
             "Design a Model", 
             id = "designAModel", 
             onClick = Some({ () => DataModel.designAModel() }),
-            enabled = space.permissions.contains(std.security.canCreatePerm)),
+            enabled = space.permissions.contains(std.security.canDesignPerm)),
           NavLink(
             "Create any Thing", 
             id = "_createAnyThing", 

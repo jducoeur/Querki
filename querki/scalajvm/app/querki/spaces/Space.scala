@@ -117,6 +117,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
   def canCreate(who:User, modelId:OID):Boolean = AccessControl.canCreate(state, who, modelId)
+  def canDesign(who:User, modelId:OID):Boolean = AccessControl.canDesign(state, who, modelId)
   def canEdit(who:User, thingId:OID):Boolean = AccessControl.canEdit(state, who, thingId)
   
   def changedProperties(oldProps:PropMap, newProps:PropMap):Seq[OID] = {
@@ -267,7 +268,12 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
       // TODO: this call is side-effecting -- it throws an exception if you *aren't* allowed to change this.
       // This is stupid and sucktastic. Change to something more functional.
       canChangeProperties(who, changedProps, None, props)
-      if (!canCreate(who, modelId)) {
+      val allowed =
+        if (props.contains(Core.IsModelProp.id))
+          canDesign(who, modelId)
+        else
+          canCreate(who, modelId)
+      if (!allowed) {
         RequestM.failed(new PublicException(CreateNotAllowed))
       } else if (name.isDefined && state.anythingByName(name.get).isDefined)
         RequestM.failed(new PublicException(NameExists, name.get))

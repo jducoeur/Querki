@@ -112,6 +112,23 @@ class AccessControlTests extends QuerkiTests {
       assert(!AccessControl.canCreate(space.state, space.nonMember, space.testModel))      
     }
     
+    "by default, only allow the Owner to design" in {
+      val space = commonSpace
+      
+      assert(AccessControl.canDesign(space.state, space.owner, Basic.SimpleThing))
+      assert(!AccessControl.canDesign(space.state, space.member1.user, Basic.SimpleThing))
+    }
+    
+    "allow the Owner to let Members design Models" in {
+      class TSpace extends CommonSpace {
+        override def otherSpaceProps = Seq(instancePermissions(AccessControl.CanDesignPerm(AccessControl.MembersTag)))
+      }
+      val space = new TSpace
+      
+      assert(AccessControl.canDesign(space.state, space.member1.user, Basic.SimpleThing))
+      assert(!AccessControl.canDesign(space.state, space.nonMember, Basic.SimpleThing))
+    }
+    
     // TODO: this will change once we have Moderation, but for now, the Public simply can't Create:
     "not allow the Owner to let non-Members create Things" in {
       class TSpace extends CommonSpace {
@@ -265,6 +282,16 @@ class AccessControlTests extends QuerkiTests {
       assert(AccessControl.canEdit(space.state, space.contributor.user, space.instance))
       assert(AccessControl.canEdit(space.state, space.editor.user, space.instance))
       assert(AccessControl.canEdit(space.state, space.manager.user, space.instance))
+    }
+    
+    "allow only the appropriate Roles to design" in {
+      implicit val space = new RoleSpace
+      
+      assert(!AccessControl.canDesign(space.state, space.member1.user, space.testModel))
+      assert(!AccessControl.canDesign(space.state, space.commentator.user, space.testModel))
+      assert(!AccessControl.canDesign(space.state, space.contributor.user, space.testModel))
+      assert(AccessControl.canDesign(space.state, space.editor.user, space.testModel))
+      assert(AccessControl.canDesign(space.state, space.manager.user, space.testModel))
     }
     
     class CustomSpace extends CommonSpace {

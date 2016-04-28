@@ -28,6 +28,7 @@ object MOIDs extends EcotIds(4) {
   val InstancePermissionsPropOID = moid(17)
   val InstancePermissionsModelOID = moid(18)
   val IsInstancePermissionOID = moid(19)
+  val CanDesignPermOID = moid(20)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -186,6 +187,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       hasPermission(CanCreateProp, state, who, modelId)
   }
   
+  def canDesign(state:SpaceState, who:User, modelId:OID):Boolean = {
+    if (state.id == querki.ecology.SystemIds.systemOID)
+      // You can't create anything in the System Space:
+      false
+    else
+      hasPermission(CanDesignPerm, state, who, modelId)
+  }
+  
   def canRead(state:SpaceState, who:User, thingId:OID):Boolean = {
     hasPermission(CanReadProp, state, who, thingId)    
   }
@@ -194,8 +203,16 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     if (state.id == querki.ecology.SystemIds.systemOID)
       // You can't edit anything in the System Space:
       false
-    else
-      hasPermission(CanEditProp, state, who, thingId)
+    else {
+      val perm = {
+        // If this is a Model, use CanDesign; otherwise, use CanEdit.
+        if (state.anything(thingId).map(_.isModel(state)).getOrElse(false))
+          CanDesignPerm
+        else
+          CanEditProp
+      }
+      hasPermission(perm, state, who, thingId)
+    }
   }
 
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
@@ -387,8 +404,11 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
         Categories(SecurityTag),
+        Basic.DeprecatedProp(true),
         Summary("Who else can edit children of this Thing"),
-        Details("""This Property is useful on Models and Spaces, and works as follows.
+        Details("""**Deprecated:** this Permission no longer matters, and is no longer used for anything.
+            |
+            |This Property is useful on Models and Spaces, and works as follows.
             |
             |When you set this Property on a **Model**, it says who is allowed to edit the Things made from
             |that Model. That is, if I have a Model named *CD*, setting this Property on it says who can
@@ -402,7 +422,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
 
   lazy val CanCreateProp = definePermission(CanCreatePropOID, 
       commonName(_.security.canCreatePerm), 
-      "Who else can make new Things in this Space", 
+      "Who else can make new Instances in this Space", 
+      Seq(OwnerTag),
+      true,
+      false)
+      
+  lazy val CanDesignPerm = definePermission(CanDesignPermOID,
+      commonName(_.security.canDesignPerm),
+      "Who can design Models in this Space",
       Seq(OwnerTag),
       true,
       false)
@@ -515,6 +542,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
 //    canEditCustomProp,
     isPermissionProp,
     CanCreateProp,
+    CanDesignPerm,
     CanEditProp,
     CanEditChildrenProp,
     CanReadProp,
