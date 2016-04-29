@@ -53,8 +53,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   lazy val smtpHost = getRequiredConf("smtpHost")
   lazy val smtpPort = Config.getInt(fullKey("port"), 0)
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
-  lazy val username = Config.getString(fullKey("username"), "")
-  lazy val password = Config.getString(fullKey("password"), "")
+  lazy val username = Config.getString(fullKey("smtpUsername"), "")
+  lazy val password = Config.getString(fullKey("smtpPassword"), "")
   
   private def createSession():Session = {
     val props = System.getProperties()
