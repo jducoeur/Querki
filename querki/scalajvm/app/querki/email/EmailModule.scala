@@ -3,7 +3,6 @@ package querki.email.impl
 import querki.email._
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
 
 import javax.activation.DataHandler
@@ -16,6 +15,7 @@ import models._
 
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.identity._
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, ThingError, ThingFound, ThingResponse}
@@ -51,15 +51,27 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   lazy val from = getRequiredConf("from")
   lazy val smtpHost = getRequiredConf("smtpHost")
+  lazy val smtpPort = Config.getInt(fullKey("port"), 0)
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
+  lazy val username = Config.getString(fullKey("username"), "")
+  lazy val password = Config.getString(fullKey("password"), "")
   
   private def createSession():Session = {
     val props = System.getProperties()
     props.setProperty("mail.host", smtpHost)
+    if (smtpPort != 0) {
+      props.setProperty("mail.smtp.port", smtpPort.toString)
+    }
     props.setProperty("mail.user", "querki")
     props.setProperty("mail.transport.protocol", "smtp")
     props.setProperty("mail.from", from)
     props.setProperty("mail.debug", "true")
+    if (username.length() > 0) {
+      // We're opening an authenticated session
+      props.setProperty("mail.smtp.auth", "true")
+      props.setProperty("mail.smtp.starttls.enable", "true")
+      props.setProperty("mail.smtp.starttls.required", "true")
+    }
 	    
     val session = Session.getInstance(props, null)
 	
@@ -269,39 +281,46 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
       recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
       subject:Wikitext, body:Wikitext):Try[Unit] = 
   Try {
-	val msg = new MimeMessage(session)
-	msg.setFrom(new InternetAddress(from))
-
-	val replyAddrs = Array(new InternetAddress(requester.email.addr, requester.name).asInstanceOf[Address])
-	msg.setReplyTo(replyAddrs)
-
-    // TBD: there must be a better way to do this. It's a nasty workaround for the fact
-	// that setRecipients() is invariant, I believe.
-	val toAddrs = Array(new InternetAddress(recipientEmail.addr, recipientName).asInstanceOf[Address])	
-	msg.setRecipients(Message.RecipientType.TO, toAddrs)
-	
-	msg.setSubject(subject.plaintext)
-	
-	// Attach the HTML...
-	val bodyHtml = body.display
-	val bodyPartHtml = new MimeBodyPart()
-	bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
-	// ... and the plaintext...
-	val bodyPlain = body.plaintext
-	val bodyPartPlain = new MimeBodyPart()
-	bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
-	// ... and set the body to the multipart:
-	val multipart = new MimeMultipart("alternative")
-	// IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
-	// one by preference:
-	multipart.addBodyPart(bodyPartPlain)
-	multipart.addBodyPart(bodyPartHtml)
-	msg.setContent(multipart)
-	    
-	msg.setHeader("X-Mailer", "Querki")
-	msg.setSentDate(new java.util.Date())
-	    
-	Transport.send(msg)
+  	val msg = new MimeMessage(session)
+  	msg.setFrom(new InternetAddress(from))
+  
+  	val replyAddrs = Array(new InternetAddress(requester.email.addr, requester.name).asInstanceOf[Address])
+  	msg.setReplyTo(replyAddrs)
+  
+      // TBD: there must be a better way to do this. It's a nasty workaround for the fact
+  	// that setRecipients() is invariant, I believe.
+  	val toAddrs = Array(new InternetAddress(recipientEmail.addr, recipientName).asInstanceOf[Address])	
+  	msg.setRecipients(Message.RecipientType.TO, toAddrs)
+  	
+  	msg.setSubject(subject.plaintext)
+  	
+  	// Attach the HTML...
+  	val bodyHtml = body.display
+  	val bodyPartHtml = new MimeBodyPart()
+  	bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
+  	// ... and the plaintext...
+  	val bodyPlain = body.plaintext
+  	val bodyPartPlain = new MimeBodyPart()
+  	bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
+  	// ... and set the body to the multipart:
+  	val multipart = new MimeMultipart("alternative")
+  	// IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
+  	// one by preference:
+  	multipart.addBodyPart(bodyPartPlain)
+  	multipart.addBodyPart(bodyPartHtml)
+  	msg.setContent(multipart)
+  	    
+  	msg.setHeader("X-Mailer", "Querki")
+  	msg.setSentDate(new java.util.Date())
+  	    
+    if (username.length > 0) {
+      val transport = session.getTransport
+      transport.connect(username, password)
+      transport.sendMessage(msg, msg.getAllRecipients)
+    } else {
+      // Non-TLS -- running on a test server, so just do it the easy way:
+  	  Transport.send(msg)
+    }
   }
 	
   def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {

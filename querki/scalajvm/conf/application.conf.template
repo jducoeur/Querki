@@ -59,9 +59,14 @@ querki {
   
   mail {
     smtpHost : SMTP HOST
+    # Specify the port here, if desired
+    # smtpPort : SMTP PORT
     from : EMAIL ADDRESS TO SEND FROM
     systemFrom : EMAIL ADDRESS SYSTEM EMAILS COME FROM
     systemName : DISPLAY NAME OF SYSTEM EMAILS
+    # If username is set to non-empty, it and password should be the TLS credentials for SMTP:
+    smtpUsername : ""
+    smtpPassword : ""
     debug : false
   }
   
