@@ -279,7 +279,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
    */
   private def sendInternal(session:Session, from:String, 
       recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
-      subject:Wikitext, body:Wikitext):Try[Unit] = 
+      subject:Wikitext, bodyMain:Wikitext):Try[Unit] = 
   Try {
   	val msg = new MimeMessage(session)
   	msg.setFrom(new InternetAddress(from))
@@ -293,6 +293,13 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   	msg.setRecipients(Message.RecipientType.TO, toAddrs)
   	
   	msg.setSubject(subject.plaintext)
+    
+    val body = bodyMain + Wikitext("""
+      |
+      |------
+      |
+      |If you believe you have received this message in error, please drop a note to "betaemail@querki.net". (We're
+      |working on the one-click unsubscribe, but not quite there yet; sorry.)""".stripMargin)
   	
   	// Attach the HTML...
   	val bodyHtml = body.display
