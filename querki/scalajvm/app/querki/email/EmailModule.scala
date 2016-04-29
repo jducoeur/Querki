@@ -321,9 +321,11 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   	msg.setSentDate(new java.util.Date())
   	    
     if (username.length > 0) {
-      val transport = session.getTransport
+      val transport = session.getTransport("smtp").asInstanceOf[SMTPTransport]
       transport.connect(username, password)
       transport.sendMessage(msg, msg.getAllRecipients)
+      if (debug)
+        QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
     } else {
       // Non-TLS -- running on a test server, so just do it the easy way:
   	  Transport.send(msg)
