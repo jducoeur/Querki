@@ -232,8 +232,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           |including [[]]-style expressions; however, links may not yet work quite the way you expect.""".stripMargin),
           
           p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
-          |twice, doing so excessively is frowned upon, as is sending unwelcome invitations. Either of these is considered spam, and is
-          |grounds for removal from Querki.""".stripMargin),
+          |twice, doing so excessively is frowned upon, as is sending unwelcome invitations.""".stripMargin, br(), 
+            b("Either of these is considered spam, and is grounds for removal from Querki.")),
           
           p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
           |to add that address to their Contacts.""".stripMargin),
