@@ -190,6 +190,16 @@ class UITests extends QuerkiTests {
     }
   }
   
+  // === _QLInput ===
+  "_QLInput" should {
+    "render properly" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_QLInput(label=""Hello"", ql=""[[$input]]"")]]""") should
+        include (s"""placeholder="Hello"""")
+    }
+  }
+  
   // === _section ===
   "_section" should {
     "work normally" in {

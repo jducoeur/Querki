@@ -693,7 +693,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL again, and appends the result to the target div. Otherwise, pressing Enter again
                 |closes the div.""".stripMargin),
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing Enter again re-runs
-                |the QL with the new value of the input field, and replaces the previous result in the target div.""".stripMargin)
+                |the QL with the new value of the input field, and replaces the previous result in the target div.""".stripMargin),
+          ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Not currently used in _QLInput.""".stripMargin)
         ),
         returns = (RawHtmlType, "The input field, ready for the page")
       ),
