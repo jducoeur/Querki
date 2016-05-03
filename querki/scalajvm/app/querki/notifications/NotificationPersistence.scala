@@ -57,29 +57,40 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
   
   def loadCurrent(userId:UserId):CurrentNotifications = {
     DB.withConnection(dbName(User)) { implicit conn =>
-      val noteStream = UserSQL(userId, """
-          SELECT * from {notename}
-           WHERE isDeleted = FALSE
-           ORDER BY sentTime DESC
-           LIMIT 100
-          """)()
-      val notes = noteStream.map { row =>
-        Notification(
-          row.int("id"),
-          row.oid("sender"),
-          row.optOid("toIdentity"),
-          NotifierId(row.short("ecotId"), row.short("noteType")),
-          row.dateTime("sentTime"),
-          row.optOid("spaceId"),
-          row.optOid("thingId"),
-          // Do we ever need a specific Space in order to deserialize a Notification? We probably can't,
-          // since we are viewing them outside the context of the Space. So just use System.
-          SpacePersistence.deserializeProps(row.string("props"), SystemState), 
-          row.bool("isRead"), 
-          row.bool("isDeleted")
-        )
+      try {
+        val noteStream = UserSQL(userId, """
+            SELECT * from {notename}
+             WHERE isDeleted = FALSE
+             ORDER BY sentTime DESC
+             LIMIT 100
+            """)()
+        val notes = noteStream.map { row =>
+          Notification(
+            row.int("id"),
+            row.oid("sender"),
+            row.optOid("toIdentity"),
+            NotifierId(row.short("ecotId"), row.short("noteType")),
+            row.dateTime("sentTime"),
+            row.optOid("spaceId"),
+            row.optOid("thingId"),
+            // Do we ever need a specific Space in order to deserialize a Notification? We probably can't,
+            // since we are viewing them outside the context of the Space. So just use System.
+            SpacePersistence.deserializeProps(row.string("props"), SystemState), 
+            row.bool("isRead"), 
+            row.bool("isDeleted")
+          )
+        }
+        CurrentNotifications(notes.force)
+      } catch {
+        case e:com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException => {
+          // This is dealing with a very specific race condition that can occur. When a User is newly
+          // created, the Client's request for numNewNotifications can race ahead of evolving this User's
+          // state, with the result that we can hit this request before the user's Notifications table exists.
+          // That results in this Exception. So we just quietly deal with it and return empty.
+          CurrentNotifications(Seq.empty)
+        }
+        case e:Throwable => throw e 
       }
-      CurrentNotifications(notes.force)
     }
   }
   
