@@ -142,7 +142,7 @@ object User {
   val userIdSessionParam = "userId"
   val levelSessionParam = "lvl"
     
-  object Anonymous extends User {
+  case object Anonymous extends User {
     val id = UnknownOID
     val name = ""
     val identities = Seq(Identity.AnonymousIdentity)
@@ -177,5 +177,6 @@ case class FullIdentity(id:OID, email:EmailAddress, handle:String, name:String, 
 
 object Identity {
   val AnonymousOID = OID(-2)
-  object AnonymousIdentity extends Identity(AnonymousOID, EmailAddress("anonidentity@querki.net"), "", "Anonymous", "Anonymous", IdentityKind.Anonymous)
+  object AnonymousIdentity 
+    extends Identity(AnonymousOID, EmailAddress("anonidentity@querki.net"), "", "Anonymous", "Anonymous", IdentityKind.Anonymous) with Serializable
 }
