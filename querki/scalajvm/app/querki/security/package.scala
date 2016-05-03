@@ -32,7 +32,14 @@ package object security {
      * the definition of a lazy val, that gets referenced in your props collection, as usual for defining a
      * Property.
      */
-    def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], isInstance:Boolean, publicAllowed:Boolean):Property[OID,OID]
+    def definePermission(
+      id:OID, 
+      name:String, 
+      summary:String, 
+      defaults:Seq[OID],
+      appliesTo:Seq[OID],
+      isInstance:Boolean, 
+      publicAllowed:Boolean):Property[OID,OID]
     
     /**
      * Fetch all of the Permissions in this Space and its Apps.
@@ -76,6 +83,14 @@ package object security {
     def ChildPermissionsProp:Property[OID,OID]   
     def InstancePermissionsProp:Property[OID,OID]
     def IsInstancePermissionProp:Property[Boolean,Boolean]
+    def DefaultPermissionProp:Property[OID,OID]
+    def PermAppliesTo:Property[OID,OID]
+    def PublicAllowedProp:Property[Boolean,Boolean]
+    
+    // The valid values for PermAppliesTo. Pass the appropriate values into definePermission().appliesTo.
+    def AppliesToSpace:Thing
+    def AppliesToModels:Thing
+    def AppliesToInstances:Thing
   }
   
   trait Encryption extends EcologyInterface {

@@ -29,6 +29,11 @@ object MOIDs extends EcotIds(4) {
   val InstancePermissionsModelOID = moid(18)
   val IsInstancePermissionOID = moid(19)
   val CanDesignPermOID = moid(20)
+  
+  val PermAppliesToOID = moid(21)
+  val AppliesToSpaceOID = moid(22)
+  val AppliesToModelsOID = moid(23)
+  val AppliesToInstancesOID = moid(24)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -319,6 +324,13 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       setName("_Instance Permissions Model"),
       setInternal,
       Summary("This is the Model for the Things that hold Default Permissions.")))
+      
+  lazy val AppliesToSpace = ThingState(AppliesToSpaceOID, systemOID, RootOID, 
+    toProps(setName(commonName(_.security.appliesToSpace))))
+  lazy val AppliesToModels = ThingState(AppliesToModelsOID, systemOID, RootOID, 
+    toProps(setName(commonName(_.security.appliesToModels))))
+  lazy val AppliesToInstances = ThingState(AppliesToInstancesOID, systemOID, RootOID, 
+    toProps(setName(commonName(_.security.appliesToInstances))))
     
   override lazy val things = Seq(
     SecurityPrincipal,
@@ -327,14 +339,26 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     MembersTag,
     OwnerTag,
     RoleModel,
-    InstancePermissionsModel
+    InstancePermissionsModel,
+    
+    AppliesToSpace,
+    AppliesToModels,
+    AppliesToInstances
   )
   
   /***********************************************
    * PROPERTIES
    ***********************************************/
   
-  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], isInstance:Boolean, publicAllowed:Boolean = false):Property[OID,OID] = {
+  def definePermission(
+    id:OID, 
+    name:String, 
+    summary:String, 
+    defaults:Seq[OID],
+    appliesTo:Seq[OID],
+    isInstance:Boolean, 
+    publicAllowed:Boolean = false):Property[OID,OID] = 
+  {
     new SystemProperty(id, LinkType, QSet,
       toProps(
         setName(name),
@@ -344,6 +368,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         LinkModelProp(SecurityPrincipal),
         Categories(SecurityTag),
         Summary(summary),
+        PermAppliesTo(appliesTo:_*),
         DefaultPermissionProp(defaults:_*),
         PublicAllowedProp(publicAllowed)))
   }
@@ -377,8 +402,9 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         LinkModelProp(SecurityPrincipal),
         Categories(SecurityTag),
         Summary("Who else can read Things in this Space"),
-        DefaultPermissionProp(PublicTag, OwnerTag),
+        DefaultPermissionProp(PublicTag),
         PublicAllowedProp(true),
+        PermAppliesTo(AppliesToSpace, AppliesToModels, AppliesToInstances),
         // You specifically can *not* restrict visibility of Properties or Types, at least not yet:
         // that makes it way too easy to cause brokenness:
         Core.AppliesToKindProp(Kind.Thing, Kind.Space)))
@@ -392,6 +418,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
         ChildPermissionsProp(CanEditChildrenPropOID),
+        PermAppliesTo(AppliesToSpace, AppliesToModels, AppliesToInstances),
         Categories(SecurityTag),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
@@ -424,6 +451,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       commonName(_.security.canCreatePerm), 
       "Who else can make new Instances in this Space", 
       Seq(OwnerTag),
+      Seq(AppliesToSpace, AppliesToModels),
       true,
       false)
       
@@ -431,6 +459,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       commonName(_.security.canDesignPerm),
       "Who can design Models in this Space",
       Seq(OwnerTag),
+      Seq(AppliesToSpace, AppliesToModels),
       true,
       false)
   
@@ -501,6 +530,12 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         |This is only temporarily visible -- it will shortly be covered by a UI that deals with this
         |stuff.""".stripMargin)))
   
+  lazy val PermAppliesTo = new SystemProperty(PermAppliesToOID, LinkType, QSet,
+    toProps(
+      setName("_Permission Applies To"),
+      setInternal,
+      Categories(SecurityTag)))
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -552,6 +587,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     ChildPermissionsProp,
     InstancePermissionsProp,
     IsInstancePermissionProp,
+    PermAppliesTo,
     
     HasPermissionFunction
   )

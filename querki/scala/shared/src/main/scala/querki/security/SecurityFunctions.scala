@@ -40,10 +40,16 @@ trait SecurityFunctions {
   def archiveThisSpace():Future[Boolean]
   
   /**
-   * Fetches the Instance Permissions for the specified Space or Model. Will create the
-   * Instance Permissions Thing if it doesn't already exist.
+   * Fetches the Permissions for the specified Thing. Will create the
+   * Instance Permissions Thing if it is a Space or Model and they don't already exist.
    */
-  def instancePermsFor(thing:TID):Future[InstancePermissions]
+  def permsFor(thing:TID):Future[ThingPermissions]
+  
+  /**
+   * Fetch the details on all of the permissions that are defined in this Space. (Which are
+   * mostly the System ones.)
+   */
+  def getAllPerms():Future[Seq[PermInfo]]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])
@@ -61,11 +67,21 @@ object SecurityFunctions {
   case class InviteResponse(newInvites:Seq[String], resends:Seq[String])
   
   sealed trait SecurityLevel
-  case object SecPublic extends SecurityLevel
-  case object SecMembers extends SecurityLevel
-  case object SecOwner extends SecurityLevel
-  case object SecCustom extends SecurityLevel
+  case object SecurityPublic extends SecurityLevel
+  case object SecurityMembers extends SecurityLevel
+  case object SecurityOwner extends SecurityLevel
+  case object SecurityCustom extends SecurityLevel
   
-  case class InstancePerm(permId:TID, currently:SecurityLevel)
-  case class InstancePermissions(permThing:ThingInfo, perms:Seq[InstancePerm])
+  case class ThingPerm(permId:TID, currently:SecurityLevel)
+  case class ThingPermissions(perms:Seq[ThingPerm], instancePermThing:Option[ThingInfo], instancePerms:Seq[ThingPerm])
+  
+  case class PermInfo(
+    id:TID,
+    name:String,
+    isInstancePerm:Boolean,
+    summary:String,
+    publicAllowed:Boolean,
+    default:Seq[TID],
+    appliesTo:Seq[TID]
+  )
 }

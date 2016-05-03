@@ -2,7 +2,7 @@ package querki.security
 
 import scala.concurrent.Future
 
-import models.{AsOID, Kind, Thing, ThingId}
+import models.{AsOID, Kind, Property, Thing, ThingId}
 import querki.api._
 import querki.data._
 import querki.globals._
@@ -16,11 +16,16 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   implicit val s = state
   
   lazy val AccessControl = interface[AccessControl]
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val Conventions = interface[querki.conventions.Conventions]
+  lazy val Conversations = interface[querki.conversations.Conversations]
+  lazy val Core = interface[querki.core.Core]
   lazy val Email = interface[querki.email.Email]
   lazy val Person = interface[querki.identity.Person]
   lazy val Roles = interface[Roles]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val UserValues = interface[querki.uservalues.UserValues]
   
   def doRoute(req:Request):Future[String] = route[SecurityFunctions](this)(req)
   
@@ -95,34 +100,104 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     }
   }
   
-  def instancePermsFor(thing:TID):Future[InstancePermissions] = withThing(thing) { thing =>
-    val permThingOpt = for {
-      oid <- thing.getFirstOpt(AccessControl.InstancePermissionsProp)(state)
-      t <- state.anything(oid)
-    }
-      yield t
-
-    // Either we have the Instance Permissions Thing, or we create it:
-    val permThingFut:Future[(Thing, SpaceState)] = 
-      permThingOpt.map(t => Future.successful((t, state))).getOrElse {
-        val createMsg = CreateThing(user, state.id, Kind.Thing, MOIDs.InstancePermissionsModelOID, Thing.emptyProps)
-        for {
-          // Create the Permissions Thing:
-          ThingFound(permThingId, _) <- spaceRouter ? createMsg
-          // And point the main Thing to it:
-          changeMsg = ChangeProps(user, state.id, thing.id, Map(AccessControl.InstancePermissionsProp(permThingId)))
-          ThingFound(_, newState) <- spaceRouter ? changeMsg
-          t = newState.anything(permThingId).get
-        }
-          yield (t, newState)
-      }
-      
-    // thingInfo() also produces a Future, so comprehension time:
+  lazy val allPerms = AccessControl.allPermissions(state)
+  lazy val allPermIds = allPerms.map(_.id).toSet
+  lazy val permMap = Map(allPerms.toSeq.map(p => (p.id, p)):_*)
+  
+  /**
+   * Note that, at this level, we're just providing a summary. In the "Custom" case, the Client asks for
+   * the actual Editor.
+   */
+  def translatePerm(permId:OID, vs:List[OID]):ThingPerm = {
+    val level:SecurityLevel =
+      if (vs.isEmpty || (vs.length == 1 && vs.contains(querki.security.MOIDs.OwnerTagOID)))
+        SecurityOwner
+      else if (vs.contains(querki.security.MOIDs.PublicTagOID))
+        SecurityPublic
+      else if (vs.contains(querki.security.MOIDs.MembersTagOID))
+        SecurityMembers
+      else
+        SecurityCustom
+        
+    ThingPerm(permId, level)
+  }
+  
+  def permsFor(thing:Thing, state:SpaceState):Seq[ThingPerm] = {
     for {
-      (t, s) <- permThingFut
-      thingInfo <- ClientApi.thingInfo(t, rc)(s)
+      pair <- thing.props.toSeq
+      if (allPermIds.contains(pair._1))
+      vs = pair._2.rawList(Core.LinkType)
     }
-      // TODO: summarize the actual permissions
-      yield InstancePermissions(thingInfo, Seq.empty)
+      yield translatePerm(pair._1, vs)
+  }
+  
+  def permsFor(thing:TID):Future[ThingPermissions] = withThing(thing) { thing =>
+    val hasInstancePerms = (thing.kind == Kind.Space || thing.isModel(state))
+    if (hasInstancePerms) {
+      val permThingOpt = for {
+        oid <- thing.getFirstOpt(AccessControl.InstancePermissionsProp)(state)
+        t <- state.anything(oid)
+      }
+        yield t
+  
+      // Either we have the Instance Permissions Thing, or we create it:
+      val permThingFut:Future[(Thing, SpaceState)] = 
+        permThingOpt.map(t => Future.successful((t, state))).getOrElse {
+          val createMsg = CreateThing(user, state.id, Kind.Thing, MOIDs.InstancePermissionsModelOID, Thing.emptyProps)
+          for {
+            // Create the Permissions Thing:
+            ThingFound(permThingId, _) <- spaceRouter ? createMsg
+            // And point the main Thing to it:
+            changeMsg = ChangeProps(user, state.id, thing.id, Map(AccessControl.InstancePermissionsProp(permThingId)))
+            ThingFound(_, newState) <- spaceRouter ? changeMsg
+            t = newState.anything(permThingId).get
+          }
+            yield (t, newState)
+        }
+        
+      // thingInfo() also produces a Future, so comprehension time:
+      for {
+        (t, s) <- permThingFut
+        thingInfo <- ClientApi.thingInfo(t, rc)(s)
+      }
+        yield ThingPermissions(permsFor(thing, s), Some(thingInfo), permsFor(t, s))
+    } else
+      Future.successful(ThingPermissions(permsFor(thing, state), None, Seq.empty))
+  }
+  
+  private def perm2Api(perm:Property[OID,OID]):PermInfo = {
+    PermInfo(
+      perm.id,
+      perm.getPropAll(Core.NameProp).head,
+      perm.ifSet(AccessControl.IsInstancePermissionProp),
+      // TODO: this is a bit suspicious -- in principle, Summary should get fully processed:
+      perm.getFirstOpt(Conventions.PropSummary).map(_.text).getOrElse(""),
+      perm.ifSet(AccessControl.PublicAllowedProp),
+      perm.getPropAll(AccessControl.DefaultPermissionProp).map(oid2tid(_)),
+      perm.getPropAll(AccessControl.PermAppliesTo).map(oid2tid(_))
+    )
+  }
+  
+  def getAllPerms():Future[Seq[PermInfo]] = {
+    // Note that this list defines the canonical editing order for permissions:
+    val perms = 
+      Seq(
+        AccessControl.CanReadProp,
+        AccessControl.CanEditProp,
+        AccessControl.CanCreateProp,
+        AccessControl.CanDesignPerm,
+        
+        Conversations.CanComment,
+        Conversations.CanReadComments,
+        
+        Roles.CanExplorePerm,
+        
+        UserValues.UserValuePermission,
+        
+        Apps.CanManipulateAppsPerm,
+        Apps.CanUseAsAppPerm
+      )
+    val infos = perms.map(perm2Api(_))
+    fut(infos)
   }
 }

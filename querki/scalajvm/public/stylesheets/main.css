@@ -635,3 +635,18 @@ dd {
 ._querkiDialog ._guts {
   margin: 10px;
 }
+
+/****************************
+ * The Security Page
+ */
+._permrow {
+  margin-bottom: 15px;
+}
+ 
+._permcheckbox {
+  margin-left: 10px;
+}
+
+._permname {
+  text-align: right;
+}

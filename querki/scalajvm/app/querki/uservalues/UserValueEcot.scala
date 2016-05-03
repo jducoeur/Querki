@@ -331,7 +331,9 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       UserValuePermissionOID, 
       "Who Can Have User Values", 
       "Who is allowed to define their own User Values (such as Ratings or Reviews)",
-      Seq(AccessControl.OwnerTag, AccessControl.MembersTag), true, false)
+      Seq(AccessControl.OwnerTag, AccessControl.MembersTag),
+      Seq(AccessControl.AppliesToSpace, AccessControl.AppliesToModels, AccessControl.AppliesToInstances),
+      true, false)
       
   lazy val IsUserValueFlag = new SystemProperty(IsUserValueFlagOID, YesNoType, ExactlyOne,
     toProps(

@@ -52,6 +52,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       querki.api.commonName(_.roles.canExplorePerm),
       "These people are allowed to explore this Space, with functions like Search, Explore, All Things and so on. If disabled, these people will not see those features.",
       Seq(AccessControl.PublicTag, AccessControl.OwnerTag),
+      Seq(AccessControl.AppliesToSpace),
       false,
       true)
       
