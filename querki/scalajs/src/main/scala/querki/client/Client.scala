@@ -50,8 +50,8 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
 	          case aex:querki.api.ApiException => throw aex
 	          // The server sent a non-ApiException, which is unfortunate. Just display it:
 	          case _:Throwable => {
-              if (jqXHR.status == 500)
-                StatusLine.showUntilChange("There was an internal error! Sorry; it has been logged. If this persists, please tell us.")
+              if (jqXHR.status >= 500)
+                StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
               else
   	            StatusLine.showUntilChange(jqXHR.responseText)
 		          throw ex	              
