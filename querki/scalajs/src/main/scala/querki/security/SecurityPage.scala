@@ -13,10 +13,11 @@ import org.querki.jquery._
 import models.Kind
 
 import querki.data.ThingInfo
-import querki.display.Gadget
+import querki.display.{Gadget, RawDiv}
 import querki.display.input.InputGadget
 import querki.display.rx._
 import querki.ecology._
+import querki.editing.EditFunctions
 import querki.globals._
 import querki.pages._
 
@@ -41,24 +42,43 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
     )
   
   class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm]) extends InputGadget[html.Div](ecology) {
+    
+    lazy val customDisplay = $(elem).find("._permCustom")
+    
+    def showCustom() = {
+      Client[EditFunctions].getOnePropertyEditor(t.oid, permInfo.id).call().foreach { propEditInfo =>
+        customDisplay.empty()
+        customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
+        Gadgets.hookPendingGadgets()
+        updatePage()
+      }
+      customDisplay.show()
+    }
+    
     def hook() = {
       $(elem).find("._permRadio").click { radio:dom.Element =>
         val oid = $(radio).valueString
         if (oid.length == 0) {
           // Custom button, so open the Custom pane. Note that this has its own inherent Save built in:
+          showCustom()
         } else {
+          $(elem).find("._permCustom").hide()
           // Does this work? Is Rx sufficiently synchronous to call save() right after it?
           currently() = oid
           save()
         }
       }
+      
+      if (isCustom())
+        showCustom
     }
     
     override lazy val thingId = t.oid
     override val path = Editing.propPath(permInfo.id, Some(t))
     
-    lazy val currently =
+    val currently =
       Var(levelMap(thingPerm.map(_.currently).getOrElse(permInfo.default)).underlying)
+    val isCustom = Rx { currently().length() == 0 }
       
     def values = List(currently())
     
@@ -73,6 +93,8 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
           s" $lbl"))
     }
     
+    implicit def rxAttr = new RxAttr[String]
+    
     def doRender() =
       div(cls:="form-inline",
         if (permInfo.publicAllowed)
@@ -81,7 +103,9 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
           div(cls:="_permcheckbox col-md-2", label(" ")),
         makeBox("Members", SecurityMembers),
         makeBox("Owner", SecurityOwner),
-        makeBox("Custom", SecurityCustom)
+        makeBox("Custom", SecurityCustom),
+        
+        div(cls:="_permCustom col-md-offset-3 col-md-8", display:="none", "Loading...")
       )
   }
   
