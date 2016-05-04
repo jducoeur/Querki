@@ -30,10 +30,12 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
     def doRender() =
       div(cls:="form-inline",
         if (permInfo.publicAllowed)
-          div(cls:="_permcheckbox checkbox", label(input(tpe:="checkbox"), " Public")), " ",
-        div(cls:="_permcheckbox checkbox", label(input(tpe:="checkbox"), " Members")), " ",
-        div(cls:="_permcheckbox checkbox", label(input(tpe:="checkbox"), " Owner")), " ",
-        div(cls:="_permcheckbox checkbox", label(input(tpe:="checkbox"), " Custom"))
+          div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Public"))
+        else
+          div(cls:="_permcheckbox col-md-2", label(" ")),
+        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Members")),
+        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Owner")),
+        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Custom"))
       )
   }
   
@@ -43,7 +45,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
         for (perm <- kindPerms) 
           yield div(cls:="row _permrow",
             div(cls:="col-md-3 _permname", b(perm.name)),
-            div(cls:="col-md-9", new OnePerm(t, perm, thingPerms)(ecology))
+            new OnePerm(t, perm, thingPerms)(ecology)
           )
       )
   }
