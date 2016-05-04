@@ -104,6 +104,10 @@ class StandardThings(h:PassthroughHandlerBase) {
     val appliesToSpace = h.pass("_Applies To Space")
     val appliesToModels = h.pass("_Applies To Models")
     val appliesToInstances = h.pass("_Applies To Instances")
+    
+    val owner = h.pass("Owner")
+    val members = h.pass("Members")
+    val public = h.pass("Public")
   }
   
   object tags {

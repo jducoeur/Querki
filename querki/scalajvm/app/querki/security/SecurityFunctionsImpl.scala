@@ -173,7 +173,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       // TODO: this is a bit suspicious -- in principle, Summary should get fully processed:
       perm.getFirstOpt(Conventions.PropSummary).map(_.text).getOrElse(""),
       perm.ifSet(AccessControl.PublicAllowedProp),
-      perm.getPropAll(AccessControl.DefaultPermissionProp).map(oid2tid(_)),
+      translatePerm(perm.id, perm.getPropAll(AccessControl.DefaultPermissionProp)).currently,
       perm.getPropAll(AccessControl.PermAppliesTo).map(oid2tid(_))
     )
   }

@@ -288,19 +288,19 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   
   lazy val PublicTag = ThingState(PublicTagOID, systemOID, SecurityPrincipal,
     toProps(
-      setName("Public"),
+      setName(commonName(_.security.public)),
       Categories(SecurityTag),
       Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable by everybody.""")))
     
   lazy val MembersTag = ThingState(MembersTagOID, systemOID, SecurityPrincipal,
     toProps(
-      setName("Members"),
+      setName(commonName(_.security.members)),
       Categories(SecurityTag),
       Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable by members of the Space.""")))
     
   lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, SecurityPrincipal,
     toProps(
-      setName("Owner"),
+      setName(commonName(_.security.owner)),
       Categories(SecurityTag),
       Summary("""Use this Tag in Can Read if you want your Space or Thing to be readable only by the owner and specific other people.""")))
 

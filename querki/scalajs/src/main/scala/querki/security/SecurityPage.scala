@@ -11,6 +11,7 @@ import models.Kind
 
 import querki.data.ThingInfo
 import querki.display.Gadget
+import querki.display.input.InputGadget
 import querki.ecology._
 import querki.globals._
 import querki.pages._
@@ -27,18 +28,45 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
   
-  class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerms:Seq[ThingPerm])(implicit val ecology:Ecology) extends Gadget[html.Div] {
-    val permPath = Editing.propPath(permInfo.id, Some(t))
+  lazy val levelMap:Map[SecurityLevel, TID] = 
+    Map(
+      (SecurityPublic -> std.security.public.oid),
+      (SecurityMembers -> std.security.members.oid),
+      (SecurityOwner -> std.security.owner.oid),
+      (SecurityCustom -> TID(""))
+    )
+  
+  class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm]) extends InputGadget[html.Div](ecology) {
+    def hook() = {
+      
+    }
+    def values = ???
+    
+    override val path = Editing.propPath(permInfo.id, Some(t))
+    
+    lazy val currently =
+      thingPerm.map(_.currently).getOrElse(permInfo.default)
+    
+    def makeBox(lbl:String, level:SecurityLevel) = {
+      div(
+        cls:="_permcheckbox col-md-2", 
+        label(cls:="radio-inline", 
+          input(tpe:="radio", name:=path, 
+            if (currently == level)
+              checked:="checked", 
+            value:=levelMap(level).underlying),
+          s" $lbl"))
+    }
     
     def doRender() =
       div(cls:="form-inline",
         if (permInfo.publicAllowed)
-          div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Public"))
+          makeBox("Public", SecurityPublic)
         else
           div(cls:="_permcheckbox col-md-2", label(" ")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Members")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Owner")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Custom"))
+        makeBox("Members", SecurityMembers),
+        makeBox("Owner", SecurityOwner),
+        makeBox("Custom", SecurityCustom)
       )
   }
   
@@ -48,7 +76,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
         for (perm <- kindPerms) 
           yield div(cls:="row _permrow",
             div(cls:="col-md-3 _permname", b(perm.name)),
-            new OnePerm(t, perm, thingPerms)(ecology)
+            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id))
           )
       )
   }

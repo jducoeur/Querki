@@ -81,7 +81,7 @@ object SecurityFunctions {
     isInstancePerm:Boolean,
     summary:String,
     publicAllowed:Boolean,
-    default:Seq[TID],
+    default:SecurityLevel,
     appliesTo:Seq[TID]
   )
 }
