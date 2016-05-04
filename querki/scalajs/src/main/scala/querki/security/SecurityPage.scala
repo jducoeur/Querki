@@ -25,17 +25,20 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
   lazy val thingId = TID(params("thingId"))
   
   lazy val Client = interface[querki.client.Client]
+  lazy val Editing = interface[querki.editing.Editing]
   
   class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerms:Seq[ThingPerm])(implicit val ecology:Ecology) extends Gadget[html.Div] {
+    val permPath = Editing.propPath(permInfo.id, Some(t))
+    
     def doRender() =
       div(cls:="form-inline",
         if (permInfo.publicAllowed)
-          div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Public"))
+          div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Public"))
         else
           div(cls:="_permcheckbox col-md-2", label(" ")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Members")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Owner")),
-        div(cls:="_permcheckbox checkbox col-md-2", label(input(tpe:="checkbox"), " Custom"))
+        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Members")),
+        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Owner")),
+        div(cls:="_permcheckbox checkbox col-md-2", label(cls:="radio-inline", input(tpe:="radio", name:=permPath), " Custom"))
       )
   }
   
