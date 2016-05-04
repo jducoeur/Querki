@@ -6,12 +6,16 @@ import dom.html
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
 import autowire._
+import rx._
+
+import org.querki.jquery._
 
 import models.Kind
 
 import querki.data.ThingInfo
 import querki.display.Gadget
 import querki.display.input.InputGadget
+import querki.display.rx._
 import querki.ecology._
 import querki.globals._
 import querki.pages._
@@ -38,21 +42,32 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
   
   class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm]) extends InputGadget[html.Div](ecology) {
     def hook() = {
-      
+      $(elem).find("._permRadio").click { radio:dom.Element =>
+        val oid = $(radio).valueString
+        if (oid.length == 0) {
+          // Custom button, so open the Custom pane. Note that this has its own inherent Save built in:
+        } else {
+          // Does this work? Is Rx sufficiently synchronous to call save() right after it?
+          currently() = oid
+          save()
+        }
+      }
     }
-    def values = ???
     
+    override lazy val thingId = t.oid
     override val path = Editing.propPath(permInfo.id, Some(t))
     
     lazy val currently =
-      thingPerm.map(_.currently).getOrElse(permInfo.default)
+      Var(levelMap(thingPerm.map(_.currently).getOrElse(permInfo.default)).underlying)
+      
+    def values = List(currently())
     
     def makeBox(lbl:String, level:SecurityLevel) = {
       div(
         cls:="_permcheckbox col-md-2", 
         label(cls:="radio-inline", 
-          input(tpe:="radio", name:=path, 
-            if (currently == level)
+          input(cls:="_permRadio", tpe:="radio", name:=path, 
+            if (currently() == levelMap(level).underlying)
               checked:="checked", 
             value:=levelMap(level).underlying),
           s" $lbl"))
