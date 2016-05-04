@@ -83,8 +83,8 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
             
             if (hasInstancePerms) {
               if (isSpace)
-                p("""These are the permissions for the Space's main page only; use the Instances tab to manage
-                    |the default permissions for the rest of the Space.""".stripMargin)
+                p("""These are the permissions for the Space's main page, and a few Space-wide permissions; use the Instances tab to manage
+                    |the default permissions for Instances in this Space.""".stripMargin)
               else
                 p("""These are the permissions for this Model; use the Instances tab to manage the permissions
                     |for its Instances.""".stripMargin)
