@@ -34,6 +34,7 @@ trait ClusterTimeoutChild extends Actor {
    * IMPORTANT: instances must call super.preStart()!!!
    */
   override def preStart() = {
+    QLog.spew(s"Starting ClusterTimeoutChild ${self.path}")
     val timeout = context.system.settings.config.getDuration(timeoutConfig, java.util.concurrent.TimeUnit.MILLISECONDS)
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()

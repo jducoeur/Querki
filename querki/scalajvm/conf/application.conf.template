@@ -31,6 +31,9 @@ querki {
     monitorHeartbeat : 1 minute
     # How long to wait before concluding that a monitor is dead 
     monitorTimeout : 3 minutes
+    # If set to true, the monitor heartbeats will also be printed to the log, allowing a
+    # semblance of recording of Space ups and downs.
+    logMonitor : false
   }
   
   session {

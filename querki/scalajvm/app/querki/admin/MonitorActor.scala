@@ -26,6 +26,7 @@ class MonitorActor(val ecology:Ecology) extends Actor with EcologyMember {
   lazy val scheduler = SystemManagement.actorSystem.scheduler
   
   lazy val heartbeat = Config.getDuration("querki.admin.monitorHeartbeat", 1 minute)
+  lazy val logHeartbeats = Config.getBoolean("querki.admin.logMonitor", false)
   
   var _current:Option[MonitorEvent] = None
   
@@ -34,7 +35,11 @@ class MonitorActor(val ecology:Ecology) extends Actor with EcologyMember {
     super.preStart()
   }
   
-  def sendUpdate() = _current.map(evt => monitor ! evt)
+  def sendUpdate() = {
+    _current.map(evt => monitor ! evt)
+    if (logHeartbeats)
+      QLog.spew(s"Send Monitor heartbeat ${_current}")
+  }
   
   def receive = {
     case msg:MonitorEvent => {
