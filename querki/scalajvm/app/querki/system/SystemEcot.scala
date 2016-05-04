@@ -77,7 +77,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |{{col-md-9:
     |[[_allThings -> _filter(_isModel) -> _sort -> _showModelTree]]
     |
-    |[[Simple Thing -> _if(_hasPermission(_Who Can Design._self), _menuButton(""designAModel"", ""Design a New Model"", class=""btn-xs btn-primary""))]]
+    |[[Simple Thing -> _if(_hasPermission(Who Can Design._self), _menuButton(""designAModel"", ""Design a New Model"", class=""btn-xs btn-primary""))]]
     |}}
     |}}
     |}}
