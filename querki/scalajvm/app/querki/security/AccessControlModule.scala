@@ -363,6 +363,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       toProps(
         setName(name),
         setInternal,
+        // Permissions do not get edited in the traditional way:
+        (querki.editing.MOIDs.NotEditableOID -> ExactlyOne(YesNoType(true))),
         isPermissionProp(true),
         IsInstancePermissionProp(isInstance),
         SkillLevel(SkillLevelAdvanced),
@@ -525,8 +527,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val InstancePermissionsProp = new SystemProperty(InstancePermissionsPropOID, LinkType, ExactlyOne,
     toProps(
       setName("_Instance Permissions"),
-      // TODO: this will become Internal (indeed, hidden) once we have a proper UI in place:
-//      setInternal,
+      setInternal,
       Categories(SecurityTag),
       Summary("Points to the Thing that holds the Instance Permissions for this Space"),
       Details("""This Property points to a Thing where you place any default Permissions for all Instances.
