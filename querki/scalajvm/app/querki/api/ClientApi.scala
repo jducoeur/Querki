@@ -129,16 +129,22 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   }
   
   def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo = {
-    if (AccessControl.canRead(state, rc.requesterOrAnon, state.id)) {
+    // TODO: this AccessControl check was an early, primitive version of a way to make the Space
+    // "hidden" -- if you can't read the Root Page, you can't see the Space exists. Problem is,
+    // that's too clumsy for real use. In particular, it doesn't allow a Space to open up just a
+    // few non-Root pages. So we should instead create a first-class "Hidden" flag, which says
+    // that non-Members can't even see that this exists, and set the RequestInfo.forbidden flag
+    // if so. (This flag is picked up in ClientController.space().)
+//    if (AccessControl.canRead(state, rc.requesterOrAnon, state.id)) {
       RequestInfo(
         userInfo(rc.requester), 
         spaceInfo(Some(state), rc), 
         rc.isOwner,
         rc.requesterOrAnon.level)
-    } else {
-      // Signal that this person doesn't have access to the Space:
-      RequestInfo(None, None, false, rc.requesterOrAnon.level, true)
-    }
+//    } else {
+        // Signal that this person doesn't have access to the Space:
+//      RequestInfo(None, None, false, rc.requesterOrAnon.level, true)
+//    }
   }
   
   def rootRequestInfo(rc:RequestContext):RequestInfo = {
