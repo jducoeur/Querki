@@ -66,8 +66,8 @@ class StandardThings(h:PassthroughHandlerBase) {
   }
   
   object apps {
-    val canUseAsAppPerm = h.pass("Can Use as an App")
-    val canManipulateAppsPerm = h.pass("Can Manipulate Apps")
+    val canUseAsAppPerm = h.pass("Who Can Use as an App")
+    val canManipulateAppsPerm = h.pass("Who Can Manipulate Apps")
   }
   
   object basic {
