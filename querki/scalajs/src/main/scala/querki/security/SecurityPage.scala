@@ -180,7 +180,9 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
               else
                 p("""These are the permissions for this Model; use the Instances tab to manage the permissions
                     |for its Instances.""".stripMargin)
-            },
+            } else
+              p("""These are the permissions for this specific Instance. If you want to change the permissions for *all* Instances
+                  |of this Model, go to the Instances Tab of the Security page for the Model.""".stripMargin),
             
             if (isSpace)
               new ShowPerms(thing, filterPermsFor(allPerms, appliesToSpace), perms.perms, isSpace)
