@@ -17,10 +17,23 @@ trait Security { this:FuncMixin =>
       TestDef(Some(Admin1), IndexPage, "Setup Explore Test") { state =>
         run(state,
           createSpace(ExploreRestrictedSpace),
-          advancedEditThing(
-            addExistingProperty(WhoCanExplorePerm),
-            WhoCanExplorePerm.setValue(MembersRole)
-          )
+          { state =>
+            
+            // TODO: this all needs to be refactored, to become a richer harness for doing Security
+            // experiments:
+            val space = state.getSpace(ExploreRestrictedSpace)
+            clickMenuItem(SecurityItem)
+            val page = SecurityPage(space)
+            waitFor(page)
+            val whoCanExplorePath = editorId(space, WhoCanExplorePerm)
+            val membersId = MembersRole.tid
+            radioButtonGroup(whoCanExplorePath).value = membersId
+            eventually { find(id("statusLine")).get.text should be ("Saved") }
+            click on "_doneButton"
+            // TODO: the state should reflect the changed permissions!
+          
+            state
+          }
         )
       },
       

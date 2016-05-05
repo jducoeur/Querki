@@ -11,6 +11,7 @@ object RefreshItem extends MenuItem("_refreshMenuItem", ActionsMenu)
 object DesignModelItem extends MenuItem("designAModel", ActionsMenu)
 object CreateThingItem extends MenuItem("_createAnyThing", ActionsMenu)
 object AdvancedEditItem extends MenuItem("_advEditButton", ActionsMenu)
+object SecurityItem extends MenuItem("_securityItem", ActionsMenu)
 
 object ProfileMenu extends Menu("_profile_menu")
 object LogoutItem extends MenuItem("logout_button", ProfileMenu)

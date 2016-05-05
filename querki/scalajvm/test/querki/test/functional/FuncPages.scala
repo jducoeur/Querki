@@ -113,5 +113,11 @@ trait FuncPages { this:FuncMixin =>
     
     override def titleParams = Seq(("query" -> query))
   }
+  
+  case class SecurityPage[T <: TThing[T]](thing:T) extends QPage {
+    val name = "security"
+    
+    override def titleParams = Seq(("thingName" -> thing.display))
+  }
 
 }

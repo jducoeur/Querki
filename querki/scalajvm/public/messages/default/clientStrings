@@ -36,6 +36,10 @@ pages : {
     noResultsHeader : "Nothing found for '$query'"
   }
   
+  security : {
+    pageTitle : "Security for $thingName"
+  }
+  
   thing : {
     pageTitle : "$thingName"
   }

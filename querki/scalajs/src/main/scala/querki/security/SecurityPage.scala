@@ -87,6 +87,9 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
     
     override lazy val thingId = t.oid
     override val path = Editing.propPath(permInfo.id, Some(t))
+    // HACK: this name is what the Functional Tests expect. When we get paths to be
+    // more consistent, replace this with plain old path:
+    val namePath = Editing.propPathOldStyleHack(permInfo.id, Some(t))
     
     val currently =
       Var(
@@ -106,7 +109,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
       div(
         cls:="_permcheckbox col-md-2", 
         label(cls:="radio-inline", 
-          input(cls:="_permRadio", tpe:="radio", name:=path, 
+          input(cls:="_permRadio", tpe:="radio", name:=namePath, 
             if (currently() == levelMap(level).underlying)
               checked:="checked", 
             value:=levelMap(level).underlying),
@@ -155,13 +158,15 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
     hasInstancePerms = (isSpace || isModel)
     perms <- Client[SecurityFunctions].permsFor(thingId).call()
     
+    pageTitle = msg("pageTitle", ("thingName" -> thing.displayName))
+    
     appliesToSpace = std.security.appliesToSpace.oid
     appliesToModels = std.security.appliesToModels.oid
     appliesToInstances = std.security.appliesToInstances.oid
 
     guts =
       div(
-        h2(s"Security ", new ButtonGadget(ButtonGadget.Normal, "Done")({ () => Pages.thingPageFactory.showPage(thing) })),
+        h2(s"Security ", new ButtonGadget(ButtonGadget.Normal, id:="_doneButton", "Done")({ () => Pages.thingPageFactory.showPage(thing) })),
         
         ul(cls:="nav nav-tabs", role:="tablist",
           li(role:="presentation", cls:="active", a(href:="#secThis", role:="tab", "data-toggle".attr:="tab", thing.displayName)),
@@ -220,5 +225,5 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
         
       )
   }
-    yield PageContents(s"Security for ${thing.displayName}", guts)
+    yield PageContents(pageTitle, guts)
 }
