@@ -648,10 +648,6 @@ dd {
   border-bottom-width: 1px;
   border-bottom-color: #dddddd;
 }
- 
-._permcheckbox {
-  margin-left: 10px;
-}
 
 ._permname {
   text-align: right;

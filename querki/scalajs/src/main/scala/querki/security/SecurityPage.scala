@@ -38,48 +38,68 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
       (SecurityPublic -> std.security.public.oid),
       (SecurityMembers -> std.security.members.oid),
       (SecurityOwner -> std.security.owner.oid),
-      (SecurityCustom -> TID(""))
+      (SecurityCustom -> TID("custom")),
+      (SecurityInherited -> TID("inherit"))
     )
   
-  class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm]) extends InputGadget[html.Div](ecology) {
+  class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean) extends InputGadget[html.Div](ecology) {
     
     lazy val customDisplay = $(elem).find("._permCustom")
     
-    def showCustom() = {
-      Client[EditFunctions].getOnePropertyEditor(t.oid, permInfo.id).call().foreach { propEditInfo =>
-        customDisplay.empty()
-        customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
-        Gadgets.hookPendingGadgets()
-        updatePage()
+    def updateCustom() = {
+      if (isCustom()) {
+        Client[EditFunctions].getOnePropertyEditor(t.oid, permInfo.id).call().foreach { propEditInfo =>
+          customDisplay.empty()
+          customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
+          Gadgets.hookPendingGadgets()
+          updatePage()
+        }
+        customDisplay.show()
+      } else {
+        customDisplay.hide()
       }
-      customDisplay.show()
     }
     
     def hook() = {
       $(elem).find("._permRadio").click { radio:dom.Element =>
-        val oid = $(radio).valueString
-        if (oid.length == 0) {
-          // Custom button, so open the Custom pane. Note that this has its own inherent Save built in:
-          showCustom()
-        } else {
-          $(elem).find("._permCustom").hide()
-          // Does this work? Is Rx sufficiently synchronous to call save() right after it?
-          currently() = oid
-          save()
+        currently() = $(radio).valueString
+        if (!isCustom()) {
+          if (isInherit()) {
+            // The meaning of "inherited" is that we don't have the Property at all
+            // TODO: in principle, this belongs in InputGadget. But that implies that we need
+            // to create a new value of PropertyChange for removing a Property, with back-end
+            // support for that.
+            StatusLine.showUntilChange("Saving...")
+            Client[EditFunctions].removeProperty(t.oid, permInfo.id).call().foreach { response =>
+              StatusLine.showBriefly("Saved")
+            }
+          } else {
+            // It's a standard value -- the OID of Public, Members or Owner -- so save that:
+            save()
+          }
         }
+        // Show or hide the customDisplay as appropriate:
+        updateCustom()
       }
-      
-      if (isCustom())
-        showCustom
+
+      updateCustom()
     }
     
     override lazy val thingId = t.oid
     override val path = Editing.propPath(permInfo.id, Some(t))
     
     val currently =
-      Var(levelMap(thingPerm.map(_.currently).getOrElse(permInfo.default)).underlying)
-    val isCustom = Rx { currently().length() == 0 }
+      Var(
+        levelMap(
+          thingPerm
+          .map(_.currently)
+          // At the Space level, we show the defaults; otherwise, inherit from the Space:
+          .getOrElse(if (isSpace) permInfo.default else SecurityInherited)
+        ).underlying)
+    val isCustom = Rx { currently() == "custom" }
+    val isInherit = Rx { currently() == "inherit" }
       
+    // Note that we don't save(), and thus don't use this, if it is custom or inherit:
     def values = List(currently())
     
     def makeBox(lbl:String, level:SecurityLevel) = {
@@ -100,22 +120,24 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
         if (permInfo.publicAllowed)
           makeBox("Public", SecurityPublic)
         else
-          div(cls:="_permcheckbox col-md-2", label(" ")),
+          div(cls:="col-md-2", label(" ")),
         makeBox("Members", SecurityMembers),
         makeBox("Owner", SecurityOwner),
         makeBox("Custom", SecurityCustom),
+        if (!isSpace)
+          makeBox("Inherit", SecurityInherited),
         
-        div(cls:="_permCustom col-md-offset-3 col-md-8", display:="none", "Loading...")
+        div(cls:="_permCustom col-md-offset-2 col-md-8", display:="none", "Loading...")
       )
   }
   
-  class ShowPerms(t:ThingInfo, kindPerms:Seq[PermInfo], thingPerms:Seq[ThingPerm])(implicit val ecology:Ecology) extends Gadget[html.Div] {
+  class ShowPerms(t:ThingInfo, kindPerms:Seq[PermInfo], thingPerms:Seq[ThingPerm], isSpace:Boolean)(implicit val ecology:Ecology) extends Gadget[html.Div] {
     def doRender() =
       div(
         for (perm <- kindPerms) 
           yield div(cls:="row _permrow",
-            div(cls:="col-md-3 _permname", b(perm.name)),
-            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id))
+            div(cls:="col-md-2 _permname", b(perm.name)),
+            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id), isSpace)
           )
       )
   }
@@ -161,11 +183,11 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
             },
             
             if (isSpace)
-              new ShowPerms(thing, filterPermsFor(allPerms, appliesToSpace), perms.perms)
+              new ShowPerms(thing, filterPermsFor(allPerms, appliesToSpace), perms.perms, isSpace)
             else if (isModel)
-              new ShowPerms(thing, filterPermsFor(allPerms, appliesToModels), perms.perms)
+              new ShowPerms(thing, filterPermsFor(allPerms, appliesToModels), perms.perms, isSpace)
             else
-              new ShowPerms(thing, filterPermsFor(allPerms, appliesToInstances), perms.perms)
+              new ShowPerms(thing, filterPermsFor(allPerms, appliesToInstances), perms.perms, isSpace)
           ),
           
           if (hasInstancePerms && perms.instancePermThing.isDefined)
@@ -186,7 +208,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
                 )
               },
               
-              new ShowPerms(perms.instancePermThing.get, filterPermsFor(allPerms, appliesToInstances), perms.instancePerms)
+              new ShowPerms(perms.instancePermThing.get, filterPermsFor(allPerms, appliesToInstances), perms.instancePerms, isSpace)
             )
             
         )

@@ -71,6 +71,9 @@ object SecurityFunctions {
   case object SecurityMembers extends SecurityLevel
   case object SecurityOwner extends SecurityLevel
   case object SecurityCustom extends SecurityLevel
+  // This actually isn't sent from the server -- it's implicit when nothing is sent -- but is
+  // used in the client:
+  case object SecurityInherited extends SecurityLevel
   
   case class ThingPerm(permId:TID, currently:SecurityLevel)
   case class ThingPermissions(perms:Seq[ThingPerm], instancePermThing:Option[ThingInfo], instancePerms:Seq[ThingPerm])
