@@ -13,7 +13,7 @@ import org.querki.jquery._
 import models.Kind
 
 import querki.data.ThingInfo
-import querki.display.{Gadget, RawDiv}
+import querki.display.{ButtonGadget, Gadget, RawDiv}
 import querki.display.input.InputGadget
 import querki.display.rx._
 import querki.ecology._
@@ -161,7 +161,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
 
     guts =
       div(
-        h2(s"Security"),
+        h2(s"Security ", new ButtonGadget(ButtonGadget.Normal, "Done")({ () => Pages.thingPageFactory.showPage(thing) })),
         
         ul(cls:="nav nav-tabs", role:="tablist",
           li(role:="presentation", cls:="active", a(href:="#secThis", role:="tab", "data-toggle".attr:="tab", thing.displayName)),
@@ -196,15 +196,18 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
                 MSeq(
                   h3(s"Permissions for Instances in Space ${thing.displayName}"),
                   
-                  p("""These are the permissions to use for *all* Instances in this Space, unless the
-                      |Model or Instance says otherwise.""".stripMargin)
+                  p("""These are the permissions to use for *all* Things in this Space, unless the
+                      |Model or Instance says otherwise. If a Model has a permission marked
+                      |"Inherit", it will use this value. If an Instance's permission says "Inherit", it
+                      |will use this value unless the Model's Instances page says otherwise.""".stripMargin)
                 )
               } else {
                 MSeq(
                   h3(s"Permissions for Instances of ${thing.displayName}"),
                   
                   p("""These are the permissions to use for all of this Model's Instances, unless the
-                      |Instance itself says otherwise.""".stripMargin)
+                      |Instance itself says otherwise. If an Instance's permissions are marked "Inherit"
+                      |(which they usually are), it will use these values.""".stripMargin)
                 )
               },
               
