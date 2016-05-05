@@ -362,6 +362,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     new SystemProperty(id, LinkType, QSet,
       toProps(
         setName(name),
+        setInternal,
         isPermissionProp(true),
         IsInstancePermissionProp(isInstance),
         SkillLevel(SkillLevelAdvanced),
@@ -396,6 +397,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Read"),
+        setInternal,
         isPermissionProp(true),
         IsInstancePermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
@@ -412,6 +414,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Edit"),
+        setInternal,
         isPermissionProp(true),
         IsInstancePermissionProp(true),
         PublicAllowedProp(false),
@@ -427,6 +430,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val CanEditChildrenProp = new SystemProperty(CanEditChildrenPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Edit Children"),
+        setInternal,
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(SecurityPrincipal),
