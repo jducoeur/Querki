@@ -75,7 +75,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       Seq(AccessControl.OwnerTag),
       Seq(AccessControl.AppliesToSpace),
       false,
-      true)
+      false)
       
   lazy val ShadowFlag = new SystemProperty(ShadowFlagOID, YesNoType, ExactlyOne,
     toProps(
