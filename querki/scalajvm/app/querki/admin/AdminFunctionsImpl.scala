@@ -2,6 +2,8 @@ package querki.admin
 
 import scala.concurrent.Future
 
+import akka.cluster._
+
 import models.{AsOID, ThingId}
 
 import querki.api._
@@ -94,10 +96,29 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     alterUserLevel(id, level)
   }
   
+  private def translateMember(mem:Member):QMember = {
+    import MemberStatus._
+    val status = mem.status match {
+      case Down => QDown
+      case Exiting => QExiting
+      case Joining => QJoining
+      case Leaving => QLeaving
+      case Removed => QRemoved
+      case Up => QUp
+    }
+    QMember(mem.address.toString, status)
+  } 
+  
   def monitor():Future[MonitorCurrent] = {
     val spaces = monitorStats.spaces.values.toSeq.map { evt => 
       RunningSpace(evt.name, evt.address, evt.nUsers, evt.size, evt.sentTime.getMillis)
     }
-    Future.successful(MonitorCurrent(SystemManagement.clusterAddress, spaces))
+    val state = Cluster(SystemManagement.actorSystem).state
+    val qstate = 
+      QCurrentClusterState(
+        state.members.toSeq.map(translateMember(_)), 
+        state.unreachable.toSeq.map(translateMember(_)), 
+        state.leader.map(_.toString).getOrElse(""))
+    Future.successful(MonitorCurrent(SystemManagement.clusterAddress, qstate, spaces))
   }
 }

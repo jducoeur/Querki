@@ -52,6 +52,23 @@ object AdminFunctions {
   case class QuerkiStats(userCountsByLevel:Map[UserLevel, Int], nSpaces:Long)
   case class AdminUserView(userId:TID, mainHandle:String, email:String, level:UserLevel)
   
+  /*
+   * The following are mostly lifted directly from akka.cluster, so that we can pass the cluster's
+   * state to the client without the client needing to be dependent on the Akka library.
+   * 
+   * TODO: is there a better way to do this?
+   */
+  sealed trait QMemberStatus
+  case object QDown extends QMemberStatus
+  case object QExiting extends QMemberStatus
+  case object QJoining extends QMemberStatus
+  case object QLeaving extends QMemberStatus
+  case object QRemoved extends QMemberStatus
+  case object QUp extends QMemberStatus
+  
+  case class QMember(address:String, status:QMemberStatus)
+  case class QCurrentClusterState(members:Seq[QMember], unreachable:Seq[QMember], leader:String)
+  
   case class RunningSpace(name:String, cluster:String, nUsers:Int, size:Int, timestamp:Long)
-  case class MonitorCurrent(monitorNode:String, spaces:Seq[RunningSpace])
+  case class MonitorCurrent(monitorNode:String, state:QCurrentClusterState, spaces:Seq[RunningSpace])
 }

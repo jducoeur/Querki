@@ -8,6 +8,8 @@ import org.widok.moment._
 import querki.api._
 import querki.globals._
 import querki.pages._
+  
+import AdminFunctions._
 
 /**
  * @author jducoeur
@@ -15,6 +17,8 @@ import querki.pages._
 class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
+  
+  def showMember(mem:QMember) = p(mem.address, ": ", mem.status.toString)
 
   def pageContent = 
     for {
@@ -22,7 +26,18 @@ class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       guts =
         div(
           h1("Currently Active in Querki"),
-          h3("Active Spaces with User Counts (running on ", update.monitorNode, ")"),
+          
+          h3("Cluster State"),
+          p(b("Admin Monitor is running on ", update.monitorNode)),
+          p(b("Leader: ", update.state.leader)),
+          h4("Members"),
+          for (member <- update.state.members)
+            showMember(member),
+          h4("Unreachable"),
+          for (unreach <- update.state.unreachable)
+            showMember(unreach),
+          
+          h3("Active Spaces with User Counts"),
           for {
             space <- update.spaces
           }
