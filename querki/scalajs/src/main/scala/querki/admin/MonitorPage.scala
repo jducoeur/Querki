@@ -22,7 +22,7 @@ class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       guts =
         div(
           h1("Currently Active in Querki"),
-          h3("Active Spaces with User Counts"),
+          h3("Active Spaces with User Counts (running on ", update.monitorNode, ")"),
           for {
             space <- update.spaces
           }

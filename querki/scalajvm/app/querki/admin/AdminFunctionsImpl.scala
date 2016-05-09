@@ -19,6 +19,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     throw new NotAnAdminException
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def doRoute(req:Request):Future[String] = route[AdminFunctions](this)(req)
@@ -97,6 +98,6 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     val spaces = monitorStats.spaces.values.toSeq.map { evt => 
       RunningSpace(evt.name, evt.address, evt.nUsers, evt.size, evt.sentTime.getMillis)
     }
-    Future.successful(MonitorCurrent(spaces))
+    Future.successful(MonitorCurrent(SystemManagement.clusterAddress, spaces))
   }
 }
