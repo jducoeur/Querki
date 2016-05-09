@@ -1,28 +1,40 @@
-package querki.email.impl
+package querki.email
 
-import querki.email._
+import scala.util.{Failure, Success, Try}
 
-import scala.concurrent.Future
-import scala.util._
-
-import javax.activation.DataHandler
-import javax.mail._
-import javax.mail.internet._
-import javax.mail.util.ByteArrayDataSource
-import com.sun.mail.smtp._
-
-import models._
+import models.{PropertyBundle, PTypeBuilder, ThingState, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
-import querki.identity._
-import querki.spaces.SpaceManager
-import querki.spaces.messages.{ChangeProps, ThingError, ThingFound, ThingResponse}
-import querki.values._
+import querki.identity.{Identity, SystemUser}
+import querki.values.{ElemValue, QLContext}
 
-import play.api.{Logger, Play}
-import play.api.Play.current
+/**
+ * Opaque wrapper for the concept of a "session"; the implementation depends on which version
+ * of the EmailSender we're using.
+ */
+private [email] trait EmailSession
+
+/**
+ * This private interface for the email system gets implemented by either the RealEmailSender
+ * (most of the time), or the TestEmailSender (during tests).
+ */
+private [email] trait EmailSender extends EcologyInterface {
+  /**
+   * The details of the session are intentionally hidden, since they are completely different
+   * depending on the EmailSender.
+   */
+  type TSession <: EmailSession
+
+  /**
+   * This lets us create one Session, and send a bunch of emails during it, for efficiency.
+   */
+  def createSession():TSession
+  def sendInternal(session:TSession, from:String, 
+      recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
+      subject:Wikitext, bodyMain:Wikitext):Try[Unit]
+}
 
 class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.MethodDefs {
 
@@ -31,59 +43,31 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   
+  lazy val EmailSender = interface[EmailSender]
   lazy val QL = interface[querki.ql.QL]
-  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
-  
-  lazy val QLType = Basic.QLType
-  
+    
   lazy val DeprecatedProp = Basic.DeprecatedProp
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val InternalProp = Core.InternalProp
+  lazy val QLType = Basic.QLType
   
   def fullKey(key:String) = "querki.mail." + key
-  def getRequiredConf(key:String) = {
-    val opt = Play.configuration.getString(fullKey(key))
-    opt match {
-      case Some(v) => v
-      case None => throw new Exception("Didn't find required configuration key " + fullKey(key))
-    }
-  }
+  lazy val from = Config.getString(fullKey("from"))
+  lazy val test = Config.getBoolean(fullKey("test"), false)
   
-  lazy val from = getRequiredConf("from")
-  lazy val smtpHost = getRequiredConf("smtpHost")
-  lazy val smtpPort = Config.getInt(fullKey("port"), 0)
-  lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
-  lazy val username = Config.getString(fullKey("smtpUsername"), "")
-  lazy val password = Config.getString(fullKey("smtpPassword"), "")
-  
-  private def createSession():Session = {
-    val props = System.getProperties()
-    props.setProperty("mail.host", smtpHost)
-    if (smtpPort != 0) {
-      props.setProperty("mail.smtp.port", smtpPort.toString)
-    }
-    props.setProperty("mail.user", "querki")
-    props.setProperty("mail.transport.protocol", "smtp")
-    props.setProperty("mail.from", from)
-    props.setProperty("mail.debug", "true")
-    if (username.length() > 0) {
-      // We're opening an authenticated session
-      props.setProperty("mail.smtp.auth", "true")
-      props.setProperty("mail.smtp.starttls.enable", "true")
-      props.setProperty("mail.smtp.starttls.required", "true")
-    }
-	    
-    val session = Session.getInstance(props, null)
-	
-    session.setDebug(debug)
-    
-    session
+  // Create the appropriate Email Sender, depending on whether we are in test mode or not. Note
+  // that this is a sub-Ecot; we actually fetch it by the EmailSender interface later, rather than
+  // holding on to the concrete type, to make sure we keep the interfaces clean.
+  if (test) {
+    // TODO: put the TestEmailSender here!
+  } else {
+    new RealEmailSender(ecology)
   }
   
   def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
-    val session = createSession()
+    val session = EmailSender.createSession()
     
-    sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
+    EmailSender.sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
   }
   
   /******************************************
@@ -265,74 +249,15 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   lazy val AccessControl = interface[querki.security.AccessControl]
   
   def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Future[Seq[OID]] = {
-    val session = createSession()
+    val session = EmailSender.createSession()
     
     val oidOptFuts = people map { person =>
       sendToPerson(context, person, session, subjectQL, bodyQL, from)
     }
     Future.sequence(oidOptFuts) map (_.flatten)
   }
-  
-  /**
-   * The guts of actually sending email. Note that this can be invoked from a number of different circumstances,
-   * some user-initiated and some not.
-   */
-  private def sendInternal(session:Session, from:String, 
-      recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
-      subject:Wikitext, bodyMain:Wikitext):Try[Unit] = 
-  Try {
-  	val msg = new MimeMessage(session)
-  	msg.setFrom(new InternetAddress(from))
-  
-  	val replyAddrs = Array(new InternetAddress(requester.email.addr, requester.name).asInstanceOf[Address])
-  	msg.setReplyTo(replyAddrs)
-  
-      // TBD: there must be a better way to do this. It's a nasty workaround for the fact
-  	// that setRecipients() is invariant, I believe.
-  	val toAddrs = Array(new InternetAddress(recipientEmail.addr, recipientName).asInstanceOf[Address])	
-  	msg.setRecipients(Message.RecipientType.TO, toAddrs)
-  	
-  	msg.setSubject(subject.plaintext)
-    
-    val body = bodyMain + Wikitext("""
-      |
-      |------
-      |
-      |If you believe you have received this message in error, please drop a note to "betaemail@querki.net". (We're
-      |working on the one-click unsubscribe, but not quite there yet; sorry.)""".stripMargin)
-  	
-  	// Attach the HTML...
-  	val bodyHtml = body.display
-  	val bodyPartHtml = new MimeBodyPart()
-  	bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
-  	// ... and the plaintext...
-  	val bodyPlain = body.plaintext
-  	val bodyPartPlain = new MimeBodyPart()
-  	bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
-  	// ... and set the body to the multipart:
-  	val multipart = new MimeMultipart("alternative")
-  	// IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
-  	// one by preference:
-  	multipart.addBodyPart(bodyPartPlain)
-  	multipart.addBodyPart(bodyPartHtml)
-  	msg.setContent(multipart)
-  	    
-  	msg.setHeader("X-Mailer", "Querki")
-  	msg.setSentDate(new java.util.Date())
-  	    
-    if (username.length > 0) {
-      val transport = session.getTransport("smtp").asInstanceOf[SMTPTransport]
-      transport.connect(username, password)
-      transport.sendMessage(msg, msg.getAllRecipients)
-      if (debug)
-        QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
-    } else {
-      // Non-TLS -- running on a test server, so just do it the easy way:
-  	  Transport.send(msg)
-    }
-  }
 	
-  def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {
+  def sendToPerson(context:QLContext, person:Thing, session:EmailSender.TSession, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {
     val name = person.displayName
     val addrList = person.getProp(EmailAddressProp)
     if (addrList.isEmpty)
@@ -357,12 +282,12 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
         // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
         // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
         // leaking the wrong email address. But it'll do to start.
-        result = sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
+        result = EmailSender.sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
 
       }
         yield result match {
           case Success(_) => Some(person.id)
-          case Failure(ex) => Logger.error("Got an error while sending email ", ex); None 
+          case Failure(ex) => QLog.error("Got an error while sending email ", ex); None 
         }
     }
   }

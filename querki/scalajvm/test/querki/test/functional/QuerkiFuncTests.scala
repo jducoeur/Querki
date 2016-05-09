@@ -66,7 +66,10 @@ class QuerkiFuncTests
         // For the moment, the names of the test DBs are hardcoded. That will probably have to
         // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",
-        "db.user.url" -> "jdbc:mysql://localhost/test_user?characterEncoding=UTF-8"
+        "db.user.url" -> "jdbc:mysql://localhost/test_user?characterEncoding=UTF-8",
+        // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
+        // mail, but instead lets us inspect what has been "sent":
+        "querki.mail.test" -> "true"
       )
     )
   }
