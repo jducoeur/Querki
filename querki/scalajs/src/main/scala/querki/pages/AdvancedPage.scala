@@ -49,6 +49,8 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
   val ql =
     s"""""### Advanced commands for ____
         |
+        |Currently running on *[[_clusterAddress]]*
+        |
         |**[Export all Instances of [[Link Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
         |
         |[[_orphanedInstances -> _section(""### Orphaned Instances"", 
@@ -59,7 +61,7 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         |
         |------"")]]
         |
-        |[[_if(_hasPermission(Can Read Comments._self), 
+        |[[_if(_hasPermission(Who Can Read Comments._self), 
         |  ""**Send me a Message whenever someone comments in this Space:** [[_space -> _getCommentNotifications._edit]]
         |("Maybe" means the default: Yes if you are the owner of this space, No otherwise.)
         |**Note:** this may not take effect for a few hours."")]]""""".stripMargin

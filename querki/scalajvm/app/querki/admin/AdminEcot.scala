@@ -14,6 +14,7 @@ import models.Wikitext
 
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User, UserId}
 import querki.notifications._
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
@@ -25,17 +26,19 @@ case class SystemStatus(spaces:Seq[SpaceStatus])
 private[admin] object MOIDs extends EcotIds(43) {
   val HeaderOID = moid(1)
   val BodyOID = moid(2)
+  val ClusterAddressOID = moid(3)
 }
 
 private[admin] trait AdminInternal extends EcologyInterface {
   def createMsg(from:PublicIdentity, header:String, body:String):Notification
 }
 
-class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOps with AdminInternal {
+class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOps with AdminInternal with querki.core.MethodDefs {
   import AdminActor._
   import MOIDs._
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -151,6 +154,22 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   }
   
   /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  lazy val ClusterAddressFunction = new InternalMethod(ClusterAddressOID, 
+    toProps(
+      setName("_clusterAddress"),
+      setInternal,
+      Summary("Produces the address of this Space inside the Querki Cluster"),
+      Details("This is how the Advanced Page shows where this Space currently resides.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      fut(ExactlyOne(Basic.PlainTextType(SystemManagement.clusterAddress)))
+    }
+  }
+  
+  /***********************************************
    * PROPERTIES
    ***********************************************/
   
@@ -165,6 +184,8 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       setInternal))
   
   override lazy val props = Seq(
+    ClusterAddressFunction,
+      
     SystemMsgHeader,
     SystemMsgBody
   )
