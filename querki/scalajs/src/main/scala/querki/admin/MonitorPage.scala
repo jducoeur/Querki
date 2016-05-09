@@ -3,6 +3,8 @@ package querki.admin
 import scalatags.JsDom.all._
 import autowire._
 
+import org.widok.moment._
+
 import querki.api._
 import querki.globals._
 import querki.pages._
@@ -24,7 +26,11 @@ class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
           for {
             space <- update.spaces
           }
-            yield p(b(space.name), " (on ", space.cluster, ")", ": ", space.nUsers, " users and roughly ", space.size, " bytes")
+            yield p(
+              b(space.name), 
+              " (on ", space.cluster, ")", 
+              ": ", space.nUsers, " users and roughly ", space.size, " bytes",
+              " (last updated ", Moment(space.timestamp).calendar(),  ")")
         )
     }
       yield PageContents("Currently Active", guts)
