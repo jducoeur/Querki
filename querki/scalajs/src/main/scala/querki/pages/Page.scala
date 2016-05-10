@@ -99,6 +99,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
   def flash(isError:Boolean, msg:String) = {
     val newAlert:Gadget[_] = 
             div(
+              id := "_alertMsg",
               classes(Seq("alert alert-dismissible", if (isError) "alert-danger" else "alert-info")),
               role:="alert",
               button(tpe:="button", cls:="close", data("dismiss"):="alert", aria.label:="Close", "x"),

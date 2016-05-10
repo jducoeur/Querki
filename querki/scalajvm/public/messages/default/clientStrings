@@ -40,6 +40,10 @@ pages : {
     pageTitle : "Security for $thingName"
   }
   
+  sharing : {
+    pageTitle : "Sharing for $spaceName"
+  }
+  
   thing : {
     pageTitle : "$thingName"
   }

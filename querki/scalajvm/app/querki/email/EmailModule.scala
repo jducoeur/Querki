@@ -59,7 +59,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   // that this is a sub-Ecot; we actually fetch it by the EmailSender interface later, rather than
   // holding on to the concrete type, to make sure we keep the interfaces clean.
   if (test) {
-    // TODO: put the TestEmailSender here!
+    new TestEmailSender(ecology)
   } else {
     new RealEmailSender(ecology)
   }

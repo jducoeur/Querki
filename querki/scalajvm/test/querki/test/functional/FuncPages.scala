@@ -119,5 +119,11 @@ trait FuncPages { this:FuncMixin =>
     
     override def titleParams = Seq(("thingName" -> thing.display))
   }
+  
+  case class SharingPage(space:TSpace) extends QPage {
+    val name = "sharing"
+    
+    override def titleParams = Seq(("spaceName" -> space.display))
+  }
 
 }

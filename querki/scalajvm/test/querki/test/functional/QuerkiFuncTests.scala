@@ -26,6 +26,7 @@ trait FuncMixin
   with FuncDB 
   with FuncInterfaces
   with FuncUtil
+  with FuncInvites
   with EcologyMember
 
 /**

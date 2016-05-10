@@ -22,7 +22,7 @@ import querki.display.rx._
 import querki.editing.EditFunctions
 import querki.security.{PersonInfo, SecurityFunctions}
 
-class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
+class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
@@ -223,9 +223,12 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     roleMap = makeRoleMap(roles)
     customMap = makeRoleMap(noRole +: custom)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
+    
+    pageTitle = msg("pageTitle", ("spaceName" -> space.displayName))
+    
     guts =
       div(
-        h2("Sharing"),
+        h2(pageTitle),
         p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
         ul(cls:="nav nav-tabs", role:="tablist",
@@ -255,7 +258,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
             
             div(cls:="control-group",
               label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
-              div(cls:="controls",
+              div(id := "_inviteeControls", cls:="controls",
                 inviteeInput
               )
             ),
@@ -279,7 +282,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
                 new RunButton(
                   ButtonGadget.Normal, 
                   "Invite Members",
-                  "Inviting...")
+                  "Inviting...",
+                  id := "_inviteButton")
                 ({ btn =>
                   val emails = inviteeInput.values
                   val collabs = collaboratorInput.values.map(TID(_))
@@ -341,5 +345,5 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         )
       )
   }
-    yield PageContents(s"Sharing for ${space.displayName}", guts)
+    yield PageContents(pageTitle, guts)
 }

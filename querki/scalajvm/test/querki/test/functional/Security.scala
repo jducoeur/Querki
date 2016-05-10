@@ -3,6 +3,8 @@ package querki.test.functional
 /**
  * Security-centric tests
  * 
+ * Among other things, this test issues an invitation to TestUser1, and has them join the new ExploreRestrictedSpace.
+ * 
  * @author jducoeur
  */
 trait Security { this:FuncMixin =>
@@ -33,7 +35,9 @@ trait Security { this:FuncMixin =>
             // TODO: the state should reflect the changed permissions!
           
             state
-          }
+          },
+          
+          shareByEmail(TestUser1)
         )
       },
       
@@ -52,6 +56,19 @@ trait Security { this:FuncMixin =>
             checkMissing(DesignModelItem)
             checkMissing(CreateThingItem)
             checkMissing(AdvancedEditItem)
+          
+            state
+          }
+        )
+      },
+      
+      // Now, accept the invitation, and set up Test User 1:
+      TestDef(None, RootPage(ExploreRestrictedSpace), "Accept the invitation for Test User 1") { state =>
+        run(state,
+          { state =>
+            
+            val inviteLink = extractInviteLink()
+            println(s"----> The invitation link is $inviteLink")
           
             state
           }

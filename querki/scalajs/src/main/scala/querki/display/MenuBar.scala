@@ -126,7 +126,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
             enabled = space.permissions.contains(std.security.canCreatePerm)),
           NavLink("Show all Things", thing("All-Things")),
           NavLink("Show all Properties", thing("All-Properties")),
-          NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
+          NavLink("Sharing", Pages.sharingFactory.pageUrl(), id = "_sharingButton", enabled = DataAccess.request.isOwner)
         )
       else
         Seq.empty

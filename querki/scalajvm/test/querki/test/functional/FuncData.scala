@@ -10,8 +10,9 @@ trait FuncData { this:FuncMixin =>
   /**
    * Represents a user who exists in the test database.
    */
-  case class TestUser(handle:String, display:String, password:String)
-  object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing")
+  case class TestUser(handle:String, display:String, password:String, email:String)
+  object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing", "admin@querki.net")
+  object TestUser1 extends TestUser("testuser1", "Test User 1", "testing", "test1@querki.net")
   
   /**
    * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that
