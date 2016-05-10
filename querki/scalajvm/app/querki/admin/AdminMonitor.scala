@@ -68,7 +68,10 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Monito
     
     case Terminated(mon) => {
       watches.get(mon.path) match {
-        case Some(evt:SpaceMonitorEvent) => spaces -= evt.spaceId
+        case Some(evt:SpaceMonitorEvent) => {
+          spaces -= evt.spaceId
+          watches -= mon.path
+        }
         case None => QLog.error(s"AdminMonitor somehow got a Terminated message for unknown Monitor ${mon.path}!")
       }
     }
