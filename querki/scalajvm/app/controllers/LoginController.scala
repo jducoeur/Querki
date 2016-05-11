@@ -185,27 +185,29 @@ class LoginController extends ApplicationBase {
         passwordValidationError(info.password) match {
           case Some(err) => withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info)) }
           case None => {
-	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
-	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
-	    	personOpt match {
-	    	  case Some(personId) => {
-		    	val result = UserAccess.createProvisional(info)
-		        result match {
-		          case Success(user) => {
-		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
-		          }
-		          case Failure(error) => {
-		            val msg = error match {
-		              case err:PublicException => err.display(request)
-		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
-		            }
-		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)) }
-		          }
-		        }    	    
-	    	  }
-	    	  case None => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
-	    	}
+  	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
+    	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
+    	    	personOpt match {
+    	    	  case Some(personId) => {
+                // This pathway is considered "confirmed" -- we got here through an invitation from a Space, so it's
+                // already routed through this person's email:
+    		    	  val result = UserAccess.createUser(info, true)
+    		        result match {
+    		          case Success(user) => {
+    		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
+    		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
+    		          }
+    		          case Failure(error) => {
+    		            val msg = error match {
+    		              case err:PublicException => err.display(request)
+    		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+    		            }
+    		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)) }
+    		          }
+    		        }    	    
+    	    	  }
+    	    	  case None => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+    	    	}
           }
         }
       }

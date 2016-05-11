@@ -217,12 +217,12 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       )
     }
   }
-  
-  // TODO: this is a pretty naive use of Try, but we should get into the habit. We likely should develop a
-  // higher-level framework on top of Try, that allows us to pass more-structured errors up the line. Note that
-  // some of these exceptions are routine user-input problems like a duplicate email address, while others are
-  // serious internal exceptions. Figure out how we want to handle them differently.
-  def createProvisional(info:SignupInfo):Try[User] = Try {
+
+  /**
+   * Creates a user based on the given information. Gets created as Pending or Free depending on
+   * whether the email address is confirmed. (Different pathways get here in different ways.)
+   */
+  def createUser(info:SignupInfo, confirmedEmail:Boolean):Try[User] = Try {
     // Note that both of these will either return None or throw an exception:
     val existingOpt = loadByHandle(info.handle, 
         Some({_ => throw new PublicException("User.handleExists", info.handle)}))
@@ -234,12 +234,17 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       val userId = OID.next(System)
       // TODO: we should have a standardized utility to deal with this
       val timestamp = org.joda.time.DateTime.now()
+      val level =
+        if (confirmedEmail)
+          UserLevel.FreeUser
+        else
+          UserLevel.PendingUser
       val userInsert = SQL("""
           INSERT User
             (id, level, join_date)
             VALUES
             ({userId}, {level}, {now})
-          """).on("userId" -> userId.raw, "level" -> UserLevel.PendingUser, "now" -> timestamp.toDate())
+          """).on("userId" -> userId.raw, "level" -> level, "now" -> timestamp.toDate())
       // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
       userInsert.execute
 //      if (!userInsert.execute)

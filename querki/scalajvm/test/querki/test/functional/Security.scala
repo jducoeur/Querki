@@ -12,6 +12,8 @@ trait Security { this:FuncMixin =>
     "Explore Restricted Space"
   )
   
+  object TestUser1Space extends TSpace("Test User 1 Personal Space")
+  
   object runSecurityTests extends TestDef(Some(Admin1), IndexPage, "Run Security Tests")({ state => state }) {
     override def subTests = Seq(
         
@@ -67,6 +69,12 @@ trait Security { this:FuncMixin =>
         run(state,
           acceptInvitationToJoinQuerki(TestUser1, ExploreRestrictedSpace)
         )
+      },
+      
+      // And check that Test User 1 is a full user -- they can create a Space:
+      TestDef(Some(TestUser1), IndexPage, "Check that Test User 1 can create a Space") { state =>
+        run(state,
+          createSpace(TestUser1Space))
       }
     )
   }

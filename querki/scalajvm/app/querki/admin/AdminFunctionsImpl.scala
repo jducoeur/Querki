@@ -82,6 +82,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     }    
   }
   
+  // TODO: this is deprecated, and should be able to go away soon:
   def upgradePendingUser(id:TID):Future[AdminUserView] = {
     alterUserLevel(id, FreeUser)
   }
