@@ -44,15 +44,6 @@ POST    /sendPasswordReset          @controllers.LoginController.doSendPasswordR
 GET     /resetPassword              @controllers.LoginController.resetPassword(email, expires:Long, hash)
 POST    /resetPassword              @controllers.LoginController.doResetPassword(email, expiresMillis:Long, hash)
 
-# Admin functionality
-GET     /admin/manageUsers          @controllers.AdminController.manageUsers
-GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingUser(userId)
-GET     /admin/makeAdmin            @controllers.AdminController.makeAdmin(userId)
-GET     /adminJs                    @controllers.AdminController.javascriptRoutes
-GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
-GET     /admin/sendSystemMessage    @controllers.AdminController.sendSystemMessage
-POST    /admin/sendSystemMessage    @controllers.AdminController.doSendSystemMessage
-
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
 
