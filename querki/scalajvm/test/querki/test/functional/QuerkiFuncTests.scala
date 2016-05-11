@@ -68,6 +68,9 @@ class QuerkiFuncTests
         // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",
         "db.user.url" -> "jdbc:mysql://localhost/test_user?characterEncoding=UTF-8",
+        // Note that 19001 is the default port for OneServerPerTest, per:
+        //   https://www.playframework.com/documentation/2.5.x/ScalaFunctionalTestingWithScalaTest
+        "querki.app.urlRoot" -> "http://localhost:19001/",
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":
         "querki.mail.test" -> "true"

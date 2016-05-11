@@ -10,6 +10,10 @@ pages : {
 	importButton : "Import a Space from a file"
   }
   
+  handleInvite : {
+    pageTitle : "You've been invited to join $spaceName!"
+  }
+  
   index : {
     pageTitle : "Your Spaces"
     ownSection : "Spaces You Own"
@@ -46,5 +50,9 @@ pages : {
   
   thing : {
     pageTitle : "$thingName"
+  }
+  
+  tos : {
+    pageTitle : "Terms of Service"
   }
 }

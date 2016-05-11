@@ -65,13 +65,7 @@ trait Security { this:FuncMixin =>
       // Now, accept the invitation, and set up Test User 1:
       TestDef(None, RootPage(ExploreRestrictedSpace), "Accept the invitation for Test User 1") { state =>
         run(state,
-          { state =>
-            
-            val inviteLink = extractInviteLink()
-            println(s"----> The invitation link is $inviteLink")
-          
-            state
-          }
+          acceptInvitationToJoinQuerki(TestUser1, ExploreRestrictedSpace)
         )
       }
     )

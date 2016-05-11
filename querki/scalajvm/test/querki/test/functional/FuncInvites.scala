@@ -51,4 +51,37 @@ trait FuncInvites { self:FuncMixin =>
       case _ => throw new Exception(s"Didn't find invitation link in $body")
     }
   }
+  
+  /**
+   * Assumes the most recent email session contains an email to join this Space.
+   */
+  def acceptInvitationToJoinQuerki(user:TestUser, space:TSpace)(state:State):State = {
+    run(state,
+      { state =>
+        
+        val inviteLink = extractInviteLink()
+        go to inviteLink
+        val handleInvitePage = HandleInvitePage(state.getSpace(space))
+        // Note that this isn't part of the client, so we can't use the normal waitFor() --
+        // the page will never be "rendered".
+        waitForTitle(handleInvitePage)
+        
+        textField("email").value = user.email
+        pwdField("password").value = user.password
+        textField("handle").value = user.handle
+        textField("display").value = user.display
+        click on "_signUpButton"
+        
+        waitForTitle(TermsOfServicePage)
+        checkbox("agreed").select()
+        click on "submitButton"
+        
+        
+        val finalPage = RootPage(state.getSpace(space)) 
+        waitFor(finalPage)
+        
+        state.copy(currentUserOpt = Some(user)) -> finalPage
+      }
+    )
+  }
 }
