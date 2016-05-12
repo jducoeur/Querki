@@ -48,6 +48,10 @@ pages : {
     pageTitle : "Sharing for $spaceName"
   }
   
+  signup : {
+    pageTitle : "Sign up for Querki"
+  }
+  
   thing : {
     pageTitle : "$thingName"
   }

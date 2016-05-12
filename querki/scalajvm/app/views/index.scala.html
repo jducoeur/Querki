@@ -12,17 +12,22 @@
 
 	@user match {
 	  case None => {
-	    <h3>Please log in</h3>
+        <h3>Please log in</h3>
 	    
-		<p>If you have a Querki login and password, please give them here. If don't have one, but you were sent an email invitation to a specific
-		Querki Space, please go that that email and click one of the links in that -- that link should log you in to Querki.</p>
-		
-		@form(routes.LoginController.dologin, 'class -> "form-inline") {
-		  <input type="text" name="name" id="name" value="" placeholder="Email Address">
-		  <input type="password" name="password" id="password" value="" placeholder="Password">
-		  <input type="submit" value="Log in" id="login_button" class="btn btn-primary">
-		  <p class="col-md-12"><small><a href="@{routes.LoginController.sendPasswordReset}">I've forgotten my password</a></small></p>
-		}
+	  	<div class="row">
+	  	  <div class="col-md-6">
+		    @form(routes.LoginController.dologin, 'class -> "form-inline") {
+		      <input type="text" name="name" id="name" value="" placeholder="Email Address">
+		      <input type="password" name="password" id="password" value="" placeholder="Password">
+		      <input type="submit" value="Log in" id="login_button" class="btn btn-primary">
+		      <p class="col-md-12"><small><a href="@{routes.LoginController.sendPasswordReset}">I've forgotten my password</a></small></p>
+		    }
+		  </div>
+		  
+		  <div class="col=md-6">
+		    <p>or <a href="/signup/#!_signup" class="btn btn-primary">Sign up for Querki!</a></p>
+		  </div>
+		</div>
 		
 		<p>For more information about Querki, see <a href="http://www.querki.net/help/#!Learning-Querki">Learning Querki</a> or 
 		the <a href="http://www.querki.net/help/#!Querki-Quickstart">Querki Quickstart page</a>. To join, email "beta@@querki.net" and

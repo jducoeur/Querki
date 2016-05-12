@@ -26,6 +26,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val createSpaceFactory = registerStandardFactory("_createSpace", { (params) => new CreateSpacePage(params) })
   lazy val importSpaceFactory = registerStandardFactory("_importSpace", { (params) => new ImportSpacePage(params) })
   lazy val securityFactory = registerThingPageFactory("_security", { (params) => new querki.security.SecurityPage(params) }, "thingId")
+  lazy val signupFactory = registerStandardFactory("_signup", { (params) => new querki.identity.SignUpPage })
   
   lazy val thingPageFactory = new RawThingPageFactory
   
@@ -41,6 +42,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     importSpaceFactory
     thingPageFactory
     securityFactory
+    signupFactory
   }
   
   private var factories = Seq.empty[PageFactory]

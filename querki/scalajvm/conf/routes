@@ -12,6 +12,8 @@ GET     /help/:thingId              @controllers.ClientController.thingRedirect(
 GET     /TOS                        @controllers.TOSController.showTOS
 POST    /TOS                        @controllers.TOSController.handleTOS
 
+GET     /signup/                    @controllers.ClientController.signup
+
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
 

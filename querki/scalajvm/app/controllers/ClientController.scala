@@ -67,7 +67,21 @@ class ClientController extends ApplicationBase with StreamController {
       // For the moment, in the not-logged-in case, we still show the old root page:
       case _ => Ok(views.html.index(this, rc))
     }
-  } 
+  }
+  
+  def signup = withUser(false) { rc =>
+    rc.requester match {
+      case Some(requester) => {
+        // Already logged in, so signup doesn't make sense
+        doInfo(indexRoute, "You're already logged into Querki")
+      }
+      // The normal case: show the client:
+      case _ => {
+        val requestInfo = ClientApi.rootRequestInfo(rc)
+        Ok(views.html.client(rc, write(requestInfo)))
+      }
+    }
+  }
   
   def space(ownerId:String, spaceIdStr:String) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
     implicit val r = rc
