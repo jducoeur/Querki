@@ -78,6 +78,11 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
   def foreach(f:G => Unit):Unit = opt().foreach(f)
   
   /**
+   * Shorthand for this extremely common case.
+   */
+  def mapOrElse[T](f:G => T, default:T):T = map(f).getOrElse(default)
+  
+  /**
    * Convenience wrapper for getting at the underlying element, if it's been set up yet.
    */
   def mapElem[T](f:Element => T):Option[T] = flatMap(_.asInstanceOf[Gadget[Element]].elemOpt.map(f))

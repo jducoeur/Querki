@@ -25,11 +25,12 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   lazy val displayInput = GadgetRef[RxInput]
   
   // The Sign Up button is disabled until all fields are fully filled-in.
-  // TODO: more validation! Validate the format of the email, and minimum length on handle and display.
+  // TODO: more validation! Validate the format of the email and handle. Even more
+  // than that, each field should display a checkmark or something saying that it is properly filled in.
   lazy val signupDisabled = Rx { 
     emailInput.isContentEmpty() ||
-    passwordInput.map(_.length < 8).getOrElse(true) ||
-    handleInput.isContentEmpty() ||
+    passwordInput.mapOrElse(_.length < 8, true) ||
+    handleInput.mapOrElse(_.length < 4, true) ||
     displayInput.isContentEmpty()
   }
   
@@ -50,7 +51,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
         showInput(emailInput, "Email Address", "emailInput", "text", "joe@example.com"),
         showInput(passwordInput, "Password", "passwordInput", "password", "Password", Some("At least 8 characters")),
         showInput(handleInput, "Choose a Querki handle", "handleInput", "text", "Handle",
-          Some("""Letters and numbers only, without spaces. (Basic ASCII only.) This will be your unique id in Querki,
+          Some("""At least four letters and numbers, without spaces. (Basic ASCII only.) This will be your unique id in Querki,
                  |and will be used in the URLs of your Spaces. This id is permanent.""".stripMargin)),
         showInput(displayInput, "Choose a Display Name", "displayInput", "text", "Name",
           Some("""Your public name in Querki, which will show most of the time. This may be your real-life name,
