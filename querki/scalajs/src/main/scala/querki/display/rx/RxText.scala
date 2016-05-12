@@ -13,7 +13,9 @@ import querki.display.Gadget
 /**
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
-class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLInputElement] {
+class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
+  extends Gadget[dom.HTMLInputElement] with RxEmpty
+{
   
   def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
   
