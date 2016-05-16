@@ -59,4 +59,8 @@ pages : {
   tos : {
     pageTitle : "Terms of Service"
   }
+  
+  validateSignup : {
+    pageTitle : "Validating your email address"
+  }
 }

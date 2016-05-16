@@ -12,7 +12,9 @@ GET     /help/:thingId              @controllers.ClientController.thingRedirect(
 GET     /TOS                        @controllers.TOSController.showTOS
 POST    /TOS                        @controllers.TOSController.handleTOS
 
+# The direct-signup pathway:
 GET     /signup/                    @controllers.ClientController.signup
+POST    /signupStart/               @controllers.LoginController.signupStart()
 
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
@@ -36,6 +38,9 @@ POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiReque
 POST    /_apiRequest                @controllers.ClientController.rawApiRequest
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
 POST    /_upload                    @controllers.ClientController.upload(targetActorPath)
+
+# Display some root-level page
+GET     /c/                         @controllers.ClientController.showClient
 
 POST    /dologin                    @controllers.LoginController.dologin
 POST    /clientlogin                @controllers.LoginController.clientlogin

@@ -24,6 +24,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Core = interface[querki.core.Core]
+  lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val System = interface[querki.system.System]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -98,5 +99,13 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       }
       case ThingError(ex, _) => throw ex
     }
+  }
+  
+  def resendActivationEmail():Future[Unit] = {
+    Person.sendValidationEmail(rc, user.mainIdentity.email, user)
+  }
+  
+  def validateActivationHash(validationStr:String):Future[Boolean] = {
+    Person.validateEmail(user, validationStr)
   }
 }

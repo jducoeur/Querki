@@ -69,6 +69,14 @@ class ClientController extends ApplicationBase with StreamController {
     }
   }
   
+  /**
+   * The common way to display the Client at the root level. Used for various root-level pages.
+   */
+  def showClient = withUser(false) { rc =>
+    val requestInfo = ClientApi.rootRequestInfo(rc)
+    Ok(views.html.client(rc, write(requestInfo)))    
+  }
+  
   def signup = withUser(false) { rc =>
     rc.requester match {
       case Some(requester) => {

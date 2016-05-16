@@ -17,6 +17,7 @@ import UserFunctions._
 class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "index") with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   def showSpace(space:SpaceInfo) = {
     li(IndexPage.spaceLink(space))
@@ -32,23 +33,53 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "index") wi
     )    
   }
   
-  def pageContent = for {
-    allSpaces <- Client[UserFunctions].listSpaces().call()
-    canCreate = (DataAccess.request.userLevel >= PendingUser)
-    guts =
-      div(
-        h1(pageTitle),
+  def normalIndexPage(canCreate:Boolean, allSpaces:AllSpaces) = 
+    div(
+      h1(pageTitle),
+      if (allSpaces.mySpaces.isEmpty && allSpaces.memberOf.isEmpty)
+        // New user, who has no Spaces
+        div(cls:="jumbotron",
+          h1("Welcome to Querki!"),
+          p(s"""You're all set -- your Querki account is up and running. You can now create Spaces of your own by pressing
+              |the ${msg("createButton")} button, below.""".stripMargin)
+        )
+      else
+        // Normal situation
         div(cls:="row",
           spaceSection(msg("ownSection"), allSpaces.mySpaces),
           spaceSection(msg("memberSection"), allSpaces.memberOf)
         ),
-        p(new ButtonGadget(ButtonGadget.Normal, msg("createButton"), id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
-          Pages.createSpaceFactory.showPage()
-        })),
-        if (!canCreate) {
-          p(cls:="_smallSubtitle", msg("notAllowedYet"))
+      p(new ButtonGadget(ButtonGadget.Normal, msg("createButton"), id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
+        Pages.createSpaceFactory.showPage()
+      })),
+      if (!canCreate) {
+        p(cls:="_smallSubtitle", msg("notAllowedYet"))
+      }
+    )
+      
+  def waitingIndexPage =
+    div(cls:="jumbotron",
+      h1("Welcome to Querki!"),
+      p("""An email has been sent to your address, with a validation link. Please find that email and click on the
+          |link in it -- that will finish activating your Querki account and let you start creating Spaces.""".stripMargin),
+          
+      p(new ButtonGadget(ButtonGadget.Normal, "Resend my activation email")({ () =>
+        Client[UserFunctions].resendActivationEmail().call().foreach { _ =>
+          StatusLine.showBriefly("Activation email sent!")
         }
-      )
+      }))
+    )
+      
+  def pageContent = for {
+    allSpaces <- Client[UserFunctions].listSpaces().call()
+    canCreate = (DataAccess.request.userLevel > PendingUser)
+    // This is a bit indirect. Should we let the server declare this instead?
+    awaitingValidation = (!canCreate && allSpaces.mySpaces.isEmpty && allSpaces.memberOf.isEmpty)
+    guts =
+      if (awaitingValidation)
+        waitingIndexPage
+      else
+        normalIndexPage(canCreate, allSpaces)
   }
     yield PageContents(guts)
 }

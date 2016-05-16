@@ -39,6 +39,17 @@ trait UserFunctions {
    * Creates a new Space with the given name, and returns its information.
    */
   def createSpace(name:String):Future[SpaceInfo]
+  
+  /**
+   * Should only be called for new Users. Sends a fresh activation email for their account.
+   */
+  def resendActivationEmail():Future[Unit]
+  
+  /**
+   * Given the hash from an activation link, this confirms that it is valid, and moves
+   * the account to full status if so.
+   */
+  def validateActivationHash(validationStr:String):Future[Boolean]
 }
 
 object UserFunctions {

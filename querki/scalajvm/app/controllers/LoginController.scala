@@ -214,6 +214,43 @@ class LoginController extends ApplicationBase {
     )
   }
   
+  /**
+   * This version of signup() is aimed at the user coming directly to the website and starting signup from there.
+   * It is called from the client, so doesn't deal with HTML.
+   * 
+   * This expects the Client to pass the guts of the request as POST params.
+   * 
+   * TODO: we're currently expecting that all validation is being done at the Client level, but we should probably
+   * sanity-check it here as well.
+   */
+  def signupStart() = withUser(false) { implicit rc =>
+    implicit val request = rc.request
+    val rawForm = signupForm.bindFromRequest
+    rawForm.fold(
+      errorForm => { BadRequest("Error: badly formatted request!") },
+      info => {
+        // This user is *not* yet validated -- that happens when they click on their email:
+        val result = UserAccess.createUser(info, false)
+        result match {
+          case Success(user) => {
+            // Okay -- user is created, so send out the validation email:
+            Person.sendValidationEmail(rc, EmailAddress(info.email), user) map { _ =>
+              // Email sent, so we're ready to move on:
+              Ok(write(ClientApi.userInfo(Some(user)).get)).withSession(user.toSession:_*)
+            }
+          }
+          case Failure(error) => {
+            val msg = error match {
+              case err:PublicException => err.display(request)
+              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+            }
+            BadRequest(s"Error: $msg")
+          }
+        }
+      }
+    )    
+  }
+  
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
     rc.sessionCookie(querki.identity.personParam).map(OID(_)).map { personId => 
       askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {

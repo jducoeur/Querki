@@ -228,6 +228,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    *************************************************************/
 
   val inviteParam = "invite"
+  val validateParam = "validate"
     
   // TODO: this belongs in a utility library somewhere:
   def encodeURL(url:String):String = java.net.URLEncoder.encode(url, "UTF-8")
@@ -274,6 +275,34 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   }
   
   case class Invitee(email:EmailAddress, display:String)
+  
+  /**
+   * Given a user that has just signed up, send the email to validate their email address.
+   * 
+   * TODO: wow, this is a lot simpler than inviteMembers(). Are there ways we can rework the
+   * latter to be more like this?
+   */
+  def sendValidationEmail(rc:RequestContext, email:EmailAddress, user:User):Future[Unit] = {
+    val idString = user.id.toString + ":" + email.addr
+    val signed = Hasher.sign(idString, emailSepChar);
+    val encoded = encodeURL(signed.toString);
+    val url = urlBase + "c/#!_validateSignup" + "?" + validateParam + "=" + encoded
+    
+    val identity = user.mainIdentity
+    
+    Email.sendRaw(
+      email, 
+      identity.name, 
+      Wikitext("Validate your email address for Querki"),
+      Wikitext(s"""You have asked to join Querki; to finish the signup process, please click on this link, or
+        |copy it into your browser:
+        |
+        |[$url]($url)
+        |
+        |If you did not make this request, please ignore this email.""".stripMargin),
+      Email.from,
+      identity)
+  }
   
   /**
    * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
@@ -425,6 +454,31 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
               
       // This gets picked up in Application.withSpace(), and redirected as necessary.
       rcOpt.getOrElse(rc)
+    }
+  }
+  
+  /**
+   * Returns true iff this validationStr matches this User.
+   */
+  def validateEmail(user:User, validationStr:String):Future[Boolean] = {
+    val hash = SignedHash(validationStr, emailSepChar)
+    if (Hasher.checkSignature(hash)) {
+      // Okay, it's a valid hash. Are the contents correct for this User?
+      val SignedHash(_, _, msg, _) = hash
+      val Array(userIdStr, emailAddrStr, _*) = msg.split(":")
+      if (user.id.toString == userIdStr && user.mainIdentity.email.addr == emailAddrStr) {
+        // Yep, all correct. Upgrade the account to Free:
+        UserAccess.changeUserLevel(user.id, SystemUser, UserLevel.FreeUser).map { updatedUserOpt =>
+          updatedUserOpt match {
+            case Some(u) => true
+            case _ => false
+          }
+        }
+      } else {
+        fut(false)
+      }
+    } else {
+      fut(false)
     }
   }
   

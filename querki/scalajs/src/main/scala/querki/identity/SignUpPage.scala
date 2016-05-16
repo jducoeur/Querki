@@ -2,7 +2,11 @@ package querki.identity
 
 import scalatags.JsDom.all._
 import rx._
+import upickle._
 
+import querki.comm._
+import querki.data.UserInfo
+import querki.display.ButtonGadget
 import querki.display.rx._
 import querki.ecology._
 import querki.globals._
@@ -13,6 +17,7 @@ import querki.pages._
  */
 class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   
+  lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
   
   if (UserAccess.user.isDefined)
@@ -23,6 +28,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   lazy val passwordInput = GadgetRef[RxInput]
   lazy val handleInput = GadgetRef[RxInput]
   lazy val displayInput = GadgetRef[RxInput]
+  lazy val signupButton = GadgetRef[RunButton]
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   // TODO: more validation! Validate the format of the email and handle. Even more
@@ -42,6 +48,35 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     )
   }
   
+  def doSignup():Future[UserInfo] = {
+    // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
+    val fut:Future[String] = 
+      controllers.LoginController.signupStart().callAjax(
+        "email" -> emailInput.get.text(), 
+        "password" -> passwordInput.get.text(),
+        "handle" -> handleInput.get.text(),
+        "display" -> displayInput.get.text())
+        
+    fut map { str =>
+      if (str.startsWith("Error:")) {
+        StatusLine.showUntilChange(str)
+        throw new Exception(str)
+      } else {
+        read[UserInfo](str)
+      }
+    }
+  }
+  
+  def signup() = {
+    doSignup().map { user =>
+      UserAccess.setUser(Some(user))
+      PageManager.showIndexPage()
+    }.onFailure { case err =>
+      // Something went wrong, so re-enable the button:
+      signupButton.get.done()
+    }
+  }
+  
   def pageContent = for {
     guts <- scala.concurrent.Future.successful(div(
       h1(pageTitle),
@@ -57,7 +92,8 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
           Some("""Your public name in Querki, which will show most of the time. This may be your real-life name,
                  |but does not have to be. You can change this later.""".stripMargin)),
                  
-        button(tpe:="submit", cls:="btn btn-primary", disabled := signupDisabled, "Sign Up")
+        signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", disabled := signupDisabled) 
+          ({ _ => signup() })
       )
     ))
   }

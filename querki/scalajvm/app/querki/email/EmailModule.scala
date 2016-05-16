@@ -256,6 +256,16 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     }
     Future.sequence(oidOptFuts) map (_.flatten)
   }
+  
+  def sendRaw(recipientEmail:EmailAddress, recipientName:String, subject:Wikitext, body:Wikitext, from:String, requester:Identity):Future[Unit] = {
+    val session = EmailSender.createSession()
+    // All of this email-sending stuff is blocking, so it *should* be creating Futures. Let's at least start
+    // doing that:
+    EmailSender.sendInternal(session, from, recipientEmail, recipientName, requester, subject, body) match {
+      case Success(_) => fut(())
+      case Failure(err) => Future.failed(err)
+    }
+  }
 	
   def sendToPerson(context:QLContext, person:Thing, session:EmailSender.TSession, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {
     val name = person.displayName
