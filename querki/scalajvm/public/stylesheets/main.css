@@ -652,3 +652,11 @@ dd {
 ._permname {
   text-align: right;
 }
+
+/***************************
+ * The Login Page
+ */
+._loginError {
+  color: #ff0000;
+  font-weight: bold;
+}

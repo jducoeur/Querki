@@ -1,9 +1,11 @@
 package querki.identity
 
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import upickle._
 
+import querki.api._
 import querki.comm._
 import querki.data.UserInfo
 import querki.display.ButtonGadget
@@ -29,6 +31,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   lazy val handleInput = GadgetRef[RxInput]
   lazy val displayInput = GadgetRef[RxInput]
   lazy val signupButton = GadgetRef[RunButton]
+  lazy val errorDisplay = GadgetRef.of[dom.html.Div]
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   // TODO: more validation! Validate the format of the email and handle. Even more
@@ -57,13 +60,8 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
         "handle" -> handleInput.get.text(),
         "display" -> displayInput.get.text())
         
-    fut map { str =>
-      if (str.startsWith("Error:")) {
-        StatusLine.showUntilChange(str)
-        throw new Exception(str)
-      } else {
-        read[UserInfo](str)
-      }
+    fut.map { str =>
+      read[UserInfo](str)
     }
   }
   
@@ -71,7 +69,13 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     doSignup().map { user =>
       UserAccess.setUser(Some(user))
       PageManager.showIndexPage()
-    }.onFailure { case err =>
+    }.onFailure { case th =>
+      th match {
+        case PlayAjaxException(jqXHR, textStatus, thrown) => {
+          errorDisplay <= div(cls:="_loginError", jqXHR.responseText)
+        }
+        case _ =>
+      }
       // Something went wrong, so re-enable the button:
       signupButton.get.done()
     }
@@ -81,6 +85,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     guts <- scala.concurrent.Future.successful(div(
       h1(pageTitle),
       p("Please fill in all of these fields, and then press the Sign Up button to join."),
+      errorDisplay <= div(),
       
       form(
         showInput(emailInput, "Email Address", "emailInput", "text", "joe@example.com"),

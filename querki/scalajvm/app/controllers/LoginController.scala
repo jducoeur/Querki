@@ -244,7 +244,7 @@ class LoginController extends ApplicationBase {
               case err:PublicException => err.display(request)
               case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
             }
-            BadRequest(s"Error: $msg")
+            BadRequest(s"$msg")
           }
         }
       }
