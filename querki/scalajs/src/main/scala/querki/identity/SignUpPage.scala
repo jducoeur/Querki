@@ -26,6 +26,9 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     // Already logged in, so this page isn't going to work right:
     PageManager.showIndexPage()
     
+  // This is a *very* primitive email-checker, but enough to start with:
+  lazy val emailRegex = ".+@.+\\..+"
+    
   lazy val emailInput = GadgetRef[RxInput]
   lazy val passwordInput = GadgetRef[RxInput]
   lazy val handleInput = GadgetRef[RxInput]
@@ -33,21 +36,27 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   lazy val signupButton = GadgetRef[RunButton]
   lazy val errorDisplay = GadgetRef.of[dom.html.Div]
   
+  lazy val emailOkay = Rx { emailInput.map(_.text().matches(emailRegex)).getOrElse(false) }
+  lazy val passwordOkay = Rx { passwordInput.mapOrElse(_.length >= 8, false) }
+  lazy val handleOkay = Rx { handleInput.mapOrElse(_.length >= 4, false) }
+  lazy val displayOkay = Rx { !displayInput.isContentEmpty() }
+  
   // The Sign Up button is disabled until all fields are fully filled-in.
-  // TODO: more validation! Validate the format of the email and handle. Even more
-  // than that, each field should display a checkmark or something saying that it is properly filled in.
-  lazy val signupDisabled = Rx { 
-    emailInput.isContentEmpty() ||
-    passwordInput.mapOrElse(_.length < 8, true) ||
-    handleInput.mapOrElse(_.length < 4, true) ||
-    displayInput.isContentEmpty()
+  lazy val signupEnabled = Rx { 
+    emailOkay() &&
+    passwordOkay() &&
+    handleOkay() &&
+    displayOkay()
   }
   
-  def showInput(ref:GadgetRef[RxInput], lbl:String, iid:String, inputType:String, place:String, help:Option[String] = None) = {
+  def showInput(ref:GadgetRef[RxInput], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = {
+    val goodCls = Rx { if (inputOkay()) "_signupGood" else "" }
+    val checkCls = Rx { if (inputOkay()) "fa fa-check-square-o" else "fa fa-square-o" }
+    
     div(cls:="form-group",
       label(`for` := iid, lbl),
       ref <= new RxInput(inputType, cls:="form-control", id := iid, placeholder := place),
-      help.map(h => p(cls:="help-block", h))
+      p(cls:="help-block", span(cls := goodCls, i(cls := checkCls), " ", help))
     )
   }
   
@@ -88,16 +97,18 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
       errorDisplay <= div(),
       
       form(
-        showInput(emailInput, "Email Address", "emailInput", "text", "joe@example.com"),
-        showInput(passwordInput, "Password", "passwordInput", "password", "Password", Some("At least 8 characters")),
+        showInput(emailInput, "Email Address", "emailInput", "text", "joe@example.com", "Must be a valid email address", emailOkay),
+        showInput(passwordInput, "Password", "passwordInput", "password", "Password", "At least 8 characters", passwordOkay),
         showInput(handleInput, "Choose a Querki handle", "handleInput", "text", "Handle",
-          Some("""At least four letters and numbers, without spaces. (Basic ASCII only.) This will be your unique id in Querki,
-                 |and will be used in the URLs of your Spaces. This id is permanent.""".stripMargin)),
+          """At least four letters and numbers, without spaces. (Basic ASCII only.) This will be your unique id in Querki,
+            |and will be used in the URLs of your Spaces. This id is permanent.""".stripMargin,
+          handleOkay),
         showInput(displayInput, "Choose a Display Name", "displayInput", "text", "Name",
-          Some("""Your public name in Querki, which will show most of the time. This may be your real-life name,
-                 |but does not have to be. You can change this later.""".stripMargin)),
-                 
-        signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", disabled := signupDisabled) 
+          """Your public name in Querki, which will show most of the time. This may be your real-life name,
+            |but does not have to be. You can change this later.""".stripMargin,
+          displayOkay),
+
+        signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", disabled := Rx { !signupEnabled() }) 
           ({ _ => signup() })
       )
     ))

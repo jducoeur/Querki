@@ -223,11 +223,13 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * whether the email address is confirmed. (Different pathways get here in different ways.)
    */
   def createUser(info:SignupInfo, confirmedEmail:Boolean):Try[User] = Try {
-    // Note that both of these will either return None or throw an exception:
-    val existingOpt = loadByHandle(info.handle, 
-        Some({_ => throw new PublicException("User.handleExists", info.handle)}))
+    // Note that both of these will either return None or throw an exception.
+    // We intentionally check email first, to catch the case where you've already created an
+    // account and have forgotten about it.
     val emailOpt = loadByEmail(EmailAddress(info.email), 
         Some({_ => throw new PublicException("User.emailExists", info.email)}))
+    val existingOpt = loadByHandle(info.handle, 
+        Some({_ => throw new PublicException("User.handleExists", info.handle)}))
       
     DB.withTransaction(dbName(System)) { implicit conn =>
       // Okay, seems to be legit

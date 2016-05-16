@@ -654,9 +654,13 @@ dd {
 }
 
 /***************************
- * The Login Page
+ * The Login, SignUp and ValidateSignUp Pages
  */
 ._loginError {
   color: #ff0000;
   font-weight: bold;
+}
+
+._signupGood {
+  color: #328a32;
 }
