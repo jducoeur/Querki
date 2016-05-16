@@ -4,6 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import upickle._
+import org.querki.jquery._
 
 import querki.api._
 import querki.comm._
@@ -13,6 +14,7 @@ import querki.display.rx._
 import querki.ecology._
 import querki.globals._
 import querki.pages._
+import querki.util.InputUtils
 
 /**
  * @author jducoeur
@@ -49,13 +51,14 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     displayOkay()
   }
   
-  def showInput(ref:GadgetRef[RxInput], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = {
+  def showInput(ref:GadgetRef[RxInput], filter:Option[JQueryEventObject => Boolean], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = 
+  {
     val goodCls = Rx { if (inputOkay()) "_signupGood" else "" }
     val checkCls = Rx { if (inputOkay()) "fa fa-check-square-o" else "fa fa-square-o" }
     
     div(cls:="form-group",
       label(`for` := iid, lbl),
-      ref <= new RxInput(inputType, cls:="form-control", id := iid, placeholder := place),
+      ref <= new RxInput(filter, inputType, cls:="form-control", id := iid, placeholder := place),
       p(cls:="help-block", span(cls := goodCls, i(cls := checkCls), " ", help))
     )
   }
@@ -97,13 +100,13 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
       errorDisplay <= div(),
       
       form(
-        showInput(emailInput, "Email Address", "emailInput", "text", "joe@example.com", "Must be a valid email address", emailOkay),
-        showInput(passwordInput, "Password", "passwordInput", "password", "Password", "At least 8 characters", passwordOkay),
-        showInput(handleInput, "Choose a Querki handle", "handleInput", "text", "Handle",
-          """At least four letters and numbers, without spaces. (Basic ASCII only.) This will be your unique id in Querki,
+        showInput(emailInput, None, "Email Address", "emailInput", "text", "joe@example.com", "Must be a valid email address", emailOkay),
+        showInput(passwordInput, None, "Password", "passwordInput", "password", "Password", "At least 8 characters", passwordOkay),
+        showInput(handleInput, Some(InputUtils.nameFilter(false)), "Choose a Querki handle", "handleInput", "text", "Handle",
+          """At least four letters and numbers, without spaces. This will be your unique id in Querki,
             |and will be used in the URLs of your Spaces. This id is permanent.""".stripMargin,
           handleOkay),
-        showInput(displayInput, "Choose a Display Name", "displayInput", "text", "Name",
+        showInput(displayInput, None, "Choose a Display Name", "displayInput", "text", "Name",
           """Your public name in Querki, which will show most of the time. This may be your real-life name,
             |but does not have to be. You can change this later.""".stripMargin,
           displayOkay),

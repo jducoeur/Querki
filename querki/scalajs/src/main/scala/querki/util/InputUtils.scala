@@ -7,9 +7,10 @@ import org.querki.jquery._
  */
 object InputUtils {
   /**
-   * This is a filter you can apply to RxText, to only allow in characters legal for Space names.
+   * This is a filter you can apply to RxText, to only allow in characters legal for names. Note
+   * that this is deliberately set up for curried use.
    */
-  def spaceNameFilter(evt:JQueryEventObject):Boolean = {
+  def nameFilter(allowNonAlphaNumeric:Boolean)(evt:JQueryEventObject):Boolean = {
     // TODO: this is quite crude, and doesn't allow Unicode through. We should do better.
     // See if there is a library to really do this sort of keyboard filtering well.
     val key = evt.which
@@ -28,7 +29,10 @@ object InputUtils {
     key == 46 || key == 45 ||
     (!(evt.shiftKey.get) && 
       (c >= '0' && c <= '9') || 
-      key == 189 || // dash 
-      c == ' ')    
+      (allowNonAlphaNumeric &&
+        (key == 189 || // dash 
+        c == ' ')))
   }
+  
+  def spaceNameFilter(evt:JQueryEventObject):Boolean = nameFilter(true)(evt)
 }

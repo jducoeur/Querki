@@ -58,7 +58,6 @@ class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String,
         charFilter match {
           case Some(filter) => {
             val allowed = filter(evt)
-            println(s"${which.toChar} = $allowed")
             if (!allowed)
               evt.preventDefault()
             allowed
