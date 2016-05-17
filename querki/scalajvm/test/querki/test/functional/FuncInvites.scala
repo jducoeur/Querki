@@ -38,17 +38,30 @@ trait FuncInvites { self:FuncMixin =>
   }
   
   val inviteLinkRegex = """<b><a href=\"([^\"]*)\">Click here</a></b> to accept the invitation.""".r.unanchored
+  val validateLinkRegex = """\[([^\"]*)\]""".r.unanchored
+  
+  def fetchLatestEmailBody():String = {
+    val session = IEmailInspector.sessions.head
+    val email = session.messages.head
+    email.bodyMain.plaintext
+  }
   
   /**
    * Go into the most recent email message sent, and get the invitation link from it.
    */
   def extractInviteLink():String = {
-    val session = IEmailInspector.sessions.head
-    val email = session.messages.head
-    val body = email.bodyMain.strip.toString
+    val body = fetchLatestEmailBody()
     body match {
       case inviteLinkRegex(url) => url
       case _ => throw new Exception(s"Didn't find invitation link in $body")
+    }
+  }
+  
+  def extractValidateLink():String = {
+    val body = fetchLatestEmailBody()
+    body match {
+      case validateLinkRegex(url) => url
+      case _ => throw new Exception(s"Didn't find validation link in $body")
     }
   }
   

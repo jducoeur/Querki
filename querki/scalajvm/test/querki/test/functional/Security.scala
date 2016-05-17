@@ -75,6 +75,37 @@ trait Security { this:FuncMixin =>
       TestDef(Some(TestUser1), IndexPage, "Check that Test User 1 can create a Space") { state =>
         run(state,
           createSpace(TestUser1Space))
+      },
+      
+      // Now, try signing up Test User 2 from the home screen:
+      TestDef(None, LoginPage, "Test User 2 joins Querki") { state =>
+        run(state,
+          { state =>
+            
+            // Sign up from the Login Page:
+            click on "signup_button"
+            waitFor(SignupPage)
+            find("signupButton").get.attribute("disabled") should be (Some("true"))
+            textField("emailInput").value = TestUser2.email
+            pwdField("passwordInput").value = TestUser2.password
+            textField("handleInput").value = TestUser2.handle
+            textField("displayInput").value = TestUser2.display
+            // It appears that in practice this goes to None instead Some("false")?
+            eventually { find("signupButton").get.attribute("disabled") should be (None) }
+            click on "signupButton"
+            waitFor(IndexPage)
+            
+            // Okay, now let's go to the email we received, and "click" on its link:
+            val validateLink = extractValidateLink()
+            go to validateLink
+            // This now goes through the Validation page, but that takes an unpredictable amount of time,
+            // so we're just going to assertion that we wind up back at the Index page, now with a Create
+            // button that we can use, indicating that we're ready to roll:
+            eventually { find("_createSpaceButton").get.isEnabled should be (true) }
+          
+            state.copy(currentUserOpt = Some(TestUser2)) -> IndexPage
+          }
+        )
       }
     )
   }

@@ -135,4 +135,8 @@ trait FuncPages { this:FuncMixin =>
   case object TermsOfServicePage extends QPage {
     val name = "tos"
   }
+  
+  case object SignupPage extends QPage {
+    val name = "signup"
+  }
 }

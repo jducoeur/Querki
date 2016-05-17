@@ -111,7 +111,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
             |but does not have to be. You can change this later.""".stripMargin,
           displayOkay),
 
-        signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", disabled := Rx { !signupEnabled() }) 
+        signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", id := "signupButton", disabled := Rx { !signupEnabled() }) 
           ({ _ => signup() })
       )
     ))
