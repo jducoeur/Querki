@@ -83,11 +83,16 @@ trait PropertyBundle {
   def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):QValue
   
   /**
+   * True iff this specific Bundle contains the Property, not taking Models into account.
+   */
+  def hasPropLocal(propId:OID):Boolean = props.contains(propId)
+  
+  /**
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.
    */
   def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
-    props.contains(propId) || getModelOpt.map(_.hasProp(propId)).getOrElse(false)
+    hasPropLocal(propId) || getModelOpt.map(_.hasProp(propId)).getOrElse(false)
   }
   
   /**

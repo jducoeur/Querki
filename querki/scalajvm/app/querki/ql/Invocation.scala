@@ -300,10 +300,20 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
         // and treat them that way:
         val tags = current.value.rawList(Tags.NewTagSetType)
         val things = tags.map(tag => Tags.getTag(tag.text, state))
-        if (things.exists(_.hasProp(prop)))
+        if (things.exists(_.hasPropLocal(prop))) {
+          // This Property exists on the Tag pseudo-Things, so return the pseudo-Things:
           Some(InvocationValueImpl(things.map(t => (t, context.next(ExactlyOne(Tags.NewTagSetType(t.displayName)))))))
-        else
-          None
+        } else {
+          // Hmm. Do these Tags point to actual Things in the Space?
+          val realThings = tags.map(tag => state.anythingByName(tag.text)).flatten
+          if (realThings.exists(_.hasProp(prop))) {
+            // Yes, and some of those Things have this Property, so return those real Things:
+            Some(InvocationValueImpl(realThings.map(t => (t, context.next(ExactlyOne(LinkType(t)))))))
+          } else {
+            // Nope, these Tags just don't seem to have this Property:
+            None
+          }
+        }
       } else current.value.pType match {
         case mt:ModelTypeBase => {
           val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(ExactlyOne(elem))))
