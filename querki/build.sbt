@@ -99,7 +99,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   buildInfoPackage := "querki",
   
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.8.0",
+    "org.scala-js" %%% "scalajs-dom" % "0.9.0",
     "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
