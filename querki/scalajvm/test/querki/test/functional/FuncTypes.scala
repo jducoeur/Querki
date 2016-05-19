@@ -31,7 +31,11 @@ trait FuncTypes { this:FuncMixin =>
     type TSetter = String
     
     def setValue(thing:TThing[_], prop:TProp[this.type], v:String):Unit = {
-      textField(editorId(thing, prop)).value = v
+      // Don't just set textField.value -- we need to be sure to tab out of here. This is because,
+      // in the TTagType, it's going to display the menu of options (or the "not found" box) until
+      // we exit this field, and that box can block the button we need next:
+      click on editorId(thing, prop)
+      enter(s"""$v\u0009""")
     }    
   }
   

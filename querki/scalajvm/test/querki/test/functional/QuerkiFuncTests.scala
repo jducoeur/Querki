@@ -45,6 +45,7 @@ class QuerkiFuncTests
   // test this stuff cross-browser:
   with ChromeFactory
   with WebBrowser
+  with concurrent.IntegrationPatience
   
   // Structural mix-ins for the tests:
   with FuncDB

@@ -60,22 +60,28 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
       }
     }
     
+    val saving = Var(false)
+    
     def hook() = {
       $(elem).find("._permRadio").click { radio:dom.Element =>
         currently() = $(radio).valueString
         if (!isCustom()) {
-          if (isInherit()) {
+          // Note that, instead of using the usual "Saving/Saved" affordance, we actually disable/re-enable
+          // the permissions while saving, via the reactive "saving" flag. This is specifically to have a
+          // reliable way to *test* this, and to prevent weird races.
+          saving() = true
+          val changeFut = if (isInherit()) {
             // The meaning of "inherited" is that we don't have the Property at all
             // TODO: in principle, this belongs in InputGadget. But that implies that we need
             // to create a new value of PropertyChange for removing a Property, with back-end
             // support for that.
-            StatusLine.showUntilChange("Saving...")
-            Client[EditFunctions].removeProperty(t.oid, permInfo.id).call().foreach { response =>
-              StatusLine.showBriefly("Saved")
-            }
+            Client[EditFunctions].removeProperty(t.oid, permInfo.id).call()
           } else {
             // It's a standard value -- the OID of Public, Members or Owner -- so save that:
             save()
+          }
+          changeFut.foreach { response =>
+            saving() = false
           }
         }
         // Show or hide the customDisplay as appropriate:
@@ -112,7 +118,8 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
           input(cls:="_permRadio", tpe:="radio", name:=namePath, 
             if (currently() == levelMap(level).underlying)
               checked:="checked", 
-            value:=levelMap(level).underlying),
+            value:=levelMap(level).underlying,
+            disabled := saving),
           s" $lbl"))
     }
     

@@ -32,7 +32,9 @@ trait Security { this:FuncMixin =>
             val whoCanExplorePath = editorId(space, WhoCanExplorePerm)
             val membersId = MembersRole.tid
             radioButtonGroup(whoCanExplorePath).value = membersId
-            eventually { find(id("statusLine")).get.text should be ("Saved") }
+            // While the permission change is saving, the radio buttons are disabled. We do this
+            // specifically because the "Saved" display in the status line is too transient.
+            eventually { find(whoCanExplorePath).get.attribute("disabled") should be (None) }
             click on "_doneButton"
             // TODO: the state should reflect the changed permissions!
           

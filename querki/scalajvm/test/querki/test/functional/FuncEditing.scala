@@ -231,7 +231,7 @@ trait FuncEditing { this:FuncMixin =>
     setters.map(f => f(thingWithTID, stateWithThing))
     
     // Click "Done", and update the State with the newly-created Thing:
-    click on "_editDoneButton"
+    eventually { click on "_editDoneButton" }
     waitUntilCreated(thingWithTID)
     waitForRendered()
     stateWithThing -> ThingPage(thingWithTID)
