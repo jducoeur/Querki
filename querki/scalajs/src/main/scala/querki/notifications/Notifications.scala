@@ -17,6 +17,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   val numNotifications = Var(0)
   
@@ -40,7 +41,9 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   override def postInit() = {
     PageManager.afterPageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {
-        checkNotifications()
+        // We should only be asking for the number of notifications if we're logged in in the first place:
+        if (UserAccess.user.isDefined)
+          checkNotifications()
       }
     }
     
