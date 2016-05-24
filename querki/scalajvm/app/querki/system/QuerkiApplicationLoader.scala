@@ -85,13 +85,16 @@ class QuerkiApplicationLoader extends ApplicationLoader {
       case Initialized(e) => ecology = e
       case _ => QLog.error("Got an unexpected result from QuerkiRoot.Initialize!!!")
     }
+
+    /**
+     * Provide the Ecology to the rest of the world.
+     */
+    app.injector.instanceOf(classOf[EcologyProvider]).setEcology(ecology)
     
     // Evil workaround, to give the functional test harness access to the running Ecology:
+    // TODO: this can probably be replaced by EcologyProvider, the same way we do for
+    // ApplicationBase:
     QuerkiRoot.ecology = ecology
-    
-    // Another evil (but temporary) workaround, to make the Ecology available to controllers
-    // in the Play 2.4 world:
-    controllers.ControllerEcologyHolder.ecology = ecology
     
     QLog.info("Querki has started")
     
@@ -135,12 +138,38 @@ class QuerkiShutdownHandler @Inject() (lifecycle: ApplicationLifecycle) extends 
 }
 
 /**
+ * This trait represents the singleton that provides the Ecology when necessary. It permits Guice-style
+ * access to the Ecology. 
+ */
+trait EcologyProvider {
+  /**
+   * Get the Ecology. This will, obviously, throw an exception if the Ecology hasn't been created yet.
+   */
+  def ecology:Ecology
+  
+  /**
+   * Sets the Ecology, at the beginning of time. NOTHING SHOULD CALL THIS EXCEPT SYSTEM SETUP.
+   * 
+   * TODO: this belongs in its own side-interface. How do we tell Guice that a Singleton has two interfaces?
+   */
+  def setEcology(ecology:Ecology):Unit
+}
+
+@Singleton
+class EcologyProviderImpl extends EcologyProvider {
+  var _ecology:Option[Ecology] = None
+  
+  def ecology = _ecology.get
+  def setEcology(ec:Ecology) = _ecology = Some(ec)
+}
+
+/**
  * This bit of glue is what causes the QuerkiShutdownHandler to actually get built at the beginning
  * of time, while all the Guice stuff is happening.
  */
 class QuerkiModule extends AbstractModule {
   def configure() = {
-    bind(classOf[ShutdownHandler]).
-      to(classOf[QuerkiShutdownHandler]).asEagerSingleton
+    bind(classOf[ShutdownHandler]).to(classOf[QuerkiShutdownHandler]).asEagerSingleton
+    bind(classOf[EcologyProvider]).to(classOf[EcologyProviderImpl]).asEagerSingleton
   }
 }
