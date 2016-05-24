@@ -122,6 +122,8 @@ session-dispatcher {
   mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
 }
 
+play.application.loader = "querki.system.QuerkiApplicationLoader"
+play.modules.enabled += "querki.system.QuerkiModule"
 
 # Redirect Play's Akka configuration to a different node. This is necessary: if Play's
 # Actor system and our own load from the same config, they conflict. See:

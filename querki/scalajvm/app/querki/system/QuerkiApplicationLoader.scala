@@ -4,6 +4,8 @@ import akka.actor._
 import akka.util.Timeout
 import scala.concurrent.duration._
 
+import com.google.inject.AbstractModule
+
 import com.typesafe.conductr.bundlelib.akka.{ Env => AkkaEnv }
 import com.typesafe.conductr.bundlelib.play.{ Env => PlayEnv }
 import com.typesafe.config.ConfigFactory
@@ -39,10 +41,9 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     val conductRConfig = Configuration(AkkaEnv.asConfig) ++ Configuration(PlayEnv.asConfig)
     val newConfig = context.initialConfiguration ++ conductRConfig
     val newContext = context.copy(initialConfiguration = newConfig)
-    
-    QLog.spew(s"About to start GuiceApplicationLoader")
-    
+        
     // Boot the core of the application from the Play POV:
+    QLog.spew(s"About to start GuiceApplicationLoader")
     val app = (new GuiceApplicationLoader).load(newContext)
     QLog.spew(s"GuiceApplicationLoader started")
     
@@ -103,19 +104,47 @@ object QuerkiApplicationLoader {
   var _root:ActorRef = null
 }
 
+/**
+ * Empty trait, so that we have something to inject.
+ */
+trait ShutdownHandler
+
+/**
+ * This is the bit that's actually responsible for shutting the system down at the end. It registers
+ * itself with the ApplicationLifecycle, and when the app is shutting down, it terminates the Actors.
+ */
 @Singleton
-class QuerkiShutdownHandler @Inject() (lifecycle: ApplicationLifecycle) {
+class QuerkiShutdownHandler @Inject() (lifecycle: ApplicationLifecycle) extends ShutdownHandler {
   val initTermDuration = 30 seconds
   implicit val initTermTimeout = Timeout(initTermDuration)
   
+  QLog.spew("Setting up QuerkiShutdownHandler")
+  
   lifecycle.addStopHook { () =>
-    QLog.info("Querki shutting down...")
+    QLog.spew("Querki shutting down...")
     
     for {
       termResult <- akka.pattern.ask(QuerkiApplicationLoader._root, QuerkiRoot.Terminate)
       terminated <- QuerkiApplicationLoader._appSystem.terminate()
-      _ = QLog.info("... Done")
+      _ = QLog.spew("... Done")
     }
       yield ()
+  }
+}
+
+/**
+ * This bit of glue is what causes the QuerkiShutdownHandler to actually get built at the beginning
+ * of time, while all the Guice stuff is happening. Note that the config file needs to include:
+ * 
+ *   play.modules.enabled += "querki.system.QuerkiModule"
+ *   
+ * Editorial: and that's why I don't like the Guice approach to the world. I appreciate configurability,
+ * but *mandating* this incestuous relationship between the config file and the code is idiotic. Is there
+ * a way to force Guice to deal with this without config intervention?
+ */
+class QuerkiModule extends AbstractModule {
+  def configure() = {
+    bind(classOf[ShutdownHandler]).
+      to(classOf[QuerkiShutdownHandler]).asEagerSingleton
   }
 }
