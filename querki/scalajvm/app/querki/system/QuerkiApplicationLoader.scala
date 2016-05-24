@@ -9,7 +9,7 @@ import com.google.inject.AbstractModule
 import com.typesafe.conductr.bundlelib.akka.{ Env => AkkaEnv }
 import com.typesafe.conductr.bundlelib.play.{ Env => PlayEnv }
 import com.typesafe.config.ConfigFactory
-import play.api.inject.guice.GuiceApplicationLoader
+import play.api.inject.guice._
 import play.api.{ Configuration, Application, ApplicationLoader }
 
 // For cleaning up afterwards:
@@ -44,7 +44,9 @@ class QuerkiApplicationLoader extends ApplicationLoader {
         
     // Boot the core of the application from the Play POV:
     QLog.spew(s"About to start GuiceApplicationLoader")
-    val app = (new GuiceApplicationLoader).load(newContext)
+    // We instantiate the module by hand, so that the config file doesn't need to get involved. 
+    val builder = new GuiceApplicationBuilder().bindings(new QuerkiModule)
+    val app = (new GuiceApplicationLoader(builder)).load(newContext)
     QLog.spew(s"GuiceApplicationLoader started")
     
     // Prep ConductR, if it's present:
@@ -134,13 +136,7 @@ class QuerkiShutdownHandler @Inject() (lifecycle: ApplicationLifecycle) extends 
 
 /**
  * This bit of glue is what causes the QuerkiShutdownHandler to actually get built at the beginning
- * of time, while all the Guice stuff is happening. Note that the config file needs to include:
- * 
- *   play.modules.enabled += "querki.system.QuerkiModule"
- *   
- * Editorial: and that's why I don't like the Guice approach to the world. I appreciate configurability,
- * but *mandating* this incestuous relationship between the config file and the code is idiotic. Is there
- * a way to force Guice to deal with this without config intervention?
+ * of time, while all the Guice stuff is happening.
  */
 class QuerkiModule extends AbstractModule {
   def configure() = {
