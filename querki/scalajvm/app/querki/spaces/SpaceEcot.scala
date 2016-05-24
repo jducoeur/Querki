@@ -3,7 +3,7 @@ package querki.spaces
 import scala.concurrent.duration._
 
 import akka.actor.{ActorRef, Props}
-import akka.contrib.pattern.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding.{ClusterSharding, ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
@@ -39,12 +39,12 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   
   // These two functions tell ClusterSharding the ID and shard for a given SpaceMessage. They are
   // then used to decide how to find/create the Space's Router (and thus, its troupe).
-  val idExtractor:ShardRegion.IdExtractor = {
+  val idExtractor:ShardRegion.ExtractEntityId = {
     case msg @ ClientRequest(req, rc) => (rc.spaceIdOpt.get.toString(), msg) 
     case msg @ SpaceMessage(req, spaceId) => (spaceId.toString(), msg) 
   }
   
-  val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+  val shardResolver:ShardRegion.ExtractShardId = msg => msg match {
     case ClientRequest(req, rc) => rc.spaceIdOpt.get.shard
     case msg @ SpaceMessage(req, spaceId) => spaceId.shard
   }

@@ -46,24 +46,24 @@
       @Html({
 		  implicit val request = rc.request
 		  
-		  import play.core.Router.JavascriptReverseRoute
+		  import play.api.routing.JavaScriptReverseRoute
 		  
-		  val callC = classOf[play.core.Router.JavascriptReverseRoute]
-		  def getRoutes[T](cont:T):Seq[JavascriptReverseRoute] = {
+		  val callC = classOf[JavaScriptReverseRoute]
+		  def getRoutes[T](cont:T):Seq[JavaScriptReverseRoute] = {
 		    val contC:Class[_] = cont.getClass
 		    val allMethods = contC.getMethods
 		    val calls = allMethods.filter { method =>
 		      val returns = method.getReturnType()
 		      callC.isAssignableFrom(returns)
 		    }
-		    calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
+		    calls.map { call => call.invoke(cont).asInstanceOf[JavaScriptReverseRoute] }
 		  }
 		  
 		  // All routes used by the Client should be placed in here. It doesn't provide proper
 		  // static typing, but it's better than doing things in a completely stringly fashion.
 		  // Use getRoutes to expose all of the entry points in a controller, or else just name
 		  // those routes individually if you want more control:
-		  play.api.Routes.javascriptRouter("clientRoutes")(
+		  play.api.routing.JavaScriptReverseRouter("clientRoutes")(
 		    (getRoutes(routes.javascript.Application) ++
 		     getRoutes(routes.javascript.ClientController) ++
 		     getRoutes(routes.javascript.TOSController) ++

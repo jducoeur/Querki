@@ -53,7 +53,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       row.int("tosVersion"))
   }
   
-  private def getUser(query:Sql, checkOpt:Option[User => Boolean] = None):Option[User] = {
+  private def getUser(query:SimpleSql[Row], checkOpt:Option[User => Boolean] = None):Option[User] = {
     // TODO: check the cache? Or should that be done at the semantic levels below?
     // There's a case to be made that the cache check is necessarily tied to the query,
     // and therefore just plain doesn't belong here...

@@ -1,7 +1,7 @@
 package querki.cluster
 
 import akka.actor._
-import akka.contrib.pattern._
+import akka.cluster.singleton._
 
 import querki.ecology._
 import querki.globals._
@@ -23,6 +23,8 @@ private [cluster] trait ClusterPrivate extends EcologyInterface {
  */
 class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with QuerkiCluster {
   
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
+  
   private final val singletonName = "querkiNodeSingleton"
   private final val coordinatorName = "querkiNodeCoordinator"
   // TODO: that "querkiRoot" in there is sort of secret knowledge about the environment. That's a
@@ -37,20 +39,20 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   // The OID allocator is a child of NodeManager, and routes through it.
   def oidAllocator = nodeManager
   
-  override def createActors(createActorCb:CreateActorFunc) = {
-    createActorCb(ClusterSingletonManager.props(
-        QuerkiNodeCoordinator.actorProps(),
-        coordinatorName,
-        QuerkiNodeCoordinator.Stop,
-        None
-      ),
-      singletonName)
-      
-    _nodeCoordinator = createActorCb(ClusterSingletonProxy.props(
-          coordinatorPath,
-          None), 
-        "querkiNodeCoordinatorProxy")
-        
-    _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
-  }
+  // TODO: until we have an Akka Persistence layer that we like, just don't even boot this up:
+//  override def createActors(createActorCb:CreateActorFunc) = {
+//    createActorCb(ClusterSingletonManager.props(
+//        QuerkiNodeCoordinator.actorProps(),
+//        QuerkiNodeCoordinator.Stop,
+//        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
+//      ),
+//      singletonName)
+//      
+//    _nodeCoordinator = createActorCb(ClusterSingletonProxy.props(
+//          coordinatorPath,
+//          ClusterSingletonProxySettings(SystemManagement.actorSystem)), 
+//        "querkiNodeCoordinatorProxy")
+//        
+//    _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
+//  }
 }

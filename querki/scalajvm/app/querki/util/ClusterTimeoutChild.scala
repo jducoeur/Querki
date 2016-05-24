@@ -3,7 +3,7 @@ package querki.util
 import scala.concurrent.duration._
 
 import akka.actor.{Actor, ReceiveTimeout}
-import akka.contrib.pattern.ShardRegion
+import akka.cluster.sharding.ShardRegion
 
 import querki.globals._
 

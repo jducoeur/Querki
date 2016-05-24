@@ -1,7 +1,7 @@
 package querki.identity
 
 import akka.actor.{ActorRef, Props}
-import akka.contrib.pattern.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding._
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -52,20 +52,20 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   // These two functions tell ClusterSharding the ID and shard for a given IdentityRequest.
   // Note that the name of the shard and the name of the entity are the same. That's intentional:
   // we want one entity -- one IdentityCache -- per shard.
-  val identityExtractor:ShardRegion.IdExtractor = {
+  val identityExtractor:ShardRegion.ExtractEntityId = {
     case msg:IdentityRequest => (msg.id.shard, msg) 
   }
-  val identityResolver:ShardRegion.ShardResolver = msg => msg match {
+  val identityResolver:ShardRegion.ExtractShardId = msg => msg match {
     case msg:IdentityRequest => msg.id.shard
   }
   
   // These tell how to shard the UserCache. Similarly to identity, there is a single entity per
   // shard, but in this case it's based on the handle in the message.
   def userShard(msg:UserCacheRequest) = (msg.handle.hashCode() % 30).toString
-  val userExtractor:ShardRegion.IdExtractor = {
+  val userExtractor:ShardRegion.ExtractEntityId = {
     case msg:UserCacheRequest => (userShard(msg), msg) 
   }
-  val userResolver:ShardRegion.ShardResolver = msg => msg match {
+  val userResolver:ShardRegion.ExtractShardId = msg => msg match {
     case msg:UserCacheRequest => userShard(msg)
   }  
   

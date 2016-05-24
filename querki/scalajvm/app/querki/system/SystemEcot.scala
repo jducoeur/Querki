@@ -2,7 +2,7 @@ package querki.system
 
 import akka.actor._
 import akka.cluster.Cluster
-import akka.contrib.pattern.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding._
 
 import querki.ecology._
 import querki.values.SpaceState
@@ -42,7 +42,7 @@ trait SystemManagement extends EcologyInterface {
    * As it says, this is a wrapper around the standard ShardRegion creation, pulled out to here so that
    * it can be stubbed for unit testing.
    */
-  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.IdExtractor, identityResolver:ShardRegion.ShardResolver):Option[ActorRef]
+  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.ExtractEntityId, identityResolver:ShardRegion.ExtractShardId):Option[ActorRef]
 }
 
 object SystemMOIDs extends EcotIds(18)
@@ -118,12 +118,13 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
   
   def actorSystem = actorSystemOpt.get
   
-  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.IdExtractor, identityResolver:ShardRegion.ShardResolver) = {
+  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.ExtractEntityId, identityResolver:ShardRegion.ExtractShardId) = {
     Some(ClusterSharding(actorSystem).start(
         typeName = name, 
-        entryProps = Some(props), 
-        idExtractor = identityExtractor, 
-        shardResolver = identityResolver))
+        entityProps = props, 
+        settings = ClusterShardingSettings(actorSystem),
+        extractEntityId = identityExtractor, 
+        extractShardId = identityResolver))
   }
   
   def clusterAddress:String = {

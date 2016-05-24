@@ -15,9 +15,23 @@ import querki.spaces.messages._
 import querki.util._
 import querki.values.SpaceState
 
+/**
+ * TEMPORARY: this is a temporary workaround for the fact that GlobalSettings.getControllerInstance() has
+ * gone away in Play 2.4, so our previous approach for injecting the Ecology into Controllers is kaput.
+ * So for the moment we're going back to a global, albeit limited to the problem of Controllers.
+ * 
+ * This should get replaced by something based on the Guice mechanisms that are built into Play, but I
+ * need to learn those well enough first. The goal is simply to provide the Application-global Ecology to
+ * each Controller as it gets instantiated.
+ */
+object ControllerEcologyHolder {
+  var ecology:Ecology = null
+}
+
 class ApplicationBase extends Controller with EcologyMember {
   
-  implicit var ecology:Ecology = null
+//  implicit var ecology:Ecology = null
+  implicit def ecology = ControllerEcologyHolder.ecology
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]

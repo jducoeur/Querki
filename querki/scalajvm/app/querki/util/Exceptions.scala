@@ -2,7 +2,14 @@ package querki.util
 
 import scala.util._
 
+// TODO: Feh -- this is all hackery to get at Messages in the Play 2.4 world. Probably need to do this
+// a better way, more compatible with Play's new dependency-injected approach. For the moment, we're
+// using a bunch of global implicits to get there.
+import play.api.Play.current
 import play.api.i18n.Messages
+import play.api.i18n.Lang.defaultLang
+import Messages.Implicits._
+
 import play.api.mvc.RequestHeader
 
 import controllers.PlayRequestContext

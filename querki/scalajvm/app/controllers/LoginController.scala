@@ -8,6 +8,12 @@ import play.api.data.format.Formats._
 import play.api.data.validation.Constraints._
 import play.api.mvc._
 
+// Provide an implicit Messages object, which is needed to pass into some of the templates.
+// TODO: this is a temporary hack -- we'll need to switch to the injected version of Messages
+// before too long.
+import play.api.i18n.Messages.Implicits._
+import play.api.Play.current
+
 import upickle._
 
 import models._

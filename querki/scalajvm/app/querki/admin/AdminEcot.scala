@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor._
-import akka.contrib.pattern._
+import akka.cluster.singleton._
 import akka.pattern._
 import akka.util.Timeout
 
@@ -60,14 +60,13 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     
     _monitorManager = createActorCb(ClusterSingletonManager.props(
         AdminMonitor.actorProps(ecology),
-        "AdminMonitor",
         PoisonPill,
-        None
-      ), 
+        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
+      ),
       "MonitorManager")
     _monitorProxy = createActorCb(ClusterSingletonProxy.props(
         "/user/querkiRoot/MonitorManager/AdminMonitor",
-        None),
+        ClusterSingletonProxySettings(SystemManagement.actorSystem)),
       "MonitorProxy")
   }
   

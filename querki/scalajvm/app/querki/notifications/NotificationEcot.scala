@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
-import akka.contrib.pattern.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding._
 import akka.util.Timeout
 
 import play.api.libs.concurrent.Execution.Implicits._
@@ -38,12 +38,12 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   lazy val userNotifications = _userNotifications.get
   
   // These two functions tell ClusterSharding the ID and shard for a given UserSessionMsg.
-  val idExtractor:ShardRegion.IdExtractor = {
+  val idExtractor:ShardRegion.ExtractEntityId = {
     case msg:UserRouteableMessage => (msg.userId.toString(), msg)
     case msg @ ClientRequest(req, rc) => (rc.requesterOrAnon.id.toString(), msg)
   }
   
-  val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+  val shardResolver:ShardRegion.ExtractShardId = msg => msg match {
     case msg:UserRouteableMessage => msg.userId.shard
     case msg @ ClientRequest(req, rc) => rc.requesterOrAnon.id.shard
   }

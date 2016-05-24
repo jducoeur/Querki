@@ -3,7 +3,7 @@ package querki.session
 import scala.concurrent.duration._
 
 import akka.actor.{ActorRef, Props}
-import akka.contrib.pattern.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding.{ClusterSharding, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -30,12 +30,12 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   lazy val sessionManager = _ref.get
   
   // These two functions tell ClusterSharding the ID and shard for a given UserSessionMsg.
-  val idExtractor:ShardRegion.IdExtractor = {
+  val idExtractor:ShardRegion.ExtractEntityId = {
     case msg @ ClientRequest(req, rc) => (rc.requesterOrAnon.id.toString(), msg)
     case msg:UserSessionMsg => (msg.userId.toString(), msg) 
   }
   
-  val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+  val shardResolver:ShardRegion.ExtractShardId = msg => msg match {
     case msg @ ClientRequest(req, rc) => rc.requesterOrAnon.id.shard
     case msg:UserSessionMsg => msg.userId.shard
   }
