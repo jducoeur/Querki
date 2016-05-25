@@ -1,6 +1,7 @@
 package querki.evolutions.steps
 
 import anorm._
+import anorm.SqlParser.long
 import java.sql.Connection
 import play.api.db._
 import play.api.Play.current
@@ -19,15 +20,13 @@ class Step6(implicit val ecology:Ecology) extends Step {
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {
     val ownerOpt = DB.withTransaction(dbName(System)) { implicit conn =>
-      val stream = SQL("""
+      SQL("""
           SELECT owner
             FROM Spaces
            WHERE id = {spaceId}
-          """).on("spaceId" -> info.id.raw)()
-      val ownerStream = stream.map { row =>
-        row.oid("owner")
-      }
-      ownerStream.headOption
+          """)
+        .on("spaceId" -> info.id.raw)
+        .as(oid("owner").singleOpt)
     }
     ownerOpt match {
       case Some(ownerId) => UserAccess.addSpaceMembership(ownerId, info.id, MembershipState.owner)

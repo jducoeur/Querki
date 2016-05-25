@@ -1,6 +1,7 @@
 package querki.evolutions
 
 import anorm._
+import anorm.SqlParser.{long, int}
 import java.sql.Connection
 import play.api.db._
 import play.api.Play.current
@@ -10,6 +11,7 @@ import querki.ecology._
 import models._
 
 import querki.db.ShardKind._
+import querki.util.SqlHelpers._
 
 /**
  * Represents a single evolutionary step -- how to progress to this version of
@@ -33,10 +35,15 @@ trait Step extends EcologyMember {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
     // quite likely not, but as it stands this is a tad riskier than I like:
     val info = DB.withTransaction(dbName(System)) { implicit conn =>
-      val row = SQL("""
+      
+      val parseRow = 
+        oid("id") ~ int("version") map { case i ~ v => SpaceInfo(i, v) }
+      
+      SQL("""
           select * from Spaces where id = {id}
-          """).on("id" -> spaceId.raw).apply().headOption.get
-      SpaceInfo(row)
+          """)
+        .on("id" -> spaceId.raw)
+        .as(parseRow.single)
     }
     DB.withTransaction(dbName(User)) { implicit spaceConn =>
       backupTables(info)(spaceConn)
@@ -73,7 +80,4 @@ trait Step extends EcologyMember {
   
 case class SpaceInfo(id:OID, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
   def thingTable = interface[querki.spaces.SpacePersistence].thingTable(id)
-}
-object SpaceInfo {
-  def apply(row:Row)(implicit ecology:Ecology):SpaceInfo = SpaceInfo(OID(row[Long]("id")), row[Int]("version"))
 }

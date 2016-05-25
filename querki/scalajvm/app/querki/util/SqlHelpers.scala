@@ -23,4 +23,7 @@ object SqlHelpers {
     def short(name:String) = load[Int](name).toShort
     def bool(name:String) = load[Boolean](name)
   }
+  
+  // Newer-style special types, similar to those in SqlParser:
+  def oid(name:String):RowParser[OID] = SqlParser.long(name).map(OID(_))
 }
