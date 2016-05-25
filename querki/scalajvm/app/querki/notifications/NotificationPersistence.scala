@@ -3,6 +3,7 @@ package querki.notifications
 import akka.actor.Props
 
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
@@ -34,14 +35,12 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
   
   def loadUserInfo(userId:UserId):Option[UserNotificationInfo] = {
     DB.withConnection(dbName(System)) { implicit conn =>
-      val userStream = SQL("""
+      SQL("""
           SELECT lastNoteChecked from User
            WHERE id = {id} 
-      """).on("id" -> userId.raw)()
-      userStream.force.map { row =>
-        val lastNoteChecked = row.int("lastNoteChecked")
-        UserNotificationInfo(userId, lastNoteChecked)
-      }.headOption
+          """)
+        .on("id" -> userId.raw)
+        .as(int("lastNoteChecked").map(UserNotificationInfo(userId, _)).singleOpt)
     }
   }
   
@@ -55,32 +54,45 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
     }    
   }
   
+  /**
+   * Parser for reading a single Notification row out of MySQL.
+   */
+  private val notificationParser = 
+    for {
+      id <- int("id")
+      sender <- oid("sender")
+      to <- oid("toIdentity").?
+      ecot <- int("ecotId")
+      tpe <- int("noteType")
+      sent <- dateTime("sentTime")
+      spaceId <- oid("spaceId").?
+      thingId <- oid("thingId").?
+      props <- str("props")
+      isRead <- bool("isRead")
+      isDeleted <- bool("isDeleted")
+    }
+      yield 
+        Notification(
+          id, sender, to,
+          NotifierId(ecot.toShort, tpe.toShort),
+          sent, spaceId, thingId,
+          // Do we ever need a specific Space in order to deserialize a Notification? We probably can't,
+          // since we are viewing them outside the context of the Space. So just use System.
+          SpacePersistence.deserializeProps(props, SystemState),
+          isRead, isDeleted
+        )
+  
   def loadCurrent(userId:UserId):CurrentNotifications = {
     DB.withConnection(dbName(User)) { implicit conn =>
       try {
-        val noteStream = UserSQL(userId, """
+        val notes = UserSQL(userId, """
             SELECT * from {notename}
              WHERE isDeleted = FALSE
              ORDER BY sentTime DESC
              LIMIT 100
-            """)()
-        val notes = noteStream.map { row =>
-          Notification(
-            row.int("id"),
-            row.oid("sender"),
-            row.optOid("toIdentity"),
-            NotifierId(row.short("ecotId"), row.short("noteType")),
-            row.dateTime("sentTime"),
-            row.optOid("spaceId"),
-            row.optOid("thingId"),
-            // Do we ever need a specific Space in order to deserialize a Notification? We probably can't,
-            // since we are viewing them outside the context of the Space. So just use System.
-            SpacePersistence.deserializeProps(row.string("props"), SystemState), 
-            row.bool("isRead"), 
-            row.bool("isDeleted")
-          )
-        }
-        CurrentNotifications(notes.force)
+            """)
+          .as(notificationParser.*)
+        CurrentNotifications(notes)
       } catch {
         case e:com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException => {
           // This is dealing with a very specific race condition that can occur. When a User is newly

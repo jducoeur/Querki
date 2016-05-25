@@ -1,6 +1,9 @@
 package querki.time
 
 import anorm._
+import SqlParser.get
+
+import querki.globals._
 
 object TimeAnorm {
   
@@ -15,13 +18,16 @@ object TimeAnorm {
     value match {
       case ts: java.sql.Timestamp => Right(new DateTime(ts.getTime))
       //case d: java.sql.Date => Right(new DateTime(d.getTime))
-      case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass) )
+      case _ => Left(TypeDoesNotMatch("Cannot convert column " + qualified + ", value " + value + " to date:" + value.asInstanceOf[AnyRef].getClass) )
     }
   }
   
+  // DEPRECATED -- old-style access
   implicit class DateTimeSqlRow(row:Row) {
     def dateTime(name:String) = row[DateTime](name)
   }
+  
+  def dateTime(name:String):RowParser[DateTime] = get[DateTime](name)
   
   implicit val dateTimeToStatement = new ToStatement[DateTime] {
     def set(s: java.sql.PreparedStatement, index: Int, aValue: DateTime): Unit = {

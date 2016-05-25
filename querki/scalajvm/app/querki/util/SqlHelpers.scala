@@ -10,6 +10,8 @@ object SqlHelpers {
    * 
    * Note that these methods will all throw exceptions if the column isn't found! This is not designed
    * to be gentle if the code and DB have somehow gotten out of sync.
+   * 
+   * DEPRECATED -- this is all old-style Anorm.
    */
   implicit class EnhancedSqlRow(row:Row) {
     def load[A](name:String)(implicit c:anorm.Column[A]) = row[A](name)
