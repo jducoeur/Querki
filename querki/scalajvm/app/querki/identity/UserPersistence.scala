@@ -3,6 +3,7 @@ package querki.identity
 import scala.util.Try
 
 import anorm._
+import anorm.SqlParser._
 import play.api._
 import play.api.db._
 import play.api.mvc._
@@ -28,58 +29,44 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   lazy val UserCacheAccess = interface[UserCacheAccess]
   
   /**
-   * TODO: RE-ADD CACHING
-   * 
-   * Note that caching needs to fundamentally change, though. We should really have a single master
-   * cache of *all* of the looked-up Users, which is probably controlled by getUser(). But that gets
-   * indexed by a bunch of little caches of pointers into it by various keys, which correspond to the
-   * query being passed into getUser(). Odds are that the cache is itself essentially a parameter to
-   * getUser().
-   * 
-   * This is going to be a hassle, so don't be half-assed about it: better to do it right once, than
-   * spend a bunch of effort on an optimization we don't need yet. Make sure it winds up thread-safe,
-   * which is not a small issue, and deal with making all of this properly asynchronous while we're at it.
-   * 
-   * TBD: is this the right way to do it? Or should we instead be caching at a higher semantic level?
-   * That might actually make more sense. Do some profiling of how we are using these records, to see.
+   * This is used in various queries -- it is a new (Play 2.4) style parser from a row to a User.
    */
-  
-  private def rowToUser(row:Row):User = {
-    val email = EmailAddress(row.string("email"))
-    val identityOID = row.oid("id")
-    FullUser(row.oid("userId"), row.string("name"),
-      Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
-      row.int("level"),
-      row.int("tosVersion"))
-  }
+  private val userParser:RowParser[User] =
+    for {
+      email <- str("email")
+      identityOID <- oid("id")
+      userOID <- oid("userId")
+      name <- str("name")
+      auth <- str("authentication")
+      handle <- str("handle")
+      level <- int("level")
+      tosV <- int("tosVersion")
+    }
+      yield 
+        FullUser(
+          userOID, name,
+          Seq(Identity(identityOID, EmailAddress(email), auth, handle, name, IdentityKind.QuerkiLogin)),
+          level,
+          tosV
+        )
   
   private def getUser(query:SimpleSql[Row], checkOpt:Option[User => Boolean] = None):Option[User] = {
-    // TODO: check the cache? Or should that be done at the semantic levels below?
-    // There's a case to be made that the cache check is necessarily tied to the query,
-    // and therefore just plain doesn't belong here...
     DB.withConnection(dbName(System)) { implicit conn =>
-      val result = query()
-      result.headOption.flatMap { row =>
-//        val email = EmailAddress(row.string("email"))
-//        val identityOID = row.oid("id")
-//        // Create the User record
-        val user = rowToUser(row)
-//          FullUser(row.oid("userId"), row.string("name"),
-//          Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
-//          row.int("level"))
-        
-        // If this is conditional -- for example, if this is login, and we need to authenticate --
-        // then do the check before returning the found user
-        if (checkOpt.isDefined)
-          checkOpt.flatMap { fCheck =>
-            if (fCheck(user))
-              Some(user)
-            else
-              None
-          }
-        else
-          Some(user)
-      }
+      query
+        .as(userParser.singleOpt)
+        .flatMap { user =>
+          // If this is conditional -- for example, if this is login, and we need to authenticate --
+          // then do the check before returning the found user
+          if (checkOpt.isDefined)
+            checkOpt.flatMap { fCheck =>
+              if (fCheck(user))
+                Some(user)
+              else
+                None
+            }
+          else
+            Some(user)
+        }
     }    
   }
   
@@ -108,30 +95,28 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     loadByUserId(userId)
   }
   
-  // DEPRECATED:
+  // DEPRECATED: we need to move away from this
   def getAllForAdmin(requester:User):Seq[User] = requester.requireAdmin {
-    val userQuery = userLoadSqlWhere("""User.level != 0""")
     DB.withConnection(dbName(System)) { implicit conn =>
-      val result = userQuery()
-      result.map(rowToUser(_)).force
+      userLoadSqlWhere("""User.level != 0""").as(userParser.*)
     }
   }
   
+  // DEPRECATED: does this even make sense after Open Beta? Probably not.
   def getPendingForAdmin(requester:User):Seq[User] = requester.requireAdmin {
-    val userQuery = userLoadSqlWhere("""User.level = 1""")
     DB.withConnection(dbName(System)) { implicit conn =>
-      val result = userQuery()
-      result.map(rowToUser(_)).force
+      userLoadSqlWhere("""User.level = 1""").as(userParser.*)
     }
   }
   
+  // DEPRECATED: this is obvious evil. Where are we using it?
   def getAllIdsForAdmin(requester:User):Seq[UserId] = requester.requireAdmin {
     DB.withConnection(dbName(System)) { implicit conn =>
-      val result = SQL("""
+      SQL("""
           SELECT id
             FROM User
-          """)()
-      result.map(_.oid("id")).force
+          """)
+        .as(oid("id").*)
     }    
   }
   
@@ -366,27 +351,29 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     updateUserCacheFor(userOpt)
   }
   
+  // TODO: in the long run, this query is just plain too heavy. We probably need something more efficient. We
+  // may have to denormalize this into the Akka Persistence level.
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = {
     DB.withConnection(dbName(System)) { implicit conn =>
-      val stream = SQL("""
+      SQL("""
           SELECT DISTINCT OtherMember.identityId FROM SpaceMembership
             JOIN SpaceMembership AS OtherMember ON OtherMember.spaceId = SpaceMembership.spaceId
            WHERE SpaceMembership.identityId = {identityId}
              AND OtherMember.identityId != {identityId}
-          """).on("identityId" -> identityId.raw)()
-      stream.force.map { row =>
-        row.oid("identityId")
-      }
+          """)
+        .on("identityId" -> identityId.raw)
+        .as(oid("identityId").*)
     }
   }
   
   def getUserVersion(userId:UserId):Option[Int] = {
     DB.withConnection(dbName(System)) { implicit conn =>
-      val userStream = SQL("""
+      SQL("""
           SELECT userVersion from User
            WHERE id = {id} 
-      """).on("id" -> userId.raw)()
-      userStream.force.map (_.int("userVersion")).headOption
+          """)
+        .on("id" -> userId.raw)
+        .as(int("userVersion").singleOpt)
     }    
   }
 }
