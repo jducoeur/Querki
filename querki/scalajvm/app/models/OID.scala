@@ -5,6 +5,7 @@ import language.implicitConversions
 // TODO: this is all a very bad smell! OID needs to have an associated Ecot, which hides the
 // details of creating the next OID, so that it can be properly stubbed out.
 import anorm._
+import anorm.SqlParser.int
 import play.api.db._
 import play.api.Play.current
 
@@ -61,18 +62,26 @@ object OID {
   // TBD: at this point, this is only being used for generating Users and Identities;
   // everything else is going through OIDAllocator. We might leave things like this,
   // with System objects working in the older style, but consider cleaning it up.
-  def next(kind:ShardKind) = {
+  def next(kind:ShardKind):OID = {
     DB.withTransaction(dbName(kind)) { implicit conn =>
-      val nextQuery = SQL("""
-          select * from OIDNexter
-          """)
-      val stream = nextQuery.apply()
-      val localId =  stream.headOption.map(row => row[Int]("nextId")).get
-      val shardId =  stream.headOption.map(row => row[Int]("shard")).get
-      SQL("""
+      
+      val parseOID = for {
+        shardId <- int("shard")
+        localId <- int("nextId")
+      }
+        yield 
+      {
+        // We update the nexter as essentially a side-effect, after successfully parsing.
+        // This is kind of horrible -- is there a better approach?
+        SQL("""
           UPDATE OIDNexter SET nextId = {next} WHERE nextId = {old}
           """).on("next" -> (localId + 1).toString, "old" -> localId).executeUpdate()
-      OID(shardId, localId)
+        OID(shardId, localId)
+      }
+      
+      SQL("""
+          select * from OIDNexter
+          """).as(parseOID.single)
     }
   }
   

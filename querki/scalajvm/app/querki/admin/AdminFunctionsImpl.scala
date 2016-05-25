@@ -106,6 +106,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       case Leaving => QLeaving
       case Removed => QRemoved
       case Up => QUp
+      case WeaklyUp => QWeaklyUp
     }
     QMember(mem.address.toString, status)
   } 

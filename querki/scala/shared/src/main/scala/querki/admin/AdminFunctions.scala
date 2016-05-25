@@ -65,6 +65,7 @@ object AdminFunctions {
   case object QLeaving extends QMemberStatus
   case object QRemoved extends QMemberStatus
   case object QUp extends QMemberStatus
+  case object QWeaklyUp extends QMemberStatus
   
   case class QMember(address:String, status:QMemberStatus)
   case class QCurrentClusterState(members:Seq[QMember], unreachable:Seq[QMember], leader:String)
