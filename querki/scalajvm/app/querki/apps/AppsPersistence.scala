@@ -1,6 +1,7 @@
 package querki.apps
 
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser.long
 
 import play.api.db._
 import play.api.Play.current
@@ -33,25 +34,24 @@ private [apps] trait AppsPersistence extends EcologyInterface {
 class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with AppsPersistence {
   def lookupApps(space:OID):Seq[OID] = {
     DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
-      val appRows = SQL("""
-        SELECT * FROM Apps
-         WHERE space_id = {spaceId}
-      ORDER BY position""").on("spaceId" -> space.raw)()
-      appRows map { row =>
-        OID(row[Long]("app_id"))
-      } force
+      SQL("""
+            SELECT * FROM Apps
+             WHERE space_id = {spaceId}
+          ORDER BY position""")
+        .on("spaceId" -> space.raw)
+        .as(long("app_id").map(OID(_)).*)
     }
   }
   
   def addApp(spaceId:OID, appId:OID):Unit = {
     DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
-      val appRows = SQL("""
-        SELECT * FROM Apps
-         WHERE space_id = {spaceId}
-      ORDER BY position""").on("spaceId" -> spaceId.raw)()
-      val appIds = appRows map { row =>
-        OID(row[Long]("app_id"))
-      }
+      val appIds = SQL("""
+            SELECT * FROM Apps
+             WHERE space_id = {spaceId}
+          ORDER BY position""")
+        .on("spaceId" -> spaceId.raw)
+        .as(long("app_id").map(OID(_)).*)
+
       // Sanity-check that this App isn't already in the list
       if (!appIds.contains(appId)) {
         val nApps = appIds.length

@@ -2,6 +2,7 @@ package querki.conversations
 
 import akka.actor._
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser.int
 import play.api.db._
 import play.api.Play.current
 
@@ -32,19 +33,23 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
   def receive = {
     case GetMaxCommentId => {
       DB.withConnection(dbName(ShardKind.User)) { implicit conn =>
-        val nOpt = SpaceSQL("""SELECT MAX(id) as max from {cname}""")().flatMap(_.opt[Int]("max")).headOption
+        val nOpt = 
+          SpaceSQL("""SELECT MAX(id) as max from {cname}""")
+            .as(int("max").singleOpt)
         sender ! CurrentMaxCommentId(nOpt.getOrElse(0))
       }
     }
     
     case LoadCommentsFor(thingId, state) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        // TODO: this is causing warnings, because of the deprecated apply. But I'm leaving it
+        // in place for now, because Conversations should move to Akka Persistence before too long.
         val commentStream = SpaceSQL("""
 	          SELECT * FROM {cname} 
                WHERE thingId = {thingId}
 	          """).on("thingId" -> thingId.raw)()
 	          
-	    val comments = commentStream.map { row =>
+	      val comments = commentStream.map { row =>
           Comment(
               spaceId,
               row.int("id"),
@@ -60,7 +65,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
               row.bool("isDeleted"),
               row.bool("isArchived")
             )
-        }
+          }
         
         // TBD: this may be conceptually inappropriate. If we want to think in EventSourcedProcessor terms, we should probably
         // instead send a stream of AddComment messages, I think.
