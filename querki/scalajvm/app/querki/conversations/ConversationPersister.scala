@@ -2,7 +2,7 @@ package querki.conversations
 
 import akka.actor._
 import anorm.{Success=>AnormSuccess,_}
-import anorm.SqlParser.int
+import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
@@ -40,36 +40,44 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
       }
     }
     
+    
     case LoadCommentsFor(thingId, state) => {
+      val commentParser:RowParser[Comment] =
+        for {
+          commentId <- int("id")
+          thingId <- oid("thingId")
+          authorId <- oid("authorId")
+          authBy <- oid("authorizedBy").?
+          props <- str("props")
+          resp <- int("responseTo").?
+          primary <- bool("primaryResponse")
+          created <- dateTime("createTime")
+          needsMod <- bool("needsModeration")
+          edited <- bool("isEdited")
+          deleted <- bool("isDeleted")
+          archived <- bool("isArchived")
+        }
+          yield
+            Comment(
+              spaceId, commentId, thingId, authorId, authBy,
+              SpacePersistence.deserializeProps(props, state),
+              resp, primary, created, needsMod,
+              edited, deleted, archived
+            )
+        
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         // TODO: this is causing warnings, because of the deprecated apply. But I'm leaving it
         // in place for now, because Conversations should move to Akka Persistence before too long.
-        val commentStream = SpaceSQL("""
+        val comments = SpaceSQL("""
 	          SELECT * FROM {cname} 
                WHERE thingId = {thingId}
-	          """).on("thingId" -> thingId.raw)()
+	          """)
+	        .on("thingId" -> thingId.raw)
+	        .as(commentParser.*)
 	          
-	      val comments = commentStream.map { row =>
-          Comment(
-              spaceId,
-              row.int("id"),
-              row.oid("thingId"),
-              row.oid("authorId"),
-              row.optOid("authorizedBy"),
-              SpacePersistence.deserializeProps(row.string("props"), state),
-              row.opt[Int]("responseTo"),
-              row.bool("primaryResponse"),
-              row.dateTime("createTime"),
-              row.bool("needsModeration"),
-              row.bool("isEdited"),
-              row.bool("isDeleted"),
-              row.bool("isArchived")
-            )
-          }
-        
         // TBD: this may be conceptually inappropriate. If we want to think in EventSourcedProcessor terms, we should probably
         // instead send a stream of AddComment messages, I think.
-        sender ! AllCommentsFor(thingId, comments.force)
+        sender ! AllCommentsFor(thingId, comments)
       }
     }
     
