@@ -1,6 +1,7 @@
 package querki.evolutions
 
 import anorm._
+import anorm.SqlParser._
 import java.sql.Connection
 import play.api.db._
 import play.api.Play.current
@@ -10,6 +11,7 @@ import models.OID
 import querki.db.ShardKind._
 import querki.ecology._
 import querki.identity.UserId
+import querki.util.SqlHelpers._
 
 trait UserStep extends EcologyMember {
   /**
@@ -22,14 +24,18 @@ trait UserStep extends EcologyMember {
   lazy val NotificationPersistence = interface[querki.notifications.NotificationPersistence]
   def UserSQL(userId:OID, query:String, version:Int = 0):SqlQuery = NotificationPersistence.UserSQL(userId, query, version)
   
+  val parseRow =
+    oid("id") ~ int("userVersion") map { case i ~ v => UserInfo(i, v) }
+  
   def evolveUp(userId:UserId) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
     // quite likely not, but as it stands this is a tad riskier than I like:
     val info = DB.withTransaction(dbName(System)) { implicit conn =>
-      val row = SQL("""
+      SQL("""
           select * from User where id = {id}
-          """).on("id" -> userId.raw).apply().headOption.get
-      UserInfo(row)
+          """)
+        .on("id" -> userId.raw)
+        .as(parseRow.single)
     }
     DB.withTransaction(dbName(User)) { implicit spaceConn =>
 //      backupTables(info)(spaceConn)
@@ -66,7 +72,4 @@ trait UserStep extends EcologyMember {
 }
   
 case class UserInfo(id:UserId, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
-}
-object UserInfo {
-  def apply(row:Row)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row[Long]("id")), row[Int]("userVersion"))
 }

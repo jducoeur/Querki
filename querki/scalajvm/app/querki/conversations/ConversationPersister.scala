@@ -35,7 +35,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
       DB.withConnection(dbName(ShardKind.User)) { implicit conn =>
         val nOpt = 
           SpaceSQL("""SELECT MAX(id) as max from {cname}""")
-            .as(int("max").singleOpt)
+            .as(int("max").?.single)
         sender ! CurrentMaxCommentId(nOpt.getOrElse(0))
       }
     }

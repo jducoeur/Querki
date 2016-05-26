@@ -5,6 +5,7 @@ import scala.util._
 import akka.actor._
 
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
@@ -53,6 +54,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
   type SpaceStatusCode = Int
   final val StatusNormal:SpaceStatusCode = 0
   final val StatusArchived:SpaceStatusCode = 1
+  
+  // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
+  // fetch Identity.id, and ThingId that if we don't find a handle:
+  private val parseSpaceDetails =
+    oid("id") ~ str("name") ~ str("display") ~ str("handle") map 
+      { case id ~ name ~ display ~ ownerHandle => SpaceDetails(AsName(name), id, display, AsName(ownerHandle)) }
 
   def receive = {
     case ListMySpaces(owner) => {
@@ -60,44 +67,30 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
         // Note that Spaces are now indexed by Identity, so we need to indirect
         // through that table. (Since our parameter is User OID.)
         val mySpaces = DB.withConnection(dbName(System)) { implicit conn =>
-          val spaceStream = SQL("""
+          SQL("""
               SELECT Spaces.id, Spaces.name, display, Identity.handle FROM Spaces
                 JOIN Identity ON userid={owner}
               WHERE owner = Identity.id
                 AND status = 0
-              """).on("owner" -> owner.raw)()
-          spaceStream.force.map { row =>
-            val id = OID(row[Long]("id"))
-            val name = row[String]("name")
-            val display = row[String]("display")
-            // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
-            // fetch Identity.id, and ThingId that if we don't find a handle:
-            val ownerHandle = row[String]("handle")
-            SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
-          }
+              """)
+            .on("owner" -> owner.raw)
+            .as(parseSpaceDetails.*)
         } ++ { if (owner == querki.identity.MOIDs.SystemUserOID) { Seq(SpaceDetails(AsName("System"), SystemIds.systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
         val memberOf = DB.withConnection(dbName(System)) { implicit conn =>
           // Note that this gets a bit convoluted, by necessity. We are coming in through a User;
           // translating that to Identities; getting all of the Spaces that those Identities are members of;
           // then getting the Identities that own those Spaces so we can get their handles. Hence the
           // need to alias the Identity table.
-          val spaceStream = SQL("""
+          SQL("""
               SELECT Spaces.id, Spaces.name, display, OwnerIdentity.handle FROM Spaces
                 JOIN Identity AS RequesterIdentity ON userid={owner}
                 JOIN SpaceMembership ON identityId=RequesterIdentity.id
                 JOIN Identity AS OwnerIdentity ON OwnerIdentity.id=Spaces.owner
                WHERE Spaces.id = SpaceMembership.spaceId
                  AND SpaceMembership.membershipState != {ownerState}
-              """).on("owner" -> owner.raw, "ownerState" -> MembershipState.owner)()
-          spaceStream.force.map { row =>
-            val id = OID(row[Long]("id"))
-            val name = row[String]("name")
-            val display = row[String]("display")
-            // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
-            // fetch Identity.id, and ThingId that if we don't find a handle:
-            val ownerHandle = row[String]("handle")
-            SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
-          }
+              """)
+            .on("owner" -> owner.raw, "ownerState" -> MembershipState.owner)
+            .as(parseSpaceDetails.*)
         }
         sender ! MySpaces(mySpaces, memberOf)
     }
@@ -108,20 +101,22 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
       try {
         DB.withTransaction(dbName(System)) { implicit conn =>
           val numWithName = SQL("""
-            SELECT COUNT(*) AS c from Spaces 
-             WHERE owner = {owner} AND name = {name} AND status = 0
-            """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get[Long]("c")
+              SELECT COUNT(*) AS c from Spaces 
+               WHERE owner = {owner} AND name = {name} AND status = 0
+              """)
+            .on("owner" -> owner.raw, "name" -> name)
+            .as(long("c").single)
           if (numWithName > 0) {
             throw new PublicException("Space.create.alreadyExists", name)
           }
         
           if (userMaxSpaces < Int.MaxValue) {
-            val sql = SQL("""
+            val numOwned = SQL("""
                   SELECT COUNT(*) AS count FROM Spaces
                   WHERE owner = {owner} AND status = 0
-                  """).on("owner" -> owner.id.raw)
-            val row = sql().headOption
-            val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
+                  """)
+                .on("owner" -> owner.id.raw)
+                .as(long("count").single)
             if (numOwned >= userMaxSpaces)
               throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
           }
@@ -173,13 +168,14 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     
     case GetSpaceByName(ownerId:OID, name:String) => {
       val result = DB.withTransaction(dbName(System)) { implicit conn =>
-        val rowOption = SQL("""
+        SQL("""
             SELECT id from Spaces 
              WHERE owner = {ownerId} 
                AND name = {name}
                AND status = 0
-            """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
-        rowOption.map(row => OID(row[Long]("id")))
+            """)
+          .on("ownerId" -> ownerId.raw, "name" -> name)
+          .as(oid("id").singleOpt)
       }
       result match {
         case Some(id) => sender ! SpaceId(id)
@@ -189,7 +185,8 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     
     case GetSpaceCount(requester) => {
       val result = DB.withTransaction(dbName(System)) { implicit conn =>
-        SQL("SELECT COUNT(*) AS c FROM Spaces WHERE status = 0")().head[Long]("c")
+        SQL("SELECT COUNT(*) AS c FROM Spaces WHERE status = 0")
+          .as(long("c").single)
       }
       sender ! SpaceCount(result)
     }
