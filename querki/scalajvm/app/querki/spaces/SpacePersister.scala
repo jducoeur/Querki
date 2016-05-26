@@ -3,6 +3,7 @@ package querki.spaces
 import akka.actor._
 
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser._
 
 import play.api.db._
 import play.api.Play.current
@@ -27,7 +28,7 @@ import querki.identity.{SystemUser, User}
 import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 import querki.util._
-import querki.util.SqlHelpers._
+import querki.util.SqlHelpers.{oid => oidParser, _}
 
 import PersistMessages._
 
@@ -81,13 +82,19 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     }
   }
   
+  case class SpaceInfoInternal(name:String, owner:OID, version:Int)
+  
+  private val spaceInfoParser =
+    str("name") ~ oidParser("owner") ~ int("version") map
+      { case name ~ owner ~ version => SpaceInfoInternal(name, owner, version) }
+  
   /**
    * This is a var instead of a lazy val, because the name can change at runtime.
    * 
    * TODO: bundle this into the overall state parameter, as described in _currentState.
    * Is there any info here that isn't part of the SpaceState?
    */
-  var _currentSpaceInfo:Option[Row] = None
+  var _currentSpaceInfo:Option[SpaceInfoInternal] = None
   /**
    * Fetch the high-level information about this Space. Note that this will throw
    * an exception if for some reason we can't load the record. Re-run this if you
@@ -97,16 +104,18 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     _currentSpaceInfo = Some(DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
           select * from Spaces where id = {id}
-          """).on("id" -> id.raw).apply().headOption.get
+          """)
+        .on("id" -> id.raw)
+        .as(spaceInfoParser.single)
     })
   }
-  def spaceInfo:Row = {
+  def spaceInfo:SpaceInfoInternal = {
     if (_currentSpaceInfo.isEmpty) fetchSpaceInfo()
     _currentSpaceInfo.get
   }
-  def name = spaceInfo[String]("name")
-  def owner = OID(spaceInfo[Long]("owner"))
-  def version = spaceInfo[Int]("version")
+  def name = spaceInfo.name
+  def owner = spaceInfo.owner
+  def version = spaceInfo.version
 
   def receive = {
     
