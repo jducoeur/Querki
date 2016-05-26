@@ -65,7 +65,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       ),
       "MonitorManager")
     _monitorProxy = createActorCb(ClusterSingletonProxy.props(
-        "/user/querkiRoot/MonitorManager/AdminMonitor",
+        "/user/querkiRoot/MonitorManager",
         ClusterSingletonProxySettings(SystemManagement.actorSystem)),
       "MonitorProxy")
   }
