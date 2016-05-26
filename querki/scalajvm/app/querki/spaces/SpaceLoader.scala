@@ -12,7 +12,7 @@ import querki.values.SpaceState
 // artificial trait. But so far, I haven't found the syntax to pass a function that takes type parameters as
 // a function parameter, so we'll hack it for now:
 trait ThingStreamLoader {
-  def getThingStream[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):Stream[T]
+  def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T]
 }
 
 /**
@@ -42,7 +42,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
       var curState:SpaceState = SystemInterface.State
       
       def getThings[T <: Thing](kind:Int)(builder:(OID, OID, PropMap, DateTime) => T):Map[OID, T] = {
-        val tStream = loader.getThingStream(kind)(curState)(builder)
+        val tStream = loader.getThingList(kind)(curState)(builder)
         (Map.empty[OID, T] /: tStream) { (m, t) =>
           try {
             m + (t.id -> t)
@@ -55,7 +55,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         }
       }
       
-      val spaceStream = loader.getThingStream(Kind.Space)(curState) { (thingId, modelId, propMap, modTime) =>
+      val spaceStream = loader.getThingList(Kind.Space)(curState) { (thingId, modelId, propMap, modTime) =>
         new SpaceState(
              thingId,
              modelId,

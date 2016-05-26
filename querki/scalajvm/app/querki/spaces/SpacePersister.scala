@@ -116,6 +116,14 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   def name = spaceInfo.name
   def owner = spaceInfo.owner
   def version = spaceInfo.version
+  
+  /**
+   * The literal contents of a row in a Space's table.
+   */
+  private case class RawSpaceRow(kind:Int, propStr:String, modified:DateTime, id:OID, model:OID)
+  private val rawSpaceParser =
+    int("kind") ~ str("props") ~ dateTime("modified") ~ oidParser("id") ~ oidParser("model") map
+      to(RawSpaceRow)
 
   def receive = {
     
@@ -140,20 +148,22 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-	      // The stream of all of the Things in this Space:
-	      // TODO: this is generating deprecation warnings in the post-Play-2.4 world, but it's going away eventually
-	      // and is a PITA to rewrite, so I'm putting it off...
-	      val stateStream = SpaceSQL("""
+	      // The list of all of the Things in this Space.
+	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
+	      // the rows several times. This is considered acceptable only because this code is
+	      // deprecated, and will be entirely replaced by Akka Persistence soon.
+	      val raws = SpaceSQL("""
 	          select * from {tname} where deleted = FALSE
-	          """)()
+	          """)
+	        .as(rawSpaceParser.*)
 	      // Split the stream, dividing it by Kind:
-	      val streamsByKind = stateStream.groupBy(_[Int]("kind"))
+	      val rawsByKind = raws.groupBy(_.kind)
 	      
 	      val loader = new ThingStreamLoader {
 		      // Now load each kind. We do this in order, although in practice it shouldn't
 		      // matter too much so long as Space comes last:
-		      def getThingStream[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):Stream[T] = {
-		        streamsByKind.get(kind).getOrElse(Stream.Empty).map({ row =>
+		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
 		          // This is a critical catch, where we log load-time errors. But we don't want to
 		          // raise them to the user, so objects that fail to load are (for the moment) quietly
 		          // suppressed.
@@ -161,14 +171,12 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 		          // more -- as it is, errors can propagate widely, so objects just vanish. 
 		          // But they should generally be considered internal errors.
 		          try {
-		            val propMap = SpacePersistence.deserializeProps(row[String]("props"), state)
-		            val modTime = row[DateTime]("modified")
 		            Some(
 		              builder(
-		                OID(row[Long]("id")), 
-		                OID(row[Long]("model")), 
-		                propMap,
-		                modTime))
+		                raw.id, 
+		                raw.model, 
+		                SpacePersistence.deserializeProps(raw.propStr, state),
+		                raw.modified))
 		          } catch {
 		            case error:Exception => {
 		              // TODO: this should go to a more serious error log, that we pay attention to. It
