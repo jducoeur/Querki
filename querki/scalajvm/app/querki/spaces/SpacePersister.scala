@@ -141,6 +141,8 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
 	      // The stream of all of the Things in this Space:
+	      // TODO: this is generating deprecation warnings in the post-Play-2.4 world, but it's going away eventually
+	      // and is a PITA to rewrite, so I'm putting it off...
 	      val stateStream = SpaceSQL("""
 	          select * from {tname} where deleted = FALSE
 	          """)()

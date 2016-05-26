@@ -4,6 +4,7 @@ import akka.actor._
 import akka.event.LoggingReceive
 
 import anorm.{Success=>AnormSuccess,_}
+import anorm.SqlParser._
 import play.api.db._
 import play.api.Play.current
 
@@ -14,14 +15,14 @@ import models.OID
 import querki.db._
 import querki.db.ShardKind._
 import querki.ecology._
-import querki.identity.Identity
+import querki.identity.{Identity, PublicIdentity}
 import querki.identity.IdentityCacheMessages._
 import querki.spaces.messages.UserValuePersistRequest
 import querki.time.DateTime
 import querki.time.TimeAnorm._
 import querki.util.QLog
 import querki.util.SqlHelpers._
-import querki.values.{EmptyValue, QValue}
+import querki.values.{EmptyValue, QValue, SpaceState}
 
 import PersistMessages._
 
@@ -33,131 +34,98 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
   
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query)
   
+  private case class RawUserValue(identId:OID, propId:OID, thingId:OID, valStr:String, modTime:DateTime) {
+    def v(implicit state:SpaceState):QValue = {
+      state.prop(propId) match {
+        case Some(prop) => prop.deserialize(valStr)
+        case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
+      }      
+    }
+    def toOneUserValue(identity:PublicIdentity)(implicit state:SpaceState):OneUserValue = {
+      OneUserValue(identity, thingId, propId, v, modTime)
+    }
+  }
+  private val rawUVParser =
+    for {
+      identId <- oid("identityId")
+      propId <- oid("propertyId")
+      thingId <- oid("thingId")
+      valStr <- str("propValue")
+      modTime <- dateTime("modTime")
+    }
+      yield RawUserValue(identId, propId, thingId, valStr, modTime)
+  
   def receive = LoggingReceive {
     case LoadValuesForUser(identity, state) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        val valueStream = SpaceSQL("""
+        val rawUVs = SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE identityId = {identityId}
-	          """).on("identityId" -> identity.id.raw)()
+	          """)
+	        .on("identityId" -> identity.id.raw)
+	        .as(rawUVParser.*)
 	          
-	    implicit val s = state
-	    val uvs = valueStream.map { row =>
-	      val identId = row.oid("identityId")
-          val propId = row.oid("propertyId")
-          val thingId = row.oid("thingId")
-          val valStr = row.string("propValue")
-          val modTime = row.dateTime("modTime")
-          val v = state.prop(propId) match {
-            case Some(prop) => prop.deserialize(valStr)
-            case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
-          }
-          OneUserValue(identity, thingId, propId, v, modTime)
-        }
+  	    implicit val s = state
+  	    val uvs = rawUVs.map(_.toOneUserValue(identity))
         
-        sender ! ValuesForUser(uvs.force)
+        sender ! ValuesForUser(uvs)
       }
     }
     
     case UserValuePersistRequest(req, space, LoadThingPropValues(thingId, propId, state)) => {
-      val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        val valueStream = SpaceSQL("""
+      val rawUVs = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE propertyId = {propertyId}
                  AND thingId = {thingId}
-	          """).on("propertyId" -> propId.raw, "thingId" -> thingId.raw)()
-	          
-	    implicit val s = state
-	    val uvs = valueStream.map { row =>
-	      val identId = row.oid("identityId")
-          val propId = row.oid("propertyId")
-          val thingId = row.oid("thingId")
-          val valStr = row.string("propValue")
-          val modTime = row.dateTime("modTime")
-          val v = state.prop(propId) match {
-            case Some(prop) => prop.deserialize(valStr)
-            case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
-          }
-          (identId, thingId, propId, v, modTime)
-        }
-        uvs.force
+	          """)
+	        .on("propertyId" -> propId.raw, "thingId" -> thingId.raw)
+	        .as(rawUVParser.*)
       }
       
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
-      val idents = tuples.map(_._1)
+      val idents = rawUVs.map(_.identId)
       loopback(IdentityAccess.getIdentities(idents)) foreach { identities =>
-        val results = tuples.map(tuple => 
-          OneUserValue(
-            identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
-            tuple._2,
-            tuple._3,
-            tuple._4,
-            tuple._5))
+  	    implicit val s = state
+        val results = rawUVs.map(raw => raw.toOneUserValue(identities.get(raw.identId).getOrElse(Identity.AnonymousIdentity)))
         sender ! ValuesForUser(results)
       }
     }
     
     case UserValuePersistRequest(req, space, LoadUserPropValues(identity, state)) => {
-      val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        val valueStream = SpaceSQL("""
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        val rawUVs = SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE identityId = {identityId}
-	          """).on("identityId" -> identity.id.raw)()
+	          """)
+	        .on("identityId" -> identity.id.raw)
+	        .as(rawUVParser.*)
 	          
-	    implicit val s = state
-	    val uvs = valueStream.map { row =>
-	      val identId = row.oid("identityId")
-          val propId = row.oid("propertyId")
-          val thingId = row.oid("thingId")
-          val valStr = row.string("propValue")
-          val modTime = row.dateTime("modTime")
-          val v = state.prop(propId) match {
-            case Some(prop) => prop.deserialize(valStr)
-            case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
-          }
-          OneUserValue(identity, thingId, propId, v, modTime)
-        }
-        sender ! ValuesForUser(uvs.force)
+  	    implicit val s = state
+  	    val uvs = rawUVs.map(_.toOneUserValue(identity))
+        sender ! ValuesForUser(uvs)
       }
     }
     
     // TODO: this should probably get refactored with LoadThingPropValues above -- they are close
     // to identical:
     case UserValuePersistRequest(req, space, LoadAllPropValues(propId, state)) => {
-      val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        val valueStream = SpaceSQL("""
+      val rawUVs = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE propertyId = {propertyId}
-	          """).on("propertyId" -> propId.raw)()
-	          
-	    implicit val s = state
-	    val uvs = valueStream.map { row =>
-	      val identId = row.oid("identityId")
-          val propId = row.oid("propertyId")
-          val thingId = row.oid("thingId")
-          val valStr = row.string("propValue")
-          val modTime = row.dateTime("modTime")
-          val v = state.prop(propId) match {
-            case Some(prop) => prop.deserialize(valStr)
-            case None => { QLog.error("LoadAllPropValues got unknown Property " + propId); EmptyValue.untyped }
-          }
-          (identId, thingId, propId, v, modTime)
-        }
-        uvs.force
+	          """)
+	        .on("propertyId" -> propId.raw)
+	        .as(rawUVParser.*)
       }
       
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
-      val idents = tuples.map(_._1)
+      val idents = rawUVs.map(_.identId)
       loopback(IdentityAccess.getIdentities(idents)) foreach { identities =>
-        val results = tuples.map(tuple => 
-          OneUserValue(
-            identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
-            tuple._2,
-            tuple._3,
-            tuple._4,
-            tuple._5))
+  	    implicit val s = state
+        val results = rawUVs.map(raw => raw.toOneUserValue(identities.get(raw.identId).getOrElse(Identity.AnonymousIdentity)))
         sender ! ValuesForUser(results)
       }
     }
