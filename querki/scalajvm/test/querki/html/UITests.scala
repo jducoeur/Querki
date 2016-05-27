@@ -21,7 +21,7 @@ class UITests extends QuerkiTests {
       implicit val requester = commonSpace.owner
       
       processQText(thingAsContext[TSpace](space, _.withInt), """[[Int Prop -> _class(""myClass"")]]""") should 
-        equal (expectedWarning("UI.transform.htmlRequired"))            
+        equal (expectedWarning("UI.transform.htmlRequired"))
     }
     
     "throw an Exception if no param is given" in {

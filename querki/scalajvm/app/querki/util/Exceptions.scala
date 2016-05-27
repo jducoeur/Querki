@@ -26,7 +26,12 @@ case class PublicException(msgName:String, params:Any*) extends Exception {
       case Some(prc:PlayRequestContext) => display(prc.request)
       // This will default to the system default language.
       // TODO: we should have a concept of Lang available in RequestContext itself!
-      case _ => Messages(msgName, params:_*)
+      case _ =>
+        if (play.api.Play.maybeApplication.isDefined)
+          Messages(msgName, params:_*)
+        else
+          // There's no Application, which implies that we're probably running under unit tests:
+          s"$msgName"
     }
   }
   override def getMessage = s"BUG: Trying to display a PublicException without the Request. Use display() instead. msgName: $msgName; params: $params"
