@@ -1,11 +1,17 @@
-package controllers
+package querki.system
 
 import scala.concurrent.Future
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 
-import querki.util.{Config, QLog}
+import play.api.http.HttpFilters
+
+import querki.globals._
+
+class Filters extends HttpFilters {
+  val filters = Seq(LoggingFilter)
+}
 
 /**
  * General filter that permits extensive logging of all requests. Adapted from example found in
