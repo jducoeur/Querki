@@ -1,5 +1,7 @@
 package querki.test.functional
 
+import play.api.{Application, ApplicationLoader, Environment}
+
 import org.scalatest._
 import org.scalatest.tags.Slow
 import org.scalatest.selenium._
@@ -8,7 +10,7 @@ import play.api.test.Helpers._
 import org.scalatestplus.play._
 
 import querki.globals._
-import querki.system.QuerkiRoot
+import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 
 /**
  * Self-trait that the elements of the cake should typically use to access all the utilities.
@@ -62,9 +64,10 @@ class QuerkiFuncTests
   /**
    * This is where we override the standard Application settings.
    */
-  override def newAppForTest(td:TestData) = {
-    FakeApplication(
-      additionalConfiguration = Map(
+  implicit override def newAppForTest(td:TestData):Application = {
+    val context = ApplicationLoader.createContext(
+      Environment.simple(),
+      Map(
         // For the moment, the names of the test DBs are hardcoded. That will probably have to
         // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",
@@ -75,8 +78,9 @@ class QuerkiFuncTests
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":
         "querki.mail.test" -> "true"
-      )
-    )
+      ))
+      
+    new QuerkiApplicationLoader().load(context)
   }
   
   var ecology:Ecology = null
