@@ -41,6 +41,9 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     val conductRConfig = Configuration(AkkaEnv.asConfig) ++ Configuration(PlayEnv.asConfig)
     val newConfig = context.initialConfiguration ++ conductRConfig
     val newContext = context.copy(initialConfiguration = newConfig)
+
+    // HACK: see the comments on initConfigHack:
+    Config.initConfigHack = Some(newContext.initialConfiguration)
         
     // Boot the core of the application from the Play POV:
     QLog.spew(s"About to start GuiceApplicationLoader")

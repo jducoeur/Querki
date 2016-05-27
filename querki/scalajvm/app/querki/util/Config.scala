@@ -4,6 +4,8 @@ import scala.concurrent.duration._
 
 import play.api.{Configuration,Play}
 
+import querki.globals._
+
 /**
  * Querki's Configuration-param system.
  * 
@@ -19,8 +21,15 @@ import play.api.{Configuration,Play}
 object Config {
   def getTyped[T](key:String, default:Seq[T], playFetcher:Configuration => Option[T], localParser:String => T):T = {
     val optV = Play.maybeApplication match {
+      // Normal case: the Play application is running
       case Some(app) => playFetcher(app.configuration)
-      case None => mocks.get(key).map(localParser(_))
+      case None =>
+        initConfigHack match {
+          // HACK: We're trying to access Config during Application setup, probably from an Ecot's constructor
+          case Some(initConfigs) => playFetcher(initConfigs)
+          // There's nothing, so let's see if the unit-test mocks are in place:
+          case _ => mocks.get(key).map(localParser(_))
+        }
     }
     optV.getOrElse {
       if (default.isEmpty)
@@ -38,6 +47,17 @@ object Config {
   }, { str =>
     throw new Exception("Config.getDuration can not yet handle local strings!")
   })
+  
+  /**
+   * HORRIBLE HACK: in the Play 2.4 world, we have an initialization-order problem. We build the Ecology, and
+   * thus create the Ecots, during QuerkiApplicationLoader.load(). Problem is, Play.current doesn't become valid
+   * until *after* that is complete. So any Ecots that need access to Config during their creation (which a few
+   * do) wind up calling getTyped() above, don't get a result, and crash out.
+   * 
+   * So this is a workaround, set early in the Loader so that Ecots can get at it. It is *not* a good solution,
+   * but I'm not sure what the right answer is...
+   */
+  var initConfigHack:Option[Configuration] = None 
   
   /***********************************
    * MOCKUPS FOR TESTING
