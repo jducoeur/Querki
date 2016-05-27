@@ -3,6 +3,7 @@ package querki.system
 import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.sharding._
+import akka.cluster.singleton._
 
 import querki.ecology._
 import querki.values.SpaceState
@@ -29,7 +30,9 @@ trait SystemManagement extends EcologyInterface {
    * Note the explicit assumption that there is a 1-to-1 correspondence between the Ecology and the
    * ActorSystem.
    * 
-   * This will throw an exception if called when there is no ActorSystem, as in unit tests!
+   * This will throw an exception if called when there is no ActorSystem, as in unit tests! As a consequence, you
+   * should *NEVER* use this during initialization of a normal Ecot. If you find that you need to, it probably
+   * means that whatever you're doing needs to get refactored into SystemManagement instead.
    */
   def actorSystem:ActorSystem
   
@@ -43,6 +46,11 @@ trait SystemManagement extends EcologyInterface {
    * it can be stubbed for unit testing.
    */
   def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.ExtractEntityId, identityResolver:ShardRegion.ExtractShardId):Option[ActorRef]
+  
+  /**
+   * Sets up a Cluster Singleton. (Which will be stubbed if we're in a unit-test environment.)
+   */
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef])
 }
 
 object SystemMOIDs extends EcotIds(18)
@@ -130,5 +138,26 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
   def clusterAddress:String = {
     val cluster = Cluster.get(actorSystem)
     cluster.selfAddress.toString
+  }
+  
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef]) = {
+    actorSystemOpt match {
+      case Some(system) => {
+        val manager = createActorCb(ClusterSingletonManager.props(
+            props,
+            PoisonPill,
+            ClusterSingletonManagerSettings(system)
+          ),
+          singletonName)
+        val proxy = createActorCb(ClusterSingletonProxy.props(
+            s"/user/querkiRoot/$singletonName",
+            ClusterSingletonProxySettings(system)),
+          proxyName)
+          
+        (manager, proxy)
+      }
+      case _ => (Some(ActorRef.noSender), Some(ActorRef.noSender))
+    }
+
   }
 }

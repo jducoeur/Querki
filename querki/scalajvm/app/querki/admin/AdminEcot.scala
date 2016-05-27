@@ -58,16 +58,14 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _ref = createActorCb(Props(classOf[AdminActor], ecology), "Admin")
     
-    _monitorManager = createActorCb(ClusterSingletonManager.props(
-        AdminMonitor.actorProps(ecology),
-        PoisonPill,
-        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
-      ),
-      "MonitorManager")
-    _monitorProxy = createActorCb(ClusterSingletonProxy.props(
-        "/user/querkiRoot/MonitorManager",
-        ClusterSingletonProxySettings(SystemManagement.actorSystem)),
-      "MonitorProxy")
+    val (mgr, proxy) = SystemManagement.createClusterSingleton(
+      createActorCb,
+      AdminMonitor.actorProps(ecology),
+      "MonitorManager",
+      "MonitorProxy"
+    )
+    _monitorManager = mgr
+    _monitorProxy = proxy
   }
   
   override def postInit() = {

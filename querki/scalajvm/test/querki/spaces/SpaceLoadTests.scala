@@ -32,8 +32,8 @@ class SpaceLoadTestDB(val ecology:Ecology) extends EcologyMember with ThingStrea
     state.things.values.foreach(store(_))
   }
   
-  def getThingStream[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):Stream[T] = {
-    val stores = db.values.filter(_.kind == kind).toStream
+  def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+    val stores = db.values.filter(_.kind == kind).toList
     stores.map(store => builder(OID(store.id), OID(store.model), SpacePersistence.deserializeProps(store.props, state), new DateTime(store.modified)))
   }
 }
