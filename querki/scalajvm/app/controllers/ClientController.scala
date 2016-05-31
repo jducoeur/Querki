@@ -7,6 +7,7 @@ import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.streams.Streams
 import play.api.mvc._
 
 import upickle._
@@ -186,7 +187,7 @@ class ClientController extends ApplicationBase with StreamController {
         yield refOpt.get
     }
     
-    uploadBodyChunks(produceUploadLocation)(rh)
+    Streams.iterateeToAccumulator(uploadBodyChunks(produceUploadLocation)(rh))
   }
 
   /**

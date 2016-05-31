@@ -8,6 +8,7 @@ import akka.util.Timeout
 
 import upickle._
 
+import play.api.libs.streams.Streams
 import play.api.mvc._
 
 import models.{OID, Wikitext}
@@ -29,7 +30,7 @@ class PhotoController extends ApplicationBase with StreamController {
         yield workerRef
     }
     
-    uploadBodyChunks(produceUploadLocation)(rh)
+    Streams.iterateeToAccumulator(uploadBodyChunks(produceUploadLocation)(rh))
   }
 
   def upload(ownerId:String, spaceId:String, thingIdStr:String) = 

@@ -1,6 +1,7 @@
 package controllers
 
 import akka.actor._
+import akka.util.ByteString
 
 import play.api.libs.iteratee._
 import play.api.mvc._
@@ -29,14 +30,18 @@ trait StreamController { self:ApplicationBase =>
    * UploadActor. We then create a fancy Iteratee that
    * keeps folding over the input chunks, producing a new Future each time. These Futures always contains the
    * same thing -- the ActorRef -- but we don't get to the final one until we've processed all of the bytes.
+   * 
+   * TODO: all of this should now be rewritten in terms of Akka Streams -- ideally, we should be directly
+   * streaming to the target Actor, although I'm not sure that's yet possible. But getting the reliability and
+   * back-pressure would be a Big Win.
    */
-  def uploadBodyChunks(startupFunc: => Future[ActorRef])(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
+  def uploadBodyChunks(startupFunc: => Future[ActorRef])(rh:RequestHeader):Iteratee[ByteString, Either[Result, Future[ActorRef]]] = {
     val workerRefFuture:Future[ActorRef] = startupFunc
       
     // Now, fold over all of the chunks, producing a new Future each time
     // TODO: we ought to put a limit on the total number of bytes we are willing to send here, to avoid
     // DOS attacks:
-    Iteratee.fold[Array[Byte], Future[ActorRef]](workerRefFuture) { (fut, bytes) => 
+    Iteratee.fold[ByteString, Future[ActorRef]](workerRefFuture) { (fut, bytes) => 
       val newFut = fut.map { ref => ref ! UploadChunk(bytes); ref }
       newFut
     } map (fut => Right(fut))

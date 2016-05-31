@@ -21,7 +21,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // Main Play dependencies
       jdbc,
       // anorm,
-      "com.typesafe.play" %% "anorm" % "2.4.0",
+      "com.typesafe.play" %% "anorm" % "2.5.0",
       // Add your project dependencies here,
       "mysql" % "mysql-connector-java" % "5.1.36",
       "javax.mail" % "javax.mail-api" % "1.5.0",
@@ -40,7 +40,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.lihaoyi" %% "utest" % "0.3.1",
       "org.querki" %% "requester" % "2.2",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
-      "org.scalatestplus" %% "play" % "1.4.0" % "test",
+      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
       "com.typesafe.conductr" %% "play24-conductr-bundle-lib" % "1.4.2",
       // TEMP: until we have persistence up and running, we need this in order to
       // help Cluster Sharding work. Note there are corresponding entries in .conf:
