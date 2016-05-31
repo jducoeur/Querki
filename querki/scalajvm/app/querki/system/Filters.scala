@@ -1,6 +1,10 @@
 package querki.system
 
-import scala.concurrent.Future
+import javax.inject.Inject
+
+import scala.concurrent.{ExecutionContext, Future}
+
+import akka.stream.Materializer
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
@@ -9,8 +13,8 @@ import play.api.http.HttpFilters
 
 import querki.globals._
 
-class Filters extends HttpFilters {
-  val filters = Seq(LoggingFilter)
+class Filters @Inject() (log:LoggingFilter) extends HttpFilters {
+  val filters = Seq(log)
 }
 
 /**
@@ -26,7 +30,7 @@ class Filters extends HttpFilters {
  * it leaks too much user info into the logs. The request side *may* be okay, but the result side
  * certainly is not.
  */
-object LoggingFilter extends Filter {
+class LoggingFilter @Inject() (implicit val mat:Materializer, ec:ExecutionContext) extends Filter {
   
   lazy val logAllRequests = Config.getBoolean("querki.test.logAllRequests", false)
   
