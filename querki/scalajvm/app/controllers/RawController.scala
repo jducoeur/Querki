@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import upickle._
 import autowire._
 
@@ -17,7 +19,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class RawController extends ApplicationBase {
+class RawController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
   def thing(ownerId:String, spaceIdStr:String, thingIdStr:String) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
     implicit val r = rc
     client[ThingFunctions].getRequestInfo().call().flatMap { requestInfo =>

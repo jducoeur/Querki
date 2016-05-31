@@ -2,6 +2,8 @@ package controllers
 
 import language.existentials
 
+import javax.inject._
+
 import scala.concurrent.Future
 
 import play.api._
@@ -15,7 +17,7 @@ import querki.spaces.messages._
 
 import querki.util.TryTrans
 
-class Application extends ApplicationBase {
+class Application @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
   
   val newSpaceForm = Form(
     mapping(

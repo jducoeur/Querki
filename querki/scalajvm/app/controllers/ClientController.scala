@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import scala.concurrent.duration._
 import akka.actor._
 import akka.pattern._
@@ -26,7 +28,7 @@ import querki.spaces.messages.SpaceError._
 import querki.streaming.UploadMessages._
 import querki.util.PublicException
 
-class ClientController extends ApplicationBase with StreamController {
+class ClientController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val SystemManagement = interface[querki.system.SystemManagement]

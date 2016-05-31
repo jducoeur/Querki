@@ -17,10 +17,12 @@ import querki.spaces.messages._
 import querki.util._
 import querki.values.SpaceState
 
-class ApplicationBase extends Controller with EcologyMember {
+trait ApplicationBase extends Controller with EcologyMember {
   
-  // TODO: is there a better way to get at the current Application from here?
-  lazy val app = play.api.Play.current
+  // Concrete Controllers must inject this in their constructor signatures:
+  val appProv:Provider[play.api.Application]
+  implicit lazy val app = appProv.get
+  
   implicit lazy val ecology = app.injector.instanceOf(classOf[querki.system.EcologyProvider]).ecology
   
   lazy val AccessControl = interface[querki.security.AccessControl]

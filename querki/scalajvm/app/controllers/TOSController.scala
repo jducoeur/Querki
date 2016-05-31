@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 
@@ -14,7 +16,7 @@ case class TOSForm(version:Int = -1, agreed:Boolean = false)
 /**
  * Handle Terms of Service. This class works hand-in-glove with querki.system.TOSModule.
  */
-class TOSController extends ApplicationBase {
+class TOSController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
   val tosForm = Form(
     mapping(
       "version" -> number,

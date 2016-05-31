@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import scala.util._
 
 import play.api.data._
@@ -12,7 +14,6 @@ import play.api.mvc._
 // TODO: this is a temporary hack -- we'll need to switch to the injected version of Messages
 // before too long.
 import play.api.i18n.Messages.Implicits._
-import play.api.Play.current
 
 import upickle._
 
@@ -28,7 +29,7 @@ import querki.values.QLRequestContext
 
 case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
 
-class LoginController extends ApplicationBase {
+class LoginController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Email = interface[querki.email.Email]

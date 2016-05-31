@@ -1,5 +1,7 @@
 package controllers
 
+import javax.inject._
+
 import scala.concurrent.duration._
 
 import akka.actor.ActorRef
@@ -18,7 +20,7 @@ import querki.photos.PhotoUploadMessages._
 import querki.spaces.messages.BeginProcessingPhoto
 import querki.util.QLog
 
-class PhotoController extends ApplicationBase with StreamController {
+class PhotoController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
   def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader) = {
     implicit val timeout = Timeout(5 seconds)
     def produceUploadLocation:Future[ActorRef] = {
