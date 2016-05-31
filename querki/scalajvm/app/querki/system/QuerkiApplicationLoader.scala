@@ -82,7 +82,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     // very rare times when we really and for true want to block, because we don't want to consider
     // ourselves truly started until it's done:
     _root = _appSystem.actorOf(Props[QuerkiRoot], "querkiRoot")
-    val fut = akka.pattern.ask(_root, QuerkiRoot.Initialize)
+    val fut = akka.pattern.ask(_root, QuerkiRoot.Initialize(app))
     val result = scala.concurrent.Await.result(fut, initTermDuration)
     result match {
       case Initialized(e) => ecology = e

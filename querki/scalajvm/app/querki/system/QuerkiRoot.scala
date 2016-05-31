@@ -23,9 +23,9 @@ class QuerkiRoot extends Actor {
   def createActor(props:Props, name:String):Option[ActorRef] = Some(context.actorOf(props, name))
   
   def receive = {
-    case Initialize => {
+    case Initialize(app) => {
       println("Creating the Ecology...")
-      val ecologyImpl = new EcologyImpl
+      val ecologyImpl = new EcologyImpl(Some(app))
       ecology = ecologyImpl
       SystemCreator.createAllEcots(ecology, Some(context.system))
       println("... initializing the Ecology...")
@@ -48,7 +48,7 @@ class QuerkiRoot extends Actor {
 }
 
 object QuerkiRoot {
-  case object Initialize
+  case class Initialize(app:play.api.Application)
   case class Initialized(ecology:Ecology)
   case object Terminate
   case object Terminated

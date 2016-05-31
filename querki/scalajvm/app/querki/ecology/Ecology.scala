@@ -120,8 +120,9 @@ trait EcotImpl extends Ecot {
   def createActors(createActorCb:CreateActorFunc):Unit = {}
 }
 
-class EcologyImpl extends EcologyImplBase[SpaceState, EcotImpl] {
-
+class EcologyImpl(val playApp:Option[play.api.Application]) 
+  extends EcologyImplBase[SpaceState, EcotImpl]
+{
   def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
     val finalState = init(initialSpaceState) { state =>
       initializeActors(createActorCb)
@@ -132,5 +133,27 @@ class EcologyImpl extends EcologyImplBase[SpaceState, EcotImpl] {
   
   private def initializeActors(createActorCb:CreateActorFunc) = {
     _initializedEcots.foreach(_.createActors(createActorCb))
-  }  
+  }
+  
+  /**
+   * Side-mechanism for those occasional times when we need to fetch an interface from Play. This is
+   * kind of cheating, but helps with the fact that our Ecology mechanism doesn't quite match Play's
+   * new (as of 2.4) DI view of the world.
+   */
+  def playApi[T](implicit tag:ClassTag[T]):T = {
+    playApp match {
+      case Some(app) => app.injector.instanceOf(tag)
+      case _ => throw new Exception(s"Trying to fetch interface ${tag.runtimeClass.getName}, but I don't have an app!")
+    }
+  }
+}
+
+object PlayEcology {
+  def playApi[T](implicit tag:ClassTag[T], ecology:Ecology):T = {
+    ecology.asInstanceOf[EcologyImpl].playApi(tag)
+  }
+  
+  def maybeApplication(implicit ecology:Ecology):Option[play.api.Application] = {
+    ecology.asInstanceOf[EcologyImpl].playApp
+  }
 }

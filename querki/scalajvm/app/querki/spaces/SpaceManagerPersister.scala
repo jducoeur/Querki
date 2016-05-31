@@ -42,7 +42,9 @@ import PersistMessages._
  * 
  * TODO: this should take the Ecology as a parameter, instead of accessing it statically.
  */
-private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor with Requester with EcologyMember {
+private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Requester with EcologyMember {
+  
+  implicit val ecology = e
   
   lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp

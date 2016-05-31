@@ -10,7 +10,9 @@ import play.api.db._
 import play.api.Play.current
 
 import querki.core.NameUtils
+import querki.db.QDB
 import querki.db.ShardKind._
+import querki.globals._
 
 /**
  * OID is the primary identifier for all objects in Querki. Internally, it is a long
@@ -62,9 +64,8 @@ object OID {
   // TBD: at this point, this is only being used for generating Users and Identities;
   // everything else is going through OIDAllocator. We might leave things like this,
   // with System objects working in the older style, but consider cleaning it up.
-  def next(kind:ShardKind):OID = {
-    DB.withTransaction(dbName(kind)) { implicit conn =>
-      
+  def next(kind:ShardKind)(implicit ecology:Ecology):OID = {
+    QDB(kind) { implicit conn =>
       val parseOID = for {
         shardId <- int("shard")
         localId <- int("nextId")

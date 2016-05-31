@@ -30,7 +30,7 @@ class EcologyTests extends WordSpec
   
   "The Ecology" should {
     "throw an exception if I double-register an interface" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1
       class Ecot2(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1
       
@@ -41,7 +41,7 @@ class EcologyTests extends WordSpec
     }
     
     "successfully register and initialize a couple of interfaces without dependencies" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1
       class Ecot2(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface2
       
@@ -65,7 +65,7 @@ class EcologyTests extends WordSpec
     }
     
     "successfully register, initialize and terminate Ecots with dependencies" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       
       // The order of termination is deterministic, due to the dependencies. So check
       // that it came out right:
@@ -102,7 +102,7 @@ class EcologyTests extends WordSpec
     }
     
     "throw if I try to use a dependency before initialization" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1 {
         val interface2 = initRequires[TestInterface2]
         
@@ -121,7 +121,7 @@ class EcologyTests extends WordSpec
     }
     
     "allow me to use a dependency during initialization" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1 {
         val interface2 = initRequires[TestInterface2]
         
@@ -145,7 +145,7 @@ class EcologyTests extends WordSpec
     }
     
     "detect a missing interface in initialization" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1 {
         val interface2 = initRequires[TestInterface2]
         
@@ -167,7 +167,7 @@ class EcologyTests extends WordSpec
     }
     
     "detect a dependency loop during initialization" in {
-      val eco = new EcologyImpl
+      val eco = new EcologyImpl(None)
       class Ecot1(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1 {
         val interface2 = initRequires[TestInterface2]
       }

@@ -53,7 +53,7 @@ class QuerkiTests
   }
   
   def createEcology() = {
-    val e = new EcologyImpl
+    val e = new EcologyImpl(None)
     createEcots(e)
     val state = e.init(querki.system.InitialSystemState.create(e), { (props, name) => Some(ActorRef.noSender) })
     e.api[querki.system.SystemManagement].setState(state)
