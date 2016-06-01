@@ -41,7 +41,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "org.querki" %% "requester" % "2.2",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
-      "com.typesafe.conductr" %% "play24-conductr-bundle-lib" % "1.4.2",
+//      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
       // TEMP: until we have persistence up and running, we need this in order to
       // help Cluster Sharding work. Note there are corresponding entries in .conf:
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV
@@ -66,7 +66,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "querki",
     EclipseKeys.skipParents in ThisBuild := false).
-  enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, ConductRPlugin).
+  enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin).//, ConductRPlugin).
 //  enablePlugins(PlayScala, BuildInfoPlugin).
   aggregate(clients.map(projectToRef): _*).
   dependsOn(querkiSharedJvm)

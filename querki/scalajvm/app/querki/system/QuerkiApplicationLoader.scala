@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 import com.google.inject.AbstractModule
 
 import com.typesafe.conductr.bundlelib.akka.{ Env => AkkaEnv }
-import com.typesafe.conductr.bundlelib.play.{ Env => PlayEnv }
+import com.typesafe.conductr.bundlelib.play.api.{ Env => PlayEnv }
 import com.typesafe.config.ConfigFactory
 import play.api.inject.guice._
 import play.api.{ Configuration, Application, ApplicationLoader }
