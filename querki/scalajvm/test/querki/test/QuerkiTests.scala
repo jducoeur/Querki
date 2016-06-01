@@ -23,6 +23,8 @@ class QuerkiTests
 {
   implicit var ecology:Ecology = null
   
+  QLog.runningUnitTests = true
+  
   lazy val Core = interface[querki.core.Core]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val QL = interface[querki.ql.QL]

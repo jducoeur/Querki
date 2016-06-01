@@ -1,6 +1,6 @@
 package querki.util
 
-import play.api.{Logger, Play}
+import play.api.Logger
 
 import models._
 
@@ -8,7 +8,14 @@ import querki.values.SpaceState
 
 object QLog {
   
-  lazy val inPlay:Boolean = Play.maybeApplication.isDefined 
+  /**
+   * Hack: we need to know whether we are in the Play environment or not, and that's
+   * no longer statically available. So instead, we just have the unit tests declare
+   * when they are running.
+   */
+  var runningUnitTests:Boolean = false
+  
+  def inPlay:Boolean = !runningUnitTests
   
   def stackTrace(message: => String) = {
     try {
