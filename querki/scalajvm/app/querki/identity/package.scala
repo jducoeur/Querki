@@ -185,6 +185,16 @@ package object identity {
      * Given the specified header from Play, fetch the User itself.
      */
     def userFromSession(req:RequestHeader):Future[Option[User]]
+    
+    /**
+     * Internal System User. This should be used for making internal changes to Spaces that are *not* under the
+     * aegis of the requesting user. 
+     * 
+     * USE WITH EXTREME CAUTION! Don't mess with this if you don't understand it! The SystemUser has essentially
+     * unlimited rights, so should only be invoked when we are intentionally doing something on the user's
+     * behalf that they cannot do themselves. That automatically requires a security audit.
+     */
+    def SystemUser:User
   }
   
   /**

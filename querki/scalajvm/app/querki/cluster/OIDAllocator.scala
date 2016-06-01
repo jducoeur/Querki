@@ -23,8 +23,10 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class OIDAllocator(shardId:ShardId) extends PersistentActor {
+class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with EcologyMember {
   import OIDAllocator._
+  
+  implicit val ecology = e
   
   override def persistenceId = s"alloc$shardId"
   
@@ -105,7 +107,7 @@ class OIDAllocator(shardId:ShardId) extends PersistentActor {
 }
 
 object OIDAllocator {
-  def actorProps(shardId:ShardId) = Props(classOf[OIDAllocator], shardId)
+  def actorProps(e:Ecology, shardId:ShardId) = Props(classOf[OIDAllocator], e, shardId)
   
   /////////////////////////////////
   //

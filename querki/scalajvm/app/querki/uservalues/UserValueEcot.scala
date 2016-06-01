@@ -13,7 +13,6 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.globals._
-import querki.identity.SystemUser
 import querki.ql.InvocationValue
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
@@ -99,7 +98,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
           newProps = thing.props + (summaryProp.id -> newSummary)
         }
-          space.modifyThing(SystemUser, tid, None, (t:Thing) => newProps)
+          space.modifyThing(IdentityAccess.SystemUser, tid, None, (t:Thing) => newProps)
       }
       
       case SpacePluginMsg(_, _, msg @ RecalculateSummaries(fromProp, summaryId, values)) => {
@@ -111,7 +110,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           // non-trivial number of modifyThing requests:
           (tid, newSummary) <- summarizer.recalculate(fromProp, summaryProp, values)
         }
-          space.modifyThing(SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)))
+          space.modifyThing(IdentityAccess.SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)))
       }
     }
   }

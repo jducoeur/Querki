@@ -23,7 +23,7 @@ import querki.time.TimeAnorm._
 import querki.db._
 import ShardKind._
 import querki.evolutions.Evolutions
-import querki.identity.{SystemUser, User}
+import querki.identity.{User}
 import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 import querki.util._

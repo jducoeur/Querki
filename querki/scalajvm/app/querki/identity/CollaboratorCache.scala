@@ -12,7 +12,10 @@ import querki.ecology._
 import querki.session.UserSessionMessages
 import querki.util.{Config, QLog}
 
-class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor with Requester with EcologyMember  {
+class CollaboratorCache(val e:Ecology, val userId:UserId) extends Actor with Requester with EcologyMember  {
+  
+  implicit val ecology = e
+  
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   

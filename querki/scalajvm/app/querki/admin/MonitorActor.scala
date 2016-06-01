@@ -15,7 +15,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class MonitorActor(val ecology:Ecology) extends Actor with EcologyMember {
+class MonitorActor(implicit val ecology:Ecology) extends Actor with EcologyMember {
   
   import MonitorActor._
   

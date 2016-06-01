@@ -43,7 +43,7 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   // IMPORTANT: this has changed. See AdminEcot for how to deal with cluster singletons now:
 //  override def createActors(createActorCb:CreateActorFunc) = {
 //    createActorCb(ClusterSingletonManager.props(
-//        QuerkiNodeCoordinator.actorProps(),
+//        QuerkiNodeCoordinator.actorProps(ecology),
 //        QuerkiNodeCoordinator.Stop,
 //        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
 //      ),

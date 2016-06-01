@@ -13,7 +13,9 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-abstract class QuerkiActor(val ecology:Ecology) extends Actor with Requester with EcologyMember {
+abstract class QuerkiActor(e:Ecology) extends Actor with Requester with EcologyMember {
+  implicit val ecology = e
+  
   /**
    * The standard receive function, which should be implemented by concrete Actors instead
    * of conventional receive.
@@ -31,7 +33,7 @@ abstract class QuerkiActor(val ecology:Ecology) extends Actor with Requester wit
  * Variant of QuerkiActor, for Actors that need to start in a "boot mode" before they can go into
  * their standard processing.
  */
-abstract class QuerkiBootableActor(ecology:Ecology) extends QuerkiActor(ecology) with Stash {
+abstract class QuerkiBootableActor(e:Ecology) extends QuerkiActor(e) with Stash {
   /**
    * Concrete Actors should override this for their boot-mode code, and call doneBooting()
    * when finished.

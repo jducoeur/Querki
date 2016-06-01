@@ -20,7 +20,7 @@ import Thing.PropMap
 import querki.core.NameUtils
 import querki.ecology._
 import querki.globals._
-import querki.identity.{SystemUser, User}
+import querki.identity.{User}
 import querki.time.DateTime
 import querki.types.{ModelTypeBase, ModelTypeDefiner}
 import querki.types.MOIDs.ModelForTypePropOID
@@ -54,12 +54,13 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val Person = interface[querki.identity.Person]
+  lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Person = interface[querki.identity.Person]
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
-  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
-  lazy val Conversations = interface[querki.conversations.Conversations]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -154,7 +155,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   def checkOwnerIsMember() = {
     state.ownerIdentity.foreach { identity =>
       if (Person.localPerson(identity)(state).isEmpty) {
-        createSomething(id, SystemUser, AccessControl.PersonModel.id, 
+        createSomething(id, IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
           Core.toProps(
             Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
@@ -192,9 +193,9 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     if (!props.isEmpty || forceCreate)
       // Okay, we actually need to create the Instance Permissions Thing:
       for {
-        ThingFound(permThingId, _) <- createSomethingGuts(id, SystemUser, AccessControl.InstancePermissionsModel.id, props, Kind.Thing)
+        ThingFound(permThingId, _) <- createSomethingGuts(id, IdentityAccess.SystemUser, AccessControl.InstancePermissionsModel.id, props, Kind.Thing)
         propsWithPerms = t.props + AccessControl.InstancePermissionsProp(permThingId)
-        _ <- modifyThingGuts(SystemUser, t.id, None, (_ => propsWithPerms), true)
+        _ <- modifyThingGuts(IdentityAccess.SystemUser, t.id, None, (_ => propsWithPerms), true)
       }
         yield ()
     else

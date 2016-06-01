@@ -31,10 +31,12 @@ import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
-class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with UploadActor with EcologyMember {
+class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with UploadActor with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
+  
+  implicit val ecology = e
   
   lazy val Core = interface[querki.core.Core]
   lazy val PhotosInternal = interface[PhotosInternal]
@@ -192,7 +194,6 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
             val lastElem = qv.cv.last
-            implicit val e = ecology
             loopback(QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc)))) map { wikified =>
               sender ! PhotoInfo(wikified)              
             }

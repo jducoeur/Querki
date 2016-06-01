@@ -468,7 +468,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       val Array(userIdStr, emailAddrStr, _*) = msg.split(":")
       if (user.id.toString == userIdStr && user.mainIdentity.email.addr == emailAddrStr) {
         // Yep, all correct. Upgrade the account to Free:
-        UserAccess.changeUserLevel(user.id, SystemUser, UserLevel.FreeUser).map { updatedUserOpt =>
+        UserAccess.changeUserLevel(user.id, IdentityAccess.SystemUser, UserLevel.FreeUser).map { updatedUserOpt =>
           updatedUserOpt match {
             case Some(u) => true
             case _ => false
@@ -496,7 +496,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       // to choose which of my identities is joining this Space:
       identity <- user.identityBy(_ => true);
       membershipResult = UserAccess.addSpaceMembership(identity.id, state.id);
-      changeRequest = ChangeProps(SystemUser, state.id, person.toThingId, 
+      changeRequest = ChangeProps(IdentityAccess.SystemUser, state.id, person.toThingId, 
           toProps(
             IdentityLink(identity.id),
             DisplayNameProp(identity.name)))

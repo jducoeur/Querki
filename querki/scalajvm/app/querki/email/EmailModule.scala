@@ -7,7 +7,7 @@ import models.{PropertyBundle, PTypeBuilder, ThingState, Wikitext}
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
-import querki.identity.{Identity, SystemUser}
+import querki.identity.{Identity}
 import querki.values.{ElemValue, QLContext}
 
 /**
@@ -44,6 +44,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Links = initRequires[querki.links.Links]
   
   lazy val EmailSender = interface[EmailSender]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val QL = interface[querki.ql.QL]
     
   lazy val DeprecatedProp = Basic.DeprecatedProp
@@ -67,7 +68,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
     val session = EmailSender.createSession()
     
-    EmailSender.sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
+    EmailSender.sendInternal(session, from, recipient.email, recipient.name, IdentityAccess.SystemUser.mainIdentity, subject, body)
   }
   
   /******************************************

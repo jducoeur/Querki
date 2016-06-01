@@ -35,7 +35,7 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Reque
     {
       case Success(ShardAssignment(id)) => {
         _shardId = Some(id)
-        _allocator = Some(context.actorOf(OIDAllocator.actorProps(shardId), "OIDAllocator"))
+        _allocator = Some(context.actorOf(OIDAllocator.actorProps(ecology, shardId), "OIDAllocator"))
         unstashAll()        
       }
 

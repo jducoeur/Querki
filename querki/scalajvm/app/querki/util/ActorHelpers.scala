@@ -7,11 +7,13 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 
+import querki.globals._
+
 /**
  * Little utility helpers for Akka.
  */
 object ActorHelpers {
   
-  def timeout = Timeout(Config.getDuration("querki.akka.timeout", 5 seconds))
+  def timeout(implicit e:Ecology) = Timeout(Config.getDuration("querki.akka.timeout", 5 seconds))
 
 }

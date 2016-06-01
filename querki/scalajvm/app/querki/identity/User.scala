@@ -24,8 +24,6 @@ import querki.email.EmailAddress
 
 import MOIDs._
 
-
-
 import UserLevel._
 
 case class SignupInfo(email:String, password:String, handle:String, display:String)
@@ -120,23 +118,6 @@ trait User {
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel, tosVersion:Int = 0) extends User
-
-// Internal System User. This should be used for making internal changes to Spaces that are *not* under the
-// aegis of the requesting user. 
-//
-// USE WITH EXTREME CAUTION! Don't mess with this if you don't understand it! The SystemUser has essentially
-// unlimited rights, so should only be invoked when we are intentionally doing something on the user's
-// behalf that they cannot do themselves. That automatically requires a security audit.
-case object SystemUser extends User {
-  val id = SystemUserOID
-  val name = "SystemUser"
-  lazy val email = EmailAddress(Config.getString("querki.mail.systemFrom", "querki@querki.net"))
-  // TODO: the presence of a reference to models.system here is suspicious. Does this indicate that SystemUser
-  // doesn't belong in this file? Likely so.
-  val identities = Seq(Identity(SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
-  val level = SuperadminUser
-  val tosVersion = noTOSUserVersion
-}
 
 object User {
   val userIdSessionParam = "userId"

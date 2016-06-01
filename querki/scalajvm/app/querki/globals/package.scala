@@ -33,7 +33,7 @@ package object globals {
     wrapper.get
   }  
   
-  def defaultTimeout = querki.util.ActorHelpers.timeout
+  def defaultTimeout(implicit e:Ecology) = querki.util.ActorHelpers.timeout
   
   /**
    * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.

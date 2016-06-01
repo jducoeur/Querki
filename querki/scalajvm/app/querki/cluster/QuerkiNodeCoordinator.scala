@@ -34,9 +34,11 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeCoordinator extends PersistentActor {
+class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMember {
   
   import QuerkiNodeCoordinator._
+  
+  implicit val ecology = e
   
   override def persistenceId = "nodeCoordinator"
   
@@ -189,7 +191,7 @@ object QuerkiNodeCoordinator {
   // Internal API -- persisted events and state
   //
   
-  def actorProps() = Props(classOf[QuerkiNodeCoordinator])
+  def actorProps(e:Ecology) = Props(classOf[QuerkiNodeCoordinator], e)
   
   /**
    * Sent by the ClusterSingletonManager to tell this copy to shut down for handoff.

@@ -5,7 +5,6 @@ import javax.inject._
 import java.sql.Connection
 import play.api.db.DB
 import play.api.db.{Database, DBApi}
-import play.api.Play.current
 
 import querki.ecology.PlayEcology
 import querki.globals._
@@ -13,9 +12,11 @@ import querki.globals._
 import ShardKind._
 
 /**
- * This is the standard Querki wrapper for Play's DB.withTransaction. It isn't yet
+ * This is the standard Querki wrapper for Play's withTransaction(). It isn't yet
  * used everywhere, but should be migrated to. Besides boilerplate reduction, it
- * automatically logs exceptions.
+ * automatically logs exceptions, and gives us a central place for when things change.
+ * (Which has already happened once, when Play went from the static DB object to
+ * requiring DI instead.)
  * 
  * @author jducoeur
  */

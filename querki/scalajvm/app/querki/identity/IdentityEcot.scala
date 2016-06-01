@@ -10,8 +10,10 @@ import play.api.mvc.{RequestHeader, Security}
 import models.{PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
+import querki.email.EmailAddress
 import querki.globals._
 import querki.session.UserSessionMessages.UserSessionMsg
+import querki.system.TOSModule.noTOSUserVersion
 import querki.util.ActorHelpers._
 import querki.values.{EmptyValue, QLContext, SpaceState}
 import querki.util.QLog
@@ -35,6 +37,7 @@ private [identity] trait UserCacheAccess extends EcologyInterface {
 
 class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with querki.core.MethodDefs with UserCacheAccess {
   
+  import MOIDs._
   import IdentityMOIDs._
   
   val Basic = initRequires[querki.basic.Basic]  
@@ -74,6 +77,23 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
         identityExtractor, identityResolver)
     _userRef = SystemManagement.createShardRegion("UserCache", UserCache.actorProps(ecology), 
         userExtractor, userResolver)
+  }
+
+  // Internal System User. This should be used for making internal changes to Spaces that are *not* under the
+  // aegis of the requesting user. 
+  //
+  // USE WITH EXTREME CAUTION! Don't mess with this if you don't understand it! The SystemUser has essentially
+  // unlimited rights, so should only be invoked when we are intentionally doing something on the user's
+  // behalf that they cannot do themselves. That automatically requires a security audit.
+  case object SystemUser extends User {
+    val id = SystemUserOID
+    val name = "SystemUser"
+    lazy val email = EmailAddress(Config.getString("querki.mail.systemFrom", "querki@querki.net"))
+    // TODO: the presence of a reference to models.system here is suspicious. Does this indicate that SystemUser
+    // doesn't belong in this file? Likely so.
+    val identities = Seq(Identity(SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
+    val level = UserLevel.SuperadminUser
+    val tosVersion = noTOSUserVersion
   }
   
   implicit val cacheTimeout = defaultTimeout

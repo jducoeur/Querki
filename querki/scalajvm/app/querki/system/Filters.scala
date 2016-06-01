@@ -30,7 +30,9 @@ class Filters @Inject() (log:LoggingFilter) extends HttpFilters {
  * it leaks too much user info into the logs. The request side *may* be okay, but the result side
  * certainly is not.
  */
-class LoggingFilter @Inject() (implicit val mat:Materializer, ec:ExecutionContext) extends Filter {
+class LoggingFilter @Inject() (implicit val mat:Materializer, ec:ExecutionContext, ecoProv:EcologyProvider) extends Filter with EcologyMember {
+  
+  implicit lazy val ecology = ecoProv.ecology
   
   lazy val logAllRequests = Config.getBoolean("querki.test.logAllRequests", false)
   

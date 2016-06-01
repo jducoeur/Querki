@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 
 import play.api.{Configuration,Play}
 
+import querki.ecology.PlayEcology
 import querki.globals._
 
 /**
@@ -19,8 +20,9 @@ import querki.globals._
  * workaround of injecting pre-canned config params.
  */
 object Config {
-  def getTyped[T](key:String, default:Seq[T], playFetcher:Configuration => Option[T], localParser:String => T):T = {
-    val optV = Play.maybeApplication match {
+  def getTyped[T](key:String, default:Seq[T], playFetcher:Configuration => Option[T], localParser:String => T)(implicit ecology:Ecology):T = {
+    // Note that we now access the Play Application through the Ecology:
+    val optV = PlayEcology.maybeApplication match {
       // Normal case: the Play application is running
       case Some(app) => playFetcher(app.configuration)
       case None =>
@@ -39,10 +41,10 @@ object Config {
     }
   }
   
-  def getInt(key:String, default:Int*):Int = getTyped(key, default, (_.getInt(key)), (_.toInt))
-  def getString(key:String, default:String*) = getTyped(key, default, (_.getString(key)), (_.toString()))
-  def getBoolean(key:String, default:Boolean*) = getTyped(key, default, (_.getBoolean(key)), (_.toBoolean))
-  def getDuration(key:String, default:FiniteDuration*):FiniteDuration = getTyped(key, default, { config =>
+  def getInt(key:String, default:Int*)(implicit ecology:Ecology):Int = getTyped(key, default, (_.getInt(key)), (_.toInt))
+  def getString(key:String, default:String*)(implicit ecology:Ecology) = getTyped(key, default, (_.getString(key)), (_.toString()))
+  def getBoolean(key:String, default:Boolean*)(implicit ecology:Ecology) = getTyped(key, default, (_.getBoolean(key)), (_.toBoolean))
+  def getDuration(key:String, default:FiniteDuration*)(implicit ecology:Ecology):FiniteDuration = getTyped(key, default, { config =>
     config.getMilliseconds(key).map(Duration(_, MILLISECONDS))
   }, { str =>
     throw new Exception("Config.getDuration can not yet handle local strings!")

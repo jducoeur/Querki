@@ -29,7 +29,7 @@ trait MonitorStats {
  * 
  * @author jducoeur
  */
-class AdminMonitor(val ecology:Ecology) extends Actor with Requester with MonitorStats with EcologyMember {
+class AdminMonitor(implicit val ecology:Ecology) extends Actor with Requester with MonitorStats with EcologyMember {
   import AdminMonitor._
 
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
