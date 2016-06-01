@@ -25,10 +25,12 @@ import mysql._
  * 
  * @author jducoeur
  */
-class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:String, totalSize:Int) extends Actor with Requester 
+class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalSize:Int) extends Actor with Requester 
   with UploadActor with SpaceBuilder with EcologyMember 
 {
   import ImportSpaceActor._
+  
+  implicit val ecology = e
   
   lazy val ClientApi = interface[querki.api.ClientApi]
   

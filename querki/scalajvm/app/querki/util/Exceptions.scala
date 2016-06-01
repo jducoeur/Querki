@@ -5,7 +5,6 @@ import scala.util._
 // TODO: Feh -- this is all hackery to get at Messages in the Play 2.4 world. Probably need to do this
 // a better way, more compatible with Play's new dependency-injected approach. For the moment, we're
 // using a bunch of global implicits to get there.
-import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Lang.defaultLang
 import Messages.Implicits._
@@ -13,6 +12,8 @@ import Messages.Implicits._
 import play.api.mvc.RequestHeader
 
 import controllers.PlayRequestContext
+import querki.ecology.PlayEcology
+import querki.globals._
 import querki.values.RequestContext
 
 /**
@@ -20,18 +21,21 @@ import querki.values.RequestContext
  * internationalize the message properly. All exceptions that are to be shown to users should use this!
  */
 case class PublicException(msgName:String, params:Any*) extends Exception {
-  def display(implicit req:RequestHeader):String = Messages(msgName, params:_*)
-  def display(rc:Option[RequestContext]):String = {
+  private def doDisplay(implicit e:Ecology):String =
+    PlayEcology.maybeApplication match {
+      case Some(app) => {
+        implicit val a = app
+        Messages(msgName, params:_*)      
+      }
+      // There's no Application, which implies that we're probably running under unit tests:
+      case _ => s"$msgName"
+    }
+  
+  def display(implicit req:RequestHeader, e:Ecology):String = doDisplay
+  def display(rc:Option[RequestContext])(implicit e:Ecology):String = {
     rc match {
-      case Some(prc:PlayRequestContext) => display(prc.request)
-      // This will default to the system default language.
-      // TODO: we should have a concept of Lang available in RequestContext itself!
-      case _ =>
-        if (play.api.Play.maybeApplication.isDefined)
-          Messages(msgName, params:_*)
-        else
-          // There's no Application, which implies that we're probably running under unit tests:
-          s"$msgName"
+      case Some(prc:PlayRequestContext) => display(prc.request, e)
+      case _ => doDisplay
     }
   }
   override def getMessage = s"BUG: Trying to display a PublicException without the Request. Use display() instead. msgName: $msgName; params: $params"

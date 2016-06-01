@@ -66,7 +66,7 @@ case class AutowireParams(
  * pointers to instances of this class!!! If you do, they will become enormous memory leaks!
  * Remember, functional programming is your friend...
  */
-abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember with RequesterImplicits 
+abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMember with RequesterImplicits 
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   def user = info.user
@@ -75,6 +75,8 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   def context = info.actor.context
   def sender = info.sender
   def requester = info.actor
+  
+  implicit lazy val ecology = e
   
   /***************************************************
    * Wrapping code
