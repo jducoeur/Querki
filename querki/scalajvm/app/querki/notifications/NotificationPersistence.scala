@@ -5,9 +5,8 @@ import akka.actor.Props
 import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser._
 import play.api.db._
-import play.api.Play.current
 
-import querki.db.ShardKind
+import querki.db._
 import ShardKind._
 import querki.ecology._
 import querki.identity.UserId
@@ -34,7 +33,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
   }
   
   def loadUserInfo(userId:UserId):Option[UserNotificationInfo] = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(System) { implicit conn =>
       SQL("""
           SELECT lastNoteChecked from User
            WHERE id = {id} 
@@ -45,7 +44,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
   }
   
   def updateLastChecked(userId:UserId, lastChecked:Int):Unit = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(System) { implicit conn =>
       SQL("""
           UPDATE User
              SET lastNoteChecked = {lastChecked}
@@ -83,7 +82,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
         )
   
   def loadCurrent(userId:UserId):CurrentNotifications = {
-    DB.withConnection(dbName(User)) { implicit conn =>
+    QDB(User) { implicit conn =>
       try {
         val notes = UserSQL(userId, """
             SELECT * from {notename}
@@ -107,7 +106,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
   }
   
   def createNotification(userId:UserId, note:Notification) = {
-    DB.withConnection(dbName(User)) { implicit conn =>
+    QDB(User) { implicit conn =>
       UserSQL(userId, """
           INSERT INTO {notename}
           ( id,   sender,   toIdentity,   ecotId,   noteType,   sentTime,   spaceId,   thingId,   props,   isRead,   isDeleted) VALUES

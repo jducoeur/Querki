@@ -7,7 +7,6 @@ import akka.actor._
 import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser._
 import play.api.db._
-import play.api.Play.current
 
 import com.github.nscala_time.time.Imports._
 
@@ -18,7 +17,7 @@ import messages._
 import models.{AsName, OID}
 import models.{Kind, Thing}
 
-import querki.db.ShardKind
+import querki.db._
 import ShardKind._
 
 import querki.cluster.OIDAllocator._
@@ -68,7 +67,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
         // TODO: this involves DB access, so should be async using the Actor DSL
         // Note that Spaces are now indexed by Identity, so we need to indirect
         // through that table. (Since our parameter is User OID.)
-        val mySpaces = DB.withConnection(dbName(System)) { implicit conn =>
+        val mySpaces = QDB(System) { implicit conn =>
           SQL("""
               SELECT Spaces.id, Spaces.name, display, Identity.handle FROM Spaces
                 JOIN Identity ON userid={owner}
@@ -78,7 +77,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
             .on("owner" -> owner.raw)
             .as(parseSpaceDetails.*)
         } ++ { if (owner == querki.identity.MOIDs.SystemUserOID) { Seq(SpaceDetails(AsName("System"), SystemIds.systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
-        val memberOf = DB.withConnection(dbName(System)) { implicit conn =>
+        val memberOf = QDB(System) { implicit conn =>
           // Note that this gets a bit convoluted, by necessity. We are coming in through a User;
           // translating that to Identities; getting all of the Spaces that those Identities are members of;
           // then getting the Identities that own those Spaces so we can get their handles. Hence the
@@ -101,7 +100,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     
     case CreateSpacePersist(owner, userMaxSpaces, name, display) => {
       try {
-        DB.withTransaction(dbName(System)) { implicit conn =>
+        QDB(System) { implicit conn =>
           val numWithName = SQL("""
               SELECT COUNT(*) AS c from Spaces 
                WHERE owner = {owner} AND name = {name} AND status = 0
@@ -135,7 +134,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
           // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
           // of the updates in the first transaction block failed, and the table was nonetheless created.
-          DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+          QDB(User) { implicit conn =>
             SpacePersistence.SpaceSQL(spaceId, """
                 CREATE TABLE {tname} (
                   id bigint NOT NULL,
@@ -146,7 +145,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
                   DEFAULT CHARSET=utf8
                 """).executeUpdate()
           }
-          DB.withTransaction(dbName(System)) { implicit conn =>
+          QDB(System) { implicit conn =>
             SQL("""
                 INSERT INTO Spaces
                 (id, shard, name, display, owner, size) VALUES
@@ -154,7 +153,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
                 """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                         "display" -> display, "ownerId" -> owner.raw).executeUpdate()
           }
-          DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+          QDB(User) { implicit conn =>
             // We need to evolve the Space before we try to create anything in it:
             Evolutions.checkEvolution(spaceId, 1)
             val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))
@@ -169,7 +168,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     }
     
     case GetSpaceByName(ownerId:OID, name:String) => {
-      val result = DB.withTransaction(dbName(System)) { implicit conn =>
+      val result = QDB(System) { implicit conn =>
         SQL("""
             SELECT id from Spaces 
              WHERE owner = {ownerId} 
@@ -186,7 +185,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     }
     
     case GetSpaceCount(requester) => {
-      val result = DB.withTransaction(dbName(System)) { implicit conn =>
+      val result = QDB(System) { implicit conn =>
         SQL("SELECT COUNT(*) AS c FROM Spaces WHERE status = 0")
           .as(long("c").single)
       }
@@ -194,7 +193,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     }
     
     case ArchiveSpace(spaceId) => {
-      DB.withTransaction(dbName(System)) { implicit conn =>
+      QDB(System) { implicit conn =>
         SQL("""
           UPDATE Spaces
              SET status = 1

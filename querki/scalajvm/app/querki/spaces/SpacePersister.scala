@@ -6,7 +6,6 @@ import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser._
 
 import play.api.db._
-import play.api.Play.current
 
 import org.querki.requester._
 
@@ -101,7 +100,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
    * have reason to believe the Spaces record has been changed. 
    */
   def fetchSpaceInfo() = {
-    _currentSpaceInfo = Some(DB.withTransaction(dbName(System)) { implicit conn =>
+    _currentSpaceInfo = Some(QDB(System) { implicit conn =>
       SQL("""
           select * from Spaces where id = {id}
           """)
@@ -147,7 +146,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
-	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+	    QDB(ShardKind.User) { implicit conn =>
 	      // The list of all of the Things in this Space.
 	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
 	      // the rows several times. This is considered acceptable only because this code is
@@ -197,7 +196,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Delete(thingId) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
 	    // TODO: add a history record
 	    SpaceSQL("""
 	      UPDATE {tname}
@@ -211,7 +210,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Change(state, thingId, modelId, modTime, props, spaceChangeOpt) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
           UPDATE {tname}
           SET model = {modelId}, modified = {modified}, props = {props}
@@ -226,7 +225,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
       spaceChangeOpt map { spaceChange =>
         // In principle, this ought to be in the same transaction, but we
         // don't currently have a mechanism for cross-DB transactions:
-        DB.withTransaction(dbName(ShardKind.System)) {implicit conn =>
+        QDB(System) {implicit conn =>
           SQL("""
             UPDATE Spaces
             SET name = {newName}, display = {displayName}

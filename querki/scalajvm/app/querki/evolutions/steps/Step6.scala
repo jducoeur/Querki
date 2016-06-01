@@ -4,9 +4,8 @@ import anorm._
 import anorm.SqlParser.long
 import java.sql.Connection
 import play.api.db._
-import play.api.Play.current
 
-import querki.db.ShardKind._
+import querki.db._
 import querki.ecology._
 import querki.evolutions._
 import querki.identity.MembershipState
@@ -19,7 +18,7 @@ class Step6(implicit val ecology:Ecology) extends Step {
   lazy val UserAccess = ecology.api[querki.identity.UserAccess]
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {
-    val ownerOpt = DB.withTransaction(dbName(System)) { implicit conn =>
+    val ownerOpt = QDB(ShardKind.System) { implicit conn =>
       SQL("""
           SELECT owner
             FROM Spaces

@@ -6,7 +6,6 @@ import akka.event.LoggingReceive
 import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser._
 import play.api.db._
-import play.api.Play.current
 
 import org.querki.requester._
 
@@ -57,7 +56,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
   
   def receive = LoggingReceive {
     case LoadValuesForUser(identity, state) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         val rawUVs = SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE identityId = {identityId}
@@ -73,7 +72,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     }
     
     case UserValuePersistRequest(req, space, LoadThingPropValues(thingId, propId, state)) => {
-      val rawUVs = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      val rawUVs = QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE propertyId = {propertyId}
@@ -94,7 +93,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     }
     
     case UserValuePersistRequest(req, space, LoadUserPropValues(identity, state)) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         val rawUVs = SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE identityId = {identityId}
@@ -111,7 +110,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     // TODO: this should probably get refactored with LoadThingPropValues above -- they are close
     // to identical:
     case UserValuePersistRequest(req, space, LoadAllPropValues(propId, state)) => {
-      val rawUVs = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      val rawUVs = QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
 	          SELECT * FROM {uvname} 
                WHERE propertyId = {propertyId}
@@ -131,7 +130,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     }
     
     case SaveUserValue(uv, state, update) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         implicit val s = state
         val prop = state.prop(uv.propId).getOrElse(throw new Exception("SaveUserValue is trying to serialize unknown Property " + uv.propId))
 //        val uvType = UserValues.getUserType(prop.pType).getOrElse(throw new Exception("SaveUserValue is trying to serialize non-UV Property " + uv.propId))

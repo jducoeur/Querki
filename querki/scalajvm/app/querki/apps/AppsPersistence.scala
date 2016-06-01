@@ -4,7 +4,6 @@ import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser.long
 
 import play.api.db._
-import play.api.Play.current
 
 import models.{OID}
 
@@ -33,7 +32,7 @@ private [apps] trait AppsPersistence extends EcologyInterface {
  */
 class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with AppsPersistence {
   def lookupApps(space:OID):Seq[OID] = {
-    DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       SQL("""
             SELECT * FROM Apps
              WHERE space_id = {spaceId}
@@ -44,7 +43,7 @@ class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with AppsPersistence 
   }
   
   def addApp(spaceId:OID, appId:OID):Unit = {
-    DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val appIds = SQL("""
             SELECT * FROM Apps
              WHERE space_id = {spaceId}

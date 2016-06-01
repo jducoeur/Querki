@@ -7,12 +7,11 @@ import anorm.SqlParser._
 import play.api._
 import play.api.db._
 import play.api.mvc._
-import play.api.Play.current
 
 import models.{AsName, AsOID, OID, ThingId}
 
 import querki.core.NameUtils
-import querki.db.ShardKind._
+import querki.db._
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
@@ -51,7 +50,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         )
   
   private def getUser(query:SimpleSql[Row], checkOpt:Option[User => Boolean] = None):Option[User] = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       query
         .as(userParser.singleOpt)
         .flatMap { user =>
@@ -97,21 +96,21 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   // DEPRECATED: we need to move away from this
   def getAllForAdmin(requester:User):Seq[User] = requester.requireAdmin {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       userLoadSqlWhere("""User.level != 0""").as(userParser.*)
     }
   }
   
   // DEPRECATED: does this even make sense after Open Beta? Probably not.
   def getPendingForAdmin(requester:User):Seq[User] = requester.requireAdmin {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       userLoadSqlWhere("""User.level = 1""").as(userParser.*)
     }
   }
   
   // DEPRECATED: this is obvious evil. Where are we using it?
   def getAllIdsForAdmin(requester:User):Seq[UserId] = requester.requireAdmin {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       SQL("""
           SELECT id
             FROM User
@@ -216,9 +215,9 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     val existingOpt = loadByHandle(info.handle, 
         Some({_ => throw new PublicException("User.handleExists", info.handle)}))
       
-    DB.withTransaction(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       // Okay, seems to be legit
-      val userId = OID.next(System)
+      val userId = OID.next(ShardKind.System)
       // TODO: we should have a standardized utility to deal with this
       val timestamp = org.joda.time.DateTime.now()
       val level =
@@ -236,7 +235,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       userInsert.execute
 //      if (!userInsert.execute)
 //        throw new Exception("Unable to create new User!")
-      val identityId = OID.next(System)
+      val identityId = OID.next(ShardKind.System)
       val identityInsert = SQL("""
           INSERT Identity
             (id, name, userId, kind, handle, email, authentication)
@@ -264,7 +263,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     if (!requester.isAdmin && !requester.hasIdentity(identity.id))
       throw new Exception("Illegal attempt to change password!")
     
-    DB.withTransaction(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE Identity
              SET authentication = {authentication}
@@ -283,7 +282,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     if (!requester.isAdmin && !requester.hasIdentity(identity.id))
       throw new Exception("Illegal attempt to change password!")
     
-    DB.withTransaction(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE Identity
              SET name = {display}
@@ -303,7 +302,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
   
   def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState):Boolean = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val insert = SQL("""
           INSERT SpaceMembership
             (identityId, spaceId, membershipState)
@@ -322,7 +321,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
   
   def changeUserLevel(userId:OID, requester:User, level:UserLevel):Future[Option[User]] = requester.requireAdmin {
-    val userOpt = DB.withConnection(dbName(System)) { implicit conn =>
+    val userOpt = QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET level={lv}
@@ -337,7 +336,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
 
   def setTOSVersion(userId:OID, version:Int) = {
-    val userOpt = DB.withConnection(dbName(System)) { implicit conn =>
+    val userOpt = QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET tosVersion={v}
@@ -354,7 +353,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   // TODO: in the long run, this query is just plain too heavy. We probably need something more efficient. We
   // may have to denormalize this into the Akka Persistence level.
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       SQL("""
           SELECT DISTINCT OtherMember.identityId FROM SpaceMembership
             JOIN SpaceMembership AS OtherMember ON OtherMember.spaceId = SpaceMembership.spaceId
@@ -367,7 +366,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
   
   def getUserVersion(userId:UserId):Option[Int] = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       SQL("""
           SELECT userVersion from User
            WHERE id = {id} 

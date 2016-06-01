@@ -4,12 +4,12 @@ import anorm._
 import anorm.SqlParser.{long, int}
 import java.sql.Connection
 import play.api.db._
-import play.api.Play.current
 
 import querki.ecology._
 
 import models._
 
+import querki.db._
 import querki.db.ShardKind._
 import querki.util.SqlHelpers._
 
@@ -34,7 +34,7 @@ trait Step extends EcologyMember {
   def evolveUp(spaceId:OID) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
     // quite likely not, but as it stands this is a tad riskier than I like:
-    val info = DB.withTransaction(dbName(System)) { implicit conn =>
+    val info = QDB(System) { implicit conn =>
       
       val parseRow = 
         oid("id") ~ int("version") map { case i ~ v => SpaceInfo(i, v) }
@@ -45,11 +45,11 @@ trait Step extends EcologyMember {
         .on("id" -> spaceId.raw)
         .as(parseRow.single)
     }
-    DB.withTransaction(dbName(User)) { implicit spaceConn =>
+    QDB(User) { implicit spaceConn =>
       backupTables(info)(spaceConn)
       doEvolve(info)(spaceConn)        
     }
-    DB.withTransaction(dbName(System)) { implicit conn =>
+    QDB(System) { implicit conn =>
       SQL("""
           UPDATE Spaces SET version = {version} WHERE id = {id}
           """).on("version" -> version, "id" -> spaceId.raw).executeUpdate

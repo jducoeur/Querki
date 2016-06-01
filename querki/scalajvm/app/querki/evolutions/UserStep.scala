@@ -4,10 +4,10 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 import play.api.db._
-import play.api.Play.current
 
 import models.OID
 
+import querki.db._
 import querki.db.ShardKind._
 import querki.ecology._
 import querki.identity.UserId
@@ -30,18 +30,18 @@ trait UserStep extends EcologyMember {
   def evolveUp(userId:UserId) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
     // quite likely not, but as it stands this is a tad riskier than I like:
-    val info = DB.withTransaction(dbName(System)) { implicit conn =>
+    val info = QDB(System) { implicit conn =>
       SQL("""
           select * from User where id = {id}
           """)
         .on("id" -> userId.raw)
         .as(parseRow.single)
     }
-    DB.withTransaction(dbName(User)) { implicit spaceConn =>
+    QDB(User) { implicit spaceConn =>
 //      backupTables(info)(spaceConn)
       doEvolve(info)(spaceConn)        
     }
-    DB.withTransaction(dbName(System)) { implicit conn =>
+    QDB(System) { implicit conn =>
       SQL("""
           UPDATE User SET userVersion = {version} WHERE id = {id}
           """).on("version" -> version, "id" -> userId.raw).executeUpdate

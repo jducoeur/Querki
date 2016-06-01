@@ -4,7 +4,6 @@ import akka.actor._
 import anorm.{Success=>AnormSuccess,_}
 import anorm.SqlParser._
 import play.api.db._
-import play.api.Play.current
 
 import models.OID
 
@@ -32,7 +31,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
   
   def receive = {
     case GetMaxCommentId => {
-      DB.withConnection(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         val nOpt = 
           SpaceSQL("""SELECT MAX(id) as max from {cname}""")
             .as(int("max").?.single)
@@ -65,7 +64,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
               edited, deleted, archived
             )
         
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         // TODO: this is causing warnings, because of the deprecated apply. But I'm leaving it
         // in place for now, because Conversations should move to Akka Persistence before too long.
         val comments = SpaceSQL("""
@@ -82,7 +81,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
     }
     
     case AddComment(comment, state) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         // Note that a bunch of the Booleans simply default to false, and are irrelevant for a new Comment:
         SpaceSQL("""
             INSERT INTO {cname}
@@ -103,7 +102,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
     
     case UpdateComment(comment, state) => {
       // Note that we tacitly assume that many fields are immutable; we only update the ones that can change:
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
             UPDATE {cname}
                SET authorizedBy = {authorizedBy}, props = {props}, needsModeration = {needsModeration}, primaryResponse = {primaryResponse},
