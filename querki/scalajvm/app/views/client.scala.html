@@ -1,10 +1,10 @@
-@(rc:PlayRequestContext, pickled:String)
+@(rc:PlayRequestContext, pickled:String, mode:play.api.Mode.Mode)
 
 @import routes.javascript._
 
 <!DOCTYPE html>
 
-@isProd = @{ play.api.Play.isProd(play.api.Play.current) }
+@isProd = @{ mode == play.api.Mode.Prod }
 
 <html>
   <head>

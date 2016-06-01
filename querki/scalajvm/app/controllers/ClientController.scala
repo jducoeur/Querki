@@ -17,9 +17,9 @@ import autowire._
 
 import models.{AsName, AsOID, MIMEType, Thing, ThingId}
 
-import querki.globals._
-
 import querki.api._
+import querki.ecology.PlayEcology
+import querki.globals._
 import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
 import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
@@ -35,6 +35,9 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
   lazy val Tags = interface[querki.tags.Tags]
   
   def apiTrace = ApiInvocation.apiTrace _
+  
+  def environment = PlayEcology.playApi[play.api.Environment]
+  def mode = environment.mode
   
   case class ApiRequest(pickledRequest:String, pickledMetadata:String)
   
@@ -65,7 +68,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
     rc.requester match {
       case Some(requester) => {
         val requestInfo = ClientApi.rootRequestInfo(rc)
-        Ok(views.html.client(rc, write(requestInfo)))
+        Ok(views.html.client(rc, write(requestInfo), mode))
       }
       // For the moment, in the not-logged-in case, we still show the old root page:
       case _ => Ok(views.html.index(this, rc))
@@ -77,7 +80,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
    */
   def showClient = withUser(false) { rc =>
     val requestInfo = ClientApi.rootRequestInfo(rc)
-    Ok(views.html.client(rc, write(requestInfo)))    
+    Ok(views.html.client(rc, write(requestInfo), mode))    
   }
   
   def signup = withUser(false) { rc =>
@@ -89,7 +92,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       // The normal case: show the client:
       case _ => {
         val requestInfo = ClientApi.rootRequestInfo(rc)
-        Ok(views.html.client(rc, write(requestInfo)))
+        Ok(views.html.client(rc, write(requestInfo), mode))
       }
     }
   }
@@ -106,7 +109,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
           val thingIdStr = rc.request.queryString("_escaped_fragment_").head
           Redirect(routes.RawController.thing(ownerId, spaceIdStr, thingIdStr))
         } else {
-          Ok(views.html.client(rc, write(requestInfo)))
+          Ok(views.html.client(rc, write(requestInfo), mode))
         }
       }
     } recoverWith {
