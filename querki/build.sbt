@@ -54,8 +54,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 	BundleKeys.memory := 1.GiB,
 	BundleKeys.diskSpace := 5.MB,
 	BundleKeys.startCommand ++= Seq(
-	  "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT"//,
-//	  "-java-home /apps/java"
+	  "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
+	  "-java-home /apps/java"
 	),
 	BundleKeys.system := "querki-server",
 	BundleKeys.endpoints := Map(
