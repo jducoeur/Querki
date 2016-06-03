@@ -102,7 +102,11 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     updateState("Removing", mem, {cs => cs.copy(members = cs.members - mem)})
   }
   def updateMember(mem:Member) = {
-    updateState("Adding/Updating", mem, {cs => cs.copy(members = cs.members + mem)})
+    // This looks a bit weird, but is (I think) necessary due to the equality operation of Member.
+    // Since members is a *Set*, and the state doesn't get detected as an equality difference, then
+    // simply using "+" won't be detected as needing to change anything. So we need to remove the old
+    // version of this Member, and then add the new one.
+    updateState("Adding/Updating", mem, {cs => cs.copy(members = (cs.members - mem) + mem)})
   }
   def ownStatus:Option[MemberStatus] = {
     for {
