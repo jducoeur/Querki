@@ -3,11 +3,13 @@ package querki.admin
 import scala.concurrent.Future
 
 import akka.cluster._
+import ClusterEvent._
 
 import models.{AsOID, ThingId}
 
 import querki.api._
 import AdminFunctions._
+import querki.cluster.QuerkiNodeManager._
 import querki.data.TID
 import querki.globals._
 import querki.identity.{User, UserLevel}
@@ -20,6 +22,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   if (!info.user.isAdmin)
     throw new NotAnAdminException
   
+  lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -115,12 +118,21 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     val spaces = monitorStats.spaces.values.toSeq.map { evt => 
       RunningSpace(evt.name, evt.address, evt.nUsers, evt.size, evt.sentTime.getMillis)
     }
-    val state = Cluster(SystemManagement.actorSystem).state
-    val qstate = 
-      QCurrentClusterState(
-        state.members.toSeq.map(translateMember(_)), 
-        state.unreachable.toSeq.map(translateMember(_)), 
-        state.leader.map(_.toString).getOrElse(""))
-    Future.successful(MonitorCurrent(SystemManagement.clusterAddress, qstate, spaces))
+    // Note that this used to use Cluster.state, but that never actually worked. So we're doing it
+    // the hard but correct way:
+    (QuerkiCluster.nodeManager ? RequestState) map {
+      case Some(CurrentClusterState(mem, unreachable, seenBy, leader, roleLeaderMap)) => {
+        val qstate = 
+          QCurrentClusterState(
+            mem.toSeq.map(translateMember(_)), 
+            unreachable.toSeq.map(translateMember(_)), 
+            leader.map(_.toString).getOrElse(""))
+        MonitorCurrent(SystemManagement.clusterAddress, qstate, spaces)
+      }
+      case _ => {
+        QLog.error("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
+        throw new Exception("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
+      }
+    }
   }
 }

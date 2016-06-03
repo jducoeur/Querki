@@ -3,6 +3,8 @@ package querki.cluster
 import scala.util.{Failure, Success}
 
 import akka.actor._
+import akka.cluster._
+import ClusterEvent._
 import akka.pattern.AskTimeoutException
 
 import org.querki.requester._
@@ -15,6 +17,11 @@ import querki.globals._
  * It is specifically responsible for working with the QuerkiNodeCoordinator (a central
  * Cluster Singleton) to get a Shard ID for this node. That ID will then be used for
  * OID creation on this node, via the OIDAllocator.
+ * 
+ * It also listens to the state of the Cluster and its members.
+ * 
+ * IMPORTANT: this is currently responsible for implementing our simple split-brain
+ * resolution!
  * 
  * @author jducoeur
  */
@@ -58,7 +65,22 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Reque
   }
   
   override def preStart() = {
-    requestShardId()
+    Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
+    // TODO: turn this back on
+//    requestShardId()
+  }
+
+  var _clusterState:Option[CurrentClusterState] = None
+  def updateState(op:String, mem:Member, f:CurrentClusterState => CurrentClusterState) = {
+    QLog.spew(s"$op member $mem")
+    val cs = _clusterState.get
+    _clusterState = Some(f(cs))
+  }
+  def removeMember(mem:Member) = {
+    updateState("Removing", mem, {cs => cs.copy(members = cs.members - mem)})
+  }
+  def updateMember(mem:Member) = {
+    updateState("Adding/Updating", mem, {cs => cs.copy(members = cs.members + mem)})
   }
   
   def receive = handleRequestResponse orElse {
@@ -82,9 +104,40 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Reque
         requestShardId()
       }
     }
+    
+    /****************************************
+     * 
+     * Cluster Events
+     * 
+     */
+    case s @ CurrentClusterState(mem, unreachable, seenBy, leader, roleLeaderMap) => {
+      QLog.spew(s"CurrentClusterState = $s")
+      _clusterState = Some(s)
+    }
+    
+    case MemberExited(member) => removeMember(member)
+    case MemberJoined(member) => updateMember(member)
+    case MemberLeft(member) => removeMember(member)
+    case MemberRemoved(member, prev) => removeMember(member)
+    case MemberUp(member) => updateMember(member)
+    case MemberWeaklyUp(member) => updateMember(member)
+    
+    case UnreachableMember(member) => {
+      updateState("Marking unreachable", member, {cs => cs.copy(unreachable = cs.unreachable + member)})
+    }
+    case ReachableMember(member) => {
+      updateState("Returning to reachable", member, {cs => cs.copy(unreachable = cs.unreachable - member)})
+    }
+    
+    case QuerkiNodeManager.RequestState => sender ! _clusterState
   }
 }
 
 object QuerkiNodeManager {
   def actorProps(ecology:Ecology) = Props(classOf[QuerkiNodeManager], ecology)
+  
+  /**
+   * Returns an Option[CurrentClusterState].
+   */
+  case object RequestState
 }

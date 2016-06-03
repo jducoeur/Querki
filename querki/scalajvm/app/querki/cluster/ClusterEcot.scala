@@ -41,7 +41,7 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   
   // TODO: until we have an Akka Persistence layer that we like, just don't even boot this up:
   // IMPORTANT: this has changed. See AdminEcot for how to deal with cluster singletons now:
-//  override def createActors(createActorCb:CreateActorFunc) = {
+  override def createActors(createActorCb:CreateActorFunc) = {
 //    createActorCb(ClusterSingletonManager.props(
 //        QuerkiNodeCoordinator.actorProps(ecology),
 //        QuerkiNodeCoordinator.Stop,
@@ -54,6 +54,6 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
 //          ClusterSingletonProxySettings(SystemManagement.actorSystem)), 
 //        "querkiNodeCoordinatorProxy")
 //        
-//    _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
-//  }
+    _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
+  }
 }

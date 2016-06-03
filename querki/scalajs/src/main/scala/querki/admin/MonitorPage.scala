@@ -32,10 +32,10 @@ class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
           p(b("Leader: ", update.state.leader)),
           h4("Members"),
           for (member <- update.state.members)
-            showMember(member),
+            yield showMember(member),
           h4("Unreachable"),
           for (unreach <- update.state.unreachable)
-            showMember(unreach),
+            yield showMember(unreach),
           
           h3("Active Spaces with User Counts"),
           for {
