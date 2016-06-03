@@ -95,6 +95,9 @@ querki {
   }
     
   cluster {
+    # REQUIRED: For now, the hard-coded expected cluster size. Eventually, we will likely
+    # get this automatically from AWS.
+    size : EXPECTED CLUSTER SIZE
     # How long we allow for re-finding a Shard before we decide it is dead:
     shardRelookupTimeout : 10 minutes
     # How often should the QuerkiNodeCoordinator save a snapshot:

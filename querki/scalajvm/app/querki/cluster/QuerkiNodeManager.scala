@@ -25,11 +25,26 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
+class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
   
   import QuerkiNodeCoordinator._
   
   lazy val ClusterPrivate = interface[ClusterPrivate]
+  
+  lazy val clusterSize = Config.getInt("querki.cluster.size")
+  // Quorum is at least half of the cluster size:
+  // TBD: is this over-complicated? Can I rely on Integer math to always produce the
+  // floor, and then add 1?
+  lazy val quorum = {
+    val isEven = (clusterSize % 2) == 0
+    val halfSize = clusterSize.toDouble / 2.toDouble
+    if (isEven)
+      // It's an even number, so quorum is *more* than half:
+      halfSize.toInt + 1
+    else
+      // Not an even number, so just round up
+      halfSize.ceil.toInt
+  }
   
   var _shardId:Option[ShardId] = None
   def shardId = _shardId.get
@@ -65,22 +80,36 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Reque
   }
   
   override def preStart() = {
+    // While we're inside of a context, make sure we have our own address:
+    selfUniqueAddress
     Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
     // TODO: turn this back on
 //    requestShardId()
   }
 
+  lazy val selfUniqueAddress = Cluster(context.system).selfUniqueAddress
   var _clusterState:Option[CurrentClusterState] = None
+  def setState(s:CurrentClusterState) = {
+    _clusterState = Some(s)
+    ownStatus.foreach(status => QLog.spew(s"I am currently $status"))    
+  }
   def updateState(op:String, mem:Member, f:CurrentClusterState => CurrentClusterState) = {
     QLog.spew(s"$op member $mem")
     val cs = _clusterState.get
-    _clusterState = Some(f(cs))
+    setState(f(cs))
   }
   def removeMember(mem:Member) = {
     updateState("Removing", mem, {cs => cs.copy(members = cs.members - mem)})
   }
   def updateMember(mem:Member) = {
     updateState("Adding/Updating", mem, {cs => cs.copy(members = cs.members + mem)})
+  }
+  def ownStatus:Option[MemberStatus] = {
+    for {
+      state <- _clusterState
+      selfMem <- state.members.find(_.uniqueAddress == selfUniqueAddress)
+    }
+      yield selfMem.status
   }
   
   def receive = handleRequestResponse orElse {
@@ -112,7 +141,7 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Reque
      */
     case s @ CurrentClusterState(mem, unreachable, seenBy, leader, roleLeaderMap) => {
       QLog.spew(s"CurrentClusterState = $s")
-      _clusterState = Some(s)
+      setState(s)
     }
     
     case MemberExited(member) => removeMember(member)
