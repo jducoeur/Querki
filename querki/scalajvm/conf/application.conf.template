@@ -108,6 +108,8 @@ querki {
     allocBlockSize : 10
     # How often to snapshot the state of each OIDAllocator, in blocks.
     allocSnapshotInterval : 10
+    # How long to wait after a node goes unreachable, before we invoke Split Brain Resolution.
+    unreachable.timeout : 20 seconds
   }
 }
 

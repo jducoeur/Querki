@@ -1,5 +1,6 @@
 package querki.cluster
 
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 import akka.actor._
@@ -9,6 +10,7 @@ import akka.pattern.AskTimeoutException
 
 import org.querki.requester._
 
+import querki.ecology._
 import querki.globals._
 
 /**
@@ -28,6 +30,7 @@ import querki.globals._
 class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
   
   import QuerkiNodeCoordinator._
+  import QuerkiNodeManager._
   
   lazy val ClusterPrivate = interface[ClusterPrivate]
   
@@ -115,6 +118,54 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     }
       yield selfMem.status
   }
+    
+  /**
+   * How long to wait after something goes unreachable, before we invoke Split Brain Resolution.
+   */
+  lazy val unreachableTimeout = Config.getDuration("querki.cluster.unreachable.timeout", 20 seconds)
+  var unreachableTimers:Map[Member, Cancellable] = Map.empty
+  /**
+   * When a Member becomes unreachable, we give it a little while to see if it comes back. If it
+   * doesn't, we invoke Split-Brain Resolution.
+   */
+  def startUnreachableClock(mem:Member) = {
+    val cancel = context.system.scheduler.scheduleOnce(unreachableTimeout, self, HandleUnreachable(mem))
+    unreachableTimers += (mem -> cancel)
+  }
+  def stopUnreachableClock(mem:Member) = {
+    unreachableTimers.get(mem) map { cancel =>
+      cancel.cancel()
+      unreachableTimers -= mem
+    }
+  }
+  
+  /**
+   * SPLIT-BRAIN RESOLUTION
+   * 
+   * This is a very simplistic SBR, based on the keep-majority principle. When at least one Member has
+   * become Unreachable for a while, we check which side of the fence we seem to be on. If we can still
+   * see a quorum of Members, then we down that unreachable Member. If we *can't* see a quorum, then we
+   * presume that we are on the wrong side of a partition, and we shoot ourselves in the head.
+   */
+  def resolveSplit(mem:Member) = {
+    for {
+      state <- _clusterState
+      app <- PlayEcology.maybeApplication
+    }
+    {
+      val nUnreachables = state.unreachable.size
+      val nReachables = state.members.size - nUnreachables
+      if (nReachables < quorum) {
+        // We're on the wrong side -- kill ourselves!
+        QLog.spew(s"SBR: quorum is $quorum, and we can only see $nReachables, so I'm shooting myself in the head!")
+        app.stop()
+      } else {
+        // We can still see quorum, so down the unreachable Member
+        QLog.spew(s"SBR: quorum is $quorum, and I can still see $nReachables, so downing $mem")
+        Cluster(context.system).down(mem.address)
+      }
+    }
+  }
   
   def receive = handleRequestResponse orElse {
     case OIDAllocator.NextOID => {
@@ -157,9 +208,16 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     
     case UnreachableMember(member) => {
       updateState("Marking unreachable", member, {cs => cs.copy(unreachable = cs.unreachable + member)})
+      startUnreachableClock(member)
     }
     case ReachableMember(member) => {
       updateState("Returning to reachable", member, {cs => cs.copy(unreachable = cs.unreachable - member)})
+      stopUnreachableClock(member)
+    }
+    
+    case HandleUnreachable(member) => {
+      QLog.spew(s"Member $member is persistently unreachable, so invoking Split-Brain!")
+      resolveSplit(member)
     }
     
     case QuerkiNodeManager.RequestState => sender ! _clusterState
@@ -173,4 +231,6 @@ object QuerkiNodeManager {
    * Returns an Option[CurrentClusterState].
    */
   case object RequestState
+  
+  private case class HandleUnreachable(mem:Member)
 }
