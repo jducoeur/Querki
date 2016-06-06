@@ -18,6 +18,8 @@ POST    /signupStart/               @controllers.LoginController.signupStart()
 
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
+# This should also work without the slash, because that's an easy error to make:
+GET     /u/:userName/:spaceId       @controllers.ClientController.spaceNoSlash(userName, spaceId)
 
 # The "raw" version of a page, mainly intended for crawlers that can't cope with the client:
 GET     /raw/:userName/:spaceId/:thingId @controllers.RawController.thing(userName, spaceId, thingId)

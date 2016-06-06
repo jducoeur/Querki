@@ -117,6 +117,10 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
     }
   }
   
+  def spaceNoSlash(ownerId:String, spaceId:String) = Action {
+    Redirect(routes.ClientController.space(ownerId, spaceId))
+  }
+  
   def thingRedirect(ownerId:String, spaceId:String, thingId:String) = Action {
     val spaceCall = routes.ClientController.space(ownerId, spaceId) 
     Redirect(new Call(spaceCall.method, spaceCall.url + s"#!$thingId"))
