@@ -321,16 +321,16 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
   
   def changeUserLevel(userId:OID, requester:User, level:UserLevel):Future[Option[User]] = requester.requireAdmin {
-    val userOpt = QDB(ShardKind.System) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET level={lv}
            WHERE id={userId}
           """).on("lv" -> level, "userId" -> userId.raw)
       update.executeUpdate
-      
-      loadByUserId(userId)
     }
+    
+    val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(userId) }
     
     updateUserCacheFor(userOpt)
   }
@@ -345,9 +345,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       update.executeUpdate
     }
     
-    val userOpt = QDB(ShardKind.System) { implicit conn =>
-      loadByUserId(userId)      
-    }
+    val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(userId) }
     
     updateUserCacheFor(userOpt)
   }
