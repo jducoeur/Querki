@@ -87,7 +87,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   private def loadByUserId(userId:OID):Option[User] = {      
     val userQuery = userLoadSqlWhere("""User.id={userId}""").on("userId" -> userId.raw)
-    getUser(userQuery)    
+    getUser(userQuery)
   }
   
   def getByUserId(requester:User, userId:OID):Option[User] = requester.requireAdmin {
@@ -336,15 +336,17 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
 
   def setTOSVersion(userId:OID, version:Int) = {
-    val userOpt = QDB(ShardKind.System) { implicit conn =>
+    QDB(ShardKind.System) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET tosVersion={v}
            WHERE id={userId}
           """).on("v" -> version, "userId" -> userId.raw)
       update.executeUpdate
-      
-      loadByUserId(userId)
+    }
+    
+    val userOpt = QDB(ShardKind.System) { implicit conn =>
+      loadByUserId(userId)      
     }
     
     updateUserCacheFor(userOpt)
