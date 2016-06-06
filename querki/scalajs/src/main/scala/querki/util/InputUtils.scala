@@ -10,7 +10,7 @@ object InputUtils {
    * This is a filter you can apply to RxText, to only allow in characters legal for names. Note
    * that this is deliberately set up for curried use.
    */
-  def nameFilter(allowNonAlphaNumeric:Boolean)(evt:JQueryEventObject):Boolean = {
+  def nameFilter(allowNonAlphaNumeric:Boolean, allowLeadingSpace:Boolean)(evt:JQueryEventObject, current:String):Boolean = {
     // TODO: this is quite crude, and doesn't allow Unicode through. We should do better.
     // See if there is a library to really do this sort of keyboard filtering well.
     val key = evt.which
@@ -31,8 +31,9 @@ object InputUtils {
       (c >= '0' && c <= '9') || 
       (allowNonAlphaNumeric &&
         (key == 189 || // dash 
-        c == ' ')))
+        // Only allow space if there is already text *or* it's explicitly allowed.
+        ((allowLeadingSpace || current.length > 0) && (c == ' ')))))
   }
   
-  def spaceNameFilter(evt:JQueryEventObject):Boolean = nameFilter(true)(evt)
+  def spaceNameFilter(evt:JQueryEventObject, current:String):Boolean = nameFilter(true, false)(evt, current)
 }

@@ -51,7 +51,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     displayOkay()
   }
   
-  def showInput(ref:GadgetRef[RxInput], filter:Option[JQueryEventObject => Boolean], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = 
+  def showInput(ref:GadgetRef[RxInput], filter:Option[(JQueryEventObject, String) => Boolean], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = 
   {
     val goodCls = Rx { if (inputOkay()) "_signupGood" else "" }
     val checkCls = Rx { if (inputOkay()) "fa fa-check-square-o" else "fa fa-square-o" }
@@ -67,7 +67,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
     // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
     val fut:Future[String] = 
       controllers.LoginController.signupStart().callAjax(
-        "email" -> emailInput.get.text(), 
+        "email" -> emailInput.get.text().trim, 
         "password" -> passwordInput.get.text(),
         "handle" -> handleInput.get.text(),
         "display" -> displayInput.get.text())
@@ -102,7 +102,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
       form(
         showInput(emailInput, None, "Email Address", "emailInput", "text", "joe@example.com", "Must be a valid email address", emailOkay),
         showInput(passwordInput, None, "Password", "passwordInput", "password", "Password", "At least 8 characters", passwordOkay),
-        showInput(handleInput, Some(InputUtils.nameFilter(false)), "Choose a Querki handle", "handleInput", "text", "Handle",
+        showInput(handleInput, Some(InputUtils.nameFilter(false, false)), "Choose a Querki handle", "handleInput", "text", "Handle",
           """At least four letters and numbers, without spaces. This will be your unique id in Querki,
             |and will be used in the URLs of your Spaces. This id is permanent.""".stripMargin,
           handleOkay),

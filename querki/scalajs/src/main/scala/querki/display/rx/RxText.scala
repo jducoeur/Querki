@@ -13,7 +13,7 @@ import querki.display.Gadget
 /**
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
-class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
+class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
   extends Gadget[dom.HTMLInputElement] with RxEmpty
 {
   
@@ -57,7 +57,7 @@ class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String,
         // Is this character allowed?
         charFilter match {
           case Some(filter) => {
-            val allowed = filter(evt)
+            val allowed = filter(evt, text())
             if (!allowed)
               evt.preventDefault()
             allowed
