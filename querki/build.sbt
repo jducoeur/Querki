@@ -5,8 +5,8 @@ import ByteConversions._
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.8"
-lazy val akkaV = "2.4.6"
 lazy val appV = "2.0.3"
+lazy val akkaV = "2.4.7"
 
 lazy val sharedSrcDir = "scala"
 
@@ -34,6 +34,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.typesafe.akka" %% "akka-cluster-sharding" % akkaV,
       "com.typesafe.akka" %% "akka-cluster" % akkaV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+      "com.typesafe.akka" %% "akka-persistence" % akkaV,
+      "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.15",
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
       "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",

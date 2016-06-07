@@ -183,6 +183,11 @@ akka {
     seed-nodes = [
        "akka.tcp://local-querki-server@127.0.0.1:2551"
     ]
+    
+    sharding {
+      journal-plugin-id = "cassandra-journal"
+      snapshot-plugin-id = "cassandra-snapshot-store"
+    }
   }
     
   actor {
@@ -211,8 +216,8 @@ akka {
   }
   
   persistence {
-    journal.plugin = "akka-persistence-sql-async.journal"
-    snapshot-store.plugin = "akka-persistence-sql-async.snapshot-store"
+    journal.plugin = "cassandra-journal"
+    snapshot-store.plugin = "cassandra-snapshot-store"
   }
 }
 
