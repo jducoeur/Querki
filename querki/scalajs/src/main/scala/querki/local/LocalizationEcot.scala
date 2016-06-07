@@ -44,7 +44,7 @@ class LocalizationEcot(e:Ecology) extends ClientEcot(e) with Localization {
   def messages(name:String) = allMessages.getPackage(name)
   
   override def postInit() = {
-    val ajaxCall:PlayAjax = controllers.Assets.at("messages/default/clientStrings")
+    val ajaxCall:PlayAjax = controllers.Assets.versioned("messages/default/clientStrings")
     ajaxCall.callAjax().map { messageText =>
       val hoconTable = HoconParse(messageText)
       _messages = Some(MessagesImpl("", hoconTable))

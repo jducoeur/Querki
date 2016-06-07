@@ -14,7 +14,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     scalaVersion := scalaV,
     version := appV,
     scalaJSProjects := clients,
-  	pipelineStages := Seq(scalaJSProd, gzip),
+  	pipelineStages := Seq(scalaJSProd, digest, gzip),
     // To prevent duplicate-artifact errors in Stage:
     publishArtifact in (Compile, packageSrc) := false,
     libraryDependencies ++= sharedDependencies.value ++ Seq(

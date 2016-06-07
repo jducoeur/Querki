@@ -79,36 +79,36 @@
         
         <title>@Html(title)</title>
         <!-- TODO: we need to make this CSS responsive! But that may require jQuery Mobile... -->
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery.ui.menubar.css")">
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/jquery-ui-1.10.0.custom.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/jquery.ui.menubar.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/bootstrap.css")">
         <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
         <style>
           body {
             padding-top: 40px;
           }
         </style>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-theme.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/bootstrap-theme.css")">
         <!-- <link type="text/css" rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.css" /> -->
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/manifest.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
         
         <script src="//cdn.jsdelivr.net/webjars/jquery/2.1.3/jquery.js"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.manifest-forked.min.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.ui.touch-punch.min.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
-        <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.raty.min.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.histogram.js")"></script>
-        <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.manifest-forked.min.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery-ui-1.10.0.custom.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.ui.touch-punch.min.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.ui.menubar.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/bootstrap.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.autosize-min.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.raty.min.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/jquery.histogram.js")"></script>
+        <script src="@routes.Assets.versioned("javascripts/querki-common.js")"></script>
         
         @PageEventManager.addHeaders(rc, template)
 
-        <link rel="stylesheet" media="print" href="@routes.Assets.at("stylesheets/print.css")">
+        <link rel="stylesheet" media="print" href="@routes.Assets.versioned("stylesheets/print.css")">
 
-        <link rel="shortcut icon" href="@routes.Assets.at("images/Capital.png")">
+        <link rel="shortcut icon" href="@routes.Assets.versioned("images/Capital.png")">
         
 		<script>
 		$(function() {
@@ -187,7 +187,7 @@
                     <span class="icon-bar"></span>
                   </a>
                   
-	              <a class="navbar-brand" href="@routes.ClientController.index"><img src="@routes.Assets.at("images/Logo-menubar.png")"></a>
+	              <a class="navbar-brand" href="@routes.ClientController.index"><img src="@routes.Assets.versioned("images/Logo-menubar.png")"></a>
 	            </div>
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav navbar-right">

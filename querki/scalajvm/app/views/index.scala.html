@@ -7,7 +7,7 @@
 @main(eco, QuerkiTemplate.Index, "Welcome to Querki", rc) {
 	
     <div class="hero-unit">
-      <h1>Welcome to <img src="@routes.Assets.at("images/Logo-green.png")"></h1>
+      <h1>Welcome to <img src="@routes.Assets.versioned("images/Logo-green.png")"></h1>
 
 	@user match {
 	  case None => {
