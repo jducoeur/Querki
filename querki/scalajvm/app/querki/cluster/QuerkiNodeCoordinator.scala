@@ -51,7 +51,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMembe
    * The Shards that are permanently out of action. Several are set aside for various
    * reasons; the rest get set through Persistence.
    */
-  private var fullShards = Set[ShardId](0, 1, 2)
+  private var fullShards = Set[ShardId](0, 1, 2, 3)
   /**
    * Which Shard each Node currently owns.
    */
