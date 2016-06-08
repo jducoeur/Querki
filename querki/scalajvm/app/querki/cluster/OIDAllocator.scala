@@ -33,8 +33,8 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
   override def persistenceId = s"alloc$shardId"
   
   lazy val allocBlockSize = Config.getInt("querki.cluster.allocBlockSize", 10)
-  lazy val allocSnapshotInterval = Config.getInt("querki.cluster.allocSnapshotInterval", 10)
-  lazy val shardFullBufferSize = Config.getInt("querki.cluster.shardFullBufferSize", 100)
+  lazy val allocSnapshotInterval = Config.getInt("querki.cluster.allocSnapshotInterval", 100)
+  lazy val shardFullBufferSize = Config.getInt("querki.cluster.shardFullBufferSize", 1000)
   // When we hit the shardFullMark, raise the alarm that we need to shut down this shard:
   lazy val shardFullMark = Int.MaxValue - shardFullBufferSize
   
