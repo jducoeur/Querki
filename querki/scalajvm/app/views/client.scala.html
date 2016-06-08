@@ -94,5 +94,28 @@
     </script>
   </head>
   <body id="_root">
+    <!-- Proto-menubar, which displays while we're loading the guts of the client. The structure intentionally mimics that
+         of the client's own menubar. This will be deleted and replaced once the client is up and running.
+      -->
+    <div class="container">
+      <div class="navbar navbar-default navbar-fixed-top _noPrint" role="navigation">
+        <div class="container">
+          <div class="navbar-header">
+            <a class="navbar-brand" id="_index_button" href="/">
+              <img src='@routes.Assets.versioned("images/Logo-menubar.png")'>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="guts container-fluid">
+      <div class="row">
+        <div class="querki-content col-md-12">
+          <p>&nbsp;</p>
+          <p>Loading Querki...</p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
