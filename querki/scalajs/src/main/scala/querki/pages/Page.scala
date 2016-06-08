@@ -134,7 +134,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
           },
           
           // TODO: replace this with something prettier:
-          renderedContent(p("Loading page...")),
+          renderedContent(p(i(cls:="fa fa-spinner fa-pulse fa-fw"), " Loading page...")),
           
           renderSignal <= span()
         )
