@@ -42,6 +42,11 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
   var availableThrough:Int = 0
   var snapshotCount:Int = 0
   
+  def updateAvailable(blockSize:Int) = {
+    // Make sure we avoid overflows:
+    availableThrough = Math.min(availableThrough + blockSize, Int.MaxValue)
+  }
+  
   def countToSnapshot() = {
     snapshotCount += 1
     if (snapshotCount >= allocSnapshotInterval) {
@@ -52,7 +57,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
   
   val receiveRecover:Receive = {
     case Alloc(blockSize) => {
-      availableThrough += blockSize
+      updateAvailable(blockSize)
       current = availableThrough
       countToSnapshot()
     }
@@ -78,13 +83,13 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
   
   val receiveCommand:Receive = {
     case NextOID => {
-      def giveOID() = {
-        if (current == Int.MaxValue) {
-          // Emergency! At this point we just need to fall over.
-          context.parent ! QuerkiNodeCoordinator.ShardFull(shardId)
-          throw new Exception(s"Overfull OIDAllocator $shardId")
-        }
-        
+      if (current == Int.MaxValue) {
+        // Emergency! At this point we just need to fall over.
+        context.parent ! QuerkiNodeCoordinator.ShardFull(shardId)
+        throw new Exception(s"Overfull OIDAllocator $shardId")
+      }
+
+      def giveOID() = {        
         val oid = OID(shardId, current)
         sender ! NewOID(oid)        
         current += 1
@@ -98,7 +103,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
       if (current >= availableThrough) {
         // We've used up the current allocation, so allocate more:
         persist(Alloc(allocBlockSize)) { msg =>
-          availableThrough += allocBlockSize
+          updateAvailable(allocBlockSize)
           giveOID()
           countToSnapshot()
         }
