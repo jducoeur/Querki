@@ -36,18 +36,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   
   lazy val clusterSize = Config.getInt("querki.cluster.size")
   // Quorum is at least half of the cluster size:
-  // TBD: is this over-complicated? Can I rely on Integer math to always produce the
-  // floor, and then add 1?
-  lazy val quorum = {
-    val isEven = (clusterSize % 2) == 0
-    val halfSize = clusterSize.toDouble / 2.toDouble
-    if (isEven)
-      // It's an even number, so quorum is *more* than half:
-      halfSize.toInt + 1
-    else
-      // Not an even number, so just round up
-      halfSize.ceil.toInt
-  }
+  lazy val quorum = (clusterSize / 2) + 1
   
   var _shardId:Option[ShardId] = None
   def shardId = _shardId.get
