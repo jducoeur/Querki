@@ -44,8 +44,8 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   var _allocator:Option[ActorRef] = None
   def allocator = _allocator.get
   
-  def requestShardId():Unit = {
-    val reqM = ClusterPrivate.nodeCoordinator.request(AssignShard()) onComplete
+  def requestShardId(msg:Any):Unit = {
+    val reqM = ClusterPrivate.nodeCoordinator.request(msg) onComplete
     {
       case Success(ShardAssignment(id)) => {
         _shardId = Some(id)
@@ -62,7 +62,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
         // QuerkiNodeManager tends to ask for its shard before the Coordinator singleton has been
         // fully created, and the ClusterSingleton mechanism appears to just drop the request on the floor.
         QLog.warn(s"QuerkiNodeManager: AssignShard timed out; trying again")
-        requestShardId()
+        requestShardId(msg)
       }
       
       case other => {
@@ -76,7 +76,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     selfUniqueAddress
     Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
     // TODO: turn this back on
-//    requestShardId()
+//    requestShardId(AssignShard())
   }
 
   lazy val selfUniqueAddress = Cluster(context.system).selfUniqueAddress
@@ -170,11 +170,12 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
         // The OIDAllocator is reporting that it is full, so we need to obtain a new Shard ID.
         // This will result in a new ShardAssignment. In the meantime, go back to stashing until
         // we have that:
-        ClusterPrivate.nodeCoordinator ! msg
         allocator ! OIDAllocator.Shutdown
         _allocator = None
         _shardId = None
-        requestShardId()
+        // Note that we are actually sending a ShardFull here; once that is complete, it should
+        // kick off the reassignment and hand us a new ShardId:
+        requestShardId(msg)
       }
     }
     

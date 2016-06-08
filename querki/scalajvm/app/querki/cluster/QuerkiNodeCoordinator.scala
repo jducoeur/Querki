@@ -10,6 +10,8 @@ import akka.persistence._
 import scala.concurrent.duration._
 import akka.util.Timeout
 
+import org.querki.requester._
+
 import querki.globals._
 
 /**
@@ -34,7 +36,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMember {
+class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester with EcologyMember {
   
   import QuerkiNodeCoordinator._
   
@@ -89,10 +91,12 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMembe
     }
   }
   
-  def unassign(path:ActorPath) = {
+  def unassign(path:ActorPath, reassign:Boolean) = {
     shardAssignments.get(path) map { shardId =>
       persist(ShardUnassigned(path, shardId)) { msg =>
         doUnassign(path, shardId)
+        if (reassign)
+          makeAssignment()
       }
     }
   }
@@ -106,7 +110,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMembe
       val sel = context.actorSelection(path)
       // relookupTimeout doesn't have to be aggressive, since we're willing to let the
       // Shard namespace be a little sparse:
-      sel.ask(Identify(assignment))(relookupTimeout) onComplete {
+      sel.request(Identify(assignment)) onComplete {
         case Failure(ex) => {
           // We can't seem to find it, so give up on the assignment
           doUnassign(path, assignment)
@@ -150,14 +154,15 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with EcologyMembe
     }
 
     case ShardFull(shardId) => {
-      unassign(sender.path)
       persist(ShardUnavailable(shardId)) { msg =>
         fullShards += shardId
       }
+      // After we unassign, we should assign a new one immediately:
+      unassign(sender.path, true)
     }
     
     case Terminated(nodeRef) => {
-      unassign(nodeRef.path)
+      unassign(nodeRef.path, false)
     }
     
     case Stop => {

@@ -4,6 +4,8 @@ import akka.actor._
 import akka.pattern._
 import akka.persistence._
 
+import org.querki.requester._
+
 import models.OID
 
 import querki.globals._
@@ -23,7 +25,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with EcologyMember {
+class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requester with EcologyMember {
   import OIDAllocator._
   
   implicit val ecology = e
@@ -68,7 +70,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
       // Give up on shutting down cleanly, and just die...
       throw new Exception(s"OIDAllocator $shardId unable to send ShardFull! Dying...")
     
-    context.parent.ask(QuerkiNodeCoordinator.ShardFull(shardId))(defaultTimeout) map {
+    context.parent.request(QuerkiNodeCoordinator.ShardFull(shardId)) map {
       case Shutdown => context.stop(self)
       case _ => sendFull(n + 1)
     }    
@@ -88,6 +90,8 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
         current += 1
         
         if (current == shardFullMark) {
+          // Time to begin shutting down this shard...
+          sendFull(0)
         }
       }
       
