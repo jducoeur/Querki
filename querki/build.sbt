@@ -36,9 +36,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
-      "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
+      "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
       "com.lihaoyi" %% "utest" % "0.3.1",
-      "org.querki" %% "requester" % "2.2",
+      "org.querki" %% "requester" % "2.3",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
@@ -89,10 +89,12 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" minified "jquery-ui-1.10.0.custom.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.manifest.js" minified "jquery.manifest.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" minified "jquery.ui.touch-punch.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
-  jsDependencies += "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.js" minified "bootstrap.min.js" dependsOn "jquery.js",
+  jsDependencies += "org.webjars" % "bootstrap" % "3.3.6" / "bootstrap.js" minified "bootstrap.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.raty.js" minified "jquery.raty.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
+
+  jsDependencies += "org.webjars" % "bootstrap-datepicker" % "1.6.1" / "bootstrap-datepicker.js" minified "bootstrap-datepicker.min.js" dependsOn "bootstrap.js",
 
   jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
   jsDependencies += ProvidedJS / "canvas-to-blob.min.js" dependsOn "load-image.min.js",
@@ -109,11 +111,11 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-    "org.querki" %%% "querki-jsext" % "0.6",
-    "org.querki" %%% "jquery-facade" % "1.0-RC3",
-    "org.querki" %%% "bootstrap-datepicker-facade" % "0.5",
+    "org.querki" %%% "querki-jsext" % "0.7",
+    "org.querki" %%% "jquery-facade" % "1.0-RC6",
+    "org.querki" %%% "bootstrap-datepicker-facade" % "0.7",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0",
-    "org.querki" %%% "jstree-facade" % "0.2"
+    "org.querki" %%% "jstree-facade" % "0.4"
   )).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).
   dependsOn(querkiSharedJs)
@@ -145,10 +147,10 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.2.7",
   "com.lihaoyi" %%% "scalarx" % "0.2.8",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
-  "com.lihaoyi" %%% "scalatags" % "0.5.2",
+  "com.lihaoyi" %%% "scalatags" % "0.5.5",
   "com.lihaoyi" %%% "fastparse" % "0.2.1",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-  "org.querki" %%% "shocon" % "0.2"
+  "org.querki" %%% "shocon" % "0.3"
 ))
 
 // utst -- run the Unit Tests:
