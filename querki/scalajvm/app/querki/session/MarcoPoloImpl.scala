@@ -78,7 +78,9 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
     }
     
     thingsFiltered.map { t =>
-      t.nameOrComputed.map { name => 
+      // IMPORTANT: note the use of unsafe here! Escaping happens client-side in this case, because
+      // we are doing more than just displaying it in HTML.
+      t.unsafeNameOrComputed.map { name => 
         if (name.toLowerCase().contains(lowerQ))
           Some(MarcoPoloItem(name, t.id.toThingId))
         else
