@@ -20,7 +20,13 @@ class HistogramGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLTableElem
     
     val labels = dl.find("dt").mapElems($(_).text())
     val scores = dl.find("dd").mapElems(e => Integer.parseInt($(e).text()))
-    val maxScore = scores.max
+    val maxScore =
+      // Seq[T].max apparently does *not* automatically use the Zero if empty; rather, it
+      // would throw an Exception. So we need to guard against that.
+      if (scores.isEmpty)
+        0
+      else
+        scores.max
     val scale =
       if (maxScore == 0)
         0
