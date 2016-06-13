@@ -82,6 +82,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           $(elem).addClass("open")
           setIcon(closeicon)
           Gadgets.hookPendingGadgets()
+          updatePage()
         }
         
         thingIdOpt match {
@@ -97,6 +98,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           targetJQ.hide()
           $(elem).removeClass("open")
           setIcon(openicon)
+          updatePage()
         }
       } else if ($(elem).hasClass("running")) {
         // Query in progress -- don't do anything

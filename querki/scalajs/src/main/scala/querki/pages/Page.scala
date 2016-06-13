@@ -160,9 +160,12 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
   private def reindex(e:dom.Element, from:Int):Int = {
     var i = from
     
-    if (canFocus(e)) {
+    if (canFocus(e) &&
+        // Omit things that should explicitly not be in the tab order:
+        !($(e).data("notab").toOption == Some(true))) 
+    {
       $(e).attr("tabindex", i)
-      i = i + 1        
+      i = i + 1
     }
     
     $(e).children().foreach { child =>

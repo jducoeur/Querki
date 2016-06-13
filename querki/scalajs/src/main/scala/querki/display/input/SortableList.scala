@@ -68,7 +68,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     })
   }
   
-  def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit) = {
+  def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit):JQuery = {
     val btn = $(buttonElem)
     btn.addClass("btn")
     btn.attr("title", tit)
@@ -78,7 +78,8 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   }
   
   def setupDeleteButton(buttonElem:dom.Element) = {
-    setupButton(buttonElem, "glyphicon glyphicon-remove-sign", "Delete Item", handleDeleteListItem) 
+    val deleteButton = setupButton(buttonElem, "glyphicon glyphicon-remove-sign", "Delete Item", handleDeleteListItem)
+    deleteButton.data("notab", true)
   }
   
   def handleDeleteListItem(evt:JQueryEventObject) = {
@@ -86,6 +87,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     val i = index(targetLi.get(0).get)
     targetLi.remove()
     numberItems()
+    updatePage()
     saveChange({ path => DeleteListItem(path, i) })
   }
   
@@ -123,6 +125,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     fixupLI(newLiElem)
     $(elem).append(newLiElem)
   	numberItems()
+  	updatePage()
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
     Gadgets.createGadgets(newLiElem)
@@ -169,6 +172,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
         val newIndex = sortList.children("li").index(item)
         saveChange({ path => MoveListItem(path, oldIndex, newIndex) })
         numberItems()
+        updatePage()
       }:js.Function2[JQueryEventObject, SortChangeUI, Any]
     ))
   }
