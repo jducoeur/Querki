@@ -43,6 +43,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "org.querki" %% "requester" % "2.3",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
+      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.1",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
       // TEMP: until we have persistence up and running, we need this in order to
       // help Cluster Sharding work. Note there are corresponding entries in .conf:
