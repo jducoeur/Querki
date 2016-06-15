@@ -1,6 +1,7 @@
 package querki.system
 
 import com.esotericsoftware.kryo._
+import serializers.TaggedFieldSerializer
 
 import querki.globals._
 
@@ -17,6 +18,25 @@ import querki.globals._
  */
 class KryoInit {
   def customize(kryo:Kryo):Unit = {
-    kryo.setDefaultSerializer(classOf[serializers.TaggedFieldSerializer[_]])
+    
+    QLog.spew(s"Customizing a Kryo instance...")
+    KryoInit._msgDecls.map { decls =>
+      QLog.spew(s"... registering message declarations...")
+      decls.foreach { case (clazz, id) =>
+        QLog.spew(s"    ${clazz.getCanonicalName} = $id")
+        kryo.register(clazz, new serializers.TaggedFieldSerializer(kryo, clazz), id)
+      }
+    }
+    QLog.spew(s"... done customizing.")
+    
+    // TODO: once Kryo 3.0.4 is released, figure out how to leverage
+    // TaggedFieldSerializer.setIgnoreUnknownTags(true) -- this should give
+    // us rudimentary forward compatibility. That probably doesn't matter
+    // much for persistence, but will be useful if we ever use Kryo for network
+    // serialization in a rolling-upgrades scenario.
   }
+}
+
+object KryoInit {
+  var _msgDecls:Option[Seq[(Class[_], Int)]] = None
 }

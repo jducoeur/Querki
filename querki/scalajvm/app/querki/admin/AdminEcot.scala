@@ -62,7 +62,8 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       createActorCb,
       AdminMonitor.actorProps(ecology),
       "MonitorManager",
-      "MonitorProxy"
+      "MonitorProxy",
+      PoisonPill
     )
     _monitorManager = mgr
     _monitorProxy = proxy

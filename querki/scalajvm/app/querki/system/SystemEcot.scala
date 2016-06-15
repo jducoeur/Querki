@@ -50,7 +50,7 @@ trait SystemManagement extends EcologyInterface {
   /**
    * Sets up a Cluster Singleton. (Which will be stubbed if we're in a unit-test environment.)
    */
-  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef])
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String, terminationMsg:Any):(Option[ActorRef], Option[ActorRef])
 }
 
 object SystemMOIDs extends EcotIds(18)
@@ -140,12 +140,12 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     cluster.selfAddress.toString
   }
   
-  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef]) = {
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String, terminationMsg:Any):(Option[ActorRef], Option[ActorRef]) = {
     actorSystemOpt match {
       case Some(system) => {
         val manager = createActorCb(ClusterSingletonManager.props(
             props,
-            PoisonPill,
+            terminationMsg,
             ClusterSingletonManagerSettings(system)
           ),
           singletonName)

@@ -107,6 +107,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
       doAssign(path, assignment)
       
       // ... then figure out whether it's still real:
+      QLog.spew(s"Trying to check reservation for $path")
       val sel = context.actorSelection(path)
       // relookupTimeout doesn't have to be aggressive, since we're willing to let the
       // Shard namespace be a little sparse:
@@ -206,20 +207,20 @@ object QuerkiNodeCoordinator {
   /**
    * Assignment of a ShardId to this Node.
    */
-  case class ShardAssigned(nodePath:ActorPath, shard:ShardId)
+  case class ShardAssigned(@KryoTag(1) nodePath:ActorPath, @KryoTag(2) shard:ShardId) extends UseKryo
   
   /**
    * This Shard is now available.
    */
-  case class ShardUnassigned(nodePath:ActorPath, shard:ShardId)
+  case class ShardUnassigned(@KryoTag(1) nodePath:ActorPath, @KryoTag(2) shard:ShardId) extends UseKryo
   
   /**
    * This Shard is now permanently unavailable.
    */
-  case class ShardUnavailable(shard:ShardId)
+  case class ShardUnavailable(@KryoTag(1) shard:ShardId) extends UseKryo
   
   /**
    * The periodic snapshot of the assignment state, to make cluster startup faster.
    */
-  case class ShardSnapshot(fullShards:Set[ShardId], shardAssignments:Map[ActorPath, ShardId])
+  case class ShardSnapshot(@KryoTag(1) fullShards:Set[ShardId], @KryoTag(2) shardAssignments:Map[ActorPath, ShardId]) extends UseKryo
 }

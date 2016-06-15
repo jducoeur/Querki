@@ -143,10 +143,10 @@ object OIDAllocator {
   /**
    * Persistent message: allocate a block of n OIDs in this Shard.
    */
-  private case class Alloc(n:Int)
+  case class Alloc(@KryoTag(1) val n:Int) extends UseKryo
   
   /**
    * State of the Allocator, for snapshotting. 
    */
-  private case class AllocState(availableThrough:Int)
+  case class AllocState(@KryoTag(1) availableThrough:Int) extends UseKryo
 }

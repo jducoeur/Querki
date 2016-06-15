@@ -118,6 +118,17 @@ trait EcotImpl extends Ecot {
    * the overall ActorSystem properly.
    */
   def createActors(createActorCb:CreateActorFunc):Unit = {}
+  
+  /**
+   * Ecots should override this in order to declare their persisted messages. Use the
+   * persist() convenience function to declare them.
+   * 
+   * Note that this is *required* for any persisted messages, which should also be marked
+   * as UseKryo!
+   */
+  def persistentMessages:(Short, Seq[(Class[_], Short)]) = (-1, Seq.empty)
+  
+  protected def persist(ecotId:Short, decls:(Class[_], Short)*) = (ecotId, decls)
 }
 
 class EcologyImpl(val playApp:Option[play.api.Application]) 
@@ -125,6 +136,7 @@ class EcologyImpl(val playApp:Option[play.api.Application])
 {
   def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
     val finalState = init(initialSpaceState) { state =>
+      collectPersistence()
       initializeActors(createActorCb)
       state
     }
@@ -133,6 +145,21 @@ class EcologyImpl(val playApp:Option[play.api.Application])
   
   private def initializeActors(createActorCb:CreateActorFunc) = {
     _initializedEcots.foreach(_.createActors(createActorCb))
+  }
+  
+  private def collectPersistence() = {
+    val msgs = (Seq.empty[(Class[_], Int)] /: _initializedEcots) { (msgs, ecot) =>
+      val (ecotId, ecotMsgs) = ecot.persistentMessages
+      if (ecotId == -1)
+        msgs
+      else {
+        val adjusted = ecotMsgs.map { case (clazz, msgId) => (clazz, (ecotId << 16) + msgId) }
+        msgs ++ adjusted
+      }
+    }
+    
+    // HACK: workaround to get this list through to KryoInit:
+    querki.system.KryoInit._msgDecls = Some(msgs)
   }
   
   /**

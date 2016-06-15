@@ -104,14 +104,15 @@ package object globals {
   def fut[T] = Future.successful[T] _
   
   /**
-   * Public marker trait, which all top-level persistence classes should use in order to
-   * be serialized properly. 
+   * In all UseKryo types *and* anything referenced by them that will be persisted, you *must*
+   * set @KryoTag on *all* fields to be persisted!
    * 
-   * Note that these classes, and all of their referenced classes, must use @Tag on all fields
-   * to be serialized! Yes, this is a hassle, but it's necessary in order to get schema
-   * evolution. (And the alternative is protobuf, which has the same problem but externally.)
+   * @KryoTag takes one Int parameter, which is the permanent ID of this field within this type.
+   * Start with 1 and increment from there. *NEVER* change this, *NEVER* reuse numbers, and for
+   * the time being (at least until Kryo 3.0.4) *NEVER* delete a field!
    * 
-   * This must be explicitly Serializable, so that it is unambiguously "more specific" than that.
+   * Note that, in order to make this work right, we need to meta-annotate this so that the
+   * compiler knows how to use it.
    */
-  trait UseKryo extends java.io.Serializable
+  type KryoTag = com.esotericsoftware.kryo.serializers.TaggedFieldSerializer.Tag @scala.annotation.meta.field
 }

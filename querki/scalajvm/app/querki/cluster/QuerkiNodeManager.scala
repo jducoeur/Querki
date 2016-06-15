@@ -75,8 +75,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     // While we're inside of a context, make sure we have our own address:
     selfUniqueAddress
     Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
-    // TODO: turn this back on
-//    requestShardId(AssignShard())
+    requestShardId(AssignShard())
   }
 
   lazy val selfUniqueAddress = Cluster(context.system).selfUniqueAddress
