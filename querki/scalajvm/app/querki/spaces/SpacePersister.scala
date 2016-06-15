@@ -243,8 +243,8 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      // Going back to the old way of doing things, until Akka Persistence is more reliable:
       QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
+      // Going back to the old way of doing things, until Akka Persistence is more reliable:
 //      {
 //        val thingId = OID.next(ShardKind.User)
         QDB(ShardKind.User) { implicit conn =>

@@ -1,7 +1,8 @@
-package querki.system
+package querki.persistence
+
+import akka.actor.{ChildActorPath, ExtendedActorSystem}
 
 import com.esotericsoftware.kryo._
-import serializers.TaggedFieldSerializer
 
 import querki.globals._
 
@@ -20,6 +21,15 @@ class KryoInit {
   def customize(kryo:Kryo):Unit = {
     
     QLog.spew(s"Customizing a Kryo instance...")
+    
+    // First, register the standard Scala and Akka types that we sometimes need. Note that these
+    // are all being registered as, effectively, EcotId 0:
+    KryoInit._actorSystem.map { actorSystem =>
+      kryo.register(classOf[ChildActorPath], new ChildActorPathSerializer(actorSystem), 100)
+    }
+    
+    // Then, register the actual application messages, which have been declared in 
+    // their Ecots, so their ids reflect the Ecot they come from:
     KryoInit._msgDecls.map { decls =>
       QLog.spew(s"... registering message declarations...")
       decls.foreach { case (clazz, id) =>
@@ -37,6 +47,10 @@ class KryoInit {
   }
 }
 
+/**
+ * Static kludges to make Kryo initialization work.
+ */
 object KryoInit {
   var _msgDecls:Option[Seq[(Class[_], Int)]] = None
+  var _actorSystem:Option[ExtendedActorSystem] = None
 }

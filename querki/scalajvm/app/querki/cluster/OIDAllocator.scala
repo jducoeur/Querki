@@ -9,6 +9,7 @@ import org.querki.requester._
 import models.OID
 
 import querki.globals._
+import querki.persistence._
 
 /**
  * Actor that actually doles OIDs out on request. There should be exactly one of these on

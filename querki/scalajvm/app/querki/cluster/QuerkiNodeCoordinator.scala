@@ -13,6 +13,7 @@ import akka.util.Timeout
 import org.querki.requester._
 
 import querki.globals._
+import querki.persistence._
 
 /**
  * The central gatekeeper for Querki's "shards".

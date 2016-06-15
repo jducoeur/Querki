@@ -1,4 +1,4 @@
-package querki.globals
+package querki.persistence
 
 /**
  * Public marker trait, which all top-level persistence classes should use in order to
