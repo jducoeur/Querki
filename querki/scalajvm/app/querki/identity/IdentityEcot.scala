@@ -108,7 +108,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   }
   
   def getIdentity(handle:String):Future[Option[PublicIdentity]] = {
-    val fut = userCache ? GetUserByHandle(handle)
+    val fut = userCache askRetry GetUserByHandle(handle)
     fut map {
       case UserFound(user) => {
         user.identityByHandle(handle)
@@ -155,7 +155,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   def userFromSession(request:RequestHeader):Future[Option[User]] = {
     request.session.get(Security.username) match {
       case Some(username) => {
-        val fut = userCache ? GetUserByHandle(username)
+        val fut = userCache askRetry GetUserByHandle(username)
         fut map {
           case UserFound(user) => Some(user)
           case _ => None
