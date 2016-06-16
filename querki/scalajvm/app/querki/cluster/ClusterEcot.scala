@@ -60,18 +60,6 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
       QuerkiNodeCoordinator.Stop)
       
     _nodeCoordinator = proxy
-//    createActorCb(ClusterSingletonManager.props(
-//        QuerkiNodeCoordinator.actorProps(ecology),
-//        QuerkiNodeCoordinator.Stop,
-//        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
-//      ),
-//      singletonName)
-//      
-//    _nodeCoordinator = createActorCb(ClusterSingletonProxy.props(
-//          coordinatorPath,
-//          ClusterSingletonProxySettings(SystemManagement.actorSystem)), 
-//        "querkiNodeCoordinatorProxy")
-//        
     _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
   }
 }
