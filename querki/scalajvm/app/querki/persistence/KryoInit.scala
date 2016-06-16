@@ -25,6 +25,7 @@ class KryoInit {
     // First, register the standard Scala and Akka types that we sometimes need. Note that these
     // are all being registered as, effectively, EcotId 0:
     KryoInit._actorSystem.map { actorSystem =>
+      akka.actor.AkkaHack.setupPrivateSerializers(kryo, actorSystem)
       kryo.register(classOf[ChildActorPath], new ChildActorPathSerializer(actorSystem), 100)
     }
     

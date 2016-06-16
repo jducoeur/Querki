@@ -56,31 +56,39 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
    */
   private var fullShards = Set[ShardId](0, 1, 2, 3)
   /**
-   * Which Shard each Node currently owns.
+   * Which Shard each Node currently owns. This map is intentionally by ActorPath, since
+   * there should be only one assignment per Node. We don't want to stack up lots of
+   * assignments to different ActorRefs that correspond to the same ActorPath.
    */
   private var shardAssignments = Map.empty[ActorPath, ShardId]
   
-  def doAssign(path:ActorPath, shardId:ShardId):ShardId = {
-    shardAssignments += (path -> shardId)
+  def doAssign(ref:ActorRef, shardId:ShardId):ShardId = {
+    QLog.spew(s"Assigning shard $shardId to node ${ref.path}")
+    shardAssignments += (ref.path -> shardId)
     shardId    
   }
   
-  def doUnassign(path:ActorPath, shardId:ShardId) = {
+  def doUnassign(path:ActorPath) = {
+    QLog.spew(s"Removing shard assignment from node $path")
     shardAssignments -= path
   }
   
-  def assignShard():ShardId = {
+  def assignShard(ref:ActorRef):ShardId = {
     val resultOpt = 
       (0 until Int.MaxValue) 
       .find { n => !fullShards.contains(n) && !shardAssignments.values.toSeq.contains(n) } 
-      .map { shardId:ShardId => doAssign(sender.path, shardId) }
+      .map { shardId:ShardId => doAssign(ref, shardId) }
     
     resultOpt.getOrElse(throw new Exception("EMERGENCY: Querki is out of Shards! How is this possible?"))
   }
   
-  def makeAssignment() = {
-    val assignment = assignShard()
-    persist(ShardAssigned(sender.path, assignment)) { msg =>
+  def makeAssignment(ref:ActorRef) = {
+    // If we already have an entry, it is by definition stale since the Node
+    // is asking for a new one:
+    doUnassign(ref.path)
+    
+    val assignment = assignShard(ref)
+    persist(ShardAssigned(ref, assignment)) { msg =>
       sender ! ShardAssignment(assignment)
     }
     
@@ -92,51 +100,25 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     }
   }
   
-  def unassign(path:ActorPath, reassign:Boolean) = {
-    shardAssignments.get(path) map { shardId =>
-      persist(ShardUnassigned(path, shardId)) { msg =>
-        doUnassign(path, shardId)
+  def unassign(ref:ActorRef, reassign:Boolean) = {
+    shardAssignments.get(ref.path) map { shardId =>
+      persist(ShardUnassigned(ref, shardId)) { msg =>
+        doUnassign(ref.path)
         if (reassign)
-          makeAssignment()
+          makeAssignment(ref)
       }
     }
   }
   
   val receiveRecover:Receive = {
-    case ShardAssigned(path, assignment) => {
-      // We pre-emptively reserve the Shard...
-      doAssign(path, assignment)
-      
-      // ... then figure out whether it's still real:
-      QLog.spew(s"Trying to check reservation for $path")
-      val sel = context.actorSelection(path)
-      // relookupTimeout doesn't have to be aggressive, since we're willing to let the
-      // Shard namespace be a little sparse:
-      sel.request(Identify(assignment)) onComplete {
-        case Failure(ex) => {
-          // We can't seem to find it, so give up on the assignment
-          doUnassign(path, assignment)
-        }
-
-        case Success(ActorIdentity(_, refOpt)) => {
-          refOpt match {
-            case Some(ref) => {
-              // We're set, so start watching that Shard
-              context.watch(ref)
-            }
-            case None => {
-              // Positive failure to find that path
-              doUnassign(path, assignment)
-            }
-          }
-        }
-        
-        case other => QLog.error(s"QuerkiNodeCoordinator got unexpected response from Identify: $other")
-      }
+    case ShardAssigned(ref, assignment) => {
+      // We pre-emptively reserve the Shard, and will sanity-check whether that's real on
+      // RecoveryCompleted:
+      doAssign(ref, assignment)
     }
     
-    case ShardUnassigned(path, shardId) => {
-      doUnassign(path, shardId)
+    case ShardUnassigned(ref, shardId) => {
+      doUnassign(ref.path)
     }
     
     case ShardUnavailable(shardId) => {
@@ -147,24 +129,48 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
       fullShards = f
       shardAssignments = s
     }
+    
+    case RecoveryCompleted => {
+      // Okay -- now let's take a look at our assignments and see if they make sense:
+      shardAssignments.foreach { case (path, id) =>
+        context.system.actorSelection(path).request(CheckShardAssignment(id)) onComplete {
+          // Didn't get through to the Node:
+          case Failure(ex) => doUnassign(path)
+          
+          // This assignment is still active:
+          case Success(ConfirmShardAssignment(ref)) => context.watch(ref)
+          
+          // Found the node, but that's not the right assignment:
+          case Success(RefuteShardAssignment) => {
+            // This one's subtle because of potential races -- only unassign if that's *still*
+            // the assignment. If not, it probably restarted and got a new assignment while this
+            // was out there:
+            if (shardAssignments.get(path) == Some(id))
+              doUnassign(path)
+          }
+          
+          case other => QLog.error(s"QuerkiNodeCoordinator.RecoveryCompleted, checking Shard Assignments, got unexpected response $other")
+        }
+      }
+    }
   }
   
   val receiveCommand:Receive = LoggingReceive {
-    case AssignShard() => {
-      context.watch(sender)
-      makeAssignment()
+    case AssignShard(nodeRef) => {
+      context.watch(nodeRef)
+      makeAssignment(nodeRef)
     }
 
-    case ShardFull(shardId) => {
+    case ShardFull(shardId, nodeRef) => {
       persist(ShardUnavailable(shardId)) { msg =>
         fullShards += shardId
       }
       // After we unassign, we should assign a new one immediately:
-      unassign(sender.path, true)
+      unassign(nodeRef, true)
     }
     
     case Terminated(nodeRef) => {
-      unassign(nodeRef.path, false)
+      unassign(nodeRef, false)
     }
     
     case Stop => {
@@ -182,7 +188,7 @@ object QuerkiNodeCoordinator {
   /**
    * Sent from a NodeManager, asking the QuerkiNodeCoordinator to give it an available shard ID.
    */
-  case class AssignShard()
+  case class AssignShard(node:ActorRef)
   /**
    * Response from AssignShard -- this is the ID for the requesting Node to use.
    */
@@ -191,7 +197,14 @@ object QuerkiNodeCoordinator {
   /**
    * Sent by a NodeManager, to say that this Shard is exhausted. Response is a fresh ShardId.
    */
-  case class ShardFull(shard:ShardId)
+  case class ShardFull(shard:ShardId, node:ActorRef)
+  
+  /**
+   * Sent by the Coordinator when it is recovering, to check its understanding of the world.
+   */
+  case class CheckShardAssignment(shard:ShardId)
+  case class ConfirmShardAssignment(ref:ActorRef)
+  case object RefuteShardAssignment
   
   ///////////////////////
   //
@@ -208,12 +221,12 @@ object QuerkiNodeCoordinator {
   /**
    * Assignment of a ShardId to this Node.
    */
-  case class ShardAssigned(@KryoTag(1) nodePath:ActorPath, @KryoTag(2) shard:ShardId) extends UseKryo
+  case class ShardAssigned(@KryoTag(1) nodePath:ActorRef, @KryoTag(2) shard:ShardId) extends UseKryo
   
   /**
    * This Shard is now available.
    */
-  case class ShardUnassigned(@KryoTag(1) nodePath:ActorPath, @KryoTag(2) shard:ShardId) extends UseKryo
+  case class ShardUnassigned(@KryoTag(1) nodePath:ActorRef, @KryoTag(2) shard:ShardId) extends UseKryo
   
   /**
    * This Shard is now permanently unavailable.

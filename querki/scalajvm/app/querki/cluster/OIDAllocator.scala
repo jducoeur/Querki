@@ -68,6 +68,10 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
       current = availableThrough
     }
     
+    case RecoveryCompleted => {
+      // We don't currently need to do anything at the end of recovery
+    }
+    
     case other => QLog.error(s"OIDAllocator got unexpected message $other")
   }
   
@@ -76,7 +80,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
       // Give up on shutting down cleanly, and just die...
       throw new Exception(s"OIDAllocator $shardId unable to send ShardFull! Dying...")
     
-    context.parent.request(QuerkiNodeCoordinator.ShardFull(shardId)) map {
+    context.parent.request(QuerkiNodeCoordinator.ShardFull(shardId, self)) map {
       case Shutdown => context.stop(self)
       case _ => sendFull(n + 1)
     }    
@@ -86,7 +90,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
     case NextOID => {
       if (current == Int.MaxValue) {
         // Emergency! At this point we just need to fall over.
-        context.parent ! QuerkiNodeCoordinator.ShardFull(shardId)
+        context.parent ! QuerkiNodeCoordinator.ShardFull(shardId, self)
         throw new Exception(s"Overfull OIDAllocator $shardId")
       }
 

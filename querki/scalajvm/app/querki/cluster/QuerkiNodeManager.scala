@@ -75,7 +75,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     // While we're inside of a context, make sure we have our own address:
     selfUniqueAddress
     Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
-    requestShardId(AssignShard())
+    requestShardId(AssignShard(self))
   }
 
   lazy val selfUniqueAddress = Cluster(context.system).selfUniqueAddress
@@ -163,7 +163,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
       }
     }
     
-    case msg @ ShardFull(id) => {
+    case msg @ ShardFull(id, _) => {
       // If the ID doesn't match the current one, this message is probably out of date:
       if (id == shardId) {
         // The OIDAllocator is reporting that it is full, so we need to obtain a new Shard ID.
@@ -173,8 +173,20 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
         _allocator = None
         _shardId = None
         // Note that we are actually sending a ShardFull here; once that is complete, it should
-        // kick off the reassignment and hand us a new ShardId:
-        requestShardId(msg)
+        // kick off the reassignment and hand us a new ShardId. Also, note that we substitute our
+        // own ActorRef into here, since this Manager is what the Coordinator really thinks in
+        // terms of:
+        requestShardId(msg.copy(node = self))
+      }
+    }
+    
+    // The Coordinator apparently restarted, and is sounding us out about the actual state
+    // of the world:
+    case CheckShardAssignment(id) => {
+      if (_shardId.map(_ == id).getOrElse(false)) {
+        sender ! ConfirmShardAssignment(self)
+      } else {
+        sender ! RefuteShardAssignment
       }
     }
     

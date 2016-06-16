@@ -16,17 +16,16 @@ import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
 import querki.cluster.OIDAllocator._
-import querki.ecology._
-import querki.time._
-import querki.time.TimeAnorm._
-
 import querki.db._
 import ShardKind._
+import querki.ecology._
 import querki.evolutions.Evolutions
+import querki.globals._
 import querki.identity.{User}
+import querki.time._
+import querki.time.TimeAnorm._
 import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
-import querki.util._
 import querki.util.SqlHelpers.{oid => oidParser, _}
 
 import PersistMessages._
@@ -66,6 +65,10 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Types = interface[querki.types.Types]
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  
+  // For the moment, new-style object creation is only turned on if it says so in config. This is
+  // so that we can conduct lower-risk experiments in production before turning it on.
+  lazy val newObjCreate = Config.getBoolean("querki.cluster.newObjCreate", false)
 
   // The OID of the Space, based on the sid
   def oid = Space.oid _
@@ -243,10 +246,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
-      // Going back to the old way of doing things, until Akka Persistence is more reliable:
-//      {
-//        val thingId = OID.next(ShardKind.User)
+      allocThingId() map { thingId =>
         QDB(ShardKind.User) { implicit conn =>
           // TODO: add a history record
           SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
@@ -254,6 +254,16 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
         sender ! Changed(thingId, modTime)
       }
     }
+  }
+  
+  // TEMP: while we're transitioning to the new Akka Persistence world, we have both OID-creation
+  // approaches in the code. Once we're confident that it's all working right, remove the
+  // OID.next version, and maybe just move the QuerkiCluster call back inline again:
+  def allocThingId():RequestM[OID] = {
+    if (newObjCreate)
+      QuerkiCluster.oidAllocator.request(NextOID).map { case NewOID(thingId) => thingId }
+    else
+      RequestM.successful(OID.next(ShardKind.User))
   }
 }
 
