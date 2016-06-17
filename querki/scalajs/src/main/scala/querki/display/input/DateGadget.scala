@@ -24,7 +24,7 @@ class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {
       todayHighlight(true).
       todayBtnLinked().
       disableTouchKeyboard(true).
-      orientation(Orientation.Top)
+      orientation(Orientation.Auto)
     // Iff this Date is Optional, show the Clear button:
     val opts = 
       if (isOptional)
