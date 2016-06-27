@@ -77,8 +77,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     if (newDisplayName.length() == 0)
       throw new MiscException("Trying to set an empty Name!")
 
-    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) map { newUser =>
-      ClientApi.userInfo(Some(newUser)).get
+    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) flatMap { newUser =>
+      ClientApi.userInfo(Some(newUser)).map (_.get)
     }
   }
   

@@ -241,9 +241,11 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         result match {
           case Success(user) => {
             // Okay -- user is created, so send out the validation email:
-            Person.sendValidationEmail(rc, EmailAddress(info.email), user) map { _ =>
+            Person.sendValidationEmail(rc, EmailAddress(info.email), user) flatMap { _ =>
               // Email sent, so we're ready to move on:
-              Ok(write(ClientApi.userInfo(Some(user)).get)).withSession(user.toSession:_*)
+              ClientApi.userInfo(Some(user)) map { userInfoOpt =>
+                Ok(write(userInfoOpt.get)).withSession(user.toSession:_*)
+              }
             }
           }
           case Failure(error) => {
@@ -379,7 +381,11 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
       form => {
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
-          case Some(user) => Ok(write(ClientApi.userInfo(Some(user)).get)).withSession(user.toSession:_*)
+          case Some(user) => {
+            ClientApi.userInfo(Some(user)) map { userInfoOpt =>
+              Ok(write(userInfoOpt)).withSession(user.toSession:_*)
+            }
+          }
           case None => Ok("failed")
         }
       }

@@ -10,7 +10,7 @@ trait ThingFunctions {
   /**
    * Fetch the initial info for showing the Client.
    */
-  def getRequestInfo():RequestInfo
+  def getRequestInfo():Future[RequestInfo]
   
   /**
    * Fetch the info for the specified Thing.

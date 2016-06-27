@@ -67,8 +67,9 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
   def index = withUser(false) { rc =>
     rc.requester match {
       case Some(requester) => {
-        val requestInfo = ClientApi.rootRequestInfo(rc)
-        Ok(views.html.client(rc, write(requestInfo), mode))
+        ClientApi.rootRequestInfo(rc).map { requestInfo =>
+          Ok(views.html.client(rc, write(requestInfo), mode))
+        }
       }
       // For the moment, in the not-logged-in case, we still show the old root page:
       case _ => Ok(views.html.index(this, rc))
@@ -79,8 +80,9 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
    * The common way to display the Client at the root level. Used for various root-level pages.
    */
   def showClient = withUser(false) { rc =>
-    val requestInfo = ClientApi.rootRequestInfo(rc)
-    Ok(views.html.client(rc, write(requestInfo), mode))    
+    ClientApi.rootRequestInfo(rc).map { requestInfo =>
+      Ok(views.html.client(rc, write(requestInfo), mode))
+    }
   }
   
   def signup = withUser(false) { rc =>
@@ -91,8 +93,9 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       }
       // The normal case: show the client:
       case _ => {
-        val requestInfo = ClientApi.rootRequestInfo(rc)
-        Ok(views.html.client(rc, write(requestInfo), mode))
+        ClientApi.rootRequestInfo(rc).map { requestInfo =>
+          Ok(views.html.client(rc, write(requestInfo), mode))
+        }
       }
     }
   }
@@ -159,9 +162,10 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       else ApiInvocation.routeRequest(request) {
         case ClientResponse(pickled) => {
           apiTrace(s"    Call to ${req.path} resulted in $pickled")
-          val userInfo = ClientApi.userInfo(prc.requester)
-          val response = ResponseWrapper(userInfo, pickled)
-          Ok(write(response))
+          ClientApi.userInfo(prc.requester).map { userInfo =>
+            val response = ResponseWrapper(userInfo, pickled)
+            Ok(write(response))
+          }
         }
         case ClientError(msg) => {
           apiTrace(s"    Call to ${req.path} resulted in error $msg")

@@ -44,34 +44,33 @@ private [session] class UserSession(val ecology:Ecology) extends Actor
   
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
 
-  /**
-   * The initial receive just handles setup, and then switches to mainReceive once it is ready:
-   */
   def receive = LoggingReceive {
     case msg:GetCollaborators => collaborators.forward(msg)
     
     // We handle UserFunctions, maybe some other APIs down the road:
     case ClientRequest(req, rc) => {
       ApiInvocation.handleSessionRequest(req, mkParams(rc))
-    }    
+    }
+    
+    case FetchUserSessionInfo(uid) => {
+      sender ! UserSessionInfo()
+    }
   }
 }
 
 object UserSessionMessages {
   sealed trait UserSessionMsg {
     def userId:UserId
-    // This is a somewhat clumsy mechanism to deal with the fact that you can't call copy() on a trait.
-    // TODO: this kinda sucks. How can we restructure these to make it suck less?
-    def copyTo(userId:UserId):UserSessionMsg
   }
   
   /**
    * Fetches the people who share Spaces with this Identity.
    */
-  case class GetCollaborators(userId:UserId, identityId:IdentityId, term:String) extends UserSessionMsg {
-    def copyTo(userId:UserId) = copy(userId = userId)    
-  }
+  case class GetCollaborators(userId:UserId, identityId:IdentityId, term:String) extends UserSessionMsg
   case class Collaborators(acs:Iterable[PublicIdentity])
+  
+  case class FetchUserSessionInfo(userId:UserId) extends UserSessionMsg
+  case class UserSessionInfo()
 }
 
 object UserSession {
