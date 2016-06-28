@@ -108,4 +108,9 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   def validateActivationHash(validationStr:String):Future[Boolean] = {
     Person.validateEmail(user, validationStr)
   }
+  
+  def setComplexity(level:TID):Future[TID] = {
+    // TODO:
+    fut(level)
+  }
 }

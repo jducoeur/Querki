@@ -2,6 +2,7 @@ package querki.session
 
 import akka.actor._
 import akka.event.LoggingReceive
+import akka.persistence._
 
 // TEMP: while hacking the timestamps:
 import com.github.nscala_time.time.Imports._
@@ -15,11 +16,12 @@ import models.OID
 import querki.api.{AutowireParams, ClientRequest}
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
+import querki.identity.skilllevel._
 import querki.time.DateTime
 import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
-private [session] class UserSession(val ecology:Ecology) extends Actor
+private [session] class UserSession(val ecology:Ecology) extends PersistentActor
   with Requester with EcologyMember with ClusterTimeoutChild
 {
   import UserSessionMessages._
@@ -32,6 +34,8 @@ private [session] class UserSession(val ecology:Ecology) extends Actor
   
   lazy val userId:OID = OID(self.path.name)
   
+  override def persistenceId = s"user$userId"
+  
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
   override def preStart() = {
@@ -43,8 +47,16 @@ private [session] class UserSession(val ecology:Ecology) extends Actor
   }
   
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
+  
+  val receiveRecover:Receive = {
+    
+    case RecoveryCompleted => {
+      // We don't currently need to do anything at the end of recovery
+    }
+    
+  }
 
-  def receive = LoggingReceive {
+  val receiveCommand:Receive = LoggingReceive {
     case msg:GetCollaborators => collaborators.forward(msg)
     
     // We handle UserFunctions, maybe some other APIs down the road:
@@ -53,7 +65,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor
     }
     
     case FetchUserSessionInfo(uid) => {
-      sender ! UserSessionInfo()
+      sender ! UserSessionInfo(querki.identity.skilllevel.MOIDs.SkillLevelStandardOID)
     }
   }
 }
@@ -70,7 +82,7 @@ object UserSessionMessages {
   case class Collaborators(acs:Iterable[PublicIdentity])
   
   case class FetchUserSessionInfo(userId:UserId) extends UserSessionMsg
-  case class UserSessionInfo()
+  case class UserSessionInfo(skillLevel:SkillLevelId)
 }
 
 object UserSession {

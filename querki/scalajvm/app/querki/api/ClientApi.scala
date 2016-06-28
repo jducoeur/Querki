@@ -124,12 +124,12 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   def userInfo(uopt:Option[User]):Future[Option[UserInfo]] = {
     futOpt(uopt.map { user =>
       implicit val timeout = ActorHelpers.timeout
-      Session.sessionManager askRetry FetchUserSessionInfo(user.id) map { case UserSessionInfo() =>
+      Session.sessionManager askRetry FetchUserSessionInfo(user.id) map { case UserSessionInfo(level) =>
         // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
         val identityInfos = user.identities.map { identity =>
           identityInfo(identity)
         }
-        UserInfo(AsOID(user.id), identityInfos)
+        UserInfo(AsOID(user.id), identityInfos, level)
       }
     })
   }

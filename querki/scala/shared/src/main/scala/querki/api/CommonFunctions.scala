@@ -110,6 +110,12 @@ class StandardThings(h:PassthroughHandlerBase) {
     val public = h.pass("Public")
   }
   
+  object skillLevel {
+    val skillLevelEasy = h.pass("Skill Level Easy")
+    val skillLevelStandard = h.pass("Skill Level Standard")
+    val skillLevelAdvanced = h.pass("Skill Level Advanced")
+  }
+  
   object tags {
     val isReifiedTag = h.pass("_Is Reified Tag")
   }
@@ -123,6 +129,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(apps, core, css, basic, conventions, editing, roles, security, tags, types)
+    Seq(apps, core, css, basic, conventions, editing, roles, security, skillLevel, tags, types)
   }
 }

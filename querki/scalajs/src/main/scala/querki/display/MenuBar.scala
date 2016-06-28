@@ -33,6 +33,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val Print = interface[querki.print.Print]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
@@ -203,6 +204,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       case Some(user) => {
         NavSection(truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
+          NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() })),
           NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
         ), 1900, id="_profile_menu")  
       }

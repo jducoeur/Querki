@@ -15,6 +15,8 @@ package object skilllevel {
     val SkillLevelAdvancedOID = moid(5)
   }
   
+  type SkillLevelId = OID
+  
   trait SkillLevel extends EcologyInterface {  
     def SkillLevelProp:Property[OID, OID]
     

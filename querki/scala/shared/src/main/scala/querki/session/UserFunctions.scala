@@ -2,7 +2,7 @@ package querki.session
 
 import scala.concurrent.Future
 
-import querki.data.{SpaceInfo, UserInfo}
+import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.identity.UserLevel
 
 /**
@@ -50,6 +50,11 @@ trait UserFunctions {
    * the account to full status if so.
    */
   def validateActivationHash(validationStr:String):Future[Boolean]
+  
+  /**
+   * Changes the complexity level preferred by this user.
+   */
+  def setComplexity(level:TID):Future[TID]
 }
 
 object UserFunctions {

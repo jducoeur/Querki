@@ -63,6 +63,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.search.SearchEcot(ecology)
     new querki.photos.PhotosEcot(ecology)
     new querki.print.PrintEcot(ecology)
+    new querki.identity.skilllevel.SkillLevelEcot(ecology)
   }
 
   /**
