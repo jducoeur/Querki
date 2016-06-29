@@ -12,8 +12,6 @@ import querki.ecology._
 import querki.globals._
 import querki.session.UserFunctions
 
-sealed case class ComplexityImpl(name:String, thing:ThingInfo, desc:String) extends Complexity
-
 class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
   def implements = Set(classOf[SkillLevel])
   
@@ -34,6 +32,10 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
     _current.get
   }
   
+  sealed case class ComplexityImpl(name:String, thing:ThingInfo, desc:String) extends Complexity {
+    def selected = { current == this }
+  }
+
   lazy val EasyComplexity = ComplexityImpl(
     "Participant",
     consts.skillLevelEasy,
@@ -84,6 +86,7 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
               for (level <- levels)
                 yield Gadget(
                   tr(
+                    if (level.selected) cls:="success",
                     td(b(level.name)),
                     td(level.desc)
                   ),
