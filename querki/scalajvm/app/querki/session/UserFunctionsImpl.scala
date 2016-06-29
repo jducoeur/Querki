@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import autowire._
 
-import models.ThingId
+import models.{OID, ThingId}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{TID, SpaceInfo, UserInfo}
@@ -32,6 +32,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val spaceManager = SpaceOps.spaceManager
   
   def doRoute(req:Request):Future[String] = route[UserFunctions](this)(req)
+  
+  lazy val sessionActorRef = info.actor.self
   
   implicit def spaceDetails2Info(details:SpaceDetails):SpaceInfo = {
     // TODO: this should probably include the Apps:
@@ -110,7 +112,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def setComplexity(level:TID):Future[TID] = {
-    // TODO:
-    fut(level)
+    sessionActorRef ? UserSessionMessages.SetSkillLevel(OID(level.underlying)) map { 
+      case UserSessionMessages.SkillLevelAck => level
+    }
   }
 }

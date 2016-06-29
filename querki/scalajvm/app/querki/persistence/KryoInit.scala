@@ -27,6 +27,8 @@ class KryoInit {
     KryoInit._actorSystem.map { actorSystem =>
       akka.actor.AkkaHack.setupPrivateSerializers(kryo, actorSystem)
       kryo.register(classOf[ChildActorPath], new ChildActorPathSerializer(actorSystem), 100)
+      // 101 -- AkkaHack: LocalActorRef
+      kryo.register(classOf[models.OID], new OIDSerializer, 102)
     }
     
     // Then, register the actual application messages, which have been declared in 

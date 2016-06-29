@@ -45,6 +45,12 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
         idExtractor, shardResolver)
   }
   
+  override def persistentMessages = persist(47,
+    (classOf[UserSession.UserStateOld] -> 100),
+    (classOf[UserSessionMessages.SetSkillLevel] -> 101),
+    (classOf[UserSession.UserState] -> 102)
+  )
+  
   override def postInit() = {
     // This is the most important API for anonymous usage, so requiresLogin = false
     ApiRegistry.registerApiImplFor[querki.api.ThingFunctions, ThingFunctionsImpl](SpaceOps.spaceRegion, false)
