@@ -82,7 +82,17 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
           table(cls:="table table-hover",
             tbody(
               for (level <- levels)
-                yield new LevelGadget(level, { select(level) })
+                yield Gadget(
+                  tr(
+                    td(b(level.name)),
+                    td(level.desc)
+                  ),
+                  { e => 
+                    $(e).click { evt:JQueryEventObject =>
+                      select(level)
+                    } 
+                  }
+                ) 
             )
           ),
           p("""You can change this at any time, by clicking on your name in the upper right corner of the page.""".stripMargin)
@@ -91,20 +101,5 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
       )
     
     _dialog.show()
-  }
-}
-
-class LevelGadget(level:ComplexityImpl, done: => Unit)(implicit val ecology:Ecology) extends Gadget[dom.html.TableRow] with EcologyMember {
-  def doRender() = {
-    tr(
-      td(b(level.name)),
-      td(level.desc)
-    )    
-  }
-  
-  override def onCreate(e:dom.html.TableRow) = {
-    $(e).click { evt:JQueryEventObject =>
-      done
-    }
   }
 }
