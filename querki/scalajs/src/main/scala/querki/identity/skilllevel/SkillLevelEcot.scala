@@ -32,8 +32,11 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
     _current.get
   }
   
-  sealed case class ComplexityImpl(name:String, thing:ThingInfo, desc:String) extends Complexity {
+  sealed case class ComplexityImpl(name:String, thing:ThingInfo, desc:String, includes:Set[Complexity]) extends Complexity {
     def selected = { current == this }
+    def accepts(actual:Complexity):Boolean = {
+      (actual == this) || (includes.contains(actual)) 
+    }
   }
 
   lazy val EasyComplexity = ComplexityImpl(
@@ -42,19 +45,22 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
     """Appropriate for most people, who want to be able to participate in other peoples' Spaces and
       |create Spaces based on Apps, but don't want to design their own Spaces from scratch. In Participant Mode, Querki
       |keeps the complexity to a minimum while still giving you the tools you need to add and edit data, and
-      |participate in conversations.""".stripMargin)
+      |participate in conversations.""".stripMargin,
+    Set(StandardComplexity, AdvancedComplexity))
   lazy val StandardComplexity = ComplexityImpl(
     "Builder",
     consts.skillLevelStandard,
     """For those who want to build Spaces that don't yet exist as Apps, tweak existing Apps to better suit
       |their needs, or manage their Spaces in more detail. Builder Mode adds the Model Designer, so that you
-      |can define exactly the sort of data you need, as well as more powerful security tools.""".stripMargin)
+      |can define exactly the sort of data you need, as well as more powerful security tools.""".stripMargin,
+    Set(AdvancedComplexity))
   lazy val AdvancedComplexity = ComplexityImpl(
     "Programmer",
     consts.skillLevelAdvanced,
     """For the Querki power user. Programmer Mode adds all the bells and whistles, so that you can customize
-      |Spaces in more detail, write your own code in QL, design custom Types, and lots more.""".stripMargin)
-      
+      |Spaces in more detail, write your own code in QL, design custom Types, and lots more.""".stripMargin,
+    Set())
+
   lazy val levels = Seq(EasyComplexity, StandardComplexity, AdvancedComplexity)
   
   implicit def tid2Complexity(level:TID):Complexity = {

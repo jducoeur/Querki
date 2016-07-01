@@ -12,6 +12,7 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.globals._
 import querki.identity.UserLevel
+import querki.identity.skilllevel.{Complexity, UnspecifiedComplexity}
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
@@ -38,6 +39,11 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def spaceOpt = DataAccess.space
   def thingOpt = DataAccess.mainThing
+  
+  def userSkillLevel = SkillLevel.current
+  lazy val Easy = SkillLevel.EasyComplexity
+  lazy val Standard = SkillLevel.StandardComplexity
+  lazy val Advanced = SkillLevel.AdvancedComplexity
   
   // There are a lot of items that are only displayed if the user have the Explore permission.
   lazy val hasExplore = spaceOpt.map { space =>
@@ -84,7 +90,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
     enabled:Boolean = true, 
     onClick:Option[() => Unit] = None,
     newWindow:Boolean = false,
-    requiresExplore:Boolean = false) extends Navigable
+    requiresExplore:Boolean = false,
+    complexity:Complexity = UnspecifiedComplexity) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -118,15 +125,17 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
           NavLink(
             "Design a Model", 
             id = "designAModel", 
+            complexity = Standard,
             onClick = Some({ () => DataModel.designAModel() }),
             enabled = space.permissions.contains(std.security.canDesignPerm)),
           NavLink(
             "Create any Thing", 
             id = "_createAnyThing", 
+            complexity = Standard,
             onClick = Some({ () => DataModel.createAThing() }),
             enabled = space.permissions.contains(std.security.canCreatePerm)),
-          NavLink("Show all Things", thing("All-Things")),
-          NavLink("Show all Properties", thing("All-Properties")),
+          NavLink("Show all Things", thing("All-Things"), complexity = Standard),
+          NavLink("Show all Properties", thing("All-Properties"), complexity = Standard),
           NavLink("Sharing", Pages.sharingFactory.pageUrl(), id = "_sharingButton", enabled = DataAccess.request.isOwner)
         )
       else
@@ -145,21 +154,24 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
               "Design " + thing.displayName, 
               Editing.modelDesignerFactory.pageUrl(thing), 
               enabled = thing.isEditable,
-              requiresExplore = true)
+              requiresExplore = true,
+              complexity = Standard)
            else
             NavLink(
               "Advanced Edit " + thing.displayName, 
               Editing.advancedEditorFactory.pageUrl(thing), 
               id = "_advEditButton",
               enabled = thing.isEditable,
-              requiresExplore = true)
+              requiresExplore = true,
+              complexity = Standard)
         },
-        NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true),
-        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), requiresExplore = true),
+        NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
+        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
         NavLink(s"Security for ${thing.displayName}", Pages.securityFactory.pageUrl(thing), requiresExplore = true,
             enabled = DataAccess.request.isOwner,
-            id = "_securityItem"),
-        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true),
+            id = "_securityItem",
+            complexity = Advanced),
+        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
         NavLink("Print...", onClick = Some({ () => Print.print(thing)})),
         NavLink(
           "Delete " + thing.displayName, 
@@ -194,8 +206,16 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       spaceOpt.map { space =>
         NavSection("Apps", Seq(
           NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
-          NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
-          NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
+          NavLink(
+            "Manage Apps", 
+            Apps.appMgmtFactory.pageUrl(), 
+            enabled = space.permissions.contains(std.apps.canManipulateAppsPerm), 
+            complexity = Advanced),
+          NavLink(
+            "Extract an App", 
+            Apps.extractAppFactory.pageUrl(), 
+            enabled = space.permissions.contains(std.apps.canManipulateAppsPerm),
+            complexity = Standard)
         ), 1200)
     }
   
@@ -241,7 +261,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def displayNavLink(link:NavLink) = {
     link match {
-      case NavLink(display, url, idStr, enabled, onClick, newWindow, hidden) => {
+      case NavLink(display, url, idStr, enabled, onClick, newWindow, hidden, complexity) => {
         if (enabled) {
           li(
             a(
@@ -317,7 +337,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   def displayNavigable(nav:Navigable) = {
     nav match {
       case link:NavLink => {
-        if (link.requiresExplore && !hasExplore)
+        if ((link.requiresExplore && !hasExplore) || !link.complexity.accepts(userSkillLevel))
           raw("")
         else
           displayNavLink(link)
