@@ -18,6 +18,9 @@ import querki.values.RequestContext
  * Actor that implements processBuffer(). It builds up the chunkBuffer, which the real
  * code can then make use of.
  * 
+ * This expects that it is receiving messages from a StreamSendActor; the two work together
+ * to implement a simplistic but reliable byte-oriented streaming protocol.
+ * 
  * @author jducoeur
  */
 trait UploadActor { self:Actor =>
@@ -25,6 +28,11 @@ trait UploadActor { self:Actor =>
    * The raw buffer, which is mutated as the stream uploads.
    */
   var chunkBuffer:Vector[Byte] = Vector.empty
+  
+  /**
+   * The index of the chunk we most recently received. This is for deduping retries.
+   */
+  var lastIndex:Int = -1
   
   var uploadComplete:Boolean = false
 
@@ -87,9 +95,18 @@ trait UploadActor { self:Actor =>
   def processTimeout = 1 minute
   
   def handleChunks:Receive = {
-    case UploadChunk(chunk) => {
-      chunkBuffer = chunkBuffer ++ chunk
-      QLog.spew(s"Actor got ${chunk.length} bytes")
+    case UploadChunk(index, chunk) => {
+      if (index > lastIndex) {
+        chunkBuffer = chunkBuffer ++ chunk
+        QLog.spew(s"Actor got ${chunk.length} bytes")
+        lastIndex = index
+        sender ! UploadChunkAck(index, chunkBuffer.size)
+      } else {
+        QLog.spew(s"Received duplicate of chunk #$index")
+        // Although it's a duplicate, we still need to re-ack, in case our previous ack got
+        // lost in transit:
+        sender ! UploadChunkAck(index, chunkBuffer.size)
+      }
     }
     
     case GetUploadTimeout => {

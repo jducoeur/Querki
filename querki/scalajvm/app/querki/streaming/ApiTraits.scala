@@ -7,7 +7,8 @@ import akka.util.ByteString
 import querki.values.RequestContext
 
 object UploadMessages {
-  case class UploadChunk(chunk:ByteString)
+  case class UploadChunk(index:Int, chunk:ByteString)
+  case class UploadChunkAck(index:Int, currentTotalSize:Int)
   case class UploadComplete(rc:RequestContext)
   
   case object GetUploadTimeout

@@ -1,7 +1,5 @@
 package querki.photos
 
-import scala.concurrent.Future
-
 import akka.actor._
 import akka.event.LoggingReceive
 
@@ -23,6 +21,7 @@ import models.{MIMEType, OID, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SessionRequest, ThingError, ThingFound}
 import querki.streaming.UploadActor
@@ -188,24 +187,29 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
         case None => prop.cType.makePropValue(Some(elem), PhotosInternal.PhotoType)
       }
       
+      def finish() = {
+        // Okay, start shutting down...
+        originalImage.flush()
+        self ! ImageComplete        
+      }
+      
       QLog.spew(s"About to actually update the Space -- the QValue is $qv")
       router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
         response match {
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
             val lastElem = qv.cv.last
-            loopback(QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc)))) map { wikified =>
-              sender ! PhotoInfo(wikified)              
+            val processFut = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc))(newState, ecology))
+            loopback(processFut) map { wikified =>
+              sender ! PhotoInfo(wikified)
+              finish()
             }
           }
           case ThingError(error, stateOpt) => {
             sender ! PhotoFailed
-          }          
+            finish()
+          } 
         }
-      
-        // Okay, start shutting down...
-        originalImage.flush()
-        self ! ImageComplete
       }
     }
     
