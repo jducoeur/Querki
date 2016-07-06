@@ -98,7 +98,7 @@ trait UploadActor { self:Actor =>
     case UploadChunk(index, chunk) => {
       if (index > lastIndex) {
         chunkBuffer = chunkBuffer ++ chunk
-        QLog.spew(s"Actor got block $index, ${chunk.length} bytes")
+        QLog.spew(s"Actor got block $index, ${chunk.length} bytes: ${chunk.take(4)} ... ${chunk.takeRight(4)}")
         lastIndex = index
         sender ! UploadChunkAck(index, chunkBuffer.size)
       } else {
