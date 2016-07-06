@@ -41,7 +41,7 @@ class StreamSendActor(recipient:ActorRef) extends Actor {
   var currentTimeout:Option[Cancellable] = None
   
   def sendBlock(attempt:Int) = { 
-    QLog.spew(s"Sending block #$currentIndex, attempt #$attempt: ${currentBlock.get.take(4)} ... ${currentBlock.get.takeRight(4)}")
+    QLog.spew(s"Sending block #$currentIndex, attempt #$attempt: length ${currentBlock.get.size} ${currentBlock.get.take(4)} ... ${currentBlock.get.takeRight(4)}")
     recipient ! UploadChunk(currentIndex, currentBlock.get)
     currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, StreamChunkTimeout(currentIndex, attempt)))
   }
