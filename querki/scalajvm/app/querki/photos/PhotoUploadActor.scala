@@ -63,8 +63,8 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
     
     case UploadDone(rc, propId, thingId) => {
       QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
-      val inputStream = new ByteArrayInputStream(chunkBuffer.toArray)
-      val originalImage = ImageIO.read(inputStream)
+      QLog.spew(s"First bytes: ${chunkBuffer.take(8)}; last bytes: ${chunkBuffer.takeRight(8)}")
+      val originalImage = ImageIO.read(uploadedStream)
       
       QLog.spew(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
       
