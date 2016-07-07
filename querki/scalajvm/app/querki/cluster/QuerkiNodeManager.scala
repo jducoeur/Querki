@@ -45,6 +45,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   def allocator = _allocator.get
   
   def requestShardId(msg:Any):Unit = {
+    QLog.spew(s"QuerkiNodeManager sending $msg to Coordinator")
     val reqM = ClusterPrivate.nodeCoordinator.request(msg) onComplete
     {
       case Success(ShardAssignment(id)) => {

@@ -41,6 +41,7 @@ class QuerkiFuncTests
   // Infrastructure mix-ins, from ScalaTest and Play:
   extends WordSpec
   with Matchers
+  with BeforeAndAfterAll
   with OneServerPerTest
   with OneBrowserPerTest
   // For now, we're just going to target Chrome. Eventually, obviously, we should

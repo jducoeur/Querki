@@ -159,7 +159,7 @@ class EcologyImpl(val playApp:Option[play.api.Application])
     }
     
     // HACK: workaround to get this list through to KryoInit:
-    querki.persistence.KryoInit._msgDecls = Some(msgs)
+    querki.persistence.KryoInit.setMsgs(msgs)
   }
   
   /**

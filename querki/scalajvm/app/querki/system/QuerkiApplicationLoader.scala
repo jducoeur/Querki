@@ -73,7 +73,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
   
     // HORRIBLE HACK: need to inject the ActorSystem into KryoInit *somewhere*.
     // TODO: figure out a better way to do this!
-    querki.persistence.KryoInit._actorSystem = Some(_appSystem.asInstanceOf[akka.actor.ExtendedActorSystem])
+    querki.persistence.KryoInit.setActorSystem(_appSystem.asInstanceOf[akka.actor.ExtendedActorSystem])
     
     // TEMP: some startup debugging, to see what I can do:
     QLog.spew(s"Querki starting...")

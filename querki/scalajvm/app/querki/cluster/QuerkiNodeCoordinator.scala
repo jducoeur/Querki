@@ -47,6 +47,8 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
   
   private var snapshotCounter = 0
   
+  QLog.spew("Creating QuerkiNodeCoordinator")
+  
   lazy val relookupTimeout = Timeout(Config.getDuration("querki.cluster.shardRelookupTimeout", 10 minutes))
   lazy val snapshotInterval = Config.getInt("querki.cluster.snapshotInterval", 100)
   
@@ -131,6 +133,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     }
     
     case RecoveryCompleted => {
+      QLog.spew(s"Finished recovering the QuerkiNodeCoordinator")
       // Okay -- now let's take a look at our assignments and see if they make sense:
       shardAssignments.foreach { case (path, id) =>
         context.system.actorSelection(path).request(CheckShardAssignment(id)) onComplete {
@@ -157,6 +160,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
   
   val receiveCommand:Receive = LoggingReceive {
     case AssignShard(nodeRef) => {
+      QLog.spew("Coordinator got AssignShard request")
       context.watch(nodeRef)
       makeAssignment(nodeRef)
     }
