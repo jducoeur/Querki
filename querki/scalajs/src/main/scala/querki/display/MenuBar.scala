@@ -224,7 +224,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       case Some(user) => {
         NavSection(truncateName(user.mainIdentity.name), Seq(
           NavLink("Your Account", Pages.accountFactory.pageUrl()),
-          NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() })),
+          NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() }), id="_skillLevelButton"),
           NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
         ), 1900, id="_profile_menu")  
       }

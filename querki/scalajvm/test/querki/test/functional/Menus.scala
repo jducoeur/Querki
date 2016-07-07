@@ -15,6 +15,7 @@ object SecurityItem extends MenuItem("_securityItem", ActionsMenu)
 object SharingItem extends MenuItem("_sharingButton", ActionsMenu)
 
 object ProfileMenu extends Menu("_profile_menu")
+object SkillLevelItem extends MenuItem("_skillLevelButton", ProfileMenu)
 object LogoutItem extends MenuItem("logout_button", ProfileMenu)
 
 trait FuncMenu { this:FuncMixin =>
