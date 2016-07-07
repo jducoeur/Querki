@@ -1,5 +1,7 @@
 package querki.test.functional
 
+import scala.sys.process._
+
 import anorm._
 
 import querki.db._
@@ -47,4 +49,47 @@ trait FuncDB { this:FuncMixin =>
     }
   }
 
+  /**
+   * IMPORTANT: the functional tests assume that ccm is installed locally! See
+   *
+   *   https://github.com/pcmanus/ccm
+   *
+   * This stops the current Cassandra test cluster, and builds a fresh one named ftst.  
+   */
+  def setupCassandra() = {
+    spew("Setting up Cassandra cluster ftst...")
+    
+    // Stop the current cluster. We intentionally ignore the return code -- this will return an
+    // error if there is no current cluster, and we don't care.
+    "ccm stop" !
+    
+    // Again, this will error if there is no such cluster, and that's fine.
+    "ccm remove ftst" !
+
+    // This one we actually care about:
+    if (("ccm create ftst -v 3.0.6 -n 3 -s" !) != 0)
+      throw new Exception(s"Failed to create a fresh Cassandra cluster!")
+    
+    spew("... cluster created")
+  }
+  
+  /**
+   * At the end of the test, this goes back to the conventional cluster.
+   * 
+   * TODO: obviously, this needs to be config-parameterized to deal with the current
+   * "conventional" cluster for this machine.
+   */
+  def teardownCassandra() = {
+    spew("Shutting down Cassandra cluster...")
+    
+    val ret = "ccm stop" #&&
+    "ccm remove ftst" #&&
+    "ccm switch test" #&&
+    "ccm start" !
+    
+    if (ret != 0)
+      throw new Exception(s"Failed to switch back to the normal Cassandra cluster -- return code $ret!")
+    
+    spew("... switched back to normal test cluster.")
+  }
 }

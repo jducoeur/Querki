@@ -62,6 +62,14 @@ class QuerkiFuncTests
   with Security
   with RegressionTests1
 {
+  override def beforeAll() {
+    setupCassandra()
+  }
+  
+  override def afterAll() {
+    teardownCassandra()
+  }
+  
   /**
    * This is where we override the standard Application settings.
    */
