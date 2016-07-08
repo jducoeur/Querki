@@ -112,6 +112,12 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     }
   }
   
+  override protected def onRecoveryFailure(cause:Throwable, event:Option[Any]):Unit = {
+    cause.fillInStackTrace()
+    QLog.error(s"QuerkiNodeCoordinator failed recovery, on event $event", cause)
+    super.onRecoveryFailure(cause, event)
+  }
+  
   val receiveRecover:Receive = {
     case ShardAssigned(ref, assignment) => {
       // We pre-emptively reserve the Shard, and will sanity-check whether that's real on

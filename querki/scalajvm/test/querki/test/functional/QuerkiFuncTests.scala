@@ -86,14 +86,12 @@ class QuerkiFuncTests
         "querki.app.urlRoot" -> "http://localhost:19001/",
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":
-        "querki.mail.test" -> "true",
-        // For the time being, functional tests will need to use the old OID-allocation mechanism,
-        // until we can automatically spin up a fresh Cassandra cluster for the tests. (Probably via
-        // command-line -- ccmlib is, sadly, Python-based.)
-        "querki.cluster.newObjCreate" -> "false"
+        "querki.mail.test" -> "true"
       ))
       
-    new QuerkiApplicationLoader().load(context)
+    val app = new QuerkiApplicationLoader().load(context)
+    
+    app
   }
   
   var ecology:Ecology = null
