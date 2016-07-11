@@ -61,5 +61,7 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
       
     _nodeCoordinator = proxy
     _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
+    
+    regAsyncInit[QuerkiNodeManager]
   }
 }

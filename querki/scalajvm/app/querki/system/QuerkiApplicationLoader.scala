@@ -32,7 +32,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
 
   var ecology:Ecology = null
   
-  val initTermDuration = 30 seconds
+  val initTermDuration = 60 seconds
   implicit val initTermTimeout = Timeout(initTermDuration)
 
   def load(context: ApplicationLoader.Context): Application = {

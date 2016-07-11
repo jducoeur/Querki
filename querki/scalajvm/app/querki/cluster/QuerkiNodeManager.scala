@@ -27,8 +27,9 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
-  
+class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester 
+  with EcologyMember with querki.system.AsyncInittingActor[QuerkiNodeManager]
+{
   import QuerkiNodeCoordinator._
   import QuerkiNodeManager._
   
@@ -51,7 +52,8 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
       case Success(ShardAssignment(id)) => {
         _shardId = Some(id)
         _allocator = Some(context.actorOf(OIDAllocator.actorProps(ecology, shardId), "OIDAllocator"))
-        unstashAll()        
+        initted()
+        unstashAll()
       }
 
       case Failure(ex:AskTimeoutException) => {
