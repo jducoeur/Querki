@@ -3,6 +3,7 @@ package querki.persistence
 import akka.actor.{ChildActorPath, ExtendedActorSystem}
 
 import com.esotericsoftware.kryo._
+import com.romix.scala.serialization.kryo._
 
 import querki.globals._
 
@@ -99,6 +100,13 @@ object KryoInit {
       kryo.register(classOf[ChildActorPath], new ChildActorPathSerializer(actorSystem), 100)
       // 101 -- AkkaHack: LocalActorRef
       kryo.register(classOf[models.OID], new OIDSerializer, 102)
+      
+      // Annoyingly, we apparently have to register these special cases individually. Kryo doesn't appear to
+      // be smart enough to deal with subclasses, even if the Serializer is capable to handling them.
+      kryo.register(classOf[scala.collection.immutable.HashSet.HashTrieSet[_]], new ScalaImmutableSetSerializer, 103)
+      
+      kryo.register(classOf[scala.collection.immutable.HashMap.HashMap1[_, _]], new ScalaImmutableMapSerializer, 104)
+      kryo.register(classOf[scala.collection.immutable.HashMap.HashTrieMap[_, _]], new ScalaImmutableMapSerializer, 105)
     }
   }
   

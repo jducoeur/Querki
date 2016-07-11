@@ -1,5 +1,6 @@
 package querki.cluster
 
+import scala.collection.immutable.{HashMap, HashSet}
 import scala.util.{Failure, Success}
 
 import akka.actor._
@@ -56,16 +57,19 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
    * The Shards that are permanently out of action. Several are set aside for various
    * reasons; the rest get set through Persistence.
    */
-  private var fullShards = Set[ShardId](0, 1, 2, 3)
+  private var fullShards = HashSet[ShardId](0, 1, 2, 3)
   /**
    * Which Shard each Node currently owns. This map is intentionally by ActorPath, since
    * there should be only one assignment per Node. We don't want to stack up lots of
    * assignments to different ActorRefs that correspond to the same ActorPath.
    */
-  private var shardAssignments = Map.empty[ActorPath, ShardId]
+  private var shardAssignments = HashMap.empty[ActorPath, ShardId]
   
   def doAssign(ref:ActorRef, shardId:ShardId):ShardId = {
     QLog.spew(s"Assigning shard $shardId to node ${ref.path}")
+    // We increment the snapshotCounter here, so that it is updated correctly during
+    // recovery:
+    snapshotCounter += 1
     shardAssignments += (ref.path -> shardId)
     shardId    
   }
@@ -95,7 +99,6 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     }
     
     // Take occasional snapshots of the state:
-    snapshotCounter += 1
     if (snapshotCounter >= snapshotInterval) {
       snapshotCounter = 0
       saveSnapshot(ShardSnapshot(fullShards, shardAssignments))
@@ -183,6 +186,9 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
       unassign(nodeRef, false)
     }
     
+    case SaveSnapshotSuccess(metadata) => //QLog.spew(s"Successfully saved snapshot: $metadata")
+    case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
+    
     case Stop => {
       context.stop(self)
     }
@@ -246,5 +252,5 @@ object QuerkiNodeCoordinator {
   /**
    * The periodic snapshot of the assignment state, to make cluster startup faster.
    */
-  case class ShardSnapshot(@KryoTag(1) fullShards:Set[ShardId], @KryoTag(2) shardAssignments:Map[ActorPath, ShardId]) extends UseKryo
+  case class ShardSnapshot(@KryoTag(1) fullShards:HashSet[ShardId], @KryoTag(2) shardAssignments:HashMap[ActorPath, ShardId]) extends UseKryo
 }

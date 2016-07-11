@@ -117,6 +117,9 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
         giveOID()
       }
     }
+    
+    case SaveSnapshotSuccess(metadata) => //QLog.spew(s"Successfully saved snapshot: $metadata")
+    case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
   }
 }
 
