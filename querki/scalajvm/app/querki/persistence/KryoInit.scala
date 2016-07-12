@@ -17,11 +17,13 @@ import querki.globals._
  * IMPORTANT: the implication here is that only fields that are marked with @Tag(int) will be
  * serialized! We are demanding some serious discipline in our persisted types, so that we
  * can have schema evolution without too much pain. 
+ * 
+ * TODO: can we make this injected, to make it less statically horrible?
  */
 class KryoInit {
   def customize(kryo:Kryo):Unit = {
     
-    QLog.spew(s"Customizing a Kryo instance...")
+//    QLog.spew(s"Customizing a Kryo instance...")
     
     // First, register the standard Scala and Akka types that we sometimes need. Note that these
     // are all being registered as, effectively, EcotId 0:
@@ -30,7 +32,7 @@ class KryoInit {
     // Then, register the actual application messages, which have been declared in 
     // their Ecots, so their ids reflect the Ecot they come from:
     KryoInit.registerMsgs(kryo)
-    QLog.spew(s"... done customizing.")
+//    QLog.spew(s"... done customizing.")
     
     // And store away this Kryo, in case we're not yet done with initialization:
     KryoInit._rawKryos = KryoInit._rawKryos :+ kryo
@@ -115,9 +117,9 @@ object KryoInit {
    */
   def registerMsgs(kryo:Kryo):Unit = {
     _msgDecls.foreach { decls => 
-      QLog.spew(s"... registering message declarations...")
+//      QLog.spew(s"... registering message declarations...")
       decls.foreach { case (clazz, id) =>
-        QLog.spew(s"    ${clazz.getCanonicalName} = $id")
+//        QLog.spew(s"    ${clazz.getCanonicalName} = $id")
         kryo.register(clazz, new serializers.TaggedFieldSerializer(kryo, clazz), id)
       }
     }    
