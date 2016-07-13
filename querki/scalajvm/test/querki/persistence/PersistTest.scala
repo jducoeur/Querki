@@ -7,6 +7,8 @@ import com.esotericsoftware.kryo.io._
 
 import org.objenesis.strategy.StdInstantiatorStrategy
 
+import querki.globals._
+
 /**
  * Mix-in trait for tests of persistent classes. The main thing here is the
  * serialRoundtrip() function, which serializes the given object and then deserializes
@@ -48,6 +50,7 @@ class PersistTest(env:PersistEnv) {
   def checkSerialization[T](builder: => T) = {
     val orig = builder
     val copy = serialRoundtrip(orig)
+    QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
   }
 }

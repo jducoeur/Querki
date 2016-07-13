@@ -31,6 +31,7 @@ class PersistenceTests
       KryoInit.setActorSystem(actorSystem)
     
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
+      new querki.cluster.OIDAllocationPersistTests(this)
     }
   }
 }

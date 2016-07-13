@@ -17,3 +17,8 @@ class QuerkiNodeCoordinatorPersistTests(env:PersistEnv) extends PersistTest(env)
       HashSet(1, 2), 
       HashMap((ActorPath.fromString("akka.tcp://application@127.0.0.1:2551/system/sharding/UserCache") -> 5))))
 }
+
+class OIDAllocationPersistTests(env:PersistEnv) extends PersistTest(env) {
+  checkSerialization(OIDAllocator.Alloc(12))
+  checkSerialization(OIDAllocator.AllocState(9384847))
+}
