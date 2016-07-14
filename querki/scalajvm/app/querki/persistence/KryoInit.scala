@@ -106,7 +106,7 @@ object KryoInit {
       
       // Annoyingly, we apparently have to register these special cases individually. Kryo doesn't appear to
       // be smart enough to deal with subclasses, even if the Serializer is capable to handling them.
-      kryo.register(classOf[scala.collection.immutable.HashSet.HashTrieSet[_]], new ScalaImmutableSetSerializer, 103)
+      kryo.register(classOf[scala.collection.immutable.Set[_]], new ScalaImmutableAbstractSetSerializer, 103)
       
       kryo.register(classOf[scala.collection.immutable.HashMap.HashMap1[_, _]], new ScalaImmutableMapSerializer, 104)
       kryo.register(classOf[scala.collection.immutable.HashMap.HashTrieMap[_, _]], new ScalaImmutableMapSerializer, 105)
