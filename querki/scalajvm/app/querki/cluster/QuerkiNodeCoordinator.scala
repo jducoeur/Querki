@@ -88,6 +88,12 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     resultOpt.getOrElse(throw new Exception("EMERGENCY: Querki is out of Shards! How is this possible?"))
   }
   
+  def snap() = {
+    QLog.spew(s"QuerkiNodeCoordinator saving snapshot")
+    snapshotCounter = 0
+    saveSnapshot(ShardSnapshot(fullShards, shardAssignments))    
+  }
+  
   def makeAssignment(ref:ActorRef) = {
     // If we already have an entry, it is by definition stale since the Node
     // is asking for a new one:
@@ -100,9 +106,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     
     // Take occasional snapshots of the state:
     if (snapshotCounter >= snapshotInterval) {
-      QLog.spew(s"QuerkiNodeCoordinator saving snapshot")
-      snapshotCounter = 0
-      saveSnapshot(ShardSnapshot(fullShards, shardAssignments))
+      snap()
     }
   }
   
@@ -149,18 +153,23 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
       shardAssignments.foreach { case (path, id) =>
         context.system.actorSelection(path).request(CheckShardAssignment(id)) onComplete {
           // Didn't get through to the Node:
-          case Failure(ex) => doUnassign(path)
+          case Failure(ex) => {
+            // We don't have a ref, and have no way to get one, so we have to persist this with
+            // a snapshot instead:
+            doUnassign(path)
+            snap()
+          }
           
           // This assignment is still active:
           case Success(ConfirmShardAssignment(ref)) => context.watch(ref)
           
           // Found the node, but that's not the right assignment:
-          case Success(RefuteShardAssignment) => {
+          case Success(RefuteShardAssignment(ref)) => {
             // This one's subtle because of potential races -- only unassign if that's *still*
             // the assignment. If not, it probably restarted and got a new assignment while this
             // was out there:
             if (shardAssignments.get(path) == Some(id))
-              doUnassign(path)
+              unassign(ref, false)
           }
           
           case other => QLog.error(s"QuerkiNodeCoordinator.RecoveryCompleted, checking Shard Assignments, got unexpected response $other")
@@ -222,7 +231,7 @@ object QuerkiNodeCoordinator {
    */
   case class CheckShardAssignment(shard:ShardId)
   case class ConfirmShardAssignment(ref:ActorRef)
-  case object RefuteShardAssignment
+  case class RefuteShardAssignment(ref:ActorRef)
   
   ///////////////////////
   //

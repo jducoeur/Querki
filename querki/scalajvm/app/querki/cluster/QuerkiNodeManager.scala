@@ -189,7 +189,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
       if (_shardId.map(_ == id).getOrElse(false)) {
         sender ! ConfirmShardAssignment(self)
       } else {
-        sender ! RefuteShardAssignment
+        sender ! RefuteShardAssignment(self)
       }
     }
     
