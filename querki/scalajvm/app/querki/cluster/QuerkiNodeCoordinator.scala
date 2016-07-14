@@ -57,13 +57,13 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
    * The Shards that are permanently out of action. Several are set aside for various
    * reasons; the rest get set through Persistence.
    */
-  private var fullShards = HashSet[ShardId](0, 1, 2, 3)
+  private var fullShards = Set[ShardId](0, 1, 2, 3)
   /**
    * Which Shard each Node currently owns. This map is intentionally by ActorPath, since
    * there should be only one assignment per Node. We don't want to stack up lots of
    * assignments to different ActorRefs that correspond to the same ActorPath.
    */
-  private var shardAssignments = HashMap.empty[ActorPath, ShardId]
+  private var shardAssignments = Map.empty[ActorPath, ShardId]
   
   def doAssign(ref:ActorRef, shardId:ShardId):ShardId = {
     QLog.spew(s"Assigning shard $shardId to node ${ref.path}")
@@ -100,6 +100,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     
     // Take occasional snapshots of the state:
     if (snapshotCounter >= snapshotInterval) {
+      QLog.spew(s"QuerkiNodeCoordinator saving snapshot")
       snapshotCounter = 0
       saveSnapshot(ShardSnapshot(fullShards, shardAssignments))
     }
@@ -137,6 +138,7 @@ class QuerkiNodeCoordinator(e:Ecology) extends PersistentActor with Requester wi
     }
     
     case SnapshotOffer(metadata, ShardSnapshot(f, s)) => {
+      QLog.spew(s"QuerkiNodeCoordinator recovering snapshot; fullShards are $f; assignments are $s")
       fullShards = f
       shardAssignments = s
     }
@@ -252,5 +254,5 @@ object QuerkiNodeCoordinator {
   /**
    * The periodic snapshot of the assignment state, to make cluster startup faster.
    */
-  case class ShardSnapshot(@KryoTag(1) fullShards:HashSet[ShardId], @KryoTag(2) shardAssignments:HashMap[ActorPath, ShardId]) extends UseKryo
+  case class ShardSnapshot(@KryoTag(1) fullShards:Set[ShardId], @KryoTag(2) shardAssignments:Map[ActorPath, ShardId]) extends UseKryo
 }

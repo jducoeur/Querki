@@ -96,6 +96,9 @@ object KryoInit {
   
   /**
    * Register our own core types, and some from Akka.
+   * 
+   * IMPORTANT: many of these types are abstract, and rely upon the new SubclassResolver that we've
+   * added to the romix library.
    */
   def registerAkkaMsgs(kryo:Kryo):Unit = {
     _actorSystem.map { actorSystem =>
@@ -104,12 +107,8 @@ object KryoInit {
       
       kryo.register(classOf[models.OID], new OIDSerializer, 102)
       
-      // Annoyingly, we apparently have to register these special cases individually. Kryo doesn't appear to
-      // be smart enough to deal with subclasses, even if the Serializer is capable to handling them.
       kryo.register(classOf[scala.collection.immutable.Set[_]], new ScalaImmutableAbstractSetSerializer, 103)
-      
-      kryo.register(classOf[scala.collection.immutable.HashMap.HashMap1[_, _]], new ScalaImmutableMapSerializer, 104)
-      kryo.register(classOf[scala.collection.immutable.HashMap.HashTrieMap[_, _]], new ScalaImmutableMapSerializer, 105)
+      kryo.register(classOf[scala.collection.immutable.Map[_, _]], new ScalaImmutableAbstractMapSerializer, 104)
     }
   }
   
