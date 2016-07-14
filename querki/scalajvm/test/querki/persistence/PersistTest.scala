@@ -2,13 +2,7 @@ package querki.persistence
 
 import java.io._
 
-import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io._
-import com.esotericsoftware.kryo.util.ListReferenceResolver
-
-import com.romix.scala.serialization.kryo.SubclassResolver
-
-import org.objenesis.strategy.StdInstantiatorStrategy
 
 import querki.globals._
 
@@ -31,23 +25,13 @@ class PersistTest(env:PersistEnv) {
     // First, sanity-check that the type is marked as UseKryo:
     env.checkObj(in)
     
-    val classResolver = new SubclassResolver
-    val kryo = new Kryo(classResolver, new ListReferenceResolver)
-    // In the running system, this gets set from config by the romix library, but we're using raw Kryo:
-    kryo.setRegistrationRequired(true)
-    new KryoInit().customize(kryo)
-    // From the romix code, necessary to cope with case classes:
-    kryo.setInstantiatorStrategy(new StdInstantiatorStrategy())
-    // Turn on subclass resolving:
-    classResolver.enable()
-    
     val outStream = new ByteArrayOutputStream()
     val output = new Output(outStream)   
-    kryo.writeClassAndObject(output, in)
+    env.testKryo.writeClassAndObject(output, in)
     output.flush()
     val inStream = new ByteArrayInputStream(outStream.toByteArray())
     val input = new Input(inStream)
-    kryo.readClassAndObject(input).asInstanceOf[T]
+    env.testKryo.readClassAndObject(input).asInstanceOf[T]
   }
   
   /**

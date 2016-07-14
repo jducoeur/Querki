@@ -99,7 +99,6 @@ object KryoInit {
    */
   def registerAkkaMsgs(kryo:Kryo):Unit = {
     _actorSystem.map { actorSystem =>
-      akka.actor.AkkaHack.setupPrivateSerializers(kryo, actorSystem)
       kryo.register(classOf[ActorPath], new ActorPathSerializer(actorSystem), 100)
       kryo.register(classOf[ActorRef], new ActorRefSerializer(actorSystem), 101)
       
