@@ -2,16 +2,25 @@ package querki.cluster
 
 import scala.collection.immutable.{HashMap, HashSet}
 
-import akka.actor.ActorPath
+import akka.actor._
 import akka.actor.Actor.noSender
 
+import querki.globals._
 import querki.persistence._
 import querki.test._
 
+class TestActor extends Actor {
+  def receive = {
+    case something => QLog.spew(s"TestActor got $something")
+  }
+}
+
 class QuerkiNodeCoordinatorPersistTests(env:PersistEnv) extends PersistTest(env) {
+  val testActor = env.testActorSystem.actorOf(Props(classOf[TestActor]))
+  
   checkSerialization(QuerkiNodeCoordinator.ShardUnavailable(12))
-  checkSerialization(QuerkiNodeCoordinator.ShardAssigned(noSender, 42))
-  checkSerialization(QuerkiNodeCoordinator.ShardUnassigned(noSender, 42))
+  checkSerialization(QuerkiNodeCoordinator.ShardAssigned(testActor, 42))
+  checkSerialization(QuerkiNodeCoordinator.ShardUnassigned(testActor, 42))
   checkSerialization(
     QuerkiNodeCoordinator.ShardSnapshot(
       HashSet(1, 2), 

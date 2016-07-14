@@ -1,9 +1,10 @@
 package querki.persistence
 
-import akka.actor.{ChildActorPath, ExtendedActorSystem}
+import akka.actor.{ActorPath, ActorRef, ExtendedActorSystem}
 
 import com.esotericsoftware.kryo._
 import com.romix.scala.serialization.kryo._
+import com.romix.akka.serialization.kryo._
 
 import querki.globals._
 
@@ -99,8 +100,9 @@ object KryoInit {
   def registerAkkaMsgs(kryo:Kryo):Unit = {
     _actorSystem.map { actorSystem =>
       akka.actor.AkkaHack.setupPrivateSerializers(kryo, actorSystem)
-      kryo.register(classOf[ChildActorPath], new ChildActorPathSerializer(actorSystem), 100)
-      // 101 -- AkkaHack: LocalActorRef
+      kryo.register(classOf[ActorPath], new ActorPathSerializer(actorSystem), 100)
+      kryo.register(classOf[ActorRef], new ActorRefSerializer(actorSystem), 101)
+      
       kryo.register(classOf[models.OID], new OIDSerializer, 102)
       
       // Annoyingly, we apparently have to register these special cases individually. Kryo doesn't appear to

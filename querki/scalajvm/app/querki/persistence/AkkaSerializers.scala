@@ -1,22 +1,19 @@
 package querki.persistence
 
-import akka.actor.{ActorPath, ChildActorPath, ExtendedActorSystem}
+import akka.actor.{ActorPath, ExtendedActorSystem}
 import akka.serialization.Serialization
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}
 
-/**
- * Can we generalize this to ActorPath, and just register ChildActorPath to it?
- */
-class ChildActorPathSerializer(val system:ExtendedActorSystem) extends Serializer[ChildActorPath] {
-  override def read(kryo:Kryo, input:Input, typ:Class[ChildActorPath]):ChildActorPath = {
+class ActorPathSerializer(val system:ExtendedActorSystem) extends Serializer[ActorPath] {
+  override def read(kryo:Kryo, input:Input, typ:Class[ActorPath]):ActorPath = {
     val path = input.readString()
     // Bleah -- this is ugly, although probably works correctly:
-    ActorPath.fromString(path).asInstanceOf[ChildActorPath]
+    ActorPath.fromString(path).asInstanceOf[ActorPath]
   }
   
-  override def write(kryo:Kryo, output:Output, obj:ChildActorPath) = {
+  override def write(kryo:Kryo, output:Output, obj:ActorPath) = {
     val defaultAddress = system.provider.getDefaultAddress
     output.writeString(obj.toSerializationFormatWithAddress(defaultAddress))
   }

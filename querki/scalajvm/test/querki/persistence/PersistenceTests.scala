@@ -7,6 +7,7 @@ import querki.test.QuerkiTests
 trait PersistEnv extends org.scalatest.WordSpecLike {
   def checkObj[T](in:T)
   def checkEquality[T](a:T, b:T)
+  def testActorSystem:ActorSystem
 }
 
 /**
@@ -25,13 +26,20 @@ class PersistenceTests
   def checkObj[T](in:T) = assert(in.isInstanceOf[UseKryo])
   def checkEquality[T](a:T, b:T) = assert(a == b)
   
+  var _actorSystemOpt:Option[ActorSystem] = None
+  def testActorSystem = _actorSystemOpt.get
+  
   "Persistence" should {
     "work for all the various packages" in { 
       val actorSystem = ActorSystem().asInstanceOf[ExtendedActorSystem]
+      _actorSystemOpt = Some(actorSystem)
       KryoInit.setActorSystem(actorSystem)
     
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)
+      
+      _actorSystemOpt = None
+      actorSystem.terminate()
     }
   }
 }
