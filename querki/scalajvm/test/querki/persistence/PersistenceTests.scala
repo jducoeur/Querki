@@ -1,10 +1,13 @@
 package querki.persistence
 
+import akka.serialization.Serializer
+
 import org.objenesis.strategy.StdInstantiatorStrategy
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.ListReferenceResolver
 
+import com.romix.akka.serialization.kryo.KryoSerializer
 import com.romix.scala.serialization.kryo.SubclassResolver
 
 import akka.actor.{ActorSystem, ExtendedActorSystem}
@@ -14,8 +17,9 @@ import querki.test.QuerkiTests
 trait PersistEnv extends org.scalatest.WordSpecLike {
   def checkObj[T](in:T)
   def checkEquality[T](a:T, b:T)
+  // We expose the ActorSystem so that tests can check Akka stuff:
   def testActorSystem:ActorSystem
-  def testKryo:Kryo
+  def roundtrip[T <: AnyRef](in:T):T
 }
 
 /**
@@ -40,25 +44,20 @@ class PersistenceTests
   var _actorSystemOpt:Option[ActorSystem] = None
   def testActorSystem = _actorSystemOpt.get
   
-  var _kryo:Option[Kryo] = None
-  def testKryo = _kryo.get
+  var _serializer:Option[Serializer] = None
+  def serializer = _serializer.get
+  def roundtrip[T <: AnyRef](in:T):T = {
+    val bytes = serializer.toBinary(in)
+    serializer.fromBinary(bytes).asInstanceOf[T]
+  }
   
   "Persistence" should {
     "work for all the various packages" in { 
       val actorSystem = ActorSystem().asInstanceOf[ExtendedActorSystem]
       _actorSystemOpt = Some(actorSystem)
       KryoInit.setActorSystem(actorSystem)
-      
-      val classResolver = new SubclassResolver
-      val kryo = new Kryo(classResolver, new ListReferenceResolver)
-      // In the running system, this gets set from config by the romix library, but we're using raw Kryo:
-      kryo.setRegistrationRequired(true)
-      new KryoInit().customize(kryo)
-      // From the romix code, necessary to cope with case classes:
-      kryo.setInstantiatorStrategy(new StdInstantiatorStrategy())
-      // Turn on subclass resolving:
-      classResolver.enable()
-      _kryo = Some(kryo)
+
+      _serializer = Some(new KryoSerializer(actorSystem))
     
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)

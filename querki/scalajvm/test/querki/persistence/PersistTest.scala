@@ -21,24 +21,17 @@ class PersistTest(env:PersistEnv) {
    * reads it back in again and returns it. You will usually want to follow this with assertions that
    * the read object matches the written one.
    */
-  def serialRoundtrip[T](in:T):T = {
+  def serialRoundtrip[T <: AnyRef](in:T):T = {
     // First, sanity-check that the type is marked as UseKryo:
     env.checkObj(in)
-    
-    val outStream = new ByteArrayOutputStream()
-    val output = new Output(outStream)   
-    env.testKryo.writeClassAndObject(output, in)
-    output.flush()
-    val inStream = new ByteArrayInputStream(outStream.toByteArray())
-    val input = new Input(inStream)
-    env.testKryo.readClassAndObject(input).asInstanceOf[T]
+    env.roundtrip(in)
   }
   
   /**
    * Convenience function over serialRoundtrip. You can use this iff the class you're testing has a
    * good == function. (That is, if it's a case class, which it usually is.)
    */
-  def checkSerialization[T](builder: => T) = {
+  def checkSerialization[T <: AnyRef](builder: => T) = {
     val orig = builder
     val copy = serialRoundtrip(orig)
     QLog.spew(s"Checking equality of $copy")
