@@ -2,6 +2,7 @@ package querki.persistence
 
 import models._
 
+import querki.core.Collections._
 import querki.globals._
 import querki.test._
 
@@ -12,6 +13,7 @@ class CollectionSerializationTests extends QuerkiTests {
     val linkable2 = new SimpleTestThing("Linkable 2")
     
     val oneThing = new SimpleTestThing("One Thing", singleTextProp("hello"), singleTagProp("floob"), singleLinkProp(linkableThing))
+    val emptyOneThing = new SimpleTestThing("Empty One Thing", singleTextProp(""))
     val optThing = new SimpleTestThing("Opt Thing", optTextProp("hello"), optTagProp("floob"), optLinkProp(linkableThing))
     val emptyOptThing = new SimpleTestThing("Empty Opt Thing", optTextProp(), optTagProp(), optLinkProp())
     val listThing = new SimpleTestThing("List Thing",
@@ -54,6 +56,10 @@ class CollectionSerializationTests extends QuerkiTests {
       
       // The old-style version of ExactlyOne serialization:
       checkProp(s.oneThing, s.singleTagProp, "floob")
+      // Old-style empty string:
+      checkProp(s.emptyOneThing, s.singleTextProp, "")
+      // The new style:
+      checkProp(s.oneThing, s.singleTagProp, s"${collSerialOpen}floob${collSerialClose}")
     }
   }
   
@@ -82,6 +88,9 @@ class CollectionSerializationTests extends QuerkiTests {
       // The old-style version of Optional serialization:
       checkProp(s.optThing, s.optTagProp, "(floob)")
       checkProp(s.emptyOptThing, s.optTagProp, "!")
+      // The new style:
+      checkProp(s.optThing, s.optTagProp, s"${collSerialOpen}floob${collSerialClose}")
+      checkProp(s.emptyOptThing, s.optTagProp, s"${collSerialOpen}${collSerialClose}")
     }
   }
   
@@ -105,9 +114,12 @@ class CollectionSerializationTests extends QuerkiTests {
     "deserialize from a raw string" in {
       implicit val s = new CollSpace
       
-      // List-style serialization:
+      // Old-style List serialization:
       checkProp(s.listThing, s.listTagsProp, "[foo,bar]")
       checkProp(s.emptyListThing, s.listTagsProp, "[]")
+      // New style:
+      checkProp(s.listThing, s.listTagsProp, s"${collSerialOpen}foo${collSerialDelimit}bar${collSerialClose}")
+      checkProp(s.emptyListThing, s.listTagsProp, s"${collSerialOpen}${collSerialClose}")
     }
   }
 }
