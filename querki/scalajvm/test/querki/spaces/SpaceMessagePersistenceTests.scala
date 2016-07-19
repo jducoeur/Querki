@@ -19,5 +19,11 @@ class SpaceMessagePersistenceTests(env:PersistEnv) extends PersistTest(env) with
     checkSerialization(builder)
   }  
   
-  checkDH(dh(CreateThing(s.owner, s.toid(), Kind.Thing, s.testModel.id, Thing.emptyProps)))
+  /**
+   * Check the raw serialization of the persisted Space messages.
+   */
+  checkDH(dh(CreateThing(s.owner, state.id, Kind.Thing, s.testModel.id, s.instance.props)))
+  checkDH(dh(ModifyThing(s.member2.user, state.id, s.instance.id, s.testModel.id, Thing.emptyProps)))
+  checkDH(dh(ChangeProps(s.owner, state.id, s.instance.id, s.instance.props, true)))
+  checkDH(dh(DeleteThing(s.owner, state.id, s.instance.id)))
 }
