@@ -78,9 +78,10 @@ case class Property[VT, RT](
   def validate(str:String, state:SpaceState) = pType.validate(str, this, state)
   
   def validatingQValue[R](v:QValue)(f: => R):R = {
-    if (v.cType != cType)
+    // NameProp is a conspicuous exception to this usual sanity-check:
+    if ((v.cType != cType) && (id != querki.core.MOIDs.NameOID))
       QLog.error(s"Property $displayName Validation Failed: expected collection ${cType.displayName}, but got ${v.cType.displayName}")
-    if (v.pType != pType)
+    if (v.pType.realType != pType.realType)
       QLog.error(s"Property $displayName Validation Failed: expected type ${pType.displayName}, but got ${v.pType.displayName}")
       
     f
