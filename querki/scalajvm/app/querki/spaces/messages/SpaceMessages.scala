@@ -62,9 +62,6 @@ case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropM
  */
 case class ChangeProps(req:User, space:OID, id:ThingId, changedProps:PropMap, sync:Boolean = false) extends SpaceMessage(req, space)
 
-// TODO: this message needs cleanup before we start using it, to match the rest:
-case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, id)
-
 case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(req, space)
 
 /**

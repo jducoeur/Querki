@@ -78,6 +78,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     _userRef = SystemManagement.createShardRegion("UserCache", UserCache.actorProps(ecology), 
         userExtractor, userResolver)
   }
+  
+  override def persistentMessages = persist(39,
+    (classOf[IdentityPersistence.UserRef] -> 100)
+  )
 
   // Internal System User. This should be used for making internal changes to Spaces that are *not* under the
   // aegis of the requesting user. 

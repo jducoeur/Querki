@@ -12,14 +12,17 @@ import com.romix.scala.serialization.kryo.SubclassResolver
 
 import akka.actor.{ActorSystem, ExtendedActorSystem}
 
-import querki.test.QuerkiTests
+import querki.globals._
+import querki.test._
 
-trait PersistEnv extends org.scalatest.WordSpecLike {
+trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
   def checkObj[T](in:T)
   def checkEquality[T](a:T, b:T)
   // We expose the ActorSystem so that tests can check Akka stuff:
   def testActorSystem:ActorSystem
   def roundtrip[T <: AnyRef](in:T):T
+  
+  def commonSpace:CommonSpace
 }
 
 /**
@@ -61,6 +64,7 @@ class PersistenceTests
     
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)
+      new querki.spaces.SpaceMessagePersistenceTests(this)
       
       _actorSystemOpt = None
       actorSystem.terminate()

@@ -19,6 +19,8 @@ import querki.values.{RequestContext, SpaceState}
 
 package object identity {
 
+  import IdentityPersistence._
+
   object MOIDs extends EcotIds(3)  {
     // The central hard-coded User and Identity IDs, which are used for system and testing purposes:
     val SystemUserOID = sysId(9)
@@ -110,6 +112,8 @@ package object identity {
      * All the people who have joined this Space.
      */
     def members(implicit state:SpaceState):Iterable[Thing]
+    
+    def user2Ref(user:User)(implicit state:SpaceState):UserRef
   }
   
   /**

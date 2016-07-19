@@ -95,7 +95,7 @@ object KryoInit {
   }
   
   /**
-   * Register our own core types, and some from Akka.
+   * Register our own core types, and some from Akka and Scala.
    * 
    * IMPORTANT: many of these types are abstract, and rely upon the new SubclassResolver that we've
    * added to the romix library.
@@ -109,6 +109,13 @@ object KryoInit {
       
       kryo.register(classOf[scala.collection.immutable.Set[_]], new ScalaImmutableAbstractSetSerializer, 103)
       kryo.register(classOf[scala.collection.immutable.Map[_, _]], new ScalaImmutableAbstractMapSerializer, 104)
+      
+      kryo.register(classOf[models.ThingId], new ThingIdSerializer, 105)
+
+      // We register the two halves of Option separately, since we really want to serialize them
+      // differently:
+      kryo.register(None.getClass(), new NoneSerializer, 106)
+      kryo.register(classOf[Some[_]], new SomeSerializer, 107)
     }
   }
   
