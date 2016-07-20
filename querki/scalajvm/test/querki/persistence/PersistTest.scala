@@ -15,7 +15,10 @@ import querki.globals._
  * this sort. What it's really testing is that the necessary bits and bobs are
  * getting registered in the Ecology.
  */
-class PersistTest(env:PersistEnv) {
+class PersistTest(env:PersistEnv) extends EcologyMember {
+  
+  def ecology = env.ecology
+  
   /**
    * This creates a Kryo (based on the registrations in the Ecology), writes out the given object,
    * reads it back in again and returns it. You will usually want to follow this with assertions that
@@ -24,7 +27,7 @@ class PersistTest(env:PersistEnv) {
   def serialRoundtrip[T <: AnyRef](in:T):T = {
     // First, sanity-check that the type is marked as UseKryo:
     env.checkObj(in)
-    env.roundtrip(in)
+    rawRoundtrip(in)
   }
   
   /**
@@ -37,4 +40,19 @@ class PersistTest(env:PersistEnv) {
     QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
   }
+  
+  def rawRoundtrip[T <: AnyRef](in:T):T = {
+    env.roundtrip(in)
+  }
+  
+  /**
+   * Use this for the low-level "raw" types that should never be serialized at the top level.
+   * These differ from the usual case in that they *don't* have to be marked as UseKryo.
+   */
+  def checkRaw[T <: AnyRef](builder: => T) = {
+    val orig = builder
+    val copy = rawRoundtrip(orig)
+    QLog.spew(s"Checking equality of $copy")
+    env.checkEquality(copy, orig)
+  }  
 }

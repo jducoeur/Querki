@@ -23,6 +23,7 @@ trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
   def roundtrip[T <: AnyRef](in:T):T
   
   def commonSpace:CommonSpace
+  def cdSpace:CDSpace
 }
 
 /**
@@ -54,14 +55,21 @@ class PersistenceTests
     serializer.fromBinary(bytes).asInstanceOf[T]
   }
   
+  var _cdSpace:Option[CDSpace] = None
+  def cdSpace = _cdSpace.get
+  
   "Persistence" should {
-    "work for all the various packages" in { 
+    "work for all the various packages" in {
+      _cdSpace = Some(new CDSpace)
+      
       val actorSystem = ActorSystem().asInstanceOf[ExtendedActorSystem]
       _actorSystemOpt = Some(actorSystem)
       KryoInit.setActorSystem(actorSystem)
 
       _serializer = Some(new KryoSerializer(actorSystem))
     
+      new CommonPersistenceTests(this)
+      new models.ModelPersistenceTests(this)
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)
       new querki.spaces.SpaceMessagePersistenceTests(this)

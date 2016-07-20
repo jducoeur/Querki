@@ -10,7 +10,6 @@ import querki.test._
 class SpaceMessagePersistenceTests(env:PersistEnv) extends PersistTest(env) with SpaceMessagePersistenceBase {
   
   val s = env.commonSpace
-  def ecology = env.ecology
   def state = s.state
   
   checkSerialization(querki.identity.IdentityPersistence.UserRef(s.owner.id, Some(s.owner.mainIdentity.id)))

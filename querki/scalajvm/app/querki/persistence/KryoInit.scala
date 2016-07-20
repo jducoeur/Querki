@@ -116,6 +116,8 @@ object KryoInit {
       // differently:
       kryo.register(None.getClass(), new NoneSerializer, 106)
       kryo.register(classOf[Some[_]], new SomeSerializer, 107)
+      
+      kryo.register(classOf[querki.time.DateTime], new DateTimeSerializer, 108)
     }
   }
   

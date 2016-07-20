@@ -2,11 +2,12 @@ package models
 
 import Thing._
 
+import querki.persistence._
 import querki.test._
 
 import ModelPersistence._
 
-class ModelPersistenceTests extends QuerkiTests with ModelPersistence {
+class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence {
   "PropMap" should {
     "roundtrip properly" in {
       val s = new CDSpace
@@ -24,4 +25,8 @@ class ModelPersistenceTests extends QuerkiTests with ModelPersistence {
       checkProp(s.genres)
     }
   }
+}
+
+class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) with ModelPersistence {
+  checkSerialization(dh(env.cdSpace.eurythmics)(env.cdSpace.state))
 }

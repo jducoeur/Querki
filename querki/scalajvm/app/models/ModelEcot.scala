@@ -3,6 +3,7 @@ package models
 import querki.ecology._
 import querki.globals._
 import querki.persistence._
+import querki.time.DateTime
 
 import Thing.PropMap
 
@@ -13,7 +14,8 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) {
   import ModelPersistence._
   
   override def persistentMessages = persist(64,
-    (classOf[DHPropMap] -> 100)
+    (classOf[DHPropMap] -> 100),
+    (classOf[DHThingState] -> 101)
   )
 }
 
@@ -47,6 +49,8 @@ trait ModelPersistence { self:EcologyMember =>
       }
     }
   }
+  
+  def dh(ts:ThingState)(implicit state:SpaceState) = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
 }
 
 object ModelPersistence {
@@ -55,4 +59,9 @@ object ModelPersistence {
    * because dehydrate/hydrate require a SpaceState, which isn't available at deserialization time.
    */
   case class DHPropMap(@KryoTag(1) props:Map[OID,String]) extends UseKryo
+  
+  /**
+   * A dehydrated ThingState.
+   */
+  case class DHThingState(@KryoTag(1) id:OID, @KryoTag(2) model:OID, @KryoTag(3) props:DHPropMap, @KryoTag(4) modTime:DateTime) extends UseKryo
 }
