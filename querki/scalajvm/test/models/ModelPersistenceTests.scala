@@ -28,5 +28,8 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence {
 }
 
 class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) with ModelPersistence {
-  checkSerialization(dh(env.cdSpace.eurythmics)(env.cdSpace.state))
+  implicit val state = env.cdSpace.state
+  
+  checkSerialization(dh(env.cdSpace.eurythmics))
+  checkSerialization(dh(env.cdSpace.genres))
 }

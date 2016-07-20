@@ -15,7 +15,8 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) {
   
   override def persistentMessages = persist(64,
     (classOf[DHPropMap] -> 100),
-    (classOf[DHThingState] -> 101)
+    (classOf[DHThingState] -> 101),
+    (classOf[DHProperty] -> 102)
   )
 }
 
@@ -51,6 +52,7 @@ trait ModelPersistence { self:EcologyMember =>
   }
   
   def dh(ts:ThingState)(implicit state:SpaceState) = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
+  def dh(prop:AnyProp)(implicit state:SpaceState) = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
 }
 
 object ModelPersistence {
@@ -64,4 +66,17 @@ object ModelPersistence {
    * A dehydrated ThingState.
    */
   case class DHThingState(@KryoTag(1) id:OID, @KryoTag(2) model:OID, @KryoTag(3) props:DHPropMap, @KryoTag(4) modTime:DateTime) extends UseKryo
+  
+  /**
+   * A dehydrated Property. Strictly speaking we don't need to pType and cType -- they should be in the
+   * props -- but it's convenient to keep them handy.
+   */
+  case class DHProperty(
+    @KryoTag(1) id:OID, 
+    @KryoTag(2) model:OID, 
+    @KryoTag(3) props:DHPropMap, 
+    @KryoTag(4) modTime:DateTime,
+    @KryoTag(5) pType:OID,
+    @KryoTag(6) cType:OID
+  ) extends UseKryo
 }
