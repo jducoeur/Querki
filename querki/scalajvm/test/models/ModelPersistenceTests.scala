@@ -32,4 +32,7 @@ class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) with ModelP
   
   checkSerialization(dh(env.cdSpace.eurythmics))
   checkSerialization(dh(env.cdSpace.genres))
+  
+  val complexSpace = new querki.types.ComplexSpace()(ecology)
+  checkSerialization(dh(complexSpace.metaType))
 }

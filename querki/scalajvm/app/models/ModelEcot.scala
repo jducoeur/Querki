@@ -4,6 +4,7 @@ import querki.ecology._
 import querki.globals._
 import querki.persistence._
 import querki.time.DateTime
+import querki.types.ModelTypeDefiner
 
 import Thing.PropMap
 
@@ -16,7 +17,8 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) {
   override def persistentMessages = persist(64,
     (classOf[DHPropMap] -> 100),
     (classOf[DHThingState] -> 101),
-    (classOf[DHProperty] -> 102)
+    (classOf[DHProperty] -> 102),
+    (classOf[DHModelType] -> 103)
   )
 }
 
@@ -53,6 +55,7 @@ trait ModelPersistence { self:EcologyMember =>
   
   def dh(ts:ThingState)(implicit state:SpaceState) = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
   def dh(prop:AnyProp)(implicit state:SpaceState) = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
+  def dh(tpe:ModelTypeDefiner#ModelType)(implicit state:SpaceState) = DHModelType(tpe.id, tpe.model, tpe.props, tpe.modTime, tpe.basedOn)
 }
 
 object ModelPersistence {
@@ -78,5 +81,19 @@ object ModelPersistence {
     @KryoTag(4) modTime:DateTime,
     @KryoTag(5) pType:OID,
     @KryoTag(6) cType:OID
+  ) extends UseKryo
+  
+  /**
+   * A dehydrated ModelType. (Which so far are the only user-createable PTypes, and might always be.)
+   * The basedOn field is redundant -- it should be in the props -- but it's convenient to have it out.
+   * 
+   * This arguably doesn't belong here, but it's convenient.
+   */
+  case class DHModelType(
+    @KryoTag(1) id:OID, 
+    @KryoTag(2) model:OID, 
+    @KryoTag(3) props:DHPropMap, 
+    @KryoTag(4) modTime:DateTime,
+    @KryoTag(5) basedOn:OID
   ) extends UseKryo
 }
