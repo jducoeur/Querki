@@ -2,6 +2,7 @@ package models
 
 import querki.ecology._
 import querki.globals._
+import querki.identity.IdentityId
 import querki.persistence._
 import querki.time.DateTime
 import querki.types.ModelTypeDefiner
@@ -18,7 +19,8 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) {
     (classOf[DHPropMap] -> 100),
     (classOf[DHThingState] -> 101),
     (classOf[DHProperty] -> 102),
-    (classOf[DHModelType] -> 103)
+    (classOf[DHModelType] -> 103),
+    (classOf[DHSpaceState] -> 104)
   )
 }
 
@@ -53,9 +55,30 @@ trait ModelPersistence { self:EcologyMember =>
     }
   }
   
-  def dh(ts:ThingState)(implicit state:SpaceState) = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
-  def dh(prop:AnyProp)(implicit state:SpaceState) = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
-  def dh(tpe:ModelTypeDefiner#ModelType)(implicit state:SpaceState) = DHModelType(tpe.id, tpe.model, tpe.props, tpe.modTime, tpe.basedOn)
+  def dh(ts:ThingState)(implicit state:SpaceState):DHThingState = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
+  def dh(prop:AnyProp)(implicit state:SpaceState):DHProperty = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
+  def dh(tpe:PType[_])(implicit state:SpaceState):DHModelType = {
+    tpe match {
+      case mt:ModelTypeDefiner#ModelType => DHModelType(mt.id, mt.model, mt.props, mt.modTime, mt.basedOn)
+      case _ => throw new Exception(s"Trying to dehydrate PType $tpe, which isn't a ModelType!")
+    }
+  }
+  def dh(state:SpaceState):DHSpaceState = {
+    implicit val s = state
+    
+    DHSpaceState(
+      state.id,
+      state.model,
+      state.props,
+      state.modTime,
+      state.owner,
+      state.name,
+      state.apps.map(_.id).toList,
+      state.types.values.map(dh(_)).toList,
+      state.spaceProps.values.map(dh(_)).toList,
+      state.things.values.map(dh(_)).toList
+    )
+  }
 }
 
 object ModelPersistence {
@@ -95,5 +118,24 @@ object ModelPersistence {
     @KryoTag(3) props:DHPropMap, 
     @KryoTag(4) modTime:DateTime,
     @KryoTag(5) basedOn:OID
+  ) extends UseKryo
+  
+  /**
+   * A dehydrated SpaceState.
+   * 
+   * Note that we aren't even bothering to dehydrate Collection yet, since there is no concept of
+   * user-defined ones yet.
+   */
+  case class DHSpaceState(
+    @KryoTag(1) id:OID, 
+    @KryoTag(2) model:OID, 
+    @KryoTag(3) props:DHPropMap, 
+    @KryoTag(4) modTime:DateTime,
+    @KryoTag(5) ownerId:IdentityId,
+    @KryoTag(6) name:String,
+    @KryoTag(7) apps:List[OID],
+    @KryoTag(8) types:List[DHModelType],
+    @KryoTag(9) spaceProps:List[DHProperty],
+    @KryoTag(10) things:List[DHThingState]
   ) extends UseKryo
 }

@@ -118,6 +118,8 @@ object KryoInit {
       kryo.register(classOf[Some[_]], new SomeSerializer, 107)
       
       kryo.register(classOf[querki.time.DateTime], new DateTimeSerializer, 108)
+      
+      kryo.register(classOf[scala.collection.immutable.List[_]], new ScalaListSerializer, 109)
     }
   }
   

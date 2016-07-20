@@ -35,4 +35,7 @@ class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) with ModelP
   
   val complexSpace = new querki.types.ComplexSpace()(ecology)
   checkSerialization(dh(complexSpace.metaType))
+  
+  // And here's the big test:
+  checkSerialization(dh(complexSpace.state))
 }
