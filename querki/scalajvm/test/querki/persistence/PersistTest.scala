@@ -33,12 +33,15 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
   /**
    * Convenience function over serialRoundtrip. You can use this iff the class you're testing has a
    * good == function. (That is, if it's a case class, which it usually is.)
+   * 
+   * This returns the copy, in case you want to do more to it.
    */
-  def checkSerialization[T <: AnyRef](builder: => T) = {
+  def checkSerialization[T <: AnyRef](builder: => T):T = {
     val orig = builder
     val copy = serialRoundtrip(orig)
     QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
+    copy
   }
   
   def rawRoundtrip[T <: AnyRef](in:T):T = {
@@ -49,10 +52,11 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
    * Use this for the low-level "raw" types that should never be serialized at the top level.
    * These differ from the usual case in that they *don't* have to be marked as UseKryo.
    */
-  def checkRaw[T <: AnyRef](builder: => T) = {
+  def checkRaw[T <: AnyRef](builder: => T):T = {
     val orig = builder
     val copy = rawRoundtrip(orig)
     QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
+    copy
   }  
 }

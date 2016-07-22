@@ -27,7 +27,7 @@ object SpaceMessagePersistence {
   case class DHDeleteThing(@KryoTag(1) req:UserRef, @KryoTag(2) thing:ThingId) extends UseKryo
 }
 
-trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence {
+trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with querki.types.ModelTypeDefiner {
   import SpaceMessagePersistence._
   
   private lazy val Person = interface[querki.identity.Person]

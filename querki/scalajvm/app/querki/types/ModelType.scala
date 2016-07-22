@@ -24,7 +24,7 @@ object SimplePropertyBundle {
  * TODO: a good deal of this code is copied from Thing. Think carefully about the right factoring here. I kind of
  * want PropertyBundle to remain a pure interface, but we may want to carefully lift out a base implementation.
  */
-case class ModeledPropertyBundle(val modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
+case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
   extends PropertyBundle with EcologyMember 
 {
   def isThing:Boolean = false
@@ -85,13 +85,13 @@ trait ModelTypeDefiner { self:EcologyMember =>
   
   private lazy val Core = interface[querki.core.Core]
   
-  class ModelType(tid:OID, spaceId:OID, modelId:OID, val basedOn:OID, typeProps:PropMap) 
-    extends querki.core.TypeUtils.SystemTypeBase[ModeledPropertyBundle](tid, spaceId, modelId, typeProps) 
+  case class ModelType(t:OID, sId:OID, mId:OID, basedOn:OID, typeProps:PropMap) 
+    extends querki.core.TypeUtils.SystemTypeBase[ModeledPropertyBundle](t, sId, mId, typeProps) 
     with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeBase
   {
     def this(t:OID, b:OID, tp:PropMap) = this(t, SystemIds.systemOID, querki.core.MOIDs.UrTypeOID, b, tp)
     
-    def copy(newModelId:OID, newProps:PropMap) = new ModelType(tid, spaceId, newModelId, basedOn, newProps)
+    def copy(newModelId:OID, newProps:PropMap) = new ModelType(t, spaceId, newModelId, basedOn, newProps)
     
     override lazy val props:PropMap = propMap + 
 		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))

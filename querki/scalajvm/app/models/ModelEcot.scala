@@ -4,8 +4,10 @@ import querki.ecology._
 import querki.globals._
 import querki.identity.IdentityId
 import querki.persistence._
+import querki.spaces.UnresolvedPropValue
 import querki.time.DateTime
 import querki.types.ModelTypeDefiner
+import querki.values.SpaceState
 
 import Thing.PropMap
 
@@ -24,11 +26,13 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) {
   )
 }
 
-trait ModelPersistence { self:EcologyMember =>
+trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =>
   
   import ModelPersistence._
   
   def recordUnresolvedProp(valStr:String) = interface[querki.spaces.SpacePersistence].recordUnresolvedProp(valStr)
+  lazy val systemState = interface[querki.system.System].State
+  lazy val UnresolvedPropType = interface[querki.spaces.SpacePersistence].UnresolvedPropType
   
   implicit def propMap2DH(pm:PropMap)(implicit state:SpaceState):DHPropMap = {
     val props = pm.map { case (k,v) =>
@@ -78,6 +82,90 @@ trait ModelPersistence { self:EcologyMember =>
       state.spaceProps.values.map(dh(_)).toList,
       state.things.values.map(dh(_)).toList
     )
+  }
+  
+  /**
+   * This deals with the synchronous bits of "rehydrating" a SpaceState. Note that the end result is still
+   * missing a few bits that require Actor communication: the apps and the ownerIdentity.
+   * 
+   * Note that this code is intentionally adapted from SpaceLoader, which it will eventually replace.
+   */
+  def rehydrate(dh:DHSpaceState):SpaceState = {
+    // First, create the framework of the SpaceState itself:
+    val baseState = 
+      SpaceState(
+        dh.id,
+        dh.model,
+        DH2PropMap(dh.props)(systemState),
+        dh.ownerId,
+        dh.name,
+        dh.modTime,
+        Seq.empty,  // apps need to be filled in async
+        Some(systemState),
+        Map.empty,  // Types -- filled in below
+        Map.empty,  // SpaceProps -- filled in below
+        Map.empty,  // Things -- filled in below
+        Map.empty,  // Collections -- ignored for now
+        None       // ownerIdentity needs to be filled in async
+      )
+      
+    // Next, add the Types. Note that we can build the Type before we build the
+    // Model it is based on.
+    val typeMap = (Map.empty[OID, PType[_]] /: dh.types) { (map, tpe) =>
+      implicit val s = baseState
+      // TODO: ModelType should take modTime, like all other dynamically-created Things:
+      val mt = new ModelType(tpe.id, dh.id, querki.core.MOIDs.UrTypeOID, tpe.basedOn, tpe.props)
+      map + (tpe.id -> mt)
+    }
+    val withTypes = baseState.copy(types = typeMap)
+    
+    // Next, add the Properties.
+    val props = (Map.empty[OID, Property[_,_]] /: dh.spaceProps) { (map, propdh) =>
+      implicit val s = withTypes
+      val typ = withTypes.typ(propdh.pType)
+      // This sad cast is necessary in order to pass the PType into the Property. It's reasonably
+      // safe: we don't actually care about the type parameters of user-created Properties, since
+      // erasure is going to scrag them anyway:
+      val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
+      val coll = systemState.coll(propdh.cType)
+      val prop = new Property(propdh.id, dh.id, propdh.model, boundTyp, coll, propdh.props, propdh.modTime)
+      map + (propdh.id -> prop)
+    }
+    val withProps = withTypes.copy(spaceProps = props)
+    
+    // Now add the Things.
+    val ts = (Map.empty[OID, ThingState] /: dh.things) { (map, thingdh) =>
+      implicit val s = withProps
+      val thing = ThingState(thingdh.id, dh.id, thingdh.model, thingdh.props, thingdh.modTime)
+      map + (thingdh.id -> thing)
+    }
+    val withThings = withProps.copy(things = ts)
+    
+    // Now we do a second pass, to resolve anything left unresolved:
+    def secondPassProps[T <: Thing](thing:T)(copier:(T, PropMap) => T):T = {
+      val fixedProps = thing.props.map { propPair =>
+        val (id, value) = propPair
+        value match {
+          case unres:UnresolvedPropValue => {
+            val propOpt = withThings.prop(id)
+            val v = propOpt match {
+              case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)(withThings)
+              case None => value
+            }
+            (id, v)
+          }
+          case _ => propPair
+        }
+      }
+      copier(thing, fixedProps)
+    }
+    // First fix up the Space itself:
+    val fixedSpace = secondPassProps(withThings)((state, props) => state.copy(pf = props))
+    // And then the Properties:
+    val fixedProps = fixedSpace.spaceProps.mapValues { prop =>
+      secondPassProps(prop)((p, metaProps) => p.copy(pf = metaProps))
+    }
+    fixedSpace.copy(spaceProps = fixedProps)
   }
 }
 
