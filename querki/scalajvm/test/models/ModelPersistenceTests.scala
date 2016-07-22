@@ -34,24 +34,34 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
 class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) 
   with ModelPersistence with querki.types.ModelTypeDefiner with ModelDiff 
 {
-  implicit val state = env.cdSpace.state
+  def runTests() = {
+    implicit val state = env.cdSpace.state
+    
+    checkSerialization(dh(env.cdSpace.eurythmics))
+    checkSerialization(dh(env.cdSpace.genres))
+    
+    val complexSpace = new querki.types.ComplexSpace()(ecology)
+    checkSerialization(dh(complexSpace.metaType))
+    
+    // Roundtrip a dehydrated SpaceState. Ignore the cache, which isn't expected to be right:
+    val complexState = complexSpace.state.copy(cache = Map.empty)
+    val spacedh = dh(complexState)
+    val spaceCopy = checkSerialization(spacedh)
+    // And rehydrate it:
+    val rehydrated = rehydrate(spaceCopy)
+    testRehydratedComplexState(rehydrated)
+  }
   
-  checkSerialization(dh(env.cdSpace.eurythmics))
-  checkSerialization(dh(env.cdSpace.genres))
+  def testRehydratedComplexState(state:SpaceState) = {
+    implicit val s = new DynamicSpace(state)(ecology)
+    
+    // These tests are intentionally lifted from ModelTypeTests. Arguably, we should
+    // refactor them out:
+    env.pqlEquals("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""",
+             "Top Text 1")
+    env.pqlEquals("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Referencing]]""", "From the Top")
+    env.pqlEquals("""[[My Tree -> Left -> Right -> Node Id]]""", "3")
+  }
   
-  val complexSpace = new querki.types.ComplexSpace()(ecology)
-  checkSerialization(dh(complexSpace.metaType))
-  
-  // Roundtrip a dehydrated SpaceState. Ignore the cache, which isn't expected to be right:
-  val complexState = complexSpace.state.copy(cache = Map.empty)
-  val spacedh = dh(complexState)
-  val spaceCopy = checkSerialization(spacedh)
-  // And rehydrate it:
-  val rehydrated = rehydrate(spaceCopy)
-//  if (rehydrated != complexState) {
-//    // Humph -- mismatched.
-//    QLog.spew("Rehydrated State doesn't match original!")
-//    println(DiffShow.diff(complexState, rehydrated).string)
-//    throw new Exception(s"Rehydrated Space didn't match the original!")
-//  }
+  runTests()
 }

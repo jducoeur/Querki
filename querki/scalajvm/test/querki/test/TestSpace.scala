@@ -236,3 +236,10 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
     results.current
   }
 }
+
+class DynamicSpace(s:SpaceState)(implicit val ecology:Ecology) extends TestSpace {
+  override lazy val state = s 
+  
+  // In the simple case, we only have one Space, so it can own the World:
+  val world = new TestWorld
+}

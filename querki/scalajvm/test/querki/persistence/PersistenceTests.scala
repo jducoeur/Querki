@@ -13,6 +13,7 @@ import com.romix.scala.serialization.kryo.SubclassResolver
 import akka.actor.{ActorSystem, ExtendedActorSystem}
 
 import querki.globals._
+import querki.identity.User
 import querki.test._
 
 trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
@@ -24,6 +25,8 @@ trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
   
   def commonSpace:CommonSpace
   def cdSpace:CDSpace
+  // Exposes the standard pql() construct in a way that PersistTests can use it:
+  def pqlEquals[S <: TestSpace](text:String, expected:String)(implicit space:S, requester:User = BasicTestUser)
 }
 
 /**
@@ -44,6 +47,10 @@ class PersistenceTests
 {
   def checkObj[T](in:T) = assert(in.isInstanceOf[UseKryo])
   def checkEquality[T](a:T, b:T) = assert(a == b)
+  
+  def pqlEquals[S <: TestSpace](text:String, expected:String)(implicit space:S, requester:User = BasicTestUser) = {
+    pql(text) should equal (expected)
+  }
   
   var _actorSystemOpt:Option[ActorSystem] = None
   def testActorSystem = _actorSystemOpt.get
