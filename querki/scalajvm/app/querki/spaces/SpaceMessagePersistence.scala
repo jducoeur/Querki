@@ -47,17 +47,4 @@ trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence wi
   
   private lazy val Person = interface[querki.identity.Person]
   implicit def user2Ref(user:User)(implicit state:SpaceState):UserRef = Person.user2Ref(user)
-  
-  def state:SpaceState
-}
-
-trait SpaceMessagePersistence extends SpaceMessagePersistenceBase with PersistentActor {
-  
-  /**
-   * A slightly more strong-typed version of persist(), just for good hygiene.
-   */
-  def ps[A <: UseKryo](msg:A)(handler: (A) => Unit):Unit = {
-    persist(msg)(handler)
-  }
-  
 }

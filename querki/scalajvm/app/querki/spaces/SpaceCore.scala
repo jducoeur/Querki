@@ -51,7 +51,10 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * Our own version of persist(). Note that this enforces UseKryo at the signature level, so we
    * should use it instead of ordinary persist().
    * 
-   * This is abstract, implemented differently in the real system vs. test.
+   * This is abstract, implemented differently in the real system vs. test. IMPORTANT: in test, the
+   * handler is called synchronously, whereas in the real code it is called asynchronously! The
+   * guarantees of Akka Persistence state that no further messages will be processed until after
+   * the handler is called, but that processing will happen *after* this returns!
    */
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit):Unit
   
@@ -78,9 +81,9 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
   def allocThingId():RequestM[OID]
   
   /**
-   * This states that the given state is the one to use from here on.
+   * Tells any outside systems about the updated state. Originally part of Space.updateState().
    */
-  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit
+  def notifyUpdateState():Unit
   
   /**
    * Sends a message to the MySQL side, telling it that this Space's name has changed.
@@ -88,6 +91,15 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * This code is currently in SpacePersister; we'll need to send a new message there.
    */
   def changeSpaceName(newName:String, newDisplay:String):Unit
+  
+  /**
+   * Look up any external cache changes, record the new state, and send notifications about it.
+   */
+  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit = {
+    val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
+    _currentState = Some(withCaches.current)
+    notifyUpdateState()
+  }
   
   def persistMsgThen[A <: UseKryo](oid:OID, event:A, handler: => Unit):RequestM[Unit] = {
     doPersist(event) { _ =>
@@ -141,6 +153,15 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     }
   }
   
+  /**
+   * This wraps around all the message handlers. It is there simply to pay attention to what comes out of the
+   * block, and propagate any exceptions to the sender.
+   * 
+   * TODO: this is *not* a great way to do things -- Exceptions are a crude way to handle ordinary user errors.
+   * It's old code, and that shows. But a lot of the bits and pieces underneath are Exception-oriented, because
+   * this is all very old code. The whole stack should be cleaned up with a more proper structure. But note
+   * that we still need to deal with RequestM, which *is* Try-based.
+   */
   def catchPrePersistExceptions(name:String, block: => RequestM[Unit]) = {
     block.onComplete { 
       case Success(_) => // The success case happens inside of doPersist(), which is side-effecting
@@ -411,6 +432,7 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
       catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind))
     }
     
+    // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
     // world.
     case ChangeProps(who, spaceId, thingId, changedProps, sync) => {
