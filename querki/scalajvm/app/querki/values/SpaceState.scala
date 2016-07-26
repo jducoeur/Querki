@@ -28,6 +28,15 @@ import querki.values._
 case class StateCacheKey(ecotId:Short, id:String)
 
 /**
+ * A properly-typed version ID for Spaces. This is initialized as SpaceVersion.Unknown, and then set
+ * based on the Akka Persistence version ID.
+ */
+case class SpaceVersion(v:Int) extends AnyVal
+object SpaceVersion {
+  val Unknown = SpaceVersion(-1)
+}
+
+/**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
  * 
@@ -55,6 +64,7 @@ case class SpaceState(
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
     ownerIdentity:Option[querki.identity.Identity],
+    version:SpaceVersion = SpaceVersion.Unknown,
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)
 {
@@ -251,6 +261,19 @@ case class SpaceState(
     thingId match {
       case AsOID(oid) => anything(oid)
       case AsName(name) => anythingByName(name)
+    }
+  }
+  
+  def localFrom[T <: Thing : scala.reflect.ClassTag](thingId:ThingId, table:Map[OID, T]):Option[T] = {
+    thingId match {
+      case AsOID(oid) => table.get(oid)
+      case AsName(rawName) => {
+        val name = NameUtils.canonicalize(rawName)
+        byCanonicalName.get(name) match {
+          case found:T => Some(found)
+          case _ => None
+        }
+      }
     }
   }
   

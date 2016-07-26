@@ -2,7 +2,7 @@ package querki.spaces
 
 import akka.persistence.PersistentActor
 
-import models.{ModelPersistence, ThingId}
+import models.{ModelPersistence, UnknownOID, ThingId}
 import models.Kind.Kind
 import ModelPersistence._
 
@@ -10,6 +10,7 @@ import querki.globals._
 import querki.identity.{User, IdentityPersistence}
 import IdentityPersistence._
 import querki.persistence._
+import querki.time.DateTime
 
 import messages._
 
@@ -21,10 +22,24 @@ import messages._
  * because that's redundant for our purposes: the message is being persisted in this Space's archive.
  */
 object SpaceMessagePersistence {
-  case class DHCreateThing(@KryoTag(1) req:UserRef, @KryoTag(2) kind:Kind, @KryoTag(3) modelId:OID, @KryoTag(4) props:DHPropMap) extends UseKryo
-  case class DHModifyThing(@KryoTag(1) req:UserRef, @KryoTag(2) id:ThingId, @KryoTag(3) modelId:OID, @KryoTag(4) props:DHPropMap) extends UseKryo
-  case class DHChangeProps(@KryoTag(1) req:UserRef, @KryoTag(2) id:ThingId, @KryoTag(3) changedProps:DHPropMap) extends UseKryo
-  case class DHDeleteThing(@KryoTag(1) req:UserRef, @KryoTag(2) thing:ThingId) extends UseKryo
+  case class DHCreateThing(
+    @KryoTag(1) req:UserRef, 
+    @KryoTag(2) id:OID,
+    @KryoTag(3) kind:Kind, 
+    @KryoTag(4) modelId:OID, 
+    @KryoTag(5) props:DHPropMap, 
+    @KryoTag(6) modTime:DateTime) extends UseKryo
+  case class DHModifyThing(
+    @KryoTag(1) req:UserRef, 
+    @KryoTag(2) id:OID, 
+    @KryoTag(3) modelIdOpt:Option[OID], 
+    @KryoTag(4) propChanges:DHPropMap,
+    @KryoTag(5) replaceAllProps:Boolean,
+    @KryoTag(6) modTime:DateTime) extends UseKryo
+  case class DHDeleteThing(
+    @KryoTag(1) req:UserRef, 
+    @KryoTag(2) id:OID, 
+    @KryoTag(3) modTime:DateTime) extends UseKryo
 }
 
 trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with querki.types.ModelTypeDefiner {
@@ -34,11 +49,6 @@ trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence wi
   implicit def user2Ref(user:User)(implicit state:SpaceState):UserRef = Person.user2Ref(user)
   
   def state:SpaceState
-  
-  def dh(msg:CreateThing) = { implicit val s = state; DHCreateThing(msg.req, msg.kind, msg.modelId, msg.props) }
-  def dh(msg:ModifyThing) = { implicit val s = state; DHModifyThing(msg.req, msg.id, msg.modelId, msg.props) }
-  def dh(msg:ChangeProps) = { implicit val s = state; DHChangeProps(msg.req, msg.id, msg.changedProps) }
-  def dh(msg:DeleteThing) = { implicit val s = state; DHDeleteThing(msg.req, msg.thing) }
 }
 
 trait SpaceMessagePersistence extends SpaceMessagePersistenceBase with PersistentActor {

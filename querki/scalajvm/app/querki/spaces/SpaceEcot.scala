@@ -59,8 +59,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   override def persistentMessages = persist(37,
     (classOf[DHCreateThing] -> 100),
     (classOf[DHModifyThing] -> 101),
-    (classOf[DHChangeProps] -> 102),
-    (classOf[DHDeleteThing] -> 103)
+    (classOf[DHDeleteThing] -> 102)
   )
   
   implicit val stdTimeout = Timeout(10 seconds)
