@@ -91,6 +91,14 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, initHistory:List[HistoryRec
 }
 
 /**
+ * This is the stand-in for an actual Property, from outside the black box -- this is used to make
+ * the Property useful in tests.
+ */
+case class PropRecord[VT, RT](oid:OID, cType:Collection, pType:PType[VT] with PTypeBuilder[VT, RT]) {
+  def apply(raws:RT*) = (oid, QValue.make(cType, pType, raws:_*))
+}
+
+/**
  * This is a specialized version of TestSpace that creates a SpaceCore and wraps around that. It allows a
  * much richer set of interactions than the traditional CommonSpace, but requires some setup effort.
  */
@@ -126,13 +134,6 @@ class SpaceCoreTests extends QuerkiTests {
     "work in a complex scenario" in {
       implicit val s = new SpaceCoreSpace
       
-      /**
-       * This is the stand-in for an actual Property, from outside the black box.
-       */
-      case class PropRecord[VT, RT](oid:OID, cType:Collection, pType:PType[VT] with PTypeBuilder[VT, RT]) {
-        def apply(raws:RT*) = (oid, QValue.make(cType, pType, raws:_*))
-      }
-      
       def addSomething(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):OID = {
         val props = s.makePropFetcher(name, propList)
         val Some(ThingFound(oid, _)) = s ! CreateThing(s.owner, s.sc.id, kind, model, props)
@@ -162,7 +163,7 @@ class SpaceCoreTests extends QuerkiTests {
       }
       
       // Boot the Space up
-      s ! InitialState(s.owner, s.sc.id, "Test SpaceCore", s.owner.mainIdentity.id)
+      s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
       
       // Build the contents of CommonSpace in it
       // First, create all the Properties...
@@ -187,6 +188,19 @@ class SpaceCoreTests extends QuerkiTests {
       val instance = addThing("My Instance", testModelId, optTextProp("Hello world"))
       val withDisplayName = addSimpleThing("Interesting Display Name", Basic.DisplayNameProp("""My name is "interesting"!"""))
       val trivialThing = addSimpleThing("Trivial")
+      
+      
+      // Okay, now a selection of tests
+      pql("[[My Instance -> My Optional Text]]") should equal ("Hello world")
+      
+      pql("[[My Model -> _kind]]") should equal ("0")
+      pql("[[Text Type -> _kind]]") should equal ("1")
+      pql("[[My List of Links._self -> _kind]]") should equal ("2")
+      pql("[[Test Space -> _kind]]") should equal ("3")
+      pql("[[Optional -> _kind]]") should equal ("4")
+      
+      pql("""[[My Instance -> _model -> _oid]]""") should equal(testModelId.toThingId.toString)
+      pql("""[[My Model -> _model -> _oid]]""") should equal(SimpleThingOID.toThingId.toString)
     }
   }
 }
