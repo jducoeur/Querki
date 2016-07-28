@@ -9,7 +9,7 @@ import models.Thing.PropMap
 import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.conversations.messages.ConversationMessage
-import querki.identity.User
+import querki.identity.{IdentityId, User}
 import querki.session.messages.SessionMessage
 import querki.values.{RequestContext, SpaceState}
 import querki.util.PublicException
@@ -63,6 +63,14 @@ case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropM
 case class ChangeProps(req:User, space:OID, id:ThingId, changedProps:PropMap, sync:Boolean = false) extends SpaceMessage(req, space)
 
 case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(req, space)
+
+/**
+ * This is the initialization message for a newly-created Space, with the basic starting info.
+ * It may *only* be sent to a newly-created Space: it is an error if the Space already has state!
+ * 
+ * Note that we only send the owning Identity's OID; it can then be fetched from req.
+ */
+case class InitialState(req:User, space:OID, display:String, owner:IdentityId) extends SpaceMessage(req, space)
 
 /**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.

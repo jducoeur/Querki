@@ -93,6 +93,8 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
           val canon = NameUtils.canonicalize(display)
           persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display)) foreach {
             case err:ThingError => sender ! err
+            // TODO: need to send the InitState message to the newly-create Space, to boot it up; don't send the
+            // SpaceInfo response until that returns a ThingFound!
             case Changed(spaceId, _) => sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
           }
         }  

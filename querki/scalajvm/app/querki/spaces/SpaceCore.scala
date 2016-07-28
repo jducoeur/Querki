@@ -1,23 +1,24 @@
 package querki.spaces
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 import akka.actor._
 import Actor.Receive
-
-import org.querki.requester._
+import akka.persistence._
 
 import models._
 import Thing.PropMap
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
-import querki.identity.User
+import querki.identity.{Identity, User}
+import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.time.DateTime
 import querki.types.ModelTypeBase
 import querki.types.MOIDs.ModelForTypePropOID
 import querki.util.UnexpectedPublicException
+import querki.values.{SpaceState, SpaceVersion}
 
 import messages._
 import SpaceError._
@@ -32,8 +33,16 @@ import SpaceMessagePersistence._
  * This trait encapsulates the central PersistentActor concepts. It isn't actually based on
  * PersistentActor because that trait isn't very pure -- it's not obvious how to just implement
  * the trait without being an actual PersistentActor.
+ * 
+ * @param rtc Effectively the abstraction of the RequestM type itself. This provides the type-level
+ *    operations, and via the rm2rtc method provides instances of the abstraction. Think of those
+ *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
-trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with ModelPersistence {
+abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) extends SpaceMessagePersistenceBase with EcologyMember with ModelPersistence {
+  /**
+   * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
+   */
+  implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
 
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -41,6 +50,9 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
+  lazy val System = interface[querki.system.System]
+  
+  lazy val SystemState = System.State
   
   /**
    * The OID of this Space.
@@ -73,12 +85,12 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime
    * in on the change before it happens.
    */
-  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RequestM[ThingChangeRequest]
+  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RM[ThingChangeRequest]
   
   /**
    * This was originally from SpacePersister -- it fetches a new OID to assign to a new Thing.
    */
-  def allocThingId():RequestM[OID]
+  def allocThingId():RM[OID]
   
   /**
    * Tells any outside systems about the updated state. Originally part of Space.updateState().
@@ -101,12 +113,12 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     notifyUpdateState()
   }
   
-  def persistMsgThen[A <: UseKryo](oid:OID, event:A, handler: => Unit):RequestM[Unit] = {
+  def persistMsgThen[A <: UseKryo](oid:OID, event:A, handler: => Unit):RM[Unit] = {
     doPersist(event) { _ =>
       handler
       respond(ThingFound(oid, state))
     }
-    RequestM.successful(())
+    rtc.successful(())
   }
   
   var _currentState:Option[SpaceState] = None
@@ -162,8 +174,8 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * this is all very old code. The whole stack should be cleaned up with a more proper structure. But note
    * that we still need to deal with RequestM, which *is* Try-based.
    */
-  def catchPrePersistExceptions(name:String, block: => RequestM[Unit]) = {
-    block.onComplete { 
+  def catchPrePersistExceptions(name:String, block: => RM[Unit]) = {
+    block.onComplete {
       case Success(_) => // The success case happens inside of doPersist(), which is side-effecting
       case Failure(th) => {
         th match {
@@ -190,6 +202,31 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     result.get
   }
   
+  def doInitState(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String) = {
+    val canonical = NameUtils.canonicalize(display)
+    val initState =
+      SpaceState(
+        id,
+        SystemState.id,
+        Map(
+          Core.NameProp(canonical),
+          Basic.DisplayNameProp(display)
+        ),
+        ownerId,
+        canonical,
+        DateTime.now,
+        Seq.empty,
+        Some(SystemState),
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        identityOpt,
+        SpaceVersion(0)
+      )
+    updateState(initState)
+  }
+  
   def doCreate(kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime) = {
     kind match {
       case Kind.Thing => {
@@ -212,7 +249,7 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     }
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RequestM[Unit] = {
+  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[Unit] = {
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
     offerChanges(who, Some(modelId), None, kind, propsIn, changedProps).flatMap { tcr =>
@@ -241,9 +278,9 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
           canCreate(who, modelId)
           
       if (!allowed) {
-        RequestM.failed(new PublicException(CreateNotAllowed))
+        rtc.failed(new PublicException(CreateNotAllowed))
       } else if (name.isDefined && state.anythingByName(name.get).isDefined)
-        RequestM.failed(new PublicException(NameExists, name.get))
+        rtc.failed(new PublicException(NameExists, name.get))
       else {
         // All tests have passed, so now we actually persist the change: 
         val modTime = DateTime.now
@@ -325,10 +362,10 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     }
   }
   
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RequestM[Unit] = {
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
-      RequestM.failed(new PublicException(UnknownPath))
+      rtc.failed(new PublicException(UnknownPath))
     else {
       val oldThing = oldThingOpt.get
       
@@ -339,7 +376,7 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
         val newProps = tcr.newProps
         canChangeProperties(who, changedProps, Some(oldThing), newProps)
         if (!canEdit(who, thingId)) {
-          RequestM.failed(new PublicException(ModifyNotAllowed))
+          rtc.failed(new PublicException(ModifyNotAllowed))
         } else {
           val modTime = DateTime.now
           val msg = {
@@ -363,7 +400,7 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
     }
   }
   
-  def deleteThing(who:User, thingId:ThingId):RequestM[Unit] = {
+  def deleteThing(who:User, thingId:ThingId):RM[Unit] = {
     // TODO: we should probably allow deletion of local Model Types as well, but should probably check
     // that there are no Properties using that Type first.
     val oldThingOpt:Option[Thing] = 
@@ -393,6 +430,11 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * The standard recovery procedure for PersistentActors.
    */
   def receiveRecover:Receive = {
+    case DHInitState(userRef, display) => {
+      // We don't have the Identity to hand here, but we have enough info to go get it:
+      doInitState(userRef.userId, userRef.identityIdOpt.get, None, display)
+    }
+    
     case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
       implicit val s = state
       val props:PropMap = dhProps 
@@ -416,6 +458,11 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
       val thing = state.anything(thingId).get
       doDelete(thingId, thing)
     }
+    
+    case RecoveryCompleted => {
+      // TODO: Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way.
+      // TODO: Iff we have a State, but we don't have an ownerIdentity, go fetch that.
+    }
   }
   
   /**
@@ -423,6 +470,17 @@ trait SpaceCore extends SpaceMessagePersistenceBase with EcologyMember with Mode
    * alter the SpaceState.
    */
   def receiveCommand:Receive = {
+    // This is the initial "set up this Space" message. It *must* be the *very first message* received
+    // by this Space!
+    case msg @ InitialState(who, spaceId, display, ownerId) => {
+      if (_currentState.isDefined) {
+        QLog.error(s"Space $id received $msg, but already has state $state!")
+      } else {
+        val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
+        persistMsgThen(spaceId, msg, doInitState(who.id, ownerId, who.identityById(ownerId), display))
+      }
+    }
+    
     // This message is simple, since it isn't persisted:
     case GetSpaceInfo(who, spaceId) => {
       respond(SpaceInfo(state.id, state.name, state.displayName, state.ownerHandle))
