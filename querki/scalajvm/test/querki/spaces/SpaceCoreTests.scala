@@ -6,19 +6,31 @@ import models._
 import Kind.Kind
 import Thing.{emptyProps, PropMap}
 import querki.basic.MOIDs.SimpleThingOID
+import querki.core.MOIDs.UrPropOID
 import querki.globals._
 import querki.identity.User
 import querki.persistence._
 import querki.spaces.messages._
 import querki.test._
+import querki.values.QValue
+  
+case class HistoryRecord(sequenceNr:Long, msg:UseKryo)
   
 /**
  * For testing, we use a version of SpaceCore built around the synchronous TCIdentity.
  */
-class TestSpaceCore(val id:OID, testSpace:TestSpace)(implicit e:Ecology) extends SpaceCore[TCIdentity](TestRTCAble) {
+class TestSpaceCore(val id:OID, testSpace:TestSpace, initHistory:List[HistoryRecord] = List.empty)(implicit e:Ecology) extends SpaceCore[TCIdentity](TestRTCAble) {
+  
+  /**
+   * This is the "history" of "persisted" events, in reverse chronological order. (That is, most recent is
+   * at the front.)
+   */
+  var history = initHistory
+  
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
-    // TODO: record these persists so that we can replay them in later tests.
+    history = HistoryRecord(lastSequenceNr, event) :: history
     lastSequenceNr += 1
+    handler(event)
   }
   
   var lastSequenceNr:Long = 0
@@ -27,7 +39,21 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace)(implicit e:Ecology) extends
    * This sends the given message back to sender.
    */
   def respond(msg:AnyRef) = {
-    // TODO: provide a hook to check these responses
+    currentResponses = msg :: currentResponses
+  }
+  
+  /**
+   * The responses to the current message.
+   */
+  var currentResponses:List[AnyRef] = List.empty
+  
+  /**
+   * Called by the test code. Returns the most recent response, if there were any.
+   */
+  def aroundReceive(msg:AnyRef):Option[AnyRef] = {
+    currentResponses = List.empty
+    receiveCommand(msg)
+    currentResponses.headOption
   }
   
   /**
@@ -52,6 +78,16 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace)(implicit e:Ecology) extends
   }
   
   def changeSpaceName(newName:String, newDisplay:String) = {}
+  
+  /**
+   * If an initial history was provided, that's effectively the persistence log, so play it
+   * before we do anything else.
+   */
+  if (!initHistory.isEmpty) {
+    // Reverse it to get chrono order:
+    val playHistory = initHistory.reverse
+    playHistory.foreach { receiveRecover(_) }
+  }
 }
 
 /**
@@ -65,10 +101,19 @@ class SpaceCoreSpace(implicit val ecology:Ecology) extends TestSpace {
   
   override lazy val state = sc.state
   
-  def !(msg:Any) = sc.receiveCommand(msg)
+  def !(msg:AnyRef) = sc.aroundReceive(msg)
 }
 
 class SpaceCoreTests extends QuerkiTests {
+  lazy val Tags = interface[querki.tags.Tags]
+  
+  lazy val ExternalLinkType = Links.URLType
+  lazy val TextType = Core.TextType
+  lazy val LinkType = Core.LinkType
+  lazy val TagType = Tags.NewTagSetType
+
+  lazy val QSet = Core.QSet
+  
   "SpaceCore" should {
     "throw an exception if it doesn't start with InitialState" in {
       implicit val s = new SpaceCoreSpace
@@ -81,7 +126,67 @@ class SpaceCoreTests extends QuerkiTests {
     "work in a complex scenario" in {
       implicit val s = new SpaceCoreSpace
       
+      /**
+       * This is the stand-in for an actual Property, from outside the black box.
+       */
+      case class PropRecord[VT, RT](oid:OID, cType:Collection, pType:PType[VT] with PTypeBuilder[VT, RT]) {
+        def apply(raws:RT*) = (oid, QValue.make(cType, pType, raws:_*))
+      }
+      
+      def addSomething(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):OID = {
+        val props = s.makePropFetcher(name, propList)
+        val Some(ThingFound(oid, _)) = s ! CreateThing(s.owner, s.sc.id, kind, model, props)
+        oid
+      }
+      
+      def addProperty[VT, RT](name:String, coll:Collection, tpe:PType[VT] with PTypeBuilder[VT, RT]):PropRecord[VT, RT] = {
+        val oid = addSomething(name, Kind.Property, UrPropOID,
+          Core.CollectionProp(coll),
+          Core.TypeProp(tpe)
+        )
+        PropRecord(oid, coll, tpe)
+      }
+      
+      def addThing(name:String, model:OID, propList:(OID, QValue)*) = {
+        addSomething(name, Kind.Thing, model, propList:_*)
+      }
+      
+      def addSimpleThing(name:String, propList:(OID, QValue)*) = {
+        addThing(name, SimpleThingOID, propList:_*)
+      }
+      
+      def addSimpleModel(name:String, propList:(OID, QValue)*) = {
+        addThing(name, SimpleThingOID,
+          (Core.IsModelProp(true) +: propList):_*
+        )
+      }
+      
+      // Boot the Space up
       s ! InitialState(s.owner, s.sc.id, "Test SpaceCore", s.owner.mainIdentity.id)
+      
+      // Build the contents of CommonSpace in it
+      // First, create all the Properties...
+      addProperty("Single Link", ExactlyOne, LinkType)
+      addProperty("Optional Link", Optional, LinkType)
+      addProperty("My List of Links", QList, LinkType)
+      addProperty("My Set of Links", QSet, LinkType)
+      
+      addProperty("Single Tag", ExactlyOne, TagType)
+      addProperty("Optional Tag", Optional, TagType)
+      addProperty("My List of Tags", QList, TagType)
+      addProperty("My Set of Tags", QSet, TagType)
+      
+      addProperty("My List of URLs", QList, ExternalLinkType)
+      addProperty("My Optional URL", Optional, ExternalLinkType)
+      
+      addProperty("Single Text", ExactlyOne, TextType)
+      val optTextProp = addProperty("My Optional Text", Optional, TextType)
+      
+      // Then the Models and Things...
+      val testModelId = addSimpleModel("My Model")
+      val instance = addThing("My Instance", testModelId, optTextProp("Hello world"))
+      val withDisplayName = addSimpleThing("Interesting Display Name", Basic.DisplayNameProp("""My name is "interesting"!"""))
+      val trivialThing = addSimpleThing("Trivial")
     }
   }
 }

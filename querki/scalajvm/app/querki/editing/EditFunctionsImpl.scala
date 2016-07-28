@@ -44,34 +44,34 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     implicit val s = state
     DisplayPropVal.propPathFromName(path, thing).flatMap { fieldIds =>
       // Compute the *actual* fields to change. Note that this isn't trivial, since the actual change might be in 
-	  // a Bundle:
-	  val context = QLRequestContext(rc)
-	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
-	  if (!actualFormFieldInfo.isValid){
-	    val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
-	    throw new querki.api.ValidationException(msg)
-	  }
-	  val result = fieldIds.container match {
-	    // If this value is contained inside (potentially nested) Bundles, dive down into them
-	    // and adjust the results:
-        case Some(higherFieldIds) => {
-          // TEMP: restructure rebuildBundle to take higherFieldIds directly:
-          def toHigherIds(oneFieldId:FieldIds):List[IndexedOID] = {
-            val thisId = IndexedOID(oneFieldId.p.id, oneFieldId.index)
-            oneFieldId.container match {
-              case Some(c) => toHigherIds(c) ::: List(thisId)
-              case None => List(thisId)
+  	  // a Bundle:
+  	  val context = QLRequestContext(rc)
+  	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
+  	  if (!actualFormFieldInfo.isValid){
+  	    val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
+  	    throw new querki.api.ValidationException(msg)
+  	  }
+  	  val result = fieldIds.container match {
+  	    // If this value is contained inside (potentially nested) Bundles, dive down into them
+  	    // and adjust the results:
+          case Some(higherFieldIds) => {
+            // TEMP: restructure rebuildBundle to take higherFieldIds directly:
+            def toHigherIds(oneFieldId:FieldIds):List[IndexedOID] = {
+              val thisId = IndexedOID(oneFieldId.p.id, oneFieldId.index)
+              oneFieldId.container match {
+                case Some(c) => toHigherIds(c) ::: List(thisId)
+                case None => List(thisId)
+              }
             }
+            Types.rebuildBundle(thing, toHigherIds(higherFieldIds), actualFormFieldInfo).
+              getOrElse(FormFieldInfo(fieldIds.p, None, true, false, None, Some(new PublicException("Didn't get bundle"))))         
           }
-          Types.rebuildBundle(thing, toHigherIds(higherFieldIds), actualFormFieldInfo).
-            getOrElse(FormFieldInfo(fieldIds.p, None, true, false, None, Some(new PublicException("Didn't get bundle"))))         
-        }
-        case None => actualFormFieldInfo
-	  }
-	    
-	  val FormFieldInfo(prop, value, _, _, _, _) = result
-	  // Note that value can be empty if it fails validation!!!
-	  value.map(v => Core.toProps((prop, v)))
+          case None => actualFormFieldInfo
+  	  }
+  	    
+  	  val FormFieldInfo(prop, value, _, _, _, _) = result
+  	  // Note that value can be empty if it fails validation!!!
+  	  value.map(v => Core.toProps((prop, v)))
     }
   }
   
