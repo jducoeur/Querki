@@ -214,7 +214,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    * The *INITIAL* state of this Space for the test. If you plan to evolve the State, the test
    * will need to fire up a Space Actor to manage that, or do it some other way.
    */
-  lazy val state:SpaceState = {
+  lazy val _initState:SpaceState = {
     val s = SpaceState(
       spaceId,    // This Space's OID
       System.State.id, // This Space's Model
@@ -235,6 +235,11 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
     
     results.current
   }
+  
+  /**
+   * This is a def so that SpaceCoreSpace can be dynamic.
+   */
+  def state:SpaceState = _initState
 }
 
 class DynamicSpace(s:SpaceState)(implicit val ecology:Ecology) extends TestSpace {
