@@ -91,14 +91,6 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, initHistory:List[HistoryRec
 }
 
 /**
- * This is the stand-in for an actual Property, from outside the black box -- this is used to make
- * the Property useful in tests.
- */
-case class PropRecord[VT, RT](oid:OID, cType:Collection, pType:PType[VT] with PTypeBuilder[VT, RT]) {
-  def apply(raws:RT*) = (oid, QValue.make(cType, pType, raws:_*))
-}
-
-/**
  * This is a specialized version of TestSpace that creates a SpaceCore and wraps around that. It allows a
  * much richer set of interactions than the traditional CommonSpace, but requires some setup effort.
  */
