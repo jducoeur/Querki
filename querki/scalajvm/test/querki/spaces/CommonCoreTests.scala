@@ -103,5 +103,13 @@ class CommonCoreTests extends QuerkiTests {
       s ! ChangeProps(s.owner, s.sc.id, s.instance, Map(s.optTextProp("Hello there")), true)
       pql("[[My Instance -> My Optional Text]]") should equal ("Hello there")      
     }
+    
+    "let me DeleteThing" in {
+      implicit val s = new CommonCoreSpace
+      
+      pql("[[My Instance -> My Optional Text]]") should equal ("Hello world")
+      s ! DeleteThing(s.owner, s.sc.id, s.instance)
+      pql("[[My Instance -> My Optional Text]]") should equal ("")
+    }
   }
 }
