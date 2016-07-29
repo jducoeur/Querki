@@ -27,57 +27,11 @@ class CommonCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with Model
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
-  lazy val Types = interface[querki.types.Types]
   
   lazy val ExternalLinkType = Links.URLType
   lazy val TextType = Core.TextType
   lazy val LinkType = Core.LinkType
   lazy val TagType = Tags.NewTagSetType
-  
-  /**
-   * Use this signature if you need to get a hold of the state after the change is made. Don't
-   * over-use this -- there aren't many circumstances where you need it.
-   */
-  def addSomethingFull(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):Option[AnyRef] = {
-    val props = makePropFetcher(name, propList)
-    this ! CreateThing(owner, sc.id, kind, model, props)
-  }
-  
-  def addSomething(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):OID = {
-    val Some(ThingFound(oid, _)) = addSomethingFull(name, kind, model, propList:_*)
-    oid
-  }
-  
-  def addProperty[VT, RT](tpe:PType[VT] with PTypeBuilder[VT, RT], coll:Collection, name:String):PropRecord[VT, RT] = {
-    val oid = addSomething(name, Kind.Property, UrPropOID,
-      Core.CollectionProp(coll),
-      Core.TypeProp(tpe)
-    )
-    PropRecord(oid, coll, tpe)
-  }
-  
-  def addThing(name:String, model:OID, propList:(OID, QValue)*) = {
-    addSomething(name, Kind.Thing, model, propList:_*)
-  }
-  
-  def addSimpleThing(name:String, propList:(OID, QValue)*) = {
-    addThing(name, SimpleThingOID, propList:_*)
-  }
-  
-  def addSimpleModel(name:String, propList:(OID, QValue)*) = {
-    addThing(name, SimpleThingOID,
-      (Core.IsModelProp(true) +: propList):_*
-    )
-  }
-  
-  def addType(name:String, modelId:OID) = {
-    val Some(ThingFound(oid, state)) = addSomethingFull(name, Kind.Type, UrTypeOID, Types.ModelForTypeProp(modelId))
-    state.typ(oid).asInstanceOf[ModelType]
-  }
-  
-  def changeThing(thingId:OID, propList:(OID, QValue)*) = {
-    this ! ChangeProps(owner, sc.id, thingId, Map(propList:_*), true)    
-  }
   
   // Boot the Space up
   this ! InitialState(owner, sc.id, "Test Space", owner.mainIdentity.id)
@@ -138,6 +92,16 @@ class CommonCoreTests extends QuerkiTests {
       pql("[[My Instance -> My Optional Text]]") should equal ("Hello world")
       s ! DeleteThing(s.owner, s.sc.id, s.instance)
       pql("[[My Instance -> My Optional Text]]") should equal ("")
+    }
+  }
+  
+  "ReplayCoreSpace" should {
+    "allow new data after replay" in {
+      val original = new CommonCoreSpace
+      implicit val s = new ReplayCoreSpace(original)
+      
+      val thingy = s.addSimpleThing("New Thingy")
+      pql("[[New Thingy]]") should equal ("[New Thingy](New-Thingy)")
     }
   }
 }

@@ -53,6 +53,8 @@ querki {
   space {
     # Time before a Space times out for inactivity
     timeout : 15 minutes
+    # How often (in terms of number of changes) should a Space save a snapshot?
+    snapshotInterval : 100
   }
   
   apps {

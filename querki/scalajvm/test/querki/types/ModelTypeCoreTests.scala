@@ -83,3 +83,29 @@ class ReplayTypeCoreTests extends ModelTypeTestBase {
     replay
   }
 }
+
+class ComplexSnapshotSpace(interval:Int)(implicit e:Ecology) extends ComplexCoreSpace {
+  override def configOpt = Some(TestSpaceConfig(Some(interval)))
+}
+
+/**
+ * This is doing some spot-checking on snapshotting, running with the snapshots happening
+ * at various intervals and making sure that things work right after playback.
+ */
+class ReplaySnapshotTests extends QuerkiTests {
+  def runSnapshotTest(interval:Int) = {
+    val original = new ComplexSnapshotSpace(interval)
+    implicit val replay = new ReplayCoreSpace(original)
+    
+    pql("""[[My Complex Thing -> Complex Prop -> Number in Model]]""") should equal ("3")
+    pql("""[[My Tree -> Left -> Right -> Node Id]]""") should equal("3")
+  }
+  
+  "SpaceCore snapshotting" should {
+    "work with several different intervals" in {
+      runSnapshotTest(3)
+      runSnapshotTest(5)
+      runSnapshotTest(10)
+    }
+  }
+}

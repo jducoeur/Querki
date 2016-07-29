@@ -7,6 +7,7 @@ import Actor.Receive
 import akka.persistence._
 
 import models._
+import models.ModelPersistence.DHSpaceState
 import Thing.PropMap
 import Kind.Kind
 import querki.core.NameUtils
@@ -38,7 +39,9 @@ import SpaceMessagePersistence._
  *    operations, and via the rm2rtc method provides instances of the abstraction. Think of those
  *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
-abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) extends SpaceMessagePersistenceBase with EcologyMember with ModelPersistence {
+abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) 
+  extends SpaceMessagePersistenceBase with EcologyMember with ModelPersistence 
+{
   /**
    * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
    */
@@ -54,10 +57,33 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
   
   lazy val SystemState = System.State
   
+  def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
+  lazy val snapshotInterval = getSnapshotInterval
+  
+  //////////////////////////////////////////////////
+  //
+  // Abstract members
+  //
+  // These are all implemented very differently in the asynchronous, Akka Persistence-based, real Actor
+  // vs. the synchronous test implementation.
+  //
+  
   /**
    * The OID of this Space.
    */
   def id:OID
+  
+  /**
+   * The standard Requester function.
+   */
+  def handleRequestResponse:Receive
+  
+  /**
+   * The usual function, inherited from PersistentActor.
+   */
+  def stash():Unit
+  
+  def unstashAll():Unit
 
   /**
    * Our own version of persist(). Note that this enforces UseKryo at the signature level, so we
@@ -105,6 +131,50 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
   def changeSpaceName(newName:String, newDisplay:String):Unit
   
   /**
+   * From PersistentActor, this saves the state of this Space as a whole, and will fire a
+   * SaveSnapshotSuccess or SaveSnapshotFailure message.
+   */
+  def saveSnapshot(snapshot:Any):Unit
+  
+  /**
+   * This is called when a Space is booted up and has *no* messages in its history. In that case,
+   * we should check to see if it exists in the old-style form in MySQL. 
+   */
+  def recoverOldSpace():RM[SpaceState]
+  
+  /**
+   * Based on the owner's OID, go get the actual Identity.
+   */
+  def fetchOwnerIdentity():RM[Identity]
+  
+  
+  //////////////////////////////////////////////////
+  
+  
+  def persistenceId = id.toThingId.toString
+  
+  
+  /**
+   * This is true iff we are currently doing external async initialization *after* Recovery. While
+   * that is true, we have to stash everything.
+   */
+  var initializing:Boolean = false
+  
+  
+  var snapshotCounter = 0
+  def doSaveSnapshot() = {
+    saveSnapshot(dh(state))
+    snapshotCounter = 0
+  }
+  def checkSnapshot() = {
+    if (snapshotCounter > snapshotInterval)
+      doSaveSnapshot()
+    else
+      snapshotCounter += 1
+  }
+  
+  
+  /**
    * Look up any external cache changes, record the new state, and send notifications about it.
    */
   def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit = {
@@ -118,6 +188,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
       handler
       respond(ThingFound(oid, state))
     }
+    checkSnapshot()
     rtc.successful(())
   }
   
@@ -430,6 +501,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
    * The standard recovery procedure for PersistentActors.
    */
   def receiveRecover:Receive = {
+    case SnapshotOffer(metadata, dh:DHSpaceState) => {
+      updateState(rehydrate(dh))
+    }
+    
     case DHInitState(userRef, display) => {
       // We don't have the Identity to hand here, but we have enough info to go get it:
       doInitState(userRef.userId, userRef.identityIdOpt.get, None, display)
@@ -460,16 +535,50 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
     }
     
     case RecoveryCompleted => {
-      // TODO: Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way.
-      // TODO: Iff we have a State, but we don't have an ownerIdentity, go fetch that.
+      // In both of the below cases, we need to stash until we are actually ready to go. While initializing
+      // is true, receiveCommand() will stash everything except Requester responses.
+      if (_currentState.isEmpty) {
+        // Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way.
+        initializing = true
+        recoverOldSpace().map { oldState =>
+          updateState(oldState)
+          initializing = false
+          unstashAll()
+        }
+      } else if (state.ownerIdentity.isEmpty) {
+        // Iff we have a State, but we don't have an ownerIdentity, go fetch that. This is the normal case
+        // after recovery.
+        initializing = true
+        fetchOwnerIdentity().map { identity =>
+          val s = state.copy(ownerIdentity = Some(identity))
+          updateState(s)
+          initializing = false
+          unstashAll()
+        }
+      } else {
+        QLog.error(s"Somehow recovered Space $id with the ownerIdentity intact?")
+      }
     }
   }
   
   /**
    * The standard PersistentActor receiveCommand, which receives and processes the messages that
    * alter the SpaceState.
+   * 
+   * This has a hardcoded switch built into it for initialization, because PersistentActor doesn't appear to
+   * implement become().
    */
   def receiveCommand:Receive = {
+    if (initializing) {
+      // Whilst we're initializing, we need to stash everything except the responses:
+      handleRequestResponse orElse {
+        case _ => stash()
+      }
+    } else
+      normalReceiveCommand
+  }
+  
+  val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
     // by this Space!
     case msg @ InitialState(who, spaceId, display, ownerId) => {
@@ -503,6 +612,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) e
     
     case DeleteThing(who, spaceId, thingId) => {
       catchPrePersistExceptions("deleteThing", deleteThing(who, thingId))
-    }    
+    }
+    
+    case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
+    case SaveSnapshotFailure(cause, metadata) => {
+      // TODO: what should we do here? This explicitly isn't fatal, but it *is* scary as all heck:
+      QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
+    }
   }
 }
