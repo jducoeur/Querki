@@ -28,8 +28,8 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, initHistory:List[HistoryRec
   var history = initHistory
   
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
-    history = HistoryRecord(lastSequenceNr, event) :: history
     lastSequenceNr += 1
+    history = HistoryRecord(lastSequenceNr, event) :: history
     handler(event)
   }
   
@@ -86,22 +86,40 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, initHistory:List[HistoryRec
   if (!initHistory.isEmpty) {
     // Reverse it to get chrono order:
     val playHistory = initHistory.reverse
-    playHistory.foreach { receiveRecover(_) }
+    playHistory.foreach { record =>
+      lastSequenceNr = record.sequenceNr
+      receiveRecover(record.msg)
+    }
   }
+}
+
+/**
+ * This is the base concept of a TestSpace that is dynamically building a TestSpaceCore.
+ */
+abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSpace {
+  def sc:TestSpaceCore
+  
+  override def state = sc.state
+  
+  def !(msg:AnyRef) = sc.aroundReceive(msg)
 }
 
 /**
  * This is a specialized version of TestSpace that creates a SpaceCore and wraps around that. It allows a
  * much richer set of interactions than the traditional CommonSpace, but requires some setup effort.
  */
-class SpaceCoreSpace(implicit val ecology:Ecology) extends TestSpace {
+class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
   val world = new TestWorld
-  
   val sc = new TestSpaceCore(toid(), this)
-  
-  override def state = sc.state
-  
-  def !(msg:AnyRef) = sc.aroundReceive(msg)
+}
+
+/**
+ * This version of SpaceCoreSpaceBase starts from a previous one, and replays its history as the starting
+ * point. It is intended to demonstrate that history replays properly.
+ */
+class ReplayCoreSpace(oldSpace:SpaceCoreSpaceBase)(implicit e:Ecology) extends SpaceCoreSpaceBase {
+  def world = oldSpace.world
+  val sc = new TestSpaceCore(oldSpace.sc.id, this, oldSpace.sc.history)
 }
 
 class SpaceCoreTests extends QuerkiTests {  

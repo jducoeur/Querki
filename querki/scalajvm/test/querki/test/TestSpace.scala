@@ -142,7 +142,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   /**
    * The World for this Test. Concrete classes must instantiate this.
    */
-  val world:TestWorld
+  def world:TestWorld
   
   /**
    * The OID of this Space.

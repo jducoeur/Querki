@@ -71,3 +71,15 @@ class ComplexCoreSpace(implicit e:Ecology) extends CommonCoreSpace() {
 class ModelTypeCoreTests extends ModelTypeTestBase {
   def makeSpace() = new ComplexCoreSpace
 }
+
+/**
+ * This variant of ModelTypeTests builds a Space, grabs its history, throws it away, *replays*
+ * that history, and then runs the tests. It is our sanity-check that history is working.
+ */
+class ReplayTypeCoreTests extends ModelTypeTestBase {
+  def makeSpace() = {
+    val original = new ComplexCoreSpace
+    val replay = new ReplayCoreSpace(original)
+    replay
+  }
+}
