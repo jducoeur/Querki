@@ -63,7 +63,7 @@ case class SpaceState(
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
-    ownerIdentity:Option[querki.identity.Identity],
+    ownerIdentity:Option[querki.identity.PublicIdentity],
     version:SpaceVersion = SpaceVersion.Unknown,
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)

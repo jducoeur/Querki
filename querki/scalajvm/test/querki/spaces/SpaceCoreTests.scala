@@ -9,7 +9,7 @@ import Thing.{emptyProps, PropMap}
 import querki.basic.MOIDs.SimpleThingOID
 import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
-import querki.identity.{Identity, User}
+import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
 import querki.spaces.messages._
 import querki.test._
@@ -119,15 +119,15 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, val config:Option[TestSpace
       lastSequenceNr = record.sequenceNr
       receiveRecover(record.msg)
     }
-    receiveRecover(RecoveryCompleted)
   }
+  receiveRecover(RecoveryCompleted)
   
   /**
    * We don't currently expect this to be called in the test environment.
    */
-  def recoverOldSpace():TCIdentity[SpaceState] = ???
+  def recoverOldSpace():TCIdentity[Option[SpaceState]] = TestRTCAble.successful(None)
   
-  def fetchOwnerIdentity():TCIdentity[Identity] = {
+  def fetchOwnerIdentity():TCIdentity[PublicIdentity] = {
     TestRTCAble.successful(testSpace.owner.mainIdentity)
   }
 }

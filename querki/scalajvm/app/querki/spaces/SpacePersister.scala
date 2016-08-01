@@ -150,49 +150,63 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    QDB(ShardKind.User) { implicit conn =>
-	      // The list of all of the Things in this Space.
-	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
-	      // the rows several times. This is considered acceptable only because this code is
-	      // deprecated, and will be entirely replaced by Akka Persistence soon.
-	      val raws = SpaceSQL("""
-	          select * from {tname} where deleted = FALSE
+	      // Check whether the table exists
+	      // Spaces created since the introduction of Akka Persistence won't have tables here, so we
+	      // need to now check explicitly.
+	      val spacesFound = SpaceSQL("""
+	          SELECT COUNT(*) as count
+	          FROM information_schema.tables
+	          WHERE table_name = '{tname}'
 	          """)
-	        .as(rawSpaceParser.*)
-	      // Split the stream, dividing it by Kind:
-	      val rawsByKind = raws.groupBy(_.kind)
-	      
-	      val loader = new ThingStreamLoader {
-		      // Now load each kind. We do this in order, although in practice it shouldn't
-		      // matter too much so long as Space comes last:
-		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
-		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
-		          // This is a critical catch, where we log load-time errors. But we don't want to
-		          // raise them to the user, so objects that fail to load are (for the moment) quietly
-		          // suppressed.
-		          // TBD: we should get more refined about these errors, and expose them a bit
-		          // more -- as it is, errors can propagate widely, so objects just vanish. 
-		          // But they should generally be considered internal errors.
-		          try {
-		            Some(
-		              builder(
-		                raw.id, 
-		                raw.model, 
-		                SpacePersistence.deserializeProps(raw.propStr, state),
-		                raw.modified))
-		          } catch {
-		            case error:Exception => {
-		              // TODO: this should go to a more serious error log, that we pay attention to. It
-		              // indicates an internal DB inconsistency that we should have ways to clean up.
-		              QLog.error("Error while trying to load ThingStream " + id, error)
-		              None
-		            }            
-		          }
-		        }).flatten
-		      }
+	        .on("dbname" -> ShardKind.dbName(ShardKind.User))
+	        .as(long("count").single)
+	      if (spacesFound > 0) {
+  	      // The list of all of the Things in this Space.
+  	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
+  	      // the rows several times. This is considered acceptable only because this code is
+  	      // deprecated, and will be entirely replaced by Akka Persistence soon.
+  	      val raws = SpaceSQL("""
+  	          select * from {tname} where deleted = FALSE
+  	          """)
+  	        .as(rawSpaceParser.*)
+  	      // Split the stream, dividing it by Kind:
+  	      val rawsByKind = raws.groupBy(_.kind)
+  	      
+  	      val loader = new ThingStreamLoader {
+  		      // Now load each kind. We do this in order, although in practice it shouldn't
+  		      // matter too much so long as Space comes last:
+  		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+  		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
+  		          // This is a critical catch, where we log load-time errors. But we don't want to
+  		          // raise them to the user, so objects that fail to load are (for the moment) quietly
+  		          // suppressed.
+  		          // TBD: we should get more refined about these errors, and expose them a bit
+  		          // more -- as it is, errors can propagate widely, so objects just vanish. 
+  		          // But they should generally be considered internal errors.
+  		          try {
+  		            Some(
+  		              builder(
+  		                raw.id, 
+  		                raw.model, 
+  		                SpacePersistence.deserializeProps(raw.propStr, state),
+  		                raw.modified))
+  		          } catch {
+  		            case error:Exception => {
+  		              // TODO: this should go to a more serious error log, that we pay attention to. It
+  		              // indicates an internal DB inconsistency that we should have ways to clean up.
+  		              QLog.error("Error while trying to load ThingStream " + id, error)
+  		              None
+  		            }            
+  		          }
+  		        }).flatten
+  		      }
+  	      }
+  
+  	      val state = doLoad(loader, apps)
+  	      sender ! Loaded(state)
+	      } else {
+	        sender ! NoOldSpace
 	      }
-
-	      val state = doLoad(loader, apps)
-	      sender ! Loaded(state)
 	    }
     }
     

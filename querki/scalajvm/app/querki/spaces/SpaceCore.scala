@@ -12,7 +12,7 @@ import Thing.PropMap
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
-import querki.identity.{Identity, User}
+import querki.identity.{Identity, PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.time.DateTime
@@ -51,6 +51,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Person = interface[querki.identity.Person]
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
   lazy val System = interface[querki.system.System]
@@ -140,12 +142,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * This is called when a Space is booted up and has *no* messages in its history. In that case,
    * we should check to see if it exists in the old-style form in MySQL. 
    */
-  def recoverOldSpace():RM[SpaceState]
+  def recoverOldSpace():RM[Option[SpaceState]]
   
   /**
    * Based on the owner's OID, go get the actual Identity.
    */
-  def fetchOwnerIdentity():RM[Identity]
+  def fetchOwnerIdentity():RM[PublicIdentity]
   
   
   //////////////////////////////////////////////////
@@ -535,26 +537,60 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case RecoveryCompleted => {
+      def readied() = {
+        initializing = false
+        unstashAll()        
+      }
+      
+      def readyState(originalOpt:Option[SpaceState]):RM[Unit] = {
+        originalOpt match {
+          case Some(original) => {
+            // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
+            // correct response?
+            fetchOwnerIdentity().map { identity =>
+              val s = original.copy(ownerIdentity = Some(identity))
+              updateState(s)
+              // Make sure that the owner is represented by a Person object in this Space. Since this requires
+              // fetching an OID, we need to loop through the standard creation pathway. Note that we can't
+              // use the CreateThing message, though, since the initializing flag is blocking that pathway; we
+              // have to use the call directly, and count on Requester to get around the stash.
+              if (Person.localPerson(identity.id)(state).isEmpty) {
+                createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
+                  Core.toProps(
+                    Core.setName(identity.handle),
+                    Basic.DisplayNameProp(identity.name),
+                    Person.IdentityLink(identity.id)),
+                  Kind.Thing).map 
+                { _ =>
+                  // Okay, the owner now exists, so we can get properly started:
+                  readied()
+                }
+              } else {
+                readied()
+              }
+            }
+          }
+          
+          // There's no existing Space, so we're assume this Space is newly-created:
+          case None => rtc.successful(readied())
+        }
+      }
+      
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing
       // is true, receiveCommand() will stash everything except Requester responses.
       if (_currentState.isEmpty) {
-        // Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way.
+        // Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way, if
+        // the Space exists already.
         initializing = true
-        recoverOldSpace().map { oldState =>
-          updateState(oldState)
-          initializing = false
-          unstashAll()
+        // Note that recoverOldSpace() will produce None iff this is a newly-created Space in the new style:
+        recoverOldSpace().flatMap { oldStateOpt =>
+          readyState(oldStateOpt)
         }
       } else if (state.ownerIdentity.isEmpty) {
         // Iff we have a State, but we don't have an ownerIdentity, go fetch that. This is the normal case
         // after recovery.
         initializing = true
-        fetchOwnerIdentity().map { identity =>
-          val s = state.copy(ownerIdentity = Some(identity))
-          updateState(s)
-          initializing = false
-          unstashAll()
-        }
+        readyState(Some(state))
       } else {
         QLog.error(s"Somehow recovered Space $id with the ownerIdentity intact?")
       }
