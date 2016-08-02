@@ -76,8 +76,11 @@ class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime
    * in on the change before it happens.
    */
-  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RequestM[ThingChangeRequest] 
-    = ???
+  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RequestM[ThingChangeRequest] =
+  {
+    val initTcr = ThingChangeRequest(who, this, state, stateRouter, modelId, None, kind, propsIn, changed)
+    SpaceChangeManager.thingChanges(RequestM.successful(initTcr))
+  }
   
   /**
    * This was originally from SpacePersister -- it fetches a new OID to assign to a new Thing.
@@ -103,7 +106,9 @@ class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:
    * 
    * This code is currently in SpacePersister; we'll need to send a new message there.
    */
-  def changeSpaceName(newName:String, newDisplay:String):Unit = ???
+  def changeSpaceName(newName:String, newDisplay:String):Unit = {
+    persister ! SpaceChange(newName, newDisplay)
+  }
   
   /**
    * This is called when a Space is booted up and has *no* messages in its history. In that case,

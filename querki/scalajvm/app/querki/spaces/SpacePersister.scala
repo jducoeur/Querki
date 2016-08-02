@@ -259,6 +259,27 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
+    /**
+     * This used to be part of Change. It has been broken out, and is now the only non-vestigial part
+     * of this Actor.
+     * 
+     * For the moment, this is purely fire-and-forget, and doesn't respond. Possibly it should do so.
+     */
+    case SpaceChange(newName, newDisplay) => {
+        QDB(System) {implicit conn =>
+          SQL("""
+            UPDATE Spaces
+            SET name = {newName}, display = {displayName}
+            WHERE id = {thingId}
+            """
+          ).on("newName" -> newName, 
+               "thingId" -> id.raw,
+               "displayName" -> newDisplay).executeUpdate()          
+        }
+    }
+    
+    /***************************/
+    
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
       allocThingId() map { thingId =>
         QDB(ShardKind.User) { implicit conn =>
