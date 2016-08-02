@@ -14,6 +14,8 @@ case object KillMe
 
 case object Shutdown
 
+case object Reload
+
 /**
  * Some standard boilerplate around the timeout-y bits of a ClusterSharding Entity. Entities
  * should usually mix this in -- it allows them to simply set a config flag for their timeout
@@ -52,6 +54,10 @@ trait ClusterTimeoutChild extends Actor {
       }
       case Shutdown => {
         QLog.spew(s"Passivating (Shutdown) ClusterTimeoutChild ${self.path}")
+        context.parent ! Passivate(KillMe)
+      }
+      case Reload => {
+        QLog.spew(s"Passivating (Reload) ClusterTimeoutChild ${self.path}")
         context.parent ! Passivate(KillMe)
       }
       case other => super.unhandled(other)

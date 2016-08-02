@@ -178,4 +178,8 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     } map (ClientApi.thingInfo(_,rc))
     Future.sequence(result.toSeq)
   }
+  
+  def reloadSpace():Future[Unit] = {
+    Future.successful(spaceRouter ! querki.util.Reload)
+  }
 }

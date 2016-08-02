@@ -75,6 +75,13 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         new QText(gutsRaw),
         if (DataAccess.request.isOwner) {
           div(
+            p("""Press this button to reload this Space. (This is mainly for testing; you can usually ignore it.)"""),
+            new ButtonGadget(ButtonGadget.Info, "Reload") ({ () =>
+              Client[ThingFunctions].reloadSpace().call().foreach { _ =>
+                PageManager.reload()
+              }
+            }),
+              
             p("""Press this button to export this *entire* Space as XML. (NOTE: photographs are not exported.)
               The exported XML will open in a new tab or window, which you can save if you want."""),
             a(

@@ -69,4 +69,9 @@ trait ThingFunctions {
    * Returns the *immediate* children of the specified Model.
    */
   def getChildren(modelId:TID, includeModels:Boolean, includeInstances:Boolean):Future[Seq[ThingInfo]]
+  
+  /**
+   * Reloads this Space. Mainly intended for testing.
+   */
+  def reloadSpace():Future[Unit]
 }
