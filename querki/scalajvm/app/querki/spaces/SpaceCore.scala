@@ -301,10 +301,18 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   def doCreate(kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime) = {
+    updateState(createPure(state, kind, thingId, modelId, props, typBasedOn, modTime))
+  }
+  
+  /**
+   * This is the pure-functional heart of creation: it takes a SpaceState and the key info, and returns the
+   * modified SpaceState.
+   */
+  def createPure(state:SpaceState, kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime):SpaceState = {
     kind match {
       case Kind.Thing => {
         val thing = ThingState(thingId, id, modelId, props, modTime, kind)
-        updateState(state.copy(things = state.things + (thingId -> thing)))
+        state.copy(things = state.things + (thingId -> thing))
       }
       case Kind.Property => {
         val typ = state.typ(Core.TypeProp.first(props))
@@ -312,13 +320,17 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
         val boundColl = coll.asInstanceOf[Collection]
         val thing = Property(thingId, id, modelId, boundTyp, boundColl, props, modTime)
-        updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
+        state.copy(spaceProps = state.spaceProps + (thingId -> thing))          
       }
       case Kind.Type => {
         val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn.get, props)
-        updateState(state.copy(types = state.types + (thingId -> tpe)))
+        state.copy(types = state.types + (thingId -> tpe))
       }
-      case _ => // This shouldn't be possible -- we're checking against it in createSomething()
+      case _ => {
+        QLog.error(s"SpaceCore.createPure is trying to create something of kind $kind!")
+        // This shouldn't be possible -- we're checking against it in createSomething()
+        state
+      }
     }
   }
 
@@ -369,6 +381,58 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
   }
   
+  /**
+   * This is the pure-functional core of the modify operation, which takes a SpaceState and returns a modified one.
+   */
+  def modifyPure(
+    state:SpaceState, 
+    thingId:OID, 
+    thing:Thing, 
+    modelId:OID, 
+    actualProps:PropMap, 
+    modTime:DateTime, 
+    typeChangeOpt:Option[TypeChangeInfo]):SpaceState = 
+  {
+    thing match {
+      case t:ThingState => {
+        val newThingState = t.copy(m = modelId, pf = actualProps, mt = modTime)
+        state.copy(things = state.things + (thingId -> newThingState)) 
+      }
+      case prop:Property[_,_] => {
+        val newProp = typeChangeOpt match {
+          case Some(typeChange) if (typeChange.typeChanged) =>
+            prop.copy(pType = typeChange.newType, m = modelId, pf = actualProps, mt = modTime)
+          case _ => prop.copy(m = modelId, pf = actualProps, mt = modTime)
+        }
+        
+        state.copy(spaceProps = state.spaceProps + (thingId -> newProp))
+      }
+      case s:SpaceState => {
+        // TODO: handle changing the owner or apps of the Space. (Different messages?)
+        val newNameOpt = for {
+          rawName <- Core.NameProp.firstOpt(actualProps)
+          newName = NameUtils.canonicalize(rawName)
+          oldName = Core.NameProp.first(thing.props)
+          oldDisplay = Basic.DisplayNameProp.firstOpt(thing.props) map (_.raw.toString) getOrElse rawName
+          newDisplay = Basic.DisplayNameProp.firstOpt(actualProps) map (_.raw.toString) getOrElse rawName
+          if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay)))
+        }
+          yield
+        {
+          changeSpaceName(newName, newDisplay)
+          newName
+        }
+        val newName = newNameOpt.getOrElse(state.name)
+        state.copy(m = modelId, pf = actualProps, name = newName, mt = modTime)
+      }
+      case mt:ModelTypeBase => {
+        // Note that ModelTypeBase has a copy() method tuned for this purpose:
+        val newType = mt.copy(modelId, actualProps)
+        state.copy(types = state.types + (thingId -> newType))
+      }
+    }    
+  }
+  
   def doModify(thingId:OID, thing:Thing, modelIdOpt:Option[OID], newProps:PropMap, replaceAllProps:Boolean, modTime:DateTime) = {
     val actualProps =
       if (replaceAllProps)
@@ -389,49 +453,18 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       case None => thing.model
     }
     
-    thing match {
-      case t:ThingState => {
-        val newThingState = t.copy(m = modelId, pf = actualProps, mt = modTime)
-        updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+    // TODO: the current approach of prepChange and finish is idiotic in the new world. Can we come up with something
+    // more synchronous, functional and sensible?
+    val typeChangeOpt =
+      thing match {
+        case prop:AnyProp => Some(PropTypeMigrator.prepChange(state, prop, actualProps))
+        case _ => None
       }
-      case prop:Property[_,_] => {
-        // If the Type has changed, alter the Property itself accordingly:
-        val typeChange = PropTypeMigrator.prepChange(state, prop, actualProps)
-        
-        val newProp = {
-          if (typeChange.typeChanged)
-            prop.copy(pType = typeChange.newType, m = modelId, pf = actualProps, mt = modTime)
-          else
-            prop.copy(m = modelId, pf = actualProps, mt = modTime)
-        }
-        
-        updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
-        
-        typeChange.finish(newProp, state, updateState)            
-      }
-      case s:SpaceState => {
-        // TODO: handle changing the owner or apps of the Space. (Different messages?)
-        val newNameOpt = for {
-          rawName <- Core.NameProp.firstOpt(actualProps)
-          newName = NameUtils.canonicalize(rawName)
-          oldName = Core.NameProp.first(thing.props)
-          oldDisplay = Basic.DisplayNameProp.firstOpt(thing.props) map (_.raw.toString) getOrElse rawName
-          newDisplay = Basic.DisplayNameProp.firstOpt(actualProps) map (_.raw.toString) getOrElse rawName
-          if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay)))
-        }
-          yield
-        {
-          changeSpaceName(newName, newDisplay)
-          newName
-        }
-        val newName = newNameOpt.getOrElse(state.name)
-        updateState(state.copy(m = modelId, pf = actualProps, name = newName, mt = modTime))
-      }
-      case mt:ModelTypeBase => {
-        // Note that ModelTypeBase has a copy() method tuned for this purpose:
-        val newType = mt.copy(modelId, actualProps)
-        updateState(state.copy(types = state.types + (thingId -> newType)))
-      }
+    val newState = modifyPure(state, thingId, thing, modelId, actualProps, modTime, typeChangeOpt)
+    updateState(newState)
+    typeChangeOpt.foreach { typeChange =>
+      val newProp = newState.prop(thingId).get
+      typeChange.finish(newProp, state, updateState) 
     }
   }
   

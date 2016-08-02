@@ -31,7 +31,7 @@ case class StateCacheKey(ecotId:Short, id:String)
  * A properly-typed version ID for Spaces. This is initialized as SpaceVersion.Unknown, and then set
  * based on the Akka Persistence version ID.
  */
-case class SpaceVersion(v:Int) extends AnyVal
+case class SpaceVersion(v:Long) extends AnyVal
 object SpaceVersion {
   val Unknown = SpaceVersion(-1)
 }
