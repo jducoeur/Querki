@@ -62,7 +62,7 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
       state.modTime,
       state.owner,
       state.name,
-      state.apps.map(_.id).toList,
+      state.apps.map(app => (app.id, app.version.v)).toList,
       state.types.values.map(dh(_)).toList,
       state.spaceProps.values.map(dh(_)).toList,
       state.things.values.map(dh(_)).toList
@@ -85,13 +85,14 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
         dh.ownerId,
         dh.name,
         dh.modTime,
-        Seq.empty,  // apps need to be filled in async
+        Seq.empty,  // TODO: apps need to be filled in async
         Some(systemState),
         Map.empty,  // Types -- filled in below
         Map.empty,  // SpaceProps -- filled in below
         Map.empty,  // Things -- filled in below
         Map.empty,  // Collections -- ignored for now
-        None       // ownerIdentity needs to be filled in async
+        None,       // ownerIdentity needs to be filled in async
+        appInfo = dh.apps
       )
       
     // Next, add the Types. Note that we can build the Type before we build the
@@ -206,7 +207,7 @@ object ModelPersistence {
     @KryoTag(4) modTime:DateTime,
     @KryoTag(5) ownerId:IdentityId,
     @KryoTag(6) name:String,
-    @KryoTag(7) apps:List[OID],
+    @KryoTag(7) apps:List[(OID, Long)],
     @KryoTag(8) types:List[DHModelType],
     @KryoTag(9) spaceProps:List[DHProperty],
     @KryoTag(10) things:List[DHThingState]
