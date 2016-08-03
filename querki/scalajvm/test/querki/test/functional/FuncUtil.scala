@@ -134,7 +134,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
     waitFor("_spaceLink")
     click on "_spaceLink"
     val page = RootPage(space)
-    waitForTitle(page)
+    waitFor(page)
     state -> page
   }
   
@@ -321,7 +321,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
   /**
    * Trivial wrapper, for using non-ops inside of run().
    */
-  def wrap(f: => Unit)(state:State):State = {
+  def s(f: => Unit)(state:State):State = {
     f
     state
   }

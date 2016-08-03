@@ -26,12 +26,11 @@ trait RegressionTests1 { this:FuncMixin with BuildCommonSpace =>
         run(state,
           // We need to go directly to the target Space, since we're Anonymous:
           goTo(CommonSpace),
-          { state =>
+          s {
             openMenuFor(RefreshItem)
 
             find(DesignModelItem.id) should be (empty)
             find(CreateThingItem.id) should be (empty)
-            state
           }
         )
       },

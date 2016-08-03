@@ -10,15 +10,14 @@ trait Persistence { this:FuncMixin with BuildCommonSpace =>
     
     run(state,
       createAnyThing(testThing),
-      { s =>
+      s {
         clickMenuItem(OpenAdvancedItem)
         waitFor(AdvancedCommandsPage)
         click on "_reloadButton"
         waitForStatus("Reloaded")
-        s
       },
       goToSpaceRoot(CommonSpace),
-      wrap(click on linkText(thingName)),
+      s(click on linkText(thingName)),
       waitForThing(testThing)
     )
   }

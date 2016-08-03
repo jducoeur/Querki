@@ -22,7 +22,6 @@ trait Security { this:FuncMixin =>
         run(state,
           createSpace(ExploreRestrictedSpace),
           { state =>
-            
             // Bump Admin1 into Programmer Mode:
             find(SecurityItem.id) should be (empty)
             clickMenuItem(SkillLevelItem)
@@ -51,7 +50,6 @@ trait Security { this:FuncMixin =>
             eventually { find(whoCanExplorePath).get.attribute("disabled") should be (None) }
             click on "_doneButton"
             // TODO: the state should reflect the changed permissions!
-          
             state
           },
           
@@ -68,14 +66,11 @@ trait Security { this:FuncMixin =>
         
         run(state,
           goTo(ExploreRestrictedSpace),
-          { state =>
-            
+          s {
             openMenuFor(RefreshItem)
             checkMissing(DesignModelItem)
             checkMissing(CreateThingItem)
             checkMissing(AdvancedEditItem)
-          
-            state
           }
         )
       },

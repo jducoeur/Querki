@@ -131,7 +131,7 @@ trait FuncData { this:FuncMixin =>
      * TBD: for the moment, we're identifying Spaces by display name, since the prototypes don't have
      * TIDs. Should we do something better, more guaranteed to be unique?
      */
-    def getSpace(target:TSpace):TSpace = spaces.values.find(_.display == target.display).getOrElse(throw new Exception("Space ${target} hasn't been created yet?"))
+    def getSpace(target:TSpace):TSpace = spaces.values.find(_.display == target.display).getOrElse(throw new Exception(s"Space ${target} hasn't been created yet?"))
     
     def updateSpace(f:TSpace => TSpace):State = {
       val space = currentSpace.getOrElse(throw new Exception(s"Trying to update the Space in $this, but there isn't one!"))
