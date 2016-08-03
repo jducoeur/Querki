@@ -127,7 +127,7 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, val config:Option[TestSpace
    */
   def recoverOldSpace():TCIdentity[Option[SpaceState]] = TestRTCAble.successful(None)
   
-  def fetchOwnerIdentity():TCIdentity[PublicIdentity] = {
+  def fetchOwnerIdentity(ownerId:OID):TCIdentity[PublicIdentity] = {
     TestRTCAble.successful(testSpace.owner.mainIdentity)
   }
 }

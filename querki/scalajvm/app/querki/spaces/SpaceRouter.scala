@@ -29,16 +29,20 @@ import querki.values.SpaceState
  * is mainly for efficiency -- the hive passes the SpaceState around frequently, and we do *not* want to
  * be serializing that.
  */
-private[spaces] class SpaceRouter(val ecology:Ecology) 
+private[spaces] class SpaceRouter(e:Ecology) 
   extends Actor with EcologyMember with Requester with ClusterTimeoutChild
 {  
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
+  implicit val ecology = e
+  
   lazy val spaceId:OID = OID(self.path.name)
   
   // How long we can be inactive before timing out this entire hive:
   def timeoutConfig:String = "querki.space.timeout"
+  
+  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
   
   // The components of the troupe:
   var conversations:ActorRef = null
@@ -49,7 +53,11 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
   var state:SpaceState = null
 
   override def preStart() = {
-    space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+    space =
+      if (useNewPersist)
+        context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+      else
+        context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
     members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")

@@ -61,7 +61,8 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     (classOf[DHModifyThing] -> 101),
     (classOf[DHDeleteThing] -> 102),
     (classOf[SpaceSnapshot] -> 103),
-    (classOf[DHInitState] -> 104)
+    (classOf[DHInitState] -> 104),
+    (classOf[BootSpace] -> 105)
   )
   
   implicit val stdTimeout = Timeout(10 seconds)

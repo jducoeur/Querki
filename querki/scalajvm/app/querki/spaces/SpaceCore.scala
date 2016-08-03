@@ -145,9 +145,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def recoverOldSpace():RM[Option[SpaceState]]
   
   /**
-   * Based on the owner's OID, go get the actual Identity.
+   * Based on the owner's OID, go get the actual Identity. Note that we pass in the ownerId, because
+   * this is typically called *before* state is set!
    */
-  def fetchOwnerIdentity():RM[PublicIdentity]
+  def fetchOwnerIdentity(ownerId:OID):RM[PublicIdentity]
   
   
   //////////////////////////////////////////////////
@@ -539,6 +540,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
       updateState(rehydrate(dh))
     }
+
+    // Note that BootSpace is an *event*, not a snapshot -- that's why this is not the
+    // same as the above SnapshotOffer. This event indicates that this Space was originally
+    // imported from somewhere else, and this is the original State:
+    case BootSpace(dh, modTime) => {
+      updateState(rehydrate(dh))
+    }
     
     case DHInitState(userRef, display) => {
       // We don't have the Identity to hand here, but we have enough info to go get it:
@@ -580,7 +588,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case Some(original) => {
             // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
             // correct response?
-            fetchOwnerIdentity().map { identity =>
+            fetchOwnerIdentity(original.owner).map { identity =>
               val s = original.copy(ownerIdentity = Some(identity))
               updateState(s)
               // Make sure that the owner is represented by a Person object in this Space. Since this requires
@@ -604,7 +612,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             }
           }
           
-          // There's no existing Space, so we're assume this Space is newly-created:
+          // There's no existing Space, so we're assume this Space is newly-created. There is no actual
+          // State yet -- instead, we expect to receive an InitState message once we're up and running:
           case None => rtc.successful(readied())
         }
       }
@@ -612,15 +621,23 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing
       // is true, receiveCommand() will stash everything except Requester responses.
       if (_currentState.isEmpty) {
-        // Iff we haven't gotten *anything*, then we should go to the old-style Persister and load that way, if
+        // We haven't gotten *any* events, so we should go to the old-style Persister and load that way, if
         // the Space exists already.
         initializing = true
-        // Note that recoverOldSpace() will produce None iff this is a newly-created Space in the new style:
-        recoverOldSpace().flatMap { oldStateOpt =>
-          readyState(oldStateOpt)
-        }
+        recoverOldSpace().map { _ match {
+          case Some(oldState) => {
+            QLog.spew(s"Recovered old Space ${oldState.name} from MySQL; recording the BootSpace event")
+            // There *is* an old Space from MySQL, so we should record that as the first event in the log:
+            val msg = BootSpace(dh(oldState), DateTime.now)
+            // Once we've recorded that, *then* we get the Space ready:
+            doPersist(msg)(_ => readyState(Some(oldState)))            
+          }
+          
+          // No old Space found, so this appears to be a brand-new Space:
+          case None => readyState(None)
+        }}
       } else if (state.ownerIdentity.isEmpty) {
-        // Iff we have a State, but we don't have an ownerIdentity, go fetch that. This is the normal case
+        // We have a State, but we don't have an ownerIdentity, so go fetch that. This is the normal case
         // after recovery.
         initializing = true
         readyState(Some(state))

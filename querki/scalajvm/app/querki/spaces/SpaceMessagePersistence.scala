@@ -51,6 +51,20 @@ object SpaceMessagePersistence {
     
   case class SpaceSnapshot(
     @KryoTag(1) state:DHSpaceState) extends UseKryo
+    
+  /**
+   * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,
+   * the first "image" of the Space, from which we begin to evolve. It should always be the
+   * first event when it is present; all Spaces should start with either BootSpace (indicating
+   * that this was imported or upgraded from the old MySQL system) or DHInitState (indicating
+   * that this was created in the new Akka Persisted world).
+   * 
+   * Note that this doesn't have a "req" field, because we often don't have that information
+   * when this happens. Generally, the requester is the owner, which is in the SpaceState.
+   */
+  case class BootSpace(
+    @KryoTag(1) state:DHSpaceState,
+    @KryoTag(2) modTime:DateTime) extends UseKryo
 }
 
 trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with querki.types.ModelTypeDefiner {

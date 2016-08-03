@@ -35,8 +35,8 @@ import PersistMessages._
  * TODO: the current workflow doesn't have anywhere for the old "Evolve" mechanism to fit.
  * Where should that go?
  */
-class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory)(implicit e:Ecology) 
-  extends SpaceCore[RequestM](RealRTCAble) with Requester with PersistentActor 
+class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory) 
+  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentActor 
 {  
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   
@@ -115,6 +115,8 @@ class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:
    * we should check to see if it exists in the old-style form in MySQL. 
    */
   def recoverOldSpace():RequestM[Option[SpaceState]] = {
+    QLog.spew(s"Converting old Space $id to the new Cassandra style, if it exists")
+    
     for {
       // Need to fetch the Owner, so we can tell the App Loader about them:
       SpaceOwner(owner) <- persister ? GetOwner
@@ -143,11 +145,11 @@ class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:
   /**
    * Based on the owner's OID, go get the actual Identity.
    */
-  def fetchOwnerIdentity():RequestM[PublicIdentity] = {
-    IdentityAccess.getIdentity(state.owner).flatMap { idOpt:Option[PublicIdentity] =>
+  def fetchOwnerIdentity(ownerId:OID):RequestM[PublicIdentity] = {
+    IdentityAccess.getIdentity(ownerId).flatMap { idOpt:Option[PublicIdentity] =>
       idOpt match {
         case Some(identity) => Future.successful(identity)
-        case None => Future.failed(new Exception(s"Couldn't find owner Identity ${state.owner} for Space $id!"))
+        case None => Future.failed(new Exception(s"Couldn't find owner Identity ${ownerId} for Space $id!"))
       }
     }
   }
@@ -220,4 +222,9 @@ class PersistentSpaceActor(val id:OID, stateRouter:ActorRef, persistenceFactory:
       }
     }
   }
+}
+
+object PersistentSpaceActor {
+  def actorProps(e:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) =
+    Props(classOf[PersistentSpaceActor], e, id, stateRouter, persistenceFactory)
 }
