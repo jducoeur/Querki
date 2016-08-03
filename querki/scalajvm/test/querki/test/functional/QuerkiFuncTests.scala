@@ -60,6 +60,7 @@ class QuerkiFuncTests
   with BuildCommonSpace
   with Search
   with Security
+  with Persistence
   with RegressionTests1
 {
   override def beforeAll() {
@@ -111,6 +112,7 @@ class QuerkiFuncTests
       buildCommonSpace,
       runSearchTests,
       runSecurityTests,
+      runPersistenceTests,
       
       // Regression Tests
       regression1

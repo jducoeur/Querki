@@ -125,6 +125,19 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
     waitForRendered()
   }
   
+  def waitForStatus(msg:String):Unit = {
+    eventually { find("statusText") should not be empty }
+    find("statusText").map(_.text) should be (Some(msg))
+  }
+  
+  def goToSpaceRoot(space:TSpace)(state:State):State = {
+    waitFor("_spaceLink")
+    click on "_spaceLink"
+    val page = RootPage(space)
+    waitForTitle(page)
+    state -> page
+  }
+  
   /**
    * Spew some output, so that we can see what's going on. This is especially useful when you're
    * running headless, which is the most common approach.

@@ -166,7 +166,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
               complexity = Standard)
         },
         NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
-        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
+        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), id = "_openAdvancedItem", requiresExplore = true, complexity = Standard),
         NavLink(s"Security for ${thing.displayName}", Pages.securityFactory.pageUrl(thing), requiresExplore = true,
             enabled = DataAccess.request.isOwner,
             id = "_securityItem",

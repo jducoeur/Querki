@@ -1,4 +1,8 @@
 pages : {
+  advancedCommands : {
+    pageTitle : "Advanced Commands"
+  }
+
   createAndEdit : {
     pageTitle : "Create a $modelName"
   }
