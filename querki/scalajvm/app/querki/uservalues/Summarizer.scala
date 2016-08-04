@@ -251,10 +251,12 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	def doDeserialize(ser:String)(implicit state:SpaceState):DiscreteSummary[UVT] = {
 	  // TODO: this should unescape " - ", "," and ":", so we can cope with arbitrary Strings:
 	  val (propId, values) = ser.split(" - ") match {
+	    // Normal case -- propId and some values
 	    case Array(propIdStr, valStr) => {
 	      (OID(propIdStr), valStr)
 	    }
-	    case Array(valStr) => (UnknownOID, valStr)
+	    // There is *only* a propId, and no values
+	    case Array(propIdStr) => (OID(propIdStr), "")
 	    case _ => (UnknownOID, "")
 	  }
 	  

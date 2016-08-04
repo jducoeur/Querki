@@ -53,10 +53,10 @@ trait CollectionBase { self:CoreEcot =>
     def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = ???
     
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
-      if (ser.isEmpty || ser.head != collSerialOpen)
+      if (ser.isEmpty || ser.head != collSerialOpen) {
         oldDeserialize(ser, elemT)
-      else { 
-        val guts = ser.slice(1, ser.length() - 1).trim()
+      } else { 
+        val guts = ser.slice(1, ser.length() - 1)
           
         if (guts.isEmpty())
           doDefault(elemT)
