@@ -49,6 +49,9 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
   
   implicit val ecology = e
   
+  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
+  
+  lazy val SpaceOps = interface[SpaceOps]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
   /**
@@ -95,7 +98,19 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
             case err:ThingError => sender ! err
             // TODO: need to send the InitState message to the newly-create Space, to boot it up; don't send the
             // SpaceInfo response until that returns a ThingFound!
-            case Changed(spaceId, _) => sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+            case Changed(spaceId, _) => {
+              if (useNewPersist) {
+                // In the new Akka Persistence world, we send the new Space an InitialState message to finish
+                // bootstrapping it:
+                SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
+                  // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
+                  case ThingFound(_, _) => sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+                  case ex:ThingError => sender ! ex
+                }
+              } else
+                // Old-style -- just send the response, and we're done:
+                sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+            }
           }
         }  
         { sender ! ThingError(_) }

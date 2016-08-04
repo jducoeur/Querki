@@ -169,41 +169,47 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   	          select * from {tname} where deleted = FALSE
   	          """)
   	        .as(rawSpaceParser.*)
-  	      // Split the stream, dividing it by Kind:
-  	      val rawsByKind = raws.groupBy(_.kind)
-  	      
-  	      val loader = new ThingStreamLoader {
-  		      // Now load each kind. We do this in order, although in practice it shouldn't
-  		      // matter too much so long as Space comes last:
-  		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
-  		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
-  		          // This is a critical catch, where we log load-time errors. But we don't want to
-  		          // raise them to the user, so objects that fail to load are (for the moment) quietly
-  		          // suppressed.
-  		          // TBD: we should get more refined about these errors, and expose them a bit
-  		          // more -- as it is, errors can propagate widely, so objects just vanish. 
-  		          // But they should generally be considered internal errors.
-  		          try {
-  		            Some(
-  		              builder(
-  		                raw.id, 
-  		                raw.model, 
-  		                SpacePersistence.deserializeProps(raw.propStr, state),
-  		                raw.modified))
-  		          } catch {
-  		            case error:Exception => {
-  		              // TODO: this should go to a more serious error log, that we pay attention to. It
-  		              // indicates an internal DB inconsistency that we should have ways to clean up.
-  		              QLog.error("Error while trying to load ThingStream " + id, error)
-  		              None
-  		            }            
-  		          }
-  		        }).flatten
-  		      }
+  	      if (raws.isEmpty) {
+  	        // This was created with *zero* rows, not even the Space itself, so it is new-style:
+  	        sender ! NoOldSpace
+  	      } else {
+  	        // Old-style Space:
+    	      // Split the stream, dividing it by Kind:
+    	      val rawsByKind = raws.groupBy(_.kind)
+    	      
+    	      val loader = new ThingStreamLoader {
+    		      // Now load each kind. We do this in order, although in practice it shouldn't
+    		      // matter too much so long as Space comes last:
+    		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+    		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
+    		          // This is a critical catch, where we log load-time errors. But we don't want to
+    		          // raise them to the user, so objects that fail to load are (for the moment) quietly
+    		          // suppressed.
+    		          // TBD: we should get more refined about these errors, and expose them a bit
+    		          // more -- as it is, errors can propagate widely, so objects just vanish. 
+    		          // But they should generally be considered internal errors.
+    		          try {
+    		            Some(
+    		              builder(
+    		                raw.id, 
+    		                raw.model, 
+    		                SpacePersistence.deserializeProps(raw.propStr, state),
+    		                raw.modified))
+    		          } catch {
+    		            case error:Exception => {
+    		              // TODO: this should go to a more serious error log, that we pay attention to. It
+    		              // indicates an internal DB inconsistency that we should have ways to clean up.
+    		              QLog.error("Error while trying to load ThingStream " + id, error)
+    		              None
+    		            }            
+    		          }
+    		        }).flatten
+    		      }
+    	      }
+    
+    	      val state = doLoad(loader, apps)
+    	      sender ! Loaded(state)
   	      }
-  
-  	      val state = doLoad(loader, apps)
-  	      sender ! Loaded(state)
 	      } else {
 	        sender ! NoOldSpace
 	      }
