@@ -4,6 +4,7 @@ import models.ModelPersistence
 import models.ModelPersistence._
 import querki.conversations.messages._
 import querki.globals._
+import querki.identity.IdentityPersistence._
 import querki.persistence._
 import querki.time.DateTime
 
@@ -30,7 +31,23 @@ object PersistentEvents {
   /**
    * The dehydrated version of ThingConversations.
    */
-  case class DHConvs(@KryoTag(1) convs:List[DHNode]) extends UseKryo  
+  case class DHConvs(@KryoTag(1) convs:List[DHNode]) extends UseKryo
+  
+  /**
+   * The event that a comment has been added. Note that the "requester" is implicitly the
+   * author in this case.
+   */
+  case class DHAddComment(
+    @KryoTag(1) comment:DHComment
+  ) extends UseKryo
+  
+  /**
+   * Event generated when a comment has been deleted.
+   */
+  case class DHDeleteComment(
+    @KryoTag(1) req:UserRef,
+    @KryoTag(2) commentId:CommentId
+  ) extends UseKryo
 }
 
 trait PersistentEvents extends ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =>

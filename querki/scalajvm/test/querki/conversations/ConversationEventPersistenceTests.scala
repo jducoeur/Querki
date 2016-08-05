@@ -7,7 +7,9 @@ import querki.test._
 
 import PersistentEvents._
 
-class ConversationEventPersistenceTests(env:PersistEnv) extends PersistTest(env) with querki.types.ModelTypeDefiner with PersistentEvents {
+class ConversationEventPersistenceTests(env:PersistEnv) 
+  extends PersistTest(env) with querki.types.ModelTypeDefiner with PersistentEvents with querki.identity.IdentityPersistence 
+{
   
   lazy val Conversations = interface[Conversations]
   
@@ -80,4 +82,9 @@ class ConversationEventPersistenceTests(env:PersistEnv) extends PersistTest(env)
   // Check that flags are roundtripping correctly:
   assert(roundtripped.comments(0).responses(0).comment.isDeleted == true)
   assert(roundtripped.comments(0).responses(1).comment.isDeleted == false)
+  
+  // Also, check the central events:
+  val simpleComment = comment(owner, "Why, hello there!").comment
+  checkSerialization(DHAddComment(dh(simpleComment)))
+  checkSerialization(DHDeleteComment(s.owner, simpleComment.id))
 }

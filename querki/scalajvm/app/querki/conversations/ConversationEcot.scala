@@ -31,7 +31,9 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   override def persistentMessages = persist(35,
     (classOf[DHComment] -> 100),
     (classOf[DHNode] -> 101),
-    (classOf[DHConvs] -> 102)
+    (classOf[DHConvs] -> 102),
+    (classOf[DHAddComment] -> 103),
+    (classOf[DHDeleteComment] -> 104)
   )
   
   lazy val traceConv = Config.getBoolean("querki.test.traceConversations", false)

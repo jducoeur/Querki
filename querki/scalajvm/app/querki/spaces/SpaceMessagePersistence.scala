@@ -67,9 +67,4 @@ object SpaceMessagePersistence {
     @KryoTag(2) modTime:DateTime) extends UseKryo
 }
 
-trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with querki.types.ModelTypeDefiner {
-  import SpaceMessagePersistence._
-  
-  private lazy val Person = interface[querki.identity.Person]
-  implicit def user2Ref(user:User)(implicit state:SpaceState):UserRef = Person.user2Ref(user)
-}
+trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with IdentityPersistence with querki.types.ModelTypeDefiner
