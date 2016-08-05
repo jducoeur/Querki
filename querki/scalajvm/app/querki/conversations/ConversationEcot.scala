@@ -8,6 +8,8 @@ import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.values.SpaceState
 
+import PersistentEvents._
+
 object MOIDs extends EcotIds(35) {
   val CommentTextOID = moid(1)
   val CanCommentPermOID = moid(2)
@@ -25,6 +27,12 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[ConversationFunctions, ConversationFunctionsImpl](SpaceOps.spaceRegion, false)
   }
+  
+  override def persistentMessages = persist(35,
+    (classOf[DHComment] -> 100),
+    (classOf[DHNode] -> 101),
+    (classOf[DHConvs] -> 102)
+  )
   
   lazy val traceConv = Config.getBoolean("querki.test.traceConversations", false)
   def convTrace(msg: => String):Unit = {

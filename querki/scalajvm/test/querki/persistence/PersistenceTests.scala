@@ -77,6 +77,7 @@ class PersistenceTests
       new models.ModelPersistenceTests(this)
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)
+      new querki.conversations.ConversationEventPersistenceTests(this)
       new querki.spaces.SpaceMessagePersistenceTests(this)
       
       _actorSystemOpt = None
