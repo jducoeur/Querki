@@ -40,7 +40,7 @@ import SpaceMessagePersistence._
  *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
 abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) 
-  extends SpaceMessagePersistenceBase with EcologyMember with ModelPersistence 
+  extends SpaceMessagePersistenceBase with PersistentActorCore with EcologyMember with ModelPersistence 
 {
   /**
    * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
@@ -74,41 +74,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * The OID of this Space.
    */
   def id:OID
-  
-  /**
-   * The standard Requester function.
-   */
-  def handleRequestResponse:Receive
-  
-  /**
-   * The usual function, inherited from PersistentActor.
-   */
-  def stash():Unit
-  
-  def unstashAll():Unit
 
-  /**
-   * Our own version of persist(). Note that this enforces UseKryo at the signature level, so we
-   * should use it instead of ordinary persist().
-   * 
-   * This is abstract, implemented differently in the real system vs. test. IMPORTANT: in test, the
-   * handler is called synchronously, whereas in the real code it is called asynchronously! The
-   * guarantees of Akka Persistence state that no further messages will be processed until after
-   * the handler is called, but that processing will happen *after* this returns!
-   */
-  def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit):Unit
-  
-  /**
-   * The sequence ID of the most recently-processed persistence message. Normally implemented by
-   * PersistentActor.
-   */
-  def lastSequenceNr:Long
-  
-  /**
-   * Encapsulates "sender !" in something a bit more unit-test-friendly.
-   */
-  def respond(msg:AnyRef):Unit
-  
   /**
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime
    * in on the change before it happens.
@@ -131,12 +97,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * This code is currently in SpacePersister; we'll need to send a new message there.
    */
   def changeSpaceName(newName:String, newDisplay:String):Unit
-  
-  /**
-   * From PersistentActor, this saves the state of this Space as a whole, and will fire a
-   * SaveSnapshotSuccess or SaveSnapshotFailure message.
-   */
-  def saveSnapshot(snapshot:Any):Unit
   
   /**
    * This is called when a Space is booted up and has *no* messages in its history. In that case,

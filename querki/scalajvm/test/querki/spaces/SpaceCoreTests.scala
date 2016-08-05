@@ -16,66 +16,18 @@ import querki.test._
 import querki.time._
 import querki.values.QValue
   
-case class HistoryRecord(sequenceNr:Long, msg:Any)
-
 case class TestSpaceConfig(snapshotInterval:Option[Int])
   
 /**
  * For testing, we use a version of SpaceCore built around the synchronous TCIdentity.
  */
-class TestSpaceCore(val id:OID, testSpace:TestSpace, val config:Option[TestSpaceConfig] = None, initHistory:List[HistoryRecord] = List.empty)(implicit e:Ecology) extends SpaceCore[TCIdentity](TestRTCAble) {
-  
-  /**
-   * Allow calling tests to override the Snapshot frequency, to ensure snapshots:
-   */
-  override def getSnapshotInterval = config.flatMap(_.snapshotInterval).getOrElse(100)
-  
-  /**
-   * We don't currently expect this to be called during tests, although that might change.
-   */
-  def handleRequestResponse:Receive = ???
-  
-  /**
-   * We don't expect this to be called either, at least not yet.
-   */
-  def stash():Unit = ???
-  def unstashAll():Unit = {}
-  
-  /**
-   * This is the "history" of "persisted" events, in reverse chronological order. (That is, most recent is
-   * at the front.)
-   */
-  var history = initHistory
-  
-  def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
-    lastSequenceNr += 1
-    history = HistoryRecord(lastSequenceNr, event) :: history
-    handler(event)
-  }
-  
-  var lastSequenceNr:Long = 0
-  
-  /**
-   * This sends the given message back to sender.
-   */
-  def respond(msg:AnyRef) = {
-    currentResponses = msg :: currentResponses
-  }
-  
-  /**
-   * The responses to the current message.
-   */
-  var currentResponses:List[AnyRef] = List.empty
-  
-  /**
-   * Called by the test code. Returns the most recent response, if there were any.
-   */
-  def aroundReceive(msg:AnyRef):Option[AnyRef] = {
-    currentResponses = List.empty
-    receiveCommand(msg)
-    currentResponses.headOption
-  }
-  
+class TestSpaceCore(
+  val id:OID, 
+  testSpace:TestSpace, 
+  val config:Option[TestSpaceConfig] = None, 
+  val initHistory:List[HistoryRecord] = List.empty)(implicit e:Ecology) 
+  extends SpaceCore[TCIdentity](TestRTCAble) with PersistentCoreTestBase
+{
   /**
    * Give hooks an opportunity to chime in on this change.
    * 
@@ -98,30 +50,12 @@ class TestSpaceCore(val id:OID, testSpace:TestSpace, val config:Option[TestSpace
   }
   
   def changeSpaceName(newName:String, newDisplay:String) = {}
-  
-  def saveSnapshot(snapshot:Any) = {
-    val metadata = SnapshotMetadata(persistenceId, lastSequenceNr, DateTime.now.getMillis)
-    val event = SnapshotOffer(metadata, snapshot)
-    // Note that the snapshot *replaces* the rest of the history, intentionally. Playback should start
-    // from here:
-    history = HistoryRecord(lastSequenceNr, event) :: Nil
-    receiveCommand(SaveSnapshotSuccess(metadata))
-  }
-  
+    
   /**
-   * If an initial history was provided, that's effectively the persistence log, so play it
-   * before we do anything else.
+   * Allow calling tests to override the Snapshot frequency, to ensure snapshots:
    */
-  if (!initHistory.isEmpty) {
-    // Reverse it to get chrono order:
-    val playHistory = initHistory.reverse
-    playHistory.foreach { record =>
-      lastSequenceNr = record.sequenceNr
-      receiveRecover(record.msg)
-    }
-  }
-  receiveRecover(RecoveryCompleted)
-  
+  override def getSnapshotInterval = config.flatMap(_.snapshotInterval).getOrElse(100)
+
   /**
    * We don't currently expect this to be called in the test environment.
    */
