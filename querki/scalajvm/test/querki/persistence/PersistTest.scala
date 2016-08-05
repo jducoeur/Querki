@@ -19,6 +19,8 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
   
   def ecology = env.ecology
   
+  def assert(a:Boolean) = env.asrt(a)
+  
   /**
    * This creates a Kryo (based on the registrations in the Ecology), writes out the given object,
    * reads it back in again and returns it. You will usually want to follow this with assertions that

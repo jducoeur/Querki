@@ -76,5 +76,8 @@ class ConversationEventPersistenceTests(env:PersistEnv) extends PersistTest(env)
     ))
   ))
   
-  checkSerialization(dh(testConvs))
+  val roundtripped = rehydrate(checkSerialization(dh(testConvs)))
+  // Check that flags are roundtripping correctly:
+  assert(roundtripped.comments(0).responses(0).comment.isDeleted == true)
+  assert(roundtripped.comments(0).responses(1).comment.isDeleted == false)
 }
