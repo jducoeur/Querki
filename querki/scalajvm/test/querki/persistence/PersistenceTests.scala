@@ -17,7 +17,6 @@ import querki.identity.User
 import querki.test._
 
 trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
-  def checkObj[T](in:T)
   def checkEquality[T](a:T, b:T)
   // We expose the ActorSystem so that tests can check Akka stuff:
   def testActorSystem:ActorSystem
@@ -45,7 +44,6 @@ trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
 class PersistenceTests 
   extends QuerkiTests with PersistEnv
 {
-  def checkObj[T](in:T) = assert(in.isInstanceOf[UseKryo])
   def checkEquality[T](a:T, b:T) = assert(a == b)
   
   def pqlEquals[S <: TestSpace](text:String, expected:String)(implicit space:S, requester:User = BasicTestUser) = {

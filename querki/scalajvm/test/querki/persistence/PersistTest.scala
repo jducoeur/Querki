@@ -23,10 +23,11 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
    * This creates a Kryo (based on the registrations in the Ecology), writes out the given object,
    * reads it back in again and returns it. You will usually want to follow this with assertions that
    * the read object matches the written one.
+   * 
+   * Note that this differs from rawRoundtrip solely in that it enforces use of UseKryo. This is a
+   * sanity-check, to catch case classes that forget to extend it.
    */
-  def serialRoundtrip[T <: AnyRef](in:T):T = {
-    // First, sanity-check that the type is marked as UseKryo:
-    env.checkObj(in)
+  def serialRoundtrip[T <: UseKryo](in:T):T = {
     rawRoundtrip(in)
   }
   
@@ -36,7 +37,7 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
    * 
    * This returns the copy, in case you want to do more to it.
    */
-  def checkSerialization[T <: AnyRef](builder: => T):T = {
+  def checkSerialization[T <: UseKryo](builder: => T):T = {
     val orig = builder
     val copy = serialRoundtrip(orig)
     QLog.spew(s"Checking equality of $copy")
