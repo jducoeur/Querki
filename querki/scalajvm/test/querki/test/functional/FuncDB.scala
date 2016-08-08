@@ -84,7 +84,7 @@ trait FuncDB { this:FuncMixin =>
     
     val ret = "ccm stop" #&&
     "ccm remove ftst" #&&
-    "ccm switch test" #&&
+    "ccm switch dev" #&&
     "ccm start" !
     
     if (ret != 0)

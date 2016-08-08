@@ -8,6 +8,8 @@ import akka.actor.Actor.Receive
  */
 trait PersistentActorCore {
   
+  def persistenceId:String
+  
   def receiveCommand:Receive
   
   def receiveRecover:Receive

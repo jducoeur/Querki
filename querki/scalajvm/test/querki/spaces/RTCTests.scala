@@ -4,7 +4,12 @@ import scala.util.{Failure, Success, Try}
 
 import querki.test._
 
-class TCIdentity[A](vt:Try[A]) {
+private [spaces] class NotYetResolvedException extends Exception
+
+class TCIdentity[A](vtIn:Try[A]) {
+  
+  var vt = vtIn
+  
   def flatMap[B](f: A => TCIdentity[B]):TCIdentity[B] = {
     vt match {
       case Success(v) => f(v)
@@ -18,12 +23,14 @@ class TCIdentity[A](vt:Try[A]) {
     }
   }
   def onComplete(f: PartialFunction[Try[A],Unit]) = f(vt)
+  def resolve(v:Try[A]):Unit = { vt = v }
 }
 
 class TestRequestTC[A](rm:TCIdentity[A]) extends RequestTC[A, TCIdentity] {
   def flatMap[B](f: A => TCIdentity[B]) = rm.flatMap(f)
   def map[B](f: A => B) = rm.map(f)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
+  def resolve(v:Try[A]):Unit = rm.resolve(v)
 }
 
 /**
@@ -35,6 +42,7 @@ object TestRTCAble extends RTCAble[TCIdentity] {
   def toRTC[A](f:TCIdentity[A]) = new TestRequestTC(f)
   def successful[A](a: A) = new TCIdentity(Success(a))
   def failed[T](ex:Exception) = new TCIdentity(Failure(ex))
+  def prep[T] = new TCIdentity(Failure(new NotYetResolvedException))
 }
 
 /**

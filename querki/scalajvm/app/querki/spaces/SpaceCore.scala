@@ -135,24 +135,43 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     else
       snapshotCounter += 1
   }
-  
+
+  /**
+   * Updates the internal state, but does *not* send out notifications. This is very occasionally correct,
+   * but you should only use it when you have reason to believe that the state in question is dangerously incomplete, and
+   * that another update is coming shortly.
+   */
+  def updateStateCore(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit = {
+    val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
+    _currentState = Some(withCaches.current)
+  }
   
   /**
    * Look up any external cache changes, record the new state, and send notifications about it.
    */
-  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit = {
-    val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
-    _currentState = Some(withCaches.current)
+  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):SpaceState = {
+    updateStateCore(newState, evt)
     notifyUpdateState()
+    state
   }
   
-  def persistMsgThen[A <: UseKryo](oid:OID, event:A, handler: => Unit):RM[Unit] = {
+  /**
+   * Note that this specifically composes, even though the persist() inside of it doesn't. The returned
+   * RM will resolve with the result of the handler, during the persist() call.
+   */
+  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R):RM[R] = {
+    val rm = rtc.prep[R]
     doPersist(event) { _ =>
-      handler
+      val result = handler
       respond(ThingFound(oid, state))
+      checkSnapshot()
+      try {
+        rm.resolve(Success(result))
+      } catch {
+        case th:Throwable => QLog.error(s"SpaceCore.persistMsgThen() got an error while resolving its callbacks:", th)
+      }
     }
-    checkSnapshot()
-    rtc.successful(())
+    rm
   }
   
   var _currentState:Option[SpaceState] = None
@@ -208,9 +227,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * this is all very old code. The whole stack should be cleaned up with a more proper structure. But note
    * that we still need to deal with RequestM, which *is* Try-based.
    */
-  def catchPrePersistExceptions(name:String, block: => RM[Unit]) = {
+  def catchPrePersistExceptions[T](name:String, block: => RM[T]) = {
     block.onComplete {
-      case Success(_) => // The success case happens inside of doPersist(), which is side-effecting
+      case Success(result) => // TODO: can/should we do something here? Should this function pass the RM up?
       case Failure(th) => {
         th match {
           case ex:PublicException => respond(ThingError(ex))
@@ -236,7 +255,24 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     result.get
   }
   
-  def doInitState(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String) = {
+  /**
+   * Create a Person for this Space's owner. This will cause an update notification to get sent out!
+   */
+  def createOwnerPerson(s:SpaceState, identity:PublicIdentity):RM[SpaceState] = {
+    // Note that we are only doing the internal update here, *not* sending out notifications, because
+    // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
+    // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
+    // yet exist, and _hasPermission gets confused:
+    updateStateCore(s)
+    createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
+      Core.toProps(
+        Core.setName(identity.handle),
+        Basic.DisplayNameProp(identity.name),
+        Person.IdentityLink(identity.id)),
+      Kind.Thing)
+  }
+  
+  def doInitState(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String):SpaceState = {
     val canonical = NameUtils.canonicalize(display)
     val initState =
       SpaceState(
@@ -258,10 +294,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         identityOpt,
         SpaceVersion(0)
       )
-    updateState(initState)
+    initState
   }
   
-  def doCreate(kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime) = {
+  def doCreate(kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime):SpaceState = {
     updateState(createPure(state, kind, thingId, modelId, props, typBasedOn, modTime))
   }
   
@@ -295,7 +331,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[Unit] = {
+  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[SpaceState] = {
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
     offerChanges(who, Some(modelId), None, kind, propsIn, changedProps).flatMap { tcr =>
@@ -509,8 +545,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case DHInitState(userRef, display) => {
-      // We don't have the Identity to hand here, but we have enough info to go get it:
-      doInitState(userRef.userId, userRef.identityIdOpt.get, None, display)
+      val initState = doInitState(userRef.userId, userRef.identityIdOpt.get, None, display)
+      updateStateCore(initState)
     }
     
     case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
@@ -550,23 +586,26 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             // correct response?
             fetchOwnerIdentity(original.owner).map { identity =>
               val s = original.copy(ownerIdentity = Some(identity))
-              updateState(s)
               // Make sure that the owner is represented by a Person object in this Space. Since this requires
               // fetching an OID, we need to loop through the standard creation pathway. Note that we can't
               // use the CreateThing message, though, since the initializing flag is blocking that pathway; we
               // have to use the call directly, and count on Requester to get around the stash.
-              if (Person.localPerson(identity.id)(state).isEmpty) {
-                createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
-                  Core.toProps(
-                    Core.setName(identity.handle),
-                    Basic.DisplayNameProp(identity.name),
-                    Person.IdentityLink(identity.id)),
-                  Kind.Thing).map 
-                { _ =>
-                  // Okay, the owner now exists, so we can get properly started:
+              if (Person.localPerson(identity.id)(s).isEmpty) {
+                // This Space doesn't contains a Person for the owner yet. This generally means that we're upgrading
+                // an old MySQL Space that hasn't been touched in a long time.
+                // TODO: this code path can probably go away eventually.
+                // Note that we are only doing the internal update here, *not* sending out notifications, because
+                // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
+                // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
+                // yet exist, and _hasPermission gets confused:
+                updateStateCore(s)
+                // createOwnerPerson will cause the notifications to go out:
+                createOwnerPerson(s, identity).map { _ =>
                   readied()
                 }
               } else {
+                // Normal situation:
+                updateState(s)
                 readied()
               }
             }
@@ -632,7 +671,15 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         QLog.error(s"Space $id received $msg, but already has state $state!")
       } else {
         val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
-        persistMsgThen(spaceId, msg, doInitState(who.id, ownerId, who.identityById(ownerId), display))
+        persistMsgThen(
+          spaceId, 
+          msg, 
+          {
+            val identityOpt = who.identityById(ownerId)
+            val initState = doInitState(who.id, ownerId, identityOpt, display)
+            createOwnerPerson(initState, identityOpt.get)
+          }
+        )
       }
     }
     

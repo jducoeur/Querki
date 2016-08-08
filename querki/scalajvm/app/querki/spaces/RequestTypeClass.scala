@@ -23,12 +23,14 @@ trait RequestTC[A, F[A]] {
   def flatMap[B](f: A => F[B]):F[B]
   def map[B](f: A => B):F[B]
   def onComplete(f: PartialFunction[Try[A],Unit]):Unit
+  def resolve(v:Try[A]):Unit
 }
 
 trait RTCAble[F[_]] {
   def toRTC[A](f:F[A]):RequestTC[A, F]
   def successful[A](a: A):F[A]
   def failed[T](ex:Exception):F[T]
+  def prep[T]:F[T]
 }
 
 /**
@@ -41,6 +43,7 @@ class RealRequestTC[A](rm:RequestM[A]) extends RequestTC[A, RequestM] {
   def flatMap[B](f: A => RequestM[B]) = rm.flatMap(f)
   def map[B](f: A => B) = rm.map(f)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
+  def resolve(v:Try[A]):Unit = rm.resolve(v)
 }
 
 /**
@@ -51,4 +54,5 @@ object RealRTCAble extends RTCAble[RequestM] {
   def toRTC[A](f:RequestM[A]) = new RealRequestTC(f)
   def successful[A](a: A) = RequestM.successful(a)
   def failed[T](ex:Exception) = RequestM.failed(ex)
+  def prep[T] = RequestM.prep[T]()
 }

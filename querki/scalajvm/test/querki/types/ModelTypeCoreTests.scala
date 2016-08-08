@@ -94,10 +94,12 @@ class ComplexSnapshotSpace(interval:Int)(implicit e:Ecology) extends ComplexCore
  */
 class ReplaySnapshotTests extends QuerkiTests {
   def runSnapshotTest(interval:Int) = {
-    val original = new ComplexSnapshotSpace(interval)
+    val original = new ComplexSnapshotSpace(interval)    
     implicit val replay = new ReplayCoreSpace(original)
     
     pql("""[[My Complex Thing -> Complex Prop -> Number in Model]]""") should equal ("3")
+    pql("""[[My Tree -> Node Id]]""") should equal("4")
+    pql("""[[My Tree -> Left -> Node Id]]""") should equal("2")
     pql("""[[My Tree -> Left -> Right -> Node Id]]""") should equal("3")
   }
   
