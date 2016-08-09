@@ -15,7 +15,7 @@ import querki.data.{BasicThingInfo}
 import querki.display.input.InputGadget
 
 class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEditInfo], val thing:BasicThingInfo, 
-  val editInfo:FullEditInfo, sortable:Boolean = true)(implicit val e:Ecology) 
+  val editInfo:FullEditInfo, val sortable:Boolean = true)(implicit val e:Ecology) 
   extends InputGadget[dom.HTMLUListElement](e) 
 {
   lazy val Gadgets = interface[querki.display.Gadgets]

@@ -32,6 +32,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   lazy val PageEventManager = interface[controllers.PageEventManager]
   lazy val UserSessionMgr = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
   
   def fRes(res:Result) = Future.successful(res)
   

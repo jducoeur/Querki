@@ -31,7 +31,6 @@ import querki.util.PublicException
 class ClientController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
-  lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val Tags = interface[querki.tags.Tags]
   
   def apiTrace = ApiInvocation.apiTrace _

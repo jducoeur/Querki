@@ -80,7 +80,8 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
             raw(s"$prompt ")),
             tooltip),
           new RawDiv(info.editor, cls:="col-md-9 col-xs-11"),
-          i(cls:="_dragHandle col-xs-1 glyphicon glyphicon-move"),
+          if (section.sortable)
+            i(cls:="_dragHandle col-xs-1 glyphicon glyphicon-move"),
           new DeleteInstanceButton({() => section.page.removeProperty(this)}) 
         ),
         if (propId == stdThings.basic.displayNameProp.oid)
