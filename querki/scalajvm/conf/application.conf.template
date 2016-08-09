@@ -218,6 +218,13 @@ akka {
 
 include "persistence.conf"
 
+cassandra-journal {
+  contact-points = ["127.0.0.1", "127.0.0.2", "127.0.0.3"]
+}
+cassandra-snapshot-store {
+  contact-points = ["127.0.0.1", "127.0.0.2", "127.0.0.3"]
+}
+
 # Secret key
 # ~~~~~
 # The secret key is used to secure cryptographics functions.
