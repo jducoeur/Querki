@@ -60,6 +60,12 @@ object SystemIds extends EcotIds(0) {
   val systemOID = sysId(0)
 }
 
+/**
+ * Marker trait for classes (usually Actors) that require asynchronous initialization, and which
+ * will be register using regAsyncInit().
+ */
+trait AsyncInitter
+
 trait EcotImpl extends Ecot {
   
   import scala.reflect.runtime.{universe => ru}
@@ -118,6 +124,25 @@ trait EcotImpl extends Ecot {
    * the overall ActorSystem properly.
    */
   def createActors(createActorCb:CreateActorFunc):Unit = {}
+  
+  /**
+   * Ecots should override this in order to declare their persisted messages. Use the
+   * persist() convenience function to declare them.
+   * 
+   * Note that this is *required* for any persisted messages, which should also be marked
+   * as UseKryo!
+   */
+  def persistentMessages:(Short, Seq[(Class[_], Short)]) = (-1, Seq.empty)
+  
+  protected def persist(ecotId:Short, decls:(Class[_], Short)*) = (ecotId, decls)
+  
+  protected def regAsyncInit[T <: AsyncInitter](implicit tag:ClassTag[T]) = {
+    val clazz = tag.runtimeClass
+    ecology match {
+      case impl:EcologyImpl => impl.regAsyncInitter(clazz)
+      case _ => // Testing...
+    }
+  }
 }
 
 class EcologyImpl(val playApp:Option[play.api.Application]) 
@@ -125,6 +150,7 @@ class EcologyImpl(val playApp:Option[play.api.Application])
 {
   def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
     val finalState = init(initialSpaceState) { state =>
+      collectPersistence()
       initializeActors(createActorCb)
       state
     }
@@ -133,6 +159,21 @@ class EcologyImpl(val playApp:Option[play.api.Application])
   
   private def initializeActors(createActorCb:CreateActorFunc) = {
     _initializedEcots.foreach(_.createActors(createActorCb))
+  }
+  
+  private def collectPersistence() = {
+    val msgs = (Seq.empty[(Class[_], Int)] /: _initializedEcots) { (msgs, ecot) =>
+      val (ecotId, ecotMsgs) = ecot.persistentMessages
+      if (ecotId == -1)
+        msgs
+      else {
+        val adjusted = ecotMsgs.map { case (clazz, msgId) => (clazz, (ecotId << 16) + msgId) }
+        msgs ++ adjusted
+      }
+    }
+    
+    // HACK: workaround to get this list through to KryoInit:
+    querki.persistence.KryoInit.setMsgs(msgs)
   }
   
   /**
@@ -145,6 +186,16 @@ class EcologyImpl(val playApp:Option[play.api.Application])
       case Some(app) => app.injector.instanceOf(tag)
       case _ => throw new Exception(s"Trying to fetch interface ${tag.runtimeClass.getName}, but I don't have an app!")
     }
+  }
+  
+  var asyncInitters:Set[Class[_]] = Set.empty
+  // TODO: there must be a way to make this more strongly-typed, but it's eluding me today:
+  private [ecology] def regAsyncInitter(clazz:Class[_]) = asyncInitters = asyncInitters + clazz
+  // True iff there are AsyncInitters that haven't checked in yet
+  def waitingForAsync:Boolean = !asyncInitters.isEmpty
+  // Marks the given AsyncInitter as ready
+  def gotAsync(clazz:Class[_]) = {
+    asyncInitters = asyncInitters - clazz
   }
 }
 

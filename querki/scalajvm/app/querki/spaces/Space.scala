@@ -154,7 +154,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
    */
   def checkOwnerIsMember() = {
     state.ownerIdentity.foreach { identity =>
-      if (Person.localPerson(identity)(state).isEmpty) {
+      if (Person.localPerson(identity.id)(state).isEmpty) {
         createSomething(id, IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
           Core.toProps(
             Core.setName(identity.handle),

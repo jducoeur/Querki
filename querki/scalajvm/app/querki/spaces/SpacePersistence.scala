@@ -125,6 +125,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     val propPairs = propStrs.filter(_.trim.length() > 0).map(deserializeProp(_))
     toProps(propPairs:_*)
   }
+  
+  def recordUnresolvedProp(valStr:String):QValue = UnresolvedProp(UnresolvedPropType(valStr))
 
   object UnresolvedProp extends ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue = UnresPropValue(cv.toList, this, pType)

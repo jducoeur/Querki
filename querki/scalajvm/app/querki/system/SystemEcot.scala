@@ -50,12 +50,17 @@ trait SystemManagement extends EcologyInterface {
   /**
    * Sets up a Cluster Singleton. (Which will be stubbed if we're in a unit-test environment.)
    */
-  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef])
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String, terminationMsg:Any):(Option[ActorRef], Option[ActorRef])
+  
+  /**
+   * The Actor that AsyncInitters should tell when they are ready.
+   */
+  def asyncInitTarget:ActorRef
 }
 
 object SystemMOIDs extends EcotIds(18)
 
-class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends QuerkiEcot(e) with System with SystemManagement {
+class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncInitTarget:ActorRef) extends QuerkiEcot(e) with System with SystemManagement {
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Tags = interface[querki.tags.Tags]
@@ -140,12 +145,12 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     cluster.selfAddress.toString
   }
   
-  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String):(Option[ActorRef], Option[ActorRef]) = {
+  def createClusterSingleton(createActorCb:CreateActorFunc, props:Props, singletonName:String, proxyName:String, terminationMsg:Any):(Option[ActorRef], Option[ActorRef]) = {
     actorSystemOpt match {
       case Some(system) => {
         val manager = createActorCb(ClusterSingletonManager.props(
             props,
-            PoisonPill,
+            terminationMsg,
             ClusterSingletonManagerSettings(system)
           ),
           singletonName)

@@ -1,11 +1,10 @@
 package querki.identity.skilllevel.impl
 
-import querki.identity.skilllevel._
-
 import models.{OID, Thing, ThingState}
 
+import querki.api.commonName
 import querki.ecology._
-
+import querki.identity.skilllevel._
 import querki.spaces.CacheUpdate
 import querki.util.{Contributor, Publisher, QLog}
 import querki.values.{SpaceState, StateCacheKey}
@@ -105,19 +104,19 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel with Con
         
   lazy val skillLevelBasic = ThingState(SkillLevelBasicOID, systemOID, SkillLevelOID,
     toProps(
-      setName("User Level Basic"),
+      setName(commonName(_.skillLevel.skillLevelEasy)),
       Categories(SkillLevelTag),
       Summary("""This level should be used for the core of Querki: the powerful but easy features that everyone uses.""")))
         
   lazy val skillLevelStandard = ThingState(SkillLevelStandardOID, systemOID, SkillLevelOID,
     toProps(
-      setName("User Level Standard"),
+      setName(commonName(_.skillLevel.skillLevelStandard)),
       Categories(SkillLevelTag),
       Summary("""This level should be used for the bulk of Querki: the common features that are often used, but not quite core.""")))
         
   lazy val skillLevelAdvanced = ThingState(SkillLevelAdvancedOID, systemOID, SkillLevelOID,
     toProps(
-      setName("User Level Advanced"),
+      setName(commonName(_.skillLevel.skillLevelAdvanced)),
       Categories(SkillLevelTag),
       Summary("""This level should be used for the power-user features of Querki, which aren't quite as easy but provide the most flexibility.""")))
         

@@ -3,7 +3,7 @@ package querki.system
 import akka.actor._
 
 import querki.ecology._
-
+import querki.globals._
 import querki.spaces.{CacheUpdate, DBSpacePersistenceFactory, SpaceManager, SpaceOps}
 
 /**
@@ -18,16 +18,29 @@ class QuerkiRoot extends Actor {
   
   import QuerkiRoot._
   
-  var ecology:Ecology = null
+  var ecology:EcologyImpl = null
+  
+  var initCaller:Option[ActorRef] = None
   
   def createActor(props:Props, name:String):Option[ActorRef] = Some(context.actorOf(props, name))
+  
+  def checkAsyncInitDone() = {
+    if (ecology.waitingForAsync) {
+      QLog.spew(s"Waiting for ${ecology.asyncInitters} to initialize")
+    } else {
+      initCaller map { origSender =>
+        QLog.spew("... Querki running.")
+        origSender ! Initialized(ecology)
+      }
+    }
+  }
   
   def receive = {
     case Initialize(app) => {
       println("Creating the Ecology...")
       val ecologyImpl = new EcologyImpl(Some(app))
       ecology = ecologyImpl
-      SystemCreator.createAllEcots(ecology, Some(context.system))
+      SystemCreator.createAllEcots(ecology, Some(context.system), self)
       println("... initializing the Ecology...")
       val finalState = ecologyImpl.init(InitialSystemState.create(ecology), createActor)
       
@@ -35,8 +48,16 @@ class QuerkiRoot extends Actor {
       val withCache = ecology.api[querki.spaces.SpaceChangeManager].updateStateCache(CacheUpdate(None, None, finalState))
       ecology.api[SystemManagement].setState(withCache.current)
       
-      println("... Querki running.")
-      sender ! Initialized(ecology)
+      initCaller = Some(sender)
+
+      // Wait until any async initters are complete:
+      checkAsyncInitDone()
+    }
+    
+    case AsyncInitted(clazz) => {
+      QLog.spew(s"Async Initter $clazz is ready")
+      ecology.gotAsync(clazz)
+      checkAsyncInitDone()
     }
     
     case Terminate => {

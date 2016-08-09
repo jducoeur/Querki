@@ -22,6 +22,19 @@ trait Security { this:FuncMixin =>
         run(state,
           createSpace(ExploreRestrictedSpace),
           { state =>
+            // Bump Admin1 into Programmer Mode:
+            find(SecurityItem.id) should be (empty)
+            clickMenuItem(SkillLevelItem)
+            val advancedButtonId = "_advancedComplexity" 
+            waitFor(advancedButtonId)
+            click on advancedButtonId
+            // This will do a full reload, and then we should see the Security menu item:
+            eventually { 
+              openMenuFor(SecurityItem)
+              find(SecurityItem.id) should not be (empty)
+              // Close the menu again, for the code below
+              click on SecurityItem.menu.id
+            }
             
             // TODO: this all needs to be refactored, to become a richer harness for doing Security
             // experiments:
@@ -37,7 +50,6 @@ trait Security { this:FuncMixin =>
             eventually { find(whoCanExplorePath).get.attribute("disabled") should be (None) }
             click on "_doneButton"
             // TODO: the state should reflect the changed permissions!
-          
             state
           },
           
@@ -54,14 +66,11 @@ trait Security { this:FuncMixin =>
         
         run(state,
           goTo(ExploreRestrictedSpace),
-          { state =>
-            
+          s {
             openMenuFor(RefreshItem)
             checkMissing(DesignModelItem)
             checkMissing(CreateThingItem)
             checkMissing(AdvancedEditItem)
-          
-            state
           }
         )
       },

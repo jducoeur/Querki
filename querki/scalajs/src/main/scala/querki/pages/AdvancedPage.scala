@@ -14,7 +14,7 @@ import querki.display.rx.GadgetRef
 import querki.globals._
 import querki.security.SecurityFunctions
 
-class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "advancedCommands") with EcologyMember {
   lazy val thingId = TID(params("thingId"))
   
   lazy val Apps = interface[querki.apps.Apps]
@@ -75,6 +75,15 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         new QText(gutsRaw),
         if (DataAccess.request.isOwner) {
           div(
+            p("""Press this button to reload this Space. (This is mainly for testing; you can usually ignore it.)"""),
+            new ButtonGadget(ButtonGadget.Info, "Reload", id := "_reloadButton") ({ () =>
+              Client[ThingFunctions].reloadSpace().call().foreach { _ =>
+                PageManager.reload().map { _ =>
+                  StatusLine.showUntilChange("Reloaded")
+                }
+              }
+            }),
+              
             p("""Press this button to export this *entire* Space as XML. (NOTE: photographs are not exported.)
               The exported XML will open in a new tab or window, which you can save if you want."""),
             a(
@@ -97,5 +106,5 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         })
       )
   }
-    yield PageContents(s"Advanced Commands", guts)
+    yield PageContents(pageTitle, guts)
 }

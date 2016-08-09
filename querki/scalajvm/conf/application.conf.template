@@ -53,6 +53,11 @@ querki {
   space {
     # Time before a Space times out for inactivity
     timeout : 15 minutes
+    # How often (in terms of number of changes) should a Space save a snapshot?
+    snapshotInterval : 100
+    # Should we use the new Cassandra-based persistence?
+    # This will go away once we've transitioned fully
+    newPersist : true
   }
   
   apps {
@@ -209,25 +214,9 @@ akka {
 #      }
 #    }
   }
-  
-  persistence {
-    journal.plugin = "akka-persistence-sql-async.journal"
-    snapshot-store.plugin = "akka-persistence-sql-async.snapshot-store"
-  }
 }
 
-akka-persistence-sql-async {
-  journal.class = "akka.persistence.journal.sqlasync.MySQLAsyncWriteJournal"
-  snapshot-store.class = "akka.persistence.snapshot.sqlasync.MySQLSnapshotStore"
-
-  user = DB LOGIN
-  password = DB PASSWORD
-  url = "jdbc:mysql://localhost/DATABASE NAME HERE"
-  max-pool-size = 4 # total connection count
-  wait-queue-capacity = 10000 # If query cannot be executed soon, it wait in the queue and will be executed later.
-  journal-table-name = "persist_journal"
-  snapshot-table-name = "persist_snapshot"
-}
+include "persistence.conf"
 
 # Secret key
 # ~~~~~

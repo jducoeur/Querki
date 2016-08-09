@@ -45,6 +45,8 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
   
   implicit val ecology = e
   
+  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
+  
   lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
@@ -134,6 +136,9 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
           // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
           // of the updates in the first transaction block failed, and the table was nonetheless created.
+          // TODO: once Conversations and User Values have been moved to Akka Persistence, we should no longer need
+          // to create and evolve the Space Table here. At that point, only the insertion into the Spaces table should
+          // be needed any more.
           QDB(User) { implicit conn =>
             SpacePersistence.SpaceSQL(spaceId, """
                 CREATE TABLE {tname} (
@@ -156,8 +161,10 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           QDB(User) { implicit conn =>
             // We need to evolve the Space before we try to create anything in it:
             Evolutions.checkEvolution(spaceId, 1)
-            val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))
-            SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
+            if (!useNewPersist) {
+              val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))
+              SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
+            }
           }
           
           sender ! Changed(spaceId, DateTime.now)

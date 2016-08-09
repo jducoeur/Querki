@@ -73,15 +73,17 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
         nodeId("5"))),
       nodeId("4"))
 }
-      
-class ModelTypeTests extends QuerkiTests {
+
+trait ModelTypeTestBase extends QuerkiTests {
+  
+  def makeSpace():TestSpace
+  
   "A simple ModelType" should {
     "be defineable and usable" in {
-      val space = new ComplexSpace
+      implicit val space = makeSpace()
       
-      processQText(thingAsContext[ComplexSpace](space, _.thingWithComplex), """[[Complex Prop -> Number in Model]]""") should
-        equal ("3")      
-      processQText(thingAsContext[ComplexSpace](space, _.thingWithComplex), """[[Complex Prop -> Text in Model]]""") should
+      pql("""[[My Complex Thing -> Complex Prop -> Number in Model]]""") should equal ("3")      
+      pql("""[[My Complex Thing -> Complex Prop -> Text in Model]]""") should
         equal ("Text in Instance")
     }
     
@@ -92,11 +94,11 @@ class ModelTypeTests extends QuerkiTests {
 //      processQText(thingAsContext[TSpace](space, _.thingWithComplex), """[[Complex Prop.Number in Model]]""") should
 //        equal ("3")      
 //    }    
-    
+  
     "be renderable as a whole" in {
-      val space = new ComplexSpace
+      implicit val space = makeSpace()
 
-      processQText(thingAsContext[ComplexSpace](space, _.thingWithComplex), """[[Complex Prop]]""") should
+      pql("""[[My Complex Thing -> Complex Prop]]""") should
         equal("""
             |<dt>Number in Model</dt><dd>3</dd>
             |<dt>Text in Model</dt><dd>Text in Instance</dd>""".stripReturns)
@@ -104,7 +106,7 @@ class ModelTypeTests extends QuerkiTests {
     
     "be able to generate an Edit control" in {
       val Editor = interface[querki.editing.Editor]
-      implicit val space = new ComplexSpace
+      implicit val space = makeSpace()
       implicit val user = space.owner
       
       val result = pql("""[[Top Level Thing -> _edit]]""")
@@ -113,14 +115,14 @@ class ModelTypeTests extends QuerkiTests {
   
   "A nested Model Type" should {
     "be defineable and usable" in {
-      implicit val space = new ComplexSpace
+      implicit val space = makeSpace()
       
       pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""") should
         equal("Top Text 1")
     }
     
     "be able to access properties from its Thing" in {
-      implicit val s = new ComplexSpace
+      implicit val s = makeSpace()
       
       // This is horribly messy, but Referencing then refers back to a Property defined all the way up
       // at the top:
@@ -128,7 +130,7 @@ class ModelTypeTests extends QuerkiTests {
     }
     
     "be able to access its Thing from _edit" in {
-      implicit val s = new ComplexSpace
+      implicit val s = makeSpace()
       
       pql("[[Top Level Thing -> Meta Property -> _first -> Complex Prop._edit]]") should include ("Reference from subModel: From the Top")
     }
@@ -136,12 +138,17 @@ class ModelTypeTests extends QuerkiTests {
   
   "A recursive Model Type" should {
     "be defineable and usable" in {
-      implicit val space = new ComplexSpace
+      implicit val space = makeSpace()
       
       pql("""[[My Tree -> Left -> Right -> Node Id]]""") should
         equal("3")
     }
   }
+}
+
+class ModelTypeTests extends ModelTypeTestBase {
+  
+  def makeSpace = new ComplexSpace
   
   "rebuildBundle" should {
     "work for a reasonably nested value with an index" in {

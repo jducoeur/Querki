@@ -27,8 +27,9 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
-  
+class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash with Requester 
+  with EcologyMember with querki.system.AsyncInittingActor[QuerkiNodeManager]
+{
   import QuerkiNodeCoordinator._
   import QuerkiNodeManager._
   
@@ -36,18 +37,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   
   lazy val clusterSize = Config.getInt("querki.cluster.size")
   // Quorum is at least half of the cluster size:
-  // TBD: is this over-complicated? Can I rely on Integer math to always produce the
-  // floor, and then add 1?
-  lazy val quorum = {
-    val isEven = (clusterSize % 2) == 0
-    val halfSize = clusterSize.toDouble / 2.toDouble
-    if (isEven)
-      // It's an even number, so quorum is *more* than half:
-      halfSize.toInt + 1
-    else
-      // Not an even number, so just round up
-      halfSize.ceil.toInt
-  }
+  lazy val quorum = (clusterSize / 2) + 1
   
   var _shardId:Option[ShardId] = None
   def shardId = _shardId.get
@@ -55,13 +45,15 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   var _allocator:Option[ActorRef] = None
   def allocator = _allocator.get
   
-  def requestShardId():Unit = {
-    val reqM = ClusterPrivate.nodeCoordinator.request(AssignShard()) onComplete
+  def requestShardId(msg:Any):Unit = {
+    QLog.spew(s"QuerkiNodeManager sending $msg to Coordinator")
+    val reqM = ClusterPrivate.nodeCoordinator.request(msg) onComplete
     {
       case Success(ShardAssignment(id)) => {
         _shardId = Some(id)
         _allocator = Some(context.actorOf(OIDAllocator.actorProps(ecology, shardId), "OIDAllocator"))
-        unstashAll()        
+        initted()
+        unstashAll()
       }
 
       case Failure(ex:AskTimeoutException) => {
@@ -73,7 +65,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
         // QuerkiNodeManager tends to ask for its shard before the Coordinator singleton has been
         // fully created, and the ClusterSingleton mechanism appears to just drop the request on the floor.
         QLog.warn(s"QuerkiNodeManager: AssignShard timed out; trying again")
-        requestShardId()
+        requestShardId(msg)
       }
       
       case other => {
@@ -86,8 +78,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     // While we're inside of a context, make sure we have our own address:
     selfUniqueAddress
     Cluster(context.system).subscribe(self, classOf[ReachabilityEvent], classOf[MemberEvent])
-    // TODO: turn this back on
-//    requestShardId()
+    requestShardId(AssignShard(self))
   }
 
   lazy val selfUniqueAddress = Cluster(context.system).selfUniqueAddress
@@ -175,17 +166,30 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
       }
     }
     
-    case msg @ ShardFull(id) => {
+    case msg @ ShardFull(id, _) => {
       // If the ID doesn't match the current one, this message is probably out of date:
       if (id == shardId) {
         // The OIDAllocator is reporting that it is full, so we need to obtain a new Shard ID.
         // This will result in a new ShardAssignment. In the meantime, go back to stashing until
         // we have that:
-        ClusterPrivate.nodeCoordinator ! msg
         allocator ! OIDAllocator.Shutdown
         _allocator = None
         _shardId = None
-        requestShardId()
+        // Note that we are actually sending a ShardFull here; once that is complete, it should
+        // kick off the reassignment and hand us a new ShardId. Also, note that we substitute our
+        // own ActorRef into here, since this Manager is what the Coordinator really thinks in
+        // terms of:
+        requestShardId(msg.copy(node = self))
+      }
+    }
+    
+    // The Coordinator apparently restarted, and is sounding us out about the actual state
+    // of the world:
+    case CheckShardAssignment(id) => {
+      if (_shardId.map(_ == id).getOrElse(false)) {
+        sender ! ConfirmShardAssignment(self)
+      } else {
+        sender ! RefuteShardAssignment(self)
       }
     }
     

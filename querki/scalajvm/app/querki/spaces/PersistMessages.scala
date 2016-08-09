@@ -54,6 +54,11 @@ private [spaces] object PersistMessages {
    * Response sent when the Persister successfully has loaded the Space.
    */
   case class Loaded(state:SpaceState)
+  
+  /**
+   * Signifies that this Space doesn't exist in the old MySQL-based system.
+   */
+  case object NoOldSpace
 
   /**
    * Command to delete the Thing with the specified OID. Fire-and-forget, with no response.

@@ -4,9 +4,12 @@ import akka.actor._
 import akka.pattern._
 import akka.persistence._
 
+import org.querki.requester._
+
 import models.OID
 
 import querki.globals._
+import querki.persistence._
 
 /**
  * Actor that actually doles OIDs out on request. There should be exactly one of these on
@@ -23,7 +26,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with EcologyMember {
+class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requester with EcologyMember {
   import OIDAllocator._
   
   implicit val ecology = e
@@ -31,14 +34,19 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
   override def persistenceId = s"alloc$shardId"
   
   lazy val allocBlockSize = Config.getInt("querki.cluster.allocBlockSize", 10)
-  lazy val allocSnapshotInterval = Config.getInt("querki.cluster.allocSnapshotInterval", 10)
-  lazy val shardFullBufferSize = Config.getInt("querki.cluster.shardFullBufferSize", 100)
+  lazy val allocSnapshotInterval = Config.getInt("querki.cluster.allocSnapshotInterval", 100)
+  lazy val shardFullBufferSize = Config.getInt("querki.cluster.shardFullBufferSize", 1000)
   // When we hit the shardFullMark, raise the alarm that we need to shut down this shard:
   lazy val shardFullMark = Int.MaxValue - shardFullBufferSize
   
   var current:Int = 0
   var availableThrough:Int = 0
   var snapshotCount:Int = 0
+  
+  def updateAvailable(blockSize:Int) = {
+    // Make sure we avoid overflows:
+    availableThrough = Math.min(availableThrough + blockSize, Int.MaxValue)
+  }
   
   def countToSnapshot() = {
     snapshotCount += 1
@@ -50,7 +58,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
   
   val receiveRecover:Receive = {
     case Alloc(blockSize) => {
-      availableThrough += blockSize
+      updateAvailable(blockSize)
       current = availableThrough
       countToSnapshot()
     }
@@ -58,6 +66,10 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
     case SnapshotOffer(metadata, AllocState(a)) => {
       availableThrough = a
       current = availableThrough
+    }
+    
+    case RecoveryCompleted => {
+      // We don't currently need to do anything at the end of recovery
     }
     
     case other => QLog.error(s"OIDAllocator got unexpected message $other")
@@ -68,7 +80,7 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
       // Give up on shutting down cleanly, and just die...
       throw new Exception(s"OIDAllocator $shardId unable to send ShardFull! Dying...")
     
-    context.parent.ask(QuerkiNodeCoordinator.ShardFull(shardId))(defaultTimeout) map {
+    context.parent.request(QuerkiNodeCoordinator.ShardFull(shardId, self)) map {
       case Shutdown => context.stop(self)
       case _ => sendFull(n + 1)
     }    
@@ -76,25 +88,27 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
   
   val receiveCommand:Receive = {
     case NextOID => {
-      def giveOID() = {
-        if (current == Int.MaxValue) {
-          // Emergency! At this point we just need to fall over.
-          context.parent ! QuerkiNodeCoordinator.ShardFull(shardId)
-          throw new Exception(s"Overfull OIDAllocator $shardId")
-        }
-        
+      if (current == Int.MaxValue) {
+        // Emergency! At this point we just need to fall over.
+        context.parent ! QuerkiNodeCoordinator.ShardFull(shardId, self)
+        throw new Exception(s"Overfull OIDAllocator $shardId")
+      }
+
+      def giveOID() = {        
         val oid = OID(shardId, current)
         sender ! NewOID(oid)        
         current += 1
         
         if (current == shardFullMark) {
+          // Time to begin shutting down this shard...
+          sendFull(0)
         }
       }
       
       if (current >= availableThrough) {
         // We've used up the current allocation, so allocate more:
         persist(Alloc(allocBlockSize)) { msg =>
-          availableThrough += allocBlockSize
+          updateAvailable(allocBlockSize)
           giveOID()
           countToSnapshot()
         }
@@ -103,6 +117,9 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Ecol
         giveOID()
       }
     }
+    
+    case SaveSnapshotSuccess(metadata) => //QLog.spew(s"Successfully saved snapshot: $metadata")
+    case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
   }
 }
 
@@ -134,10 +151,10 @@ object OIDAllocator {
   /**
    * Persistent message: allocate a block of n OIDs in this Shard.
    */
-  private case class Alloc(n:Int)
+  case class Alloc(@KryoTag(1) val n:Int) extends UseKryo
   
   /**
    * State of the Allocator, for snapshotting. 
    */
-  private case class AllocState(availableThrough:Int)
+  case class AllocState(@KryoTag(1) availableThrough:Int) extends UseKryo
 }

@@ -74,6 +74,13 @@ package object spaces {
     
   trait SpacePersistence extends EcologyInterface {
     def UnresolvedPropType:PType[String]
+    /**
+     * This notes a serialized Property value that we're trying to deserialize but can't yet.
+     * 
+     * TODO: this arguably no longer belongs in SpacePersistence, but instead in querki.persistence
+     * somewhere. Think about the factoring.
+     */
+    def recordUnresolvedProp(valStr:String):QValue
     
     // The name of the Space's Thing Table
     def thingTable(id:OID):String

@@ -13,9 +13,11 @@ import querki.core.NameUtils
 import querki.data._
 import querki.ecology._
 import querki.identity.{PublicIdentity, User}
+import querki.session.UserSessionMessages._
 import querki.tags.IsTag
 import querki.types.ModelTypeBase
-import querki.util.XmlEscape
+import querki.util.{ActorHelpers, XmlEscape}
+import ActorHelpers._
 import querki.values.{QLRequestContext, RequestContext}
 
 class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
@@ -29,6 +31,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
   lazy val Roles = interface[querki.security.Roles]
+  lazy val Session = interface[querki.session.Session]
   
   var _anonHandler:Option[ActorRef] = None
   lazy val anonHandler = _anonHandler.get
@@ -118,42 +121,38 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     IdentityInfo(AsOID(identity.id), identity.name, identity.handle)
   }
   
-  def userInfo(uopt:Option[User]):Option[UserInfo] = {
-    uopt.map { user =>
-      // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
-      val identityInfos = user.identities.map { identity =>
-        identityInfo(identity)
+  def userInfo(uopt:Option[User]):Future[Option[UserInfo]] = {
+    futOpt(uopt.map { user =>
+      implicit val timeout = ActorHelpers.timeout
+      Session.sessionManager askRetry FetchUserSessionInfo(user.id) map { case UserSessionInfo(level) =>
+        // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
+        val identityInfos = user.identities.map { identity =>
+          identityInfo(identity)
+        }
+        UserInfo(AsOID(user.id), identityInfos, level)
       }
-      UserInfo(AsOID(user.id), identityInfos)
-    }
+    })
   }
   
-  def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo = {
-    // TODO: this AccessControl check was an early, primitive version of a way to make the Space
-    // "hidden" -- if you can't read the Root Page, you can't see the Space exists. Problem is,
-    // that's too clumsy for real use. In particular, it doesn't allow a Space to open up just a
-    // few non-Root pages. So we should instead create a first-class "Hidden" flag, which says
-    // that non-Members can't even see that this exists, and set the RequestInfo.forbidden flag
-    // if so. (This flag is picked up in ClientController.space().)
-//    if (AccessControl.canRead(state, rc.requesterOrAnon, state.id)) {
+  def requestInfo(rc:RequestContext)(implicit state:SpaceState):Future[RequestInfo] = {
+    userInfo(rc.requester).map { uInfo =>
       RequestInfo(
-        userInfo(rc.requester), 
+        uInfo, 
         spaceInfo(Some(state), rc), 
         rc.isOwner,
         rc.requesterOrAnon.level)
-//    } else {
-        // Signal that this person doesn't have access to the Space:
-//      RequestInfo(None, None, false, rc.requesterOrAnon.level, true)
-//    }
+    }
   }
   
-  def rootRequestInfo(rc:RequestContext):RequestInfo = {
-    RequestInfo(
-      userInfo(rc.requester),
-      None,
-      false,
-      rc.requesterOrAnon.level
-    )
+  def rootRequestInfo(rc:RequestContext):Future[RequestInfo] = {
+    userInfo(rc.requester).map { uInfo =>    
+      RequestInfo(
+        uInfo,
+        None,
+        false,
+        rc.requesterOrAnon.level
+      )
+    }
   }
   
   def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo = {

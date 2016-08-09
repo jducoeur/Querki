@@ -10,11 +10,13 @@ object ActionsMenu extends Menu("_actionsMenu")
 object RefreshItem extends MenuItem("_refreshMenuItem", ActionsMenu)
 object DesignModelItem extends MenuItem("designAModel", ActionsMenu)
 object CreateThingItem extends MenuItem("_createAnyThing", ActionsMenu)
+object OpenAdvancedItem extends MenuItem("_openAdvancedItem", ActionsMenu)
 object AdvancedEditItem extends MenuItem("_advEditButton", ActionsMenu)
 object SecurityItem extends MenuItem("_securityItem", ActionsMenu)
 object SharingItem extends MenuItem("_sharingButton", ActionsMenu)
 
 object ProfileMenu extends Menu("_profile_menu")
+object SkillLevelItem extends MenuItem("_skillLevelButton", ProfileMenu)
 object LogoutItem extends MenuItem("logout_button", ProfileMenu)
 
 trait FuncMenu { this:FuncMixin =>

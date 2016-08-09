@@ -23,10 +23,55 @@ import MOIDs._
 // Collections
 //
 
+object Collections {
+  /*
+   * These are the delimiters for serializing Collections. All newly-saved Collections work this way;
+   * the old distinctions have been removed.
+   */
+  val collSerialOpen = '\u0002'
+  val collSerialClose = '\u0003'
+  val collSerialDelimit = '\u001e'
+  
+  val collSerialOpenStr = s"$collSerialOpen"
+  val collSerialCloseStr = s"$collSerialClose"
+  val collSerialDelimitStr = s"$collSerialDelimit"
+}
+
 trait CollectionBase { self:CoreEcot =>
   def UnknownType:PType[Unit]
   
   abstract class SystemCollection(cid:OID, pf:PropMap)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
+  {
+    import Collections._
+    
+    type implType = List[ElemValue]
+    
+    /**
+     * Concrete Collections should override this if they previously stored their data in a different
+     * format. We fall back to that when deserializing a record that doesn't fit the current format.
+     */
+    def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = ???
+    
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+      if (ser.isEmpty || ser.head != collSerialOpen) {
+        oldDeserialize(ser, elemT)
+      } else { 
+        val guts = ser.slice(1, ser.length() - 1)
+          
+        if (guts.isEmpty())
+          doDefault(elemT)
+        else {
+          val elemStrs = guts.split(collSerialDelimit).toList
+          elemStrs.map(elemT.deserialize(_))
+        }
+      }
+    }
+    
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
+      v.map(elem => elemT.serialize(elem)).
+        mkString(collSerialOpenStr, collSerialDelimitStr, collSerialCloseStr)
+    }
+  }
 
   abstract private[core] class SingleElementBase(cid:OID, pf:PropMap)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
   {
@@ -97,13 +142,8 @@ trait CollectionBase { self:CoreEcot =>
       toProps(
         setName(commonName(_.core.exactlyOneColl)))) 
   {
-    type implType = List[ElemValue]
-
-	def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+  	override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.deserialize(ser))
-    }
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      elemT.serialize(v.headOption.getOrElse(elemT.default))
     }
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       elemT.wikify(context)(v.headOption.getOrElse(elemT.default(context.state)), displayOpt, lexicalThing)
@@ -130,9 +170,7 @@ trait CollectionBase { self:CoreEcot =>
   
   abstract class QListBase(cid:OID, pf:PropMap) extends SystemCollection(cid, pf) 
   {
-    type implType = List[ElemValue]
-    
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       val guts = 
         // Note: this is a bit of a hack. We've had at least one Issue (.3y28amy) where we accidentally
         // stored Set data as ExactlyOne. As a result, the storage format was wrong. We don't want to
@@ -149,12 +187,6 @@ trait CollectionBase { self:CoreEcot =>
         val elemStrs = guts.replace("\\,", temp).split(",").toList.map(_.replace(temp, ","))
         elemStrs.map(elemT.deserialize(_))
       }
-    }
-    
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      v.map(elem => elemT.serialize(elem)).
-        map(_.replace(",", "\\,")).
-        mkString("[", "," ,"]")
     }
     
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
@@ -310,8 +342,6 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
         setName(commonName(_.core.optionalColl))
         )) 
   {
-    type implType = List[ElemValue]
-    
     override def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = {
       // If the input was empty, that's QNone.
       // TODO: this isn't good enough for the long run -- we'll have to do something more
@@ -322,7 +352,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
         None
     }
     
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       ser match {
         case "!" => Nil
         case s:String => {
@@ -332,16 +362,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       }
     }
     
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      v match {
-        case List(elem) => "(" + elemT.serialize(elem) + ")"
-        case Nil => "!"
-      }
-    }
-    
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       v match {
-        case List(elem) => elemT.wikify(context)(elem, displayOpt, lexicalThing)
+        case elem :: rest => elemT.wikify(context)(elem, displayOpt, lexicalThing)
         case Nil => fut(Wikitext(""))
       }
     }
@@ -432,11 +455,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       setInternal
     )) 
   {
-    type implType = List[ElemValue]
+    override def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = Nil
     
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = Nil
-    
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
+    override def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
     
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
       fut(Wikitext(""))
@@ -467,11 +488,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
    * we can get the real Collections booted up.
    */
   class bootCollection extends SingleElementBase(UnknownOID, models.Thing.emptyProps) {
-    type implType = List[ElemValue]
-
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))
-
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = elemT.serialize(v.head)
+    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))
 
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       elemT.wikify(context)(v.head, displayOpt, lexicalThing)

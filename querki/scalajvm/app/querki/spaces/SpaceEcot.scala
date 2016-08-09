@@ -26,6 +26,7 @@ object SpaceEcotMOIDs extends EcotIds(37) {
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
   
   import SpaceEcotMOIDs._
+  import SpaceMessagePersistence._
   
   val SystemManagement = initRequires[querki.system.SystemManagement]
   
@@ -54,6 +55,15 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         idExtractor, shardResolver)
     _ref = createActorCb(Props(classOf[SpaceManager], ecology, spaceRegion), "SpaceManager")
   }
+  
+  override def persistentMessages = persist(37,
+    (classOf[DHCreateThing] -> 100),
+    (classOf[DHModifyThing] -> 101),
+    (classOf[DHDeleteThing] -> 102),
+    (classOf[SpaceSnapshot] -> 103),
+    (classOf[DHInitState] -> 104),
+    (classOf[BootSpace] -> 105)
+  )
   
   implicit val stdTimeout = Timeout(10 seconds)
   

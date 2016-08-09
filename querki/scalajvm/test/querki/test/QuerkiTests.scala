@@ -1,6 +1,6 @@
 package querki.test
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion
 
 import org.scalatest.{WordSpec, BeforeAndAfterAll, Matchers}
@@ -34,7 +34,7 @@ class QuerkiTests
   lazy val Optional = Core.Optional
   lazy val QList = Core.QList
   
-  class SystemEcotSemiStub(e:Ecology, aso:Option[ActorSystem]) extends querki.system.SystemEcot(e, aso) {
+  class SystemEcotSemiStub(e:Ecology, aso:Option[ActorSystem]) extends querki.system.SystemEcot(e, aso, Actor.noSender) {
     override def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.ExtractEntityId, identityResolver:ShardRegion.ExtractShardId) = {
       Some(ActorRef.noSender)
     }

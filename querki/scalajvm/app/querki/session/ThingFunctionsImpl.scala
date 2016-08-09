@@ -27,7 +27,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   
   def doRoute(req:Request):Future[String] = route[ThingFunctions](this)(req)
   
-  def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)(state)
+  def getRequestInfo():Future[RequestInfo] = ClientApi.requestInfo(rc)(state)
   
   def getThingInfo(thingId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
     ClientApi.thingInfo(thing, rc)(state)
@@ -177,5 +177,9 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
         includeInstances
     } map (ClientApi.thingInfo(_,rc))
     Future.sequence(result.toSeq)
+  }
+  
+  def reloadSpace():Future[Unit] = {
+    Future.successful(spaceRouter ! querki.util.Reload)
   }
 }

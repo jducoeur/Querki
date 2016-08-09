@@ -39,21 +39,29 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   // The OID allocator is a child of NodeManager, and routes through it.
   def oidAllocator = nodeManager
   
+  override def persistentMessages = persist(58,
+    (classOf[OIDAllocator.Alloc] -> 100),
+    (classOf[OIDAllocator.AllocState] -> 101),
+    
+    (classOf[QuerkiNodeCoordinator.ShardAssigned] -> 201),
+    (classOf[QuerkiNodeCoordinator.ShardUnassigned] -> 202),
+    (classOf[QuerkiNodeCoordinator.ShardUnavailable] -> 203),
+    (classOf[QuerkiNodeCoordinator.ShardSnapshot] -> 204)
+  )
+  
   // TODO: until we have an Akka Persistence layer that we like, just don't even boot this up:
   // IMPORTANT: this has changed. See AdminEcot for how to deal with cluster singletons now:
   override def createActors(createActorCb:CreateActorFunc) = {
-//    createActorCb(ClusterSingletonManager.props(
-//        QuerkiNodeCoordinator.actorProps(ecology),
-//        QuerkiNodeCoordinator.Stop,
-//        ClusterSingletonManagerSettings(SystemManagement.actorSystem)
-//      ),
-//      singletonName)
-//      
-//    _nodeCoordinator = createActorCb(ClusterSingletonProxy.props(
-//          coordinatorPath,
-//          ClusterSingletonProxySettings(SystemManagement.actorSystem)), 
-//        "querkiNodeCoordinatorProxy")
-//        
+    val (mgr, proxy) = SystemManagement.createClusterSingleton(
+      createActorCb, 
+      QuerkiNodeCoordinator.actorProps(ecology), 
+      singletonName, 
+      "querkiNodeCoordinatorProxy", 
+      QuerkiNodeCoordinator.Stop)
+      
+    _nodeCoordinator = proxy
     _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
+    
+    regAsyncInit[QuerkiNodeManager]
   }
 }

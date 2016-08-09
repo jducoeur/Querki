@@ -135,6 +135,12 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
       case ex:Throwable => { handleException(ex, req); completeCb(ex) }
     }
   }
+  
+  implicit def thing2TID(t:Thing):TID = TID(t.id.toThingId)
+  implicit def OID2TID(oid:OID):TID = TID(oid.toThingId)
+  implicit class TIDExt(tid:TID) {
+    def toThingId = ThingId(tid.underlying)
+  }
 }
 
 case class SpacePayload(state:SpaceState, spaceRouter:ActorRef)
@@ -165,12 +171,6 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
    */
   def createSelfRequest(msg:SessionMessage):SessionRequest = {
     SessionRequest(user, state.id, msg)
-  }
-  
-  implicit def thing2TID(t:Thing):TID = TID(t.id.toThingId)
-  implicit def OID2TID(oid:OID):TID = TID(oid.toThingId)
-  implicit class TIDExt(tid:TID) {
-    def toThingId = ThingId(tid.underlying)
   }
 
 }

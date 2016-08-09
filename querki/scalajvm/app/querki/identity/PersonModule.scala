@@ -25,6 +25,8 @@ import querki.email.EmailAddress
 import controllers.{PageEventManager, PlayRequestContext}
 
 import play.api.Logger
+
+import IdentityPersistence._
   
 import MOIDs._
   
@@ -548,5 +550,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     withCache { cache =>
       user.identities.map(localPerson(_)).flatten.headOption
     }
+  }
+  
+  def user2Ref(user:User)(implicit state:SpaceState):UserRef = {
+    UserRef(user.id, localIdentities(user).headOption.map(_.id))
   }
 }

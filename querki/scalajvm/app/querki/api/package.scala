@@ -29,8 +29,8 @@ package object api {
     def thing2TID(t:Thing):TID
     def OID2TID(oid:OID):TID
     
-    def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo
-    def rootRequestInfo(rc:RequestContext):RequestInfo
+    def requestInfo(rc:RequestContext)(implicit state:SpaceState):Future[RequestInfo]
+    def rootRequestInfo(rc:RequestContext):Future[RequestInfo]
     
     def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[ThingInfo]
     
@@ -40,7 +40,7 @@ package object api {
     
     def identityInfo(identity:PublicIdentity):IdentityInfo
     
-    def userInfo(uopt:Option[User]):Option[UserInfo]
+    def userInfo(uopt:Option[User]):Future[Option[UserInfo]]
     
     def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo
     

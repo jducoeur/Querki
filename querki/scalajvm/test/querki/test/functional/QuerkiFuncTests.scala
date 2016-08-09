@@ -41,6 +41,7 @@ class QuerkiFuncTests
   // Infrastructure mix-ins, from ScalaTest and Play:
   extends WordSpec
   with Matchers
+  with BeforeAndAfterAll
   with OneServerPerTest
   with OneBrowserPerTest
   // For now, we're just going to target Chrome. Eventually, obviously, we should
@@ -59,8 +60,17 @@ class QuerkiFuncTests
   with BuildCommonSpace
   with Search
   with Security
+  with Persistence
   with RegressionTests1
 {
+  override def beforeAll() {
+    setupCassandra()
+  }
+  
+  override def afterAll() {
+    teardownCassandra()
+  }
+  
   /**
    * This is where we override the standard Application settings.
    */
@@ -80,7 +90,9 @@ class QuerkiFuncTests
         "querki.mail.test" -> "true"
       ))
       
-    new QuerkiApplicationLoader().load(context)
+    val app = new QuerkiApplicationLoader().load(context)
+    
+    app
   }
   
   var ecology:Ecology = null
@@ -100,6 +112,7 @@ class QuerkiFuncTests
       buildCommonSpace,
       runSearchTests,
       runSecurityTests,
+      runPersistenceTests,
       
       // Regression Tests
       regression1

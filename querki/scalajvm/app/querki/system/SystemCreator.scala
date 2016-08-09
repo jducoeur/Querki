@@ -1,6 +1,6 @@
 package querki.system
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 
 import querki.ecology._
 
@@ -25,8 +25,8 @@ object SystemCreator {
   /**
    * This creates the other Ecots that need to be stubbed in unit testing.
    */
-  def createStubbableEcots(ecology:Ecology, actorSystem:Option[ActorSystem]) = {
-    new querki.system.SystemEcot(ecology, actorSystem)             // 18
+  def createStubbableEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef) = {
+    new querki.system.SystemEcot(ecology, actorSystem, asyncInitTarget)             // 18
     new controllers.PublicUrlDefinitions(ecology)                  // 53    
   }
   
@@ -103,12 +103,13 @@ object SystemCreator {
     new querki.ql.SignatureEcot(ecology)                           // 61
     new querki.core.FunctionEcot(ecology)                          // 62
     new querki.location.LocationEcot(ecology)                      // 63
+    new models.ModelEcot(ecology)                                  // 64
   }
   
-  def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {
+  def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {
     createTestableEcots(ecology)
     createDBEcots(ecology)
-    createStubbableEcots(ecology, actorSystem)
+    createStubbableEcots(ecology, actorSystem, asyncInitTarget)
     
     ecology
   }

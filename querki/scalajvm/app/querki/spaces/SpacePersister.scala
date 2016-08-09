@@ -16,17 +16,16 @@ import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
 import querki.cluster.OIDAllocator._
-import querki.ecology._
-import querki.time._
-import querki.time.TimeAnorm._
-
 import querki.db._
 import ShardKind._
+import querki.ecology._
 import querki.evolutions.Evolutions
+import querki.globals._
 import querki.identity.{User}
+import querki.time._
+import querki.time.TimeAnorm._
 import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
-import querki.util._
 import querki.util.SqlHelpers.{oid => oidParser, _}
 
 import PersistMessages._
@@ -66,6 +65,10 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Types = interface[querki.types.Types]
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  
+  // For the moment, new-style object creation is only turned on if it says so in config. This is
+  // so that we can conduct lower-risk experiments in production before turning it on.
+  lazy val newObjCreate = Config.getBoolean("querki.cluster.newObjCreate", false)
 
   // The OID of the Space, based on the sid
   def oid = Space.oid _
@@ -147,49 +150,69 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    QDB(ShardKind.User) { implicit conn =>
-	      // The list of all of the Things in this Space.
-	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
-	      // the rows several times. This is considered acceptable only because this code is
-	      // deprecated, and will be entirely replaced by Akka Persistence soon.
-	      val raws = SpaceSQL("""
-	          select * from {tname} where deleted = FALSE
+	      // Check whether the table exists
+	      // Spaces created since the introduction of Akka Persistence won't have tables here, so we
+	      // need to now check explicitly.
+	      val spacesFound = SpaceSQL("""
+	          SELECT COUNT(*) as count
+	          FROM information_schema.tables
+	          WHERE table_name = '{tname}'
 	          """)
-	        .as(rawSpaceParser.*)
-	      // Split the stream, dividing it by Kind:
-	      val rawsByKind = raws.groupBy(_.kind)
-	      
-	      val loader = new ThingStreamLoader {
-		      // Now load each kind. We do this in order, although in practice it shouldn't
-		      // matter too much so long as Space comes last:
-		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
-		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
-		          // This is a critical catch, where we log load-time errors. But we don't want to
-		          // raise them to the user, so objects that fail to load are (for the moment) quietly
-		          // suppressed.
-		          // TBD: we should get more refined about these errors, and expose them a bit
-		          // more -- as it is, errors can propagate widely, so objects just vanish. 
-		          // But they should generally be considered internal errors.
-		          try {
-		            Some(
-		              builder(
-		                raw.id, 
-		                raw.model, 
-		                SpacePersistence.deserializeProps(raw.propStr, state),
-		                raw.modified))
-		          } catch {
-		            case error:Exception => {
-		              // TODO: this should go to a more serious error log, that we pay attention to. It
-		              // indicates an internal DB inconsistency that we should have ways to clean up.
-		              QLog.error("Error while trying to load ThingStream " + id, error)
-		              None
-		            }            
-		          }
-		        }).flatten
-		      }
+	        .on("dbname" -> ShardKind.dbName(ShardKind.User))
+	        .as(long("count").single)
+	      if (spacesFound > 0) {
+  	      // The list of all of the Things in this Space.
+  	      // Note that this is pretty inefficient in terms of memory -- we're going to be copying
+  	      // the rows several times. This is considered acceptable only because this code is
+  	      // deprecated, and will be entirely replaced by Akka Persistence soon.
+  	      val raws = SpaceSQL("""
+  	          select * from {tname} where deleted = FALSE
+  	          """)
+  	        .as(rawSpaceParser.*)
+  	      if (raws.isEmpty) {
+  	        // This was created with *zero* rows, not even the Space itself, so it is new-style:
+  	        sender ! NoOldSpace
+  	      } else {
+  	        // Old-style Space:
+    	      // Split the stream, dividing it by Kind:
+    	      val rawsByKind = raws.groupBy(_.kind)
+    	      
+    	      val loader = new ThingStreamLoader {
+    		      // Now load each kind. We do this in order, although in practice it shouldn't
+    		      // matter too much so long as Space comes last:
+    		      def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+    		        rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
+    		          // This is a critical catch, where we log load-time errors. But we don't want to
+    		          // raise them to the user, so objects that fail to load are (for the moment) quietly
+    		          // suppressed.
+    		          // TBD: we should get more refined about these errors, and expose them a bit
+    		          // more -- as it is, errors can propagate widely, so objects just vanish. 
+    		          // But they should generally be considered internal errors.
+    		          try {
+    		            Some(
+    		              builder(
+    		                raw.id, 
+    		                raw.model, 
+    		                SpacePersistence.deserializeProps(raw.propStr, state),
+    		                raw.modified))
+    		          } catch {
+    		            case error:Exception => {
+    		              // TODO: this should go to a more serious error log, that we pay attention to. It
+    		              // indicates an internal DB inconsistency that we should have ways to clean up.
+    		              QLog.error("Error while trying to load ThingStream " + id, error)
+    		              None
+    		            }            
+    		          }
+    		        }).flatten
+    		      }
+    	      }
+    
+    	      val state = doLoad(loader, apps)
+    	      sender ! Loaded(state)
+  	      }
+	      } else {
+	        sender ! NoOldSpace
 	      }
-
-	      val state = doLoad(loader, apps)
-	      sender ! Loaded(state)
 	    }
     }
     
@@ -242,11 +265,29 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
+    /**
+     * This used to be part of Change. It has been broken out, and is now the only non-vestigial part
+     * of this Actor.
+     * 
+     * For the moment, this is purely fire-and-forget, and doesn't respond. Possibly it should do so.
+     */
+    case SpaceChange(newName, newDisplay) => {
+        QDB(System) {implicit conn =>
+          SQL("""
+            UPDATE Spaces
+            SET name = {newName}, display = {displayName}
+            WHERE id = {thingId}
+            """
+          ).on("newName" -> newName, 
+               "thingId" -> id.raw,
+               "displayName" -> newDisplay).executeUpdate()          
+        }
+    }
+    
+    /***************************/
+    
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      // Going back to the old way of doing things, until Akka Persistence is more reliable:
-//      QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
-      {
-        val thingId = OID.next(ShardKind.User)
+      allocThingId() map { thingId =>
         QDB(ShardKind.User) { implicit conn =>
           // TODO: add a history record
           SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
@@ -254,6 +295,16 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
         sender ! Changed(thingId, modTime)
       }
     }
+  }
+  
+  // TEMP: while we're transitioning to the new Akka Persistence world, we have both OID-creation
+  // approaches in the code. Once we're confident that it's all working right, remove the
+  // OID.next version, and maybe just move the QuerkiCluster call back inline again:
+  def allocThingId():RequestM[OID] = {
+    if (newObjCreate)
+      QuerkiCluster.oidAllocator.request(NextOID).map { case NewOID(thingId) => thingId }
+    else
+      RequestM.successful(OID.next(ShardKind.User))
   }
 }
 

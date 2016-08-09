@@ -26,9 +26,12 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   lazy val space = DataAccess.space.get
+  
+  lazy val isAdvanced = SkillLevel.current == SkillLevel.AdvancedComplexity
   
   val noRole = ThingInfo(
     TID(""),
@@ -234,7 +237,8 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
         ul(cls:="nav nav-tabs", role:="tablist",
           li(role:="presentation", cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
           li(role:="presentation", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
-          li(role:="presentation", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
+          if (isAdvanced)
+            li(role:="presentation", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
         ),
           
         div(cls:="tab-content",
@@ -333,15 +337,16 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
             )
           ),
         
-          section(role:="tabpanel", cls:="tab-pane", id:="custom",
-            h3("Custom Roles"),
-            p(b("Advanced: "),
-              """You can define special custom Roles for your Space, if you need more control. For the moment, you
-                |can only use these Roles in the fine-grained permission system (that is, using them for permissions
-                |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
-                |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin),
-            new CustomRoleManager(customMap)
-          ) 
+          if (isAdvanced)
+            section(role:="tabpanel", cls:="tab-pane", id:="custom",
+              h3("Custom Roles"),
+              p(b("Advanced: "),
+                """You can define special custom Roles for your Space, if you need more control. For the moment, you
+                  |can only use these Roles in the fine-grained permission system (that is, using them for permissions
+                  |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
+                  |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin),
+              new CustomRoleManager(customMap)
+            ) 
         )
       )
   }

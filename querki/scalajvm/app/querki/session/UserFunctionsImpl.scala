@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import autowire._
 
-import models.ThingId
+import models.{OID, ThingId}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{TID, SpaceInfo, UserInfo}
@@ -32,6 +32,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val spaceManager = SpaceOps.spaceManager
   
   def doRoute(req:Request):Future[String] = route[UserFunctions](this)(req)
+  
+  lazy val sessionActorRef = info.actor.self
   
   implicit def spaceDetails2Info(details:SpaceDetails):SpaceInfo = {
     // TODO: this should probably include the Apps:
@@ -77,8 +79,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     if (newDisplayName.length() == 0)
       throw new MiscException("Trying to set an empty Name!")
 
-    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) map { newUser =>
-      ClientApi.userInfo(Some(newUser)).get
+    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) flatMap { newUser =>
+      ClientApi.userInfo(Some(newUser)).map (_.get)
     }
   }
   
@@ -107,5 +109,11 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   def validateActivationHash(validationStr:String):Future[Boolean] = {
     Person.validateEmail(user, validationStr)
+  }
+  
+  def setComplexity(level:TID):Future[TID] = {
+    sessionActorRef ? UserSessionMessages.SetSkillLevel(OID(level.underlying)) map { 
+      case UserSessionMessages.SkillLevelAck => level
+    }
   }
 }

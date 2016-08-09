@@ -5,7 +5,7 @@ import ByteConversions._
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.8"
-lazy val akkaV = "2.4.6"
+lazy val akkaV = "2.4.7"
 lazy val appV = "2.0.3.6"
 
 lazy val sharedSrcDir = "scala"
@@ -34,17 +34,24 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.typesafe.akka" %% "akka-cluster-sharding" % akkaV,
       "com.typesafe.akka" %% "akka-cluster" % akkaV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+      "com.typesafe.akka" %% "akka-persistence" % akkaV,
+      "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
       "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
       "com.lihaoyi" %% "utest" % "0.3.1",
-      "org.querki" %% "requester" % "2.3",
+      "org.querki" %% "requester" % "2.4",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
+      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2-SNAPSHOT",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
       // TEMP: until we have persistence up and running, we need this in order to
       // help Cluster Sharding work. Note there are corresponding entries in .conf:
-      "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV
+      "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
+      // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
+      "com.lihaoyi" %% "pprint" % "0.4.1",
+      // Powerful structural-diffing library: https://github.com/xdotai/diff
+      "ai.x" %% "diff" % "1.2.0" % "test"
     ),
     
     // ConductR params
