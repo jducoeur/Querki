@@ -25,6 +25,9 @@ trait MonadLike[F[_]] {
   val monadSyntax = new MonadLikeSyntax[F] { def F = MonadLike.this }
 }
 
+// We define this as AnyVal (a value class) for efficiency, since these functions will be invoked a *lot*.
+// Note that this is more efficient than Cats (or scalaz) currently is, but they have plans to elide the allocations
+// eventually. The value class trick is lovely, but only works in simple situations.
 class MonadLikeOps[F[_], A](val self:F[A]) extends AnyVal {
   def flatMap[B](f: A => F[B])(implicit monad:MonadLike[F]): F[B] = {
     monad.flatMap(self)(f)
