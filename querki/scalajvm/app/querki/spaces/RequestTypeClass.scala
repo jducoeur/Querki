@@ -18,6 +18,9 @@ import org.querki.requester._
  * that point we could do it more cheaply and easily by defining a *base* trait of Requester and
  * an providing alternate implementation. This is to a large degree a proof of concept of how to do
  * this sort of thing *without* altering the class.
+ * 
+ * TODO: this should be replaced with something that is more typeclassy and performant. See
+ * querki.test.MonadTests for an example of how it ought to work.
  */
 trait RequestTC[A, F[A]] {
   def flatMap[B](f: A => F[B]):F[B]
