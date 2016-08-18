@@ -6,6 +6,7 @@ import querki.core.IsLinkType
 import querki.ecology._
 import querki.globals._
 import querki.ql.{QLParser, QLPhrase}
+import querki.types.ModelTypeBase
 import querki.values._
 
 object MOIDs extends EcotIds(6) {
@@ -32,8 +33,11 @@ object MOIDs extends EcotIds(6) {
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
   import MOIDs._
 
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Logic = interface[querki.logic.Logic]
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val PlainTextType = Basic.PlainTextType
   
   /***********************************************
    * FUNCTIONS
@@ -347,16 +351,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  sealed trait SortTerm
 	  case object EmptySortTerm extends SortTerm
 	  case class RealSortTerm(elem:ElemValue, compType:PType[_]) extends SortTerm
-	  case class SortTerms(t:Thing, terms:Seq[SortTerm])(implicit s:SpaceState, rc:RequestContext) {
-      // TODO: HORRIBLE HACK!
-      // This is a compromise, and should be a temporary one. The issue is that we don't want to calculate the
-      // displayName unless we must, because Computed Name can take a long time. But Seq.sortWith() is synchronous:
-      // it doesn't allow the sort function to be Future[Boolean]. So for the moment, we're allowing ourselves to
-      // compute it lazily, blocking.
-      // The correct solution here is probably to write a Future-friendly version of sortWith(), where each computation
-      // returns Future[Boolean] and it composes the result. That's a project, though, so I'm not dealing with it yet.
-      lazy val displayName = awaitHack(t.unsafeNameOrComputed)
-    }
+	  case class SortTerms(terms:Seq[SortTerm], on:ElemValue)
 	  
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -368,7 +363,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    /**
 	     * Compare two SortTerms.
 	     */
-	    def thingSortFunc(left:SortTerms, right:SortTerms):Boolean = {
+	    def bundleSortFunc(left:SortTerms, right:SortTerms):Boolean = {
 	      val matchedTerms = left.terms zip right.terms
 	      // Iterate over the paired elements, which correspond to the parameters to _sort. Use the first
 	      // result where they don't match:
@@ -399,10 +394,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	                    // could wind up producing different types from the same test expression.
 	                    // TBD: in the long run, we might wind up with "subtype" relationships, in which case this test
 	                    // will need to become more sophisticated:
-    			            if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem))
+    			            if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem)) {
     			              // They're the same type, and don't match, so let's compare:
     			              Some(compType.comp(context)(leftElem, rightElem))
-    			            else
+    			            } else
     			              // Either they're not matching types, or they're identical, so move along:
     			              None
 	                  }
@@ -413,15 +408,14 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	        }
 	      }
 	      
-	      // When all else fails, compare display names:
-	      resultOpt.getOrElse(left.displayName.toLowerCase < right.displayName.toLowerCase)
+	      // No successful comparison, so we consider them to be "equal"
+	      resultOpt.getOrElse(false)
 	    }
 	    
 	    /**
-	     * For a given Thing, compute its sort terms based on the parameters. The last element of the tuple is the display name,
-	     * which is the final fallback for sorting.
+	     * For a given Bundle, compute its sort terms based on the parameters.
 	     */
-	    def computeSortTerms(t:Thing):Future[SortTerms] = {
+	    def computeSortTerms(ev:ElemValue):Future[SortTerms] = {
 	      paramsOpt match {
 	        case Some(params) => {
 	          val termFuts:Seq[Future[SortTerm]] = for {
@@ -431,7 +425,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
               yield for {
                 // Do some calculations and get a Future...
                 // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-                tCalc <- context.parser.get.processExp(param.exp, context.next(ExactlyOne(LinkType(t)))).map(_.value)
+                tCalc <- context.parser.get.processExp(param.exp, context.next(ExactlyOne(ev))).map(_.value)
                 tRawResultOpt = tCalc.firstOpt
                 // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
                 // is very common iff the sort expression including a Property not defined on the received Bundle.)
@@ -456,10 +450,28 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             for {
               terms <- Future.sequence(termFuts)
             }
-  	          yield SortTerms(t, terms)
+  	          yield SortTerms(terms, ev)
 	        }
+	        
 	        // The simple case: there are no sort parameters, so we're just sorting on displayName.
-	        case None => Future.successful(SortTerms(t, Seq.empty))
+	        case None => Future.successful(SortTerms(Seq.empty, ev))
+	      }
+	    }
+	    
+	    /**
+	     * If we're comparing Things, and there are no sort terms specified, add display name as a fallback to sort on.
+	     * Note that we specifically want to do this here, not in bundleSortFunc, because that has to be synchronous and
+	     * unsafeNameOrComputed isn't.
+	     */
+	    def computeThingSortTerms(ev:ElemValue):Future[SortTerms] = {
+	      if (paramsOpt.isEmpty || paramsOpt.get.isEmpty) {
+          s.anything(LinkType.get(ev)) match {
+            // PlainTextType has appropriate comparison -- in particular, it automatically compares toLowerCase.
+            case Some(thing) => thing.unsafeNameOrComputed.map(name => SortTerms(Seq(RealSortTerm(PlainTextType(name), PlainTextType)), ev))
+            case _ => fut(SortTerms(Seq(EmptySortTerm), ev))
+          }
+	      } else {
+	        computeSortTerms(ev)
 	      }
 	    }
 	    
@@ -467,11 +479,16 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    val pType = context.value.pType
 	    pType match {
 	      case pt:IsLinkType => {
-	        val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
-	        Future.sequence(asThings.map(computeSortTerms)).map { terms =>
-            val sortedOIDs = terms.sortWith(thingSortFunc).map(_.t.id)
+	        Future.sequence(start.map(computeThingSortTerms)).map { terms =>
+            val sortedOIDs = terms.sortWith(bundleSortFunc).map(terms => LinkType.get(terms.on))
             Core.listFrom(sortedOIDs, LinkType)            
           }
+	      }
+	      case mt:ModelTypeBase => {
+	        Future.sequence(start.map(computeSortTerms)).map { terms =>
+	          val sortedBundles = terms.sortWith(bundleSortFunc).map(_.on)
+	          QList.makePropValue(sortedBundles, pType)
+	        }
 	      }
 	      case _ => {
 	        val sorted = start.sortWith(pType.comp(context))

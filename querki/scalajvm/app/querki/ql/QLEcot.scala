@@ -197,7 +197,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
         s"""""${v.plaintext}"""""
     }
   
-    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext }
+    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext.toLowerCase < right.plaintext.toLowerCase }
     override def doMatches(left:Wikitext, right:Wikitext):Boolean = { left.plaintext == right.plaintext }
     override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   

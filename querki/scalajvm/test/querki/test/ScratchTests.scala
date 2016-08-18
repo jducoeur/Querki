@@ -52,6 +52,43 @@ class ScratchTests extends QuerkiTests
         QLog.spew(s"    $sup")
       }
     }
+    
+    // This is mainly a test, to prove to myself that we need to know the actual type T
+    // at the time we invoke the typeclass-using function; it can't be ambiguous.
+    // Unfortunate, but as I suspected.
+    // Since this is just a compiler test, we're ignoring it.
+    "be able to invoke something with typeclasses" ignore {
+      sealed trait Thingy
+      case class ThingI(i:Int) extends Thingy
+      case class ThingS(s:String) extends Thingy
+      
+      trait FooAble[T] {
+        def foo(t:T):String
+      }
+      
+      object MyFooAbles {
+        implicit object FooAbleI extends FooAble[ThingI] {
+          def foo(t:ThingI) = t.i.toString
+        }
+        implicit object FooAbleS extends FooAble[ThingS] {
+          def foo(t:ThingS) = t.s
+        }
+      }
+      
+      object FooShower {
+        def showIt[T : FooAble](t:T) = println(implicitly[FooAble[T]].foo(t))
+      }
+      
+      import MyFooAbles._
+      
+      val thingies = List.empty[Thingy]
+      val result = thingies.map { 
+        _ match {
+          case i:ThingI => FooShower.showIt(i)
+          case s:ThingS => FooShower.showIt(s)
+        }
+      }
+    }
   }
 }
 

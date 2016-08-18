@@ -490,6 +490,79 @@ Wild!, 19, """.stripReturns)
       pql("""[[With Tags -> My List of Tags -> _sort]]""") should
         equal(listOfTags("Canoe", "elk", "Lug the Undulous Burden", "Underwater Branch"))
     }
+    
+    "sort text fields case-insensitively" in {
+      class MySpace extends CommonSpace {
+        val textModel = new SimpleTestThing("Text Model", singleTextProp())
+        
+        val first = new TestThing("First", textModel, singleTextProp("Text in Instance"))
+        val second = new TestThing("Second", textModel, singleTextProp("Some other text"))
+        val third = new TestThing("Third", textModel, singleTextProp("More text?"))
+        val fourth = new TestThing("Fourth", textModel, singleTextProp("Text in Instance"))
+        val fifth = new TestThing("Fifth", textModel, singleTextProp("blah"))
+        val sixth = new TestThing("Sixth", textModel, singleTextProp("text in instance"))
+      }
+      implicit val s = new MySpace
+      
+      pql("""[[Text Model._instances -> _sort(Single Text)]]""") should
+        equal (listOfLinkText(s.fifth, s.third, s.second, s.first, s.fourth, s.sixth))
+    }
+    
+    "handle sorting on fields of complex types" in {
+      import querki.types.{ComplexSpace, SimplePropertyBundle}
+      
+      class ComplexSpaceWithList extends CommonSpace {
+        val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number in Model")
+        val textProp = new TestProperty(TextType, ExactlyOne, "Text in Model")
+        val modelForType = new SimpleTestThing("Model for Type",
+            numberProp(0),
+            textProp(""))          
+        val modelType = new ModelType(toid, modelForType.id, 
+            Core.toProps(
+              Core.setName("My Model Type")
+                ))
+        registerType(modelType)
+        val listOfModelType = new TestProperty(modelType, QList, "Complex List")
+        
+        val thingWithModelList = new SimpleTestThing("Thing With Model List", listOfModelType(
+          SimplePropertyBundle(
+            Core.NameProp("First"),
+            numberProp(3),
+            textProp("Text in Instance")),
+          SimplePropertyBundle(
+            Core.NameProp("Second"),
+            numberProp(12),
+            textProp("Some other text")),
+          SimplePropertyBundle(
+            Core.NameProp("Third"),
+            numberProp(2),
+            textProp("More text?")),
+          SimplePropertyBundle(
+            Core.NameProp("Fourth"),
+            numberProp(839),
+            textProp("Text in Instance")),
+          SimplePropertyBundle(
+            Core.NameProp("Fifth"),
+            numberProp(3),
+            textProp("blah")),
+          SimplePropertyBundle(
+            Core.NameProp("Sixth"),
+            numberProp(-84),
+            textProp("text in instance"))
+        ))
+      }
+      implicit val s = new ComplexSpaceWithList
+      
+      // Sort by number:
+      pql("""[[Thing With Model List -> Complex List -> _sort(Number In Model) -> Link Name -> _commas]]""") should
+        equal ("""Sixth, Third, First, Fifth, Second, Fourth""")
+      // Sort by text:
+      pql("""[[Thing With Model List -> Complex List -> _sort(Text In Model) -> Link Name -> _commas]]""") should
+        equal ("""Fifth, Third, Second, First, Fourth, Sixth""")      
+      // Sort by both:
+      pql("""[[Thing With Model List -> Complex List -> _sort(Number In Model, Text In Model) -> Link Name -> _commas]]""") should
+        equal ("""Sixth, Third, Fifth, First, Second, Fourth""")      
+    }
   }
     
   // === _take ===
