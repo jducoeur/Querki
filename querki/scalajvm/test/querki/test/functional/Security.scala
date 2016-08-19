@@ -22,18 +22,20 @@ trait Security { this:FuncMixin =>
         run(state,
           createSpace(ExploreRestrictedSpace),
           { state =>
-            // Bump Admin1 into Programmer Mode:
-            find(SecurityItem.id) should be (empty)
-            clickMenuItem(SkillLevelItem)
-            val advancedButtonId = "_advancedComplexity" 
-            waitFor(advancedButtonId)
-            click on advancedButtonId
-            // This will do a full reload, and then we should see the Security menu item:
-            eventually { 
-              openMenuFor(SecurityItem)
-              find(SecurityItem.id) should not be (empty)
-              // Close the menu again, for the code below
-              click on SecurityItem.menu.id
+            if (cassandraEnabled) {
+              // Bump Admin1 into Programmer Mode:
+              find(SecurityItem.id) should be (empty)
+              clickMenuItem(SkillLevelItem)
+              val advancedButtonId = "_advancedComplexity" 
+              waitFor(advancedButtonId)
+              click on advancedButtonId
+              // This will do a full reload, and then we should see the Security menu item:
+              eventually { 
+                openMenuFor(SecurityItem)
+                find(SecurityItem.id) should not be (empty)
+                // Close the menu again, for the code below
+                click on SecurityItem.menu.id
+              }
             }
             
             // TODO: this all needs to be refactored, to become a richer harness for doing Security

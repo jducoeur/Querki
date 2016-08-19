@@ -25,6 +25,10 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   
+  // For the moment, this needs to be turned on for us to use the new object-creation mechanism,
+  // which is the main purpose of the QuerkiNodeCoordinator/Manager system:
+  lazy val newObjCreate = Config.getBoolean("querki.cluster.newObjCreate", false)
+  
   private final val singletonName = "querkiNodeSingleton"
   private final val coordinatorName = "querkiNodeCoordinator"
   // TODO: that "querkiRoot" in there is sort of secret knowledge about the environment. That's a
@@ -49,19 +53,19 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
     (classOf[QuerkiNodeCoordinator.ShardSnapshot] -> 204)
   )
   
-  // TODO: until we have an Akka Persistence layer that we like, just don't even boot this up:
-  // IMPORTANT: this has changed. See AdminEcot for how to deal with cluster singletons now:
   override def createActors(createActorCb:CreateActorFunc) = {
-    val (mgr, proxy) = SystemManagement.createClusterSingleton(
-      createActorCb, 
-      QuerkiNodeCoordinator.actorProps(ecology), 
-      singletonName, 
-      "querkiNodeCoordinatorProxy", 
-      QuerkiNodeCoordinator.Stop)
+    if (newObjCreate) {
+      val (mgr, proxy) = SystemManagement.createClusterSingleton(
+        createActorCb, 
+        QuerkiNodeCoordinator.actorProps(ecology), 
+        singletonName, 
+        "querkiNodeCoordinatorProxy", 
+        QuerkiNodeCoordinator.Stop)
+        
+      _nodeCoordinator = proxy
+      _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
       
-    _nodeCoordinator = proxy
-    _nodeManager = createActorCb(QuerkiNodeManager.actorProps(ecology), "querkiNodeManager")
-    
-    regAsyncInit[QuerkiNodeManager]
+      regAsyncInit[QuerkiNodeManager]
+    }
   }
 }

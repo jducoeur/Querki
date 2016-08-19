@@ -6,6 +6,7 @@ import anorm._
 
 import querki.db._
 import ShardKind._
+import querki.globals._
 import querki.system.TOSModule
 
 /**
@@ -14,6 +15,9 @@ import querki.system.TOSModule
  * @author jducoeur
  */
 trait FuncDB { this:FuncMixin =>
+  
+  // TEMP: this will be able to go away once we're firmly using Cassandra:
+  lazy val cassandraEnabled = false
   
   // This drops the existing test databases, and builds fresh ones based on test_system_template.
   // Note that, at the end of a test run, the test DBs will be left intact for forensic inspection.
@@ -57,20 +61,22 @@ trait FuncDB { this:FuncMixin =>
    * This stops the current Cassandra test cluster, and builds a fresh one named ftst.  
    */
   def setupCassandra() = {
-    spew("Setting up Cassandra cluster ftst...")
-    
-    // Stop the current cluster. We intentionally ignore the return code -- this will return an
-    // error if there is no current cluster, and we don't care.
-    "ccm stop" !
-    
-    // Again, this will error if there is no such cluster, and that's fine.
-    "ccm remove ftst" !
-
-    // This one we actually care about:
-    if (("ccm create ftst -v 3.0.6 -n 3 -s" !) != 0)
-      throw new Exception(s"Failed to create a fresh Cassandra cluster!")
-    
-    spew("... cluster created")
+    if (cassandraEnabled) {
+      spew("Setting up Cassandra cluster ftst...")
+      
+      // Stop the current cluster. We intentionally ignore the return code -- this will return an
+      // error if there is no current cluster, and we don't care.
+      "ccm stop" !
+      
+      // Again, this will error if there is no such cluster, and that's fine.
+      "ccm remove ftst" !
+  
+      // This one we actually care about:
+      if (("ccm create ftst -v 3.0.6 -n 3 -s" !) != 0)
+        throw new Exception(s"Failed to create a fresh Cassandra cluster!")
+      
+      spew("... cluster created")
+    }
   }
   
   /**
@@ -80,16 +86,18 @@ trait FuncDB { this:FuncMixin =>
    * "conventional" cluster for this machine.
    */
   def teardownCassandra() = {
-    spew("Shutting down Cassandra cluster...")
-    
-    val ret = "ccm stop" #&&
-    "ccm remove ftst" #&&
-    "ccm switch dev" #&&
-    "ccm start" !
-    
-    if (ret != 0)
-      throw new Exception(s"Failed to switch back to the normal Cassandra cluster -- return code $ret!")
-    
-    spew("... switched back to normal test cluster.")
+    if (cassandraEnabled) {
+      spew("Shutting down Cassandra cluster...")
+      
+      val ret = "ccm stop" #&&
+      "ccm remove ftst" #&&
+      "ccm switch dev" #&&
+      "ccm start" !
+      
+      if (ret != 0)
+        throw new Exception(s"Failed to switch back to the normal Cassandra cluster -- return code $ret!")
+      
+      spew("... switched back to normal test cluster.")
+    }
   }
 }

@@ -4,9 +4,6 @@ import akka.actor._
 import akka.event.LoggingReceive
 import akka.persistence._
 
-// TEMP: while hacking the timestamps:
-import com.github.nscala_time.time.Imports._
-
 import org.querki.requester._
 
 import querki.globals._
