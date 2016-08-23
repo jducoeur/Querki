@@ -85,6 +85,7 @@ trait PersistentCoreTestBase extends PersistentActorCore {
     }
     currentResponses.headOption
   }
+  def !(msg:AnyRef) = aroundReceive(msg)
   
   def saveSnapshot(snapshot:Any) = {
     val metadata = SnapshotMetadata(persistenceId, lastSequenceNr, DateTime.now.getMillis)

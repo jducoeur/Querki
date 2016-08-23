@@ -29,7 +29,7 @@ import PersistentEvents._
  * so much conversation as to make them useful. We might add them later: the snapshot would just
  * consist of the ThingConversations and nextId.
  */
-abstract class ThingConversationsCore(initState:SpaceState, thingId:OID)(implicit val ecology:Ecology) 
+abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(implicit val ecology:Ecology) 
   extends EcologyMember with PersistentActorCore with PersistentEvents with IdentityPersistence
 { self:querki.types.ModelTypeDefiner =>
   
@@ -159,7 +159,7 @@ abstract class ThingConversationsCore(initState:SpaceState, thingId:OID)(implici
     }
   }
   
-  def receiveRecovery:Receive = {
+  def receiveRecover:Receive = {
     case SnapshotOffer(metadata, msg) => {
       // We aren't yet using snapshots, so this is weird:
       QLog.error(s"ThingConversationsCore got offered a snapshot: $msg")

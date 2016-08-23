@@ -7,6 +7,7 @@ import models._
 import Kind.Kind
 import Thing.{emptyProps, PropMap}
 import querki.basic.MOIDs.SimpleThingOID
+import querki.conversations.TestConversations
 import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
@@ -68,15 +69,30 @@ class TestSpaceCore(
 
 /**
  * This is the base concept of a TestSpace that is dynamically building a TestSpaceCore.
+ * 
+ * Also includes TestConversations, so it can be used for routing to those as well. It is gradually
+ * becoming the faux version of SpaceRouter, routing messages to the right children as needed.
  */
-abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSpace {
+abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSpace with TestConversations
+{
   lazy val Types = interface[querki.types.Types]
   
   def sc:TestSpaceCore
   
   override def state = sc.state
   
-  def !(msg:AnyRef) = sc.aroundReceive(msg)
+  /**
+   * This intentionally mimics SpaceRouter.
+   */
+  def !(msg:AnyRef):Option[AnyRef] = {
+    msg match {
+      case msg @ CurrentState(curState) => {
+        routeToConv(msg)
+      }
+      case msg:ConversationRequest => routeToConv(msg)
+      case msg:SpaceMessage => sc.aroundReceive(msg)
+    }
+  }
   
   /**
    * Use this signature if you need to get a hold of the state after the change is made. Don't
