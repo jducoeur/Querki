@@ -116,6 +116,11 @@ querki {
     # How long to wait after a node goes unreachable, before we invoke Split Brain Resolution.
     unreachable.timeout : 20 seconds
   }
+  
+  conversations {
+    # How long to keep alive the conversations for a particular Thing
+    timeout : 3 minutes
+  }
 }
 
 play.http.session {

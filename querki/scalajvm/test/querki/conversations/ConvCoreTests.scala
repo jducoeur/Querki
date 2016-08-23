@@ -21,7 +21,8 @@ class TestConvCore(initState:SpaceState, thingId:OID, val initHistory:List[Histo
  */
 trait TestConversations extends EcologyMember { self:TestSpace =>
   def state:SpaceState
-  def !(msg:AnyRef):Option[AnyRef]  
+  def !(msg:AnyRef):Option[AnyRef]
+  def oldSpaceOpt:Option[SpaceCoreSpaceBase]
   
   var thingConvs:Map[OID, TestConvCore] = Map.empty
   
@@ -29,6 +30,19 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
    * Shorthand for ordinary ConversationRequests, coming from the Space's owner.
    */
   def convReq(msg:ConversationMessage) = this ! ConversationRequest(owner, state.id, msg)
+  
+  /**
+   * Replay the history of the old Conversation if there is one; otherwise, create a new one.
+   */
+  def getTestConv(thingId:OID):TestConvCore = {
+    val newConvOpt = for {
+      oldSpace <- oldSpaceOpt
+      oldConv <- oldSpace.thingConvs.get(thingId)
+    }
+      yield new TestConvCore(state, thingId, oldConv.history)
+      
+    newConvOpt.getOrElse(new TestConvCore(state, thingId))
+  }
   
   /**
    * Passes a ConversationRequest on to the appropriate TestConvCore. Returns the response to that
@@ -51,7 +65,7 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
         val conv = thingConvs.get(thingId) match {
           case Some(c) => c
           case _ => {
-            val c = new TestConvCore(state, thingId)
+            val c = getTestConv(thingId)
             thingConvs = thingConvs + (thingId -> c)
             c
           }
@@ -166,53 +180,95 @@ class ConvCoreTests extends QuerkiTests {
     }
     
     "be able to handle normal interactions" in {
-      implicit val s = new SimpleCoreSpace
-      
-      val fooId = s.addSimpleThing("Foo")
-      val comment1 = addCommentOn(fooId, "This is the first comment")
-      val comment1_1 = comment1.reply("This is the first reply", true)
-      val comment1_2 = comment1.reply("This is the second reply", false)
-      
-      val comment2 = addCommentOn(fooId, "Second comment")
-      val comment2_1 = comment2.reply("First reply", true)
-      val comment2_1_1 = comment2_1.reply("First sub-reply", true)
-      // Note that we expect this one to get reparented down the chain, since we have a primary-comment race condition:
-      val comment2_2 = comment2.reply("Second attempt at a primary", true, Some(comment2_1_1))
-      
-      val convs = s.convReq(GetConversations(fooId))
-      convs match {
-        case Some(ThingConversations(convs)) if (convs.size == 2) => {
-          convs(0).responses match {
-            case Seq(reply1, reply2) => {
-              assert(reply1.isPrimary)
-              reply1.assertText("This is the first reply")
-              
-              assert(!reply2.isPrimary)
-              reply2.assertText("This is the second reply")
+      def doMainTest():(SpaceCoreSpaceBase, OID) = {
+        implicit val s = new SimpleCoreSpace
+        
+        val fooId = s.addSimpleThing("Foo")
+        val comment1 = addCommentOn(fooId, "This is the first comment")
+        val comment1_1 = comment1.reply("This is the first reply", true)
+        val comment1_2 = comment1.reply("This is the second reply", false)
+        
+        val comment2 = addCommentOn(fooId, "Second comment")
+        val comment2_1 = comment2.reply("First reply", true)
+        val comment2_1_1 = comment2_1.reply("First sub-reply", true)
+        // Note that we expect this one to get reparented down the chain, since we have a primary-comment race condition:
+        val comment2_2 = comment2.reply("Second attempt at a primary", true, Some(comment2_1_1))
+        
+        val convs = s.convReq(GetConversations(fooId))
+        convs match {
+          case Some(ThingConversations(convs)) if (convs.size == 2) => {
+            convs(0).responses match {
+              case Seq(reply1, reply2) => {
+                assert(reply1.isPrimary)
+                reply1.assertText("This is the first reply")
+                
+                assert(!reply2.isPrimary)
+                reply2.assertText("This is the second reply")
+              }
             }
-          }
-          
-          convs(1).responses match {
-            case Seq(reply1) => {
-              reply1.responses match {
-                case Seq(reply1_1) => {
-                  reply1_1.assertText("First sub-reply")
-                  
-                  // The original comment2_2 has been reparented down to here:
-                  reply1_1.responses match {
-                    case Seq(reply1_1_1) => {
-                      assert(reply1_1_1.isPrimary)
-                      reply1_1_1.assertText("Second attempt at a primary")
+            
+            convs(1).responses match {
+              case Seq(reply1) => {
+                reply1.responses match {
+                  case Seq(reply1_1) => {
+                    reply1_1.assertText("First sub-reply")
+                    
+                    // The original comment2_2 has been reparented down to here:
+                    reply1_1.responses match {
+                      case Seq(reply1_1_1) => {
+                        assert(reply1_1_1.isPrimary)
+                        reply1_1_1.assertText("Second attempt at a primary")
+                      }
                     }
                   }
+                  case other => fail(s"reply1's responses were $other")
                 }
-                case other => fail(s"reply1's responses were $other")
               }
             }
           }
+          case _ => fail(s"Conversation structure doesn't match expected: $convs")
         }
-        case _ => fail(s"Conversation structure doesn't match expected: $convs")
+        
+        (s, fooId)
       }
+      
+      def doReloadTest(oldSpace:SpaceCoreSpaceBase, fooId:OID):SpaceCoreSpaceBase = {
+        implicit val s = new ReplayCoreSpace(oldSpace)
+        
+        val convs = s.convReq(GetConversations(fooId))
+        convs match {
+          case Some(ThingConversations(Seq(conv1, conv2))) => {
+            val comment2_2 = conv2.responses.head.responses.head.responses.head
+            comment2_2.assertText("Second attempt at a primary")
+            val comment2_3 = comment2_2.reply("This is a reply after reload", true)
+          }
+          case _ => fail(s"First conversation reload was broken: $convs")
+        }
+        
+        s
+      }
+      
+      def reloadSecond(oldSpace:SpaceCoreSpaceBase, fooId:OID):SpaceCoreSpaceBase = {
+        implicit val s = new ReplayCoreSpace(oldSpace)
+        
+        val convs = s.convReq(GetConversations(fooId))
+        convs match {
+          case Some(ThingConversations(Seq(conv1, conv2))) => {
+            val comment2_3 = conv2.responses.head.responses.head.responses.head.responses.head
+            comment2_3.assertText("This is a reply after reload")
+            val comment2_4 = comment2_3.reply("This is the one that had been breaking", true)
+          }
+          case _ => fail(s"Second conversation reload was broken: $convs")
+        }
+        
+        s        
+      }
+      
+      // This seems a bit ornate, but is specifically unit-testing a bug where it was losing
+      // track of comment Ids.
+      val (originalSpace, fooId) = doMainTest()
+      val reloadedOnce = doReloadTest(originalSpace, fooId)
+      val reloadedTwice = reloadSecond(reloadedOnce, fooId)
     }
   }
 }

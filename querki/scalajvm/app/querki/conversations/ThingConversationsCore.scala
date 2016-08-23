@@ -166,7 +166,11 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     }
     
     case DHAddComment(comment) => {
-      doAdd(rehydrate(comment))
+      val (parentIdOpt, node) = doAdd(rehydrate(comment))
+      val commentId = node.comment.id
+      if (commentId >= nextId) {
+        nextId = commentId + 1
+      }
     }
     
     case DHDeleteComment(req, commentId) => {
@@ -185,8 +189,6 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     case CurrentState(current) => {
       state = current
     }
-    
-    case GetActiveThings => respond(ActiveThings(conversations.comments.size))
     
     /**
      * This is a wrapped message that was sent to the troupe. The guts are in msg.
@@ -229,6 +231,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   	      }
         }
         
+        // TODO: this needs unit-testing, before we get around to actually implementing the UI:
         case DeleteComment(_, commentId) => {
           conversations.findNode(commentId) match {
             case Some(node) => {

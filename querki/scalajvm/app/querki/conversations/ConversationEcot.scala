@@ -47,6 +47,8 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def conversationActorProps(persistenceFactory:SpacePersistenceFactory, spaceId:OID, space:ActorRef):Props = 
     Props(new SpaceConversationsActor(ecology, persistenceFactory, spaceId, space))
+    
+  def conversationsManagerProps(router:ActorRef):Props = Props(classOf[SpaceConversationsManager], ecology, router)
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:

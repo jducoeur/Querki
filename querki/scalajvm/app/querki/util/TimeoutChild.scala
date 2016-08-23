@@ -45,6 +45,10 @@ object RoutingStates {
  * 
  * As currently constructed, a given Actor can only be the RoutingParent for a single kind of
  * child.
+ * 
+ * Yes, this is quite similar to Cluster Sharding. But it is local-only, lighter-weight, and
+ * has timeout built in. We generally use it *under* our top-level Cluster Sharded entities,
+ * to manage particular Troupes.
  */
 trait RoutingParent[K] extends Actor {
 
@@ -109,6 +113,12 @@ trait RoutingParent[K] extends Actor {
     }
     child.forward(msg)    
   }
+  
+  /**
+   * This should be called inside the receive() clause for a message; it forwards this message
+   * to *all* currently-active children.
+   */
+  def routeToAll(msg:Any) = children.foreach { _.forward(msg) }
   
   override def unhandled(message: Any): Unit = {
     message match {

@@ -81,6 +81,8 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
   
   override def state = sc.state
   
+  val oldSpaceOpt:Option[SpaceCoreSpaceBase] = None
+  
   /**
    * This intentionally mimics SpaceRouter.
    */
@@ -155,6 +157,9 @@ class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
  * point. It is intended to demonstrate that history replays properly.
  */
 class ReplayCoreSpace(oldSpace:SpaceCoreSpaceBase)(implicit e:Ecology) extends SpaceCoreSpaceBase {
+  
+  override val oldSpaceOpt = Some(oldSpace)
+  
   def world = oldSpace.world
   val sc = new TestSpaceCore(oldSpace.sc.id, this, oldSpace.sc.config, oldSpace.sc.history)
   override def makeOwner = oldSpace.owner

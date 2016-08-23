@@ -36,7 +36,7 @@ import PersistMessages._
  * Where should that go?
  */
 class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory) 
-  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentActor 
+  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor 
 {  
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   
@@ -50,27 +50,6 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   //
   // Concrete definitions of SpaceCore abstract methods
   //
-  
-  /**
-   * Our own version of persist(). Note that this enforces UseKryo at the signature level, so we
-   * should use it instead of ordinary persist().
-   * 
-   * This is abstract, implemented differently in the real system vs. test. IMPORTANT: in test, the
-   * handler is called synchronously, whereas in the real code it is called asynchronously! The
-   * guarantees of Akka Persistence state that no further messages will be processed until after
-   * the handler is called, but that processing will happen *after* this returns!
-   */
-  def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
-    persist(event) { evt =>
-      handler(evt)
-    }
-  }
-  
-  /**
-   * Encapsulates "sender !" in something a bit more unit-test-friendly. Obviously, this may only
-   * be called inside the receiveCommand loop, or inside the guts of doPersist().
-   */
-  def respond(msg:AnyRef) = { sender ! msg }
   
   /**
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime

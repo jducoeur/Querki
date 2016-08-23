@@ -39,9 +39,14 @@ package object conversations {
     def CanReadComments:Property[OID,OID]
     
     /**
-     * The public interface to create a SpaceConversationsActor.
+     * The *old* public interface to create a SpaceConversationsActor.
      */
     def conversationActorProps(persistenceFactory:SpacePersistenceFactory, spaceId:OID, space:ActorRef):Props
+    
+    /**
+     * The *new* public interface to create a SpaceConversationsManager.
+     */
+    def conversationsManagerProps(router:ActorRef):Props
     
     /**
      * The interface to build the Persister for a Space's Conversations.

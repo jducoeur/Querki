@@ -59,7 +59,11 @@ private[spaces] class SpaceRouter(e:Ecology)
       else
         context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
-    conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
+    conversations =
+      if (useNewPersist)
+        context.actorOf(Conversations.conversationsManagerProps(self))
+      else
+        context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
     members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
     super.preStart()
   }
