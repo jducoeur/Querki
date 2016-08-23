@@ -8,6 +8,7 @@ import querki.spaces._
 import querki.spaces.messages._
 import querki.test._
 import querki.types.ModelTypeDefiner
+import querki.util.PublicException
 import querki.values.SpaceState
 
 class TestConvCore(initState:SpaceState, thingId:OID, val initHistory:List[HistoryRecord] = List.empty)(implicit e:Ecology) 
@@ -144,6 +145,24 @@ class ConvCoreTests extends QuerkiTests {
       
       val fooId = s.addSimpleThing("Foo")
       s.convReq(GetConversations(fooId)) shouldMatch { case Some(ThingConversations(convs)) if (convs.isEmpty) => }
+    }
+    
+    "not allow a non-member to comment" in {
+      implicit val s = new CommonCoreSpace
+      
+      val fooId = s.addSimpleThing("Foo")
+      val comment = Comment(
+        s.state.id,
+        0,
+        fooId,
+        s.nonMember.mainIdentity.id,
+        None,
+        Map(CommentText("Hi! I'm a troll!")),
+        None,
+        true
+      )
+      
+      s.convReq(NewComment(comment)) shouldMatch { case Some(ThingError(PublicException(SpaceError.ModifyNotAllowed), stateOpt)) => }
     }
     
     "be able to handle normal interactions" in {

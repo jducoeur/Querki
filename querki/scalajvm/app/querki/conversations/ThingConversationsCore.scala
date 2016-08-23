@@ -199,7 +199,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   	        respond(ThingError(new PublicException(SpaceError.UnknownID)))
   	      } else {
   	        // TODO: if the requester is not a Moderator, strip out needsModeration comments.
-  	        // TODO: strip out isDeleted comments.
+  	        // TODO: strip out isDeleted comments. Does this include child comments? Probably not.
   	        respond(conversations)
   	      }          
         }

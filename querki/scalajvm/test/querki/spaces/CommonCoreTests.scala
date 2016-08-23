@@ -6,6 +6,8 @@ import Thing.emptyProps
 import querki.basic.MOIDs.SimpleThingOID
 import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
+import querki.identity.User
+import querki.identity.UserLevel._
 import querki.spaces.messages._
 import querki.test._
 import querki.types.ModelTypeDefiner
@@ -59,6 +61,8 @@ class CommonCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with Model
   val instance = addThing("My Instance", testModelId, optTextProp("Hello world"))
   val withDisplayName = addSimpleThing("Interesting Display Name", Basic.DisplayNameProp("""My name is "interesting"!"""))
   val trivialThing = addSimpleThing("Trivial")  
+  
+  val nonMember:User = userAs("Non-Member", "nonMemberHandle", PaidUser)
 }
 
 class CommonCoreTests extends QuerkiTests {
