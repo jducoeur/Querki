@@ -225,15 +225,20 @@ include "persistence.conf"
 
 cassandra-journal {
   contact-points = ["127.0.0.1", "127.0.0.2", "127.0.0.3"]
+  keyspace = "querki_spaces_prod"
+  # If we are manually building the keyspaces (as in production), set this to false, otherwise true:
+  keyspace-autocreate = false
   # Iff the Cassandra cluster requires authentication, fill this in, here and in the
   # cassandra-snapshot-store:
   authentication {
     username = ""
     password = ""
-  }  
+  }
 }
 cassandra-snapshot-store {
   contact-points = ["127.0.0.1", "127.0.0.2", "127.0.0.3"]
+  keyspace = "querki_snap_prod"
+  keyspace-autocreate = false
   authentication {
     username = ""
     password = ""
