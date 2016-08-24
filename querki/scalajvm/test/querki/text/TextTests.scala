@@ -102,4 +102,24 @@ class TextTests extends QuerkiTests {
         equal("")
     }
   }
+  
+  "_textLength" should {
+    "work with literals" in {
+      implicit val s = commonSpace
+      
+      pql("""[[""Hello"" -> _textLength]]""") should equal ("5")
+    }
+    
+    "work with the Name Property" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> Link Name -> _textLength]]""") should equal ("11")
+    }
+    
+    "work with a Number" in {
+      implicit val s = commonSpace
+      
+      pql("""[[1827 -> _textLength]]""") should equal ("4")
+    }
+  }
 }

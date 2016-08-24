@@ -16,6 +16,7 @@ object MOIDs extends EcotIds(23) {
   
   val MatchCaseOID = moid(1)
   val SubstringOID = moid(2)
+  val TextLengthOID = moid(3)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -291,11 +292,36 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   	  adjusted + actualText.substring(1)
   	}
   }
+	
+	lazy val TextLengthMethod = new InternalMethod(TextLengthOID,
+	  toProps(
+	    setName("_textLength"),
+	    SkillLevel(SkillLevelAdvanced),
+	    Signature(
+	      expected = Some((Seq(AnyType), "A text value, or something that can be displayed as text")),
+	      reqs = Seq.empty,
+	      opts = Seq.empty,
+	      returns = (IntType, "The length of that text")
+	    ),
+	    Categories(TextTag),
+	    Summary("Produce the length of some received text.")))
+	{
+	  override def qlApply(inv:Invocation):QFut = {
+	    for {
+	      elemContext <- inv.contextElements
+	      v = elemContext.value
+	      wikitext <- inv.fut(v.wikify(elemContext))
+	      str = wikitext.strip.toString
+	    }
+	      yield ExactlyOne(IntType(str.length))
+	  }
+	}
   
   override lazy val props = Seq(
     PluralizeMethod,
     JoinMethod,
     MatchCaseMethod,
-    SubstringMethod
+    SubstringMethod,
+    TextLengthMethod
   )
 }
