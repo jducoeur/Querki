@@ -73,5 +73,21 @@ class GroupingTests extends QuerkiTests {
       pql("""[[Grouping Model._instances -> _groupBy(My Key) -> 
                _groupGet(1)]]""".stripReturns) should equal (listOfLinkText(s.thing1, s.thing6, s.thing7))
     }
+    
+    "work with _search" in {
+      implicit val s = new TSpace1
+      
+      pql("""[[_search(query=""Thing"", properties=Name._self) -> _searchResultThing -> _groupBy(My Key) -> ""
+          |Key: [[_if(_groupKey -> _isEmpty, ""empty"", _groupKey)]] [[_groupElements -> _sort]]""]]""".stripReturns) should 
+        equal(s"""
+          |
+          |Key: empty ${listOfLinkText(s.thing10, s.thing5)}
+          |
+          |Key: 1 ${listOfLinkText(s.thing1, s.thing6, s.thing7)}
+          |
+          |Key: 9 ${listOfLinkText(s.thing3, s.thing8)}
+          |
+          |Key: 12 ${listOfLinkText(s.thing2, s.thing4, s.thing9)}""".stripReturns)
+    }
   }
 }

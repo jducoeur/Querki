@@ -50,6 +50,31 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     
     def doComputeMemSize(v:QValue):Int = v.memsize
     
+    override def doComp(context:QLContext)(left:QValue, right:QValue):Boolean = {
+      // TODO: for the time being, this is hyper-simplistic, and only deals with comparing single values.
+      // It should be smarter about lists.
+      if (left.cv.isEmpty && right.cv.isEmpty)
+        // They are both empty, thus equal
+        false
+      else if (left.cv.size < right.cv.size)
+        // Left side is shorter, so "less"
+        true
+      else if (right.cv.size < left.cv.size)
+        // Right side is shorter, so "more"
+        false
+      else {
+        // Compare the first elements
+        val leftElem = left.cv.head
+        val rightElem = right.cv.head
+        val pt = leftElem.pType
+        pt.comp(context)(leftElem, rightElem)
+      }
+    }
+    
+    override def doMatches(left:QValue, right:QValue):Boolean = {
+      left.matches(right)
+    }
+    
     /**
      * In principle, a WrappedValueType can be viewed as any other type. However, note that this will throw an
      * exception in coerce if you try to do with it an incorrect value.

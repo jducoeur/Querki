@@ -17,7 +17,7 @@ import querki.system.TOSModule
 trait FuncDB { this:FuncMixin =>
   
   // TEMP: this will be able to go away once we're firmly using Cassandra:
-  lazy val cassandraEnabled = false
+  lazy val cassandraEnabled = true
   
   // This drops the existing test databases, and builds fresh ones based on test_system_template.
   // Note that, at the end of a test run, the test DBs will be left intact for forensic inspection.

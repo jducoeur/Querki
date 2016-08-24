@@ -14,6 +14,7 @@ object GroupingMOIDs extends EcotIds(36) {
   val GroupTypeOID = moid(4)
   val GroupByFunctionOID = moid(5)  
   val GroupGetOID = moid(6)
+  val GroupElementsOID = moid(7)
 }
 import GroupingMOIDs._
 
@@ -43,12 +44,12 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
    * instead, we could work with anything. But that requires beefing up WrappedValueType to have sensible
    * delegation of all the standard PType methods in order for the contents to be useful.
    */
-  lazy val groupMembersProperty = new SystemProperty(GroupMembersPropOID, Core.LinkType, QList,
+  lazy val groupMembersProperty = new SystemProperty(GroupMembersPropOID, Types.WrappedValueType, QList,
       toProps(
-        setName("_groupElements"),
+        setName("_groupMembers"),
         setInternal,
         Categories(CollTag),
-        Summary("The Things in a single grouping from _groupBy")))
+        Summary("The elements in a single grouping from _groupBy; use _groupElements to access these.")))
   
   /***********************************************
    * TYPES
@@ -82,6 +83,31 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
    * FUNCTIONS
    ***********************************************/
   
+  lazy val groupElementsFunction = new InternalMethod(GroupElementsOID,
+    toProps(
+      setName("_groupElements"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(CollTag),
+      Summary("Fetches the values in a _groupBy group."),
+      Signature(
+        expected = Some(Seq(groupType), "A group from _groupBy"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (AnyType, "The values in that group.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val s = inv.state
+      
+      // All this really does is unwrap the _groupMembers, so that you can use the real types:
+      for {
+        group <- inv.contextAllAs(groupType)
+        member <- inv.iter(group.getPropAll(groupMembersProperty))
+      }
+        yield member
+    }
+  }
+  
   lazy val groupByFunction = new InternalMethod(GroupByFunctionOID,
       toProps(
         setName("_groupBy"),
@@ -89,7 +115,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         Categories(CollTag),
         Summary("Groups the received Things by the specified Property or Expression"),
         Signature(
-          expected = Some(Seq(LinkType), "A List of Things to be grouped"),
+          expected = Some(Seq(AnyType), "A List of values to be grouped"),
           reqs = Seq(("groupExp", AnyType, "The expression to apply to each received element, saying what to group it on")),
           opts = Seq.empty,
           returns = (AnyType, "A List of _groupModel values.")
@@ -99,7 +125,10 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |
             |The result of this is a List of _groupModel values. _groupModel has two Properties:
             |* _groupKey -- the key that identifies everything in this group
-            |* _groupElements -- the list of Things in this group
+            |* _groupMembers -- the list of values in this group
+            |
+            |Don't use _groupMembers directly, though (it's hard to work with); instead, use the
+            |`_groupElements` function, which will fetch the elements the way you expect.
             |
             |For example, say that My Model has a Property named Score, which is a number from 1-5.
             |I can separate out all of the Instances of My Model based on Score, and print each group,
@@ -109,27 +138,21 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |  \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupElements -> _sort -> _commas\]]\""\]]
             |```
             |This Function is still pretty delicate. If the parameter doesn't evaluate properly on
-            |all of the Things, you will likely get an error.
+            |all of the values, you will likely get an error.
             |
             |ADVANCED: in principle, the data structure returned by _groupBy is a Map. It is somewhat likely
             |that, somewhere down the line, we will add Map as an official Collection, and rewrite this in
-            |terms of that.
-            |
-            |In the future, this will probably be enhanced to work with a List of any Type. Please speak up if that
-            |would be especially helpful for you.""".stripMargin)))
+            |terms of that.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val keyThingsWrapped = for {
         elemContext <- inv.contextElements
-        // TODO: this should really not be imposing a Type on the elements -- we should just take the
-        // value, whatever it is, and use it as a raw QValue, wrapping it in WrappedValueType later.
-        thing <- inv.opt(elemContext.value.firstAs(LinkType))
         key <- inv.process("groupExp", elemContext)
       }
-        yield (key, thing)
+        yield (key, elemContext.value)
         
       
-      def sortFunc(left:(QValue, OID), right:(QValue, OID)):Boolean = {
+      def sortFunc(left:(QValue, QValue), right:(QValue, QValue)):Boolean = {
         if (left._1.isEmpty && !right._1.isEmpty)
           // *Strictly* less-than, so it's only true iff only the left is empty:
           true
@@ -173,7 +196,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
           case None => keyThingPairs
         }
         sortedPairs = fixedPairs.sortWith(sortFunc)
-        rawGroupings = (Seq.empty[(QValue, Seq[OID])] /: sortedPairs) { (seqs, pair) =>
+        rawGroupings = (Seq.empty[(QValue, Seq[QValue])] /: sortedPairs) { (seqs, pair) =>
           val (key, id) = pair
           if (seqs.isEmpty)
             Seq((key, Seq(id)))
@@ -223,13 +246,14 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         memberPV <- inv.opt(group.getPropOpt(groupMembersProperty))
         member <- inv.iter(memberPV.rawList)
       }
-        yield ExactlyOne(LinkType(member))
+        yield member
     }
   }
 
   override lazy val props = Seq(
     groupKeyProperty,
     groupMembersProperty,
+    groupElementsFunction,
     groupByFunction,
     groupGet
   )
