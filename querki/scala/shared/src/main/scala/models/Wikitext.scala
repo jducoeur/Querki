@@ -171,18 +171,18 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   private def combine(left:Wikitext, right:Wikitext, insertNewline:Boolean):Vector[Wikitext] = {
     val maybeNewline = if (insertNewline) "\n" else ""
     left match {
-	  case QWikitext(leftWiki) => right match {
-	    case QWikitext(rightWiki) => Vector(QWikitext(leftWiki + maybeNewline + rightWiki))
-		case HtmlWikitextImpl(str) => Vector(QWikitext(leftWiki + maybeNewline), right)
-		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-	  }
-	  case HtmlWikitextImpl(leftStr) => right match {
-	    case QWikitext(rightWiki) => Vector(HtmlWikitext(leftStr + maybeNewline), right)
-		case HtmlWikitextImpl(rightStr) => Vector(HtmlWikitext(leftStr + maybeNewline + rightStr))
-		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-	  }
-	  case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-	}
+  	  case QWikitext(leftWiki) => right match {
+  	    case QWikitext(rightWiki) => Vector(QWikitext(leftWiki + maybeNewline + rightWiki))
+    		case HtmlWikitextImpl(str) => Vector(QWikitext(leftWiki + maybeNewline), right)
+    		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+  	  }
+  	  case HtmlWikitextImpl(leftStr) => right match {
+  	    case QWikitext(rightWiki) => Vector(HtmlWikitext(leftStr + maybeNewline), right)
+    		case HtmlWikitextImpl(rightStr) => Vector(HtmlWikitext(leftStr + maybeNewline + rightStr))
+    		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+  	  }
+  	  case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+  	}
   }
 
   def append(other:CompositeWikitext, insertNewline:Boolean):Wikitext = {

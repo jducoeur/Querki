@@ -36,7 +36,9 @@ class QLTests extends QuerkiTests {
   "Display names" should {
     "work with backticks" in {
       processQText(commonThingAsContext(_.sandbox), """[[`My name is "interesting"!`]]""") should
-        equal ("""[My name is &quot;interesting&quot;!](Interesting-Display-Name)""")
+      // TBD: when we changed the way we handle LinkType rendering, we needed to change this test:
+//        equal ("""[My name is &quot;interesting&quot;!](Interesting-Display-Name)""")
+        equal ("""[My name is "interesting"!](Interesting-Display-Name)""")
     }
     
     "work normally if the name is simple" in {

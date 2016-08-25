@@ -470,7 +470,11 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
           val displayFut = displayOpt match {
             case Some(display) => Future.successful(display)
             case None => {
-              t.nameOrComputed(context.request, context.state).map(_.htmlWikitext)
+              // TBD: the first version here is what it had been, which was working well but was inefficient
+              // because it was injecting HtmlWikitext nodes all over the place. Does the second version
+              // (which uses ordinary QWikitext, and is therefore *much* less overhead) work properly?
+//              t.nameOrComputed(context.request, context.state).map(_.htmlWikitext)
+              t.nameOrComputedWiki(context.request, context.state)
             }
           }
           displayFut.map(makeWikiLink(context, t, _))
