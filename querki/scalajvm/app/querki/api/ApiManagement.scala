@@ -6,15 +6,21 @@ import scala.concurrent.duration._
 import scala.reflect.ClassTag
 
 import akka.actor.ActorRef
+import akka.pattern._
 import akka.util.Timeout
 
 import querki.ecology._
 import querki.globals._
+import querki.streaming._
 
 /**
  * @author jducoeur
  */
 class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
+  
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
+  lazy val actorSystem = SystemManagement.actorSystem
+  
   implicit val timeout = defaultTimeout
   
   case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
@@ -56,7 +62,28 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
     apiRouters.get(name) match {
       case Some(router) => {
         apiTrace(s"  Sending call to ${req.req.path} to $router")
-        akka.pattern.ask(router.router, req)(timeout).flatMap(cb)
+        ask(router.router, req)(timeout).flatMap {
+          case msg:ClientResponse => cb(msg)
+          case err:ClientError => cb(err)
+          // This is essentially ClientResponse, but the contents are too large to send safely as a single
+          // block. (Because of Akka message-size limits.) So we instead need to establish a channel to
+          // stream it over to here:
+          case OversizedResponse(streamer) => {
+            val streamReceiver = actorSystem.actorOf(StringStream.receiverProps(streamer))
+            ask(streamReceiver, StringStream.Start).flatMap {
+              // We get this when the stream is done. Note that we explicitly assume that this message
+              // from a *local* Actor is reasonably reliable, and that the message fits comfortably in
+              // memory:
+              case StringStream.ReceivedString(str) => {
+                cb(ClientResponse(str))
+              }
+              
+              case ex:AskTimeoutException => {
+                cb(ClientError("Failed to get response!"))
+              }
+            }
+          }
+        }
       }
       case None => throw new Exception(s"handleSessionRequest got request for unknown API $name")
     }

@@ -17,6 +17,7 @@ import querki.globals._
 import querki.identity.User
 import querki.session.messages.SessionMessage
 import querki.spaces.messages.SessionRequest
+import querki.streaming._
 import querki.util.UnexpectedPublicException
 import querki.values.{RequestContext, SpaceState}
 
@@ -124,11 +125,30 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
    * }}}
    */
   def doRoute(req:Request):Future[String]
+
+  // TODO: this is duplicated from StringStreamSender; we should probably refactor these together
+  // somewhere:
+  val chunkSize = Config.getInt("querki.stream.stringChunkSize", 10000)
   
   def handleRequest(req:Request, completeCb: Any => Unit) = {
     try {
       doRoute(req).onComplete { 
-        case Success(result) => { sender ! ClientResponse(result); completeCb(result) }
+        case Success(result) => {
+          if (result.length > chunkSize) {
+            // The result string is over-sized. We're going to stream it, so we don't hit inter-node
+            // serialization limits. Fire up a StringSender, and pass its address along:
+            val stringSender = context.actorOf(StringStream.senderProps(result))
+            sender ! OversizedResponse(stringSender)
+            stringSender.request(StringStream.Start).map {
+              case StringStream.SendComplete => {
+                completeCb(result) 
+              }
+            }
+          } else {
+            sender ! ClientResponse(result)
+            completeCb(result) 
+          }
+        }
         case Failure(ex) => { handleException(ex, req); completeCb(ex) }
       }
     } catch {
