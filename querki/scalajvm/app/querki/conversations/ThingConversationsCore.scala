@@ -165,6 +165,11 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
       QLog.error(s"ThingConversationsCore got offered a snapshot: $msg")
     }
     
+    case evt:DHConvs => {
+      val convs = rehydrate(evt)
+      conversations = convs
+    }
+    
     case DHAddComment(comment) => {
       val (parentIdOpt, node) = doAdd(rehydrate(comment))
       val commentId = node.comment.id
@@ -188,6 +193,18 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
      */
     case CurrentState(current) => {
       state = current
+    }
+        
+    /**
+     * This doesn't get a security check, because it's a system message, and *should* be impossible to
+     * get here incorrectly.
+     */
+    case SetConversations(convs) => {
+      val evt = dh(convs)
+      doPersist(evt) { _ =>
+        conversations = convs
+        respond(ConvsSet())
+      }
     }
     
     /**

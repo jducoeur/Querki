@@ -9,6 +9,7 @@ import models._
 import Kind.Kind
 import Thing.PropMap
 import querki.cluster.OIDAllocator.{NewOID, NextOID}
+import querki.conversations.ConversationTransitionActor
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
@@ -116,6 +117,16 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
       adjustedState:Option[SpaceState] <- sOpt match {
         case Some(s) => checkInstancePermissions(s).map(Some(_))
         case _ => RequestM.successful(None)
+      }
+      // Now transition the Conversations to the new world, if there are any:
+      _ <- adjustedState match {
+        case Some(s) => {
+          val transitionActor = context.actorOf(ConversationTransitionActor.actorProps(ecology, s, stateRouter, persistenceFactory))
+          transitionActor.request(ConversationTransitionActor.RunTransition).map { resp =>
+            context.stop(transitionActor)
+          }
+        }
+        case None => RequestM.successful(None)
       }
     }
       yield adjustedState

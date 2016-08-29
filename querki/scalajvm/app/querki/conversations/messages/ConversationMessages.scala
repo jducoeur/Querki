@@ -44,3 +44,12 @@ case class AddedNode(parentId:Option[CommentId], node:ConversationNode)
 case class DeleteComment(thingId:OID, commentId:CommentId) extends ConversationMessage
 case object CommentDeleted
 case object CommentNotDeleted
+
+/**
+ * This message is internal to the Conversations system; it is used to slam the conversations for the
+ * target Thing. It is only being used during the upgrade process from MySQL to Cassandra, and should
+ * go away once that is completely done. Note that it is intentionally impossible to send this from
+ * outside the Conversations system.
+ */
+case class SetConversations(convs:ThingConversations)
+case class ConvsSet()

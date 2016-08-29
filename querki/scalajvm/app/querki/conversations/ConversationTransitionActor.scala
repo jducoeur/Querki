@@ -2,6 +2,8 @@ package querki.conversations
 
 import akka.actor._
 
+import org.querki.requester._
+
 import querki.conversations.messages._
 import querki.globals._
 import querki.spaces.SpacePersistenceFactory
@@ -13,7 +15,7 @@ import querki.util.QuerkiActor
  * MySQL world to the new Akka Persistence one. Once we are reasonably sure that all Spaces
  * have been ported, this should be able to go away.
  */
-class ConversationTransitionActor(space:ActorRef, e:Ecology, state:SpaceState, router:ActorRef, persistenceFactory:SpacePersistenceFactory) extends QuerkiActor(e) {
+class ConversationTransitionActor(e:Ecology, state:SpaceState, router:ActorRef, persistenceFactory:SpacePersistenceFactory) extends QuerkiActor(e) {
   import ConversationTransitionActor._
   import PersistMessages._
   
@@ -51,17 +53,32 @@ class ConversationTransitionActor(space:ActorRef, e:Ecology, state:SpaceState, r
   
   def doReceive = {
     case RunTransition => {
-      persister.requestFor[AllComments](LoadAllComments(state)).map { allComments =>
-        val commentsByThing = allComments.comments.groupBy(_.thingId)
-        val convsByThing = commentsByThing.map { case (thingId, comments) => (thingId, buildConversations(comments)) }
+      for {
+        allComments <- persister.requestFor[AllComments](LoadAllComments(state))
+        commentsByThing = allComments.comments.groupBy(_.thingId)
+        convsByThing = commentsByThing.map { case (thingId, comments) => (thingId, buildConversations(comments)) }
+        // Go through all the Things that have conversations. For each, fire up a ThingConversationsActor, send it
+        // the conversations, and wait for an Ack. This is a bit high-latency, but avoids saturating anything.
+        _ <- (RequestM.successful(ConvsSet()) /: convsByThing) { case (prevReq, (thingId, convs)) =>
+          prevReq.flatMap { _ =>
+            val convActor = context.actorOf(ThingConversationsActor.actorProps(state, thingId, ecology))
+            convActor.requestFor[ConvsSet](SetConversations(convs)).map { set =>
+              // After the Actor acknowledges that it is done, shut it down:
+              context.stop(convActor)
+              set
+            }
+          }
+        }
       }
+        sender ! TransitionComplete
     }
   }
 }
 
 object ConversationTransitionActor {
-  case object RunTransition
+  def actorProps(e:Ecology, state:SpaceState, router:ActorRef, persistenceFactory:SpacePersistenceFactory) =
+    Props(classOf[ConversationTransitionActor], e, state, router, persistenceFactory)
   
-  case object FetchAllConversations
-  case class AllConversations()
+  case object RunTransition
+  case object TransitionComplete
 }
