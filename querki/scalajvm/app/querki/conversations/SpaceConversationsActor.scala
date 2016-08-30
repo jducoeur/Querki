@@ -248,7 +248,7 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
   	          val (parent, node) = comment.responseTo.flatMap(convs.findNode(_)) match {
   	            
   	            // The comment is being inserted into an existing Conversation
-  	            case Some(rawParentNode) => {
+  	            case Some((rawParentNode, parents)) => {
   	              // Find the actual parent node to insert this under, and amend the comment if
   	              // necessary:
   	              val commentWithCorrectedParent = {
@@ -307,7 +307,7 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
         case DeleteComment(thingId, commentId) => {
           withConversations(thingId) { convs =>
             convs.findNode(commentId) match {
-              case Some(node) => {
+              case Some((node, parents)) => {
                 if (req.hasIdentity(state.owner) || req.hasIdentity(node.comment.authorId)) {
                   // Create the tweaked node...
                   val deleted = node.comment.copy(isDeleted = true)

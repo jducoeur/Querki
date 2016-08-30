@@ -61,7 +61,7 @@ class ConversationTransitionActor(e:Ecology, state:SpaceState, router:ActorRef, 
         // the conversations, and wait for an Ack. This is a bit high-latency, but avoids saturating anything.
         _ <- (RequestM.successful(ConvsSet()) /: convsByThing) { case (prevReq, (thingId, convs)) =>
           prevReq.flatMap { _ =>
-            val convActor = context.actorOf(ThingConversationsActor.actorProps(state, thingId, ecology))
+            val convActor = context.actorOf(ThingConversationsActor.actorProps(state, thingId, Actor.noSender, ecology))
             convActor.requestFor[ConvsSet](SetConversations(convs)).map { set =>
               // After the Actor acknowledges that it is done, shut it down:
               context.stop(convActor)

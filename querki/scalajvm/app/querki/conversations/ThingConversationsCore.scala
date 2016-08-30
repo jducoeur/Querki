@@ -5,7 +5,7 @@ import akka.persistence._
 
 import querki.conversations.messages._
 import querki.globals._
-import querki.identity.IdentityPersistence
+import querki.identity.{IdentityId, IdentityPersistence, User}
 import querki.persistence.PersistentActorCore
 import querki.spaces.messages._
 import querki.time.DateTime
@@ -36,6 +36,8 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   lazy val ConvEcot = interface[Conversations]
   
   def convTrace = ConvEcot.convTrace _
+  
+  def notifyNewComment(req:User, comment:Comment, parentAuthors:Seq[IdentityId])
   
   implicit var state:SpaceState = initState
   val persistenceId = s"conv-${initState.id.toString}-${thingId.toString}"
@@ -105,20 +107,20 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   /**
    * The guts of adding a new comment to this Thing's Conversations.
    */
-  def doAdd(comment:Comment):(Option[CommentId], ConversationNode) = {
+  def doAdd(comment:Comment):(Option[CommentId], ConversationNode, List[ConversationNode]) = {
     // Insert the comment into the Conversations list in the appropriate place. This
     // may involve tweaking the comment a bit in case of race conditions.
     comment.responseTo.flatMap(conversations.findNode(_)) match {
       
       // The comment is being inserted into an existing Conversation
-      case Some(rawParentNode) => {
+      case Some((rawParentNode, parents)) => {
         // Find the actual parent node to insert this under, and amend the comment if
         // necessary:
-        val commentWithCorrectedParent = {
+        val (commentWithCorrectedParent, actualParent) = {
           if (!comment.primaryResponse || rawParentNode.responses.isEmpty)
             // Either way, this comment is simply being inserted directly under the parent. This
             // is the common case:
-            comment
+            (comment, rawParentNode)
           else {
             // Race condition: there is already a "primary" response, and this is also trying to
             // be one. This can happen if multiple people both reply directly to the comment, and
@@ -131,7 +133,8 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
                 case None => parentNode
               }
             }
-            comment.copy(responseTo = Some(currentConvEnd(rawParentNode).comment.id))
+            val actualParent = currentConvEnd(rawParentNode)
+            (comment.copy(responseTo = Some(currentConvEnd(rawParentNode).comment.id)), actualParent)
           }
         }
 
@@ -141,14 +144,14 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
         replaceAndUpdate(parentId) { parentNode =>
           parentNode.copy(responses = parentNode.responses :+ node)
         }
-        (Some(parentId), node)
+        (Some(parentId), node, actualParent :: parents)
       }
       
       // The comment is starting a new Conversation
       case None => {
         val node = ConversationNode(comment)
         updateConversations(convs => convs.copy(comments = convs.comments :+ node))
-        (None, node)
+        (None, node, List.empty)
       }
     }
   }
@@ -171,7 +174,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     }
     
     case DHAddComment(comment) => {
-      val (parentIdOpt, node) = doAdd(rehydrate(comment))
+      val (parentIdOpt, node, parents) = doAdd(rehydrate(comment))
       val commentId = node.comment.id
       if (commentId >= nextId) {
         nextId = commentId + 1
@@ -237,13 +240,14 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
             nextId += 1
             val evt = DHAddComment(dh(comment))
             doPersist(evt) { _ =>
-              val (parent, node) = doAdd(comment)
+              val (parent, node, parents) = doAdd(comment)
               
               // Send the ack of the newly-created comment, saying where to place it:
               respond(AddedNode(parent, node))
               
-              // TODO: send out Notifications -- fire-and-forget, will get there eventually:
-//              NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state) 
+              // Send out Notifications -- fire-and-forget, will get there eventually:
+              val threadAuthors = parents.map(_.comment.authorId)
+              notifyNewComment(req, node.comment, threadAuthors)
             }
   	      }
         }
@@ -251,7 +255,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
         // TODO: this needs unit-testing, before we get around to actually implementing the UI:
         case DeleteComment(_, commentId) => {
           conversations.findNode(commentId) match {
-            case Some(node) => {
+            case Some((node, parents)) => {
               if (req.hasIdentity(state.owner) || req.hasIdentity(node.comment.authorId)) {
                 doPersist(DHDeleteComment(req, commentId)) { _ =>
                   doDelete(commentId)

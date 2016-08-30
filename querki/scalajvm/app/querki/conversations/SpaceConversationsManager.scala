@@ -23,8 +23,10 @@ private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorR
   var _state:Option[SpaceState] = None
   def state = _state.get
   
+  lazy val notifier = context.actorOf(SpaceConversationNotifier.actorProps(e, state, router))
+  
   // From RoutingParent
-  def createChild(thingId:OID):ActorRef = context.actorOf(ThingConversationsActor.actorProps(state, thingId, ecology))
+  def createChild(thingId:OID):ActorRef = context.actorOf(ThingConversationsActor.actorProps(state, thingId, notifier, ecology))
   
   def bootReceive:Receive = {
     case CurrentState(current) => {
@@ -37,6 +39,7 @@ private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorR
     case msg @ CurrentState(current) => {
       _state = Some(current)
       routeToAll(msg)
+      notifier ! msg
     }
     
     case GetActiveThings => sender ! ActiveThings(nChildren)

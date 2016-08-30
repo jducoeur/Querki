@@ -2,7 +2,7 @@ package querki.conversations
 
 import querki.conversations.messages._
 import querki.globals._
-import querki.identity.User
+import querki.identity.{IdentityId, User}
 import querki.persistence._
 import querki.spaces._
 import querki.spaces.messages._
@@ -14,6 +14,7 @@ import querki.values.SpaceState
 class TestConvCore(initState:SpaceState, thingId:OID, val initHistory:List[HistoryRecord] = List.empty)(implicit e:Ecology) 
   extends ThingConversationsCore(initState, thingId) with ModelTypeDefiner with PersistentCoreTestBase 
 {
+  def notifyNewComment(req:User, comment:Comment, parentAuthors:Seq[IdentityId]) = {}
 }
 
 /**

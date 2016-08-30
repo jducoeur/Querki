@@ -2,6 +2,7 @@ package querki.conversations.messages
 
 import models.OID
 import models.Thing.PropMap
+import querki.identity.IdentityId
 import querki.time.{DateTime, epoch}
 
 /**
@@ -23,7 +24,7 @@ case class Comment(
     /**
      * The OID of the *Identity* who wrote this Comment. 
      */
-    authorId:OID,
+    authorId:IdentityId,
     /**
      * The OID of the Moderator who authorized this Comment.
      */
@@ -89,18 +90,20 @@ case class ThingConversations(comments:Seq[ConversationNode]) {
    * 
    * Note that we are very explicitly assuming that the number of Comments per Thing is smallish,
    * so it is easier to do a depth-first search instead of building a Map for lookups.
+   * 
+   * This returns both the located Node and its parent chain if there is one.
    */
-  def findNode(commentId:CommentId):Option[ConversationNode] = {
-    def findNodeRec(nodes:Seq[ConversationNode]):Option[ConversationNode] = {
+  def findNode(commentId:CommentId):Option[(ConversationNode, List[ConversationNode])] = {
+    def findNodeRec(nodes:Seq[ConversationNode], parents:List[ConversationNode]):Option[(ConversationNode, List[ConversationNode])] = {
       // Look -- I found the right way to deconstruct a Seq! Yay!
       nodes match {
         case node +: rest => {
           // Is this node the one we want?
           if (node.comment.id == commentId)
-            Some(node)
+            Some((node, parents))
           else {
             // Try the children, and then the successors in the list:
-            findNodeRec(node.responses) orElse findNodeRec(rest)
+            findNodeRec(node.responses, node :: parents) orElse findNodeRec(rest, parents)
           }
         }
         // We've hit a dead end:
@@ -108,6 +111,6 @@ case class ThingConversations(comments:Seq[ConversationNode]) {
       }
     }
     
-    findNodeRec(comments)
+    findNodeRec(comments, List.empty)
   }
 }
