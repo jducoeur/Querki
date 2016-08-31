@@ -360,27 +360,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       checkDisplayName(req, space)
       payload match {    
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
-        
-  	    case GetThing(thingIdOpt) => {
-  	      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
-  	      if (thingIdOpt.isDefined) {
-  	        val thingOpt = state.anything(thingIdOpt.get)
-  	        if (thingOpt.isDefined) {
-  	          sender ! ThingFound(thingOpt.get.id, state)
-  	        } else {
-  	          thingIdOpt.get match {
-  	            // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
-  	            // that is how tags work -- but we should think through how to keep that properly controlled.
-  	            case AsName(name) => sender ! ThingError(new PublicException(UnknownName), Some(state))
-  	            case AsOID(id) => sender ! ThingError(new PublicException(UnknownID))
-  	          }
-  	        }
-  	      } else {
-  	        // TODO: is this the most semantically appropriate response?
-  	        sender ! ThingFound(UnknownOID, state)
-  	      }    
-  	    }
-  	    
+          	    
   	    case ChangeProps2(thingId, props) => {
   	      changeProps(request, thingId, props)
   	    }

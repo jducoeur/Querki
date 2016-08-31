@@ -11,7 +11,6 @@ import querki.api._
 import querki.ecology._
 import querki.globals._
 import querki.identity._
-import querki.session.messages.GetThing
 import querki.spaces.SpaceManager
 import querki.spaces.messages._
 import querki.util._
