@@ -253,9 +253,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
     case _ => stash()
   }
   
-  def changeProps(currentRequest:SessionRequest, thingId:ThingId, props:PropMap) = {
-    val SessionRequest(req, space, payload) = currentRequest
-    
+  def changeProps(req:User, thingId:ThingId, props:PropMap) = {
     // For the time being, we cope only with a single UserValue property being set at a time.
     // TODO: generalize this properly!
     val uvPropPairOpt:Option[(OID, QValue)] = 
@@ -278,7 +276,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               // Persist the change...
               val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
               val previous = addUserValue(uv)
- 	          persister ! SaveUserValue(uv, state, previous.isDefined)
+   	          persister ! SaveUserValue(uv, state, previous.isDefined)
    	          
               // ... then tell the Space to summarize it, if there is a Summary Property...
    	          val msg = for {
@@ -287,7 +285,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
    	            summaryPropId <- summaryLinkPV.firstOpt
    	            newV = if (v.isDeleted) None else Some(v)
    	          }
-                yield SpacePluginMsg(req, space, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
+                yield SpacePluginMsg(req, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
               // ... then tell the user we're set.
@@ -302,7 +300,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         }
       }
       // It's not a UserValue, so just tell the Space about the change:
-      case None => spaceRouter.forward(ChangeProps(req, space, thingId, props))
+      case None => spaceRouter.forward(ChangeProps(req, spaceId, thingId, props))
     }    
   }
   
@@ -362,7 +360,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
           	    
   	    case ChangeProps2(thingId, props) => {
-  	      changeProps(request, thingId, props)
+  	      changeProps(req, thingId, props)
   	    }
   	    
   	    case MarcoPoloRequest(propId, q, rc) => {
