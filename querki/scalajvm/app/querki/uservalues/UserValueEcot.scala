@@ -66,7 +66,11 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   override def term = {
     SpaceChangeManager.updateStateCache -= UserValueCacheUpdater    
   }
-  
+    
+  override def persistentMessages = persist(44,
+    (classOf[PersistentEvents.DHUserValue] -> 100)
+  )
+
   def createPlugin(space:SpaceAPI):SpacePlugin = {
     new UserValueSpacePlugin(space)
   }

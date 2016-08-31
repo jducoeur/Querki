@@ -35,7 +35,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
  */
-private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
+private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
@@ -357,7 +357,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
     case request @ SessionRequest(req, space, payload) => { 
       checkDisplayName(req, space)
       payload match {    
-        case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
+        case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")
           	    
   	    case ChangeProps2(thingId, props) => {
   	      changeProps(req, thingId, props)
@@ -374,9 +374,9 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   }
 }
 
-object UserSpaceSession {
+object OldUserSpaceSession {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new UserSpaceSession(ecology, spaceId, user, spaceRouter, persister))
+  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new OldUserSpaceSession(ecology, spaceId, user, spaceRouter, persister))
 }

@@ -33,7 +33,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   
   def createChild(key:User):ActorRef = {
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
-    context.actorOf(UserSpaceSession.actorProps(ecology, spaceId, key, spaceRouter, persister).withDispatcher("session-dispatcher"), key.id.toString)
+    context.actorOf(OldUserSpaceSession.actorProps(ecology, spaceId, key, spaceRouter, persister).withDispatcher("session-dispatcher"), key.id.toString)
   }
   
   override def initChild(child:ActorRef) = state.map(child ! CurrentState(_))
