@@ -254,21 +254,12 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   }
   
   def changeProps(req:User, thingId:ThingId, props:PropMap) = {
-    // For the time being, we cope only with a single UserValue property being set at a time.
-    // TODO: generalize this properly!
-    val uvPropPairOpt:Option[(OID, QValue)] = 
-      if (props.size == 1) {
-        val (propId, v) = props.head
-        if (UserValues.isUserValueProp(propId)(state))
-          Some((propId, v))
-        else
-          None
-      } else
-        None
-          
-    uvPropPairOpt match {
-      // It's a UserValue, so persist it that way:
-      case Some((propId, v)) => {
+    val (uvProps, nonUvProps) = props.partition { case (propId, _) => UserValues.isUserValueProp(propId)(state) }
+    
+    // Note that this code really isn't right! In practice, if we get more than one User Value change, the replies
+    // don't line up here. But this code is, at this point, temporary, and it works better in UserValueSessionCore.
+    if (!uvProps.isEmpty) {
+      uvProps.foreach { case (propId, v) =>
         state.anything(thingId) match {
           case Some(thing) => {
             if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
@@ -297,11 +288,13 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
             }
           }
           case None => sender ! ThingError(UnexpectedPublicException, Some(state))
-        }
+        }        
       }
-      // It's not a UserValue, so just tell the Space about the change:
-      case None => spaceRouter.forward(ChangeProps(req, spaceId, thingId, props))
-    }    
+    }
+    
+    if (!nonUvProps.isEmpty) {
+      spaceRouter.forward(ChangeProps(req, spaceId, thingId, nonUvProps))
+    }
   }
   
   // Autowire functions
