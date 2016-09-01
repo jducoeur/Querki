@@ -1,34 +1,32 @@
 package querki.uservalues
 
-import models.ModelPersistence._
+import models.ModelPersistence
+import models.Thing.PropMap
 
 import querki.globals._
 import querki.identity.IdentityId
 import querki.persistence._
 import querki.time.DateTime
 
-trait PersistentEvents {
+trait PersistentEvents extends ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =>
   import PersistentEvents._
-  import PersistMessages._
   
-  def dh(uv:OneUserValue)(implicit state:SpaceState):DHUserValue = {
-    val prop = state.prop(uv.propId).getOrElse(throw new Exception("SaveUserValue is trying to serialize unknown Property " + uv.propId))
+  def dh(identityId:IdentityId, thingId:OID, props:PropMap)(implicit state:SpaceState) =
     DHUserValue(
-      uv.identity.id,
-      uv.thingId,
-      uv.propId,
-      prop.serialize(uv.v),
-      uv.modTime
+      identityId,
+      thingId,
+      props,
+      DateTime.now
     )
-  }
 }
 
 object PersistentEvents {
+  import ModelPersistence._
+  
   case class DHUserValue(
     @KryoTag(1) identityId:IdentityId,
     @KryoTag(2) thingId:OID,
-    @KryoTag(3) propId:OID,
-    @KryoTag(4) v:String,
-    @KryoTag(5) modTime:DateTime
+    @KryoTag(3) props:DHPropMap,
+    @KryoTag(4) modTime:DateTime
   ) extends UseKryo
 }
