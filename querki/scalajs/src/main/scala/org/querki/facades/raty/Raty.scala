@@ -58,8 +58,8 @@ class RatyOptionBuilder(val dict:OptMap) extends JSOptionBuilder[RatyOptions, Ra
   /**
    * Used when we want starts with a saved rating.
    */
-  def score(v:Int) = jsOpt("score", v)
-  def score(v:js.ThisFunction0[dom.Element, Int]) = jsOpt("score", v)
+  def score(v:Double) = jsOpt("score", v)
+  def score(v:js.ThisFunction0[dom.Element, Double]) = jsOpt("score", v)
   
   /**
    * Some place to display the hints or the cancelHint.
