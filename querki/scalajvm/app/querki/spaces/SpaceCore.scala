@@ -534,14 +534,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    */
   def receiveRecover:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
-      updateState(rehydrate(dh))
+      updateStateCore(rehydrate(dh))
     }
 
     // Note that BootSpace is an *event*, not a snapshot -- that's why this is not the
     // same as the above SnapshotOffer. This event indicates that this Space was originally
     // imported from somewhere else, and this is the original State:
     case BootSpace(dh, modTime) => {
-      updateState(rehydrate(dh))
+      updateStateCore(rehydrate(dh))
     }
     
     case DHInitState(userRef, display) => {
