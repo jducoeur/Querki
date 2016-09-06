@@ -119,7 +119,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       case Some(cache @ CachedPeople(_, _)) => { 
         f(cache)
       }
-      case other => throw new Exception(s"Didn't find CachedPeople for space ${state.id} -- got $other instead!")
+      case other => {
+        // Getting called before the cache is built, which happens in rare cases. This is expensive,
+        // but shouldn't happen often.
+        // TODO: we should instrument this, and make *sure* it isn't happening often!
+        val cache = CachedPeople(ecology, state)
+        f(cache)
+      }
     }
   }
   
