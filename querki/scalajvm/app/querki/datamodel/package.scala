@@ -1,6 +1,6 @@
 package querki
 
-import models.{Property, Thing}
+import models.{AnyProp, Property, Thing}
 
 import querki.ecology._
 import querki.values.{QValue, SpaceState}
@@ -16,7 +16,7 @@ package object datamodel {
     /**
      * Signal Value, to indicate a Value that has been intentionally removed.
      */
-    def DeletedValue:QValue
+    def getDeletedValue(prop:AnyProp)(implicit state:SpaceState):QValue
     
     def isDeletable(t:Thing, allowIfProp:Boolean = false)(implicit state:SpaceState):Boolean
   }

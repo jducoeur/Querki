@@ -26,7 +26,6 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[Editor]
   
-  lazy val deleted = DataModelAccess.DeletedValue
   lazy val InstanceProps = Editor.InstanceProps
   lazy val LinkType = Core.LinkType
 
@@ -83,7 +82,7 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
             } 
             case None => Map.empty
           }
-        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> deleted)), true)) flatMap {
+        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop))), true)) flatMap {
           case ThingFound(tid, newState) => {
             nDone = nDone + 1
             removeFrom(things.tail)

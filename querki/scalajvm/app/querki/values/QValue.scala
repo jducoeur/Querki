@@ -88,7 +88,9 @@ trait QValue {
    * see if that introduces any problems.
    */
   def matches(other:QValue):Boolean = {
-    if (!matchesType(other.pType))
+    if (isDeleted != other.isDeleted)
+      false
+    else if (!matchesType(other.pType))
       false
     else if (cv.size != other.cv.size)
       false

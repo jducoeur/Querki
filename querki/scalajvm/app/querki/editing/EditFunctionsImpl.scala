@@ -390,7 +390,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     val propId = propIdStr.toThingId
     val propsOpt = for {
       prop <- state.prop(propId)
-      newV = DataModel.DeletedValue
+      newV = DataModel.getDeletedValue(prop)
     }
       yield Core.toProps((prop, newV))
 

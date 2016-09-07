@@ -23,6 +23,11 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   var mainThing:Option[ThingInfo] = None
   var mainModel:Option[ThingInfo] = None
   
+  // TODO: this is horrible! setThing is used to define the "main" Thing, and we're using that
+  // as a fallback in various places, but it's broadly evil, because it is so side-effecty. It is
+  // easy to fail to set this, and wind up with cryptic bugs as a result.
+  // We should really get rid of setThing() and .mainThing, and force everything currently depending
+  // on them to be more explicit instead.
   def setThing(thing:Option[ThingInfo]) = mainThing = thing
   def setModel(model:Option[ThingInfo]) = mainModel = model
   

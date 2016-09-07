@@ -15,13 +15,22 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
   
   import ModelPersistence._
   
+  lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
+  
   def recordUnresolvedProp(valStr:String) = interface[querki.spaces.SpacePersistence].recordUnresolvedProp(valStr)
   lazy val systemState = interface[querki.system.System].State
   lazy val UnresolvedPropType = interface[querki.spaces.SpacePersistence].UnresolvedPropType
   
+  /**
+   * This is the "magic string" that means that this Property value has been deleted.
+   */
+  final val DeletedValueSignal = "\uFFFD"
+  
   implicit def propMap2DH(pm:PropMap)(implicit state:SpaceState):DHPropMap = {
     val props = pm.map { case (k,v) =>
-      state.prop(k) match {
+      if (v.isDeleted)
+        (k, DeletedValueSignal)
+      else state.prop(k) match {
         case Some(prop) => {
           (k, prop.serialize(v))
         }
@@ -37,7 +46,12 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
   implicit def DH2PropMap(dh:DHPropMap)(implicit state:SpaceState):PropMap = {
     dh.props.map { case(k,v) =>
       state.prop(k) match {
-        case Some(prop) => (k, prop.deserialize(v))
+        case Some(prop) => {
+          if (v == DeletedValueSignal)
+            (k, DataModelAccess.getDeletedValue(prop))
+          else
+            (k, prop.deserialize(v))
+        }
         // We'll presume for now that this Property hasn't been deserialized itself yet:
         case None => (k, recordUnresolvedProp(v))
       }

@@ -120,15 +120,17 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  lazy val DeletedValue:QValue = new QValue {
-    override def isDeleted = true
-    
-    val cType = Core.QUnit
-    def cv = ???
-    def pType = ???
-    
-    override def toString = "DELETED QVALUE"
-  }
+  def getDeletedValue(prop:AnyProp)(implicit state:SpaceState):QValue =  
+    new QValue {
+      override def isDeleted = true
+      
+      val cType = prop.cType
+      // TODO: why are these casts necessary? Something's wrong here...
+      val cv = prop.default.cv.asInstanceOf[cType]
+      def pType = prop.pType.asInstanceOf[PType[_]]
+      
+      override def toString = "DELETED QVALUE"
+    }
   
   /***********************************************
    * PROPERTIES

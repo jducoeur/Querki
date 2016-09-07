@@ -17,7 +17,7 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
       val s = new CDSpace
       implicit val state = s.state
       
-      val original = s.blackmores.props
+      val original = s.blackmores.props + (s.singleLinkProp.id -> DataModelAccess.getDeletedValue(s.singleLinkProp))
       val dh:DHPropMap = original
       val copy:PropMap = dh
       
@@ -27,6 +27,7 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
       
       checkProp(Core.NameProp)
       checkProp(s.genres)
+      assert(s.singleLinkProp.from(copy).isDeleted)
     }
   }
 }
