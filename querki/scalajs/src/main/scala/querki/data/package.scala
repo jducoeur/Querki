@@ -64,7 +64,7 @@ package object data {
      * Convenience function to get the "thingId" part of a typical path. Should only be used if
      * you know that the thing exists!
      */
-    def thingId = mainThing.get.urlName
+    def thingId = mainThing.getOrElse(throw new Exception("Trying to access mainThing, but it isn't set!")).urlName
     
     /**
      * Returns the system-wide StandardThings. Note that this is fetched asynchronously after startup;

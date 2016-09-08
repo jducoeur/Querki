@@ -239,7 +239,12 @@ trait CollectionBase { self:CoreEcot =>
       }
       yield 
         <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
-          <ul id={currentValue.collectionControlId} class="sortableList">{guts}</ul>
+          {
+            currentValue.thingId match {
+              case Some(thingId) => <ul id={currentValue.collectionControlId} class="sortableList" data-thing={thingId}>{guts}</ul>
+              case None => <ul id={currentValue.collectionControlId} class="sortableList">{guts}</ul>
+            }
+          }
           <button class="add-item-button btn-xs" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
           <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
           {inputTemplate}

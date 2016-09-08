@@ -25,6 +25,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "mo
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]
+  lazy val DataSetting = interface[querki.data.DataSetting]
   lazy val Editing = interface[Editing]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -143,6 +144,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "mo
   def pageContent = {
     checkParams getOrElse (for {
       model <- DataAccess.getThing(modelId)
+      _ = DataSetting.setThing(Some(model))
       modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
       allProps = fullEditInfo.propInfos
