@@ -385,10 +385,30 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     state:SpaceState, 
     thingId:OID, 
     thing:Thing, 
-    modelId:OID, 
-    actualProps:PropMap, 
+    modelIdOpt:Option[OID], 
+    newProps:PropMap, 
+    replaceAllProps:Boolean,
     modTime:DateTime):SpaceState = 
   {
+    val actualProps =
+      if (replaceAllProps)
+        newProps
+      else {
+        (thing.props /: newProps) { (current, pair) =>
+          val (propId, v) = pair
+          if (v.isDeleted)
+            // The caller has sent the special signal to delete this Property:
+            current - propId
+          else
+            current + pair
+        }
+      }
+    
+    val modelId = modelIdOpt match {
+      case Some(m) => m
+      case None => thing.model
+    }
+    
     thing match {
       case t:ThingState => {
         val newThingState = t.copy(m = modelId, pf = actualProps, mt = modTime)
@@ -425,26 +445,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   def doModify(thingId:OID, thing:Thing, modelIdOpt:Option[OID], newProps:PropMap, replaceAllProps:Boolean, modTime:DateTime) = {
-    val actualProps =
-      if (replaceAllProps)
-        newProps
-      else {
-        (thing.props /: newProps) { (current, pair) =>
-          val (propId, v) = pair
-          if (v.isDeleted)
-            // The caller has sent the special signal to delete this Property:
-            current - propId
-          else
-            current + pair
-        }
-      }
-    
-    val modelId = modelIdOpt match {
-      case Some(m) => m
-      case None => thing.model
-    }
-    
-    val newState = modifyPure(state, thingId, thing, modelId, actualProps, modTime)
+    val newState = modifyPure(state, thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)
     updateState(newState)
   }
   
