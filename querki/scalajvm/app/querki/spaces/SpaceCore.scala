@@ -53,7 +53,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
-  lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
   lazy val System = interface[querki.system.System]
   
@@ -212,10 +211,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   // general principles.
   def canChangeProperties(who:User, changedProps:Seq[OID], oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
     val failedProp = changedProps.find(!AccessControl.canChangePropertyValue(state, who, _))
-    failedProp match {
-      case Some(propId) => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName)
-      case _ => oldThingOpt.map(PropTypeMigrator.checkLegalChange(state, _, newProps))
-    }
+    failedProp map { propId => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName) }
   }
   
   /**
@@ -380,6 +376,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   /**
    * This is the pure-functional core of the modify operation, which takes a SpaceState and returns a modified one.
+   * 
+   * TODO: once upon a time, there was a horrible mechanism for dealing with Properties changing their Types, based on
+   * the PropTypeMigrator Ecot. That Ecot has (as of this writing) been deprecated, and should be removed in due
+   * course, because it was a horrible way to deal with the problem.
    */
   def modifyPure(
     state:SpaceState, 
@@ -387,8 +387,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     thing:Thing, 
     modelId:OID, 
     actualProps:PropMap, 
-    modTime:DateTime, 
-    typeChangeOpt:Option[TypeChangeInfo]):SpaceState = 
+    modTime:DateTime):SpaceState = 
   {
     thing match {
       case t:ThingState => {
@@ -396,12 +395,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         state.copy(things = state.things + (thingId -> newThingState)) 
       }
       case prop:Property[_,_] => {
-        val newProp = typeChangeOpt match {
-          case Some(typeChange) if (typeChange.typeChanged) =>
-            prop.copy(pType = typeChange.newType, m = modelId, pf = actualProps, mt = modTime)
-          case _ => prop.copy(m = modelId, pf = actualProps, mt = modTime)
-        }
-        
+        val newProp = prop.copy(m = modelId, pf = actualProps, mt = modTime)
         state.copy(spaceProps = state.spaceProps + (thingId -> newProp))
       }
       case s:SpaceState => {
@@ -450,19 +444,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       case None => thing.model
     }
     
-    // TODO: the current approach of prepChange and finish is idiotic in the new world. Can we come up with something
-    // more synchronous, functional and sensible?
-    val typeChangeOpt =
-      thing match {
-        case prop:AnyProp => Some(PropTypeMigrator.prepChange(state, prop, actualProps))
-        case _ => None
-      }
-    val newState = modifyPure(state, thingId, thing, modelId, actualProps, modTime, typeChangeOpt)
+    val newState = modifyPure(state, thingId, thing, modelId, actualProps, modTime)
     updateState(newState)
-    typeChangeOpt.foreach { typeChange =>
-      val newProp = newState.prop(thingId).get
-      typeChange.finish(newProp, state, updateState) 
-    }
   }
   
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {

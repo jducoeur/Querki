@@ -45,6 +45,10 @@ object MOIDs extends EcotIds(25)
 /**
  * This utility deals with the important edge case of trying to change the Type of a
  * Property. This is a sufficient big and complex problem as to demand its own class.
+ * 
+ * TODO (9/8/16): this Ecot is now Deprecated, and is not used in the Akka Persisted world.
+ * It was always a fairly craptastic design, and doesn't fit well into the new code. See
+ * Issue .7w4g7x4 for details on how this should be reimplemented later.
  */
 class PropTypeMigratorEcot(e:Ecology) extends QuerkiEcot(e) with PropTypeMigrator {
   

@@ -210,7 +210,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
         permThingId <- allocThingId()
         stateWithPermThing = createPure(state, Kind.Thing, permThingId, AccessControl.InstancePermissionsModel.id, props, None, DateTime.now)
         propsWithPerms = t.props + AccessControl.InstancePermissionsProp(permThingId)
-        spaceWithAdjustedThing = modifyPure(stateWithPermThing, t.id, t, t.model, propsWithPerms, DateTime.now, None)
+        spaceWithAdjustedThing = modifyPure(stateWithPermThing, t.id, t, t.model, propsWithPerms, DateTime.now)
       }
         yield spaceWithAdjustedThing
     else
