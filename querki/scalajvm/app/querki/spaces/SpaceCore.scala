@@ -238,17 +238,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
   }
   
-  def basedOn(props:PropMap):OID = {
+  def basedOn(props:PropMap):Option[OID] = {
     val result = for {
       basedOnVal <- props.get(ModelForTypePropOID)
       basedOn <- basedOnVal.firstAs(Core.LinkType)
     }
       yield basedOn
       
-    if (result.isEmpty)
-      throw new Exception("Tried to create a Type without a valid Model!")
-      
-    result.get
+    result
   }
   
   /**
@@ -293,15 +290,15 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     initState
   }
   
-  def doCreate(kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime):SpaceState = {
-    updateState(createPure(state, kind, thingId, modelId, props, typBasedOn, modTime))
+  def updateAfter(f: SpaceState => SpaceState):SpaceState = {
+    updateState(f(state))
   }
   
   /**
    * This is the pure-functional heart of creation: it takes a SpaceState and the key info, and returns the
    * modified SpaceState.
    */
-  def createPure(state:SpaceState, kind:Kind, thingId:OID, modelId:OID, props:PropMap, typBasedOn:Option[OID], modTime:DateTime):SpaceState = {
+  def createPure(kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
     kind match {
       case Kind.Thing => {
         val thing = ThingState(thingId, id, modelId, props, modTime, kind)
@@ -316,8 +313,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         state.copy(spaceProps = state.spaceProps + (thingId -> thing))          
       }
       case Kind.Type => {
-        val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn.get, props)
-        state.copy(types = state.types + (thingId -> tpe))
+        // Note that basedOn() returns an Option, but we should have sanity-checked this in
+        // createSomething, so we *expect* it to always be defined. Let's not risk a crash
+        // unnecessarily, though:
+        basedOn(props).map { typBasedOn =>
+          val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn, props)
+          state.copy(types = state.types + (thingId -> tpe))
+        } getOrElse (state)
       }
       case _ => {
         QLog.error(s"SpaceCore.createPure is trying to create something of kind $kind!")
@@ -334,12 +336,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       val props = tcr.newProps
       val name = Core.NameProp.firstOpt(props)
       
-      // We need to sanity-check the Type Model now, before we get to persisting:
-      val typBasedOn = {
-        if (kind == Kind.Type) {
-          Some(basedOn(props))
-        } else
-          None
+      // We need to sanity-check the Type Model now, before we get to persisting. This will result
+      // in redundant calls to basedOn() in the create path, but I think we just live with that.
+      if (kind == Kind.Type) {
+        basedOn(props).getOrElse(throw new Exception("Tried to create a Type without a valid Model!"))
       }
       
       // TODO: this call is side-effecting -- it throws an exception if you *aren't* allowed to change this.
@@ -368,7 +368,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             DHCreateThing(who, thingId, kind, modelId, props, modTime)
           }
           
-          persistMsgThen(thingId, msg, doCreate(kind, thingId, modelId, props, typBasedOn, modTime))
+          persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)))
         }
       }
     }
@@ -382,13 +382,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * course, because it was a horrible way to deal with the problem.
    */
   def modifyPure(
-    state:SpaceState, 
     thingId:OID, 
     thing:Thing, 
     modelIdOpt:Option[OID], 
     newProps:PropMap, 
     replaceAllProps:Boolean,
-    modTime:DateTime):SpaceState = 
+    modTime:DateTime)(state:SpaceState):SpaceState = 
   {
     val actualProps =
       if (replaceAllProps)
@@ -444,10 +443,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }    
   }
   
-  def doModify(thingId:OID, thing:Thing, modelIdOpt:Option[OID], newProps:PropMap, replaceAllProps:Boolean, modTime:DateTime) = {
-    updateState(modifyPure(state, thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime))
-  }
-  
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
@@ -470,13 +465,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
           }
           
-          persistMsgThen(thingId, msg, doModify(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime))
+          persistMsgThen(thingId, msg, updateAfter(modifyPure(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)))
         }
       }
     }    
   }
   
-  def deletePure(state:SpaceState, oid:OID, thing:Thing):SpaceState = {
+  def deletePure(oid:OID, thing:Thing)(state:SpaceState):SpaceState = {
     thing match {
       case t:ThingState => state.copy(things = state.things - oid)
       case p:Property[_,_] => state.copy(spaceProps = state.spaceProps - oid)
@@ -485,10 +480,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       // TODO (QI.7w4g7x5): deal with deleting a Model Type:
       case _ => throw new Exception("Somehow got a request to delete unexpected thing " + thing)
     }    
-  }
-  
-  def doDelete(oid:OID, thing:Thing) = {
-    updateState(deletePure(state, oid, thing))
   }
   
   def deleteThing(who:User, thingId:ThingId):RM[Unit] = {
@@ -514,7 +505,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       implicit val s = state
       DHDeleteThing(who, oid, modTime)
     }
-    persistMsgThen(oid, msg, doDelete(oid, oldThing))
+    persistMsgThen(oid, msg, updateAfter(deletePure(oid, oldThing)))
   }
   
   /**
@@ -540,25 +531,20 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
       implicit val s = state
       val props:PropMap = dhProps 
-      val typBasedOn =
-        if (kind == Kind.Type)
-          Some(basedOn(props))
-        else
-          None
           
-      doCreate(kind, thingId, modelId, props, typBasedOn, modTime)
+      updateAfter(createPure(kind, thingId, modelId, props, modTime))
     }
     
     case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
       implicit val s = state
       val thing = state.anything(thingId).get
       val props:PropMap = propChanges
-      doModify(thingId, thing, modelIdOpt, props, replaceAllProps, modTime)
+      updateAfter(modifyPure(thingId, thing, modelIdOpt, props, replaceAllProps, modTime))
     }
     
     case DHDeleteThing(req, thingId, modTime) => {
       val thing = state.anything(thingId).get
-      doDelete(thingId, thing)
+      updateAfter(deletePure(thingId, thing))
     }
     
     case RecoveryCompleted => {
