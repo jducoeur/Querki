@@ -445,8 +445,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   def doModify(thingId:OID, thing:Thing, modelIdOpt:Option[OID], newProps:PropMap, replaceAllProps:Boolean, modTime:DateTime) = {
-    val newState = modifyPure(state, thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)
-    updateState(newState)
+    updateState(modifyPure(state, thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime))
   }
   
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {
@@ -477,14 +476,19 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }    
   }
   
-  def doDelete(oid:OID, thing:Thing) = {
+  def deletePure(state:SpaceState, oid:OID, thing:Thing):SpaceState = {
     thing match {
-      case t:ThingState => updateState(state.copy(things = state.things - oid))
-      case p:Property[_,_] => updateState(state.copy(spaceProps = state.spaceProps - oid))
+      case t:ThingState => state.copy(things = state.things - oid)
+      case p:Property[_,_] => state.copy(spaceProps = state.spaceProps - oid)
       // This really shouldn't be possible, since deleteThing is looking it up from just the
       // things and spaceProps tables:
+      // TODO (QI.7w4g7x5): deal with deleting a Model Type:
       case _ => throw new Exception("Somehow got a request to delete unexpected thing " + thing)
-    }
+    }    
+  }
+  
+  def doDelete(oid:OID, thing:Thing) = {
+    updateState(deletePure(state, oid, thing))
   }
   
   def deleteThing(who:User, thingId:ThingId):RM[Unit] = {
