@@ -96,7 +96,12 @@ private [streaming] class StringStreamSender(str:String, e:Ecology) extends Acto
         if (remainingChunks.isEmpty) {
           // That was the final Ack, for the Complete, so we're done. Tell the originator that we're
           // finished, and die:
-          originator.get ! SendComplete
+          // NOTE: there's a potential (if rare) race condition here, which I've seen happen once.
+          // It is only likely if sender and receiver are on the same machine, but if so, we *can*
+          // get all the way through the sending process and to here before receiving our original
+          // Start message. In that case, this won't happen, and the originator won't ever receive
+          // the completion. So the originator should always have a timeout for this.
+          originator.map(_ ! SendComplete)
           context.stop(self)
         } else {
           remainingChunks = remainingChunks.drop(1)

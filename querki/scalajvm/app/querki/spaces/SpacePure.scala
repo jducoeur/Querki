@@ -1,0 +1,172 @@
+package querki.spaces
+
+import models._
+import Kind.Kind
+import Thing._
+
+import querki.core.NameUtils
+import querki.globals._
+import querki.identity.Identity
+import querki.time.DateTime
+import querki.types.ModelTypeBase
+import querki.types.MOIDs.ModelForTypePropOID
+import querki.values.{SpaceState, SpaceVersion}
+
+/**
+ * This trait represents the heart of the processing of Space messages: the
+ * pure functions that take a Space and return a new Space. They are separated
+ * out so that we can handle this process in various ways.
+ */
+trait SpacePure extends querki.types.ModelTypeDefiner with EcologyMember {
+  
+  // Abstracts that the concrete type has to fill in:
+  def Basic:querki.basic.Basic
+  def Core:querki.core.Core
+  def SystemState:SpaceState
+  def id:OID
+  
+  def initStatePure(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String):SpaceState = {
+    val canonical = NameUtils.canonicalize(display)
+    val initState =
+      SpaceState(
+        id,
+        SystemState.id,
+        Map(
+          Core.NameProp(canonical),
+          Basic.DisplayNameProp(display)
+        ),
+        ownerId,
+        canonical,
+        DateTime.now,
+        Seq.empty,
+        Some(SystemState),
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        identityOpt,
+        SpaceVersion(0)
+      )
+    initState
+  }
+  
+  def basedOn(props:PropMap):Option[OID] = {
+    val result = for {
+      basedOnVal <- props.get(ModelForTypePropOID)
+      basedOn <- basedOnVal.firstAs(Core.LinkType)
+    }
+      yield basedOn
+      
+    result
+  }
+  
+  /**
+   * This is the pure-functional heart of creation: it takes a SpaceState and the key info, and returns the
+   * modified SpaceState.
+   */
+  def createPure(kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
+    kind match {
+      case Kind.Thing => {
+        val thing = ThingState(thingId, id, modelId, props, modTime, kind)
+        state.copy(things = state.things + (thingId -> thing))
+      }
+      case Kind.Property => {
+        val typ = state.typ(Core.TypeProp.first(props))
+        val coll = state.coll(Core.CollectionProp.first(props))
+        val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
+        val boundColl = coll.asInstanceOf[Collection]
+        val thing = Property(thingId, id, modelId, boundTyp, boundColl, props, modTime)
+        state.copy(spaceProps = state.spaceProps + (thingId -> thing))          
+      }
+      case Kind.Type => {
+        // Note that basedOn() returns an Option, but we should have sanity-checked this in
+        // createSomething, so we *expect* it to always be defined. Let's not risk a crash
+        // unnecessarily, though:
+        basedOn(props).map { typBasedOn =>
+          val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn, props)
+          state.copy(types = state.types + (thingId -> tpe))
+        } getOrElse (state)
+      }
+      case _ => {
+        QLog.error(s"SpacePure.createPure is trying to create something of kind $kind!")
+        // This shouldn't be possible -- we're checking against it in createSomething()
+        state
+      }
+    }
+  }
+  
+  /**
+   * This is the pure-functional core of the modify operation, which takes a SpaceState and returns a modified one.
+   * 
+   * TODO: once upon a time, there was a horrible mechanism for dealing with Properties changing their Types, based on
+   * the PropTypeMigrator Ecot. That Ecot has (as of this writing) been deprecated, and should be removed in due
+   * course, because it was a horrible way to deal with the problem.
+   */
+  def modifyPure(
+    thingId:OID, 
+    thing:Thing, 
+    modelIdOpt:Option[OID], 
+    newProps:PropMap, 
+    replaceAllProps:Boolean,
+    modTime:DateTime)(state:SpaceState):SpaceState = 
+  {
+    val actualProps =
+      if (replaceAllProps)
+        newProps
+      else {
+        (thing.props /: newProps) { (current, pair) =>
+          val (propId, v) = pair
+          if (v.isDeleted)
+            // The caller has sent the special signal to delete this Property:
+            current - propId
+          else
+            current + pair
+        }
+      }
+    
+    val modelId = modelIdOpt match {
+      case Some(m) => m
+      case None => thing.model
+    }
+    
+    thing match {
+      case t:ThingState => {
+        val newThingState = t.copy(m = modelId, pf = actualProps, mt = modTime)
+        state.copy(things = state.things + (thingId -> newThingState)) 
+      }
+      case prop:Property[_,_] => {
+        val newProp = prop.copy(m = modelId, pf = actualProps, mt = modTime)
+        state.copy(spaceProps = state.spaceProps + (thingId -> newProp))
+      }
+      case s:SpaceState => {
+        // Note that the actual notification to the MySQL layer happens in SpaceCore.modifyWithSpaceName
+        // TODO: handle changing the owner or apps of the Space. (Different messages?)
+        val newNameOpt = for {
+          rawName <- Core.NameProp.firstOpt(actualProps)
+          newName = NameUtils.canonicalize(rawName)
+          oldName = Core.NameProp.first(thing.props)
+          if (!NameUtils.equalNames(newName, oldName))
+        }
+          yield newName
+        val newName = newNameOpt.getOrElse(state.name)
+        state.copy(m = modelId, pf = actualProps, name = newName, mt = modTime)
+      }
+      case mt:ModelTypeBase => {
+        // Note that ModelTypeBase has a copy() method tuned for this purpose:
+        val newType = mt.copy(modelId, actualProps)
+        state.copy(types = state.types + (thingId -> newType))
+      }
+    }    
+  }
+    
+  def deletePure(oid:OID, thing:Thing)(state:SpaceState):SpaceState = {
+    thing match {
+      case t:ThingState => state.copy(things = state.things - oid)
+      case p:Property[_,_] => state.copy(spaceProps = state.spaceProps - oid)
+      // This really shouldn't be possible, since deleteThing is looking it up from just the
+      // things and spaceProps tables:
+      // TODO (QI.7w4g7x5): deal with deleting a Model Type:
+      case _ => throw new Exception("Somehow got a request to delete unexpected thing " + thing)
+    }    
+  }
+}

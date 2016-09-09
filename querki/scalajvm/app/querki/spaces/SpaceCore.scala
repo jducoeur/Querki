@@ -16,8 +16,6 @@ import querki.identity.{Identity, PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.time.DateTime
-import querki.types.ModelTypeBase
-import querki.types.MOIDs.ModelForTypePropOID
 import querki.util.UnexpectedPublicException
 import querki.values.{SpaceState, SpaceVersion}
 
@@ -40,7 +38,7 @@ import SpaceMessagePersistence._
  *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
 abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) 
-  extends SpaceMessagePersistenceBase with PersistentActorCore with EcologyMember with ModelPersistence 
+  extends SpaceMessagePersistenceBase with PersistentActorCore with SpacePure with EcologyMember with ModelPersistence 
 {
   /**
    * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
@@ -238,16 +236,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
   }
   
-  def basedOn(props:PropMap):Option[OID] = {
-    val result = for {
-      basedOnVal <- props.get(ModelForTypePropOID)
-      basedOn <- basedOnVal.firstAs(Core.LinkType)
-    }
-      yield basedOn
-      
-    result
-  }
-  
   /**
    * Create a Person for this Space's owner. This will cause an update notification to get sent out!
    */
@@ -265,68 +253,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       Kind.Thing)
   }
   
-  def doInitState(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String):SpaceState = {
-    val canonical = NameUtils.canonicalize(display)
-    val initState =
-      SpaceState(
-        id,
-        SystemState.id,
-        Map(
-          Core.NameProp(canonical),
-          Basic.DisplayNameProp(display)
-        ),
-        ownerId,
-        canonical,
-        DateTime.now,
-        Seq.empty,
-        Some(SystemState),
-        Map.empty,
-        Map.empty,
-        Map.empty,
-        Map.empty,
-        identityOpt,
-        SpaceVersion(0)
-      )
-    initState
-  }
-  
   def updateAfter(f: SpaceState => SpaceState):SpaceState = {
     updateState(f(state))
-  }
-  
-  /**
-   * This is the pure-functional heart of creation: it takes a SpaceState and the key info, and returns the
-   * modified SpaceState.
-   */
-  def createPure(kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
-    kind match {
-      case Kind.Thing => {
-        val thing = ThingState(thingId, id, modelId, props, modTime, kind)
-        state.copy(things = state.things + (thingId -> thing))
-      }
-      case Kind.Property => {
-        val typ = state.typ(Core.TypeProp.first(props))
-        val coll = state.coll(Core.CollectionProp.first(props))
-        val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-        val boundColl = coll.asInstanceOf[Collection]
-        val thing = Property(thingId, id, modelId, boundTyp, boundColl, props, modTime)
-        state.copy(spaceProps = state.spaceProps + (thingId -> thing))          
-      }
-      case Kind.Type => {
-        // Note that basedOn() returns an Option, but we should have sanity-checked this in
-        // createSomething, so we *expect* it to always be defined. Let's not risk a crash
-        // unnecessarily, though:
-        basedOn(props).map { typBasedOn =>
-          val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn, props)
-          state.copy(types = state.types + (thingId -> tpe))
-        } getOrElse (state)
-      }
-      case _ => {
-        QLog.error(s"SpaceCore.createPure is trying to create something of kind $kind!")
-        // This shouldn't be possible -- we're checking against it in createSomething()
-        state
-      }
-    }
   }
 
   def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[SpaceState] = {
@@ -373,74 +301,40 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
     }
   }
-  
+
   /**
-   * This is the pure-functional core of the modify operation, which takes a SpaceState and returns a modified one.
+   * This is a tweak of modifyPure, which deals with updating the MySQL level when the Space's name changes.
    * 
-   * TODO: once upon a time, there was a horrible mechanism for dealing with Properties changing their Types, based on
-   * the PropTypeMigrator Ecot. That Ecot has (as of this writing) been deprecated, and should be removed in due
-   * course, because it was a horrible way to deal with the problem.
+   * TODO: there is probably a general notification mechanism fighting to break out here. Think about whether
+   * there are better ways to do this.
    */
-  def modifyPure(
+  def modifyWrapper(
     thingId:OID, 
     thing:Thing, 
     modelIdOpt:Option[OID], 
     newProps:PropMap, 
     replaceAllProps:Boolean,
-    modTime:DateTime)(state:SpaceState):SpaceState = 
+    modTime:DateTime)(state:SpaceState):SpaceState =
   {
-    val actualProps =
-      if (replaceAllProps)
-        newProps
-      else {
-        (thing.props /: newProps) { (current, pair) =>
-          val (propId, v) = pair
-          if (v.isDeleted)
-            // The caller has sent the special signal to delete this Property:
-            current - propId
-          else
-            current + pair
-        }
-      }
-    
-    val modelId = modelIdOpt match {
-      case Some(m) => m
-      case None => thing.model
-    }
+    val modified = modifyPure(thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)(state)    
     
     thing match {
-      case t:ThingState => {
-        val newThingState = t.copy(m = modelId, pf = actualProps, mt = modTime)
-        state.copy(things = state.things + (thingId -> newThingState)) 
-      }
-      case prop:Property[_,_] => {
-        val newProp = prop.copy(m = modelId, pf = actualProps, mt = modTime)
-        state.copy(spaceProps = state.spaceProps + (thingId -> newProp))
-      }
       case s:SpaceState => {
-        // TODO: handle changing the owner or apps of the Space. (Different messages?)
-        val newNameOpt = for {
-          rawName <- Core.NameProp.firstOpt(actualProps)
-          newName = NameUtils.canonicalize(rawName)
-          oldName = Core.NameProp.first(thing.props)
-          oldDisplay = Basic.DisplayNameProp.firstOpt(thing.props) map (_.raw.toString) getOrElse rawName
-          newDisplay = Basic.DisplayNameProp.firstOpt(actualProps) map (_.raw.toString) getOrElse rawName
-          if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay)))
-        }
-          yield
+        // Okay, we're modifying the Space. Did we change either name?
+        def linkName(state:SpaceState) = Core.NameProp.first(state.props)
+        def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
+        
+        if (!NameUtils.equalNames(linkName(modified), linkName(s)) 
+         || !(disp(modified).contentEquals(disp(s))))
         {
-          changeSpaceName(newName, newDisplay)
-          newName
+          // At least one of those names changed, so notify the outside world:
+          changeSpaceName(NameUtils.canonicalize(linkName(modified)), disp(modified))
         }
-        val newName = newNameOpt.getOrElse(state.name)
-        state.copy(m = modelId, pf = actualProps, name = newName, mt = modTime)
       }
-      case mt:ModelTypeBase => {
-        // Note that ModelTypeBase has a copy() method tuned for this purpose:
-        val newType = mt.copy(modelId, actualProps)
-        state.copy(types = state.types + (thingId -> newType))
-      }
-    }    
+      case _ =>
+    }
+    
+    modified
   }
   
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {
@@ -465,20 +359,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
           }
           
-          persistMsgThen(thingId, msg, updateAfter(modifyPure(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)))
+          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)))
         }
       }
-    }    
-  }
-  
-  def deletePure(oid:OID, thing:Thing)(state:SpaceState):SpaceState = {
-    thing match {
-      case t:ThingState => state.copy(things = state.things - oid)
-      case p:Property[_,_] => state.copy(spaceProps = state.spaceProps - oid)
-      // This really shouldn't be possible, since deleteThing is looking it up from just the
-      // things and spaceProps tables:
-      // TODO (QI.7w4g7x5): deal with deleting a Model Type:
-      case _ => throw new Exception("Somehow got a request to delete unexpected thing " + thing)
     }    
   }
   
@@ -524,7 +407,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case DHInitState(userRef, display) => {
-      val initState = doInitState(userRef.userId, userRef.identityIdOpt.get, None, display)
+      val initState = initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
       updateStateCore(initState)
     }
     
@@ -538,8 +421,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
       implicit val s = state
       val thing = state.anything(thingId).get
-      val props:PropMap = propChanges
-      updateAfter(modifyPure(thingId, thing, modelIdOpt, props, replaceAllProps, modTime))
+      updateAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
     }
     
     case DHDeleteThing(req, thingId, modTime) => {
@@ -650,7 +532,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           msg, 
           {
             val identityOpt = who.identityById(ownerId)
-            val initState = doInitState(who.id, ownerId, identityOpt, display)
+            val initState = initStatePure(who.id, ownerId, identityOpt, display)
             createOwnerPerson(initState, identityOpt.get)
           }
         )
