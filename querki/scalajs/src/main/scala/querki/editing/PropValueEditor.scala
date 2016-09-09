@@ -6,7 +6,7 @@ import scalatags.JsDom.all._
 import rx._
 
 import querki.globals._
-
+import querki.data._
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
 import querki.display.rx._
@@ -27,6 +27,12 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(propInfo.displayName)
     def stdThings = section.page.std
+    
+    def isSpace = section.thing match {
+      case t:ThingInfo => (t.kind == models.Kind.Space)
+      case s:SpaceInfo => true
+      case _ => false
+    }
     
     val propDetailsArea = GadgetRef.of[dom.HTMLDivElement]
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
@@ -84,7 +90,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
             i(cls:="_dragHandle col-xs-1 glyphicon glyphicon-move"),
           new DeleteInstanceButton({() => section.page.removeProperty(this)}) 
         ),
-        if (propId == stdThings.basic.displayNameProp.oid)
+        if ((propId == stdThings.basic.displayNameProp.oid) && !isSpace)
           new DeriveNameCheck(this),
         propDetailsArea <= div(display:="none", width:="100%")
       )
