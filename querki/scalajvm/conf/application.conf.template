@@ -121,6 +121,11 @@ querki {
     # How long to keep alive the conversations for a particular Thing
     timeout : 3 minutes
   }
+  
+  history {
+    # How long to keep alive in memory the history of a Space 
+    timeout : 5 minutes
+  }
 }
 
 play.http.session {

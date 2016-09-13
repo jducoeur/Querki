@@ -3,6 +3,8 @@ package querki.history
 import scala.collection.immutable.VectorBuilder
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
+import akka.persistence._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
 import akka.stream.ActorMaterializer
@@ -15,17 +17,30 @@ import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
-import querki.util.QuerkiBootableActor
+import querki.util._
 import querki.values.{SpaceState, SpaceVersion}
 import querki.spaces.SpacePure
 
 import HistoryFunctions._
 
 /**
+ * This is a very simplistic wrapper around SpaceHistory, so that the latter can only be in
+ * memory when needed. It routes all messages to SpaceHistory.
+ */
+class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with SingleRoutingParent with ReceivePipeline {
+  def createChild():ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id))
+  
+  def receive = {
+    case msg => routeToChild(msg)
+  }
+}
+
+/**
  * This is essentially a variant of the PersistentSpaceActor, which reads in the complete history
  * of a Space, and provides access to it.
  */
-class SpaceHistory(e:Ecology, val id:OID) extends QuerkiBootableActor(e) with SpacePure with ModelPersistence
+private [history] class SpaceHistory(e:Ecology, val id:OID) 
+  extends QuerkiBootableActor(e) with SpacePure with ModelPersistence with TimeoutChild with ReceivePipeline
 {
   import SpaceHistory._
   
@@ -35,6 +50,8 @@ class SpaceHistory(e:Ecology, val id:OID) extends QuerkiBootableActor(e) with Sp
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   lazy val SystemState = interface[querki.system.System].State
+  
+  def timeoutConfig:String = "querki.history.timeout"
   
   def persistenceId = id.toThingId.toString
   
@@ -183,6 +200,8 @@ class SpaceHistory(e:Ecology, val id:OID) extends QuerkiBootableActor(e) with Sp
 }
 
 object SpaceHistory {
+  def actorProps(e:Ecology, id:OID) = Props(classOf[SpaceHistoryParent], e, id)
+  
   private case object Start
   
   sealed trait HistoryMessage
