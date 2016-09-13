@@ -56,6 +56,25 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   var nextId:CommentId = 1
   
   /**
+   * When the outside world tells us to set the conversations, deal with side-effects.
+   */
+  def setConvs(convs:ThingConversations) = {
+    conversations = convs
+    
+    def fixNextIdRec(convList:Seq[ConversationNode]):Unit = {
+      convList.foreach { node =>
+        if (node.comment.id >= nextId) {
+          nextId = node.comment.id + 1
+        }
+        
+        fixNextIdRec(node.responses)
+      }
+    }
+  
+    fixNextIdRec(conversations.comments)
+  }
+  
+  /**
    * Finds and mutates the specified node, and returns the resulting tree.
    * 
    * TODO: this is too rigid to make really nasty topological changes, sadly. Is there a better way to do this?
@@ -170,7 +189,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     
     case evt:DHConvs => {
       val convs = rehydrate(evt)
-      conversations = convs
+      setConvs(convs)
     }
     
     case DHAddComment(comment) => {
@@ -205,7 +224,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     case SetConversations(convs) => {
       val evt = dh(convs)
       doPersist(evt) { _ =>
-        conversations = convs
+        setConvs(convs)
         respond(ConvsSet())
       }
     }
