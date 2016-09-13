@@ -1,6 +1,7 @@
 package querki.session
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
 
 import models.OID
@@ -15,7 +16,7 @@ import querki.util._
 import querki.values.SpaceState
 
 private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
-  extends Actor with EcologyMember with RoutingParent[User]
+  extends Actor with EcologyMember with ReceivePipeline with RoutingParent[User]
 {
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   lazy val SystemManagement = interface[querki.system.SystemManagement]

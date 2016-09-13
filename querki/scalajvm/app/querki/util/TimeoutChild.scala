@@ -4,14 +4,19 @@ import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
+import ReceivePipeline._
+
+import querki.globals._
 
 /**
- * The child of a RoutingParent, which has a built-in inactivity timeout.
+ * The child of a RoutingParent, which has a built-in inactivity timeout. Concrete classes must
+ * also extend ReceivePipeline. Note that ReceivePipeline must be extended *after* PersistentActor!
  * 
  * Note that ClusterTimeoutChild is quite similar, but designed specifically to work with
  * ClusterSharding.
  */
-trait TimeoutChild extends Actor {
+trait TimeoutChild extends Actor { pipe:ReceivePipeline =>
   
   /**
    * Instances must define this -- it is the name of the config string that defines how long
@@ -25,10 +30,10 @@ trait TimeoutChild extends Actor {
     super.preStart()
   }
   
-  override def unhandled(message: Any): Unit = {
-    message match {
-      case resp:ReceiveTimeout => context.parent ! KillMe
-      case other => super.unhandled(other)
+  pipelineInner {
+    case resp:ReceiveTimeout => {
+      context.parent ! KillMe
+      HandledCompletely
     }
   }
 }
@@ -43,6 +48,8 @@ object RoutingStates {
  * each of which has a clear ID. When it receives a message for a child, it routes it there,
  * creating the child if it doesn't already exist.
  * 
+ * Concrete classes must also extend ReceivePipeline.
+ * 
  * As currently constructed, a given Actor can only be the RoutingParent for a single kind of
  * child.
  * 
@@ -50,7 +57,7 @@ object RoutingStates {
  * has timeout built in. We generally use it *under* our top-level Cluster Sharded entities,
  * to manage particular Troupes.
  */
-trait RoutingParent[K] extends Actor {
+trait RoutingParent[K] extends Actor { pipe:ReceivePipeline =>
 
   class ManagedChild(val id:K, val ref:ActorRef) {
     import RoutingStates._
@@ -120,30 +127,31 @@ trait RoutingParent[K] extends Actor {
    */
   def routeToAll(msg:Any) = children.foreach { _.forward(msg) }
   
-  override def unhandled(message: Any): Unit = {
-    message match {
-      case KillMe => {
-        findChild(sender) match {
-          case Some(child) => child.beginShutdown
-          case _ => {}
-        }
+  pipelineInner {
+    case KillMe => {
+      findChild(sender) match {
+        case Some(child) => child.beginShutdown
+        case _ => QLog.warn(s"RouterParent got KillMe from unknown child $sender")
       }
-      case Terminated(other) => {
-        findChild(sender) match {
-          case Some(child) => {
-            // Okay, the child is now completely finished...
-            val key = child.id
-            _children = _children - key
-            if (!child.buffer.isEmpty) {
-              // ... but more messages came in the meantime, so rebuild the child:
-              child.buffer.foreach(msg => routeToChild(key, msg))
-            }
-            childrenUpdated()
+      HandledCompletely
+    }
+    
+    case msg @ Terminated(other) => {
+      findChild(other) match {
+        case Some(child) => {
+          // Okay, the child is now completely finished...
+          val key = child.id
+          _children = _children - key
+          if (!child.buffer.isEmpty) {
+            // ... but more messages came in the meantime, so rebuild the child:
+            child.buffer.foreach(msg => routeToChild(key, msg))
           }
-          case None => // Not our problem
+          childrenUpdated()
+          HandledCompletely
         }
+        // It's a Terminated from something else?
+        case None => Inner(msg)
       }
-      case other => super.unhandled(other)
     }
   }
 }

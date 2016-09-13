@@ -1,6 +1,7 @@
 package querki.conversations
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
 import akka.persistence._
 
 import querki.conversations.messages.Comment
@@ -15,7 +16,7 @@ import querki.util.TimeoutChild
  * all functionality comes from its base traits.
  */
 class ThingConversationsActor(initState:SpaceState, thingId:OID, notifier:ActorRef, e:Ecology) 
-  extends ThingConversationsCore(initState, thingId)(e) with PersistentQuerkiActor with TimeoutChild with ModelTypeDefiner 
+  extends ThingConversationsCore(initState, thingId)(e) with PersistentQuerkiActor with ReceivePipeline with TimeoutChild with ModelTypeDefiner 
 {
   val timeoutConfig = "querki.conversations.timeout"
   

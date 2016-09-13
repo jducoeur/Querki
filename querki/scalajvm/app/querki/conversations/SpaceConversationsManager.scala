@@ -1,6 +1,7 @@
 package querki.conversations
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
 
 import querki.conversations.messages._
 import querki.globals._
@@ -18,8 +19,9 @@ import querki.util._
  * Note that this is a RoutingParent, which deals with most of the routing and timeout
  * infrastructure.
  */
-private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorRef) extends QuerkiBootableActor(e) with RoutingParent[OID] {
-  
+private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorRef) 
+  extends QuerkiBootableActor(e) with ReceivePipeline with RoutingParent[OID]
+{ 
   var _state:Option[SpaceState] = None
   def state = _state.get
   

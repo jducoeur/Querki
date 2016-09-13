@@ -4,6 +4,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 import akka.actor._
+import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
 
 import upickle._
@@ -36,7 +37,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * concerns.
  */
 private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
-  extends Actor with Stash with Requester with EcologyMember with TimeoutChild
+  extends Actor with Stash with Requester with EcologyMember with ReceivePipeline with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   implicit val ecology = e
