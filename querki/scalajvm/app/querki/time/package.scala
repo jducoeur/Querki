@@ -34,6 +34,10 @@ package object time extends Imports with Implicits {
     def QDateTime:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
   }
   
+  implicit class RichDateTime(val dt:DateTime) extends AnyVal {
+    def toTimestamp:Common.Timestamp = dt.getMillis
+  }
+  
   trait QDuration extends EcologyInterface {
     def toPeriod(duration:ModeledPropertyBundle, state:SpaceState):Period
     

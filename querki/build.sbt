@@ -36,6 +36,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       "com.typesafe.akka" %% "akka-persistence" % akkaV,
       "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
+      "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaV,
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
       "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",

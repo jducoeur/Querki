@@ -121,7 +121,13 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       case _ => None
     }
   }
-  
+
+  // TODO: this is too important a function to be this inefficient and unreliable. It works like this because the
+  // IdentityCache is distributed around the cluster, but that's probably a bad design. Would it be possible
+  // to redo the cache as a CRDT of some sort instead? Needs some research, and some thought about whether we
+  // can cope with the cache sometimes containing stale data. My *guess* is that that's okay for any use case
+  // that is getting many Identities. It may well be that we need two caches: a distributed high-reliability one
+  // and a CRDT one that can be a bit stale.
   def getIdentitiesInternal[T >: FullIdentity](ids:Seq[OID]):Future[Map[OID, T]] = {
     val requests:Set[Future[Any]] = ids.toSet.map { id:OID => identityCache ? GetIdentityRequest(id) }
     val resultSetFut = Future.sequence(requests)

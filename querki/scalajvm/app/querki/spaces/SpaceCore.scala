@@ -420,13 +420,15 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
       implicit val s = state
-      val thing = state.anything(thingId).get
-      updateAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
+      state.anything(thingId).map { thing =>
+        updateAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
+      }
     }
     
     case DHDeleteThing(req, thingId, modTime) => {
-      val thing = state.anything(thingId).get
-      updateAfter(deletePure(thingId, thing))
+      state.anything(thingId).map { thing =>
+        updateAfter(deletePure(thingId, thing))
+      }
     }
     
     case RecoveryCompleted => {
