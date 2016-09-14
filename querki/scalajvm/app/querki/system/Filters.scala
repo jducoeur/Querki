@@ -8,13 +8,15 @@ import akka.stream.Materializer
 
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
-
 import play.api.http.HttpFilters
+import play.filters.gzip.GzipFilter
 
 import querki.globals._
 
-class Filters @Inject() (log:LoggingFilter) extends HttpFilters {
-  val filters = Seq(log)
+class Filters @Inject() (gzip:GzipFilter, log:LoggingFilter) 
+  extends HttpFilters 
+{
+  val filters = Seq(log, gzip)
 }
 
 /**

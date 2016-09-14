@@ -21,6 +21,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // Main Play dependencies
       jdbc,
       // anorm,
+      filters,
       "com.typesafe.play" %% "anorm" % "2.5.0",
       // Add your project dependencies here,
       "mysql" % "mysql-connector-java" % "5.1.36",

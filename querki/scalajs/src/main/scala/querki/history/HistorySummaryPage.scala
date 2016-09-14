@@ -13,7 +13,6 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "h
   
   def pageContent = for {
     summary <- Client[HistoryFunctions].getHistorySummary().call()
-    _ = println("Got the summary")
     HistorySummary(evts, EvtContext(whoMap, thingNames)) = summary
     guts = div("hello")
   }
