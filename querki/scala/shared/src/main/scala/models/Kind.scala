@@ -25,4 +25,15 @@ object Kind {
       case _ => None
     }
   }
+  
+  def getName(kind:Kind):Option[String] = {
+    kind match {
+      case Thing => Some("thing")
+      case Type => Some("type")
+      case Property => Some("property")
+      case Space => Some("space")
+      case Collection => Some("collection")
+      case _ => None
+    }
+  }
 }

@@ -83,11 +83,14 @@ trait RoutingParentBase[K] extends Actor { pipe:ReceivePipeline =>
    */
   def initChild(child:ActorRef) = {}
   
+  def updateCache(key:K, newChild:ManagedChild):Unit
+  
   protected def createManagedChild(key:K):ManagedChild = {
     val c = new ManagedChild(key, createChild(key))
     context.watch(c.ref)
     initChild(c.ref)
     childrenUpdated()
+    updateCache(key, c)
     c    
   }
   
@@ -144,6 +147,7 @@ trait SingleRoutingParent extends RoutingParentBase[Unit] { pipe:ReceivePipeline
   
   def createChild():ActorRef
   def createChild(key:Unit):ActorRef = createChild()
+  def updateCache(key:Unit, c:ManagedChild) = _child = Some(c)
   
   def routeToChild(key:Unit, msg:Any):Unit = {
     val child = _child match {
@@ -185,11 +189,7 @@ trait RoutingParent[K] extends RoutingParentBase[K] { pipe:ReceivePipeline =>
   def nChildren = _children.size
   def removeChild(key:K) = _children = _children - key
   
-  override protected def createManagedChild(key:K):ManagedChild = {
-    val c = super.createManagedChild(key)
-    _children = _children + (key -> c)
-    c    
-  }
+  def updateCache(key:K, c:ManagedChild) = _children = _children + (key -> c)
   
   /**
    * This should be called inside the receive() clause for a message that is intended for a child.

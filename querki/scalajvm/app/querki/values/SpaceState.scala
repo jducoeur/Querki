@@ -273,7 +273,7 @@ case class SpaceState(
       case AsName(rawName) => {
         val name = NameUtils.canonicalize(rawName)
         byCanonicalName.get(name) match {
-          case found:T => Some(found)
+          case Some(found:T) => Some(found)
           case _ => None
         }
       }

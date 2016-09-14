@@ -15,6 +15,7 @@ import querki.data.ThingInfo
 import querki.display.{Gadget, QText, WrapperDiv}
 import querki.display.input.DeleteButton
 import querki.display.input.AutosizeFacade._
+import querki.time._
 
 import messages._
 
@@ -84,7 +85,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
   lazy val Client = interface[querki.client.Client]
   
   val cid = comment.id
-  val created = Moment(comment.createTime).calendar()
+  val created = displayTime(comment.createTime)
   
   def doRender() =
     div(

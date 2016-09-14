@@ -123,7 +123,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "querki-jsext" % "0.7",
     "org.querki" %%% "jquery-facade" % "1.0-RC6",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.7",
-    "io.github.widok" %%% "scala-js-momentjs" % "0.1.0",
+    "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
     "org.querki" %%% "jstree-facade" % "0.4"
   )).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).

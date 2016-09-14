@@ -10,6 +10,7 @@ import akka.persistence.query._
 import akka.stream.ActorMaterializer
 
 import models._
+import Thing.PropMap
 
 import querki.data.TID
 import querki.globals._
@@ -95,7 +96,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
   
   def toSummary(evt:Any, sequenceNr:Long, identities:Set[OID], thingNames:ThingNames)(implicit state:SpaceState):(EvtSummary, Set[OID], ThingNames) = 
   {
-    def fill(userRef:UserRef, thingIdOpt:Option[OID], f:String => EvtSummary):(EvtSummary, Set[OID], ThingNames) = {
+    def fill(userRef:UserRef, thingIds:Seq[OID], f:String => EvtSummary):(EvtSummary, Set[OID], ThingNames) = {
       val summary = f(userRef.identityIdOpt.map(_.toThingId.toString).getOrElse(""))
       
       val newIdentities = userRef.identityIdOpt match {
@@ -103,29 +104,34 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
         case None => identities
       }
       
-      val thingNameOpt = for {
-        thingId <- thingIdOpt
+      val namePairs = for {
+        thingId <- thingIds
         thing <- state.anything(thingId)
       }
-        yield thing.displayName
+        yield (thingId, thing.displayName)
         
-      val newThingNames = thingNameOpt.map(name => thingNames + (OID2TID(thingIdOpt.get) -> name)).getOrElse(thingNames)
+      val newThingNames = 
+        (thingNames /: namePairs) { (tn, pair) =>
+          val (id, name) = pair
+          tn + (OID2TID(id) -> name)
+        }
+
       (summary, newIdentities, newThingNames)
     }
     
     evt match {
       case BootSpace(dh, modTime) => (BootSummary(sequenceNr, "", modTime.toTimestamp), identities, thingNames)
       
-      case DHInitState(userRef, display) => fill(userRef, None, ImportSummary(sequenceNr, _, 0))
+      case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
       case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => 
-        fill(req, Some(thingId), CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId))
+        fill(req, dhProps.keys.toSeq :+ thingId, CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId))
       
       case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => 
-        fill(req, Some(thingId), ModifySummary(sequenceNr, _, modTime.toTimestamp, thingId, propChanges.keys.toSeq.map(OID2TID)))
+        fill(req, propChanges.keys.toSeq :+ thingId, ModifySummary(sequenceNr, _, modTime.toTimestamp, thingId, propChanges.keys.toSeq.map(OID2TID)))
       
       case DHDeleteThing(req, thingId, modTime) => 
-        fill(req, Some(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
+        fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
     }
   }
   

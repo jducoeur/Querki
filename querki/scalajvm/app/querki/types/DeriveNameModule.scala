@@ -77,42 +77,49 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
           }
           case _ => {
             implicit val s = evt.state
-            val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
-            val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(Core.NameType)).orElse(oldNameOpt)
-            // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
-            // Editor, we have to fill it back in from the existing Name in many cases:
-            def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
             
-    	      val newDisplayNameOpt = for (
-    	        newDisplayNameVal <- evt.newProps.get(querki.basic.MOIDs.DisplayNameOID);
+    	      def getDisplayName(props:PropMap):Option[String] = for {
+    	        newDisplayNameVal <- props.get(querki.basic.MOIDs.DisplayNameOID)
     	        name <- newDisplayNameVal.firstTyped(Basic.PlainTextType)
-    	          )
-    	        yield name.text;
-    	      
-    	      newDisplayNameOpt match {
-              // Only bother if we can get a non-empty Link Name out of this:
-    	        case Some(displayName) if (makeLegal(displayName).length > 0) => {
-    	          val flag = deriveFlag(evt)
-    	          flag match {
-    	            case DeriveInitiallyOID => {
-    	              if (existingNameOpt.isDefined && existingNameOpt.get.length() > 0)
-    	                evtWithExistingName
-    	              else
-    	                // Only derive the new Name iff it's currently empty
-    	                updateWithDerived(evt, displayName)
-    	            }
-    	            
-    	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
-    	            
-    	            case DeriveNeverOID => evtWithExistingName
-    	            
-    	            case _ => evtWithExistingName
-    	          }          
-    	        }
+    	      }
+    	        yield name.text
     	        
-    	        // If there's no Display Name, don't do anything
-    	        case _ => evtWithExistingName
-    	      }    
+    	      val newDisplayNameOpt = getDisplayName(evt.newProps)
+    	      if (newDisplayNameOpt.isEmpty || newDisplayNameOpt == evt.thingOpt.flatMap(t => getDisplayName(t.props))) {
+    	        // Nothing's changed, so leave it alone:
+    	        evt
+    	      } else {
+              val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
+              val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(Core.NameType)).orElse(oldNameOpt)
+              // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
+              // Editor, we have to fill it back in from the existing Name in many cases:
+              def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
+      	      
+      	      newDisplayNameOpt match {
+                // Only bother if we can get a non-empty Link Name out of this:
+      	        case Some(displayName) if (makeLegal(displayName).length > 0) => {
+      	          val flag = deriveFlag(evt)
+      	          flag match {
+      	            case DeriveInitiallyOID => {
+      	              if (existingNameOpt.isDefined && existingNameOpt.get.length() > 0)
+      	                evtWithExistingName
+      	              else
+      	                // Only derive the new Name iff it's currently empty
+      	                updateWithDerived(evt, displayName)
+      	            }
+      	            
+      	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
+      	            
+      	            case DeriveNeverOID => evtWithExistingName
+      	            
+      	            case _ => evtWithExistingName
+      	          }          
+      	        }
+      	        
+      	        // If there's no Display Name, don't do anything
+      	        case _ => evtWithExistingName
+      	      }    
+            }
           }
         }
       }
