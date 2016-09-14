@@ -54,7 +54,7 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   
   def requiresLogin(req:ClientRequest):Boolean = {
     val name = apiName(req.req)
-    apiRouters.get(name).map(_.requiresLogin).getOrElse(throw new Exception("requiresLogin got unknown API $name"))
+    apiRouters.get(name).map(_.requiresLogin).getOrElse(throw new Exception(s"requiresLogin got unknown API $name"))
   }
   
   def routeRequest[R](req:ClientRequest)(cb: PartialFunction[Any, Future[R]]):Future[R] = {

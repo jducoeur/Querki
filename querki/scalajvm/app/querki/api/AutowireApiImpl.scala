@@ -170,6 +170,9 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
   def payload = info.payload.get.asInstanceOf[SpacePayload]
   def state = payload.state
   def spaceRouter = payload.spaceRouter
+  // TBD: we have both this and rc.isOwner. I like this definition more, but it's not always available. 
+  // Hmm...
+  def isOwner = user.hasIdentity(state.owner)
   
   def withThing[R](thingId:TID)(f:Thing => R):R = {
     val oid = ThingId(thingId.underlying)

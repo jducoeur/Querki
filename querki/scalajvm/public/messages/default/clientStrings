@@ -18,6 +18,10 @@ pages : {
     pageTitle : "You've been invited to join $spaceName!"
   }
   
+  historySummary : {
+    pageTitle : "History Summary"
+  }
+  
   index : {
     pageTitle : "Your Spaces"
     ownSection : "Spaces You Own"

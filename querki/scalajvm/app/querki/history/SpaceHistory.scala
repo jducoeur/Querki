@@ -17,7 +17,7 @@ import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
-import querki.util._
+import querki.util.{QuerkiBootableActor, SingleRoutingParent, TimeoutChild}
 import querki.values.{SpaceState, SpaceVersion}
 import querki.spaces.SpacePure
 
@@ -26,8 +26,10 @@ import HistoryFunctions._
 /**
  * This is a very simplistic wrapper around SpaceHistory, so that the latter can only be in
  * memory when needed. It routes all messages to SpaceHistory.
+ * 
+ * This lives under SpaceRouter, as part of the standard troupe.
  */
-class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with SingleRoutingParent with ReceivePipeline {
+class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with ReceivePipeline with SingleRoutingParent {
   def createChild():ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id))
   
   def receive = {
@@ -40,7 +42,7 @@ class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with SingleRouting
  * of a Space, and provides access to it.
  */
 private [history] class SpaceHistory(e:Ecology, val id:OID) 
-  extends QuerkiBootableActor(e) with SpacePure with ModelPersistence with TimeoutChild with ReceivePipeline
+  extends QuerkiBootableActor(e) with SpacePure with ModelPersistence with ReceivePipeline with TimeoutChild
 {
   import SpaceHistory._
   

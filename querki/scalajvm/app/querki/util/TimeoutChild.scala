@@ -11,7 +11,8 @@ import querki.globals._
 
 /**
  * The child of a RoutingParent, which has a built-in inactivity timeout. Concrete classes must
- * also extend ReceivePipeline. Note that ReceivePipeline must be extended *after* PersistentActor!
+ * also extend ReceivePipeline. Note that ReceivePipeline must be extended *after* PersistentActor
+ * and *before* this trait!
  * 
  * Note that ClusterTimeoutChild is quite similar, but designed specifically to work with
  * ClusterSharding.

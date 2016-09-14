@@ -11,6 +11,7 @@ import querki.api.ClientRequest
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
 import querki.globals._
+import querki.history.SpaceHistory
 import querki.photos.PhotoUploadActor
 import querki.session.UserSpaceSessions
 import querki.session.messages._
@@ -44,29 +45,22 @@ private[spaces] class SpaceRouter(e:Ecology)
   
   lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
   
-  // The components of the troupe:
-  var conversations:ActorRef = null
-  var space:ActorRef = null
-  var sessions:ActorRef = null
-  var members:ActorRef = null
+  // The components of the troupe, which get immediately set up as soon as we start:
+  val space =
+    if (useNewPersist)
+      context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+    else
+      context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+  val conversations = 
+    if (useNewPersist)
+      context.actorOf(Conversations.conversationsManagerProps(self))
+    else
+      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
+  val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
+  val members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
+  val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId))
   
   var state:SpaceState = null
-
-  override def preStart() = {
-    space =
-      if (useNewPersist)
-        context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-      else
-        context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-    sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
-    conversations =
-      if (useNewPersist)
-        context.actorOf(Conversations.conversationsManagerProps(self))
-      else
-        context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
-    members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
-    super.preStart()
-  }
   
   def receive = LoggingReceive {
     
@@ -111,6 +105,9 @@ private[spaces] class SpaceRouter(e:Ecology)
       worker.forward(msg)
       sender ! worker
     }
+    
+    // Messages for the SpaceHistory:
+    case msg:SpaceHistory.HistoryMessage => history.forward(msg)
     
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)

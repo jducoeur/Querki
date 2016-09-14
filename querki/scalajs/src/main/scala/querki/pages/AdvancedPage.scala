@@ -19,6 +19,7 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "advance
   
   lazy val Apps = interface[querki.apps.Apps]
   lazy val Client = interface[querki.client.Client]
+  lazy val History = interface[querki.history.History]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   def archiveAfterConfirm(info:SpaceInfo) = {
@@ -82,6 +83,11 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "advance
                   StatusLine.showUntilChange("Reloaded")
                 }
               }
+            }),
+            
+            p("""Press this button to view the history of this Space"""),
+            new ButtonGadget(ButtonGadget.Info, "View History", id := "_historyButton") ({ () =>
+              History.historySummaryFactory.showPage()
             }),
               
             p("""Press this button to export this *entire* Space as XML. (NOTE: photographs are not exported.)
