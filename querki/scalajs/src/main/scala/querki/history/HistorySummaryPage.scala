@@ -5,7 +5,10 @@ import autowire._
 
 import org.widok.moment._
 
+import org.querki.jquery._
+
 import models.Kind
+import querki.display.Gadget
 import querki.globals._
 import querki.pages._
 import querki.time._
@@ -68,7 +71,17 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology)
     HistorySummary(evts, EvtContext(whoMap, thingNames)) = summary
     guts = 
       div(
-        h3(s"History of ${spaceInfo.displayName}"),
+        h3(s"History of ${spaceInfo.displayName} ",
+          Gadget(querkiButton("Done"), { e => 
+            $(e).click({ evt:JQueryEventObject => Pages.showSpacePage(spaceInfo) })
+          }),
+          
+          " ",
+          
+          Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
+            $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
+          })
+        ),
           
         p(s"""The most recent events are on top. Click on an event to see more information and options.""".stripMargin),
              
