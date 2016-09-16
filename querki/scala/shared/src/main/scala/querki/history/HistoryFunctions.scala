@@ -16,6 +16,9 @@ trait HistoryFunctions {
 }
 
 object HistoryFunctions {
+  
+  type HistoryVersion = Long
+  
   /**
    * The subtypes of EvtSummary represent summary descriptions of history events.
    */
@@ -35,11 +38,11 @@ object HistoryFunctions {
      */
     def time:Timestamp
   }
-  case class BootSummary(idx:Long, who:String, time:Timestamp) extends EvtSummary
-  case class ImportSummary(idx:Long, who:String, time:Timestamp) extends EvtSummary
-  case class CreateSummary(idx:Long, who:String, time:Timestamp, kind:Kind.Kind, id:TID, model:TID) extends EvtSummary
-  case class ModifySummary(idx:Long, who:String, time:Timestamp, id:TID, props:Seq[TID]) extends EvtSummary
-  case class DeleteSummary(idx:Long, who:String, time:Timestamp, id:TID) extends EvtSummary
+  case class BootSummary(idx:HistoryVersion, who:String, time:Timestamp) extends EvtSummary
+  case class ImportSummary(idx:HistoryVersion, who:String, time:Timestamp) extends EvtSummary
+  case class CreateSummary(idx:HistoryVersion, who:String, time:Timestamp, kind:Kind.Kind, id:TID, model:TID) extends EvtSummary
+  case class ModifySummary(idx:HistoryVersion, who:String, time:Timestamp, id:TID, props:Seq[TID]) extends EvtSummary
+  case class DeleteSummary(idx:HistoryVersion, who:String, time:Timestamp, id:TID) extends EvtSummary
   
   type IdentityMap = Map[String, IdentityInfo]
   type ThingNames = Map[TID, String]

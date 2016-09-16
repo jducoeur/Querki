@@ -19,6 +19,7 @@ import querki.globals._
 
 import querki.api._
 import querki.identity.{Identity, User}
+import querki.history.SpaceHistory._
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
@@ -340,7 +341,26 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       }
       
       try {
-        ApiInvocation.handleSessionRequest(req, mkParams(rc))
+        rc.rawParam("_historyVersion") match {
+          case Some(vStr) => {
+            // We're exploring history, which is a more complex problem.
+            // First, we only allow the Owner to play with this stuff:
+            if (!rc.isOwner)
+              throw new Exception(s"Only the Owner of a Space is currently allow to explore History!")
+            
+            val v = vStr.toLong
+            
+            // Fetch the state as of that point:
+            for {
+              CurrentState(state) <- spaceRouter.request(GetHistoryVersion(v))
+            }
+            {
+              val params = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
+              ApiInvocation.handleSessionRequest(req, params)
+            }
+          }
+          case None => ApiInvocation.handleSessionRequest(req, mkParams(rc))
+        }
       } catch {
         // Note that this only catches synchronous exceptions; asynchronous ones get
         // handled in AutowireApiImpl

@@ -13,6 +13,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val History = interface[querki.history.History]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -71,7 +72,12 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   }
   
   def makeCall(req:Request, ajax:PlayAjax):Future[String] = {
-    val metadata = RequestMetadata(DataAccess.querkiVersion, PageManager.currentPageParams)
+    val params =
+      if (History.viewingHistory)
+        PageManager.currentPageParams + ("_historyVersion" -> History.currentHistoryVersion.get.toString)
+      else
+        PageManager.currentPageParams
+    val metadata = RequestMetadata(DataAccess.querkiVersion, params)
     interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
   }
   

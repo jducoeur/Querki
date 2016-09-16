@@ -1,5 +1,7 @@
 package querki.history
 
+import scala.scalajs.js
+
 import scalatags.JsDom.all._
 import autowire._
 
@@ -8,7 +10,7 @@ import org.widok.moment._
 import org.querki.jquery._
 
 import models.Kind
-import querki.display.Gadget
+import querki.display.{ButtonGadget, Gadget, SimpleGadget}
 import querki.globals._
 import querki.pages._
 import querki.time._
@@ -20,6 +22,7 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology)
   extends Page(e, "historySummary") with EcologyMember with querki.util.ScalatagUtils
 {
   lazy val Client = interface[querki.client.Client]
+  lazy val History = interface[History]
   
   lazy val spaceInfo = DataAccess.space.get
   
@@ -56,14 +59,39 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology)
     
     val whoName = whoMap.get(info.who).map(_.name).getOrElse("")
     
-    tr(
+    new SimpleGadget(tr(
       data("idx") := info.idx,
       cls:=info.colorClass,
       td(displayTime(info.time)),
       td(whoName),
       td(raw(info.title)),
       td(info.details)
-    )
+    ), { e =>
+      $(e).click { evt:JQueryEventObject =>
+        val isOpen = $(e).data("isopen").map(_.asInstanceOf[Boolean]).getOrElse(false)
+        if (isOpen) {
+          val details = $(e).next()
+          details.hide("fast", { () => details.remove() })
+          $(e).data("isopen", false)
+        } else {
+          val sib = 
+            tr(
+              cls:=info.colorClass,
+              display:="none",
+              td(
+                colspan:=4,
+                new ButtonGadget(ButtonGadget.Info, "View Space") ({ () =>
+                  History.setHistoryVersion(info.idx)
+                  Pages.showSpacePage(spaceInfo)
+                })
+              )
+            ).render
+          $(e).after(sib)
+          $(sib).show("fast")
+          $(e).data("isopen", true)
+        }
+      }
+    })
   }
   
   def pageContent = for {

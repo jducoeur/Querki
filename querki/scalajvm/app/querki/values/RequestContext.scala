@@ -64,4 +64,12 @@ case class RequestContext(
       }
     }
   }
+  
+  def rawParam(name:String):Option[String] = {
+    for {
+      metadata <- metadataOpt
+      v <- metadata.pageParams.get(name)
+    }
+      yield v
+  }
 }

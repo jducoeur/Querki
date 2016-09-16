@@ -16,6 +16,7 @@ import Thing.PropMap
 
 import querki.data.TID
 import querki.globals._
+import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.SpaceMessagePersistence._
@@ -23,6 +24,7 @@ import querki.time._
 import querki.util.{QuerkiActor, SingleRoutingParent, TimeoutChild}
 import querki.values.{SpaceState, SpaceVersion}
 import querki.spaces.SpacePure
+import querki.spaces.messages.CurrentState
 
 import HistoryFunctions._
 
@@ -47,8 +49,6 @@ class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with ReceivePipeli
 private [history] class SpaceHistory(e:Ecology, val id:OID) 
   extends QuerkiActor(e) with SpacePure with ModelPersistence with ReceivePipeline with TimeoutChild
 {
-  import SpaceHistory._
-  
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Core = interface[querki.core.Core]
@@ -210,6 +210,18 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
         }
       }
     }
+    
+    case GetHistoryVersion(v) => {
+      readCurrentHistory() map { _ =>
+        if (history.size < v) 
+          throw new Exception(s"Space $id got a request for unknown History Version $v!")
+        
+        // Adjust for the 1-indexed version numbers
+        val idx = (v - 1).toInt
+        val record = history(idx)
+        sender ! CurrentState(record.state)
+      }
+    }
   }
 }
 
@@ -221,4 +233,9 @@ object SpaceHistory {
    * Fetches the HistorySummary (as described in the public API).
    */
   case class GetHistorySummary() extends HistoryMessage
+  
+  /**
+   * Fetch a specific version of the history of this Space. Returns a CurrentState().
+   */
+  case class GetHistoryVersion(v:HistoryVersion) extends HistoryMessage
 }
