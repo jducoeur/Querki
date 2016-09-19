@@ -14,7 +14,7 @@ import querki.globals._
 import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
-import querki.display.{Gadget, WrapperDiv}
+import querki.display.{ButtonGadget, Gadget, SmallButtonGadget, WrapperDiv}
 import querki.display.rx.{GadgetRef, RxDiv}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
@@ -37,6 +37,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Gadgets = interface[querki.display.Gadgets]
+  private lazy val History = interface[querki.history.History]
   lazy val Localization = interface[querki.local.Localization]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[Pages]
@@ -123,6 +124,19 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
         div(cls:="querki-content col-md-12",
           // Placeholder for "flash" content in Play-speak (alert messages):
           flashDiv,
+          
+          History.currentHistoryTime map { time =>
+            div(
+              id := "_historyAlertMsg",
+              classes(Seq("alert alert-warning _noPrint")),
+              role:="alert",
+              s"Viewing this Space as it was $time. Some functions are disabled. ",
+              new SmallButtonGadget(ButtonGadget.Primary, "Return to current") ({() =>
+                History.clearHistoryVersion()
+                History.historySummaryFactory.showPage()
+              })
+            )
+          },
           
           // The link to the Space:
           DataAccess.space match {

@@ -81,7 +81,7 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology)
               td(
                 colspan:=4,
                 new ButtonGadget(ButtonGadget.Info, "View Space") ({ () =>
-                  History.setHistoryVersion(info.idx)
+                  History.setHistoryVersion(info.idx, info.time)
                   Pages.showSpacePage(spaceInfo)
                 })
               )

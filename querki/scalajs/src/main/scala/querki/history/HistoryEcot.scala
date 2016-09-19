@@ -5,6 +5,8 @@ import autowire.Core.Request
 import querki.globals._
 import querki.history.HistoryFunctions._
 import querki.pages.{Page, PageFactory, ParamMap}
+import querki.time.displayTime
+import querki.time.Common.Timestamp
 
 class HistoryEcot(e:Ecology) extends ClientEcot(e) with History {
   def implements = Set(classOf[History])
@@ -17,7 +19,18 @@ class HistoryEcot(e:Ecology) extends ClientEcot(e) with History {
    * If we are in View History mode, which version are we viewing?
    */
   var currentHistoryVersion:Option[HistoryVersion] = None
-  def setHistoryVersion(v:HistoryVersion) = currentHistoryVersion = Some(v)
+  var _currentHistoryTime:Option[Timestamp] = None
+  def currentHistoryTime:Option[String] = {
+    _currentHistoryTime.map(displayTime(_))
+  }
+  def setHistoryVersion(v:HistoryVersion, time:Timestamp) = {
+    currentHistoryVersion = Some(v)
+    _currentHistoryTime = Some(time)
+  }
+  def clearHistoryVersion() = {
+    currentHistoryVersion = None
+    _currentHistoryTime = None
+  }
   def viewingHistory = currentHistoryVersion.isDefined
   
   override def postInit() = {
