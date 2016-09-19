@@ -19,6 +19,9 @@ import querki.display.input.{InputGadget, ManifestItem, MarcoPoloInput, TagSetKi
 class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
+  lazy val History = interface[querki.history.History]
+  
+  def viewingHistory = History.viewingHistory
   
   val initialThingId = TID(params.requiredParam("thingId"))
   var chosenThingId:Option[TID] = None
@@ -112,7 +115,8 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
           div(cls:="col-md-1 _exploreSurround", b("]]"))
         ),
         
-        p(ReifyButton),
+        if (!viewingHistory)
+          p(ReifyButton),
         
         p(b("Results:")),
         
@@ -120,7 +124,8 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
         
         results,
         
-        p(SaveButton),
+        if (!viewingHistory)
+          p(SaveButton),
         
         p(new ButtonGadget(ButtonGadget.Primary, "Done")({ () => 
           Pages.thingPageFactory.showPage(initialThingId)

@@ -79,6 +79,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val History = interface[querki.history.History]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   
@@ -86,6 +87,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   val std = page.std
   
   val modelOpt = DataAccess.mainModel
+  
+  def viewingHistory = History.viewingHistory
   
   lazy val topEditButton =
     new QLButtonGadget(
@@ -104,54 +107,57 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         
       h1(cls:="_defaultTitle", 
         raw(thingName), " ",
-        if (thing.isModel) {
-          MSeq(
-            if (thing.isEditable) {
-              iconButton("edit")(
-                title:=s"Design $thingName",
-                id:="_thingEdit",
-                href:=Editing.modelDesignerFactory.pageUrl(thing))
-            },
-            if (thing.isInstantiatable) {
-              iconButton("plus")(
-                title:=s"Create a $thingName",
-                href:=Pages.createAndEditFactory.pageUrl(thing))
-            },
-            if (thing.isEditable || thing.isInstantiatable) {
-              querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
-                title:=s"Edit all instances of $thingName",
-                href:=Editing.editInstancesFactory.pageUrl(thing))
-            }
-          )
-        } else {
-          // Not a Model
-          MSeq(
-            if (thing.isEditable) {
-              if (thing.isTag) {
+        if (!viewingHistory) {
+          // The "editing" buttons:
+          if (thing.isModel) {
+            MSeq(
+              if (thing.isEditable) {
                 iconButton("edit")(
-                  title:=s"Make $thingName into a real Thing",
-                  href:=
-                    Pages.createAndEditFactory.pageUrl(
-                      modelOpt.getOrElse(std.basic.simpleThing),
-                      (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
-                      "reifyTag" -> "true"))
-              } else if (thing.kind == Kind.Property || thing.kind == Kind.Space) {
-      			    iconButton("edit")(
-      			      title:=s"Edit $thingName",
-      			      href:=Editing.advancedEditorFactory.pageUrl(thing))
-              } else {
-                topEditButton
+                  title:=s"Design $thingName",
+                  id:="_thingEdit",
+                  href:=Editing.modelDesignerFactory.pageUrl(thing))
+              },
+              if (thing.isInstantiatable) {
+                iconButton("plus")(
+                  title:=s"Create a $thingName",
+                  href:=Pages.createAndEditFactory.pageUrl(thing))
+              },
+              if (thing.isEditable || thing.isInstantiatable) {
+                querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
+                  title:=s"Edit all instances of $thingName",
+                  href:=Editing.editInstancesFactory.pageUrl(thing))
               }
-            },
-            modelOpt match {
-              case Some(model) if (model.isInstantiatable) => {
-                querkiButton(MSeq(icon("plus-sign"), "..."))(
-                  title:=s"Create another ${model.displayName}",
-                  href:=Pages.createAndEditFactory.pageUrl(model))
+            )
+          } else {
+            // Not a Model
+            MSeq(
+              if (thing.isEditable) {
+                if (thing.isTag) {
+                  iconButton("edit")(
+                    title:=s"Make $thingName into a real Thing",
+                    href:=
+                      Pages.createAndEditFactory.pageUrl(
+                        modelOpt.getOrElse(std.basic.simpleThing),
+                        (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
+                        "reifyTag" -> "true"))
+                } else if (thing.kind == Kind.Property || thing.kind == Kind.Space) {
+        			    iconButton("edit")(
+        			      title:=s"Edit $thingName",
+        			      href:=Editing.advancedEditorFactory.pageUrl(thing))
+                } else {
+                  topEditButton
+                }
+              },
+              modelOpt match {
+                case Some(model) if (model.isInstantiatable) => {
+                  querkiButton(MSeq(icon("plus-sign"), "..."))(
+                    title:=s"Create another ${model.displayName}",
+                    href:=Pages.createAndEditFactory.pageUrl(model))
+                }
+                case _ => {}
               }
-              case _ => {}
-            }
-          )
+            )
+          }
         },
         Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
           $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
