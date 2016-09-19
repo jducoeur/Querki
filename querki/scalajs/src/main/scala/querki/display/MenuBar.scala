@@ -31,6 +31,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val History = interface[querki.history.History]
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val Print = interface[querki.print.Print]
@@ -91,7 +92,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
     onClick:Option[() => Unit] = None,
     newWindow:Boolean = false,
     requiresExplore:Boolean = false,
-    complexity:Complexity = UnspecifiedComplexity) extends Navigable
+    complexity:Complexity = UnspecifiedComplexity,
+    allowedDuringHistory:Boolean = false) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -110,7 +112,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def alwaysLinks:Seq[Navigable] = {
     Seq(
-      NavLink("Refresh", id="_refreshMenuItem", onClick = Some({ () => PageManager.reload() }))
+      NavLink("Refresh", id="_refreshMenuItem", onClick = Some({ () => PageManager.reload() }), allowedDuringHistory = true)
     )
   }
   
@@ -134,8 +136,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
             complexity = Standard,
             onClick = Some({ () => DataModel.createAThing() }),
             enabled = space.permissions.contains(std.security.canCreatePerm)),
-          NavLink("Show all Things", thing("All-Things"), complexity = Standard),
-          NavLink("Show all Properties", thing("All-Properties"), complexity = Standard),
+          NavLink("Show all Things", thing("All-Things"), complexity = Standard, allowedDuringHistory = true),
+          NavLink("Show all Properties", thing("All-Properties"), complexity = Standard, allowedDuringHistory = true),
           NavLink("Sharing", Pages.sharingFactory.pageUrl(), id = "_sharingButton", enabled = DataAccess.request.isOwner)
         )
       else
@@ -165,14 +167,19 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
               requiresExplore = true,
               complexity = Standard)
         },
-        NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
-        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing), id = "_openAdvancedItem", requiresExplore = true, complexity = Standard),
+        NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true, complexity = Standard, allowedDuringHistory = true),
+        NavLink("Advanced...", 
+            Pages.advancedFactory.pageUrl(thing), 
+            id = "_openAdvancedItem", 
+            requiresExplore = true, 
+            complexity = Standard, 
+            allowedDuringHistory = true),
         NavLink(s"Security for ${thing.displayName}", Pages.securityFactory.pageUrl(thing), requiresExplore = true,
             enabled = DataAccess.request.isOwner,
             id = "_securityItem",
             complexity = Advanced),
-        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true, complexity = Standard),
-        NavLink("Print...", onClick = Some({ () => Print.print(thing)})),
+        NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true, complexity = Standard, allowedDuringHistory = true),
+        NavLink("Print...", onClick = Some({ () => Print.print(thing)}), allowedDuringHistory = true),
         NavLink(
           "Delete " + thing.displayName, 
           enabled = thing.isDeleteable, 
@@ -261,8 +268,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   
   def displayNavLink(link:NavLink) = {
     link match {
-      case NavLink(display, url, idStr, enabled, onClick, newWindow, hidden, complexity) => {
-        if (enabled) {
+      case NavLink(display, url, idStr, enabled, onClick, newWindow, hidden, complexity, allowedDuringHistory) => {
+        if (enabled && (allowedDuringHistory || !History.viewingHistory)) {
           li(
             a(
               if (idStr.length > 0) id:=idStr,

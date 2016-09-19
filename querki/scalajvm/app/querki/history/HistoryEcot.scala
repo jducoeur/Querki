@@ -11,7 +11,7 @@ class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History {
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
-    ApiRegistry.registerApiImplFor[HistoryFunctions, HistoryFunctionsImpl](SpaceOps.spaceRegion)
+    ApiRegistry.registerApiImplFor[HistoryFunctions, HistoryFunctionsImpl](SpaceOps.spaceRegion, allowedDuringHistory = true)
   }
   
   def viewingHistoryVersion(rc:RequestContext):Option[HistoryVersion] = {
