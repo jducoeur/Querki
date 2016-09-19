@@ -57,6 +57,8 @@ trait ThingFunctions {
   
   /**
    * Delete the specified Thing.
+   * 
+   * TODO: this doesn't belong here! This really belongs in EditFunctions, or something like that.
    */
   def deleteThing(thingId:TID):Future[Unit]
   

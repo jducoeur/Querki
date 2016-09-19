@@ -18,12 +18,15 @@ import querki.streaming._
  */
 class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
   
+  lazy val History = interface[querki.history.History]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val actorSystem = SystemManagement.actorSystem
   
   implicit val timeout = defaultTimeout
   
   case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
+  
+  case class HandlerInfo(constr:Constructor[AutowireApiImpl], allowedDuringHistory:Boolean)
   
   /**
    * Turn this config flag on to trace the path of API calls through some of the system.
@@ -35,20 +38,20 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   /**
    * Map from API classes to the constructors for their handlers.
    */
-  var sessionHandlers = Map.empty[String, Constructor[AutowireApiImpl]]
+  var sessionHandlers = Map.empty[String, HandlerInfo]
   var apiRouters = Map.empty[String, RouterInfo]
   
   // NOTE: we explicitly presume that the function is simply named under the API class. Is this always true?
   def apiName(req:autowire.Core.Request[String]) = req.path.dropRight(1).mkString(".")
 
-  def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
+  def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean, allowedDuringHistory:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
     val api = apiTag.runtimeClass
     val apiName = api.getName
     val impl = implTag.runtimeClass
     // This asInstanceOf is sad, but for some reason it seems to be losing the constructed type otherwise.
     // (Some odd erasure behavior?)
     val constr = impl.getConstructor(classOf[AutowireParams], classOf[Ecology]).asInstanceOf[Constructor[AutowireApiImpl]]
-    sessionHandlers += (apiName -> constr)
+    sessionHandlers += (apiName -> HandlerInfo(constr, allowedDuringHistory))
     apiRouters += (apiName -> RouterInfo(router, requiresLogin))
   }
   
@@ -91,9 +94,14 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   
   def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams, completeCb: Any => Unit = { dummy => }) = {
     sessionHandlers.get(apiName(req)) match {
-      case Some(constr) => {
+      case Some(info) => {
         apiTrace(s"  Handling request for ${req.path.mkString(".")}(${req.args.values.mkString(", ")})")
-        constr.newInstance(params, ecology).handleRequest(req, completeCb)
+        // Sanity-check that this call is allowed now.
+        // TBD: this is kind of ugly here -- it's mixing semantic levels. In principle, this should be
+        // refactored somewhere.
+        if (History.isViewingHistory(params.rc) && !info.allowedDuringHistory)
+          throw new Exception(s"Trying to call interface $info during History!")
+        info.constr.newInstance(params, ecology).handleRequest(req, completeCb)
       }
       case None => throw new Exception(s"handleSessionRequest got request for unknown API ${apiName(req)}")
     }

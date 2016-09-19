@@ -72,13 +72,17 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   }
   
   def makeCall(req:Request, ajax:PlayAjax):Future[String] = {
-    val params =
-      if (History.viewingHistory)
-        PageManager.currentPageParams + ("_historyVersion" -> History.currentHistoryVersion.get.toString)
-      else
-        PageManager.currentPageParams
-    val metadata = RequestMetadata(DataAccess.querkiVersion, params)
-    interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
+    if (History.viewingHistory && !History.isLegalDuringHistory(req))
+      Future.failed(new Exception("You're not allowed to do that while viewing History"))
+    else {
+      val params =
+        if (History.viewingHistory)
+          PageManager.currentPageParams + ("_historyVersion" -> History.currentHistoryVersion.get.toString)
+        else
+          PageManager.currentPageParams
+      val metadata = RequestMetadata(DataAccess.querkiVersion, params)
+      interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
+    }
   }
   
   override def doCall(req: Request): Future[String] = {

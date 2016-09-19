@@ -1,5 +1,7 @@
 package querki
 
+import autowire.Core.Request
+
 import querki.ecology._
 import querki.globals._
 import querki.history.HistoryFunctions._
@@ -20,5 +22,11 @@ package object history {
     def currentHistoryVersion:Option[HistoryVersion]
     
     def setHistoryVersion(v:HistoryVersion):Unit
+    
+    /**
+     * Returns true iff the specified Request may be performed while viewing a previous
+     * Version. Most operations are *not* legal!
+     */
+    def isLegalDuringHistory(req:Request[String]):Boolean
   }
 }

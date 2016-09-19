@@ -64,7 +64,7 @@ package object api {
      *   sanity. It says nothing about *who* the invoker is, merely that this API makes no sense if you
      *   aren't logged in. This defaults to true; you must set it to false iff this API is legal *without* login.
      */
-    def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean = true)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL])
+    def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean = true, allowedDuringHistory:Boolean = false)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL])
   }
   
   /**

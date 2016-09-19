@@ -49,7 +49,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search with querki.core.M
   
   override def postInit() = {
     // Search does not require login:
-    ApiRegistry.registerApiImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false)
+    ApiRegistry.registerApiImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false, true)
   }
   
   val SearchTag = "Search"

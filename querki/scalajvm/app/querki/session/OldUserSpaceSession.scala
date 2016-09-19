@@ -44,9 +44,10 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   implicit val ecology = e
   
   lazy val AccessControl = interface[querki.security.AccessControl]
-  lazy val Basic = interface[querki.basic.Basic]
-  lazy val Person = interface[querki.identity.Person]
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
+  lazy val Basic = interface[querki.basic.Basic]
+  lazy val History = interface[querki.history.History]
+  lazy val Person = interface[querki.identity.Person]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -341,14 +342,12 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       }
       
       try {
-        rc.rawParam("_historyVersion") match {
-          case Some(vStr) => {
+        History.viewingHistoryVersion(rc) match {
+          case Some(v) => {
             // We're exploring history, which is a more complex problem.
             // First, we only allow the Owner to play with this stuff:
             if (!rc.isOwner)
               throw new Exception(s"Only the Owner of a Space is currently allow to explore History!")
-            
-            val v = vStr.toLong
             
             // Fetch the state as of that point:
             for {
