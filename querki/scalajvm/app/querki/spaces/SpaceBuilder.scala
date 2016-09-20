@@ -17,6 +17,16 @@ import querki.values.{ElemValue, RequestContext, QValue}
 /**
  * Mix-in trait for building a new Space from a SpaceState that describes the desired outcome.
  * 
+ * TODO: this should be rewritten to be smarter for the new Akka Persistence world. We can make
+ * this *vastly* more efficient by:
+ * 
+ * a) Adding the ability to request an entire block of OIDs at a shot.
+ * b) In one operation, requesting a block of OIDs equal to the number of Things in this Space.
+ * c) Do the entire ID mapping and rebuilding operation at one shot.
+ * d) Assigning the entire new Space as a single BootSpace operation.
+ * 
+ * That would take just a couple of roundtrips, instead of hundreds-to-thousands.
+ * 
  * @author jducoeur
  */
 trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
@@ -42,6 +52,15 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   
   lazy val LinkType = Core.LinkType
   
+  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
+  
+  def startSpaceActor(spaceId:OID):ActorRef = {
+    if (useNewPersist)
+      context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
+    else
+      context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
+  }
+  
   /**
    * The importers start by building a faux SpaceState, representing the data to import. Now, we
    * actually build up a real Space from that. The returned Future will complete once the new
@@ -54,7 +73,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
     setMsg(createMsg)
     for {
       // First, we create the new Space:
-      info @ SpaceInfo(spaceId, canon, display, ownerHandle) <- SpaceOps.spaceManager.request(CreateSpace(user, name))
+      info @ SpaceInfo(spaceId, canon, display, ownerHandle) <- SpaceOps.spaceManager.request(CreateSpace(user, name, StatusInitializing))
       // IMPORTANT: we are creating a *local* version of the Space Actor, under the aegis of this
       // request, for purposes of this setup process. Afterwards, we'll shut this Actor down and hand
       // off to more normal machinery.
@@ -62,7 +81,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
       // something goes wrong? Keep in mind that the process is wildly async, so we can't just do
       // try/catch.
       dummyMsg = setMsg(buildingMsg)
-      spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
+      spaceActor = startSpaceActor(spaceId)
       // Create all of the Models and Instances, so we have all their OIDs in the map.
       dummyMsg2 = {
         setMsg(thingsMsg)
@@ -81,8 +100,10 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
       dummyMsg5 = setMsg(valuesMsg)
       pWithValues <- setPropValues(pWithProps, imp.things.values.toSeq)
       dummy2 <- setSpaceProps(pWithValues)
-      // Finally, once it's all built, shut down this temp Actor and let the real systems take over:
+      // Finally, once it's all built, shut down this temp Actor:
       dummy3 = context.stop(spaceActor)
+      // And tell the SpaceManager that this Space is now ready to be treated normally:
+      _ <- SpaceOps.spaceManager.requestFor[StatusChanged.type](ChangeSpaceStatus(spaceId, StatusNormal))
     }
       yield NewSpaceInfo(info, pWithValues.idMap)
   }

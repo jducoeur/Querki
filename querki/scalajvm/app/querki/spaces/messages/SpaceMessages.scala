@@ -11,6 +11,7 @@ import models.{AsOID, OID, ThingId, UnknownOID}
 import querki.conversations.messages.ConversationMessage
 import querki.identity.{IdentityId, User}
 import querki.session.messages.SessionMessage
+import querki.spaces.{SpaceStatusCode, StatusNormal}
 import querki.values.{RequestContext, SpaceState}
 import querki.util.PublicException
 
@@ -32,11 +33,18 @@ case class SpaceCount(count:Long)
 case class GetSpacesStatus(val requester:User) extends SpaceMgrMsg
 case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
 
-// This responds eventually with a ThingFound:
-case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg
+/**
+ * Builds a new Space with the given name. Responds with a ThingFound once the Space is ready to
+ * interact with.
+ * 
+ * @param initialStatus The status that the Space will be started with. If this is anything *other*
+ * than StatusNormal, the Space will be shut down immediately after creation, so that the caller
+ * can deal with post-creation operations.
+ */
+case class CreateSpace(requester:User, name:String, initialStatus:SpaceStatusCode = StatusNormal) extends SpaceMgrMsg
 
-case class ArchiveSpace(spaceId:OID) extends SpaceMgrMsg
-case object Archived
+case class ChangeSpaceStatus(spaceId:OID, newStatus:SpaceStatusCode) extends SpaceMgrMsg
+case object StatusChanged
 
 /**
  * The base class for message that get routed to a Space.
@@ -102,6 +110,12 @@ case class SpacePluginMsg(req:User, space:OID, payload:Any) extends SpaceMessage
  */
 case class BeginProcessingPhoto(req:User, space:OID, mimeType:Option[String]) extends SpaceMessage(req, space) 
 case object ImageComplete
+
+/**
+ * Tells this Space to pro-actively close itself.
+ */
+case class ShutdownSpace(req:User, space:OID) extends SpaceMessage(req, space)
+case object ShutdownAck
 
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"

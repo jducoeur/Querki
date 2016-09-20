@@ -82,7 +82,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
       }
     }
 
-    case req @ CreateSpace(requester, display) => {
+    case req @ CreateSpace(requester, display, initialStatus) => {
       Tryer 
         { checkLegalSpaceCreation(requester,display) } 
         { unit =>
@@ -94,7 +94,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
           }
           
           val canon = NameUtils.canonicalize(display)
-          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display)) foreach {
+          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display, initialStatus)) foreach {
             case err:ThingError => sender ! err
             // TODO: need to send the InitState message to the newly-create Space, to boot it up; don't send the
             // SpaceInfo response until that returns a ThingFound!
@@ -104,7 +104,18 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
                 // bootstrapping it:
                 SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
                   // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
-                  case ThingFound(_, _) => sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+                  case ThingFound(_, _) => {
+                    // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
+                    // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
+                    val req = if (initialStatus != StatusNormal) {
+                      SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
+                    } else {
+                      RequestM.successful(ShutdownAck)
+                    }
+                    req.map { _ =>
+                      sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+                    }
+                  }
                   case ex:ThingError => sender ! ex
                 }
               } else
@@ -117,7 +128,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
     }
     
     case req:GetSpaceByName => persister.forward(req)
-    case req:ArchiveSpace => persister.forward(req)
+    case req:ChangeSpaceStatus => persister.forward(req)
   }
   
   // Any checks we can make without needing to go to the DB should go here. Note that we

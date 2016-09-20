@@ -12,6 +12,9 @@ import querki.globals._
  */
 case object KillMe
 
+/**
+ * Allows an external system to tell a child to shut itself down.
+ */
 case object Shutdown
 
 case object Reload

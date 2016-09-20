@@ -53,6 +53,11 @@ import PersistMessages._
  * might be a mid-level Actor between the SpaceManager and Space/SpacePersister, which
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
+ * 
+ * TODO: This class should have guards against loading a Space that isn't in the correct State.
+ * Normally, you should only be able to load a Space with StatusNormal. If it *isn't* in
+ * StatusNormal, you shouldn't be able to load it through the "back door" by using its OID,
+ * which is currently possible! (QI.7w4g7xl)
  */
 private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember 
   with Requester with SpaceLoader with ModelTypeDefiner 

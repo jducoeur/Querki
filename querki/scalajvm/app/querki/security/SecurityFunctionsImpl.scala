@@ -7,6 +7,7 @@ import querki.api._
 import querki.data._
 import querki.globals._
 import querki.identity.InvitationResult
+import querki.spaces._
 import querki.spaces.messages._
 
 import SecurityFunctions._
@@ -90,8 +91,8 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)
       throw new NotAllowedException()
     
-    SpaceOps.spaceManager.request(ArchiveSpace(state.id)) map {
-      case Archived => {
+    SpaceOps.spaceManager.request(ChangeSpaceStatus(state.id, StatusArchived)) map {
+      case StatusChanged => {
         // Have the troupe self-destruct on the way out, since this Space is no longer valid:
         spaceRouter ! querki.util.Shutdown
         true

@@ -97,7 +97,7 @@ private [spaces] object PersistMessages {
    * 
    * This will return either a Changed(), or ThingError.
    */
-  case class CreateSpacePersist(ownerId:OID, userMaxSpaces:Int, name:String, display:String)
+  case class CreateSpacePersist(ownerId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode)
   
   /**
    * Command to fetch a Space by its path. OwnerId should be an Identity.

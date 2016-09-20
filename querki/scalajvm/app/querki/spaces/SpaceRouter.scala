@@ -109,6 +109,11 @@ private[spaces] class SpaceRouter(e:Ecology)
     // Messages for the SpaceHistory:
     case msg:SpaceHistory.HistoryMessage => history.forward(msg)
     
+    case msg:ShutdownSpace => {
+      sender ! ShutdownAck
+      self ! querki.util.Shutdown
+    }
+    
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     // FALLBACK -- NOTHING SHOULD GO BELOW HERE:

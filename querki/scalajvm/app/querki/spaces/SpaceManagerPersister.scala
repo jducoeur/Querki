@@ -54,10 +54,6 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   
-  type SpaceStatusCode = Int
-  final val StatusNormal:SpaceStatusCode = 0
-  final val StatusArchived:SpaceStatusCode = 1
-  
   // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
   // fetch Identity.id, and ThingId that if we don't find a handle:
   private val parseSpaceDetails =
@@ -100,7 +96,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     
     // =========================================
     
-    case CreateSpacePersist(owner, userMaxSpaces, name, display) => {
+    case CreateSpacePersist(owner, userMaxSpaces, name, display, initialStatus) => {
       try {
         QDB(System) { implicit conn =>
           val numWithName = SQL("""
@@ -153,10 +149,10 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           QDB(System) { implicit conn =>
             SQL("""
                 INSERT INTO Spaces
-                (id, shard, name, display, owner, size) VALUES
-                ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
+                (id, shard, name, display, owner, size, status) VALUES
+                ({sid}, {shard}, {name}, {display}, {ownerId}, 0, {status})
                 """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
-                        "display" -> display, "ownerId" -> owner.raw).executeUpdate()
+                        "display" -> display, "ownerId" -> owner.raw, "status" -> initialStatus.underlying).executeUpdate()
           }
           QDB(User) { implicit conn =>
             // We need to evolve the Space before we try to create anything in it:
@@ -199,15 +195,15 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
       sender ! SpaceCount(result)
     }
     
-    case ArchiveSpace(spaceId) => {
+    case ChangeSpaceStatus(spaceId, newStatus) => {
       QDB(System) { implicit conn =>
         SQL("""
           UPDATE Spaces
-             SET status = 1
+             SET status = {status}
            WHERE id = {spaceId}
-        """).on("spaceId" -> spaceId.raw).executeUpdate()
+        """).on("spaceId" -> spaceId.raw, "status" -> newStatus.underlying).executeUpdate()
       }
-      sender ! Archived
+      sender ! StatusChanged
     }
   }
 }

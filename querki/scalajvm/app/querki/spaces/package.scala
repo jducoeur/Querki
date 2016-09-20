@@ -19,6 +19,24 @@ import querki.util.{Aggregator, Sequencer}
 import querki.values.{QValue, SpaceState, StateCacheKey}
 
 package object spaces {
+  
+  /**
+   * Represents the states that a given Space can be in.
+   */
+  case class SpaceStatusCode(val underlying:Int) extends AnyVal
+  /**
+   * Normal status: this Space is alive, visible and functioning.
+   */
+  final val StatusNormal = SpaceStatusCode(0)
+  /**
+   * This Space has been Archived, and can not be used.
+   */
+  final val StatusArchived = SpaceStatusCode(1)
+  /**
+   * This Space is currently being built, and should not be loaded conventionally.
+   */
+  final val StatusInitializing = SpaceStatusCode(2)
+  
   // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
   trait UnresolvedPropValue
 
