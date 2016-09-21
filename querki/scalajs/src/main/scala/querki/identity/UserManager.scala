@@ -11,6 +11,7 @@ import querki.globals._
 import querki.data.UserInfo
 import querki.display._
 import querki.display.rx._
+import querki.pages.Page
 
 class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
@@ -27,8 +28,8 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def name = _user.map(_.mainIdentity.name).getOrElse("Not logged in")
   
-  def login:Future[UserInfo] = {
-    val loginPromise = Promise[UserInfo]
+  def login:Future[Page] = {
+    val loginPromise = Promise[Page]
     
     // The order of the logic here is a tad convoluted, because it's a bit recursive: we want to
     // allow Enter, in the passwordInput, which is inside the Dialog, to *close* that Dialog.
@@ -43,10 +44,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
           loginPromise.failure(new Exception("Wasn't a legal login"))
         } else {
           loginDialog.done()
-          val info = read[UserInfo](result)
-          _user = Some(info)
-          loginPromise.success(info)
-          PageManager.reload()
+          loginPromise.completeWith(PageManager.reload())
         }
       }      
     }

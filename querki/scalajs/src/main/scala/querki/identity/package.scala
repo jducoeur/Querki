@@ -1,8 +1,8 @@
 package querki
 
 import querki.globals._
-
 import querki.data.UserInfo
+import querki.pages.Page
 
 package object identity {
   trait UserAccess extends EcologyInterface {
@@ -12,6 +12,6 @@ package object identity {
     
     def name:String
     
-    def login():Future[UserInfo]
+    def login():Future[Page]
   }
 }
