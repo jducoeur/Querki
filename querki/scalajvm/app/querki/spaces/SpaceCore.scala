@@ -152,6 +152,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     state
   }
   
+  def updateAfter(f: SpaceState => SpaceState):SpaceState = {
+    updateState(f(state))
+  }
+  
+  def updateCoreAfter(f: SpaceState => SpaceState):Unit = {
+    updateStateCore(f(state))
+  }
+  
   /**
    * Note that this specifically composes, even though the persist() inside of it doesn't. The returned
    * RM will resolve with the result of the handler, during the persist() call.
@@ -251,10 +259,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         Basic.DisplayNameProp(identity.name),
         Person.IdentityLink(identity.id)),
       Kind.Thing)
-  }
-  
-  def updateAfter(f: SpaceState => SpaceState):SpaceState = {
-    updateState(f(state))
   }
 
   def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[SpaceState] = {
@@ -415,26 +419,27 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       implicit val s = state
       val props:PropMap = dhProps 
           
-      updateAfter(createPure(kind, thingId, modelId, props, modTime))
+      updateCoreAfter(createPure(kind, thingId, modelId, props, modTime))
     }
     
     case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
       implicit val s = state
       state.anything(thingId).map { thing =>
-        updateAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
+        updateCoreAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
       }
     }
     
     case DHDeleteThing(req, thingId, modTime) => {
       state.anything(thingId).map { thing =>
-        updateAfter(deletePure(thingId, thing))
+        updateCoreAfter(deletePure(thingId, thing))
       }
     }
     
     case RecoveryCompleted => {
       def readied() = {
         initializing = false
-        unstashAll()        
+        notifyUpdateState()
+        unstashAll() 
       }
       
       def readyState(originalOpt:Option[SpaceState]):RM[Unit] = {
