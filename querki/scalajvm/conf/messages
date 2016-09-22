@@ -67,9 +67,9 @@ Types.Int.tooHigh=Values of {0} can be no more than {1}
 Types.Int.badFormat=Numbers can only contain digits
 Types.Int.empty=A required Number field may not be empty
 
-Types.Name.empty=Names must have non-zero length
-Types.Name.tooLong=Names should not be excessively long
-Types.Name.badChars=Names may only contain letters, digits, and spaces
+Types.Name.empty=Link Names must have non-zero length
+Types.Name.tooLong=Link Names should not be excessively long
+Types.Name.badChars=Link Names may only contain letters, digits, dashes and spaces, and may not end with a dash or space
 Types.Text.tooShort={0} must be at least {1} characters long, not counting spaces at the beginning and end
 
 UI.adjustTree.badInput=Not a legal value for the children parameter!

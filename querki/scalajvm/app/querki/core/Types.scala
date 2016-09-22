@@ -181,18 +181,26 @@ trait NameTypeBasis { self:CoreEcot with NameUtils with WithQL =>
     def doDeserialize(v:String)(implicit state:SpaceState) = toDisplay(v)
     def doSerialize(v:String)(implicit state:SpaceState) = toInternal(v)
     
-    override def doToUser(v:String)(implicit state:SpaceState):String = toDisplay(v)
-    override protected def doFromUser(v:String)(implicit state:SpaceState):String = {
+    def doValidate(v:String):Unit = {
       if (v.length() == 0)
         throw new PublicException("Types.Name.empty")
       else if (v.length() > 254)
         throw new PublicException("Types.Name.tooLong")
-      // TODO: this should forbid double-slashes, since "//" is a comment in QL. Possibly
-      // we should unify this with the QLParser.name regex?
-      else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' ' && c != '/'))
-        throw new PublicException("Types.Name.badChars")
-      else
-        toDisplay(v)
+      
+      v match {
+        case nameRegex(_*) => // As it should be
+        case _ => throw new PublicException("Types.Name.badChars")
+      }      
+    }
+    
+    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
+      doValidate(v)
+    }
+    
+    override def doToUser(v:String)(implicit state:SpaceState):String = toDisplay(v)
+    override protected def doFromUser(v:String)(implicit state:SpaceState):String = {
+      doValidate(v)
+      toDisplay(v)
     }
     
     def getName(context:QLContext)(v:ElemValue) = canonicalize(get(v))

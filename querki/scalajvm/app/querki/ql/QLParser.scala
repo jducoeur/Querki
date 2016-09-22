@@ -114,8 +114,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   
   // *****************************************
   
-  // Note that we allow *one* slash in a name, but not pairs:
-  val name = """[a-zA-Z_]([\w-_ ]|/?!/)*[\w]""".r
+  final val name = querki.core.nameRegex
   // These two regexes are used in the unQLText production. Yes, they *could* be combined into one
   // expression, and originally were. They were split because having them together apparently does
   // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of

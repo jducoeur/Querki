@@ -47,6 +47,16 @@ package object core {
   }
   
   val CoreTag = "Querki Core"
+  
+  /**
+   * The formal definition of the syntax of a Link Name.
+   * 
+   * TBD: this probably isn't the ideal place for this, but it's needed in a couple of different
+   * places, so it'll do for now.
+   * 
+   * Note that we allow *one* slash in a name, in order to allow nested names, but not pairs:
+   */
+  final val nameRegex = """[a-zA-Z_]([\w-_ ]|/?!/)*[\w]""".r
     
   /**
    * QLText is a String that may contain both Wikitext and QL expressions. It must go through two
