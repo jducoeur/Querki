@@ -12,6 +12,7 @@ import querki.display.{ButtonGadget, Gadget}
 import ButtonGadget._
 import querki.display.rx._
 import querki.globals._
+import querki.util.InputUtils
   
 class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
 
@@ -30,7 +31,27 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   
   override def onInserted() = { nameInput.mapElem($(_).focus()) }
   
-  val nameInput = GadgetRef[RxText]
+  val nameInput = GadgetRef[RxInput].
+    whenSet { g =>
+      Obs(g.elemOptRx) {
+        g.elemOpt.map { e => $(e).blur { evt:JQueryEventObject => fixNameInput(g.text()) } }
+      }
+    }
+  // When we blur out of the Name field, fix it up if necessary:
+  def fixNameInput(init:String):Unit = {
+    def fixRec(current:String):String = {
+      val c = current.last
+      // These are legal, but *not* at the end of the name:
+      if (c == ' ' || c == '-')
+        fixRec(current.dropRight(1))
+      else
+        current
+    }
+    
+    val fixed = fixRec(init)
+    if (fixed != init)
+      nameInput.get.setValue(fixed)
+  }
   
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
   def collBtn(coll:CollectionInfo, selected:Boolean):ButtonInfo = {
@@ -101,7 +122,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         div(cls:="col-md-6",
           div(cls:="row",
             div(cls:="col-md-12",
-              nameInput <= new RxText(cls:="col-md-6 form-control", id:="_createPropName", placeholder:="Name (required)...")
+              nameInput <= new RxInput(Some(InputUtils.nameFilter(true, false) _), "text", cls:="col-md-6 form-control", id:="_createPropName", placeholder:="Name (required)...")
             )
           ),
           div(cls:="row",
