@@ -46,7 +46,7 @@ trait Decorator {
     def javascriptNeutralized(url:String):String = {
       // Basically, if this has anything that looks like an unapproved URI scheme, force it to relative:
       val urlLower = url.toLowerCase()
-      if (!(urlLower.startsWith("http:") || urlLower.startsWith("https:")) && urlLower.matches("^[a-z0-9+\\.\\-]*:.*"))
+      if (!(urlLower.startsWith("http:") || urlLower.startsWith("https:") || urlLower.startsWith("mailto:")) && urlLower.matches("^[a-z0-9+\\.\\-]*:.*"))
         "./" + url
       else
         url  
@@ -54,7 +54,7 @@ trait Decorator {
     def decorateLink(text:String, url:String, title:Option[String]):String = {
       val nurl = javascriptNeutralized(url)
       val nurlLower = nurl.toLowerCase()
-      val isExternal = (nurlLower.startsWith("http:") || nurlLower.startsWith("https:") | nurlLower.startsWith("./") | nurlLower.startsWith("/"))
+      val isExternal = (nurlLower.startsWith("http:") || nurlLower.startsWith("https:") || nurlLower.startsWith("mailto:") || nurlLower.startsWith("./") || nurlLower.startsWith("/"))
       val extAttrs =
         if (isExternal)
           """ rel="nofollow" target="_blank""""

@@ -11,7 +11,8 @@ trait MainDecorator extends Decorator {
 
 object MainDecorator {
   def adjustUrl(urlIn:String):String = {
-    if ((urlIn.startsWith("http:") || (urlIn.startsWith("https:") || (urlIn.startsWith("/")) || (urlIn.startsWith("#"))))) {
+    // This list of approved protcols should get unified with the one in Decorator:
+    if ((urlIn.startsWith("http:") || (urlIn.startsWith("https:") || urlIn.startsWith("mailto:") || (urlIn.startsWith("/")) || (urlIn.startsWith("#"))))) {
       // Absolute URL or already hashed, so leave it alone:
       urlIn
     } else {
