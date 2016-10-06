@@ -243,7 +243,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    Details("""```
           |_greaterThan(EXP1, EXP2) -> YES OR NO
           |```
-	        |_lessThan produces Yes iff the value in the first expression is greater than the second. The definition
+	        |_greaterThan produces Yes iff the value in the first expression is greater than the second. The definition
 	        |of "greater than" is type-dependent, but by and large is similar to > in most programming languages.
 	        |
 	        |Alternate version:
