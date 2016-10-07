@@ -69,6 +69,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
   lazy val QLInternals = interface[QLInternals]
+  lazy val Tags = interface[querki.tags.Tags]
   
   lazy val qlProfilers = QLInternals.qlProfilers
   
@@ -276,12 +277,6 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       }
     }
     
-    def handleThing(tOpt:Option[Thing], context:QLContext) = {
-      tOpt.map { t =>
-        processThing(t, context)
-      }.getOrElse(Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name)))))
-    }
-    
     call.name match {
       case binding:QLBinding => { 
         processBinding(binding, context, isParam, call).flatMap { resolvedBinding =>  
@@ -304,12 +299,34 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         processBindingDef(bindingDef, context)
       }
       case tid:QLThingId => {
-        val tOpt = context.state.anything(ThingId(tid.name))
-        handleThing(tOpt, context)
+        context.state.anything(ThingId(tid.name)) match {
+          case Some(t) => processThing(t, context)
+          case None => Future.failed(new PublicException("QL.unknownThingId", tid.reconstructString))
+        }
       }
       case _ => {
-        val tOpt = context.state.anythingByName(call.name.name)
-        handleThing(tOpt, context)
+        // Looking up a Thing by name, which is the most common situation:
+        context.state.anythingByName(call.name.name) match {
+          // Normal case: we found this Thing by name:
+          case Some(t) => processThing(t, context)
+          // We *didn't* find the Thing...
+          case None => {
+            // This gets a bit subtle. If you have put the name in backticks, as a QLDisplayName, then
+            // we say that you know what you're doing, and use it as a tag.
+            call.name match {
+              // Explicitly marked as a Tag:
+              case QLDisplayName(name) => Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(name))))
+              case _ => {
+                if (Tags.tagExists(call.name.name, context.state))
+                  // It's the name of a Tag that *is* being used in the Space, so allow it:
+                  Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
+                else
+                  // We can't find this name anyway, so give up:
+                  Future.failed(new PublicException("QL.unknownName", call.name.name))
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -571,13 +588,20 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     withScope(context, processExp(exp, _))
   }
 
+  // Note that the returned Future here is guaranteed to be successful -- Exceptions are already rendered.
   def contextsToWikitext(contextsFut:Future[Seq[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
     // Wikify each of them:
     val wikified = contextsFut.flatMap { contexts =>
       Future.sequence(contexts.map(context => context.value.wikify(context.parent)))
     }
     // And merge them together:
-    wikified.map { contexts => (Wikitext("") /: contexts) (_.+(_, insertNewlines)) }
+    wikified
+      .map { contexts => (Wikitext("") /: contexts) (_.+(_, insertNewlines)) }
+      // Iff the Future contains an Exception, render that here. This is how we display errors in-place,
+      // instead of having them propagate out to overwhelm the page:
+      .recoverWith {
+        case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt)).flatMap(_.value.wikify(initialContext))
+      }
   }
   
   /**
@@ -679,9 +703,6 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       case Success(result, _) => 
         qlProfilers.processMethod.profile { 
           contextsToWikitext(processExpAll(result, initialContext, false), false)
-          .recoverWith {
-            case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt)).flatMap(_.value.wikify(initialContext))
-          }
         }
       case Failure(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
       case Error(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }

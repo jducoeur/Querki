@@ -206,4 +206,39 @@ class QLTests extends QuerkiTests {
       pql("""[[5 -> _plus(-2)]]""") should equal ("3")
     }
   }
+  
+  "Tag / Name Literals" should {
+    "work if the name is a defined Thing" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Mandatory Fun]]""") should equal(linkText(s.mandatoryFun))
+    }
+    
+    "work if the name is a used but undefined Tag" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Weird]]""") should equal (unknownName("Weird"))
+    }
+    
+    "fail if the name is neither a Thing nor a Tag" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Some Other Genre]]""") should equal (expectedWarning("QL.unknownName"))
+    }
+    
+    "work if the name is neither a Thing nor a Tag, but is marked explicitly as a Tag" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[`Some Other Genre`]]""") should equal (unknownName("Some Other Genre"))
+    }
+  }
+  
+  "Errors" should {
+    "be placed at the appropriate place in the containing text" in {
+      implicit val s = commonSpace
+      
+      pql("""Before the error [[Some Other Genre]] After the error""") should
+        equal (s"""Before the error ${expectedWarning("QL.unknownName")} After the error""")
+    }
+  }
 }

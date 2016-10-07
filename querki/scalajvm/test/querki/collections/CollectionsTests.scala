@@ -22,13 +22,13 @@ class CollectionsTests extends QuerkiTests {
       class TSpace extends CDSpace {
         val favoriteGenresProp = new TestProperty(TagType, QSet, "Favorite Genres", Links.LinkModelProp(genreModel))
         
-	    new SimpleTestThing("More Favorites", 
-	      favoriteArtistsProp(tmbg, blackmores),
-	      favoriteGenresProp("Rock", "Weird"))
+  	    new SimpleTestThing("More Favorites", 
+  	      favoriteArtistsProp(tmbg, blackmores),
+  	      favoriteGenresProp("Rock", "Weird"))
       }
-      implicit val s = new CDSpace
+      implicit val s = new TSpace
       
-      pql("""[[My Favorites -> _concat(Favorite Artists, Favorite Genres)]]""") should
+      pql("""[[More Favorites -> _concat(Favorite Artists, Favorite Genres)]]""") should
         equal (expectedWarning("Collections.concat.mismatchedTypes"))
     }
   }

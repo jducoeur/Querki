@@ -222,6 +222,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     tagList.toSet.filter(_.length > 0).map(publicTag(_))
   }
   
+  // TBD: do we want to cache this Set as well, to optimize tagExists()? It's not obvious,
+  // since the underlying fetchTags() does cache the per-Property values.
   def fetchAllTags(state:SpaceState):Set[String] = {
     state
       .allProps
@@ -230,6 +232,10 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       .map(prop => fetchTags(state, prop))
       .toSet
       .flatten
+  }
+  
+  def tagExists(name:String, state:SpaceState):Boolean = {
+    fetchAllTags(state).contains(name)
   }
 
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {

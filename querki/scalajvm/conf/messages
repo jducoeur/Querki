@@ -40,6 +40,8 @@ Logic.equals.typeMismatch=The parameters to _equals must be the same Type: got _
 QL.invocation.notASpace=The _space parameter must be a Space -- either this Space or one of its Apps.
 QL.self.notDotted=The _self function can only be used when dotted after a property, as in "MyProp._self".
 QL.isBound.notABinding=The parameter to _isBound must be a binding, such as "$query".
+QL.unknownName=There is no Thing named "{0}" -- might be a typo? If you want to use that name as a Tag, put it in backticks.
+QL.unknownThingId=There is no Thing with OID "{0}".
 
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.

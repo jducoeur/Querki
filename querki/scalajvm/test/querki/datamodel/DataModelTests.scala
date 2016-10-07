@@ -277,7 +277,7 @@ class DataModelTests extends QuerkiTests {
     // the stage gets ignored. This *might* change, but for now let's test the actual behaviour:
     "can not work in dotted position with something that doesn't exist" in {
       implicit val s = commonSpace
-      pql("""[[Floob._isDefined]]""") should equal ("{{_unknownName:[Floob](Floob)}}")
+      pql("""[[`Floob`._isDefined]]""") should equal (unknownName("Floob"))
     }
     
     "work in received position with something that does exist" in {
@@ -287,7 +287,7 @@ class DataModelTests extends QuerkiTests {
     
     "work in received position with something that doesn't exist" in {
       implicit val s = commonSpace
-      pql("""[[Floob -> _isDefined]]""") should equal ("false")
+      pql("""[[`Floob` -> _isDefined]]""") should equal ("false")
     }
     
     "work on a Tag Set" in {
@@ -403,7 +403,7 @@ class DataModelTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[Child Tag -> _tagRefs]]""") should equal (listOfLinkText(s.childThing))
-      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal ("")
+      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal (expectedWarning("QL.unknownName"))
     }
   }
 }

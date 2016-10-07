@@ -184,6 +184,12 @@ class QuerkiTests
   
   def expectedWarning(warningName:String):String = s"{{_warning:$warningName}}"
   
+  // This is the non-error display of a Tag literal that is unknown
+  // TODO: this *should* just reuse oneTag() -- but it can't, because the URL from unknownName (in
+  // QLEcot.UnknownNameType) doesn't match the one for Tags (in TagsEcot.TagThing)! These really
+  // should be reconciled...
+  def unknownName(name:String):String = s"{{_unknownName:[$name](${name.replace(" ", "-")})}}"
+  
   // Commonly used Ecots and pieces therein:
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
 

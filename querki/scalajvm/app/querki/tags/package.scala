@@ -44,6 +44,7 @@ package object tags {
      * This will warm up the Tag cache, so don't be too afraid of it.
      */
     def fetchAllTags(state:SpaceState):Set[String]
+    def tagExists(name:String, state:SpaceState):Boolean
     def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing
     /**
      * Returns true iff this Property is "taggable" -- that is, Manifest can treat it like a tag.

@@ -109,10 +109,10 @@ class TagTests extends QuerkiTests {
         val propOfMidModelType = TestModelProperty("Deep Prop", midModel, Optional)
         
         val topModel = new SimpleTestThing("My Model", propOfModelType(), propOfMidModelType(), tagProp())
-        val instance1 = new TestThing("Thing 1", topModel, tagProp("Tag-1"))
-        val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(tagProp("Tag-2"))))
+        val instance1 = new TestThing("Thing 1", topModel, tagProp("Tag 1"))
+        val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(tagProp("Tag 2"))))
         val instance3 = new TestThing("Thing 3", topModel,
-            propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(tagProp("Tag-2"))))))
+            propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(tagProp("Tag 2"))))))
       }
       implicit val s = new TSpace
       
