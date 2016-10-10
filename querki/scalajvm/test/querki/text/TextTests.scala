@@ -121,5 +121,17 @@ class TextTests extends QuerkiTests {
       
       pql("""[[1827 -> _textLength]]""") should equal ("4")
     }
+    
+    "work with a literal parameter" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_textLength(""hello"")]]""") should equal ("5")
+    }
+    
+    "work with a processed parameter" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> _textLength(Link Name)]]""") should equal ("11")
+    }
   }
 }

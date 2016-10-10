@@ -300,17 +300,27 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    Signature(
 	      expected = Some((Seq(AnyType), "A text value, or something that can be displayed as text")),
 	      reqs = Seq.empty,
-	      opts = Seq.empty,
-	      returns = (IntType, "The length of that text")
+	      opts = Seq(
+	        ("text", AnyType, Core.QNone, "A text value, or something that can be displayed as text")
+	      ),
+	      returns = (IntType, "The length of the parameter, or of the received value if there is no parameter")
 	    ),
 	    Categories(TextTag),
 	    Summary("Produce the length of some received text.")))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    for {
-	      elemContext <- inv.contextElements
-	      v = elemContext.value
-	      wikitext <- inv.fut(v.wikify(elemContext))
+        elemContext <- inv.contextElements
+        v = elemContext.value
+        // TODO: Can we refactor out a common processParamOrContext function? Keep an eye on uses
+        // of processAsOpt(), and see if it's worth lifting this out.
+        textOpt <- inv.processAsOpt("text", QL.ParsedTextType, elemContext)
+	      wikitext <- inv.fut {
+	        textOpt match {
+	          case Some(wiki) => fut(wiki)
+	          case _ => v.wikify(elemContext)
+	        }
+	      }
 	      str = wikitext.strip.toString
 	    }
 	      yield ExactlyOne(IntType(str.length))
