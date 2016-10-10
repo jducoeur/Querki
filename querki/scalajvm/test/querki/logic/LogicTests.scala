@@ -198,6 +198,20 @@ class LogicTests extends QuerkiTests {
       
       pql("""[[_if(Trivial -> _equals(Link Name, My Thing -> My Num), ""hello"")]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")            
     }
+    
+    // Unit test for QI.7w4g86b
+    "work correctly with missing parameters" in {
+      implicit val s = commonSpace
+      
+      // Missing predicate, which is empty, which is false:
+      pql("""[[_if(,""yes"",""no"")]]""") should equal ("no")
+      // Missing true clause:
+      pql("""[[_if(true,,""no"")]]""") should equal ("")
+      pql("""[[_if(false,,""no"")]]""") should equal ("no")
+      // Missing false clause:
+      pql("""[[_if(true,""yes"",)]]""") should equal ("yes")
+      pql("""[[_if(false,""yes"",)]]""") should equal ("")      
+    }
   }
   
   // === _lessThan ===

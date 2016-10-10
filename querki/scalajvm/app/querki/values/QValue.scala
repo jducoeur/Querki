@@ -226,6 +226,7 @@ object QValue {
 object EmptyValue {
   // TODO: do something with this?
   def apply(pType:PType[_])(implicit ecology:Ecology) = ecology.api[querki.core.Core].emptyListOf(pType)
-  // TODO: do we need this?
+  // Is this best considered to be Unit, or Bottom? I think it's roughly Bottom -- it can be considered
+  // to be any type -- but it's a bit weird in type-system terms.
   def untyped(implicit ecology:Ecology) = ecology.api[querki.core.Core].emptyList
 }

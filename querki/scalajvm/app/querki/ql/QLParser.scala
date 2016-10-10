@@ -581,7 +581,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     // *usually* what you want, but certainly more restrictive than the official semantics of QL.
     // Figure out how to make the callers of this cope with Seq[Future[QLContext]] (or Future[Seq[QLContext]]),
     // and adjust this to produce that.
-    processExpAll(exp, context, isParam).map(_.last)
+    processExpAll(exp, context, isParam).map { contexts =>
+      if (contexts.isEmpty)
+        // This probably means that the expression was completely empty -- for example, an
+        // empty parameter. So we treat this as simply empty.
+        context.next(EmptyValue.untyped)
+      else
+        contexts.last
+    }
   }
   
   def processExpAsScope(exp:QLExp, context:QLContext):Future[QLContext] = {
