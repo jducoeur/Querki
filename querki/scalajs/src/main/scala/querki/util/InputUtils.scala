@@ -23,8 +23,8 @@ object InputUtils {
     key == 8 || key == 9 || key == 13 ||
     // Home and End
     key == 35 || key == 36 ||
-    // left and right arrows
-    key == 37 || key == 39 ||
+    // left, right, up and down arrows
+    (key >= 37 && key <= 40) ||
     // Del and Ins
     key == 46 || key == 45 ||
     (!(evt.shiftKey.get) && 
