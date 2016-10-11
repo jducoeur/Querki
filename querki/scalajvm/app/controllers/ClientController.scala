@@ -67,7 +67,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
     rc.requester match {
       case Some(requester) => {
         ClientApi.rootRequestInfo(rc).map { requestInfo =>
-          Ok(views.html.client(rc, write(requestInfo), mode))
+          Ok(views.html.client(rc, write(requestInfo), " your Spaces", mode))
         }
       }
       // For the moment, in the not-logged-in case, we still show the old root page:
@@ -80,7 +80,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
    */
   def showClient = withUser(false) { rc =>
     ClientApi.rootRequestInfo(rc).map { requestInfo =>
-      Ok(views.html.client(rc, write(requestInfo), mode))
+      Ok(views.html.client(rc, write(requestInfo), "", mode))
     }
   }
   
@@ -93,7 +93,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       // The normal case: show the client:
       case _ => {
         ClientApi.rootRequestInfo(rc).map { requestInfo =>
-          Ok(views.html.client(rc, write(requestInfo), mode))
+          Ok(views.html.client(rc, write(requestInfo), "", mode))
         }
       }
     }
@@ -111,7 +111,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
           val thingIdStr = rc.request.queryString("_escaped_fragment_").head
           Redirect(routes.RawController.thing(ownerId, spaceIdStr, thingIdStr))
         } else {
-          Ok(views.html.client(rc, write(requestInfo), mode))
+          Ok(views.html.client(rc, write(requestInfo), requestInfo.space.map(" " + _.displayName).getOrElse(""), mode))
         }
       }
     } recoverWith {
