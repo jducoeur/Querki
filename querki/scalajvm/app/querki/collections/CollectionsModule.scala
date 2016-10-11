@@ -275,7 +275,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_filter"),
         Categories(CollTag),
-	      Summary("Filter out non-matching elements of a collection"),
+	      Summary("Remove non-matching elements of a collection"),
         Signature(
           expected = Some(Seq.empty, "A List of any sort"),
           reqs = Seq(("exp", YesNoType, "An expression to apply to the received value, which should produce True or False")),
