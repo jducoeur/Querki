@@ -51,7 +51,7 @@ class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
       detailsText = detailsOpt.getOrElse(Wikitext.empty)
       guts =
         div(
-          h1(s"Info about ${spaceInfo.displayName}"),
+          h1(s"Info about ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
           p(b(new QText(summaryText))),
           new QText(detailsText)
         )
