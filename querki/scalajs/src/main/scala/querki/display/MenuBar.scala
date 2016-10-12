@@ -107,7 +107,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
    * lines of the old Server-side NavSection?
    */
   def sections:Seq[Navigable] = {
-    Seq(actionSection, appsSection, adminSection).flatten
+    Seq(actionSection, adminSection).flatten
   }
   
   def alwaysLinks:Seq[Navigable] = {
@@ -203,28 +203,6 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
     val allLinks = alwaysLinks ++ allSpaceLinks.getOrElse(Seq.empty)
     Some(NavSection("Actions", allLinks, 1100, id="_actionsMenu"))
   }
-  
-  // Apps are a non-sequiteur if we're not in the context of a Space and fully running
-  // TBD: this whole section arguably belongs in the Apps Ecot. Should we make this pluggable?
-  def appsSection = 
-    if (!hasExplore)
-      None
-    else
-      spaceOpt.map { space =>
-        NavSection("Apps", Seq(
-          NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
-          NavLink(
-            "Manage Apps", 
-            Apps.appMgmtFactory.pageUrl(), 
-            enabled = space.permissions.contains(std.apps.canManipulateAppsPerm), 
-            complexity = Advanced),
-          NavLink(
-            "Extract an App", 
-            Apps.extractAppFactory.pageUrl(), 
-            enabled = space.permissions.contains(std.apps.canManipulateAppsPerm),
-            complexity = Standard)
-        ), 1200)
-    }
   
   def loginSection = {
     UserAccess.user match {
