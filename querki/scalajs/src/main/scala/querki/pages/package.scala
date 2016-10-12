@@ -82,6 +82,7 @@ package object pages {
     def importSpaceFactory:PageFactory
     def thingPageFactory:ThingPageFactory
     def securityFactory:ThingPageFactory
+    def infoFactory:PageFactory
     
     /**
      * The URL of the given Space.

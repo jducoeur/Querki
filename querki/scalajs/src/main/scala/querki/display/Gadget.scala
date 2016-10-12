@@ -135,6 +135,7 @@ trait QuerkiUIUtils extends ScalatagUtils {
       show)
   
   def icon(iconName:String) = i(classes(Seq("glyphicon", s"glyphicon-$iconName")))
+  def faIcon(iconName:String) = i(classes(Seq("fa", s"fa-$iconName")))
   
   /**
    * Show a standard Querki icon button.

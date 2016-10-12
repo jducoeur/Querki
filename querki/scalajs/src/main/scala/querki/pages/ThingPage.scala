@@ -90,6 +90,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   
   def viewingHistory = History.viewingHistory
   
+  def isSpace = thing.kind == Kind.Space
+  
   lazy val topEditButton =
     new QLButtonGadget(
     	iconButton("edit", Seq("_qlInvoke"))(
@@ -107,6 +109,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         
       h1(cls:="_defaultTitle", 
         raw(thingName), " ",
+        if (isSpace)
+          querkiButton(faIcon("info"))(
+            title:=s"Info about $thingName",
+            id:="_infoButton",
+            href:=Pages.infoFactory.pageUrl()),
         if (!viewingHistory) {
           // The "editing" buttons:
           if (thing.isModel) {
@@ -140,7 +147,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                         modelOpt.getOrElse(std.basic.simpleThing),
                         (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                         "reifyTag" -> "true"))
-                } else if (thing.kind == Kind.Property || thing.kind == Kind.Space) {
+                } else if (thing.kind == Kind.Property || isSpace) {
         			    iconButton("edit")(
         			      title:=s"Edit $thingName",
         			      href:=Editing.advancedEditorFactory.pageUrl(thing))
