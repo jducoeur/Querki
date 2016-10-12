@@ -7,7 +7,7 @@ import querki.persistence._
 import querki.spaces.UnresolvedPropValue
 import querki.time.DateTime
 import querki.types.ModelTypeDefiner
-import querki.values.SpaceState
+import querki.values.{SpaceState, SpaceVersion}
 
 import Thing.PropMap
 
@@ -106,7 +106,7 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
         Map.empty,  // Things -- filled in below
         Map.empty,  // Collections -- ignored for now
         None,       // ownerIdentity needs to be filled in async
-        appInfo = dh.apps
+        appInfo = dh.apps.map { case (id, l) => (id, SpaceVersion(l)) }
       )
       
     // Next, add the Types. Note that we can build the Type before we build the

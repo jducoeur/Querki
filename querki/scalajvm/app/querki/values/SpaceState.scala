@@ -67,7 +67,7 @@ case class SpaceState(
     version:SpaceVersion = SpaceVersion.Unknown,
     // This is filled in during rehydration; it is just here to allow us to fill in the
     // real apps:
-    appInfo:Seq[(OID, Long)] = Seq.empty,
+    appInfo:Seq[(OID, SpaceVersion)] = Seq.empty,
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)
 {
