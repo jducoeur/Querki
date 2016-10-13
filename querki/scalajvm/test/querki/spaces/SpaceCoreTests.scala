@@ -65,6 +65,11 @@ class TestSpaceCore(
   def fetchOwnerIdentity(ownerId:OID):TCIdentity[PublicIdentity] = {
     TestRTCAble.successful(testSpace.owner.mainIdentity)
   }
+  
+  /**
+   * TODO: figure out how to specify and test Apps in the test environment.
+   */
+  def loadAppsFor(state:SpaceState):TCIdentity[SpaceState] = TestRTCAble.successful(state)
 }
 
 /**

@@ -179,6 +179,11 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     }
   }
   
+  def loadAppsFor(state:SpaceState):RequestM[SpaceState] = {
+    // TODO: make this real
+    RequestM.successful(state)
+  }
+  
   ///////////////////////////////////////////
   
   /**

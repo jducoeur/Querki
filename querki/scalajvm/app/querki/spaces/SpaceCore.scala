@@ -107,6 +107,16 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    */
   def fetchOwnerIdentity(ownerId:OID):RM[PublicIdentity]
   
+  /**
+   * Given a SpaceState, load the Apps for that Space. Returns the RequestM of the updated Space.
+   * 
+   * This runs recursively, loading the Apps for each App as needed.
+   * 
+   * TODO: this should deal more elegantly with diamond dependencies, but be careful of that: you could
+   * have multiple dependencies on the same App at different versions.
+   */
+  def loadAppsFor(state:SpaceState):RM[SpaceState]
+  
   
   //////////////////////////////////////////////////
   
@@ -393,6 +403,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   /**
    * Handler for the "meta-events" that are built into Akka Persistence.
+   * 
+   * TBD: wow, this is horrible code. I really want a more functional version of receiveRecover, which
+   * is basically folding over the incoming message stream to produce the SpaceState.
    */
   def recoverPersistence:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
@@ -407,7 +420,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
       
       def readyState(originalOpt:Option[SpaceState]):RM[Unit] = {
-        originalOpt match {
+        def afterOwnerIdentity = originalOpt match {
           case Some(original) => {
             // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
             // correct response?
@@ -427,21 +440,32 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
                 // yet exist, and _hasPermission gets confused:
                 updateStateCore(s)
                 // createOwnerPerson will cause the notifications to go out:
-                createOwnerPerson(s, identity).map { _ =>
-                  readied()
-                }
+                createOwnerPerson(s, identity)
               } else {
                 // Normal situation:
                 updateState(s)
-                readied()
               }
             }
           }
           
           // There's no existing Space, so we're assume this Space is newly-created. There is no actual
           // State yet -- instead, we expect to receive an InitState message once we're up and running:
-          case None => rtc.successful(readied())
+          case None => rtc.successful(())
         }
+        
+        def loadApps:RM[Option[SpaceState]] = {
+          if (_currentState.isEmpty)
+            rtc.successful(None)
+          else
+            loadAppsFor(_currentState.get).map(Some(_))          
+        }
+        
+        for {
+          _ <- afterOwnerIdentity
+          stateWithAppsOpt <- loadApps
+          _ = stateWithAppsOpt.foreach(updateState(_))
+        }
+          yield readied()
       }
       
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing
