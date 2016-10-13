@@ -2,6 +2,9 @@ package querki.spaces
 
 import akka.actor._
 import akka.persistence._
+import akka.persistence.cassandra.query.scaladsl._
+import akka.persistence.query._
+import akka.stream.ActorMaterializer
 
 import org.querki.requester._
 
@@ -15,7 +18,7 @@ import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
 import querki.spaces.messages._
 import querki.time.DateTime
-import querki.values.QValue
+import querki.values.{QValue, SpaceVersion}
 
 import PersistMessages._
 
@@ -180,8 +183,65 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   }
   
   def loadAppsFor(state:SpaceState):RequestM[SpaceState] = {
-    // TODO: make this real
-    RequestM.successful(state)
+    loadAppsFor(state, Map.empty)
+  }
+  
+  ///////////////////////////////////////////
+  //
+  // App Loading
+  //
+  
+  lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
+  
+  /**
+   * The internal version of loadAppsFor -- this keeps track of the Apps loaded so far.
+   * 
+   * This is partly so that we don't load conflicting versions in case of diamond dependencies, but mainly
+   * to prevent app dependency loops. (Which I don't think would happen in normal use, but let's
+   * prevent any hackers from DDoS'ing us this way.)
+   * 
+   * Note that this is mutually recursive with loadAppVersion(), which actually loads a single App.
+   */
+  def loadAppsFor(state:SpaceState, appsSoFar:Map[OID, SpaceState]):RequestM[SpaceState] = {
+    // This does the recursive dive through the tree, returning the Apps specified in there:
+    val appsRM:RequestM[Map[OID, SpaceState]] = (RequestM.successful(appsSoFar) /: state.appInfo) { (rm, appInfo) =>
+      rm.flatMap { appMap =>
+        val (appId, appVersion) = appInfo
+        if (appMap.contains(appId))
+          RequestM.successful(appMap)
+        else
+          loadAppVersion(appId, appVersion, appMap).map { appState =>
+          appMap + (appId -> appState)
+        }
+      }
+    }
+    
+    // Once that's done, set the actual Apps in this Space:
+    appsRM.map { appMap =>
+      // Fetch the appropriate Apps, in order, from the map:
+      val spaceApps = state.appInfo.map(_._1).map(appMap(_))
+      state.copy(apps = spaceApps)
+    }
+  }
+  
+  /**
+   * Given the OID and version of an App, return that State.
+   * 
+   * Note that this is mutually recursive with loadAppsFor() -- the returned State will have
+   * its Apps in place. 
+   */
+  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RequestM[SpaceState] = {
+    val source = readJournal.currentEventsByPersistenceId(persistenceId, 0, version.v)
+    implicit val mat = ActorMaterializer()
+    loopback {
+      source.runFold(emptySpace) { case ((curState, EventEnvelope(offset, persistenceId, sequenceNr, evt))) =>
+        evolveState(Some(curState))(evt)
+      }
+    } flatMap { loadedState =>
+      mat.shutdown()
+      // Now that we've loaded this App, recurse in and load *its* Apps:
+      loadAppsFor(loadedState, appsSoFar)
+    }
   }
   
   ///////////////////////////////////////////
