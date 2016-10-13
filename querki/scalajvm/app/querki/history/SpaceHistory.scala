@@ -61,24 +61,6 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
   def persistenceId = id.toThingId.toString
   
   lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
-  
-  lazy val emptySpace =
-    SpaceState(
-      id,
-      SystemState.id,
-      Thing.emptyProps,
-      UnknownOID,
-      "",
-      DateTime.now,
-      Seq.empty,
-      Some(SystemState),
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      None,
-      SpaceVersion(0)
-    )
     
   case class HistoryRecord(sequenceNr:Long, evt:Any, state:SpaceState)
   type StateHistory = Vector[HistoryRecord]
@@ -134,34 +116,6 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     }
   }
   
-  // Actually process a single event. Note that this intentionally echoes SpaceCore.receiveRecover, but
-  // I'm not sure how to factor them together.
-  def evolveState(evt:Any, state:SpaceState):SpaceState = {
-    evt match {
-      case BootSpace(dh, modTime) => rehydrate(dh)
-      
-      case DHInitState(userRef, display) => initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
-      
-      case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
-        implicit val s = state
-        createPure(kind, thingId, modelId, dhProps, modTime)(state)
-      }
-      
-      case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
-        implicit val s = state
-        state.anything(thingId).map { thing =>
-          modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime)(state)
-        }.getOrElse(state)
-      }
-      
-      case DHDeleteThing(req, thingId, modTime) => {
-        state.anything(thingId).map { thing =>
-          deletePure(thingId, thing)(state)
-        }.getOrElse(state)
-      }
-    }
-  }
-  
   /**
    * This reads all of the history since the last time it was called. It is designed so that we can
    * reload the client page and get any new events since it was last shown.
@@ -182,7 +136,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
       // Note that we construct the history using VectorBuilder, for efficiency:
       source.runFold((initialState, new VectorBuilder[HistoryRecord])) {
         case (((curState, history), EventEnvelope(offset, persistenceId, sequenceNr, evt))) =>
-        val nextState = evolveState(evt, curState)
+        val nextState = evolveState(Some(curState))(evt)
         history += HistoryRecord(sequenceNr, evt, nextState)
         (nextState, history)
       }

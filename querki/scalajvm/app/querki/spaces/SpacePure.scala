@@ -7,6 +7,7 @@ import Thing._
 import querki.core.NameUtils
 import querki.globals._
 import querki.identity.Identity
+import querki.spaces.SpaceMessagePersistence._
 import querki.time.DateTime
 import querki.types.ModelTypeBase
 import querki.types.MOIDs.ModelForTypePropOID
@@ -17,13 +18,31 @@ import querki.values.{SpaceState, SpaceVersion}
  * pure functions that take a Space and return a new Space. They are separated
  * out so that we can handle this process in various ways.
  */
-trait SpacePure extends querki.types.ModelTypeDefiner with EcologyMember {
+trait SpacePure extends querki.types.ModelTypeDefiner with ModelPersistence with EcologyMember {
   
   // Abstracts that the concrete type has to fill in:
   def Basic:querki.basic.Basic
   def Core:querki.core.Core
   def SystemState:SpaceState
   def id:OID
+  
+  lazy val emptySpace =
+    SpaceState(
+      id,
+      SystemState.id,
+      Thing.emptyProps,
+      UnknownOID,
+      "",
+      DateTime.now,
+      Seq.empty,
+      Some(SystemState),
+      Map.empty,
+      Map.empty,
+      Map.empty,
+      Map.empty,
+      None,
+      SpaceVersion(0)
+    )
   
   def initStatePure(userId:OID, ownerId:OID, identityOpt:Option[Identity], display:String):SpaceState = {
     val canonical = NameUtils.canonicalize(display)
@@ -168,5 +187,34 @@ trait SpacePure extends querki.types.ModelTypeDefiner with EcologyMember {
       // TODO (QI.7w4g7x5): deal with deleting a Model Type:
       case _ => throw new Exception("Somehow got a request to delete unexpected thing " + thing)
     }    
+  }
+
+  /**
+   * This is the core of processing a Space's history -- a PartialFunction over Space events,
+   * which takes the current history as a curried parameter.
+   */
+  def evolveState(stateOpt:Option[SpaceState]):PartialFunction[Any, SpaceState] = {
+    case BootSpace(dh, modTime) => rehydrate(dh)
+    
+    case DHInitState(userRef, display) => initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
+    
+    case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
+      implicit val s = stateOpt.get
+      createPure(kind, thingId, modelId, dhProps, modTime)(s)
+    }
+    
+    case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
+      implicit val s = stateOpt.get
+      s.anything(thingId).map { thing =>
+        modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime)(s)
+      }.getOrElse(s)
+    }
+    
+    case DHDeleteThing(req, thingId, modTime) => {
+      implicit val s = stateOpt.get
+      s.anything(thingId).map { thing =>
+        deletePure(thingId, thing)(s)
+      }.getOrElse(s)
+    }
   }
 }

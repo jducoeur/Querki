@@ -155,11 +155,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def updateAfter(f: SpaceState => SpaceState):SpaceState = {
     updateState(f(state))
   }
-  
-  def updateCoreAfter(f: SpaceState => SpaceState):Unit = {
-    updateStateCore(f(state))
-  }
-  
+    
   /**
    * Note that this specifically composes, even though the persist() inside of it doesn't. The returned
    * RM will resolve with the result of the handler, during the persist() call.
@@ -396,43 +392,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   /**
-   * The standard recovery procedure for PersistentActors.
+   * Handler for the "meta-events" that are built into Akka Persistence.
    */
-  def receiveRecover:Receive = {
+  def recoverPersistence:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
       updateStateCore(rehydrate(dh))
-    }
-
-    // Note that BootSpace is an *event*, not a snapshot -- that's why this is not the
-    // same as the above SnapshotOffer. This event indicates that this Space was originally
-    // imported from somewhere else, and this is the original State:
-    case BootSpace(dh, modTime) => {
-      updateStateCore(rehydrate(dh))
-    }
-    
-    case DHInitState(userRef, display) => {
-      val initState = initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
-      updateStateCore(initState)
-    }
-    
-    case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
-      implicit val s = state
-      val props:PropMap = dhProps 
-          
-      updateCoreAfter(createPure(kind, thingId, modelId, props, modTime))
-    }
-    
-    case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {
-      implicit val s = state
-      state.anything(thingId).map { thing =>
-        updateCoreAfter(modifyPure(thingId, thing, modelIdOpt, propChanges, replaceAllProps, modTime))
-      }
-    }
-    
-    case DHDeleteThing(req, thingId, modTime) => {
-      state.anything(thingId).map { thing =>
-        updateCoreAfter(deletePure(thingId, thing))
-      }
     }
     
     case RecoveryCompleted => {
@@ -508,6 +472,23 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
     }
   }
+  
+  /**
+   * This looks kind of bizarre -- we're lifting the PartialFunction evolveState, then re-wrapping
+   * it. Why? Because otherwise, evolveState(_currentState) gets called *once*: remember that
+   * receiveRecover only gets called once, to fetch the overall processing function. So we need
+   * to spell things out more explicitly.
+   */
+  def recoverSpaceCommand:PartialFunction[Any, SpaceState] =
+    PartialFunction { any =>
+      evolveState(_currentState)(any)
+    }
+  
+  /**
+   * The standard recovery procedure for PersistentActors.
+   */
+  def receiveRecover:Receive = recoverPersistence orElse 
+    (recoverSpaceCommand andThen { newState => updateStateCore(newState) })
   
   /**
    * The standard PersistentActor receiveCommand, which receives and processes the messages that
