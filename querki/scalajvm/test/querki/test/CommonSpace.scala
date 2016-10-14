@@ -27,7 +27,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   lazy val TagType = Tags.NewTagSetType
   
   // In the simple case, we only have one Space, so it can own the World:
-  val world = new TestWorld
+  lazy val world = new TestWorld
   
   /***********************************************
    * PROPERTIES

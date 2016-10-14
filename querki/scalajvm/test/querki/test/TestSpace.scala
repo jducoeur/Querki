@@ -36,6 +36,18 @@ class TestWorld {
    * stable from run to run, but will be unique within a single run.
    */
   def nextOID():OID = testOID(_currentLocal.incrementAndGet())
+  
+  /**
+   * The Spaces that exist in this World. Only really matters if you're playing with Apps.
+   */
+  private var spaceRegistry:Map[OID, TestSpace] = Map.empty
+  
+  /**
+   * Registers this Space as belonging in this World. Happens automatically.
+   */
+  def register(space:TestSpace):Unit = {
+    spaceRegistry += (space.spaceId -> space)
+  }
 }
 
 case class SpaceMember(user:User, person:ThingState)
@@ -157,6 +169,8 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    */
   def toid():OID = world.nextOID()
   
+  world.register(this)
+  
   /**
    * This Space's Apps, if any. Note that you specify the App's TestSpace; the state will be
    * automatically used.
@@ -247,5 +261,5 @@ class DynamicSpace(s:SpaceState)(implicit val ecology:Ecology) extends TestSpace
   override lazy val state = s 
   
   // In the simple case, we only have one Space, so it can own the World:
-  val world = new TestWorld
+  lazy val world = new TestWorld
 }

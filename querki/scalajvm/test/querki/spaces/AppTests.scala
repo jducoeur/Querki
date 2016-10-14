@@ -22,7 +22,7 @@ class AppTests extends QuerkiTests {
     val theWorld = this
     
     trait TestApp extends TestSpace {
-      val world = theWorld
+      lazy val world = theWorld
       def ecology = getEcology
     }
   

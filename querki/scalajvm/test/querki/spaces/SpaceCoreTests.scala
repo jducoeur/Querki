@@ -155,7 +155,7 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
  */
 class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
   def configOpt:Option[TestSpaceConfig] = None
-  val world = new TestWorld
+  lazy val world = new TestWorld
   val sc = new TestSpaceCore(toid(), this, configOpt)
 }
 
