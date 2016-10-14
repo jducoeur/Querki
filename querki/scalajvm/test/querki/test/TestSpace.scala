@@ -48,6 +48,8 @@ class TestWorld {
   def register(space:TestSpace):Unit = {
     spaceRegistry += (space.spaceId -> space)
   }
+  
+  def getSpace(id:OID):TestSpace = spaceRegistry(id)
 }
 
 case class SpaceMember(user:User, person:ThingState)

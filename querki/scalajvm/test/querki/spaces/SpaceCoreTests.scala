@@ -160,6 +160,13 @@ class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
 }
 
 /**
+ * This is another Space in the same World as the other one. This is necessary for testing Apps.
+ */
+class SpaceInWorldWith(other:SpaceCoreSpaceBase)(implicit e:Ecology) extends SpaceCoreSpace {
+  override lazy val world = other.world
+}
+
+/**
  * This version of SpaceCoreSpaceBase starts from a previous one, and replays its history as the starting
  * point. It is intended to demonstrate that history replays properly.
  */

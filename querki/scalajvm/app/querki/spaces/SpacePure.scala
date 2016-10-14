@@ -17,6 +17,9 @@ import querki.values.{SpaceState, SpaceVersion}
  * This trait represents the heart of the processing of Space messages: the
  * pure functions that take a Space and return a new Space. They are separated
  * out so that we can handle this process in various ways.
+ * 
+ * Note that this class is intentionally stateless: it contains all the functions
+ * about how to *transform* a SpaceState based on its events.
  */
 trait SpacePure extends querki.types.ModelTypeDefiner with ModelPersistence with EcologyMember {
   

@@ -201,6 +201,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * prevent any hackers from DDoS'ing us this way.)
    * 
    * Note that this is mutually recursive with loadAppVersion(), which actually loads a single App.
+   * 
+   * TODO: as currently structured, this code *probably* isn't quite right in the (probably rare) case of diamond
+   * dependencies. We're currently always using the *first* specified version of an App, but I suspect
+   * we should instead use the *newest* specified version. I don't think it's strictly clear, though.
+   * The problem is essentially the same as that of evicted dependencies in Maven, and I suspect that,
+   * as in that case, there's no obvious right answer.
    */
   def loadAppsFor(state:SpaceState, appsSoFar:Map[OID, SpaceState]):RM[SpaceState] = {
     // This does the recursive dive through the tree, returning the Apps specified in there:
