@@ -15,7 +15,7 @@ import querki.persistence._
 import querki.spaces.messages._
 import querki.test._
 import querki.time._
-import querki.values.QValue
+import querki.values.{QValue, SpaceVersion}
   
 case class TestSpaceConfig(snapshotInterval:Option[Int])
   
@@ -67,9 +67,11 @@ class TestSpaceCore(
   }
   
   /**
-   * TODO: figure out how to specify and test Apps in the test environment.
+   * TODO: figure out how to specify and test Apps in the test environment. This is just a stub.
+   * The real code should probably tie into the long-defined TestWorld machinery.
    */
-  def loadAppsFor(state:SpaceState):TCIdentity[SpaceState] = TestRTCAble.successful(state)
+  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):TCIdentity[SpaceState] =
+    TestRTCAble.successful(emptySpace)
 }
 
 /**

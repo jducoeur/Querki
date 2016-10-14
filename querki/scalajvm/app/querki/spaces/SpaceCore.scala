@@ -108,15 +108,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def fetchOwnerIdentity(ownerId:OID):RM[PublicIdentity]
   
   /**
-   * Given a SpaceState, load the Apps for that Space. Returns the RequestM of the updated Space.
+   * Given the OID and version of an App, and the Apps that have been loaded so far, return this
+   * App.
    * 
-   * This runs recursively, loading the Apps for each App as needed.
-   * 
-   * TODO: this should deal more elegantly with diamond dependencies, but be careful of that: you could
-   * have multiple dependencies on the same App at different versions.
+   * This is expected to be recursively dependent on loadAppsFor(), but this is the bit that actually
+   * does the loading. The appsSoFar parameter is passed in solely so that it can then be passed to
+   * loadAppsFor().
    */
-  def loadAppsFor(state:SpaceState):RM[SpaceState]
-  
+  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
   
   //////////////////////////////////////////////////
   
@@ -192,6 +191,49 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       case Some(s) => s
       case None => throw new Exception("State not ready in Actor " + id)
     }
+  }
+  
+  /**
+   * The internal version of loadAppsFor -- this keeps track of the Apps loaded so far.
+   * 
+   * This is partly so that we don't load conflicting versions in case of diamond dependencies, but mainly
+   * to prevent app dependency loops. (Which I don't think would happen in normal use, but let's
+   * prevent any hackers from DDoS'ing us this way.)
+   * 
+   * Note that this is mutually recursive with loadAppVersion(), which actually loads a single App.
+   */
+  def loadAppsFor(state:SpaceState, appsSoFar:Map[OID, SpaceState]):RM[SpaceState] = {
+    // This does the recursive dive through the tree, returning the Apps specified in there:
+    val appsRM:RM[Map[OID, SpaceState]] = (rtc.successful(appsSoFar) /: state.appInfo) { (rm, appInfo) =>
+      rm.flatMap { appMap =>
+        val (appId, appVersion) = appInfo
+        if (appMap.contains(appId))
+          rtc.successful(appMap)
+        else
+          loadAppVersion(appId, appVersion, appMap).map { appState =>
+          appMap + (appId -> appState)
+        }
+      }
+    }
+    
+    // Once that's done, set the actual Apps in this Space:
+    appsRM.map { appMap =>
+      // Fetch the appropriate Apps, in order, from the map:
+      val spaceApps = state.appInfo.map(_._1).map(appMap(_))
+      state.copy(apps = spaceApps)
+    }
+  }
+  
+  /**
+   * Given a SpaceState, load the Apps for that Space. Returns the RequestM of the updated Space.
+   * 
+   * This runs recursively, loading the Apps for each App as needed.
+   * 
+   * TODO: this should deal more elegantly with diamond dependencies, but be careful of that: you could
+   * have multiple dependencies on the same App at different versions.
+   */
+  def loadAppsFor(state:SpaceState):RM[SpaceState] = {
+    loadAppsFor(state, Map.empty)
   }
 
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
