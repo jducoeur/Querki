@@ -24,13 +24,19 @@ import messages._
  * the ones that are there after we do all the checks, which are needed to make the real state changes.
  */
 object SpaceMessagePersistence {
+  
+  /**
+   * Marker trait, solely so matches can be checked for completeness.
+   */
+  sealed trait SpaceEvent
+  
   case class DHCreateThing(
     @KryoTag(1) req:UserRef, 
     @KryoTag(2) id:OID,
     @KryoTag(3) kind:Kind, 
     @KryoTag(4) modelId:OID, 
     @KryoTag(5) props:DHPropMap, 
-    @KryoTag(6) modTime:DateTime) extends UseKryo
+    @KryoTag(6) modTime:DateTime) extends UseKryo with SpaceEvent
     
   case class DHModifyThing(
     @KryoTag(1) req:UserRef, 
@@ -38,19 +44,16 @@ object SpaceMessagePersistence {
     @KryoTag(3) modelIdOpt:Option[OID], 
     @KryoTag(4) propChanges:DHPropMap,
     @KryoTag(5) replaceAllProps:Boolean,
-    @KryoTag(6) modTime:DateTime) extends UseKryo
+    @KryoTag(6) modTime:DateTime) extends UseKryo with SpaceEvent
     
   case class DHDeleteThing(
     @KryoTag(1) req:UserRef, 
     @KryoTag(2) id:OID, 
-    @KryoTag(3) modTime:DateTime) extends UseKryo
+    @KryoTag(3) modTime:DateTime) extends UseKryo with SpaceEvent
     
   case class DHInitState(
     @KryoTag(1) req:UserRef,
-    @KryoTag(2) display:String) extends UseKryo
-    
-  case class SpaceSnapshot(
-    @KryoTag(1) state:DHSpaceState) extends UseKryo
+    @KryoTag(2) display:String) extends UseKryo with SpaceEvent
     
   /**
    * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,
@@ -64,7 +67,10 @@ object SpaceMessagePersistence {
    */
   case class BootSpace(
     @KryoTag(1) state:DHSpaceState,
-    @KryoTag(2) modTime:DateTime) extends UseKryo
+    @KryoTag(2) modTime:DateTime) extends UseKryo with SpaceEvent
+    
+  case class SpaceSnapshot(
+    @KryoTag(1) state:DHSpaceState) extends UseKryo
 }
 
 trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with IdentityPersistence with querki.types.ModelTypeDefiner

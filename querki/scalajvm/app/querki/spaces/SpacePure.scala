@@ -196,7 +196,7 @@ trait SpacePure extends querki.types.ModelTypeDefiner with ModelPersistence with
    * This is the core of processing a Space's history -- a PartialFunction over Space events,
    * which takes the current history as a curried parameter.
    */
-  def evolveState(stateOpt:Option[SpaceState]):PartialFunction[Any, SpaceState] = {
+  def evolveState(stateOpt:Option[SpaceState]):PartialFunction[SpaceEvent, SpaceState] = {
     case BootSpace(dh, modTime) => rehydrate(dh)
     
     case DHInitState(userRef, display) => initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)

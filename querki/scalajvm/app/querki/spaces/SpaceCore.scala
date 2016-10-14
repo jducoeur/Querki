@@ -550,10 +550,18 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * it. Why? Because otherwise, evolveState(_currentState) gets called *once*: remember that
    * receiveRecover only gets called once, to fetch the overall processing function. So we need
    * to spell things out more explicitly.
+   * 
+   * IMPORTANT: this *must* be at the end of the orElse chain!
    */
   def recoverSpaceCommand:PartialFunction[Any, SpaceState] =
     PartialFunction { any =>
-      evolveState(_currentState)(any)
+      any match {
+        case evt:SpaceEvent => evolveState(_currentState)(evt)
+        // TBD: This is horrible -- we really want to be able to filter the types without these
+        // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
+        // checking ourselves.
+        case _ => throw new Exception(s"SpaceCore.recoverSpaceCommand somehow got non-SpaceEvent $any")
+      }
     }
   
   /**

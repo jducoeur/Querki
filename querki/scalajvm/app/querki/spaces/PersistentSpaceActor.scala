@@ -21,6 +21,7 @@ import querki.time.DateTime
 import querki.values.{QValue, SpaceVersion}
 
 import PersistMessages._
+import SpaceMessagePersistence.SpaceEvent
 
 /**
  * This is the master controller for a single Space. It is a PersistentActor -- all
@@ -199,7 +200,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     val source = readJournal.currentEventsByPersistenceId(persistenceId, 0, version.v)
     implicit val mat = ActorMaterializer()
     loopback {
-      source.runFold(emptySpace) { case ((curState, EventEnvelope(offset, persistenceId, sequenceNr, evt))) =>
+      source.runFold(emptySpace) { case ((curState, EventEnvelope(offset, persistenceId, sequenceNr, evt:SpaceEvent))) =>
         evolveState(Some(curState))(evt)
       }
     } flatMap { loadedState =>

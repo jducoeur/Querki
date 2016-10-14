@@ -135,7 +135,8 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     loopback {
       // Note that we construct the history using VectorBuilder, for efficiency:
       source.runFold((initialState, new VectorBuilder[HistoryRecord])) {
-        case (((curState, history), EventEnvelope(offset, persistenceId, sequenceNr, evt))) =>
+        // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
+        case (((curState, history), EventEnvelope(offset, persistenceId, sequenceNr, evt:SpaceEvent))) =>
         val nextState = evolveState(Some(curState))(evt)
         history += HistoryRecord(sequenceNr, evt, nextState)
         (nextState, history)
