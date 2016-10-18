@@ -332,6 +332,18 @@ case class SpaceState(
     }
   }
   
+  def hasApp(appId:OID):Boolean = getApp(appId).isDefined
+  
+  /**
+   * Returns all of the Apps in the entire inheritance hierarchy.
+   */
+  def allApps():Map[OID, SpaceState] = {
+    accumulateAll[Map[OID, SpaceState]](
+      state => Map(state.apps.map(app => (app.id -> app)):_*),
+      (acc, next) => acc ++ next
+    )
+  }
+  
   /***************************************
    * The Dynamic Cache
    * 

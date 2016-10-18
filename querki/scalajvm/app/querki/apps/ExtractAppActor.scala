@@ -90,7 +90,8 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
       dummy1 = setState(Reloading)
       // This will return once the reload process has *started*. It may take a while before the Space is
       // fully reloaded, but it should stash until then:
-      ThingFound(_, _) <- withMsg("Reloading Space with new App", router ? SpacePluginMsg(owner, state.id, AddApp(newSpaceInfo.info.id)))
+      // TODO: the SpaceVersion below should be the current version of the newly-created App!!!!!
+      ThingFound(_, _) <- withMsg("Reloading Space with new App", router ? SpacePluginMsg(owner, state.id, AddApp(newSpaceInfo.info.id, querki.values.SpaceVersion(Int.MaxValue))))
       dummy2 = setState(Hollowing)
       dummy <- hollowSpace(extractees, newSpaceInfo)
     }

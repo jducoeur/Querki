@@ -55,6 +55,12 @@ object SpaceMessagePersistence {
     @KryoTag(1) req:UserRef,
     @KryoTag(2) display:String) extends UseKryo with SpaceEvent
     
+  case class DHAddApp(
+    @KryoTag(1) req:UserRef,
+    @KryoTag(2) modTime:DateTime,
+    @KryoTag(3) appState:DHSpaceState,
+    @KryoTag(4) parentApps:Seq[DHSpaceState]) extends UseKryo with SpaceEvent
+    
   /**
    * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,
    * the first "image" of the Space, from which we begin to evolve. It should always be the
@@ -69,8 +75,16 @@ object SpaceMessagePersistence {
     @KryoTag(1) state:DHSpaceState,
     @KryoTag(2) modTime:DateTime) extends UseKryo with SpaceEvent
     
+  /**
+   * The official Snapshot type, which serializes the current state of this Space *and* that
+   * of all of its Apps.
+   * 
+   * Note that some older Spaces may have Snapshots that predate this, which simply were a
+   * straight DHSpaceState. We need to keep supporting that for now.
+   */
   case class SpaceSnapshot(
-    @KryoTag(1) state:DHSpaceState) extends UseKryo
+    @KryoTag(1) state:DHSpaceState,
+    @KryoTag(2) apps:Seq[DHSpaceState]) extends UseKryo
 }
 
 trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with IdentityPersistence with querki.types.ModelTypeDefiner

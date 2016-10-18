@@ -8,7 +8,9 @@ import models.{OID, Thing, ThingId}
 import models.Thing.PropMap
 
 import querki.identity.User
-import querki.values.SpaceState
+import querki.persistence.{PersistentActorCore, UseKryo}
+import querki.spaces.messages.SpaceMessage
+import querki.values.{SpaceState, SpaceVersion}
 
 /**
  * The abstraction of a Space, so that SpacePlugins can interact with it.
@@ -16,12 +18,25 @@ import querki.values.SpaceState
  * IMPORTANT: this must NEVER be used outside of a SpacePlugin, when that Plugin has been properly
  * invoked by the Space itself! Anything else is incredibly dangerous!
  */
-trait SpaceAPI extends Actor with Requester {
+trait SpaceAPI[RM[_]] extends PersistentActorCore {
   /**
-   * Accessor to the current state of this Space. Note that you cannot modify the state directly --
-   * you must do so through modifyThing.
+   * Accessor to the current state of this Space.
    */
   def state:SpaceState
+  
+  /**
+   * Actually changes the Space. Usually called *inside* persistMsgAPI(), and will execute after
+   * the message is persisted.
+   */
+  def updateAfter(f: SpaceState => SpaceState):SpaceState
+  
+  /**
+   * This is how a plugin tells the system to persist an event. The handler should generally
+   * be a call to updateAfter().
+   * 
+   * This will respond with a ThingFound(oid) if all is successful.
+   */
+  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R):RM[R]
   
   /**
    * Record a change to the specified Thing.
@@ -42,13 +57,7 @@ trait SpaceAPI extends Actor with Requester {
    */
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false):Unit
   
-  /**
-   * Tells the Space that something has changed in a very serious way, and the Space should reload
-   * itself from scratch.
-   * 
-   * This is an extreme and expensive function, and should only be used under relatively extreme circumstances.
-   */
-  def reloadSpace():Unit
+  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
 }
 
 /**
@@ -57,6 +66,9 @@ trait SpaceAPI extends Actor with Requester {
  * point without having to know about the entire world.
  * 
  * Extend this class to create your specific plugin.
+ * 
+ * Note that this takes an RM type parameter -- this is the monadic abstraction of RequestM, and *must*
+ * be used instead of RequestM. In return, your Plugin can work in synchronous unit tests.
  * 
  * ==Rules for SpacePlugins==
  * - Only use a SpacePlugin if you have a chunk of code that ''must'' happen inside the Space processing,
@@ -69,7 +81,7 @@ trait SpaceAPI extends Actor with Requester {
  * - The receive method should avoid throwing Exceptions if possible; if they happen, they will force
  *   a reload of the Space, and the message will be dropped on the floor, as usual for receive.
  */
-abstract class SpacePlugin(val space:SpaceAPI) {
+abstract class SpacePlugin[RM[_]](val space:SpaceAPI[RM], rtc:RTCAble[RM]) {
   /**
    * The receive handler.
    * 
@@ -77,19 +89,17 @@ abstract class SpacePlugin(val space:SpaceAPI) {
    * dealt with.
    */
   def receive:Actor.Receive
-  
-  /**
-   * The current sender. Valid during receive(), as usual.
-   */
-  def sender = space.context.sender
 }
 
 /**
  * This trait should be implemented by Ecots that want to plug their own code into all Spaces.
+ * 
+ * TODO: the typeclasses here are *all* messed up -- I'm sure we are tying ourselves far too deeply
+ * in knots. This needs rationalization!
  */
 trait SpacePluginProvider {
   /**
    * Creates a plugin for the given Space.
    */
-  def createPlugin(space:SpaceAPI):SpacePlugin
+  def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM]
 }

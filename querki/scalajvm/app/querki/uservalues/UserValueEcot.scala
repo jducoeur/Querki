@@ -14,7 +14,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.globals._
 import querki.ql.InvocationValue
-import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
+import querki.spaces.{CacheUpdate, RTCAble, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
@@ -71,8 +71,8 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     (classOf[PersistentEvents.DHUserValue] -> 100)
   )
 
-  def createPlugin(space:SpaceAPI):SpacePlugin = {
-    new UserValueSpacePlugin(space)
+  def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = {
+    new UserValueSpacePlugin(space, rtc)
   }
   
   case class RecalculateSummaries[UVT](fromProp:Property[UVT,_], summaryId:OID, values:Seq[OneUserValue])
@@ -82,7 +82,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
    * update the Summary for that Property. This handles the message in a plugin, so the Space code doesn't
    * need to know about all that.
    */
-  class UserValueSpacePlugin(s:SpaceAPI) extends SpacePlugin(s) {
+  class UserValueSpacePlugin[RM[_]](s:SpaceAPI[RM], rtc:RTCAble[RM]) extends SpacePlugin(s, rtc) {
     // TBD: this doesn't really check the types as well as we'd like it to do, due to erasure. Are all the needed types
     // lost too far upstream? Is there any way to introduce TypeTags to allow us to actually check Summarizer[UVT,VT]?
     def asSummarizer[UVT,MSG[UVT],VT](prop:Property[VT,_], msg:MSG[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {

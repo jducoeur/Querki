@@ -40,7 +40,8 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   /**
    * Called by each Space once, to instantiate its plugins. This is how we hook Space processing.
    */
-  def createPlugin(space:SpaceAPI):SpacePlugin = new AppsSpacePlugin(space, ecology)
+  def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = 
+    new AppsSpacePlugin(space, rtc, ecology)
   
   class AppLoading extends Contributor[AppLoadInfo, Future[Seq[SpaceState]]] {
     def notify(evt:AppLoadInfo, sender:Publisher[AppLoadInfo, Future[Seq[SpaceState]]]):Future[Seq[SpaceState]] = {

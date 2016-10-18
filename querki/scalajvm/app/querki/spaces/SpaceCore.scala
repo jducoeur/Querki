@@ -38,7 +38,7 @@ import SpaceMessagePersistence._
  *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
 abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) 
-  extends SpaceMessagePersistenceBase with PersistentActorCore with SpacePure with EcologyMember with ModelPersistence 
+  extends SpaceMessagePersistenceBase with SpaceAPI[RM] with PersistentActorCore with SpacePure with EcologyMember with ModelPersistence 
 {
   /**
    * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
@@ -46,6 +46,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
 
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
@@ -58,6 +59,30 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
+  
+  ////////////////////////////////////////////
+  //
+  // SpaceAPI
+  //
+  
+  /**
+   * This is all of the SpacePluginProvider's plugin's receives, concatenated together.
+   * It is actually an important mechanism for separation of concerns. If external Ecots need
+   * to inject their own messages into Space processing, they should define a SpacePlugin. That
+   * will get picked up here, and added to the pipeline of processing when we receive messages.
+   */
+  val pluginReceive = SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this, rtc).receive).reduce(_ orElse _)
+  
+  /**
+   * This is the old signature, from Space.scala. Once we are completely done with that, and committed
+   * to the new Cassandra world, rewrite this signature to match current reality.
+   */
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false) = {
+    state.anything(thingId).map { thing =>
+      val props = pf(thing)
+      modifyThing(who, thingId, modelIdOpt, props, true)
+    }
+  }
   
   //////////////////////////////////////////////////
   //
@@ -132,7 +157,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   var snapshotCounter = 0
   def doSaveSnapshot() = {
-    saveSnapshot(dh(state))
+    val dhSpace = dh(state)
+    val dhApps = state.allApps.values.toSeq.map(dh(_))
+    val snapshot = SpaceSnapshot(dhSpace, dhApps)
+    saveSnapshot(snapshot)
     snapshotCounter = 0
   }
   def checkSnapshot() = {
@@ -449,6 +477,19 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     persistMsgThen(oid, msg, updateAfter(deletePure(oid, oldThing)))
   }
   
+  def addApp(who:User, appId:OID, appVersion:SpaceVersion):RM[Unit] = {
+    // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
+    // can only fail if something has changed significantly:
+    if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, who, state))
+      throw new PublicException("Apps.notAllowed")
+      
+    // By default, we use the *current* version of the App.
+    for {
+      app <- loadAppVersion(appId, appVersion, state.allApps)
+    }
+      yield ()
+  }
+  
   /**
    * Handler for the "meta-events" that are built into Akka Persistence.
    * 
@@ -458,6 +499,17 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def recoverPersistence:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
       updateStateCore(rehydrate(dh))
+    }
+    
+    case SnapshotOffer(metadata, SpaceSnapshot(dh, dhApps)) => {
+      val rawSpace = rehydrate(dh)
+      val rawApps = for {
+        dhApp <- dhApps
+        rawApp = rehydrate(dhApp)
+      }
+        yield (rawApp.id -> rawApp)
+      val filledSpace = fillInApps(rawSpace, Map(rawApps:_*), Map.empty)
+      updateStateCore(filledSpace._1)
     }
     
     case RecoveryCompleted => {
@@ -501,6 +553,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case None => rtc.successful(())
         }
         
+        // TODO: this code is just plain wrong, and needs to go away! We need to add the Apps *while* we are
+        // loading, during the DHAddApp Event, not afterwards!
         def loadApps:RM[Option[SpaceState]] = {
           if (_currentState.isEmpty)
             rtc.successful(None)
@@ -584,7 +638,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         case _ => stash()
       }
     } else
-      normalReceiveCommand
+      normalReceiveCommand orElse pluginReceive
   }
   
   val normalReceiveCommand:Receive = {

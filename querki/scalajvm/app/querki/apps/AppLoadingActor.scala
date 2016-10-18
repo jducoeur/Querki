@@ -21,6 +21,8 @@ import querki.util.QuerkiActor
  * This will probably get largely obviated by Akka Streams, but if not, think about switching it to Typed Akka
  * down the road.
  * 
+ * TODO: I believe this code is now entirely dead.
+ * 
  * @author jducoeur
  */
 private [apps] class AppLoadingActor(ecology:Ecology, spaceId:OID, ownerIdentity:OID) extends QuerkiActor(ecology) {
@@ -38,6 +40,7 @@ private [apps] class AppLoadingActor(ecology:Ecology, spaceId:OID, ownerIdentity
   
   def doReceive = {
     case FetchApps => {
+/*
       val appOIDs = AppsPersistence.lookupApps(spaceId)
       
       // TODO: this is arbitrary. Probably make it configurable? Keep in mind that this may kick
@@ -59,6 +62,7 @@ private [apps] class AppLoadingActor(ecology:Ecology, spaceId:OID, ownerIdentity
         theSender ! AppStates(states map { _.state })
         context.stop(self)
       }
+*/
     }
   }
 }
@@ -72,6 +76,7 @@ private [apps] object AppLoadingActor {
 /**
  * Worker that fetches the State of a specific App.
  */
+/*
 private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) extends QuerkiActor(ecology) {
   import AppLoader._
   import AppSender._
@@ -130,3 +135,4 @@ private [apps] object AppLoader {
   case object FetchApp
   def props(ecology:Ecology, appId:OID, ownerIdentity:OID) = Props(classOf[AppLoader], ecology, appId, ownerIdentity)
 }
+*/

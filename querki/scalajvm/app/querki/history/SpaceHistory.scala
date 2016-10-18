@@ -62,7 +62,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
   
   lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
     
-  case class HistoryRecord(sequenceNr:Long, evt:Any, state:SpaceState)
+  case class HistoryRecord(sequenceNr:Long, evt:SpaceEvent, state:SpaceState)
   type StateHistory = Vector[HistoryRecord]
   val StateHistory = Vector
   
@@ -75,7 +75,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
   
   implicit def OID2TID(oid:OID):TID = ClientApi.OID2TID(oid)
   
-  def toSummary(evt:Any, sequenceNr:Long, identities:Set[OID], thingNames:ThingNames)(implicit state:SpaceState):(EvtSummary, Set[OID], ThingNames) = 
+  def toSummary(evt:SpaceEvent, sequenceNr:Long, identities:Set[OID], thingNames:ThingNames)(implicit state:SpaceState):(EvtSummary, Set[OID], ThingNames) = 
   {
     def fill(userRef:UserRef, thingIds:Seq[OID], f:String => EvtSummary):(EvtSummary, Set[OID], ThingNames) = {
       val summary = f(userRef.identityIdOpt.map(_.toThingId.toString).getOrElse(""))
@@ -113,6 +113,9 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
       
       case DHDeleteThing(req, thingId, modTime) => 
         fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
+        
+      case DHAddApp(req, modTime, app, appParents) =>
+        fill(req, Seq(app.id), AddAppSummary(sequenceNr, _, modTime.toTimestamp, app.id))
     }
   }
   

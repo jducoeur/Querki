@@ -41,7 +41,7 @@ import SpaceMessagePersistence.SpaceEvent
  * Where should that go?
  */
 class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory) 
-  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor with SpaceAPI
+  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor
 {  
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   
@@ -50,36 +50,6 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
    * database.
    */
   lazy val persister = persistenceFactory.getSpacePersister(id)
-  
-  ////////////////////////////////////////////
-  //
-  // SpaceAPI
-  //
-  
-  /**
-   * This is all of the SpacePluginProvider's plugin's receives, concatenated together.
-   * It is actually an important mechanism for separation of concerns. If external Ecots need
-   * to inject their own messages into Space processing, they should define a SpacePlugin. That
-   * will get picked up here, and added to the pipeline of processing when we receive messages.
-   */
-  val pluginReceive = SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this).receive).reduce(_ orElse _)
-  
-  /**
-   * This is the old signature, from Space.scala. Once we are completely done with that, and committed
-   * to the new Cassandra world, rewrite this signature to match current reality.
-   */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false) = {
-    state.anything(thingId).map { thing =>
-      val props = pf(thing)
-      modifyThing(who, thingId, modelIdOpt, props, true)
-    }
-  }
-
-  /**
-   * Note that the semantics of "Reload" are different in the new world from the old, so this needs some
-   * sanity-checking. But I think this is currently only called from the AppsSpacePlugin.
-   */
-  def reloadSpace() = stateRouter ! querki.util.Reload
 
   /**
    * We override SpaceCore's receiveCommand so that we can hit the plugins.

@@ -12,7 +12,7 @@ import querki.conversations.messages.ConversationMessage
 import querki.identity.{IdentityId, User}
 import querki.session.messages.SessionMessage
 import querki.spaces.{SpaceStatusCode, StatusNormal}
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext, SpaceState, SpaceVersion}
 import querki.util.PublicException
 
 sealed trait SpaceMgrMsg

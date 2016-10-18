@@ -47,10 +47,10 @@ private[spaces] class SpaceRouter(e:Ecology)
   
   // The components of the troupe, which get immediately set up as soon as we start:
   val space =
-    if (useNewPersist)
+//    if (useNewPersist)
       context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-    else
-      context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+//    else
+//      context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
   val conversations = 
     if (useNewPersist)
       context.actorOf(Conversations.conversationsManagerProps(self))

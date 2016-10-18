@@ -51,6 +51,8 @@ class HistorySummaryPage(params:ParamMap)(implicit e:Ecology)
         SummaryDisplayInfo(idx, who, time, s"Edited ${lookup(id)}", s"Changed: ${props.map(lookup(_)).mkString(", ")}", "info")
       case DeleteSummary(idx, who, time, id) =>
         SummaryDisplayInfo(idx, who, time, s"Deleted ${lookup(id)}", "", "danger")
+      case AddAppSummary(idx, who, time, appId) =>
+        SummaryDisplayInfo(idx, who, time, s"Added app ${lookup(appId)}", "", "info")
     }
   }
   

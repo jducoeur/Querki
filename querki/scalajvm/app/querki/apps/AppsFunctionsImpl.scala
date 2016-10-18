@@ -6,6 +6,7 @@ import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.data.{SpaceInfo, TID}
 import querki.globals._
 import querki.spaces.messages._
+import querki.values.SpaceVersion
 
 /**
  * @author jducoeur
@@ -27,7 +28,8 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     
     ThingId(appIdStr) match {
       case AsOID(appId) => {
-        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId))) map {
+        // For the time being, we simply assume that you want the current version of the App:
+        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue)))) map {
           case ThingFound(_, _) => ()
           case ThingError(ex, _) => throw ex
         }
