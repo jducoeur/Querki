@@ -49,8 +49,6 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
   
   implicit val ecology = e
   
-  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
-  
   lazy val SpaceOps = interface[SpaceOps]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -96,31 +94,25 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
           val canon = NameUtils.canonicalize(display)
           persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display, initialStatus)) foreach {
             case err:ThingError => sender ! err
-            // TODO: need to send the InitState message to the newly-create Space, to boot it up; don't send the
-            // SpaceInfo response until that returns a ThingFound!
             case Changed(spaceId, _) => {
-              if (useNewPersist) {
-                // In the new Akka Persistence world, we send the new Space an InitialState message to finish
-                // bootstrapping it:
-                SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
-                  // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
-                  case ThingFound(_, _) => {
-                    // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
-                    // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
-                    val req = if (initialStatus != StatusNormal) {
-                      SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
-                    } else {
-                      RequestM.successful(ShutdownAck)
-                    }
-                    req.map { _ =>
-                      sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
-                    }
+              // In the new Akka Persistence world, we send the new Space an InitialState message to finish
+              // bootstrapping it:
+              SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
+                // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
+                case ThingFound(_, _) => {
+                  // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
+                  // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
+                  val req = if (initialStatus != StatusNormal) {
+                    SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
+                  } else {
+                    RequestM.successful(ShutdownAck)
                   }
-                  case ex:ThingError => sender ! ex
+                  req.map { _ =>
+                    sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+                  }
                 }
-              } else
-                // Old-style -- just send the response, and we're done:
-                sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
+                case ex:ThingError => sender ! ex
+              }
             }
           }
         }  

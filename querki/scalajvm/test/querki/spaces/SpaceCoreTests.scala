@@ -67,11 +67,13 @@ class TestSpaceCore(
   }
   
   /**
-   * TODO: figure out how to specify and test Apps in the test environment. This is just a stub.
-   * The real code should probably tie into the long-defined TestWorld machinery.
+   * Note that calling this only makes sense if you are operating in the same world as the specified App.
+   * See querki.apps.SpaceInWorldWith to set this up properly.
    */
-  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):TCIdentity[SpaceState] =
-    TestRTCAble.successful(emptySpace)
+  def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):TCIdentity[SpaceState] = {
+    val appSpace = testSpace.world.getSpace(appId)
+    TestRTCAble.successful(appSpace.state)
+  }
 }
 
 /**
@@ -156,14 +158,12 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
 class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
   def configOpt:Option[TestSpaceConfig] = None
   lazy val world = new TestWorld
-  val sc = new TestSpaceCore(toid(), this, configOpt)
+  val sc = new TestSpaceCore(spaceId, this, configOpt)
 }
 
-/**
- * This is another Space in the same World as the other one. This is necessary for testing Apps.
- */
-class SpaceInWorldWith(other:SpaceCoreSpaceBase)(implicit e:Ecology) extends SpaceCoreSpace {
-  override lazy val world = other.world
+class SimpleCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with querki.types.ModelTypeDefiner {
+  // Boot the Space up
+  this ! InitialState(owner, sc.id, "Test Space", owner.mainIdentity.id)
 }
 
 /**

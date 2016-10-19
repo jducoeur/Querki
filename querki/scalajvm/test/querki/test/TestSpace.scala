@@ -49,7 +49,7 @@ class TestWorld {
     spaceRegistry += (space.spaceId -> space)
   }
   
-  def getSpace(id:OID):TestSpace = spaceRegistry(id)
+  def getSpace(id:OID):TestSpace = spaceRegistry.get(id).getOrElse(throw new Exception(s"World didn't find a Space with id $id -- registry is $spaceRegistry"))
 }
 
 case class SpaceMember(user:User, person:ThingState)

@@ -55,14 +55,9 @@ querki {
     timeout : 15 minutes
     # How often (in terms of number of changes) should a Space save a snapshot?
     snapshotInterval : 100
-    # Should we use the new Cassandra-based persistence?
-    # This will go away once we've transitioned fully
-    newPersist : true
   }
   
   apps {
-    # The size of each chunk being sent from an App to its child Spaces
-    chunksize : 10000
   }
   
   mail {

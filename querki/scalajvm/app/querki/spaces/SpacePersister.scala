@@ -76,7 +76,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   lazy val newObjCreate = Config.getBoolean("querki.cluster.newObjCreate", false)
 
   // The OID of the Space, based on the sid
-  def oid = Space.oid _
+  def oid(sid:String) = OID(sid)
   // The name of the Space's History Table
   def historyTable(id:OID) = "h" + sid(id)
   

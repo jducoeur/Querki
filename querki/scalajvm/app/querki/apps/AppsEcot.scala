@@ -33,7 +33,6 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   override def postInit() = {
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[AppsFunctions, AppsFunctionsImpl](SpaceOps.spaceRegion, false)
-    SpaceChangeManager.appLoader += new AppLoading
     SpaceChangeManager.registerPluginProvider(this)
   }
   
@@ -42,21 +41,6 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
    */
   def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = 
     new AppsSpacePlugin(space, rtc, ecology)
-  
-  class AppLoading extends Contributor[AppLoadInfo, Future[Seq[SpaceState]]] {
-    def notify(evt:AppLoadInfo, sender:Publisher[AppLoadInfo, Future[Seq[SpaceState]]]):Future[Seq[SpaceState]] = {
-      import AppLoadingActor._
-      
-      val AppLoadInfo(ownerIdentity, spaceId, space) = evt
-      // TODO: this is arbitrary. Probably make it configurable? Keep in mind that this may kick
-      // off recursive loads.
-      implicit val timeout = Timeout(1 minute)
-      
-      // We do the actual work in a separate Actor:
-      val loader = space.context.actorOf(AppLoadingActor.props(ecology, spaceId, ownerIdentity))
-      (loader ? FetchApps).mapTo[AppStates] map { _.states }
-    }
-  }
     
   /***********************************************
    * PROPERTIES

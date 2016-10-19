@@ -43,19 +43,15 @@ private[spaces] class SpaceRouter(e:Ecology)
   // How long we can be inactive before timing out this entire hive:
   def timeoutConfig:String = "querki.space.timeout"
   
-  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
-  
   // The components of the troupe, which get immediately set up as soon as we start:
   val space =
-//    if (useNewPersist)
       context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-//    else
-//      context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
   val conversations = 
-    if (useNewPersist)
+//    if (useNewPersist)
       context.actorOf(Conversations.conversationsManagerProps(self))
-    else
-      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
+//    else
+      // TODO: remove the old ConversationsActor, and then this:
+//      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
   val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
   val members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
   val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId))

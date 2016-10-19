@@ -139,6 +139,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * This is expected to be recursively dependent on loadAppsFor(), but this is the bit that actually
    * does the loading. The appsSoFar parameter is passed in solely so that it can then be passed to
    * loadAppsFor().
+   * 
+   * If you want to load the current version of the App, use Int.MaxValue as the version.
    */
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
   
@@ -553,21 +555,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case None => rtc.successful(())
         }
         
-        // TODO: this code is just plain wrong, and needs to go away! We need to add the Apps *while* we are
-        // loading, during the DHAddApp Event, not afterwards!
-        def loadApps:RM[Option[SpaceState]] = {
-          if (_currentState.isEmpty)
-            rtc.successful(None)
-          else
-            loadAppsFor(_currentState.get).map(Some(_))          
-        }
-        
-        for {
-          _ <- afterOwnerIdentity
-          stateWithAppsOpt <- loadApps
-          _ = stateWithAppsOpt.foreach(updateState(_))
-        }
-          yield readied()
+        afterOwnerIdentity.map(_ => readied())
       }
       
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing

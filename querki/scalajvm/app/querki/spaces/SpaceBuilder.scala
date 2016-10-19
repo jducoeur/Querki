@@ -52,13 +52,8 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   
   lazy val LinkType = Core.LinkType
   
-  lazy val useNewPersist = Config.getBoolean("querki.space.newPersist", false)
-  
   def startSpaceActor(spaceId:OID):ActorRef = {
-//    if (useNewPersist)
-      context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
-//    else
-//      context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
+    context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
   }
   
   /**

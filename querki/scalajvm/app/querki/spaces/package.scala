@@ -166,11 +166,6 @@ package object spaces {
     def updateStateCache:Sequencer[CacheUpdate]
     
     /**
-     * Signal to load the Apps for this Space. Really only expects to have one implementation.
-     */
-    def appLoader:Aggregator[AppLoadInfo, Future[Seq[SpaceState]]]
-    
-    /**
      * Allows other Ecots to plug their own code into Space processing.
      */
     def registerPluginProvider(provider:SpacePluginProvider)

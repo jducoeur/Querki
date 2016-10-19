@@ -19,7 +19,7 @@ object SystemCreator {
   def createDBEcots(ecology:Ecology) = {
     new querki.identity.UserPersistence(ecology)                   // 30    
     new querki.spaces.DBSpacePersistenceFactory(ecology)           // 38
-    new querki.apps.AppsPersistenceEcot(ecology)                   // 60
+//  new querki.apps.AppsPersistenceEcot(ecology)                   // 60
   }
   
   /**

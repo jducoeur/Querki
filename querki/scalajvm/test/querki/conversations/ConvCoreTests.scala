@@ -78,11 +78,6 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
   }
 }
 
-class SimpleCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with ModelTypeDefiner {
-  // Boot the Space up
-  this ! InitialState(owner, sc.id, "Test Space", owner.mainIdentity.id)
-}
-
 /**
  * Tests for ThingConversationsCore.
  */

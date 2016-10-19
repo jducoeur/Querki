@@ -39,15 +39,6 @@ class SpaceChangeManagerEcot(e:Ecology) extends QuerkiEcot(e) with SpaceChangeMa
   val updateStateCache = new CacheUpdater
   class CacheUpdater extends Sequencer[CacheUpdate]
   
-  /**
-   * Called just before Load, to fetch the Apps.
-   * 
-   * This is a slight abuse of the publication mechanism, but it's the existing way to decouple this
-   * functionality from Space itself.
-   */
-  val appLoader = new AppLoader
-  class AppLoader extends Aggregator[AppLoadInfo, Future[Seq[SpaceState]]]
-  
   var spacePluginProviders:Seq[SpacePluginProvider] = Seq.empty
   
   def registerPluginProvider(provider:SpacePluginProvider) = {
