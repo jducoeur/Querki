@@ -5,6 +5,7 @@ import scala.collection.immutable.Queue
 import akka.actor.Actor.Receive
 import akka.persistence._
 
+import querki.globals._
 import querki.time.DateTime
 
 case class HistoryRecord(sequenceNr:Long, msg:Any)
@@ -54,6 +55,8 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
     lastSequenceNr += 1
     history = HistoryRecord(lastSequenceNr, event) :: history
+    // Uncomment this to see exactly what's going on:
+//    QLog.spew(s"Persisting $event")
     handler(event)
   }
   

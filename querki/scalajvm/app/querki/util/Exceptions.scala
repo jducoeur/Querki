@@ -38,7 +38,7 @@ case class PublicException(msgName:String, params:Any*) extends Exception {
       case _ => doDisplay
     }
   }
-  override def getMessage = s"$msgName($params)"
+  override def getMessage = s"$msgName(${params.mkString(", ")})"
 }
 object UnexpectedPublicException extends PublicException("General")
 

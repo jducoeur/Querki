@@ -105,6 +105,10 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
     }
   }
   
+  def ?(msg:AnyRef):AnyRef = {
+    (this ! msg).getOrElse(throw new Exception(s"Didn't get expected response to $msg"))
+  }
+  
   /**
    * Use this signature if you need to get a hold of the state after the change is made. Don't
    * over-use this -- there aren't many circumstances where you need it.
