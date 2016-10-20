@@ -47,7 +47,7 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
             val permThingRM:RM[(Thing, SpaceState)] = permThingOpt match {
               case Some(t) => rtc.successful((t, state))
               case _ => {
-                val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Permissions"))
+                val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Instance Permissions"))
                 for {
                   // Create the Permissions Thing:
                   result <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)
