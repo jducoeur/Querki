@@ -70,14 +70,28 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * It is actually an important mechanism for separation of concerns. If external Ecots need
    * to inject their own messages into Space processing, they should define a SpacePlugin. That
    * will get picked up here, and added to the pipeline of processing when we receive messages.
+   * 
+   * The complexity here is mainly in catching exceptions. Is there no better way to do this?
+   * Not only is this complex, but it *must* be the end of the call chain!
    */
-  val pluginReceive = SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this, rtc).receive).reduce(_ orElse _)
+  val pluginReceive:Receive =
+    PartialFunction { any:Any =>
+      try {
+        SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this, rtc).receive).reduce(_ orElse _)(any)
+      } catch {
+        case ex:PublicException => respond(ThingError(ex))
+        case ex:Throwable => {
+          QLog.error(s"Space.plugins received an unexpected exception before doPersist()", ex)
+          respond(ThingError(UnexpectedPublicException))
+        }
+      }
+    }
   
   /**
    * This is the old signature, from Space.scala. Once we are completely done with that, and committed
    * to the new Cassandra world, rewrite this signature to match current reality.
    */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false) = {
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean) = {
     state.anything(thingId).map { thing =>
       val props = pf(thing)
       modifyThing(who, thingId, modelIdOpt, props, true)
@@ -199,11 +213,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * Note that this specifically composes, even though the persist() inside of it doesn't. The returned
    * RM will resolve with the result of the handler, during the persist() call.
    */
-  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R):RM[R] = {
+  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R, sendAck:Boolean = true):RM[R] = {
     val rm = rtc.prep[R]
     doPersist(event) { _ =>
       val result = handler
-      respond(ThingFound(oid, state))
+      if (sendAck) {
+        respond(ThingFound(oid, state))
+      }
       checkSnapshot()
       try {
         rm.resolve(Success(result))
@@ -371,23 +387,41 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         else
           canCreate(who, modelId)
           
+      def isDuplicateName:Boolean = {
+        val resultOpt = for {
+          n <- name
+          existing <- state.anythingByName(n)
+        }
+          // It is *not* a duplicate if it is found in an App or System; that's legal:
+          yield existing.spaceId == state.id
+          
+        resultOpt.getOrElse(false)
+      }
+          
       if (!allowed) {
         rtc.failed(new PublicException(CreateNotAllowed))
-      } else if (name.isDefined && state.anythingByName(name.get).isDefined)
+      } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        // All tests have passed, so now we actually persist the change: 
-        val modTime = DateTime.now
-        allocThingId().flatMap { thingId =>
-          val msg = {
-            implicit val s = state
-            DHCreateThing(who, thingId, kind, modelId, props, modTime)
-          }
-          
-          persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)))
-        }
+        doCreate(who, modelId, props, kind, true).map(_._1)
       }
     }
+  }
+  
+  /**
+   * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
+   */
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean):RM[(SpaceState, OID)] = {
+    // All tests have passed, so now we actually persist the change: 
+    val modTime = DateTime.now
+    allocThingId().flatMap { thingId =>
+      val msg = {
+        implicit val s = state
+        DHCreateThing(who, thingId, kind, modelId, props, modTime)
+      }
+      
+      persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)), sendAck).map((_, thingId))
+    }    
   }
 
   /**
@@ -425,7 +459,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     modified
   }
   
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean):RM[Unit] = {
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean = true):RM[SpaceState] = {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
       rtc.failed(new PublicException(UnknownPath))
@@ -447,7 +481,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
           }
           
-          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)))
+          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)), sendAck)
         }
       }
     }    
@@ -626,7 +660,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         case _ => stash()
       }
     } else
-      normalReceiveCommand orElse pluginReceive
+      handleRequestResponse orElse normalReceiveCommand orElse pluginReceive
   }
   
   val normalReceiveCommand:Receive = {

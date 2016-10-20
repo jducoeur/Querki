@@ -133,37 +133,17 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   }
   
   def permsFor(thing:TID):Future[ThingPermissions] = withThing(thing) { thing =>
-    val hasInstancePerms = (thing.kind == Kind.Space || thing.isModel(state))
-    if (hasInstancePerms) {
-      val permThingOpt = for {
-        oid <- thing.getFirstOpt(AccessControl.InstancePermissionsProp)(state)
-        t <- state.anything(oid)
-      }
-        yield t
-  
-      // Either we have the Instance Permissions Thing, or we create it:
-      val permThingFut:Future[(Thing, SpaceState)] = 
-        permThingOpt.map(t => Future.successful((t, state))).getOrElse {
-          val createMsg = CreateThing(user, state.id, Kind.Thing, MOIDs.InstancePermissionsModelOID, Thing.emptyProps)
-          for {
-            // Create the Permissions Thing:
-            ThingFound(permThingId, _) <- spaceRouter ? createMsg
-            // And point the main Thing to it:
-            changeMsg = ChangeProps(user, state.id, thing.id, Map(AccessControl.InstancePermissionsProp(permThingId)))
-            ThingFound(_, newState) <- spaceRouter ? changeMsg
-            t = newState.anything(permThingId).get
-          }
-            yield (t, newState)
-        }
-        
-      // thingInfo() also produces a Future, so comprehension time:
-      for {
-        (t, s) <- permThingFut
-        thingInfo <- ClientApi.thingInfo(t, rc)(s)
-      }
-        yield ThingPermissions(permsFor(thing, s), Some(thingInfo), permsFor(t, s))
-    } else
-      Future.successful(ThingPermissions(permsFor(thing, state), None, Seq.empty))
+    for {
+      // Go to the Space Plugin for the InstancePermissions, because it may create that object:
+      ThingFound(permsId, newState) <- spaceRouter ? SpacePluginMsg(user, state.id, GetInstancePermissionsObject(thing.id))
+      permThingOpt = 
+        if (permsId == thing.id)
+          None
+        else
+          newState.anything(permsId)
+      thingInfoOpt <- futOpt(permThingOpt.map { ClientApi.thingInfo(_, rc)(newState) }.orElse(None))
+    }
+      yield ThingPermissions(permsFor(thing, s), thingInfoOpt, permThingOpt.map(permsFor(_, newState)).getOrElse(Seq.empty))
   }
   
   private def perm2Api(perm:Property[OID,OID]):PermInfo = {

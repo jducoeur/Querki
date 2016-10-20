@@ -38,7 +38,7 @@ case class PublicException(msgName:String, params:Any*) extends Exception {
       case _ => doDisplay
     }
   }
-  override def getMessage = s"BUG: Trying to display a PublicException without the Request. Use display() instead. msgName: $msgName; params: $params"
+  override def getMessage = s"$msgName($params)"
 }
 object UnexpectedPublicException extends PublicException("General")
 

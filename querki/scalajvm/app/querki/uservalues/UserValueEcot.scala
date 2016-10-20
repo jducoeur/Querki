@@ -102,7 +102,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
           newProps = thing.props + (summaryProp.id -> newSummary)
         }
-          space.modifyThing(IdentityAccess.SystemUser, tid, None, (t:Thing) => newProps)
+          space.modifyThing(IdentityAccess.SystemUser, tid, None, (t:Thing) => newProps, false)
       }
       
       case SpacePluginMsg(_, _, msg @ RecalculateSummaries(fromProp, summaryId, values)) => {
@@ -114,7 +114,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           // non-trivial number of modifyThing requests:
           (tid, newSummary) <- summarizer.recalculate(fromProp, summaryProp, values)
         }
-          space.modifyThing(IdentityAccess.SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)))
+          space.modifyThing(IdentityAccess.SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)), false)
       }
     }
   }

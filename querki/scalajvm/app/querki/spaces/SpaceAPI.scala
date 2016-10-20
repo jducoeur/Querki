@@ -4,7 +4,7 @@ import akka.actor._
 
 import org.querki.requester._
 
-import models.{OID, Thing, ThingId}
+import models.{Kind, OID, Thing, ThingId}
 import models.Thing.PropMap
 
 import querki.identity.User
@@ -36,10 +36,10 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * 
    * This will respond with a ThingFound(oid) if all is successful.
    */
-  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R):RM[R]
+  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R, sendAck:Boolean = true):RM[R]
   
   /**
-   * Record a change to the specified Thing.
+   * DEPRECATED: Record a change to the specified Thing.
    * 
    * IMPORTANT: this will send responses to the current Akka sender, but may do so asynchronously. 
    * It will also persist the changes, asynchronously.
@@ -55,7 +55,21 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    *    chance that the Space Actor will go away before the change gets flushed, but this might become
    *    the default.
    */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false):Unit
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean):Unit
+  
+  /**
+   * Create a new Thing.
+   * 
+   * IMPORTANT: this is strictly for internal use, and does *not* do as much massaging as usual!
+   * 
+   * @param sendAck Iff true, the usual ThingFound message will be sent to sender.
+   */
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, sendAck:Boolean):RM[(SpaceState, OID)]
+  
+  /**
+   * The newer and better way to modify a Thing.
+   */
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean):RM[SpaceState]
   
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
 }

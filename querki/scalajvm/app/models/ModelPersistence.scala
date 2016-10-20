@@ -35,7 +35,7 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
           (k, prop.serialize(v))
         }
         case None => {
-          QLog.error(s"Trying to serialize unknown Property $k, with value $v!")
+          QLog.stackTrace(s"Trying to serialize unknown Property $k, with value $v!")
           (k, "")
         }
       }

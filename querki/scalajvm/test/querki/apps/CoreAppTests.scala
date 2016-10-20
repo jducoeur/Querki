@@ -13,7 +13,10 @@ class SpaceInWorldWith(other:SpaceCoreSpaceBase)(implicit e:Ecology) extends Sim
   override lazy val world = other.world
   
   def addApp(app:SpaceCoreSpaceBase) = {
-    this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue)))
+    (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue)))) match {
+      case Some(ThingFound(appId, newState)) => // All okay
+      case wrong => throw new Exception(s"addApp() got unexpected result $wrong")
+    }
   }
 }
 
@@ -50,11 +53,11 @@ trait AppTree {
     addApp(highest)
     
     val duplicateThing = addSimpleThing("Duplicate Thing")
-    val numThing = addSimpleThing("Num Thing", highest.myNumProp(4, 6, 8))      
+    val numThing = addSimpleThing("Num Thing", highest.myNumProp(4, 6, 8))
   }
   
   lazy val mainSpace = new SpaceInWorldWith(highest) {
-    addApp(mid1)
+//    addApp(mid1)
 //    addApp(mid2)
 //    addApp(mid3)
 //    

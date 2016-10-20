@@ -8,6 +8,8 @@ import akka.persistence._
 import querki.time.DateTime
 
 case class HistoryRecord(sequenceNr:Long, msg:Any)
+  
+sealed trait Dummy
 
 /**
  * This provides a consistent implementation of the key functions of PersistentActor, so that we
@@ -25,7 +27,9 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   /**
    * We don't currently expect this to be called during tests, although that might change.
    */
-  def handleRequestResponse:Receive = ???
+  def handleRequestResponse:Receive = {
+    case n:Dummy => // This will never actually happen, it's just a placeholder
+  }
   
   /**
    * Simple emulator for stash(), if necessary.

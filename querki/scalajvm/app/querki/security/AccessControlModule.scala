@@ -6,6 +6,7 @@ import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.identity.{Identity, User}
+import querki.spaces.{RTCAble, SpaceAPI, SpacePlugin, SpacePluginProvider}
 import querki.values._
   
 object MOIDs extends EcotIds(4) {
@@ -36,7 +37,9 @@ object MOIDs extends EcotIds(4) {
   val AppliesToInstancesOID = moid(24)
 }
 
-class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
+class AccessControlModule(e:Ecology) 
+  extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils with SpacePluginProvider
+{
   
   import MOIDs._
 
@@ -46,6 +49,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   val Person = initRequires[querki.identity.Person]
   val Profiler = initRequires[querki.tools.Profiler]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
     
   lazy val QLType = Basic.QLType
@@ -56,7 +60,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   
   override def postInit() = {
     ApiRegistry.registerApiImplFor[SecurityFunctions, SecurityFunctionsImpl](SpaceOps.spaceRegion)
+    SpaceChangeManager.registerPluginProvider(this)
   }
+  
+  /**
+   * Called by each Space once, to instantiate its plugins. This is how we hook Space processing.
+   */
+  def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = 
+    new SecuritySpacePlugin(space, rtc, ecology)
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
