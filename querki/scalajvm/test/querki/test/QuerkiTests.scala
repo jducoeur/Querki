@@ -173,6 +173,11 @@ class QuerkiTests
     lines.mkString
   }
   
+  def listOfLinkText(ids:OID*)(implicit state:SpaceState):String = {
+    val things = ids.map(state.anything(_).get)
+    listOfLinkText(things:_*)
+  }
+  
   def oneTag(tag:String):String = {
     s"[$tag](${tag.replace(" ", "+")})"
   }

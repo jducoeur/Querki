@@ -92,10 +92,19 @@ class CoreAppTests extends QuerkiTests with AppTree {
   }
   
   "A Space built with AddApp" should {
+    // This basically runs through most of the stuff in the old querki.spaces.AppTests
     "have the same characteristics as a hand-built one" in {
       implicit val s = mainSpace
+      implicit val state = s.state
       
       testName("Simple Thing", Basic.SimpleThing)
+      testName("Highest Thing", highest.highestThing)
+      testName("Simple-Page", mid2.mySimplePage)
+      testName("Duplicate Thing", mid1.duplicateThing)
+      pql("[[Num Thing -> My Nums -> Plus One -> First Two -> _commas]]") should
+        equal("5, 7")
+      pql("[[My Root Model._instances]]") should
+        equal(listOfLinkText(highest.highestInstance, mainSpace.mainInstance, mid2.mid2Instance))
     }
   }
 }
