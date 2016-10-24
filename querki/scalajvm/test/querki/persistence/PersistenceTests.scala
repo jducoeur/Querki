@@ -77,6 +77,7 @@ class PersistenceTests
     
       new CommonPersistenceTests(this)
       new models.ModelPersistenceTests(this)
+      new querki.apps.AppPersistenceTests(this)
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)
       new querki.conversations.ConversationEventPersistenceTests(this)

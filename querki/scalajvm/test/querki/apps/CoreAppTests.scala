@@ -29,6 +29,10 @@ class SpaceInWorldWith(other:SpaceCoreSpaceBase)(implicit e:Ecology) extends App
   }
 }
 
+class SpaceInWorldWithSnapshots(other:SpaceCoreSpaceBase, interval:Int)(implicit e:Ecology) extends SpaceInWorldWith(other) {
+  override def configOpt = Some(TestSpaceConfig(Some(interval)))
+}
+
 /**
  * Actually builds an App hierarchy for testing. Deliberately apes querki.spaces.AppTests.
  */

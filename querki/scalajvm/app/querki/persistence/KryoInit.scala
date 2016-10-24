@@ -120,6 +120,11 @@ object KryoInit {
       kryo.register(classOf[querki.time.DateTime], new DateTimeSerializer, 108)
       
       kryo.register(classOf[scala.collection.immutable.List[_]], new ScalaListSerializer, 109)
+      
+      kryo.register(classOf[scala.Tuple1[_]], new ScalaProductSerializer(kryo), 110)
+      kryo.register(classOf[scala.Tuple2[_, _]], new ScalaProductSerializer(kryo), 111)
+      kryo.register(classOf[scala.Tuple3[_, _, _]], new ScalaProductSerializer(kryo), 112)
+      kryo.register(classOf[scala.Tuple4[_, _, _, _]], new ScalaProductSerializer(kryo), 113)
     }
   }
   
