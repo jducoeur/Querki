@@ -40,5 +40,5 @@ class AppPersistenceTests(env:PersistEnv) extends PersistTest(env) with SpaceMes
   
   checkSerialization(dh(state))
   checkSerialization(SpaceSnapshot(dh(state), Seq.empty))
-  checkSerialization(SpaceSnapshot(dh(state), state.apps.map(dh(_))))
+  checkSerialization(SpaceSnapshot(dh(state), state.allApps.values.toSeq.map(dh(_))))
 }

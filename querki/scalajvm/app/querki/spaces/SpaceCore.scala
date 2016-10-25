@@ -708,7 +708,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
-    case SaveSnapshotFailure(cause, metadata) => {
+    case SaveSnapshotFailure(metadata, cause) => {
       // TODO: what should we do here? This explicitly isn't fatal, but it *is* scary as all heck:
       QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
     }

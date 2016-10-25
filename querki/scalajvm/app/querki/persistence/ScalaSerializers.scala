@@ -54,3 +54,23 @@ class ScalaListSerializer() extends Serializer[List[_]] {
     collection.foreach { e: Any => kryo.writeClassAndObject(output, e) }
   }
 }
+
+class ScalaStreamSerializer() extends Serializer[Stream[_]] {
+  override def read(kryo: Kryo, input: Input, typ: Class[Stream[_]]): Stream[_] = {
+    val len = input.readInt(true)
+    val coll = Stream.newBuilder[Any]
+
+    var i = 0
+    while (i < len) {
+      coll += kryo.readClassAndObject(input)
+      i += 1
+    }
+    coll.result
+  }
+
+  override def write(kryo: Kryo, output: Output, collection: Stream[_]) = {
+    val len = collection.size
+    output.writeInt(len, true)
+    collection.foreach { e: Any => kryo.writeClassAndObject(output, e) }
+  }
+}

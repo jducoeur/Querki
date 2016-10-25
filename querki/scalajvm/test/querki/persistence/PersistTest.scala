@@ -42,7 +42,7 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
   def checkSerialization[T <: UseKryo](builder: => T):T = {
     val orig = builder
     val copy = serialRoundtrip(orig)
-    QLog.spew(s"Checking equality of $copy")
+//    QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
     copy
   }
@@ -58,7 +58,7 @@ class PersistTest(env:PersistEnv) extends EcologyMember {
   def checkRaw[T <: AnyRef](builder: => T):T = {
     val orig = builder
     val copy = rawRoundtrip(orig)
-    QLog.spew(s"Checking equality of $copy")
+//    QLog.spew(s"Checking equality of $copy")
     env.checkEquality(copy, orig)
     copy
   }  

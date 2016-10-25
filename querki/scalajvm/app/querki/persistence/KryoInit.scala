@@ -125,6 +125,8 @@ object KryoInit {
       kryo.register(classOf[scala.Tuple2[_, _]], new ScalaProductSerializer(kryo), 111)
       kryo.register(classOf[scala.Tuple3[_, _, _]], new ScalaProductSerializer(kryo), 112)
       kryo.register(classOf[scala.Tuple4[_, _, _, _]], new ScalaProductSerializer(kryo), 113)
+      
+      kryo.register(classOf[scala.collection.immutable.Stream[_]], new ScalaStreamSerializer, 114)
     }
   }
   
