@@ -64,12 +64,12 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * 
    * @param sendAck Iff true, the usual ThingFound message will be sent to sender.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, sendAck:Boolean):RM[(SpaceState, OID)]
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, sendAck:Boolean)(state:SpaceState):RM[(SpaceState, OID)]
   
   /**
    * The newer and better way to modify a Thing.
    */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean):RM[SpaceState]
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean)(state:SpaceState):RM[SpaceState]
   
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
 }

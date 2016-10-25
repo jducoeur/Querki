@@ -94,7 +94,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean) = {
     state.anything(thingId).map { thing =>
       val props = pf(thing)
-      modifyThing(who, thingId, modelIdOpt, props, true)
+      modifyThing(who, thingId, modelIdOpt, props, true)(state)
     }
   }
   
@@ -358,10 +358,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         Core.setName(identity.handle),
         Basic.DisplayNameProp(identity.name),
         Person.IdentityLink(identity.id)),
-      Kind.Thing)
+      Kind.Thing)(state)
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind):RM[SpaceState] = {
+  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind)(state:SpaceState):RM[SpaceState] = {
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
     offerChanges(who, Some(modelId), None, kind, propsIn, changedProps).flatMap { tcr =>
@@ -403,7 +403,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        doCreate(who, modelId, props, kind, true).map(_._1)
+        doCreate(who, modelId, props, kind, true)(state).map(_._1)
       }
     }
   }
@@ -411,7 +411,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   /**
    * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean):RM[(SpaceState, OID)] = {
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean)(state:SpaceState):RM[(SpaceState, OID)] = {
     // All tests have passed, so now we actually persist the change: 
     val modTime = DateTime.now
     allocThingId().flatMap { thingId =>
@@ -459,7 +459,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     modified
   }
   
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean = true):RM[SpaceState] = {
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean = true)(state:SpaceState):RM[SpaceState] = 
+  {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
       rtc.failed(new PublicException(UnknownPath))
@@ -487,7 +488,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }    
   }
   
-  def deleteThing(who:User, thingId:ThingId):RM[Unit] = {
+  def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[Unit] = {
     // TODO: we should probably allow deletion of local Model Types as well, but should probably check
     // that there are no Properties using that Type first.
     val oldThingOpt:Option[Thing] = 
@@ -689,22 +690,22 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case CreateThing(who, spaceId, kind, modelId, props) => {
-      catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind))
+      catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind)(state))
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
     // world.
     case ChangeProps(who, spaceId, thingId, changedProps, sync) => {
-      catchPrePersistExceptions("changeProps", modifyThing(who, thingId, None, changedProps, false))
+      catchPrePersistExceptions("changeProps", modifyThing(who, thingId, None, changedProps, false)(state))
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
-      catchPrePersistExceptions("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))
+      catchPrePersistExceptions("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true)(state))
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      catchPrePersistExceptions("deleteThing", deleteThing(who, thingId))
+      catchPrePersistExceptions("deleteThing", deleteThing(who, thingId)(state))
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything

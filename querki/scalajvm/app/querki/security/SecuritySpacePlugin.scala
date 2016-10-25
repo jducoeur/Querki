@@ -50,11 +50,11 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
                 val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Instance Permissions"))
                 for {
                   // Create the Permissions Thing:
-                  result <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)
+                  result <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)(state)
                   (newState, permThingId) = result
                   permThing = newState.anything(permThingId).get
                   // And point the main Thing to it:
-                  fullState <- api.modifyThing(req, thingId, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false, false)
+                  fullState <- api.modifyThing(req, thingId, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false, false)(newState)
                 }
                   yield (permThing, fullState)
               }
