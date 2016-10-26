@@ -22,6 +22,15 @@ import querki.values.{SpaceState, SpaceVersion}
 import messages._
 import SpaceError._
 import SpaceMessagePersistence._
+  
+/**
+ * The result from a single Space-changing function.
+ * 
+ * @param events The event(s) -- usually one, but possibly more -- to persist this change.
+ * @param changedThing The OID of the Thing (if appropriate) that this event was "about".
+ * @param resultingState The State that results when this function is complete.
+ */
+case class ChangeResult(events:List[SpaceEvent with UseKryo], changedThing:Option[OID], resultingState:SpaceState)
 
 /**
  * This trait represents the heart of the "new style" Space Actor, based on Akka Persistence.
@@ -230,6 +239,17 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     rm
   }
   
+  /**
+   * A wrapper around persist() that allows us to chain from it. No clue why this isn't built into Akka Persistence.
+   */
+  def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]] = {
+    val rm = rtc.prep[Seq[UseKryo]]
+    doPersistAll(events) { _ =>
+      rm.resolve(Success(events))
+    }
+    rm
+  }
+  
   var _currentState:Option[SpaceState] = None
   // This should return okay any time after recovery:
   def state = {
@@ -345,14 +365,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   /**
-   * Create a Person for this Space's owner. This will cause an update notification to get sent out!
+   * Create a Person for this Space's owner.
    */
-  def createOwnerPerson(s:SpaceState, identity:PublicIdentity):RM[SpaceState] = {
-    // Note that we are only doing the internal update here, *not* sending out notifications, because
-    // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
-    // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
-    // yet exist, and _hasPermission gets confused:
-    updateStateCore(s)
+  def createOwnerPerson(identity:PublicIdentity)(state:SpaceState):RM[ChangeResult] = {
     createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
       Core.toProps(
         Core.setName(identity.handle),
@@ -361,7 +376,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       Kind.Thing)(state)
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind)(state:SpaceState):RM[SpaceState] = {
+  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind)(state:SpaceState):RM[ChangeResult] = {
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
     offerChanges(who, Some(modelId), None, kind, propsIn, changedProps).flatMap { tcr =>
@@ -403,7 +418,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        doCreate(who, modelId, props, kind, true)(state).map(_._1)
+        doCreate(who, modelId, props, kind, true)(state)
       }
     }
   }
@@ -411,7 +426,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   /**
    * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean)(state:SpaceState):RM[(SpaceState, OID)] = {
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean)(state:SpaceState):RM[ChangeResult] = {
     // All tests have passed, so now we actually persist the change: 
     val modTime = DateTime.now
     allocThingId().flatMap { thingId =>
@@ -419,8 +434,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         implicit val s = state
         DHCreateThing(who, thingId, kind, modelId, props, modTime)
       }
-      
-      persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)), sendAck).map((_, thingId))
+      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(kind, thingId, modelId, props, modTime)(state)))    
+//      persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)), sendAck).map((_, thingId))
     }    
   }
 
@@ -488,7 +503,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }    
   }
   
-  def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[Unit] = {
+  def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[ChangeResult] = {
     // TODO: we should probably allow deletion of local Model Types as well, but should probably check
     // that there are no Properties using that Type first.
     val oldThingOpt:Option[Thing] = 
@@ -507,11 +522,75 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     val modTime = DateTime.now
     val oid = oldThing.id
-    val msg = {
-      implicit val s = state
-      DHDeleteThing(who, oid, modTime)
+    implicit val s = state
+    val msg = DHDeleteThing(who, oid, modTime)
+    rtc.successful(ChangeResult(List(msg), Some(oid), deletePure(oid, oldThing)(s)))
+//    persistMsgThen(oid, msg, updateAfter(deletePure(oid, oldThing)))
+  }
+  
+  /**
+   * This deals with actually persisting a list of changes atomically, and produces the
+   * state at the end of all that.
+   */
+  def persistAllThenFinalState(changes:List[ChangeResult]):RM[SpaceState] = {
+    val allEvents = changes.flatMap(change => change.events)
+    persistAllAnd(allEvents).map { _ =>
+      changes.last.resultingState
     }
-    persistMsgThen(oid, msg, updateAfter(deletePure(oid, oldThing)))
+  }
+  
+  /**
+   * Actually execute the changes from a bunch of functions.
+   * 
+   * Note that this is ridiculous overkill for most cases, but is designed to work properly
+   * for complex collections of operations.
+   */
+  def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]] = {
+    // Run through all the functions, collect the results or the first error. Note
+    // that the resulting list is in reverse order, simply because it's easier that way.
+    val resultsRM = (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
+      rm.flatMap { changes =>
+        val stateToPass = changes.headOption.map(_.resultingState).getOrElse(state)
+        func(stateToPass).map(_ +: changes)
+      }
+    }
+    
+    for {
+      resultsReversed <- resultsRM
+      results = resultsReversed.reverse
+      finalState <- persistAllThenFinalState(results)
+      _ = updateState(finalState)
+      _ = checkSnapshot()
+    }
+      yield results
+  }
+  
+  /**
+   * Simple wrapper around runChanges -- this runs them, and then sends the appropriate response.
+   */
+  def runAndSendResponse(opName:String, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]] = {
+    val result = runChanges(Seq(func))(state)
+    
+    // If there was an error, respond with that.
+    // TBD: the asymmetry here is awfully ugly. Does this suggest changes to RM?
+    result.onComplete {
+      case Success(_) =>
+      case Failure(th) => {
+        th match {
+          case ex:PublicException => respond(ThingError(ex))
+          case ex => {
+            QLog.error(s"Space.$opName received an unexpected exception before doPersist()", ex)
+            respond(ThingError(UnexpectedPublicException))
+          }
+        }
+      }
+    }
+    
+    // If it was successful, send the response for that.
+    result.map { changes =>
+      changes.lastOption.foreach(change => change.changedThing.foreach(oid => respond(ThingFound(oid, change.resultingState))))
+      changes
+    }
   }
   
   def addApp(who:User, appId:OID, appVersion:SpaceVersion):RM[Unit] = {
@@ -575,9 +654,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
                 // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
                 // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
                 // yet exist, and _hasPermission gets confused:
-                updateStateCore(s)
-                // createOwnerPerson will cause the notifications to go out:
-                createOwnerPerson(s, identity)
+//                updateStateCore(s)
+                // This will cause the notifications to go out:
+                runAndSendResponse("createOwnerPerson", createOwnerPerson(identity))(s)
               } else {
                 // Normal situation:
                 updateState(s)
@@ -672,15 +751,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         QLog.error(s"Space $id received $msg, but already has state $state!")
       } else {
         val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
-        persistMsgThen(
-          spaceId, 
-          msg, 
-          {
-            val identityOpt = who.identityById(ownerId)
-            val initState = initStatePure(who.id, ownerId, identityOpt, display)
-            createOwnerPerson(initState, identityOpt.get)
-          }
-        )
+        persistAllAnd(List(msg)).map { _ =>
+          val identityOpt = who.identityById(ownerId)
+          val initState = initStatePure(who.id, ownerId, identityOpt, display)
+          // TODO: this shouldn't be necessary, but until everything is purified, it is:
+          updateStateCore(initState)
+          runAndSendResponse("createOwnerPerson", createOwnerPerson(identityOpt.get))(initState)
+        }
       }
     }
     
@@ -690,7 +767,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case CreateThing(who, spaceId, kind, modelId, props) => {
-      catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind)(state))
+      runAndSendResponse("createSomething", createSomething(who, modelId, props, kind))(state)
+//      catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind)(state))
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
@@ -705,7 +783,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      catchPrePersistExceptions("deleteThing", deleteThing(who, thingId)(state))
+      runAndSendResponse("deleteThing", deleteThing(who, thingId))(state)
+//      catchPrePersistExceptions("deleteThing", deleteThing(who, thingId)(state))
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything

@@ -52,12 +52,27 @@ trait PersistentCoreTestBase extends PersistentActorCore {
    */
   var history = initHistory
   
+  /**
+   * Turn this on to print out the history saves as they go. This can help debug unit test issues.
+   */
+  final val _spewHistory = false
+  
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit) = {
     lastSequenceNr += 1
     history = HistoryRecord(lastSequenceNr, event) :: history
-    // Uncomment this to see exactly what's going on:
-//    QLog.spew(s"Persisting $event")
+    if (_spewHistory) QLog.spew(s"Persisting $event")
     handler(event)
+  }
+  
+  def doPersistAll(events:collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit):Unit = {
+    val (seqNr, recs) = ((lastSequenceNr, List.empty[HistoryRecord]) /: events) { case ((curSeqNr, recs), event) =>
+      val seqNr = curSeqNr + 1
+      if (_spewHistory) QLog.spew(s"Persisting $event")
+      (seqNr, HistoryRecord(seqNr, event) :: recs)
+    }
+    lastSequenceNr = seqNr
+    history = recs.reverse ::: history
+    handler(events.last)
   }
   
   var lastSequenceNr:Long = 0
@@ -97,6 +112,7 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   def saveSnapshot(snapshot:Any) = {
     val metadata = SnapshotMetadata(persistenceId, lastSequenceNr, DateTime.now.getMillis)
     val event = SnapshotOffer(metadata, snapshot)
+    if (_spewHistory) QLog.spew(s"Persisting $event")
     // Note that the snapshot *replaces* the rest of the history, intentionally. Playback should start
     // from here:
     history = HistoryRecord(lastSequenceNr, event) :: Nil

@@ -31,6 +31,13 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
   def updateAfter(f: SpaceState => SpaceState):SpaceState
   
   /**
+   * Persists the specified events, and lets you hook into what happens afterwards.
+   */
+  def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]]
+  
+  /**
+   * DEPRECATED: this tried to do too much at once. We're using different patterns now.
+   * 
    * This is how a plugin tells the system to persist an event. The handler should generally
    * be a call to updateAfter().
    * 
@@ -64,7 +71,7 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * 
    * @param sendAck Iff true, the usual ThingFound message will be sent to sender.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, sendAck:Boolean)(state:SpaceState):RM[(SpaceState, OID)]
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, sendAck:Boolean)(state:SpaceState):RM[ChangeResult]
   
   /**
    * The newer and better way to modify a Thing.

@@ -51,7 +51,10 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
                 for {
                   // Create the Permissions Thing:
                   result <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)(state)
-                  (newState, permThingId) = result
+                  ChangeResult(events, permThingIdOpt, newState) = result
+                  // Actually persist those changes:
+                  _ <- api.persistAllAnd(events)
+                  permThingId = permThingIdOpt.get
                   permThing = newState.anything(permThingId).get
                   // And point the main Thing to it:
                   fullState <- api.modifyThing(req, thingId, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false, false)(newState)

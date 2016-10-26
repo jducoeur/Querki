@@ -37,6 +37,8 @@ trait PersistentActorCore {
    */
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit):Unit
   
+  def doPersistAll(events:collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit):Unit
+  
   /**
    * The sequence ID of the most recently-processed persistence message. Normally implemented by
    * PersistentActor.

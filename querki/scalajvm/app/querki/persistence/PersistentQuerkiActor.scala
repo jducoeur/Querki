@@ -26,6 +26,15 @@ trait PersistentQuerkiActor extends PersistentActorCore with PersistentActor wit
   }
   
   /**
+   * Our version of persistAll(), which enforces UseKryo.
+   */
+  def doPersistAll(events:collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit) = {
+    persistAll(events) { evt =>
+      handler(evt)
+    }
+  }  
+  
+  /**
    * Encapsulates "sender !" in something a bit more unit-test-friendly. Obviously, this may only
    * be called inside the receiveCommand loop, or inside the guts of doPersist().
    */

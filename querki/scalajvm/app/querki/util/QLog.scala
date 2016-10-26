@@ -115,4 +115,15 @@ $renderProps
 """
     spew(rendered)
   }
+  
+  def spewState(state:SpaceState) = {
+    spew(s"Full details of $state")
+    implicit val s = state
+    spew(s"Local Things")
+    spew(s"==========")
+    for {
+      thing <- state.localThings
+    }
+      spewThing(thing)
+  }
 }
