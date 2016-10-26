@@ -50,14 +50,15 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
                 val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Instance Permissions"))
                 for {
                   // Create the Permissions Thing:
-                  result <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)(state)
-                  ChangeResult(events, permThingIdOpt, newState) = result
-                  // Actually persist those changes:
-                  _ <- api.persistAllAnd(events)
+                  createResult <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, false)(state)
+                  ChangeResult(createEvents, permThingIdOpt, newState) = createResult
                   permThingId = permThingIdOpt.get
                   permThing = newState.anything(permThingId).get
                   // And point the main Thing to it:
-                  fullState <- api.modifyThing(req, thingId, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false, false)(newState)
+                  modifyResult <- api.modifyThing(req, thingId, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false, false)(newState)
+                  ChangeResult(modifyEvents, _, fullState) = modifyResult
+                  // Okay, everything seems to check out. Persist the whole thing atomically:
+                  _ <- api.persistAllAnd(createEvents ++ modifyEvents)
                 }
                   yield (permThing, fullState)
               }

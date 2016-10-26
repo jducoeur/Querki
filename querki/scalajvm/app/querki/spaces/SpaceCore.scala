@@ -445,36 +445,42 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * TODO: there is probably a general notification mechanism fighting to break out here. Think about whether
    * there are better ways to do this.
    */
-  def modifyWrapper(
-    thingId:OID, 
-    thing:Thing, 
-    modelIdOpt:Option[OID], 
-    newProps:PropMap, 
-    replaceAllProps:Boolean,
-    modTime:DateTime)(state:SpaceState):SpaceState =
-  {
-    val modified = modifyPure(thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)(state)    
-    
-    thing match {
-      case s:SpaceState => {
-        // Okay, we're modifying the Space. Did we change either name?
-        def linkName(state:SpaceState) = Core.NameProp.first(state.props)
-        def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
-        
-        if (!NameUtils.equalNames(linkName(modified), linkName(s)) 
-         || !(disp(modified).contentEquals(disp(s))))
-        {
-          // At least one of those names changed, so notify the outside world:
-          changeSpaceName(NameUtils.canonicalize(linkName(modified)), disp(modified))
-        }
-      }
-      case _ =>
-    }
-    
-    modified
-  }
+//  def modifyWrapper(
+//    thingId:OID, 
+//    thing:Thing, 
+//    modelIdOpt:Option[OID], 
+//    newProps:PropMap, 
+//    replaceAllProps:Boolean,
+//    modTime:DateTime)(state:SpaceState):SpaceState =
+//  {
+//    val modified = modifyPure(thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)(state)    
+//    
+//    thing match {
+//      case s:SpaceState => {
+//        // Okay, we're modifying the Space. Did we change either name?
+//        def linkName(state:SpaceState) = Core.NameProp.first(state.props)
+//        def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
+//        
+//        if (!NameUtils.equalNames(linkName(modified), linkName(s)) 
+//         || !(disp(modified).contentEquals(disp(s))))
+//        {
+//          // At least one of those names changed, so notify the outside world:
+//          changeSpaceName(NameUtils.canonicalize(linkName(modified)), disp(modified))
+//        }
+//      }
+//      case _ =>
+//    }
+//    
+//    modified
+//  }
   
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean = true)(state:SpaceState):RM[SpaceState] = 
+  def modifyThing(
+    who:User, 
+    thingId:ThingId, 
+    modelIdOpt:Option[OID], 
+    rawNewProps:PropMap, 
+    replaceAllProps:Boolean, 
+    sendAck:Boolean = true)(state:SpaceState):RM[ChangeResult] = 
   {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
@@ -497,10 +503,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
             DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
           }
           
-          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)), sendAck)
+          rtc.successful(ChangeResult(List(msg), Some(thingId), modifyPure(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)(state)))
+//          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)), sendAck)
         }
       }
-    }    
+    }
   }
   
   def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[ChangeResult] = {
@@ -775,11 +782,33 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
     // world.
     case ChangeProps(who, spaceId, thingId, changedProps, sync) => {
-      catchPrePersistExceptions("changeProps", modifyThing(who, thingId, None, changedProps, false)(state))
+      val initialState = state
+      runAndSendResponse("changeProps", modifyThing(who, thingId, None, changedProps, false))(state).map { changes =>
+        // After we finish persisting everything, we need to deal with the possibility that
+        // they've changed the name of the Space...
+        changes.last.changedThing.map { lastThingId => 
+          if (lastThingId == spaceId) {
+            // Okay, we're modifying the Space. Did we change either name?
+            val finalState = changes.last.resultingState
+            def linkName(state:SpaceState) = Core.NameProp.first(state.props)
+            def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
+        
+            if (!NameUtils.equalNames(linkName(finalState), linkName(initialState)) 
+              || !(disp(finalState).contentEquals(disp(initialState))))
+            {
+              // At least one of those names changed, so notify the MySQL layer:
+              changeSpaceName(NameUtils.canonicalize(linkName(finalState)), disp(finalState))
+            }
+          }
+        }
+        
+      }
+//      catchPrePersistExceptions("changeProps", modifyThing(who, thingId, None, changedProps, false)(state))
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
-      catchPrePersistExceptions("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true)(state))
+      runAndSendResponse("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))(state)
+//      catchPrePersistExceptions("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true)(state))
     }
     
     case DeleteThing(who, spaceId, thingId) => {

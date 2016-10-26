@@ -76,7 +76,7 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
   /**
    * The newer and better way to modify a Thing.
    */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean)(state:SpaceState):RM[SpaceState]
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean)(state:SpaceState):RM[ChangeResult]
   
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
 }
