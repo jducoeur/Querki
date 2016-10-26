@@ -79,6 +79,16 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], rawNewProps:PropMap, replaceAllProps:Boolean, sendAck:Boolean)(state:SpaceState):RM[ChangeResult]
   
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
+  
+  /**
+   * The heart of processing commands from the outside.
+   * 
+   * This wraps around a function that takes the current SpaceState, and produces a transformation
+   * of that state -- events that need to be persisted, the thing (if any) that serves as the "direct object"
+   * of this transformation, and the resulting SpaceState. It then persists the events, updates the State
+   * to the final State in the result list, and sends out the ThingFound/ThingError for the last entry.
+   */
+  def runAndSendResponse(opName:String, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]]
 }
 
 /**
@@ -94,13 +104,16 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
  * ==Rules for SpacePlugins==
  * - Only use a SpacePlugin if you have a chunk of code that ''must'' happen inside the Space processing,
  *   SpacePlugins are automatically a little expensive, even if they are rarely invoked. They are
- *   mainly intended for crucial synchronization situations.
+ *   mainly intended for situations that potentially need to ''alter'' the Space in ways that
+ *   aren't encompassed by the ordinary messages.
  * - The SpacePlugin's receive function must be '''fast''', and must '''never''' block. It may send
  *   messages, and handle responses, for asynchronous processing.
+ * - The SpacePlugin takes an RM type parameter, which is the abstraction of RequestM. It must '''always'''
+ *   use that for handling asynchronous communication. This allows it to be synchronously unit-tested.
  * - The SpacePlugin must be self-contained. It will be owned by the Space itself, and will be discarded
  *   when the Space is unloaded.
- * - The receive method should avoid throwing Exceptions if possible; if they happen, they will force
- *   a reload of the Space, and the message will be dropped on the floor, as usual for receive.
+ * - The SpacePlugin will only be called during command processing, ''not'' during recovery. Any persistence
+ *   effects should happen through normal SpaceEvents.
  */
 abstract class SpacePlugin[RM[_]](val space:SpaceAPI[RM], rtc:RTCAble[RM]) {
   /**

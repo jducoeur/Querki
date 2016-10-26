@@ -26,6 +26,9 @@ import SpaceMessagePersistence._
 /**
  * The result from a single Space-changing function.
  * 
+ * TODO: I believe this is strictly a Semigroup. We should probably define a Cats typeclass instance as such,
+ * since we are starting to *use* it as a Semigroup.
+ * 
  * @param events The event(s) -- usually one, but possibly more -- to persist this change.
  * @param changedThing The OID of the Thing (if appropriate) that this event was "about".
  * @param resultingState The State that results when this function is complete.
@@ -435,44 +438,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         DHCreateThing(who, thingId, kind, modelId, props, modTime)
       }
       rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(kind, thingId, modelId, props, modTime)(state)))    
-//      persistMsgThen(thingId, msg, updateAfter(createPure(kind, thingId, modelId, props, modTime)), sendAck).map((_, thingId))
     }    
   }
-
-  /**
-   * This is a tweak of modifyPure, which deals with updating the MySQL level when the Space's name changes.
-   * 
-   * TODO: there is probably a general notification mechanism fighting to break out here. Think about whether
-   * there are better ways to do this.
-   */
-//  def modifyWrapper(
-//    thingId:OID, 
-//    thing:Thing, 
-//    modelIdOpt:Option[OID], 
-//    newProps:PropMap, 
-//    replaceAllProps:Boolean,
-//    modTime:DateTime)(state:SpaceState):SpaceState =
-//  {
-//    val modified = modifyPure(thingId, thing, modelIdOpt, newProps, replaceAllProps, modTime)(state)    
-//    
-//    thing match {
-//      case s:SpaceState => {
-//        // Okay, we're modifying the Space. Did we change either name?
-//        def linkName(state:SpaceState) = Core.NameProp.first(state.props)
-//        def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
-//        
-//        if (!NameUtils.equalNames(linkName(modified), linkName(s)) 
-//         || !(disp(modified).contentEquals(disp(s))))
-//        {
-//          // At least one of those names changed, so notify the outside world:
-//          changeSpaceName(NameUtils.canonicalize(linkName(modified)), disp(modified))
-//        }
-//      }
-//      case _ =>
-//    }
-//    
-//    modified
-//  }
   
   def modifyThing(
     who:User, 
@@ -504,7 +471,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           }
           
           rtc.successful(ChangeResult(List(msg), Some(thingId), modifyPure(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)(state)))
-//          persistMsgThen(thingId, msg, updateAfter(modifyWrapper(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)), sendAck)
         }
       }
     }
@@ -532,18 +498,23 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     implicit val s = state
     val msg = DHDeleteThing(who, oid, modTime)
     rtc.successful(ChangeResult(List(msg), Some(oid), deletePure(oid, oldThing)(s)))
-//    persistMsgThen(oid, msg, updateAfter(deletePure(oid, oldThing)))
   }
   
   /**
    * This deals with actually persisting a list of changes atomically, and produces the
    * state at the end of all that.
+   * 
+   * This copes with there being no actual Events to persist, but requires there be
+   * at least one ChangeResult.
    */
   def persistAllThenFinalState(changes:List[ChangeResult]):RM[SpaceState] = {
     val allEvents = changes.flatMap(change => change.events)
-    persistAllAnd(allEvents).map { _ =>
-      changes.last.resultingState
-    }
+    if (allEvents.isEmpty)
+      rtc.successful(changes.last.resultingState)
+    else
+      persistAllAnd(allEvents).map { _ =>
+        changes.last.resultingState
+      }
   }
   
   /**
