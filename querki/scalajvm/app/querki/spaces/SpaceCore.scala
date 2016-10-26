@@ -746,7 +746,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     case CreateThing(who, spaceId, kind, modelId, props) => {
       runAndSendResponse("createSomething", createSomething(who, modelId, props, kind))(state)
-//      catchPrePersistExceptions("createSomething", createSomething(who, modelId, props, kind)(state))
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
@@ -774,17 +773,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         }
         
       }
-//      catchPrePersistExceptions("changeProps", modifyThing(who, thingId, None, changedProps, false)(state))
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
       runAndSendResponse("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))(state)
-//      catchPrePersistExceptions("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true)(state))
     }
     
     case DeleteThing(who, spaceId, thingId) => {
       runAndSendResponse("deleteThing", deleteThing(who, thingId))(state)
-//      catchPrePersistExceptions("deleteThing", deleteThing(who, thingId)(state))
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
