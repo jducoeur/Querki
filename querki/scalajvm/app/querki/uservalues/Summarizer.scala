@@ -118,6 +118,9 @@ trait SummarizerDefs { self:QuerkiEcot =>
     
     // ===========================================================
     
+    // TODO: recalculate has been removed from the UI for now, because it's not clear how it
+    // should work in the new world. Either it should eventually get added back to the UI, or
+    // this code should be killed.
     def recalculate(fromProp:Property[_,_], prop:Property[VT,_], values:Seq[OneUserValue])(implicit state:SpaceState):Iterable[(OID, QValue)] = {
       val pathOpt:Option[(ModelTypeBase, PropPath[_,_], Property[_,_])] = fromProp.pType match {
         case mt:ModelTypeBase => {

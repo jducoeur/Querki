@@ -14,12 +14,11 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.globals._
 import querki.ql.InvocationValue
-import querki.spaces.{CacheUpdate, RTCAble, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
+import querki.spaces._
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
-import querki.util.{Contributor, Publisher, QLog}
-import querki.util.ActorHelpers
+import querki.util.{ActorHelpers, Contributor, Publisher, QLog, UnexpectedPublicException}
 import querki.values.{QLContext, SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
@@ -73,51 +72,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
 
   def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = {
     new UserValueSpacePlugin(space, rtc)
-  }
-  
-  case class RecalculateSummaries[UVT](fromProp:Property[UVT,_], summaryId:OID, values:Seq[OneUserValue])
-  
-  /**
-   * When a UserSpaceSession changes a UserValue, it may send a SummarizeChange message to the Space, telling it to
-   * update the Summary for that Property. This handles the message in a plugin, so the Space code doesn't
-   * need to know about all that.
-   */
-  class UserValueSpacePlugin[RM[_]](s:SpaceAPI[RM], rtc:RTCAble[RM]) extends SpacePlugin(s, rtc) {
-    // TBD: this doesn't really check the types as well as we'd like it to do, due to erasure. Are all the needed types
-    // lost too far upstream? Is there any way to introduce TypeTags to allow us to actually check Summarizer[UVT,VT]?
-    def asSummarizer[UVT,MSG[UVT],VT](prop:Property[VT,_], msg:MSG[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {
-      if (prop.pType.isInstanceOf[Summarizer[_,_]])
-        Some((prop.asInstanceOf[Property[VT,_]], prop.pType.asInstanceOf[Summarizer[UVT,VT]]))
-      else
-        None
-    }
-    
-    def receive = {
-      case SpacePluginMsg(_, _, msg @ SummarizeChange(tid, fromProp, summaryId, previous, current)) => {
-        implicit val state = space.state
-        for {
-          rawProp <- state.prop(summaryId) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
-          thing <- state.anything(tid) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Thing $tid")
-          (summaryProp, summarizer) <- asSummarizer(rawProp, msg)
-          newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
-          newProps = thing.props + (summaryProp.id -> newSummary)
-        }
-          space.modifyThing(IdentityAccess.SystemUser, tid, None, (t:Thing) => newProps, false)
-      }
-      
-      case SpacePluginMsg(_, _, msg @ RecalculateSummaries(fromProp, summaryId, values)) => {
-        implicit val state = space.state
-        for {
-          rawProp <- state.prop(summaryId) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
-          (summaryProp, summarizer) <- asSummarizer(rawProp, msg)
-          // IMPORTANT: note that we'll get one result for each change that is needed. This can produce a
-          // non-trivial number of modifyThing requests:
-          (tid, newSummary) <- summarizer.recalculate(fromProp, summaryProp, values)
-        }
-          space.modifyThing(IdentityAccess.SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)), false)
-      }
-    }
-  }
+  }  
   
   object StateCacheKeys {
     val userValueProps = "UserValueProps"
@@ -292,6 +247,10 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     }
   }
   
+  // TODO: this function underlies the Recalculate button in the UI, which is currently disabled,
+  // because the back end of this function is disabled. I may want to simply kill this function
+  // outright in the new architecture, in which case Summaries.recalculate() should also go away,
+  // along with the commented-out code in UserValueSpacePlugin.
   lazy val UpdatePropSummariesFunction = new InternalMethod(UpdatePropSummariesFunctionOID,
     toProps(
       setName("_updatePropSumaries"),
