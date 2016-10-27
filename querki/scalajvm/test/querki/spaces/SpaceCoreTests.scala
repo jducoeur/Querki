@@ -151,7 +151,7 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
   }
   
   def changeThing(thingId:OID, propList:(OID, QValue)*) = {
-    this ! ChangeProps(owner, sc.id, thingId, Map(propList:_*), true)    
+    this ! ChangeProps(owner, sc.id, thingId, Map(propList:_*))    
   }
 }
 

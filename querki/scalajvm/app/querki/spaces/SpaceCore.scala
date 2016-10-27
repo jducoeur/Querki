@@ -361,7 +361,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        doCreate(who, modelId, props, kind, true)(state)
+        doCreate(who, modelId, props, kind)(state)
       }
     }
   }
@@ -369,7 +369,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   /**
    * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, sendAck:Boolean)(state:SpaceState):RM[ChangeResult] = {
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind)(state:SpaceState):RM[ChangeResult] = {
     // All tests have passed, so now we actually persist the change: 
     val modTime = DateTime.now
     allocThingId().flatMap { thingId =>
@@ -386,8 +386,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     thingId:ThingId, 
     modelIdOpt:Option[OID], 
     rawNewProps:PropMap, 
-    replaceAllProps:Boolean, 
-    sendAck:Boolean = true)(state:SpaceState):RM[ChangeResult] = 
+    replaceAllProps:Boolean)(state:SpaceState):RM[ChangeResult] = 
   {
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
@@ -684,7 +683,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
     // world.
-    case ChangeProps(who, spaceId, thingId, changedProps, sync) => {
+    case ChangeProps(who, spaceId, thingId, changedProps) => {
       val initialState = state
       runAndSendResponse("changeProps", modifyThing(who, thingId, None, changedProps, false))(state).map { changes =>
         // After we finish persisting everything, we need to deal with the possibility that

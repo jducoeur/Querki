@@ -39,7 +39,7 @@ class UserValueSpacePlugin[RM[_]](s:SpaceAPI[RM], rtc:RTCAble[RM])(implicit val 
       newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
       newProps = thing.props + (summaryProp.id -> newSummary)
     }
-      yield space.modifyThing(IdentityAccess.SystemUser, tid, None, newProps, true, false)(state)
+      yield space.modifyThing(IdentityAccess.SystemUser, tid, None, newProps, true)(state)
       
     resultOpt.getOrElse(rtc.failed(UnexpectedPublicException))
   }

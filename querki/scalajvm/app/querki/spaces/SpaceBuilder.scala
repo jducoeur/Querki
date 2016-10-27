@@ -397,7 +397,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
         // The composed new QValue with the new Model Values:
         val intV = v.cType.makePropValue(intVals, intType)
         
-        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((intPID -> intV)), true)) flatMap {
+        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((intPID -> intV)))) flatMap {
           case found @ ThingFound(intId, state) => {
             fixDeferrals(p + found, deferrals.tail)
           }
@@ -417,7 +417,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
       case Some(thing) => {
 //        QLog.spew(s"Setting Property values on")
 //        QLog.spewThing(thing)(imp)
-        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p), true)) flatMap {
+        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p))) flatMap {
           case found @ ThingFound(intId, state) => {
             if (deferredPropertiesByModel.contains(thing.id)) {
 //              QLog.spew(s"${thing.displayName} is a Model with deferrals")
@@ -467,7 +467,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
    * Step 5: set the properties on the Space itself.
    */
   private def setSpaceProps(p:FoldParams)(implicit imp:SpaceState):RequestM[Any] = {
-    p.actor.request(ChangeProps(p.user, p.spaceId, p.spaceId, filterSpaceProps(translateProps(imp, p)), true))
+    p.actor.request(ChangeProps(p.user, p.spaceId, p.spaceId, filterSpaceProps(translateProps(imp, p))))
   }
   
 }

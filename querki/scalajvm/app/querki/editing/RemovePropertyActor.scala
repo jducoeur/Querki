@@ -82,7 +82,7 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
             } 
             case None => Map.empty
           }
-        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop))), true)) flatMap {
+        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop))))) flatMap {
           case ThingFound(tid, newState) => {
             nDone = nDone + 1
             removeFrom(things.tail)

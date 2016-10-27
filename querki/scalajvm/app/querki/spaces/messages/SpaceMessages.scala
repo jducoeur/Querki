@@ -68,7 +68,7 @@ case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropM
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
  */
-case class ChangeProps(req:User, space:OID, id:ThingId, changedProps:PropMap, sync:Boolean = false) extends SpaceMessage(req, space)
+case class ChangeProps(req:User, space:OID, id:ThingId, changedProps:PropMap) extends SpaceMessage(req, space)
 
 case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(req, space)
 
