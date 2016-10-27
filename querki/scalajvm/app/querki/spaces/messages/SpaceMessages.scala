@@ -79,6 +79,11 @@ case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(
  * Note that we only send the owning Identity's OID; it can then be fetched from req.
  */
 case class InitialState(req:User, space:OID, display:String, owner:IdentityId) extends SpaceMessage(req, space)
+/**
+ * This is the ack from InitialState. We specifically do *not* respond with ThingFound in this case, because
+ * the message often goes cross-node.
+ */
+case object StateInitialized
 
 /**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.

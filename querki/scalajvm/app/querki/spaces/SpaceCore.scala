@@ -734,7 +734,13 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           val initState = initStatePure(who.id, ownerId, identityOpt, display)
           // TODO: this shouldn't be necessary, but until everything is purified, it is:
           updateStateCore(initState)
-          runAndSendResponse("createOwnerPerson", createOwnerPerson(identityOpt.get))(initState)
+          // Note that we intentionally do *not* use runAndSendResponse() here. That's
+          // because that function responds at the end with ThingFound, which we can't
+          // use for InitialState -- we're getting this call from a SpaceManager, often
+          // one on a different node, and ThingFound doesn't work cross-node:
+          runChanges(Seq(createOwnerPerson(identityOpt.get)))(state).map { _ =>
+            respond(StateInitialized)
+          }
         }
       }
     }

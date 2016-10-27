@@ -99,7 +99,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
               // bootstrapping it:
               SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
                 // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
-                case ThingFound(_, _) => {
+                case StateInitialized => {
                   // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
                   // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
                   val req = if (initialStatus != StatusNormal) {
