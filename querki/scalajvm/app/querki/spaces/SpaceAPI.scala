@@ -25,44 +25,9 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
   def state:SpaceState
   
   /**
-   * Actually changes the Space. Usually called *inside* persistMsgAPI(), and will execute after
-   * the message is persisted.
-   */
-  def updateAfter(f: SpaceState => SpaceState):SpaceState
-  
-  /**
    * Persists the specified events, and lets you hook into what happens afterwards.
    */
   def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]]
-  
-  /**
-   * DEPRECATED: this tried to do too much at once. We're using different patterns now.
-   * 
-   * This is how a plugin tells the system to persist an event. The handler should generally
-   * be a call to updateAfter().
-   * 
-   * This will respond with a ThingFound(oid) if all is successful.
-   */
-  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R, sendAck:Boolean = true):RM[R]
-  
-  /**
-   * DEPRECATED: Record a change to the specified Thing.
-   * 
-   * IMPORTANT: this will send responses to the current Akka sender, but may do so asynchronously. 
-   * It will also persist the changes, asynchronously.
-   * 
-   * @param who The User who is requesting this Change.
-   * @param thingId The ThingId of the Thing to be modified.
-   * @param modelIdOpt ''If'' the Thing's Model is being changed, the OID of the new Model. Otherwise,
-   *    this can be omitted.
-   * @param pf A Function that takes the previous state of the Thing, and returns the *complete* new
-   *    PropMap for that Thing. (Not just the changes!)
-   * @param sync If true, this change will be made synchronously -- sender will not be informed of
-   *    the change until after it is persisted. This is mainly intended for cases where there is a real
-   *    chance that the Space Actor will go away before the change gets flushed, but this might become
-   *    the default.
-   */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean):Unit
   
   /**
    * Create a new Thing.

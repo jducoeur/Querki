@@ -99,17 +99,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
     }
   
-  /**
-   * This is the old signature, from Space.scala. Once we are completely done with that, and committed
-   * to the new Cassandra world, rewrite this signature to match current reality.
-   */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean) = {
-    state.anything(thingId).map { thing =>
-      val props = pf(thing)
-      modifyThing(who, thingId, modelIdOpt, props, true)(state)
-    }
-  }
-  
   //////////////////////////////////////////////////
   //
   // Abstract members
@@ -217,31 +206,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     state
   }
   
-  def updateAfter(f: SpaceState => SpaceState):SpaceState = {
-    updateState(f(state))
-  }
-    
-  /**
-   * Note that this specifically composes, even though the persist() inside of it doesn't. The returned
-   * RM will resolve with the result of the handler, during the persist() call.
-   */
-  def persistMsgThen[A <: UseKryo, R](oid:OID, event:A, handler: => R, sendAck:Boolean = true):RM[R] = {
-    val rm = rtc.prep[R]
-    doPersist(event) { _ =>
-      val result = handler
-      if (sendAck) {
-        respond(ThingFound(oid, state))
-      }
-      checkSnapshot()
-      try {
-        rm.resolve(Success(result))
-      } catch {
-        case th:Throwable => QLog.error(s"SpaceCore.persistMsgThen() got an error while resolving its callbacks:", th)
-      }
-    }
-    rm
-  }
-  
   /**
    * A wrapper around persist() that allows us to chain from it. No clue why this isn't built into Akka Persistence.
    */
@@ -341,30 +305,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def canChangeProperties(who:User, changedProps:Seq[OID], oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
     val failedProp = changedProps.find(!AccessControl.canChangePropertyValue(state, who, _))
     failedProp map { propId => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName) }
-  }
-  
-  /**
-   * This wraps around all the message handlers. It is there simply to pay attention to what comes out of the
-   * block, and propagate any exceptions to the sender.
-   * 
-   * TODO: this is *not* a great way to do things -- Exceptions are a crude way to handle ordinary user errors.
-   * It's old code, and that shows. But a lot of the bits and pieces underneath are Exception-oriented, because
-   * this is all very old code. The whole stack should be cleaned up with a more proper structure. But note
-   * that we still need to deal with RequestM, which *is* Try-based.
-   */
-  def catchPrePersistExceptions[T](name:String, block: => RM[T]) = {
-    block.onComplete {
-      case Success(result) => // TODO: can/should we do something here? Should this function pass the RM up?
-      case Failure(th) => {
-        th match {
-          case ex:PublicException => respond(ThingError(ex))
-          case ex => {
-            QLog.error(s"Space.$name received an unexpected exception before doPersist()", ex)
-            respond(ThingError(UnexpectedPublicException))
-          }
-        }
-      }      
-    }
   }
   
   /**
@@ -569,19 +509,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       changes.lastOption.foreach(change => change.changedThing.foreach(oid => respond(ThingFound(oid, change.resultingState))))
       changes
     }
-  }
-  
-  def addApp(who:User, appId:OID, appVersion:SpaceVersion):RM[Unit] = {
-    // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
-    // can only fail if something has changed significantly:
-    if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, who, state))
-      throw new PublicException("Apps.notAllowed")
-      
-    // By default, we use the *current* version of the App.
-    for {
-      app <- loadAppVersion(appId, appVersion, state.allApps)
-    }
-      yield ()
   }
   
   /**
