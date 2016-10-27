@@ -35,7 +35,7 @@ class TestSpaceCore(
    * TODO: can we do this for real, letting the rest of the Ecology play? Seems potentially problematic
    * in the synchronous unit tests, but I'm intrigued.
    */
-  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):TCIdentity[ThingChangeRequest] = {
+  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID])(state:SpaceState):TCIdentity[ThingChangeRequest] = {
     // The null below is ugly, but I don't have an easy way to provide a Requester reference. How *should* we do this
     // in tests? We basically want to carry the TCIdentity abstraction further along.
     val tcr = ThingChangeRequest(who, null, state, noSender, modelId, None, kind, propsIn, changed)
@@ -88,7 +88,7 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
   
   def sc:TestSpaceCore
   
-  override def state = sc.state
+  override def state = sc.currentState
   
   val oldSpaceOpt:Option[SpaceCoreSpaceBase] = None
   

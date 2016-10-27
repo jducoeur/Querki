@@ -22,7 +22,7 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
   /**
    * Accessor to the current state of this Space.
    */
-  def state:SpaceState
+  def currentState:SpaceState
   
   /**
    * Persists the specified events, and lets you hook into what happens afterwards.

@@ -65,7 +65,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime
    * in on the change before it happens.
    */
-  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RequestM[ThingChangeRequest] =
+  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID])(state:SpaceState):RequestM[ThingChangeRequest] =
   {
     val initTcr = ThingChangeRequest(who, this, state, stateRouter, modelId, thingOpt, kind, propsIn, changed)
     SpaceChangeManager.thingChanges(RequestM.successful(initTcr))

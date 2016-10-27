@@ -32,13 +32,13 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   def addApp(req:User, appId:OID, appVersion:SpaceVersion)(state:SpaceState):RM[ChangeResult] = {
     // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
     // can only fail if something has changed significantly:
-    if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, space.state, req, space.state))
+    if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, req, state))
       throw new PublicException("Apps.notAllowed")
     
     // Okay -- load the app:
     api.loadAppVersion(appId, appVersion, state.allApps).map { app =>
       // Secondary check: is this App willing to be used?
-      if (AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, space.state.ownerIdentity.get.id, app)) {
+      if (AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, state.ownerIdentity.get.id, app)) {
         implicit val s = state
         val dhApp = dh(app)
         val dhParents = app.allApps.values.toSeq.map(dh(_))
@@ -57,7 +57,7 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
    */
   def receive:Actor.Receive = {
     case SpacePluginMsg(req, _, AddApp(appId, appVersion)) => {
-      api.runAndSendResponse("addApp", addApp(req, appId, appVersion))(api.state)
+      api.runAndSendResponse("addApp", addApp(req, appId, appVersion))(api.currentState)
     }
   }
 }

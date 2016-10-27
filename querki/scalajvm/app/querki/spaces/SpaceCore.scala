@@ -116,7 +116,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * This is where the SpaceChangeManager slots into the real process, allowing other Ecots a chance to chime
    * in on the change before it happens.
    */
-  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID]):RM[ThingChangeRequest]
+  def offerChanges(who:User, modelId:Option[OID], thingOpt:Option[Thing], kind:Kind, propsIn:PropMap, changed:Seq[OID])(state:SpaceState):RM[ThingChangeRequest]
   
   /**
    * This was originally from SpacePersister -- it fetches a new OID to assign to a new Thing.
@@ -174,8 +174,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   var snapshotCounter = 0
   def doSaveSnapshot() = {
-    val dhSpace = dh(state)
-    val dhApps = state.allApps.values.toSeq.map(dh(_))
+    val dhSpace = dh(currentState)
+    val dhApps = currentState.allApps.values.toSeq.map(dh(_))
     val snapshot = SpaceSnapshot(dhSpace, dhApps)
     saveSnapshot(snapshot)
     snapshotCounter = 0
@@ -203,7 +203,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):SpaceState = {
     updateStateCore(newState, evt)
     notifyUpdateState()
-    state
+    currentState
   }
   
   /**
@@ -219,7 +219,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   var _currentState:Option[SpaceState] = None
   // This should return okay any time after recovery:
-  def state = {
+  def currentState = {
     _currentState match {
       case Some(s) => s
       case None => throw new Exception("State not ready in Actor " + id)
@@ -275,10 +275,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     loadAppsFor(state, Map.empty)
   }
 
-  def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
-  def canCreate(who:User, modelId:OID):Boolean = AccessControl.canCreate(state, who, modelId)
-  def canDesign(who:User, modelId:OID):Boolean = AccessControl.canDesign(state, who, modelId)
-  def canEdit(who:User, thingId:OID):Boolean = AccessControl.canEdit(state, who, thingId)
+  def canCreate(who:User, modelId:OID)(implicit state:SpaceState):Boolean = AccessControl.canCreate(state, who, modelId)
+  def canDesign(who:User, modelId:OID)(implicit state:SpaceState):Boolean = AccessControl.canDesign(state, who, modelId)
+  def canEdit(who:User, thingId:OID)(implicit state:SpaceState):Boolean = AccessControl.canEdit(state, who, thingId)
   
   /**
    * Goes through the Props, and figures out what is actually changing.
@@ -302,7 +301,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   // before we generalize this feature.
   // TODO: This is horribly anti-functional -- failure is through Exceptions. Fix this when we get a chance, just on
   // general principles.
-  def canChangeProperties(who:User, changedProps:Seq[OID], oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
+  def canChangeProperties(who:User, changedProps:Seq[OID], oldThingOpt:Option[Thing], newProps:PropMap)(implicit state:SpaceState):Unit = {
     val failedProp = changedProps.find(!AccessControl.canChangePropertyValue(state, who, _))
     failedProp map { propId => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName) }
   }
@@ -320,9 +319,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
 
   def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind)(state:SpaceState):RM[ChangeResult] = {
+    implicit val s = state
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
-    offerChanges(who, Some(modelId), None, kind, propsIn, changedProps).flatMap { tcr =>
+    offerChanges(who, Some(modelId), None, kind, propsIn, changedProps)(state).flatMap { tcr =>
       val props = tcr.newProps
       val name = Core.NameProp.firstOpt(props)
       
@@ -334,7 +334,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       
       // TODO: this call is side-effecting -- it throws an exception if you *aren't* allowed to change this.
       // This is stupid and sucktastic. Change to something more functional.
-      canChangeProperties(who, changedProps, None, props)
+      canChangeProperties(who, changedProps, None, props)(state)
       
       if (kind != Kind.Thing && kind != Kind.Property && kind != Kind.Type)
         throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
@@ -388,6 +388,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     rawNewProps:PropMap, 
     replaceAllProps:Boolean)(state:SpaceState):RM[ChangeResult] = 
   {
+    implicit val s = state
     val oldThingOpt = state.anything(thingId)
     if (oldThingOpt.isEmpty)
       rtc.failed(new PublicException(UnknownPath))
@@ -397,17 +398,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       val thingId = oldThing.id
       val changedProps = changedProperties(oldThing.props, rawNewProps)
       // Let other systems put in their own oar about the PropMap:
-      offerChanges(who, modelIdOpt, Some(oldThing), oldThing.kind, rawNewProps, changedProps).flatMap { tcr =>
+      offerChanges(who, modelIdOpt, Some(oldThing), oldThing.kind, rawNewProps, changedProps)(state).flatMap { tcr =>
         val newProps = tcr.newProps
-        canChangeProperties(who, changedProps, Some(oldThing), newProps)
+        canChangeProperties(who, changedProps, Some(oldThing), newProps)(state)
         if (!canEdit(who, thingId)) {
           rtc.failed(new PublicException(ModifyNotAllowed))
         } else {
           val modTime = DateTime.now
-          val msg = {
-            implicit val s = state
-            DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
-          }
+          val msg = DHModifyThing(who, thingId, modelIdOpt, newProps, replaceAllProps, modTime)
           
           rtc.successful(ChangeResult(List(msg), Some(thingId), modifyPure(thingId, oldThing, modelIdOpt, newProps, replaceAllProps, modTime)(state)))
         }
@@ -416,6 +414,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   }
   
   def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[ChangeResult] = {
+    implicit val s = state
     // TODO: we should probably allow deletion of local Model Types as well, but should probably check
     // that there are no Properties using that Type first.
     val oldThingOpt:Option[Thing] = 
@@ -434,9 +433,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     val modTime = DateTime.now
     val oid = oldThing.id
-    implicit val s = state
     val msg = DHDeleteThing(who, oid, modTime)
-    rtc.successful(ChangeResult(List(msg), Some(oid), deletePure(oid, oldThing)(s)))
+    rtc.successful(ChangeResult(List(msg), Some(oid), deletePure(oid, oldThing)(state)))
   }
   
   /**
@@ -594,11 +592,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           // No old Space found, so this appears to be a brand-new Space:
           case None => readyState(None)
         }}
-      } else if (state.ownerIdentity.isEmpty) {
+      } else if (currentState.ownerIdentity.isEmpty) {
         // We have a State, but we don't have an ownerIdentity, so go fetch that. This is the normal case
         // after recovery.
         initializing = true
-        readyState(Some(state))
+        readyState(Some(currentState))
       } else {
         QLog.error(s"Somehow recovered Space $id with the ownerIdentity intact?")
       }
@@ -652,7 +650,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     // by this Space!
     case msg @ InitialState(who, spaceId, display, ownerId) => {
       if (_currentState.isDefined) {
-        QLog.error(s"Space $id received $msg, but already has state $state!")
+        QLog.error(s"Space $id received $msg, but already has state $currentState!")
       } else {
         val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
         persistAllAnd(List(msg)).map { _ =>
@@ -664,7 +662,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           // because that function responds at the end with ThingFound, which we can't
           // use for InitialState -- we're getting this call from a SpaceManager, often
           // one on a different node, and ThingFound doesn't work cross-node:
-          runChanges(Seq(createOwnerPerson(identityOpt.get)))(state).map { _ =>
+          runChanges(Seq(createOwnerPerson(identityOpt.get)))(currentState).map { _ =>
             respond(StateInitialized)
           }
         }
@@ -673,19 +671,19 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     // This message is simple, since it isn't persisted:
     case GetSpaceInfo(who, spaceId) => {
-      respond(SpaceInfo(state.id, state.name, state.displayName, state.ownerHandle))
+      respond(SpaceInfo(currentState.id, currentState.name, currentState.displayName, currentState.ownerHandle))
     }
     
     case CreateThing(who, spaceId, kind, modelId, props) => {
-      runAndSendResponse("createSomething", createSomething(who, modelId, props, kind))(state)
+      runAndSendResponse("createSomething", createSomething(who, modelId, props, kind))(currentState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
     // world.
     case ChangeProps(who, spaceId, thingId, changedProps) => {
-      val initialState = state
-      runAndSendResponse("changeProps", modifyThing(who, thingId, None, changedProps, false))(state).map { changes =>
+      val initialState = currentState
+      runAndSendResponse("changeProps", modifyThing(who, thingId, None, changedProps, false))(currentState).map { changes =>
         // After we finish persisting everything, we need to deal with the possibility that
         // they've changed the name of the Space...
         changes.last.changedThing.map { lastThingId => 
@@ -708,11 +706,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
-      runAndSendResponse("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))(state)
+      runAndSendResponse("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      runAndSendResponse("deleteThing", deleteThing(who, thingId))(state)
+      runAndSendResponse("deleteThing", deleteThing(who, thingId))(currentState)
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
