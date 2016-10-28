@@ -16,6 +16,8 @@ object InputUtils {
     val key = evt.which
     val c = key.toChar
     
+    // Work around the idiotic Chrome mobile misfeature -- we simply give up for now:
+    (key == 0 || key == 229) ||
     (c >= 'A' && c <= 'Z') || 
     // Numeric keypad
     (key >= 96 && key <= 105) ||
