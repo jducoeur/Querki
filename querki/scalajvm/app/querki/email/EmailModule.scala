@@ -8,6 +8,7 @@ import querki.core.QLText
 import querki.ecology._
 import querki.globals._
 import querki.identity.{Identity}
+import querki.util.SafeUrl
 import querki.values.{ElemValue, QLContext}
 
 /**
@@ -50,7 +51,9 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   lazy val DeprecatedProp = Basic.DeprecatedProp
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val InternalProp = Core.InternalProp
+  lazy val ParsedTextType = QL.ParsedTextType
   lazy val QLType = Basic.QLType
+  lazy val URLType = Links.URLType
   
   def fullKey(key:String) = "querki.mail." + key
   lazy val from = Config.getString(fullKey("from"))
@@ -105,6 +108,91 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   }
   lazy val EmailAddressType = new EmailAddressType(EmailTypeOID)
   override lazy val types = Seq(EmailAddressType)
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  /**
+   * TODO: in principle, we should be looking for a more-principled Email Address Type here. But email
+   * validation is an incredible pain in the ass, and it's not obvious that it provides much benefit, so
+   * for now we're just going to accept Text types. In the long run I believe we'll need that anyway.
+   */
+  lazy val EmailLinkFunction = new InternalMethod(EmailLinkOID,
+    toProps(
+      setName("_emailLink"),
+      Categories(EmailTag),
+      Summary("Creates a link to open an email in your mailer"),
+      Signature(
+        expected = Some(Seq(AnyType), "Any value"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("to", TextType, Core.QNone, "Who this email is being sent to."),
+          ("cc", TextType, Core.QNone, "Any Cc: recipients for this email"),
+          ("bcc", TextType, Core.QNone, "Any Bcc: recipients for this email"),
+          ("subject", TextType, Core.QNone, "The Subject of this email"),
+          ("body", TextType, Core.QNone, "The Body of this email")
+        ),
+        returns = (URLType, "")
+      ),
+      Details("""While it is legal to create a mailto: link in an ordinary QText expression, by saying something
+                |like `\[to Joe\](mailto:joe@bob.com)`, this turns out to be very limited -- it is difficult to
+                |make a button or link that produces complete, pre-filled emails. This function allows you to
+                |do this right -- you can provide a complete email template, ready to send.
+                |
+                |Note that _emailLink does not actually *send* an email -- due to spam concerns, Querki doesn't
+                |send email on your behalf. But this will produce a link that, when clicked, will open a pre-filled
+                |email in your computer's mailer, that you can then easily send out.
+                |
+                |This function produces a long and complicated URL. You should usually feed that into something
+                |like _linkButton, like this:
+                |```
+                |myRecipient -> _emailLink(to=Email, subject=\""Howdy!\"", body=\""...\"") -> _linkButton(\""Send mail\"")
+                |```""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      def plusParam(p:Seq[Wikitext], name:String, full:Boolean = false):Option[String] = {
+        val prefix =
+          if (name.length == 0)
+            ""
+          else
+            s"$name="
+        if (p.isEmpty)
+          None
+        else {
+          val safe = p.map { wikitext =>
+            val plaintext =
+              if (full)
+                wikitext.email
+              else
+                wikitext.strip
+            SafeUrl(plaintext)
+          }
+          Some(prefix+safe.mkString(","))
+        }
+      }
+      
+      for {
+        to <- inv.processAsList("to", ParsedTextType)
+        cc <- inv.processAsList("cc", ParsedTextType)
+        bcc <- inv.processAsList("bcc", ParsedTextType)
+        subject <- inv.processAsOpt("subject", ParsedTextType)
+        body <- inv.processAsOpt("body", ParsedTextType)
+        
+        fullUrl = 
+          "mailto:" +
+          plusParam(to, "").getOrElse("") +
+          "?" +
+          List(
+            plusParam(cc, "cc"),
+            plusParam(bcc, "bcc"),
+            plusParam(subject.toSeq, "subject"),
+            plusParam(body.toSeq, "body", true)
+          ).flatten.mkString("&")
+      }
+        yield ExactlyOne(URLType(fullUrl))
+    }
+  }
   
   /***********************************************
    * PROPERTIES
@@ -207,7 +295,9 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     
     sentToProp,
     
-    recipientsProp
+    recipientsProp,
+    
+    EmailLinkFunction
   )
   
   /***********************************************

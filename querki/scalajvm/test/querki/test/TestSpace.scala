@@ -132,6 +132,8 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   }
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
     extends TestThing(toid, name, pairs:_*)
+  class TestModel(name:String, pairs:(OID, QValue)*)
+    extends SimpleTestThing(name, (pairs :+ Core.IsModelProp(true)):_*)
   
   // Add this to the pairs for a Model or the otherSpaceProps in order to set up Instance Permissions
   // for it:

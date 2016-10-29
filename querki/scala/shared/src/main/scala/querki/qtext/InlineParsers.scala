@@ -81,7 +81,12 @@ trait InlineParsers extends BaseParsers {
             //process chars until we hit a special char or the end
             while (i<end && !special.contains(s.charAt(i))) {
                 val c = s.charAt(i)
-                val xmlEscape = XmlEscape.escapeFastForXml(c)
+                val xmlEscape = 
+                  if (deco.escapeXmlEntities) {
+                    XmlEscape.escapeFastForXml(c)
+                  } else {
+                    null
+                  }
                 if (markdownEscapes && c == '\\' && i+1 < end && escapableMarkdownChars(s.charAt(i+1))!=null) {
                     result.append(s.subSequence(start, i).toString)
                     result.append(escapableMarkdownChars(s.charAt(i+1)))
@@ -378,6 +383,7 @@ trait InlineParsers extends BaseParsers {
      * Markdown escapes are not processed.
      */
     def escapeXml(s:String) = {
+      if (deco.escapeXmlEntities) {
         var i = 0
         val end = s.length
         val result = new StringBuffer()
@@ -392,5 +398,8 @@ trait InlineParsers extends BaseParsers {
             i += 1
         }
         result.toString
+      } else {
+        s
+      }
     }
 }

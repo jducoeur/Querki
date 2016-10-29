@@ -26,6 +26,11 @@ trait Decorator {
      * otherwise they are escaped and included as plain text
      */
     def allowVerbatimXml():Boolean = true
+    /**
+     * If true, XML entities get escaped as normal. Otherwise, they are simply left alone.
+     * This should only be turned off if you know that the environment is safe!
+     */
+    def escapeXmlEntities():Boolean = true
     /** used to print out manual line breaks (default: <br />)
      */
     def decorateBreak():String = "<br />"

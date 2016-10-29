@@ -343,6 +343,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         iconOpt <- inv.processAsOpt("icon", ParsedTextType, elemContext)
         tooltipOpt <- inv.processAsOpt("tooltip", ParsedTextType, elemContext)
         idOpt <- inv.processAsOpt("id", ParsedTextType, elemContext)
+        openNewWindow = 
+          (url.startsWith("http:") ||
+           url.startsWith("https:") ||
+           url.startsWith("mailto:"))
       }
         yield {
           HtmlValue(
@@ -352,6 +356,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
               idOpt.map { idStr => idAttr:=idStr.raw.toString },
               tooltipOpt.map { tooltip => title:=tooltip.raw.toString },
               iconOpt.map { icon => iAttr(cls:=s"glyphicon glyphicon-${icon.raw.toString}") },
+              if (openNewWindow)
+                target := "_blank",
               if (iconOpt.isDefined && labelOpt.isDefined)
                 // Need a space between them:
                 " ",

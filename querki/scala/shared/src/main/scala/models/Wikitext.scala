@@ -28,6 +28,7 @@ sealed trait Wikitext extends DebugRenderable {
   def transformRaw = transform(new RawTransformer) _
   def transformSpan = transform(new SpanTransformer) _
   def transformStrip = transform(new StripTransformer) _
+  def transformEmail = transform(new EmailTransformer) _
   
   def display:DisplayText
   
@@ -47,6 +48,11 @@ sealed trait Wikitext extends DebugRenderable {
    * Produces a no-markup version, for cases where you really want just plain text output.
    */
   def strip:DisplayText
+  
+  /**
+   * Produces a version that works in email. This needs a bunch more work yet, but it's a start.
+   */
+  def email:DisplayText
   
   /**
    * This should only be used internally, never to display to the user!
@@ -96,6 +102,7 @@ case class QWikitext(wiki:String) extends Wikitext {
   def raw = DisplayText(transformRaw(internal))
   def span = DisplayText(transformSpan(internal))
   def strip = DisplayText(transformStrip(internal))
+  def email = DisplayText(transformEmail(internal))
   
   /**
    * This should only be used internally, never to display to the user!
@@ -135,6 +142,7 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   def raw = DisplayText(str)
   def span = DisplayText(str)
   def strip = DisplayText(str)
+  def email = DisplayText(str)
   def internal = str
   def plaintext = str
   val keepRaw = true
@@ -214,6 +222,7 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   def raw = DisplayText(process(transformRaw))
   def span = DisplayText(process(transformSpan))
   def strip = DisplayText(process(transformStrip))
+  def email = DisplayText(process(transformEmail))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
@@ -263,4 +272,19 @@ class StripTransformer extends Transformer with MainDecorator {
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""
     override def decorateLink(text:String, url:String, title:Option[String]):String = text
+}
+
+// TODO: this is optimized for use inside _emailLink(). It is *not* safe for general use yet,
+// because it turns off escapeXmlEntities()! We really need to refactor the whole damned
+// Transformer mechanism to make that parameterizable. Or better yet, we should be able to
+// pass this whole object as a parameter to Wikitext.display.
+// TODO: in principle, this should probably be a sort of LiteralTransformer, which simply
+// emits most markup in its original form.
+class EmailTransformer extends Transformer with MainDecorator {
+    override def deco() = this
+    override def allowVerbatimXml():Boolean = true
+    override def escapeXmlEntities():Boolean = false
+    // TBD: this is a bit surprising -- we apparently can't use HTML in email links:
+    override def decorateParagraphOpen():String = ""
+    override def decorateParagraphClose():String = "\n\n"
 }

@@ -27,7 +27,11 @@ package object email {
     val EmailShowSendOID = oldMoid(9)
     val SentToOID = oldMoid(10)
     val RecipientsOID = oldMoid(11)
+    
+    val EmailLinkOID = moid(1)
   }
+  
+  val EmailTag = "Email"
   
   /**
    * The character that we use to separate strings involving email addresses. Chosen mostly

@@ -242,6 +242,12 @@ package object ql {
     def processAsOpt[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[Option[VT]]
     
     /**
+     * Whereas normal processAs returns each of the matched elements one at a time, this returns *all* of them
+     * as a List.
+     */
+    def processAsList[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[List[VT]]
+    
+    /**
      * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
      * are operating at the syntactic level, which aren't simply processing the parameter as usual.
      */

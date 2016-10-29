@@ -155,7 +155,7 @@ class UITests extends QuerkiTests {
     }
     "work with an external URL" in {
       processQText(commonThingAsContext(_.withUrl), """[[My Optional URL -> _linkButton(""hello"")]]""") should
-        equal ("""<a class="btn btn-primary" href="http://www.google.com/">hello</a>""")
+        equal ("""<a class="btn btn-primary" href="http://www.google.com/" target="_blank">hello</a>""")
     }
     "quietly ignore an empty context" in {
       processQText(commonThingAsContext(_.withoutUrl), """[[My Optional URL -> _linkButton(""hello"")]]""") should

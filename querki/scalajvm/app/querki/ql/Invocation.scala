@@ -471,6 +471,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     processAsBase(name, pt.displayName, (qv => Some(qv.firstAs(pt)).toSeq), processContext)
   }
   
+  def processAsList[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[List[VT]] = {
+    processAsBase(name, pt.displayName, (qv => List(qv.rawList(pt))), processContext)
+  }
+  
   def rawParam(name:String):InvocationValue[Option[QLExp]] = {
     InvocationValueImpl(inv, Future.successful(IVData(Some(sig.getParam(name).exp))))
   }
