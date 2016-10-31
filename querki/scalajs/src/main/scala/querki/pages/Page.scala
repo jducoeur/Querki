@@ -89,7 +89,15 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
    * This is called before the Page begins to render. Pages should override it to do
    * things like register page-specific Gadget hooks. 
    */
-  def beforeRender() = {}
+  def beforeRender():Future[Unit] = Future.successful(())
+  
+  /**
+   * This just exists to make sure that std is set before we actually call beforeRender().
+   * It is called by PageManager, and should not otherwise be used.
+   */
+  def beforeRenderInternal():Future[Unit] = {
+    setStd.flatMap(_ => beforeRender())
+  }
   
   /**
    * Display the specified alert at the top of the page.
@@ -155,7 +163,7 @@ abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivE
       )
     )
 
-    setStd.flatMap(_ => pageContent).notYet.foreach { content =>
+    pageContent.notYet.foreach { content =>
       val fullyRendered = content.content.render
       renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.titleOr(pageTitle))

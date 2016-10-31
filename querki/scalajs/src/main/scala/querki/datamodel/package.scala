@@ -12,14 +12,9 @@ package object datamodel {
     def deleteAfterConfirm(thing:ThingInfo):Unit
     
     /**
-     * Creates a new Model, and opens the Model Designer on it.
+     * Pop a standard dialog that allows the user to choose a model.
      */
-    def designAModel():Unit
-    
-    /**
-     * Allows the user to select a Model, creates a new Instance, and opens the editor for it.
-     */
-    def createAThing():Unit
+    def chooseAModel(title:String, msg:String, buttonText:String):Future[Option[TID]]
     
     /**
      * Displays a dialog to let the user choose a new Model for the Thing, makes the

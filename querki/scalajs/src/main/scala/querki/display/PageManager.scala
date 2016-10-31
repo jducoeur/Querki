@@ -222,20 +222,20 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def renderPage(page:Page):Future[Page] = {
     val fut = nextChangeFuture
     
-    DataAccess.standardThings.foreach { std =>
-      beforePageLoads(page)
-      
-      val fullPage =
+    for {
+      std <- DataAccess.standardThings
+      _ = beforePageLoads(page)
+      fullPage =
         div(
           StatusLineInternal.statusGadget,
           menuHolder(new MenuBar(std)), 
           page, 
           new StandardFooter)
-      
-      page.beforeRender()
-          
+      _ <- page.beforeRenderInternal()
+    }
+    {
       $(displayRoot).empty()
-      $(displayRoot).append(fullPage.render)
+      $(displayRoot).append(fullPage.render) 
     }
     
     // Note that onPageRendered doesn't get called here, because most Pages involve

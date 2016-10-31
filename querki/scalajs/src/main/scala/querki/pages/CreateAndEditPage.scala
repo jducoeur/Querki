@@ -24,15 +24,39 @@ object EditQL {
 class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "createAndEdit") with EcologyMember  {
 
   lazy val Client = interface[querki.client.Client]
+  lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val DataSetting = interface[querki.data.DataSetting]
   lazy val Editing = interface[querki.editing.Editing]
   
-  lazy val modelId = TID(params("model"))
+  lazy val rawModelIdOpt = params.get("model")
+  var _modelId:Option[TID] = None
+  def modelId = _modelId.get
   
   lazy val _reifyTag = params.get("reifyTag")
   def reifyTag = _reifyTag.isDefined
   
   var thingInfoOpt:Option[ThingInfo] = None
+  
+  override def beforeRender() = {
+    rawModelIdOpt match {
+      case Some(mid) => {
+        _modelId = rawModelIdOpt.map(TID(_))
+        Future.successful(())
+      }
+      case _ => {
+        DataModel.chooseAModel(
+          "Create a Thing", 
+          "What kind of Thing do you want to create? (Just use Simple Thing if you just want a plain page.)", 
+          "Create"
+        ).map { selection =>
+          if (selection.isEmpty)
+            PageManager.showRoot()
+          else
+            _modelId = selection
+        }
+      }
+    }
+  }
 
   def pageContent = for {
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()

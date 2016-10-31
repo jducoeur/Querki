@@ -1,5 +1,7 @@
 package querki.datamodel
 
+import scala.util.Success
+
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
@@ -24,6 +26,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val ProgressDialog = interface[querki.display.ProgressDialog]
   lazy val StatusLine = interface[querki.display.StatusLine]
@@ -100,7 +103,8 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     }
   }
   
-  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit) {
+  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit, onCancel: => Unit) = 
+  {
     for {
       typeInfo <- DataAccess.getAllTypes()
       stdThings <- DataAccess.standardThings
@@ -127,38 +131,29 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
             onSelect(selector.selectedTID())
             dialog.done()
           }),
-          (ButtonGadget.Normal, Seq("Cancel", id := "_modelCancel"), { dialog => dialog.done() })
+          (ButtonGadget.Normal, Seq("Cancel", id := "_modelCancel"), { dialog => 
+            onCancel
+            dialog.done() 
+          })
         )
     
       modelDialog.show()
     }
   }
   
-  def designAModel() = {
+  def chooseAModel(title:String, msg:String, buttonText:String):Future[Option[TID]] = {
+    val promise = Promise[Option[TID]]
     modelSelectionForm(
-      "Design a Model", 
-      "Choose which Model to base the new one on (just use Simple Thing if not sure):",
-      "Create Model",
-      { selection =>
-        DataAccess.standardThings.foreach { stdThings =>
-          val initProps = 
-            Seq(
-              ChangePropertyValue(Editing.propPath(stdThings.core.isModelProp), Seq("true"))
-            )
-          Client[EditFunctions].create(selection, initProps).call().foreach { modelInfo =>
-            Editing.modelDesignerFactory.showPage(modelInfo)
-          }
-        }
-      })
-  }
-  
-  def createAThing() = {
-    modelSelectionForm(
-      "Create a Thing",
-      "What kind of Thing do you want to create? (Just use Simple Thing if you just want a plain page.)",
-      "Create",
-      { selection => Pages.createAndEditFactory.showPage(selection) }
+      title, 
+      msg,
+      buttonText,
+      { selection => promise.complete(Success(Some(selection))) },
+      {
+        promise.complete(Success(None))
+        PageManager.showRoot()
+      }
     )
+    promise.future
   }
   
   def changeModel(thing:ThingInfo, cb:ThingInfo => Unit) = {
@@ -170,7 +165,8 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         Client[EditFunctions].changeModel(thing, selection).call().foreach { newThingInfo =>
           cb(newThingInfo)
         }
-      }
+      },
+      {}
     )
   }
 }

@@ -126,15 +126,15 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
           NavDivider,
           NavLink(
             "Design a Model", 
+            Editing.modelDesignerFactory.pageUrl(),
             id = "designAModel", 
             complexity = Standard,
-            onClick = Some({ () => DataModel.designAModel() }),
             enabled = space.permissions.contains(std.security.canDesignPerm)),
           NavLink(
-            "Create any Thing", 
+            "Create any Thing",
+            Pages.createAndEditFactory.pageUrl(),
             id = "_createAnyThing", 
             complexity = Standard,
-            onClick = Some({ () => DataModel.createAThing() }),
             enabled = space.permissions.contains(std.security.canCreatePerm)),
           NavLink("Show all Things", thing("All-Things"), complexity = Standard, allowedDuringHistory = true),
           NavLink("Show all Properties", thing("All-Properties"), complexity = Standard, allowedDuringHistory = true),

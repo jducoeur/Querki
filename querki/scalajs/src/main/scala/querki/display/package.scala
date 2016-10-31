@@ -103,6 +103,11 @@ package object display {
     def showPage(pageName:String, paramMap:ParamMap):Future[Page]
     
     /**
+     * Show the root of the current Space.
+     */
+    def showRoot():Future[Page]
+    
+    /**
      * If you need to be signaled when the page next changes, use this.
      * 
      * IMPORTANT: this is an edge-trigger! Use with care! After the page changes, this will reset

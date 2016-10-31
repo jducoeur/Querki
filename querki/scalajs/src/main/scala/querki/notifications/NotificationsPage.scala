@@ -32,6 +32,9 @@ class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
    * Spaces), and construct the link Client-side.
    */
   override def beforeRender() = {
+    // Yes, this weird structure is intentional. We don't want to return renderedContentFuture, which
+    // would cause a recursive dependency, we just want to hook it. And yes, it's hideous and ugly;
+    // see above.
     renderedContentFuture.foreach { thisPage =>
       // WTF? Why is this JQExt conversion needed? For some reason, the usual implicit isn't working?
       $(elem).find(".noteHeadline a").foreach({ rawElem:dom.Element =>
@@ -41,6 +44,7 @@ class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         $(anchor).attr("href", adjusted)
       })
     }
+    Future.successful(())
   }
   
   def pageContent = {

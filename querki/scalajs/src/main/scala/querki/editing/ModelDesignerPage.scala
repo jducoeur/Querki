@@ -21,7 +21,45 @@ import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "modelDesigner") with EcologyMember  {
   
-  lazy val modelId = TID(params.get("modelId").getOrElse(params("thingId")))
+  lazy val rawModelIdOpt = params.get("modelId").orElse(params.get("thingId"))
+  var _modelId:Option[TID] = None
+  def modelId = _modelId.get
+  
+  override def beforeRender() = {
+    // Page-specific gadget hooks:
+    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10 form-control") }
+    Gadgets.registerHook("input[type='text']") { elem => 
+      val inputs = $(elem).filter(".propEditor").filter(":not(._tagSetInput)")
+      inputs.addClass("col-md-10 form-control") 
+    }
+    
+    // If a Model hasn't been specified, pop a dialog:
+    rawModelIdOpt match {
+      case Some(mid) => {
+        _modelId = rawModelIdOpt.map(TID(_))
+        Future.successful(())
+      }
+      case _ => {
+        DataModel.chooseAModel(
+          "Design a Model", 
+          "Choose which Model to base the new one on (just use Simple Thing if not sure)", 
+          "Create Model"
+        ).flatMap { selection =>
+          if (selection.isEmpty)
+            Future.successful(PageManager.showRoot())
+          else {
+            val initProps = 
+              Seq(
+                ChangePropertyValue(Editing.propPath(std.core.isModelProp), Seq("true"))
+              )
+            Client[EditFunctions].create(selection.get, initProps).call().map { modelInfo =>
+               _modelId = Some(modelInfo.oid)
+            }
+          }
+        }
+      }
+    }
+  }
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]
@@ -67,15 +105,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "mo
    */
   val modelMapFut = allTypesFut.map { allTypeInfo =>
     Map(allTypeInfo.models.map(modelInfo => (modelInfo.oid -> modelInfo)):_*)
-  }
-  
-  override def beforeRender() = {
-    // Page-specific gadget hooks:
-    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10 form-control") }
-    Gadgets.registerHook("input[type='text']") { elem => 
-      val inputs = $(elem).filter(".propEditor").filter(":not(._tagSetInput)")
-      inputs.addClass("col-md-10 form-control") 
-    }    
   }
   
   def addProperty(propId:TID, openEditor:Boolean = false) = {

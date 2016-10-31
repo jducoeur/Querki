@@ -799,7 +799,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           classesOpt.map(_.strip.toString).map(" " + _).getOrElse("")
       }
         yield HtmlValue(
-          button(
+          a(
             cls:=classes,
             data.menuid := id.strip.toString(),
             label.strip.toString()))
