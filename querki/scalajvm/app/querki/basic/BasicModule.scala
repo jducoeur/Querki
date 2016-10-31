@@ -51,6 +51,9 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
         else
           fallback()
       }
+      def strip(w:Wikitext):Wikitext = {
+        Wikitext(w.strip)
+      }
       
       val localName = tops.fullLookupDisplayName
       if (localName.isEmpty) {
@@ -60,7 +63,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
         }
           yield QL.process(v, tops.thisAsContext)
           
-        computed.map { fut => fut.map(checkLength(_)) }.getOrElse(Future.successful(fallback()))
+        // We need to strip any Wikitext out of the computed name, or we wind up with broken links-in-links:
+        computed.map { fut => fut.map(w => strip(checkLength(w))) }.getOrElse(Future.successful(fallback()))
       } else {
         localName.get.renderPlain.map(checkLength(_))
       }
