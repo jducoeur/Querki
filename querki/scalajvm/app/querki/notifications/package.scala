@@ -11,6 +11,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.identity.{IdentityId, PublicIdentity, User, UserId}
 import querki.notifications.Common
+import querki.spaces.SerializedProps
 import querki.values.{RequestContext, SpaceState}
 
 package object notifications {
@@ -22,10 +23,13 @@ package object notifications {
   val EmptyNotificationId = Common.EmptyNotificationId
   
   /**
-   * How we represent the guts of a Notification. This may continue to be exactly a PropMap, but
-   * it's helpful to at least mark it as a separate Type.
+   * How we represent the guts of a Notification. Note that this is necessarily a *serialized*
+   * PropMap, because we use it in cross-node messages.
+   * 
+   * IMPORTANT: there's an implication here that this can therefore only contain Properties in
+   * System, since we are deserializing it without knowing the Space context.
    */
-  type NotificationPayload = PropMap
+  type NotificationPayload = SerializedProps
   
   /**
    * All Notifiers should register themselves in here. This can and usually should happen during

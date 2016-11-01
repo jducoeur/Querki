@@ -43,6 +43,11 @@ package object spaces {
   // The name of the Space Actor
   def sid(id:OID):String = id.toString
   
+  /**
+   * Represents a serialized PropMap.
+   */
+  case class SerializedProps(val ser:String) extends AnyVal
+  
   trait SpaceOps extends EcologyInterface {
     /**
      * Fetch a reference to a SpaceManager Actor, to which you can send requests. This is the
@@ -104,7 +109,16 @@ package object spaces {
     def thingTable(id:OID):String
     
     def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery
+    
+    // More type-safe versions of serializeProps and deserializeProps:
+    def serProps(props:PropMap, space:SpaceState):SerializedProps = {
+      SerializedProps(serializeProps(props, space))
+    }
+    def deserProps(ser:SerializedProps, space:SpaceState):PropMap = {
+      deserializeProps(ser.ser, space)
+    }
 
+    // Deprecated -- prefer the type-safe versions above:
     def serializeProps(props:PropMap, space:SpaceState):String
     def deserializeProps(str:String, space:SpaceState):PropMap
     def deserializeProp(propStr:String)(implicit space:SpaceState):(OID, QValue)

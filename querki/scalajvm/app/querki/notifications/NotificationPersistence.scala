@@ -10,6 +10,7 @@ import querki.db._
 import ShardKind._
 import querki.ecology._
 import querki.identity.UserId
+import querki.spaces.SerializedProps
 import querki.time.TimeAnorm._
 import querki.util.SqlHelpers._
 import querki.values.SpaceState
@@ -77,7 +78,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
           sent, spaceId, thingId,
           // Do we ever need a specific Space in order to deserialize a Notification? We probably can't,
           // since we are viewing them outside the context of the Space. So just use System.
-          SpacePersistence.deserializeProps(props, SystemState),
+          SerializedProps(props),
           isRead, isDeleted
         )
   
@@ -120,7 +121,7 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
             "sentTime" -> note.sentTime,
             "spaceId" -> note.spaceId.map(_.raw),
             "thingId" -> note.thingId.map(_.raw),
-            "props" -> SpacePersistence.serializeProps(note.payload, SystemState),
+            "props" -> note.payload.ser,
             "isRead" -> note.isRead,
             "isDeleted" -> note.isDeleted
           ).executeUpdate

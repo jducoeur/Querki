@@ -42,7 +42,11 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  lazy val System = interface[querki.system.System]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
+  
+  lazy val SystemState = System.State
   
   /**
    * The one true handle to the Admin Actor, which deals with asynchronous communications with the other Actors.
@@ -114,7 +118,8 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     }
     
     def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
-      val payload = note.payload
+      val rawPayload = note.payload
+      val payload = SpacePersistence.deserProps(rawPayload, SystemState)
       val futuresOpt = for {
         headerQV <- payload.get(HeaderOID)
         headerQL <- headerQV.firstAs(LargeTextType)
@@ -148,7 +153,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       DateTime.now,
       None, 
       None, 
-      payload)
+      SpacePersistence.serProps(payload, SystemState))
   }
   
   /***********************************************

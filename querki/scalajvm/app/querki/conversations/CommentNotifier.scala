@@ -30,9 +30,12 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   lazy val Conversations = interface[Conversations]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  lazy val System = interface[querki.system.System]
   
   lazy val CommentText = Conversations.CommentText
   lazy val PlainTextType = Basic.PlainTextType
+  lazy val SystemState = System.State
   
   override def postInit() = {
     NotifierRegistry.register(this)
@@ -92,7 +95,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       comment.createTime,
       Some(comment.spaceId), 
       Some(comment.thingId), 
-      payload,
+      SpacePersistence.serProps(payload, state),
       true,
       false)
       
@@ -126,7 +129,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   }
   
   // TODO: this should become a standard utility:
-  class RichPropMap(payload:NotificationPayload) {
+  class RichPropMap(payload:PropMap) {
     def getProp[VT](prop:Property[VT,_], as:PType[VT]):Option[VT] = {
       for {
         qv <- payload.get(prop)
@@ -135,10 +138,11 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         yield v
     }
   }
-  implicit def payload2Rich(payload:NotificationPayload):RichPropMap = new RichPropMap(payload)
+  implicit def payload2Rich(payload:PropMap):RichPropMap = new RichPropMap(payload)
   
   def commentLink(note:Notification):Option[String] = {
-    val payload = note.payload
+    val rawPayload = note.payload
+    val payload = SpacePersistence.deserProps(rawPayload, SystemState)
     for {
       ownerId <- payload.getProp(CommentSpaceOwner, LinkType)
       spaceId <- note.spaceId
@@ -154,7 +158,8 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   }
     
   def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
-    val payload = note.payload
+    val rawPayload = note.payload
+    val payload = SpacePersistence.deserProps(rawPayload, SystemState)
     val resultOpt = for {
       thingName <- payload.getProp(CommentThingName, PlainTextType)
       link = commentLink(note)

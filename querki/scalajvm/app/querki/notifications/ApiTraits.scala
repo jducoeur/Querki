@@ -74,8 +74,17 @@ case class CurrentNotifications(notes:Seq[Notification])
 /**
  * A single Notification in the system.
  */
-case class Notification(id:NotificationId, sender:IdentityId, toIdentity:Option[IdentityId], notifier:NotifierId, sentTime:DateTime, spaceId:Option[OID], thingId:Option[OID], payload:NotificationPayload, 
-    isRead:Boolean = false, isDeleted:Boolean = false)
+case class Notification(
+  id:NotificationId, 
+  sender:IdentityId, 
+  toIdentity:Option[IdentityId], 
+  notifier:NotifierId, 
+  sentTime:DateTime, 
+  spaceId:Option[OID], 
+  thingId:Option[OID], 
+  payload:NotificationPayload, 
+  isRead:Boolean = false, 
+  isDeleted:Boolean = false)
 
 /**
  * Represents a person or persons who a Notification can be sent to. 
