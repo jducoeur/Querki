@@ -34,7 +34,7 @@ class RawController @Inject() (val appProv:Provider[play.api.Application]) exten
           title = thingPageDetails.thingInfo.displayName
           canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(false)(rc.request)
           descWiki = descOpt.getOrElse(thingPageDetails.rendered)
-          desc = descWiki.strip.toString
+          desc = descWiki.displayWith(new RawTransformWrapper).toString
           guts = thingPageDetails.rendered.display.toString
         }
           yield Ok(views.html.raw(title, canonical, desc, guts, rc.request))
@@ -43,4 +43,15 @@ class RawController @Inject() (val appProv:Provider[play.api.Application]) exten
       case pex:PublicException => doError(indexRoute, pex) 
     }    
   }
+}
+
+class RawTransformer extends StripTransformer {
+  override def decorateParagraphOpen():String = "\n"
+  override def decorateParagraphClose():String = "\n"
+  override def escapeXmlEntities():Boolean = false
+}
+
+class RawTransformWrapper extends TransformWrapper {
+  val transformer = new RawTransformer
+  override val ignoreRaw:Boolean = true
 }

@@ -30,6 +30,8 @@ sealed trait Wikitext extends DebugRenderable {
   def transformStrip = transform(new StripTransformer) _
   def transformEmail = transform(new EmailTransformer) _
   
+  def displayWith(trans:TransformWrapper):DisplayText
+  
   def display:DisplayText
   
   /**
@@ -104,6 +106,8 @@ case class QWikitext(wiki:String) extends Wikitext {
   def strip = DisplayText(transformStrip(internal))
   def email = DisplayText(transformEmail(internal))
   
+  def displayWith(trans:TransformWrapper) = DisplayText(trans(internal, this))
+  
   /**
    * This should only be used internally, never to display to the user!
    * 
@@ -146,6 +150,9 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   // stuff to be ScalaTags-based, we can make it smarter.
   def strip = DisplayText("")
   def email = DisplayText(str)
+  
+  def displayWith(trans:TransformWrapper) = DisplayText(trans(str, this))
+  
   def internal = str
   def plaintext = str
   val keepRaw = true
@@ -231,6 +238,7 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   def span = DisplayText(process(transformSpan))
   def strip = DisplayText(process(transformStrip, true))
   def email = DisplayText(process(transformEmail))
+  def displayWith(trans:TransformWrapper) = DisplayText(process({str => trans(str, this)}, trans.ignoreRaw))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
@@ -243,6 +251,14 @@ object Wikitext {
   def apply(str:String):Wikitext = new QWikitext(str)
   val empty = Wikitext("")
   val nl = Wikitext("\n")
+}
+
+trait TransformWrapper {
+  def transformer:Transformer
+  
+  val ignoreRaw:Boolean = false
+  
+  def apply(str:String, wiki:Wikitext) = transformer(str)
 }
 
 // NOTE: MainDecorator is defined separately on Client and Server, so they can have slightly
