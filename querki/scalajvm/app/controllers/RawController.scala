@@ -27,13 +27,17 @@ class RawController @Inject() (val appProv:Provider[play.api.Application]) exten
         unknownSpace(spaceIdStr)
       } else {
         val thingId = ThingId(thingIdStr)
-        client[ThingFunctions].getThingPage(TID(thingId.toString()), None).call().map { thingPageDetails =>
-          val title = thingPageDetails.thingInfo.displayName
-          val canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(false)(rc.request)
-          val desc = thingPageDetails.rendered.plaintext
-          val guts = thingPageDetails.rendered.display.toString
-          Ok(views.html.raw(title, canonical, desc, guts, rc.request))
+        val tid = TID(thingId.toString())
+        for {
+          thingPageDetails <- client[ThingFunctions].getThingPage(tid, None).call()
+          descOpt <- client[ThingFunctions].getPropertyDisplay(tid, querki.conventions.MOIDs.PropDetailsOID.toTID).call()
+          title = thingPageDetails.thingInfo.displayName
+          canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(false)(rc.request)
+          descWiki = descOpt.getOrElse(thingPageDetails.rendered)
+          desc = descWiki.strip.toString
+          guts = thingPageDetails.rendered.display.toString
         }
+          yield Ok(views.html.raw(title, canonical, desc, guts, rc.request))
       }
     } recoverWith {
       case pex:PublicException => doError(indexRoute, pex) 

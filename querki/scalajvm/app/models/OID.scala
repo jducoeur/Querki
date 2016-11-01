@@ -10,6 +10,7 @@ import play.api.db._
 import play.api.Play.current
 
 import querki.core.NameUtils
+import querki.data.TID
 import querki.db.QDB
 import querki.db.ShardKind._
 import querki.globals._
@@ -34,6 +35,7 @@ case class OID(val raw:Long) {
   override def toString = java.lang.Long.toString(raw, 36)
   def toThingId = AsOID(this)
   def id = this
+  def toTID = TID(toThingId.toString)
   
   override def equals(other:Any) = {
     other match {

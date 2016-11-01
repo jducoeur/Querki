@@ -141,7 +141,10 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   def display = DisplayText(str)
   def raw = DisplayText(str)
   def span = DisplayText(str)
-  def strip = DisplayText(str)
+  // We don't want to display HTML in strip mode
+  // TODO: this is kind of horrible -- we're going to lose the text *in* the HTML as well. When we rewrite this
+  // stuff to be ScalaTags-based, we can make it smarter.
+  def strip = DisplayText("")
   def email = DisplayText(str)
   def internal = str
   def plaintext = str
@@ -199,14 +202,19 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   
   case class ProcessState(str:String, map:Map[Int, Wikitext])
   
-  def process(processor:String => String):String = {
+  def process(processor:String => String, ignoreRaw:Boolean = false):String = {
     val indexedContents = contents.zipWithIndex
     // To begin with, we process everything where keepRaw == false, and replace the keepRaw == true...
     val ProcessState(builtStr, substitutionMap) = (ProcessState("", Map.empty[Int, Wikitext]) /: indexedContents) { (state, textAndIndex) =>
       val (text, index) = textAndIndex
-      if (text.keepRaw)
-        ProcessState(state.str + "(-+" + index + "+-)", state.map + (index -> text))
-      else
+      if (text.keepRaw) {
+        if (ignoreRaw) {
+          // Simply skip this element. We do this during strip mode:
+          state
+        } else {
+          ProcessState(state.str + "(-+" + index + "+-)", state.map + (index -> text))
+        }
+      } else
         ProcessState(state.str + text.internal, state.map)
     }
     val processedStr = processor(builtStr)
@@ -221,7 +229,7 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   def display = DisplayText(process(transformDisplay))
   def raw = DisplayText(process(transformRaw))
   def span = DisplayText(process(transformSpan))
-  def strip = DisplayText(process(transformStrip))
+  def strip = DisplayText(process(transformStrip, true))
   def email = DisplayText(process(transformEmail))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
@@ -269,9 +277,38 @@ class SpanTransformer extends Transformer with MainDecorator {
 class StripTransformer extends Transformer with MainDecorator {
     override def deco() = this
     override def allowVerbatimXml():Boolean = true
+    
+    override def decorateBreak():String = "\n"
+    override def decorateCode(code:String):String = "`" + code + "`"
+    override def decorateEmphasis(text:String):String = "*" + text + "*"
+    override def decorateStrong(text:String):String = "**" + text + "**"
+    override def decorateStrike(text:String):String = "-" + text + "-"
+    override def decorateLink(text:String, url:String, title:Option[String]):String = text
+    override def decorateImg(alt:String, src:String, title:Option[String]):String = ""
+    override def decorateRuler():String = "======\n"
+    override def decorateHeaderOpen(headerNo:Int):String = ""
+    override def decorateHeaderClose(headerNo:Int):String = ""
+    override def decorateCodeBlockOpen():String = "\n\n"
+    override def decorateCodeBlockClose():String = "\n\n"
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""
-    override def decorateLink(text:String, url:String, title:Option[String]):String = text
+    override def decorateBlockQuoteOpen():String = "\n"
+    override def decorateBlockQuoteClose():String = "\n"
+    override def decorateItemOpen():String = "* "
+    override def decorateItemClose():String = "\n"
+    override def decorateUListOpen():String = "\n"
+    override def decorateUListClose():String = "\n"
+    override def decorateOListOpen():String = "\n"
+    override def decorateOListClose():String = "\n"
+    override def decorateDListOpen():String = "\n"
+    override def decorateDListClose():String = "\n"
+    override def decorateDTitleOpen():String = ""
+    override def decorateDTitleClose():String = "\n"
+    override def decorateDDescOpen():String = "    "
+    override def decorateDDescClose():String = "\n"
+    override def decorateClassDivOpen(className:String):String = ""
+    override def decorateClassDivClose():String = ""
+    override def decorateClassSpan(className:String, text:String):String = text     
 }
 
 // TODO: this is optimized for use inside _emailLink(). It is *not* safe for general use yet,
