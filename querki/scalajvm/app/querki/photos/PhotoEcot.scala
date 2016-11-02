@@ -223,7 +223,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           |Then whenever a user clicks on a thumbnail, it will replace the full-sized picture. This way, you can have a
           |lot of Photos, but only take up a bit of display space on the page.
           |
-          |It is legal, but usually pointless, to use this function with Exactly One or Optional Photo.""".stripMargin)))
+          |It is legal, but usually pointless, to use this function with Required or Optional Photo; 
+          |it is generally used with a List of Photos.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {

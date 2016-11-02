@@ -295,7 +295,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
           |Type -- it can take several forms, and you have to say which one it is. As of this writing, the
           |available Collections are:
           |
-          |* Exactly One -- the most common case, where the Property holds one of this Type. Note that this means
+          |* Required -- the most common case, where the Property holds one of this Type. Note that this means
           |    that it *always* holds one of this type; if you don't give it a value, it will be set to a default.
           |* Optional -- the Property may or may not hold a value of this Type. Use Optional when it makes sense
           |    for a Thing to have the Property but not have it filled in. It is very common for a Model to have an
@@ -306,7 +306,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
           |    will be silently thrown away, and order is not preserved; Sets are usually shown in alphabetical order.
           |
           |When you create a Property, you must choose which Collection it uses. If you aren't sure, it is usually
-          |best to go for Exactly One, but you should use any of these when they make sense.""".stripMargin)
+          |best to go for Optional, but you should use any of these when they make sense.""".stripMargin)
       ))
 
   /**

@@ -697,7 +697,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       Summary("Produces true if the received List contains the specified value"),
       Signature(
         expected = Some(Seq.empty, "A List (or Set) of any sort"),
-        reqs = Seq(("v", AnyType, "A single value that might be in the List. This should be Exactly One; if not, the first element will be used.")),
+        reqs = Seq(("v", AnyType, "A single value that might be in the List. This should be Required; if not, the first element will be used.")),
         opts = Seq.empty,
         returns = (YesNoType, "True if *v* is found in the List; False otherwise")
       )))

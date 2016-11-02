@@ -53,7 +53,7 @@ trait PassthroughHandlerBase {
 class StandardThings(h:PassthroughHandlerBase) {
   
   object core {
-    val exactlyOneColl = h.pass("Exactly One")
+    val exactlyOneColl = h.pass("Required")
   	val optionalColl = h.pass("Optional")
   	val listColl = h.pass("List")
   	val setColl = h.pass("Set")
