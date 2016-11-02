@@ -17,14 +17,14 @@ trait BlockParsers extends Parsers {
     /**
      * Used to define the output format of parsed blocks and whether verbatim xml blocks are allowed.
      */
-    def deco():Decorator = Decorator
+    def deco():Decorator
 
     /**
      * returns the current indentation string repeated the given number of levels
      */
     def indent(level:Int):String = deco.indentation * level
 
-    private val tokenizer = new LineTokenizer()
+    private val tokenizer = new LineTokenizer(deco)
 
     /** A markdown block element.
      */
@@ -193,7 +193,7 @@ trait BlockParsers extends Parsers {
      * Helper class to build lists. Allows easy checking if an item ends with empty lines and
      * recursively builds the content of an item.
      */
-    class ListItem(val lines:List[MarkdownLine], lookup:Map[String, LinkDefinition]) extends LineParsers {
+    class ListItem(val lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], val deco:Decorator = deco) extends LineParsers {
         def endsWithNewline = lines.size > 1 && (lines.last.isInstanceOf[EmptyLine])
 
         def addResult(level:Int, out:StringBuilder, paragraph_? : Boolean) {

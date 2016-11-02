@@ -2,7 +2,7 @@ package querki.email
 
 import scala.util.{Failure, Success, Try}
 
-import models.{PropertyBundle, PTypeBuilder, ThingState, Wikitext}
+import models.{LiteralTransformWrapper, PropertyBundle, PTypeBuilder, ThingState, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -161,12 +161,12 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
           None
         else {
           val safe = p.map { wikitext =>
-            val plaintext =
+            val disp = 
               if (full)
-                wikitext.email
+                wikitext.displayWith(new LiteralTransformWrapper)
               else
                 wikitext.strip
-            SafeUrl(plaintext)
+            SafeUrl(disp)
           }
           Some(prefix+safe.mkString(","))
         }

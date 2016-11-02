@@ -128,5 +128,5 @@ trait Decorator {
 /**
  * Default instance of Decorator with the standard Markdown behavior
  */
-object Decorator extends Decorator {
-}
+//object Decorator extends Decorator {
+//}

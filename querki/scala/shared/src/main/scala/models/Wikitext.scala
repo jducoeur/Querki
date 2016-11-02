@@ -28,7 +28,6 @@ sealed trait Wikitext extends DebugRenderable {
   def transformRaw = transform(new RawTransformer) _
   def transformSpan = transform(new SpanTransformer) _
   def transformStrip = transform(new StripTransformer) _
-  def transformEmail = transform(new EmailTransformer) _
   
   def displayWith(trans:TransformWrapper):DisplayText
   
@@ -50,11 +49,6 @@ sealed trait Wikitext extends DebugRenderable {
    * Produces a no-markup version, for cases where you really want just plain text output.
    */
   def strip:DisplayText
-  
-  /**
-   * Produces a version that works in email. This needs a bunch more work yet, but it's a start.
-   */
-  def email:DisplayText
   
   /**
    * This should only be used internally, never to display to the user!
@@ -104,7 +98,6 @@ case class QWikitext(wiki:String) extends Wikitext {
   def raw = DisplayText(transformRaw(internal))
   def span = DisplayText(transformSpan(internal))
   def strip = DisplayText(transformStrip(internal))
-  def email = DisplayText(transformEmail(internal))
   
   def displayWith(trans:TransformWrapper) = DisplayText(trans(internal, this))
   
@@ -149,7 +142,6 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   // TODO: this is kind of horrible -- we're going to lose the text *in* the HTML as well. When we rewrite this
   // stuff to be ScalaTags-based, we can make it smarter.
   def strip = DisplayText("")
-  def email = DisplayText(str)
   
   def displayWith(trans:TransformWrapper) = DisplayText(trans(str, this))
   
@@ -237,7 +229,6 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   def raw = DisplayText(process(transformRaw))
   def span = DisplayText(process(transformSpan))
   def strip = DisplayText(process(transformStrip, true))
-  def email = DisplayText(process(transformEmail))
   def displayWith(trans:TransformWrapper) = DisplayText(process({str => trans(str, this)}, trans.ignoreRaw))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
@@ -265,7 +256,6 @@ trait TransformWrapper {
 // tweaked behavior.
 
 class QuerkiTransformer extends Transformer with MainDecorator {
-    override def deco() = this
     // We now allow XML in QText, but note that the parser only allows a few, whitelisted constructs:
     override def allowVerbatimXml():Boolean = true
     // We use <div> instead of a real <p>, because it turns out that older versions of IE (specifically IE9)
@@ -275,23 +265,18 @@ class QuerkiTransformer extends Transformer with MainDecorator {
 }
 
 class RawTransformer extends Transformer with MainDecorator {
-    override def deco() = this
     override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""    
 }
 
 class SpanTransformer extends Transformer with MainDecorator {
-    override def deco() = this
     override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = "<span>"
     override def decorateParagraphClose():String = "</span>"    
 }
 
-// TODO: in principle, this should override pretty much every decorator with a stripped version.
-// In practice, we mostly case about decorateLink, which has been a problem.
 class StripTransformer extends Transformer with MainDecorator {
-    override def deco() = this
     override def allowVerbatimXml():Boolean = true
     
     override def decorateBreak():String = "\n"
@@ -312,11 +297,11 @@ class StripTransformer extends Transformer with MainDecorator {
     override def decorateBlockQuoteClose():String = "\n"
     override def decorateItemOpen():String = "* "
     override def decorateItemClose():String = "\n"
-    override def decorateUListOpen():String = "\n"
+    override def decorateUListOpen():String = ""
     override def decorateUListClose():String = "\n"
-    override def decorateOListOpen():String = "\n"
+    override def decorateOListOpen():String = ""
     override def decorateOListClose():String = "\n"
-    override def decorateDListOpen():String = "\n"
+    override def decorateDListOpen():String = ""
     override def decorateDListClose():String = "\n"
     override def decorateDTitleOpen():String = ""
     override def decorateDTitleClose():String = "\n"
@@ -327,17 +312,13 @@ class StripTransformer extends Transformer with MainDecorator {
     override def decorateClassSpan(className:String, text:String):String = text     
 }
 
-// TODO: this is optimized for use inside _emailLink(). It is *not* safe for general use yet,
-// because it turns off escapeXmlEntities()! We really need to refactor the whole damned
-// Transformer mechanism to make that parameterizable. Or better yet, we should be able to
-// pass this whole object as a parameter to Wikitext.display.
-// TODO: in principle, this should probably be a sort of LiteralTransformer, which simply
-// emits most markup in its original form.
-class EmailTransformer extends Transformer with MainDecorator {
-    override def deco() = this
-    override def allowVerbatimXml():Boolean = true
-    override def escapeXmlEntities():Boolean = false
-    // TBD: this is a bit surprising -- we apparently can't use HTML in email links:
-    override def decorateParagraphOpen():String = ""
-    override def decorateParagraphClose():String = "\n\n"
+class LiteralTransformer extends StripTransformer {
+  override def decorateParagraphOpen():String = ""
+  override def decorateParagraphClose():String = "\n\n"
+  override def escapeXmlEntities():Boolean = false
+}
+
+class LiteralTransformWrapper extends TransformWrapper {
+  val transformer = new LiteralTransformer
+  override val ignoreRaw:Boolean = true
 }

@@ -4,7 +4,7 @@ import querki.test._
 
 import org.scalatest.FlatSpec
 
-class HtmlTest extends QuerkiTests with Transformer {
+class HtmlTest extends QuerkiTests with Transformer with MainDecorator {
   "Simple, legal XHTML fragments" should {
     "parse cleanly" in {
       apply("Hello <div>there</div>") should equal ("""<p>Hello <div>there</div></p>

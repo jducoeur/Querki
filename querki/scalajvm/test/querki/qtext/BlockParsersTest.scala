@@ -8,6 +8,8 @@ import org.scalatest.{FlatSpec, Matchers}
  */
 //@RunWith(classOf[JUnitRunner])
 class BlockParsersTest extends FlatSpec with Matchers with BlockParsers{
+  
+  def deco() = new MainDecorator {}
 
     "The BlockParsers" should "parse optional empty lines" in {
         val p = optEmptyLines

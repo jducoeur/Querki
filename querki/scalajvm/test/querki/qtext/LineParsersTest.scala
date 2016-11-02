@@ -8,6 +8,8 @@ import org.junit.runner.RunWith
  */
 //@RunWith(classOf[JUnitRunner])
 class LineParsersTest extends FlatSpec with Matchers with LineParsers{
+  
+  def deco() = new MainDecorator {}
 
     "The LineParsers" should "parse horizontal rulers" in {
         val p = ruler

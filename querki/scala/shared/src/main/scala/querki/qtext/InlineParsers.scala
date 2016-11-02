@@ -15,7 +15,7 @@ trait InlineParsers extends BaseParsers {
     /**
      * Defines how the output is formatted and whether inline xml elements are allowed.
      */
-    def deco():Decorator = Decorator
+    def deco():Decorator
 
     /////////////////////////////////////
     // Types we use for inline parsing //

@@ -29,8 +29,10 @@ case class LineReader private (val lines:Seq[String],
  * Chops the input into lines and turns those lines into line tokens.
  * Also takes care of preprocessing link definitions and xml blocks.
  */
-class LineTokenizer() extends Parsers {
-    object lineParsers extends LineParsers
+class LineTokenizer(val deco:Decorator) extends Parsers {
+    object lineParsers extends {
+      val deco = LineTokenizer.this.deco
+    } with LineParsers
 
     /**we munch whole lines (OM NOM NOM)
      */

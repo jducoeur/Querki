@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
  * Package Explorer, and do File -> Convert Line Delimiters To -> Unix.
  */
 //@RunWith(classOf[JUnitRunner])
-class TransformerTest extends FlatSpec with Matchers with Transformer {
+class TransformerTest extends FlatSpec with Matchers with Transformer with MainDecorator {
     
 
   implicit class testableString(str:String) {

@@ -24,6 +24,8 @@ trait InlineBase { this:InlineParsers with Matchers =>
  */
 //@RunWith(classOf[JUnitRunner])
 class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with InlineBase {
+  
+  def deco() = new MainDecorator {}
 
     ///////////////////////////////////////////////////////////////
     // Inline parsing Tests                                      //
