@@ -12,15 +12,19 @@ import querki.display.{ButtonGadget, Gadget}
 import ButtonGadget._
 import querki.display.rx._
 import querki.globals._
+import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils
   
-class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
-
+class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) 
+  extends Gadget[dom.HTMLDivElement] with SkillLevelsNeeded with EcologyMember 
+{
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[Editing]
   
   val std = DataAccess.std
+  
+  def isAdvanced = userSkillLevel == Advanced
   
   def reset() = {
     nameInput.map(_.setValue(""))
@@ -61,6 +65,10 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     typeInfo.collections.headOption.map { collBtn(_, true) } ++
     typeInfo.collections.tail.map { collBtn(_, false) }
   lazy val collSelector = GadgetRef[RxButtonGroup]
+  
+  def collButton(collection:TID):ButtonInfo = {
+    collButtons.find(_.value == collection.underlying).get
+  }
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
   val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
@@ -72,7 +80,16 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   val modelSelector = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
-        g.selectedValOpt().map(_ => typeSelector.map(_.setValue("")))
+        g.selectedValOpt().map { _ =>
+          // They've selected a Model, so reset the Type...
+          typeSelector.map(_.setValue("")) 
+          // ... and set the Collection to List. Yes, this is hardcoded. So far,
+          // I have yet to see an example where you want any Collection *other*
+          // than List when you're incorporating a Model value.
+          // TODO: this isn't very Rx-ish. Can/should we make this more properly
+          // declarative and reactive?
+          collSelector.map { _.choose(collButton(std.core.listColl)) }
+        }
       }
     }
   
@@ -126,24 +143,26 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
             )
           ),
           div(cls:="row",
-            div(cls:="col-md-12",
-              collSelector <= new RxButtonGroup(Var(collButtons.toSeq), id:="_collSelector")
-            )
-          ),
-          div(cls:="row",
             div(cls:="col-md-5", 
               typeSelector <= RxSelect(
                 Var({typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))}), 
                 "Choose a Type...", 
                 id:="_typeSelector",
                 cls:="form-control")), 
-            span(cls:="col-md-1", " or "), 
+            if (isAdvanced)
+              span(cls:="col-md-1", " or "), 
             div(cls:="col-md-5", 
+              display:={if (isAdvanced) "inline" else "none"},
               modelSelector <= RxSelect(
                 Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}), 
-                "Base it on a Model...",
+                "Make it a List of...",
                 id:="_modelSelector",
                 cls:="form-control"))
+          ),
+          div(cls:="row",
+            div(cls:="col-md-12",
+              collSelector <= new RxButtonGroup(Var(collButtons.toSeq), id:="_collSelector")
+            )
           ),
           p(cls:="col-md-offset1",
             addButton

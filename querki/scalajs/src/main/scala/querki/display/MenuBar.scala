@@ -12,7 +12,7 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.globals._
 import querki.identity.UserLevel
-import querki.identity.skilllevel.{Complexity, UnspecifiedComplexity}
+import querki.identity.skilllevel.{Complexity, SkillLevelsNeeded, UnspecifiedComplexity}
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
@@ -23,7 +23,9 @@ import querki.search.SearchGadget
  * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
  * overall ordering of the list?
  */
-class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
+class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) 
+  with QuerkiUIUtils with SkillLevelsNeeded 
+{
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val Admin = interface[querki.admin.Admin]
@@ -35,16 +37,10 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val Print = interface[querki.print.Print]
-  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
   def thingOpt = DataAccess.mainThing
-  
-  def userSkillLevel = SkillLevel.current
-  lazy val Easy = SkillLevel.EasyComplexity
-  lazy val Standard = SkillLevel.StandardComplexity
-  lazy val Advanced = SkillLevel.AdvancedComplexity
   
   // There are a lot of items that are only displayed if the user have the Explore permission.
   lazy val hasExplore = spaceOpt.map { space =>
