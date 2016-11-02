@@ -309,6 +309,15 @@ dd {
   margin-bottom: 20px;
 }
 
+/*
+ * We hardcode the height of the Type Description, so the Create Property box's size
+ * doesn't jump up and down when you change Types.
+ */
+._advancedEditor ._typeDescription {
+  height: 200px;
+  overflow: auto;
+}
+
 ._propValueGuts {
   width: 100%;
 }

@@ -144,14 +144,14 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
                 "Base it on a Model...",
                 id:="_modelSelector",
                 cls:="form-control"))
+          ),
+          p(cls:="col-md-offset1",
+            addButton
           )
         ),
-        div(cls:="col-md-6", 
+        div(cls:="col-md-6 _typeDescription", 
           new DescriptionDiv(page, selectedBasis)
         )
-      ),
-      p(cls:="col-md-offset1",
-        addButton
       ),
       hr,
       p(new ButtonGadget(Info, id:="_addExistingInstead", "Add an Existing Property")({ () => apg.mainDiv.get.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
