@@ -603,6 +603,9 @@ trait TypeCreation {
         (querki.conventions.MOIDs.PropDetailsOID -> 
         	ExactlyOne(ElemValue(QLText("""""".stripMargin),
             new DelegatingType(LargeTextType)))),
+        (querki.editing.MOIDs.PreferredCollectionOID ->
+          ExactlyOne(ElemValue(querki.core.MOIDs.OptionalOID,
+            new DelegatingType(LinkType)))),
         (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____**""]]
             |
             |[[Details]]
@@ -920,6 +923,9 @@ trait TypeCreation {
   class TagType extends PlainTextType(querki.tags.MOIDs.NewTagSetOID, 
       toProps(
         setName("Tag Type"),
+        (querki.editing.MOIDs.PreferredCollectionOID ->
+          ExactlyOne(ElemValue(querki.core.MOIDs.QSetOID,
+            new DelegatingType(LinkType)))),
         Summary("A collection of arbitrary Tags that apply to this Thing"),
         Details("""A Tag Set is a way to add a bunch of "tags" to a Thing. It is typically used to
             |list the characteristics of this Thing.

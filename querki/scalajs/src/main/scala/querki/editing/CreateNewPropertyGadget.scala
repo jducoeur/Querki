@@ -26,6 +26,14 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   
   def isAdvanced = userSkillLevel == Advanced
   
+  lazy val preferredCollectionsByType:Map[TID, TID] = {
+    val allTypes = typeInfo.standardTypes ++ typeInfo.advancedTypes
+    val pairs = allTypes.map { typeInfo =>
+      typeInfo.preferredCollection.map(collId => (typeInfo.oid, collId))
+    }.flatten
+    Map(pairs:_*)
+  }
+  
   def reset() = {
     nameInput.map(_.setValue(""))
     typeSelector.map(_.setValue(""))
@@ -74,7 +82,20 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
-        g.selectedValOpt().map(_ => modelSelector.map(_.setValue("")))
+        g.selectedValOpt().map{ selectedType =>
+          // They've selected a Type, so reset the Model...
+          modelSelector.map(_.setValue("")) 
+          // ... and set the Collection to best suit this Type:
+          collSelector.map { sel =>
+            val selectedTID = TID(selectedType)
+            preferredCollectionsByType.get(selectedTID) match {
+              // There's a preferred option:
+              case Some(collId) => sel.choose(collButton(collId))
+              // If there is nothing preferred, use Optional:
+              case _ => sel.choose(collButton(std.core.optionalColl))
+            }
+          }
+        }
       } 
     }
   val modelSelector = GadgetRef[RxSelect].

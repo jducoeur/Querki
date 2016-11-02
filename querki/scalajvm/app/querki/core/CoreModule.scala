@@ -150,6 +150,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
   def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text))) 
   def Categories(cats:String*) = (querki.conventions.MOIDs.PropCategoriesOID -> QSet.makePropValue(cats.map(TagType(_)), TagType))
   def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
+  def PreferredCollection(collId:OID) = (querki.editing.MOIDs.PreferredCollectionOID -> ExactlyOne(LinkType(collId)))
   lazy val SkillLevelBasic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID
   lazy val SkillLevelStandard = querki.identity.skilllevel.MOIDs.SkillLevelStandardOID
   lazy val SkillLevelAdvanced = querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID

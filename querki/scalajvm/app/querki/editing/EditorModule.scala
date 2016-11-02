@@ -136,6 +136,21 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       setName("_Not Editable Property"),
       setInternal,
       Summary("Set on a Property that should not show up in the Editor.")))
+  
+  lazy val PreferredCollectionProp = new SystemProperty(PreferredCollectionOID, LinkType, Optional,
+    toProps(
+      setName("_Preferred Collection for Type"),
+      Categories(EditingTag),
+      SkillLevel(SkillLevelAdvanced),
+      AppliesToKindProp(Kind.Type),
+      Summary("Set on a Type to say which Collection tends to be best for this Type"),
+      Details("""Most Types work best with a particular Collection. For example, Links and Tags tend to
+        |be used with Sets, and Photos are usually in Lists. Most others are best with Optional.
+        |
+        |`_Preferred Collection for Type` declares which Collection is *best* for this Type. Note
+        |that this is just a default used in the Create Property editor -- it is not enforced.
+        |
+        |If this is not set on a given Type, it will default to Optional.""")))
 
   abstract class EditMethodBase(id:OID, pf:PropMap) extends InternalMethod(id, pf)
   {

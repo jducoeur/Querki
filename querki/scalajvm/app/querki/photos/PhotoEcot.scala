@@ -62,6 +62,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   import PhotoUploadActor._
   
   val Basic = initRequires[querki.basic.Basic]
+  val Editor = initRequires[querki.editing.Editor]
   // Note that this needs to be named something other than QL, because the inherited QL is lazy, and this needs
   // to not be.
   val RQL = initRequires[querki.ql.QL]
@@ -274,6 +275,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     toProps(
       setName("Photo Type"),
       Basic.ExplicitProp(true),
+      Editor.PreferredCollectionProp(QList),
       Categories(PhotosTag),
       Summary("A single Photograph in Querki"))) with FullInputRendering
   {

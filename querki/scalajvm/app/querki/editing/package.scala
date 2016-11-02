@@ -24,6 +24,7 @@ package object editing {
     val EditWidthPropOID = moid(3)
     val NotEditableOID = moid(4)
     val CheckListOID = moid(5)
+    val PreferredCollectionOID = moid(6)
   }
   
   val EditingTag = "Editing"
@@ -40,6 +41,7 @@ package object editing {
     def InstanceEditViewProp:Property[QLText,String]
     def EditWidthProp:Property[Int,Int]
     def NotEditableProp:Property[Boolean,Boolean]
+    def PreferredCollectionProp:Property[OID,OID]
     
     /**
      * Given a Model, this returns the expected Properties to show/use for Instances of this Model.

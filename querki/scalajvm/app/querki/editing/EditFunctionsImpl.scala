@@ -409,7 +409,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       }
     }
     
-    def toTypeInfo(t:PType[_]) = TypeInfo(t, t.linkName, t.displayName)
+    def toTypeInfo(t:PType[_]) = TypeInfo(t, t.linkName, t.displayName, Some(querki.core.MOIDs.QListOID.toTID))
     
     typOpt match {
       case Some(typ) => Future.successful(toTypeInfo(typ))

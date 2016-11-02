@@ -100,7 +100,8 @@ case class CollectionInfo(
 case class TypeInfo(
   oid:TID,
   linkName:Option[String],
-  displayName:String
+  displayName:String,
+  preferredCollection:Option[TID]
 ) extends BasicThingInfo
 
 case class AllTypeInfo(

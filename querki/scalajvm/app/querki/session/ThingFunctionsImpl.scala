@@ -147,7 +147,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
       AllTypeInfo(
         Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
         Seq.empty,
-        spaceTypes.map(typ => TypeInfo(typ, typ.linkName, typ.displayName)).toSeq,
+        spaceTypes.map(typ => TypeInfo(typ, typ.linkName, typ.displayName, typ.firstOpt(Editor.PreferredCollectionProp).map(_.toTID))).toSeq,
         modelInfo
       )
     }
