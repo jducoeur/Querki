@@ -5,6 +5,7 @@ import scala.xml.NodeSeq
 import models.{Collection, DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropMap
 
+import querki.api.commonName
 import querki.basic.PlainTextBaseType
 import querki.ecology._
 import querki.globals._
@@ -770,7 +771,7 @@ trait TypeCreation {
   
   class LinkType extends LinkTypeBase(LinkTypeOID,
       toProps(
-        setName("Thing Type"),
+        setName(commonName(_.core.linkType)),
         Summary("A specific Thing"),
         Details("""This contains a single Thing in this Space. It can be any Thing: an Instance, a Model,
             |a Property -- even a Type or the Space itself.
@@ -922,7 +923,7 @@ trait TypeCreation {
   
   class TagType extends PlainTextType(querki.tags.MOIDs.NewTagSetOID, 
       toProps(
-        setName("Tag Type"),
+        setName(commonName(_.core.tagType)),
         (querki.editing.MOIDs.PreferredCollectionOID ->
           ExactlyOne(ElemValue(querki.core.MOIDs.QSetOID,
             new DelegatingType(LinkType)))),

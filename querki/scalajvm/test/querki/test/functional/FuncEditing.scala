@@ -190,12 +190,14 @@ trait FuncEditing { this:FuncMixin =>
       
     // Set the name...
     textField("_createPropName").value = prop.display
-    // ... the collection...
-    click on s"_coll${prop.coll.id.toThingId.toString}"
     // ... the type...
     singleSel("_typeSelector").value = prop.tpe.tid
+    // ... do any prep, if needed...
+    prop.prepProp(state)
+    // ... the collection...
+    click on s"_coll${prop.coll.id.toThingId.toString}"
     // ... and actually create it:
-    click on "_doCreatePropertyButton"
+    eventually { click on "_doCreatePropertyButton" }
     
     // Wait for the new PropValueEditor to be created:
     eventually { countEditors() should equal (nOrigEditors + 1) }

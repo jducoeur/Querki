@@ -19,6 +19,8 @@ trait FuncTypes { this:FuncMixin =>
     
     def setValue(thing:TThing[_], prop:TProp[this.type], v:TSetter):Unit
     
+    def prepProp(prop:TProp[this.type])(state:State):Unit = {}
+    
     def fixupProp(prop:TProp[this.type])(state:State):Unit = {}
   }
   
@@ -52,13 +54,25 @@ trait FuncTypes { this:FuncMixin =>
    * Utility function for setting up Link and Tag Properties.
    */
   trait ModelRestrictions { this:TType =>
-    override def fixupProp(prop:TProp[this.type])(state:State):Unit = {
+    override def prepProp(prop:TProp[this.type])(state:State):Unit = {
+      // TODO: Figure out a way to test *creation* of a Model, using the New button
+      // TODO: Ick! A var! Surely there's a better way to do this...
+      var hasModelRestriction = false
       prop.extras.collect {
         case RestrictedToModel(modelProto) => {
+          waitFor("_pointerKind-Existing")
+          // Select the existing-model option:
+          click on "_pointerKind-Existing"
           // HACK: for the moment, the options in the selector use OIDs, not TIDs:
-          val modelId = state.thing(modelProto).oidStr
-          singleSel(editorId(prop, RestrictToModelProp)).value = modelId
+          val modelId = state.thing(modelProto).tid
+          singleSel("_pointerModelSelector").value = modelId
+          hasModelRestriction = true
         }
+      }
+      if (!hasModelRestriction) {
+        // There's no Model Restriction, so we need to click on the Any button:
+        waitFor("_pointerKind-Any")
+        click on "_pointerKind-Any"
       }
     }
   }

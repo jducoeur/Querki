@@ -52,12 +52,16 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // When we blur out of the Name field, fix it up if necessary:
   def fixNameInput(init:String):Unit = {
     def fixRec(current:String):String = {
-      val c = current.last
-      // These are legal, but *not* at the end of the name:
-      if (c == ' ' || c == '-')
-        fixRec(current.dropRight(1))
-      else
+      if (current.length == 0)
         current
+      else {
+        val c = current.last
+        // These are legal, but *not* at the end of the name:
+        if (c == ' ' || c == '-')
+          fixRec(current.dropRight(1))
+        else
+          current
+      }
     }
     
     val fixed = fixRec(init)
@@ -118,12 +122,46 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // RxSelect:
   lazy val selectedBasis = Rx { modelSelector.flatMap(_.selectedWithTID()) orElse typeSelector.flatMap(_.selectedWithTID()) }
   
+  // True iff the selected type is a "pointer" type.
+  // For the time being, since we only have two "pointer" types, we're just going to hardcore this.
+  // If we develop more of them, this "pointerness" should probably become a meta-Property on the
+  // Type instead:
+  lazy val isPointerType = Rx { selectedBasis().map 
+    { case ((_, tid)) =>
+      (tid == std.core.linkType.oid) || (tid == std.core.tagType.oid)
+    }.getOrElse(false) 
+  }
+  
+  final val PointsToAny = "Any"
+  final val PointsToExisting = "Existing"
+  final val PointsToNew = "New"
+  
+  val pointerModelChoice = GadgetRef[RxRadio]
+  val pointerModelSelector = GadgetRef[RxSelect]
+  val pointerModelName = GadgetRef[RxInput]
+  
+  lazy val pointerIsLegal:Rx[Boolean] = Rx {
+    !isPointerType() ||
+    (pointerModelChoice.map { _.selectedValOpt() match {
+      case Some(PointsToAny) => true
+      case Some(PointsToExisting) => pointerModelSelector.map(_.selectedValOpt().isDefined).getOrElse(false)
+      case Some(PointsToNew) => pointerModelName.map(name => !(name.isEmpty())).getOrElse(false)
+      case _ => false
+    }}.getOrElse(false))
+  }
+  
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
   lazy val addButton = 
     new ButtonGadget(Info, 
-        disabled := Rx{ nameInput.get.textOpt().isEmpty || collSelector.get.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }, 
-        "Create", id:="_doCreatePropertyButton")({ () =>
+        disabled := Rx{ 
+          nameInput.get.textOpt().isEmpty || 
+          collSelector.get.selectedTIDOpt().isEmpty || 
+          selectedBasis().isEmpty ||
+          !pointerIsLegal() 
+        }, 
+        "Create",
+        id:="_doCreatePropertyButton")({ () =>
       val name = nameInput.get.textOpt().get
       val coll = collSelector.get.selectedTIDOpt().get
       val (selector, oid) = selectedBasis().get
@@ -141,15 +179,51 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
       val path = Editing.propPath(oid)
       ChangePropertyValue(path, Seq(v))
     }
+    // Here are the basic meta-Properties from the form:
     val initProps = Seq(
       mkPV(std.core.nameProp, name),
       mkPV(std.core.collectionProp, collId.underlying),
       mkPV(std.core.typeProp, typeId.underlying)
     )
-    Client[EditFunctions].create(std.core.urProp, initProps).call().foreach { propInfo =>
+    // The complex problem comes iff it's a pointer Type:
+    val fullPropsFut:Future[Seq[ChangePropertyValue]] =
+      if (isPointerType()) {
+        pointerModelChoice.get.selectedVal() match {
+          // Don't need to do anything
+          case PointsToAny => Future.successful(initProps)
+          // Add the existing Model to the meta-Props:
+          case PointsToExisting => {
+            val modelId = pointerModelSelector.get.selectedVal()
+            val pv = mkPV(std.links.linkModelProp, modelId)
+            Future.successful(initProps :+ pv)
+          }
+          // Need to create a new Model (which is why all of this is
+          // Future-oriented):
+          case PointsToNew => {
+            val modelPVs = Seq(
+              mkPV(std.core.nameProp, pointerModelName.get.text()),
+              mkPV(std.core.isModelProp, "true")
+            )
+            Client[EditFunctions].create(std.basic.simpleThing, modelPVs).call().map 
+            { modelInfo =>
+              println(s"Created new Model $modelInfo")
+              initProps :+ mkPV(std.links.linkModelProp, modelInfo.oid.underlying)
+            }
+          }
+          case _ => throw new Exception(s"Pointer Type is inconsistent!!!")
+        }
+      } else
+        Future.successful(initProps)
+
+    // Okay, now we have all our ducks in a row, so actually create the Property:
+    for {
+      fullProps <- fullPropsFut
+      propInfo <- Client[EditFunctions].create(std.core.urProp, fullProps).call()
+    }
+    {
       page.addProperty(propInfo.oid, true)
       reset()
-      apg.reset()
+      apg.reset() 
     }
   }
   
@@ -179,6 +253,38 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
                 "Make it a List of...",
                 id:="_modelSelector",
                 cls:="form-control"))
+          ),
+          div(cls:="row well-small",
+            // This section only shows if the selected Type is a "pointer" -- Link or Tag
+            hidden:= Rx { !isPointerType() },
+            div(cls:="col-md-12 container",
+              "What model (if any) should this use?",
+              pointerModelChoice <= new RxRadio("_pointerKind",
+                RadioButton(
+                  PointsToExisting,
+                  "It should use existing Model ",
+                  pointerModelSelector <= RxSelect(
+                    Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}),
+                    "Choose a Model...",
+                    id:="_pointerModelSelector",
+                    cls:="form-control")
+                ),
+                RadioButton(
+                  PointsToNew,
+                  "Create a new Model named ",
+                  pointerModelName <= new RxInput(
+                    Some(InputUtils.nameFilter(true, false) _), 
+                    "text", 
+                    cls:="col-md-6 form-control", 
+                    id:="_createModelName", 
+                    placeholder:="Name (required)...")
+                ),
+                RadioButton(
+                  PointsToAny,
+                  "It can indicate anything in this Space"
+                )
+              )
+            )
           ),
           div(cls:="row",
             div(cls:="col-md-12",

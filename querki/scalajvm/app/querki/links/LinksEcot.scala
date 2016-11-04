@@ -6,6 +6,7 @@ import org.querki.requester._
 
 import models.{DisplayPropVal, Kind, PropertyBundle, PType, PTypeBuilder, Wikitext}
 
+import querki.api.commonName
 import querki.core.{LinkCandidateProvider, URLableType}
 import querki.ecology._
 import querki.spaces.{TCRReq, ThingChangeRequest}
@@ -226,7 +227,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	
 	lazy val LinkModelProp = new SystemProperty(LinkModelOID, LinkType, Optional,
     toProps(
-      setName("Restrict to Model"),
+      setName(commonName(_.links.linkModelProp)),
       Categories(LinksTag),
       Summary("Which Things can this Property contain?"),
       Details("""By default, Link Properties can contain *anything*. This usually isn't what

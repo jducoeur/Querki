@@ -57,6 +57,9 @@ class StandardThings(h:PassthroughHandlerBase) {
   	val optionalColl = h.pass("Optional")
   	val listColl = h.pass("List")
   	val setColl = h.pass("Set")
+  	
+  	val linkType = h.pass("Thing Type")
+  	val tagType = h.pass("Tag Type")
   
     val urProp = h.pass("Property")
     val nameProp = h.pass("Link Name")
@@ -88,6 +91,10 @@ class StandardThings(h:PassthroughHandlerBase) {
   
   object editing {
     val instancePropsProp = h.pass("Instance Properties")
+  }
+  
+  object links {
+    val linkModelProp = h.pass("Restrict to Model")
   }
   
   object roles {
@@ -129,6 +136,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(apps, core, css, basic, conventions, editing, roles, security, skillLevel, tags, types)
+    Seq(apps, core, css, basic, conventions, editing, links, roles, security, skillLevel, tags, types)
   }
 }

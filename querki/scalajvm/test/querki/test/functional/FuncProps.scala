@@ -36,6 +36,13 @@ trait FuncProps { this:FuncMixin =>
     }
     
     /**
+     * If relevant, do stuff just *before* creating a Property.
+     */
+    def prepProp(state:State):Unit = {
+      tpe.prepProp(this.asInstanceOf[TProp[tpe.type]])(state)
+    }
+    
+    /**
      * After creation, when we're in the PropertyEditor, make any needed tweaks.
      */
     def fixupProp(state:State):Unit = {
