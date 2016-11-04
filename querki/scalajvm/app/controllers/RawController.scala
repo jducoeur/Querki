@@ -30,7 +30,7 @@ class RawController @Inject() (val appProv:Provider[play.api.Application]) exten
         val tid = TID(thingId.toString())
         for {
           thingPageDetails <- client[ThingFunctions].getThingPage(tid, None).call()
-          descOpt <- client[ThingFunctions].getPropertyDisplay(tid, querki.conventions.MOIDs.PropDetailsOID.toTID).call()
+          descOpt <- client[ThingFunctions].getPropertyDisplay(tid, querki.conventions.MOIDs.PropSummaryOID.toTID).call()
           title = thingPageDetails.thingInfo.displayName
           canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(true)(rc.request)
           descWiki = descOpt.getOrElse(thingPageDetails.rendered)
