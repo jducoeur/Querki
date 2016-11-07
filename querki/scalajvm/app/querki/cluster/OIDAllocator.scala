@@ -118,6 +118,41 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
       }
     }
     
+    // TODO: figure out how best to factor these two handlers together.
+    case GiveOIDBlock(nAlloc) => {
+      if ((current.toLong + nAlloc) >= Int.MaxValue) {
+        // Emergency! At this point we just need to fall over.
+        context.parent ! QuerkiNodeCoordinator.ShardFull(shardId, self)
+        throw new Exception(s"Overfull OIDAllocator $shardId")        
+      }
+      
+      def giveOIDs() = {
+        val wasFull = current >= shardFullMark
+        
+        val oids = for (n <- 0 to nAlloc) yield { OID(shardId, current + n) }
+        sender ! NewOIDs(oids)
+        current += nAlloc
+        
+        if (!wasFull && (current >= shardFullMark)) {
+          // Time to begin shutting down this shard...
+          sendFull(0)          
+        }
+      }
+      
+      if ((current + nAlloc) >= availableThrough) {
+        // Allocate at least enough for this operation
+        val toAlloc = nAlloc + allocBlockSize
+        persist(Alloc(toAlloc)) { msg =>
+          updateAvailable(toAlloc)
+          giveOIDs()
+          countToSnapshot()
+        }
+      } else {
+        // We're still in the current block:
+        giveOIDs()
+      }
+    }
+    
     case SaveSnapshotSuccess(metadata) => //QLog.spew(s"Successfully saved snapshot: $metadata")
     case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
   }
@@ -131,15 +166,28 @@ object OIDAllocator {
   // Public API
   //
   
+  sealed trait AllocMessage
+  
   /**
    * Request the next available OID. Returns a NewOID.
    */
-  case object NextOID
+  case object NextOID extends AllocMessage
   
   /**
    * A newly-created, unique OID for this system to use.
    */
   case class NewOID(oid:OID)
+  
+  /**
+   * Requests a block of OIDs; returns a NewOIDs. This is usually only used for importing and
+   * other such operations that create a whole bunch of Space at once.
+   */
+  case class GiveOIDBlock(n:Int) extends AllocMessage
+  
+  /**
+   * A collection of newly-allocated OIDs to use.
+   */
+  case class NewOIDs(oids:Seq[OID])
   
   case object Shutdown
   
