@@ -9,8 +9,8 @@ import Thing.PropMap
 
 import querki.globals._
 import querki.identity.User
-import querki.spaces.SpaceBuilder.{IDMap, NewSpaceInfo}
-import querki.spaces.messages._
+import querki.spaces.SpacePure
+import querki.time.DateTime
 
 /**
  * The part of the Extract App process that "hollows out" the extracted items from the original Space.
@@ -21,54 +21,56 @@ import querki.spaces.messages._
  * 
  * @author jducoeur
  */
-private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
+private [apps] trait Hollower extends EcologyMember with SpacePure {
+  
+  private lazy val Apps = interface[Apps]
+  private lazy val System = interface[querki.system.System]
+  private lazy val Types = interface[querki.types.Types]
+  
+  private lazy val SystemSpace = System.State
+  
+  def hollowSpace(extractees:Extractees, childState:SpaceState, appState:SpaceState, idMap:Map[OID, OID]):SpaceState = {
+    val (models, instances) = extractees.state.things.values.partition(_.isModel(extractees.state))
+    
+    val withoutInstances = deleteInstances(instances, childState)
+    val hollowedModels = hollowThings(models, withoutInstances, idMap)
+    val hollowedTypes = hollowThings(extractees.state.types.values, hollowedModels, idMap)
+    val hollowedProps = hollowThings(extractees.state.spaceProps.values, hollowedTypes, idMap)
+    val hollowedSpace =
+      if (extractees.extractState)
+        hollowThings(Seq(hollowedProps), hollowedProps, idMap)
+      else
+        hollowedProps
+        
+    hollowedSpace
+  }
   
   /**
-   * Syntax sugar for building purely side-effecting chains of requests. This is as un-pure as
-   * you can get, but makes sense in the Akka context.
-   * 
-   * TODO: once we are confident this works, it should get extracted to Requester and properly
-   * unit-tested.
+   * This removes all of the extracted instances from the child Space. We do *not* shadow Instances.
    */
-  implicit class UnitRequest(req:RequestM[Unit]) {
-    /**
-     * Do something after this Request is finished.
-     * 
-     * TODO: this probably isn't the right name, because it has different meaning in Future.
-     * What should we call it?
-     */
-    def andThen(fNext: => RequestM[Unit]):RequestM[Unit] = req flatMap { dummy => fNext }
+  def deleteInstances(instances:Iterable[ThingState], childState:SpaceState):SpaceState = {
+    (childState /: instances) { (curState, instance) =>
+      deletePure(instance.id, instance)(curState)
+    }
   }
   
-  def Apps:querki.apps.Apps
-  def Core:querki.core.Core
-  def Types:querki.types.Types
-  
-  def setMsg(msg:String):Unit
-  def withMsg[R](msg:String, f: => R):R
-  
-  def state:SpaceState
-  def owner:User
-  def router:ActorRef
-  def SystemSpace:SpaceState
-  
-  def spaceId = state.id
-  
-  def hollowSpace(extractees:Extractees, appInfo:NewSpaceInfo):RequestM[Unit] = {
-    setMsg("Rewriting the Space")
-    
-    implicit val s = state
-    
-    val idMap = appInfo.mapping
-    val (models, instances) = extractees.state.things.values.partition(_.isModel)
-    
-    withMsg("Removing extracted Instances", deleteInstances(instances)) andThen 
-      withMsg("Adjusting Models", hollowThings(models, idMap, noAddl)) andThen
-      withMsg("Adjusting Types", hollowThings(extractees.state.types.values, idMap, noAddl)) andThen
-      withMsg("Adjusting Properties", hollowThings(extractees.state.spaceProps.values, idMap, noAddl)) andThen
-      hollowSpace(extractees, idMap)
+  /**
+   * For each of the extracted Things, hollow out the original version, give it the model in the App,
+   * and mark it as a Shadow.
+   */
+  def hollowThings(things:Iterable[Thing], childState:SpaceState, idMap:Map[OID, OID]):SpaceState = {
+    (childState /: things) { (curState, thing) =>
+      modifyPure(
+        thing.id,
+        thing,
+        idMap.get(thing),
+        hollowThing(thing),
+        true,
+        DateTime.now
+      )(curState)
+    }
   }
-  
+
   /**
    * The only Props we do *not* filter are the ones that have the NotInherited flag.
    * 
@@ -95,52 +97,5 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
     // Remove all props on this Thing *except* the ones that are unique to it, and mark it as
     // a Shadow:
     thing.props.filterKeys(pid => uninheritedProps.contains(pid) || propsToRetain.contains(pid)) + Apps.ShadowFlag(true)
-  }
-
-  def noAddl(t:Thing, idMap:IDMap):PropMap = Map.empty
-  
-  // We use a single function for all the hollowing-out, since it is basically the same for everything. The
-  // only real difference is that some Kinds have a "kicker" that is slightly different, which is the addl parameter.
-  def hollowThings(things:Iterable[Thing], idMap:IDMap, addl:(Thing, IDMap) => PropMap):RequestM[Unit] = {
-    things.headOption match {
-      case Some(thing) => {
-        router.request(ModifyThing(owner, spaceId, thing.id, idMap(thing.id), hollowThing(thing) ++ addl(thing, idMap))) flatMap {
-          case found @ ThingFound(_, _) => {
-            hollowThings(things.tail, idMap, addl)
-          }
-          case ThingError(ex, _) => {
-            RequestM.failed(ex)
-          }
-        }
-      }
-      case None => RequestM.successful(())
-    }
-  }
-  
-  def hollowSpace(extractees:Extractees, idMap:IDMap):RequestM[Unit] = {
-    // Extracting the Space itself is optional; did we do so?
-    if (extractees.extractState) {
-      withMsg("Adjusting Space", hollowThings(Seq(state), idMap, noAddl))
-    } else
-      RequestM.successful(())
-  }
-  
-  /**
-   * All Instances that were extracted simply get removed from the child Space.
-   */
-  def deleteInstances(things:Iterable[Thing]):RequestM[Unit] = {
-    things.headOption match {
-      case Some(thing) => {
-        router.request(DeleteThing(owner, spaceId, thing.id)) flatMap {
-          case found @ ThingFound(_, _) => {
-            deleteInstances(things.tail)
-          }
-          case ThingError(ex, _) => {
-            RequestM.failed(ex)
-          }
-        }        
-      }
-      case None => RequestM.successful(())
-    }
   }
 }

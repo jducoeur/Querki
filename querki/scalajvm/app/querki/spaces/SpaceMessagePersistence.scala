@@ -63,15 +63,14 @@ object SpaceMessagePersistence {
     
   /**
    * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,
-   * the first "image" of the Space, from which we begin to evolve. It should always be the
-   * first event when it is present; all Spaces should start with either BootSpace (indicating
-   * that this was imported or upgraded from the old MySQL system) or DHInitState (indicating
-   * that this was created in the new Akka Persisted world).
+   * a complete "image" of the Space. It is often the first event in the Space's history (when
+   * it is being imported), but is sometimes emitted when the Space goes through a traumatic
+   * atomic change (such as having an App extracted from it).
    * 
    * Note that this doesn't have a "req" field, because we often don't have that information
    * when this happens. Generally, the requester is the owner, which is in the SpaceState.
    */
-  case class BootSpace(
+  case class DHSetState(
     @KryoTag(1) state:DHSpaceState,
     @KryoTag(2) modTime:DateTime) extends UseKryo with SpaceEvent
     

@@ -306,6 +306,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     failedProp map { propId => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName) }
   }
   
+  def setState(who:User, newState:SpaceState)(state:SpaceState):RM[ChangeResult] = {
+    implicit val s = state
+    val evt = DHSetState(dh(newState), DateTime.now)
+    rtc.successful(ChangeResult(List(evt), Some(state.id), newState))
+  }
+  
   /**
    * Create a Person for this Space's owner.
    */
@@ -584,7 +590,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case Some(oldState) => {
             QLog.spew(s"Recovered old Space ${oldState.name} from MySQL; recording the BootSpace event")
             // There *is* an old Space from MySQL, so we should record that as the first event in the log:
-            val msg = BootSpace(dh(oldState), DateTime.now)
+            val msg = DHSetState(dh(oldState), DateTime.now)
             // Once we've recorded that, *then* we get the Space ready:
             doPersist(msg)(_ => readyState(Some(oldState)))            
           }
@@ -667,6 +673,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           }
         }
       }
+    }
+    
+    case SetState(who, spaceId, newState) => {
+      runAndSendResponse("setState", setState(who, newState))(currentState)
     }
     
     // This message is simple, since it isn't persisted:

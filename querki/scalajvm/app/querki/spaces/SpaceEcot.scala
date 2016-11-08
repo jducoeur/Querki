@@ -62,7 +62,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     (classOf[DHDeleteThing] -> 102),
     (classOf[SpaceSnapshot] -> 103),
     (classOf[DHInitState] -> 104),
-    (classOf[BootSpace] -> 105),
+    (classOf[DHSetState] -> 105),
     (classOf[DHAddApp] -> 106)
   )
   

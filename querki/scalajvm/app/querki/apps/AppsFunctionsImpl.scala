@@ -5,20 +5,28 @@ import models.{AsOID, ThingId}
 import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.data.{SpaceInfo, TID}
 import querki.globals._
+import querki.spaces.Remapper
 import querki.spaces.messages._
 import querki.values.SpaceVersion
 
 /**
  * @author jducoeur
  */
-class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with AppsFunctions  {
-  
+class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) 
+  extends SpaceApiImpl(info, e) with AppsFunctions with ExtracteeComputer with Remapper with Hollower
+{  
   import AppsFunctions._
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]
+  lazy val System = interface[querki.system.System]
+  
+  lazy val SystemState:SpaceState = System.State
+  lazy val id = state.id
   
   def doRoute(req:Request):Future[String] = route[AppsFunctions](this)(req)
   
@@ -38,16 +46,26 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
-  def extractApp(elements:Seq[TID], name:String):OperationHandle = {
+  /**
+   * Extracts an App from this Space, based on the received parameters.
+   * 
+   * Note that much of the guts of this enormous function is pulled out into separate classes.
+   */
+  def extractApp(elements:Seq[TID], name:String):Future[Unit] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
-    // TBD: for now, we're creating the extraction Actor here, within the Space's troupe. I *think* this
-    // works, because Space.reload() leaves the Actor hierarchy in place and just reloads the data. This
-    // needs sanity-checking, though, and we should keep an eye on whether it remains true once we move
-    // to the Akka Persistence mechanism. If it doesn't work, then switch the last parameter here to "true",
-    // to make the extraction Actor top-level.
-    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, name, user, state, spaceRouter), false)
+    // First, take the list of Things to extract, and turn it into the State of the prospective App...
+    val extractees = computeExtractees(elements, name, user)(state)
+    val appState = extractees.state
+    for {
+      // ... take extractees.extractState -- the raw version of the App -- and produce a version of it that
+      // has all of its OIDs remapped...
+      (remappedApp, idMap) <- remapOIDs(appState, extractees.extractState)
+      // ... "hollow" out all of the Things that got extracted up to the App, marking them as Shadows.
+      hollowedSpace = hollowSpace(extractees, state, appState, idMap)
+    }
+      yield ()
   }
   
   val stylesheetId = querki.css.MOIDs.StylesheetBaseOID

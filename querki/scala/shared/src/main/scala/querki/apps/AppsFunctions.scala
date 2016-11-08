@@ -24,10 +24,8 @@ trait AppsFunctions {
   
   /**
    * Lift the specified elements from this Space into a newly-created App.
-   * 
-   * Returns the path to an operation handle, which should be fed to getProgress() for regular updates.
    */
-  def extractApp(elements:Seq[TID], name:String):OperationHandle
+  def extractApp(elements:Seq[TID], name:String):Future[Unit]
   
   /**
    * Fetches the list of Models that are available to Extract from this Space.

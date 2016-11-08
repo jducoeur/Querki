@@ -12,20 +12,20 @@ import querki.values.SpaceState
 private [apps] case class Extractees(state:SpaceState, typeModels:Set[OID], extractState:Boolean)
 
 /**
- * The part of ExtractAppActor that computes what we're actually extracting from this Space.
+ * The part of ExtractApp that computes what we're actually extracting from this Space. It's
+ * basically just one complex function that takes a list of elements to extract and produces
+ * the extracted App Space.
  * 
- * This is pulled out solely to keep the file sizes comprehensible.
+ * This is pulled out solely for separation of concerns -- it is fundamentally part of the Extract App
+ * process.
  */
 private [apps] trait ExtracteeComputer { self:EcologyMember =>
   
-  def Core:querki.core.Core
-  def SystemSpace:SpaceState
-  def systemId:OID
+  private lazy val Core = interface[querki.core.Core]
+  private lazy val System = interface[querki.system.System]
   
-  def elements:Seq[TID]
-  def name:String
-  def owner:User
-  def state:SpaceState
+  private lazy val SystemSpace = System.State
+  private lazy val systemId = SystemSpace.id
   
   /**
    * Creates the complete Extractees structure, with all the stuff we expect to pull out.
@@ -34,7 +34,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
    * fair assumption -- a lot of things will break if there are -- but do we need to sanity-check
    * for that?
    */
-  def computeExtractees():Extractees = {
+  def computeExtractees(elements:Seq[TID], name:String, owner:User)(implicit state:SpaceState):Extractees = {
     val oids = elements
       .map(tid => ThingId(tid.underlying))
       .collect { case AsOID(oid) => oid }
@@ -69,7 +69,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
     (withRoot /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
   }
   
-  def extractStateRoot(in:Extractees):Extractees = {
+  private def extractStateRoot(in:Extractees)(implicit state:SpaceState):Extractees = {
     if (in.extractState) {
       // If the Space depends on local Properties, make sure to include those, too:
       val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
@@ -82,7 +82,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       in
   }
   
-  def addThingToExtract(id:OID, in:Extractees):Extractees = {
+  private def addThingToExtract(id:OID, in:Extractees)(implicit state:SpaceState):Extractees = {
     if (in.state.things.contains(id))
       // Already done
       in
@@ -104,7 +104,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
     }
   }
   
-  def addPropToExtract(id:OID, in:Extractees):Extractees = {
+  private def addPropToExtract(id:OID, in:Extractees)(implicit state:SpaceState):Extractees = {
     if (in.state.spaceProps.contains(id))
       in
     else {
@@ -127,7 +127,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
     }
   }
   
-  def addTypeToExtract(pt:PType[_], in:Extractees):Extractees = {
+  private def addTypeToExtract(pt:PType[_], in:Extractees)(implicit state:SpaceState):Extractees = {
     if (in.state.types.contains(pt.id))
       in
     else {

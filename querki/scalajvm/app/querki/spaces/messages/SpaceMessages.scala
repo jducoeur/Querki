@@ -86,6 +86,13 @@ case class InitialState(req:User, space:OID, display:String, owner:IdentityId) e
 case object StateInitialized
 
 /**
+ * Sets the state of this Space to a new value. This is sometimes sent at creation time (for imported Spaces),
+ * sometimes after major changes. Either way, it may *ONLY* be sent from within the Space's own troupe, because
+ * it contains a SpaceState!
+ */
+case class SetState(req:User, space:OID, state:SpaceState) extends SpaceMessage(req, space)
+
+/**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.
  */
 case class ConversationRequest(req:User, space:OID, payload:ConversationMessage) extends SpaceMessage(req, space)

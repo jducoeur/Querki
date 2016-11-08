@@ -101,7 +101,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     }
     
     evt match {
-      case BootSpace(dh, modTime) => (BootSummary(sequenceNr, "", modTime.toTimestamp), identities, thingNames)
+      case DHSetState(dh, modTime) => (BootSummary(sequenceNr, "", modTime.toTimestamp), identities, thingNames)
       
       case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
