@@ -45,7 +45,7 @@ import PersistMessages._
  * from UserSession instead. Provided we can hook UserSession to the pool of Persisters, that ought to just
  * work.
  */
-class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester with EcologyMember {
+class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester with EcologyMember with SpaceCreator {
   
   implicit val ecology = e
   
@@ -81,55 +81,35 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
     }
 
     case req @ CreateSpace(requester, display, initialStatus) => {
-      Tryer 
-        { checkLegalSpaceCreation(requester,display) } 
-        { unit =>
-          val userMaxSpaces = {
-            if (requester.isAdmin || requester.level == querki.identity.UserLevel.PermanentUser)
-              Int.MaxValue
-            else
-              maxSpaces
-          }
-          
-          val canon = NameUtils.canonicalize(display)
-          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display, initialStatus)) foreach {
-            case err:ThingError => sender ! err
-            case Changed(spaceId, _) => {
-              // In the new Akka Persistence world, we send the new Space an InitialState message to finish
-              // bootstrapping it:
-              SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
-                // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
-                case StateInitialized => {
-                  // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
-                  // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
-                  val req = if (initialStatus != StatusNormal) {
-                    SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
-                  } else {
-                    RequestM.successful(ShutdownAck)
-                  }
-                  req.map { _ =>
-                    sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
-                  }
-                }
-                case ex:ThingError => sender ! ex
+      val canon = NameUtils.canonicalize(display)
+      createSpace(requester, canon, display, initialStatus).onComplete {
+        case Failure(ex:PublicException) => sender ! ThingError(ex, None)
+        case Failure(ex) => sender ! ThingError(UnexpectedPublicException, None)
+        case Success(spaceId) => {
+          // In the new Akka Persistence world, we send the new Space an InitialState message to finish
+          // bootstrapping it:
+          SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
+            // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
+            case StateInitialized => {
+              // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
+              // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
+              val req = if (initialStatus != StatusNormal) {
+                SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
+              } else {
+                RequestM.successful(ShutdownAck)
+              }
+              req.map { _ =>
+                sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
               }
             }
+            case ex:ThingError => sender ! ex
           }
-        }  
-        { sender ! ThingError(_) }
+          
+        }
+      }
     }
     
     case req:GetSpaceByName => persister.forward(req)
     case req:ChangeSpaceStatus => persister.forward(req)
   }
-  
-  // Any checks we can make without needing to go to the DB should go here. Note that we
-  // intentionally don't do any legality checking on the name yet -- since it is a display name,
-  // we're pretty liberal about what's allowed.
-  private def checkLegalSpaceCreation(owner:User, display:String):Unit = {
-    if (!owner.canOwnSpaces)
-      throw new PublicException("Space.create.pendingUser")
-  }
-  
-  lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
 }
