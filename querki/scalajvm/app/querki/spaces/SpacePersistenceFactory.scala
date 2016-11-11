@@ -33,15 +33,20 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     context.actorOf(Props(new SpacePersister(spaceId, ecology)), sid(spaceId) + "-persist")
   }
+  
+  final val persisterName = "space-manager-persist"
 
   // Note that we actually create a *pool* of persistence routers for this job, because it is important,
   // central, and relatively time-consuming.
+  // TODO: this is really no longer true -- usage of this has been minimized, and continues to go down.
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef = {
     // TODO: this really ought to be defined in config, but there doesn't appear to be a way in 2.1.4
     // to define the supervisorStrategy with FromConfig() yet. So for now, we do it by hand:
-    context.actorOf(Props(new SpaceManagerPersister(ecology)).withRouter(
+    context.child(persisterName).getOrElse {
+      context.actorOf(Props(new SpaceManagerPersister(ecology)).withRouter(
         SmallestMailboxPool(2, resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)), supervisorStrategy = stoppingStrategy)), 
-      "space-manager-persist")
+        persisterName)
+    }
 //    context.actorOf(Props[SpaceManagerPersister].withRouter(FromConfig(supervisorStrategy = stoppingStrategy)), "space-manager-persist")    
   }
   

@@ -22,6 +22,17 @@ class TCIdentity[A](vtIn:Try[A]) {
       case Failure(ex) => new TCIdentity(Failure[B](ex))
     }
   }
+  def filter(p:A => Boolean):TCIdentity[A] = {
+    vt match {
+      case Success(v) => {
+        if (p(v))
+          this
+        else
+          new TCIdentity(Failure[A](new Exception(s"Filtered out a TCIdentity! Is that a bug?")))
+      }
+      case Failure(ex) => this
+    }
+  }
   def onComplete(f: PartialFunction[Try[A],Unit]) = f(vt)
   def resolve(v:Try[A]):Unit = { vt = v }
 }
@@ -29,6 +40,7 @@ class TCIdentity[A](vtIn:Try[A]) {
 class TestRequestTC[A](rm:TCIdentity[A]) extends RequestTC[A, TCIdentity] {
   def flatMap[B](f: A => TCIdentity[B]) = rm.flatMap(f)
   def map[B](f: A => B) = rm.map(f)
+  def filter(p:A => Boolean) = rm.filter(p)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
   def resolve(v:Try[A]):Unit = rm.resolve(v)
 }

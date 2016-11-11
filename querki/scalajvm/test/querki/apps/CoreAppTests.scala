@@ -1,18 +1,46 @@
 package querki.apps
 
+import scala.util.{Success}
+
 import querki.globals._
+import querki.identity.User
 import querki.spaces._
 import querki.spaces.messages._
 import querki.test._
 import querki.values.SpaceVersion
 
-class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace {
+class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractorSupport[TCIdentity] {
   lazy val Apps = interface[Apps]
   
   def makeThisAnApp() = {
     val permProps = Apps.CanUseAsAppPerm(AccessControl.PublicTag)
     changeThing(state.id, permProps)
   }
+  
+  def success[T](v:T):TCIdentity[T] = new TCIdentity(Success(v))
+  
+  /* **************************************
+   * AppExtractorSupport methods. You don't call these directly; they are used inside AppExtractor.
+   */
+  
+  def getOIDs(nRequested:Int):TCIdentity[Seq[OID]] = {
+    success(world.oidBlock(nRequested))
+  }
+  def createSpace(user:User, name:String, display:String):TCIdentity[OID] = {
+    val app = new SpaceInWorldWith(this)
+    success(app.spaceId)
+  }
+  def setAppState(state:SpaceState):TCIdentity[Unit] = {
+    world.getSpace(state.id) match {
+      case app:SpaceCoreSpaceBase => success((app ! SetState(owner, state.id, state)).get)
+      case _ => throw new Exception(s"Trying to set appState for non-Core Space ${state.id}!")
+    }
+  }
+  def setChildState(state:SpaceState):TCIdentity[Any] = {
+    success((this ! SetState(owner, state.id, state)).get)
+  }
+  
+  /* ************************************** */
 }
 
 /**

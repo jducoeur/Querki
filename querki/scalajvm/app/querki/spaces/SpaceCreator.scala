@@ -1,6 +1,6 @@
 package querki.spaces
 
-import akka.actor.ActorRef
+import akka.actor._
 
 import org.querki.requester._
 
@@ -13,9 +13,12 @@ import PersistMessages._
 
 trait SpaceCreator extends EcologyMember with RequesterImplicits {
   
-  lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
+  private lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   
   def persister:ActorRef
+  def context:ActorContext
+  
+  lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
   
   // Any checks we can make without needing to go to the DB should go here. Note that we
   // intentionally don't do any legality checking on the name yet -- since it is a display name,
@@ -31,18 +34,24 @@ trait SpaceCreator extends EcologyMember with RequesterImplicits {
    * Actually creates a new Space in the database, but does *not* boot it up -- that's for the calling
    * code to deal with.
    */
-  def createSpace(requester:User, name:String, display:String, initialStatus:SpaceStatusCode):RequestM[OID] = {
-    checkLegalSpaceCreation(requester,display) match {
+  def createSpace(
+    user:User, 
+    name:String, 
+    display:String, 
+    initialStatus:SpaceStatusCode
+  ):RequestM[OID] = 
+  {
+    checkLegalSpaceCreation(user,display) match {
       case Some(ex) => RequestM.failed(ex)
       case None => {
         val userMaxSpaces = {
-          if (requester.isAdmin || requester.level == querki.identity.UserLevel.PermanentUser)
+          if (user.isAdmin || user.level == querki.identity.UserLevel.PermanentUser)
             Int.MaxValue
           else
             maxSpaces
         }
         
-        persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, name, display, initialStatus)).map {
+        persister.request(CreateSpacePersist(user.mainIdentity.id, userMaxSpaces, name, display, initialStatus)).map {
             case ThingError(ex, _) => throw ex
             case Changed(spaceId, _) => spaceId
         }

@@ -22,9 +22,11 @@ import org.querki.requester._
  * TODO: this should be replaced with something that is more typeclassy and performant. See
  * querki.test.MonadTests for an example of how it ought to work.
  */
-trait RequestTC[A, F[A]] {
+trait RequestTC[A, F[_]] {
   def flatMap[B](f: A => F[B]):F[B]
   def map[B](f: A => B):F[B]
+  def filter(p:A => Boolean):F[A]
+  def withFilter(p:A => Boolean):F[A] = filter(p)
   def onComplete(f: PartialFunction[Try[A],Unit]):Unit
   def resolve(v:Try[A]):Unit
 }
@@ -45,6 +47,7 @@ trait RTCAble[F[_]] {
 class RealRequestTC[A](rm:RequestM[A]) extends RequestTC[A, RequestM] {
   def flatMap[B](f: A => RequestM[B]) = rm.flatMap(f)
   def map[B](f: A => B) = rm.map(f)
+  def filter(p:A => Boolean) = rm.filter(p)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
   def resolve(v:Try[A]):Unit = rm.resolve(v)
 }

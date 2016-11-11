@@ -38,6 +38,16 @@ class TestWorld {
   def nextOID():OID = testOID(_currentLocal.incrementAndGet())
   
   /**
+   * Fetch a bunch of OIDs at once.
+   */
+  def oidBlock(nIds:Int):Seq[OID] = {
+    for { 
+      n <- 0 to nIds 
+    }
+      yield nextOID()
+  }
+  
+  /**
    * The Spaces that exist in this World. Only really matters if you're playing with Apps.
    */
   private var spaceRegistry:Map[OID, TestSpace] = Map.empty

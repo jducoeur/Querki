@@ -11,6 +11,7 @@ import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePure
 import querki.time.DateTime
+import querki.types.ModelTypeDefiner
 
 /**
  * The part of the Extract App process that "hollows out" the extracted items from the original Space.
@@ -34,15 +35,16 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
     
     val withoutInstances = deleteInstances(instances, childState)
     val hollowedModels = hollowThings(models, withoutInstances, idMap)
-    val hollowedTypes = hollowThings(extractees.state.types.values, hollowedModels, idMap)
-    val hollowedProps = hollowThings(extractees.state.spaceProps.values, hollowedTypes, idMap)
+    val shadowed = markShadows(extractees.state.spaceProps.values ++ extractees.state.types.values, hollowedModels)
     val hollowedSpace =
       if (extractees.extractState)
-        hollowThings(Seq(hollowedProps), hollowedProps, idMap)
+        hollowThings(Seq(shadowed), shadowed, idMap)
       else
-        hollowedProps
+        shadowed
         
-    hollowedSpace
+    hollowedSpace.copy(
+      apps = hollowedSpace.apps :+ appState, 
+      appInfo = hollowedSpace.appInfo :+ (appState.id, appState.version))
   }
   
   /**
@@ -97,5 +99,14 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
     // Remove all props on this Thing *except* the ones that are unique to it, and mark it as
     // a Shadow:
     thing.props.filterKeys(pid => uninheritedProps.contains(pid) || propsToRetain.contains(pid)) + Apps.ShadowFlag(true)
+  }
+  
+  /**
+   * Mark all of the extracted Props and Types as Shadows, but otherwise leave them intact.
+   */
+  def markShadows(extracted:Iterable[Thing], childState:SpaceState):SpaceState = {
+    (childState /: extracted) { (curState, t) =>
+      modifyPure(t.id, t, None, t.props + Apps.ShadowFlag(true), true, t.modTime)(curState)
+    }
   }
 }
