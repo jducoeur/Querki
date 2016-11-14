@@ -36,6 +36,7 @@ trait SpaceCreator extends EcologyMember with RequesterImplicits {
    */
   def createSpace(
     user:User, 
+    spaceId:OID,
     name:String, 
     display:String, 
     initialStatus:SpaceStatusCode
@@ -51,10 +52,13 @@ trait SpaceCreator extends EcologyMember with RequesterImplicits {
             maxSpaces
         }
         
-        persister.request(CreateSpacePersist(user.mainIdentity.id, userMaxSpaces, name, display, initialStatus)).map {
-            case ThingError(ex, _) => throw ex
-            case Changed(spaceId, _) => spaceId
+        for {
+          persistResponse <- persister.request(CreateSpacePersist(user.mainIdentity.id, spaceId, userMaxSpaces, name, display, initialStatus))
         }
+          yield persistResponse match {
+            case Changed(_, _) => spaceId
+            case ThingError(ex, _) => throw ex
+          }
       }
     }
   }

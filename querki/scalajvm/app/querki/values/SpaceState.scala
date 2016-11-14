@@ -513,5 +513,10 @@ object SpaceState {
   implicit class SpaceStateExtras(state:SpaceState) {
     def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
     def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
+    
+    /**
+     * Pure syntactic sugar, to make it easy to chain State-changing operations clearly.
+     */
+    def and(f:SpaceState => SpaceState):SpaceState = f(state) 
   }
 }

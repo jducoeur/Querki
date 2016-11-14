@@ -3,40 +3,20 @@ package querki.spaces
 import language.postfixOps
 import scala.util._
 
+import akka.actor._
+
 import org.querki.requester._
 
-import models.{AsName, AsOID, OID}
-import models.{Kind, Thing}
+import models._
 import messages._
-import SpaceError._
 
-import querki.db.ShardKind
-import ShardKind._
-
-import scala.concurrent.duration._
-import scala.concurrent.Future
-
-import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
-
-import anorm.{Success=>AnormSuccess,_}
-import play.api._
-import play.api.db._
-import play.api.libs.concurrent._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.Play.current
-import play.Configuration
-
+import querki.cluster.OIDAllocator._
 import querki.core.NameUtils
 import querki.ecology._
-
+import querki.globals._
 import querki.identity.User
-
 import querki.spaces._
-
-import querki.util._
-import querki.util.SqlHelpers._
+import querki.util.UnexpectedPublicException
 
 import PersistMessages._
 
@@ -49,6 +29,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
   
   implicit val ecology = e
   
+  private lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SpaceOps = interface[SpaceOps]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -82,7 +63,13 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
 
     case req @ CreateSpace(requester, display, initialStatus) => {
       val canon = NameUtils.canonicalize(display)
-      createSpace(requester, canon, display, initialStatus).onComplete {
+      val result = for {
+        NewOID(spaceId) <- QuerkiCluster.oidAllocator.request(NextOID)
+        _ <- createSpace(requester, spaceId, canon, display, initialStatus)
+      }
+        yield spaceId
+        
+      result.onComplete {
         case Failure(ex:PublicException) => sender ! ThingError(ex, None)
         case Failure(ex) => sender ! ThingError(UnexpectedPublicException, None)
         case Success(spaceId) => {

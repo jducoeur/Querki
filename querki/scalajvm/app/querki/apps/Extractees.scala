@@ -49,7 +49,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
     
     val initState = 
       SpaceState(
-        if (extractState) state.id else OID(1, 1),
+        state.id,
         systemId,
         Map(Core.NameProp(name)),
         owner.mainIdentity.id,

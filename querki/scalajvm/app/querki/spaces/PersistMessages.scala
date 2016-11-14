@@ -90,6 +90,9 @@ private [spaces] object PersistMessages {
   /**
    * Command to create a new Space. Note that ownerId should be an *Identity*.
    * 
+   * spaceId is the Space to be created. The caller should have already allocated this OID. (We do it
+   * this way because sometimes we care about allocating it first.)
+   * 
    * userMaxSpaces is the maximum number of Spaces this owner is allowed to have; this will be
    * checked before creation.
    * 
@@ -97,7 +100,7 @@ private [spaces] object PersistMessages {
    * 
    * This will return either a Changed(), or ThingError.
    */
-  case class CreateSpacePersist(ownerId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode)
+  case class CreateSpacePersist(ownerId:OID, spaceId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode)
   
   /**
    * Command to fetch a Space by its path. OwnerId should be an Identity.

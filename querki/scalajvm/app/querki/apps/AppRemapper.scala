@@ -36,23 +36,31 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
       
     // First, fetch new OIDs for the Models:
     val models = state.things.values.filter(_.isModel(state))
-    extractorSupport.getOIDs(models.size).map { oids =>
-      val pairs = models.map(_.id).zip(oids).toSeq
+    extractorSupport.getOIDs(models.size + 1).map { oids =>
+      val pairs = models.map(_.id).zip(oids).toSeq :+ (state.id -> oids.last)
       // This is now a Map from old to new OIDs:
       implicit val oidMap = Map(pairs:_*)
+//      QLog.spew(s"Remappings:")
+//      oidMap.foreach { case (k, v) => QLog.spew(s"  $k -> $v") }
       // IMPORTANT NOTE: the way this works, we're implicitly assuming that Types and Props don't
       // themselves have meta-Props whose *values* are pointing to other Things in this Space. That
       // may or may not be a safe assumption -- keep an eye on it! (The issue is that, until the
       // Props have been remapped, we're going to tend to fail to fetch Prop values.)
-      val withTypes = remapTypes(state)
-      val withProps = remapProps(withTypes)
-      val withThings = remapThings(withProps)
-      val withOwnProps =
-        if (includeSpace)
-          withThings.copy(pf = remapPropMap(withThings, withThings))
-        else
-          withThings
-      (withOwnProps, oidMap)
+      
+      // Note that "and" is magic syntax sugar on SpaceState that lets me chain without creating lots
+      // of intermediate names:
+      val transformed =
+        remapTypes(state) and
+        remapProps and
+        remapThings and
+        { _.copy(s = oidMap(state.id)) } and
+        { withOwnID =>
+          if (includeSpace)
+            withOwnID.copy(pf = remapPropMap(withOwnID, withOwnID))
+          else
+            withOwnID          
+        }
+      (transformed, oidMap)
     }
   }
   

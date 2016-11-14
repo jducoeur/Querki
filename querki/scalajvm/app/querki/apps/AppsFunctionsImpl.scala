@@ -63,8 +63,8 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   def getOIDs(nRequested:Int):RequestM[Seq[OID]] = {
     Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids) 
   }
-  def createSpace(user:User, name:String, display:String):RequestM[OID] = {
-    createSpace(user, name, display, StatusNormal)
+  def createSpace(user:User, spaceId:OID, name:String, display:String):RequestM[OID] = {
+    createSpace(user, spaceId, name, display, StatusNormal)
   }
   def setAppState(state:SpaceState):RequestM[Unit] = {
     val appId = state.id

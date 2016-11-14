@@ -20,7 +20,6 @@ import models.{Kind, Thing}
 import querki.db._
 import ShardKind._
 
-import querki.cluster.OIDAllocator._
 import querki.ecology._
 import querki.identity.MembershipState
 import querki.util._
@@ -48,7 +47,6 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
   lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
-  lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   
@@ -94,7 +92,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     
     // =========================================
     
-    case CreateSpacePersist(owner, userMaxSpaces, name, display, initialStatus) => {
+    case CreateSpacePersist(owner, spaceId, userMaxSpaces, name, display, initialStatus) => {
       try {
         QDB(System) { implicit conn =>
           val numWithName = SQL("""
@@ -119,7 +117,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           }
         }
         
-        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>
+//        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>
           // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
           // part into System. That's unfortunate, but kind of a consequence of the architecture.
           // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
@@ -154,7 +152,7 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
           }
           
           sender ! Changed(spaceId, DateTime.now)
-        } 
+//        } 
       } catch {
         case ex:PublicException => sender ! ThingError(ex)
       }

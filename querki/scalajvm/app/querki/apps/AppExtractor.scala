@@ -9,7 +9,7 @@ import querki.spaces.messages._
 
 trait AppExtractorSupport[RM[_]] {
   def getOIDs(nRequested:Int):RM[Seq[OID]]
-  def createSpace(user:User, name:String, display:String):RM[OID]
+  def createSpace(user:User, spaceId:OID, name:String, display:String):RM[OID]
   def setAppState(state:SpaceState):RM[Unit]
   def setChildState(state:SpaceState):RM[Any]
 }
@@ -48,9 +48,9 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       // has all of its OIDs remapped...
       (remappedApp, idMap) <- remapOIDs(appState, extractees.extractState)
       // ... "hollow" out all of the Things that got extracted up to the App, marking them as Shadows.
-      hollowedSpace = hollowSpace(extractees, state, appState, idMap)
+      hollowedSpace = hollowSpace(extractees, state, remappedApp, idMap)
       // ... create the App itself...
-      appId <- extractorSupport.createSpace(user, canon, display)
+      appId <- extractorSupport.createSpace(user, remappedApp.id, canon, display)
       // ... update its OID...
       renumberedApp = remappedApp.copy(s = appId)
       // ... set the App's state...

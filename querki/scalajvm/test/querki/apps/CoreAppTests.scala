@@ -19,6 +19,13 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   
   def success[T](v:T):TCIdentity[T] = new TCIdentity(Success(v))
   
+  /**
+   * This is the object you use to play with extracting an App from this Space.
+   */
+  def makeExtractor():AppExtractor[TCIdentity] = {
+    new AppExtractor(state, owner)(TestRTCAble, this)
+  }
+  
   /* **************************************
    * AppExtractorSupport methods. You don't call these directly; they are used inside AppExtractor.
    */
@@ -26,8 +33,8 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   def getOIDs(nRequested:Int):TCIdentity[Seq[OID]] = {
     success(world.oidBlock(nRequested))
   }
-  def createSpace(user:User, name:String, display:String):TCIdentity[OID] = {
-    val app = new SpaceInWorldWith(this)
+  def createSpace(user:User, spaceId:OID, name:String, display:String):TCIdentity[OID] = {
+    val app = new SpaceInWorldWith(this, Some(spaceId))
     success(app.spaceId)
   }
   def setAppState(state:SpaceState):TCIdentity[Unit] = {
@@ -45,9 +52,12 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
 
 /**
  * This is another Space in the same World as the other one. This is necessary for testing Apps.
+ * 
+ * Note that you *can* preset the ID of this Space; that's needed for the ExtractApp workflow.
  */
-class SpaceInWorldWith(other:SpaceCoreSpaceBase)(implicit e:Ecology) extends AppableSpace {
+class SpaceInWorldWith(other:SpaceCoreSpaceBase, presetSpaceId:Option[OID] = None)(implicit e:Ecology) extends AppableSpace {
   override lazy val world = other.world
+  override lazy val spaceId = presetSpaceId.getOrElse(toid())
   
   def addApp(app:SpaceCoreSpaceBase) = {
     (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue)))) match {

@@ -119,11 +119,22 @@ $renderProps
   def spewState(state:SpaceState) = {
     spew(s"Full details of $state")
     implicit val s = state
+    spew(s"The State Itself")
+    spew(s"==========")
+    spewThing(state)
+    
     spew(s"Local Things")
     spew(s"==========")
     for {
       thing <- state.localThings
     }
       spewThing(thing)
+      
+    spew(s"Local Props")
+    spew(s"==========")
+    for {
+      prop <- state.spaceProps.values
+    }
+      spewThing(prop)
   }
 }
