@@ -1,6 +1,7 @@
 package querki.apps
 
 import querki.globals._
+import querki.spaces.SpaceCoreSpaceBase
 import querki.test._
 import querki.types.{ModelTypeBase, SimplePropertyBundle}
 
@@ -41,6 +42,9 @@ class ExtractAppTests extends QuerkiTests {
   
   "An extracted App" should {
     "work normally" in {
+      //
+      // Step 1: do the extraction
+      //
       implicit val s = new SpaceToExtract
       val model1Id = s.model1.id
       val extractor = s.makeExtractor()
@@ -54,6 +58,7 @@ class ExtractAppTests extends QuerkiTests {
         }
       }
       val appState = s.state.apps.head
+      val appSpace = s.world.getSpace(appState.id).asInstanceOf[SpaceCoreSpaceBase]
       implicit val childState = s.state
       
 //      println(s"The extracted App")
@@ -61,6 +66,9 @@ class ExtractAppTests extends QuerkiTests {
 //      println(s"\nThe child State")
 //      QLog.spewState(childState)
       
+      //
+      // Step 2: test the extraction
+      //
       val extractedByName = appState.anythingByName("Model 1").get
       val shadowModel = childState.localFrom(model1Id, childState.things).get
       assert(shadowModel.ifSet(Apps.ShadowFlag))
@@ -83,6 +91,12 @@ class ExtractAppTests extends QuerkiTests {
       pql("""[[Instance 3 1 -> Complex Prop -> Int Property]]""") should equal("")
       pql("""[[Instance 3 2 -> Complex Prop -> Int Property]]""") should equal("17")
       pql("""[[Instance 3 3 -> Complex Prop -> Text Property]]""") should equal("3 3 Value")
+      
+      //
+      // Step 3: make a new Space based on the App
+      //
+      val newChild = new SpaceInWorldWith(s)
+      newChild.addApp(appSpace)
     }
   }
 }

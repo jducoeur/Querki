@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import autowire._
 
-import models.{OID, ThingId}
+import models.{AsOID, OID, ThingId}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{TID, SpaceInfo, UserInfo}
@@ -22,6 +22,7 @@ import querki.spaces.messages._
 class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with UserFunctions {
   import UserFunctions._
   
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
@@ -84,7 +85,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     }
   }
   
-  def createSpace(name:String):Future[SpaceInfo] = {
+  def createSpace(name:String, appTIDOpt:Option[TID]):Future[SpaceInfo] = {
     if (name.length() == 0)
       throw new MiscException("Trying to create a Space with an empty name!")
     
@@ -95,9 +96,23 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     // so just let the exception happen:
     Core.NameProp.validate(name, System.State)
     
-    SpaceOps.spaceManager ? CreateSpace(user, name) map {
+    val appIdOpt = appTIDOpt.map { appTID =>
+      val thingId = ThingId(appTID.underlying)
+      thingId match {
+        case AsOID(oid) => oid
+        case _ => throw new Exception(s"createSpace apparently called with a non-OID TID!")
+      }
+    }
+    
+    (SpaceOps.spaceManager ? CreateSpace(user, name)).flatMap {
       case info:querki.spaces.messages.SpaceInfo => {
-        ClientApi.spaceInfo(info)
+        val result = ClientApi.spaceInfo(info)
+        appIdOpt match {
+          case Some(appId) => {
+            Apps.addAppToSpace(user, info.id, appId).map { _ => result }
+          }
+          case _ => fut(result)
+        }
       }
       case ThingError(ex, _) => throw ex
     }

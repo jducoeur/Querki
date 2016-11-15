@@ -1,5 +1,7 @@
 package querki.apps
 
+import scala.util.{Failure, Success}
+
 import akka.actor._
 
 import models.ModelPersistence
@@ -11,7 +13,7 @@ import querki.spaces._
 import SpaceMessagePersistence.DHAddApp
 import querki.spaces.messages._
 import querki.time._
-import querki.util.PublicException
+import querki.util.{PublicException, UnexpectedPublicException}
 import querki.values.{RequestContext, SpaceVersion}
 
 /**
@@ -56,8 +58,21 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
    * handlers particular to Apps.
    */
   def receive:Actor.Receive = {
+    // Note that this can be called cross-node, so we specifically do *not* use
+    // runAndSendResponse. (Since that tries to send the new State.)
     case SpacePluginMsg(req, _, AddApp(appId, appVersion)) => {
-      api.runAndSendResponse("addApp", addApp(req, appId, appVersion))(api.currentState)
+      api.runChanges(Seq(addApp(req, appId, appVersion)))(api.currentState).onComplete {
+        case Success(_) => api.respond(AddAppResult(None))
+        case Failure(th) => {
+          th match {
+            case ex:PublicException => api.respond(AddAppResult(Some(ex)))
+            case ex => {
+              QLog.error(s"AddApp received an unexpected exception", ex)
+              api.respond(ThingError(UnexpectedPublicException))
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -67,3 +82,7 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
  * To add the current version of the App, use Int.MaxValue as the version.
  */
 private [apps] case class AddApp(appId:OID, appVersion:SpaceVersion)
+/**
+ * Response from AddApp. Should be considered successful unless there is an Exception here.
+ */
+private [apps] case class AddAppResult(exceptionOpt:Option[PublicException])

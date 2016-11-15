@@ -9,8 +9,11 @@ import models.{Property}
 import querki.api.commonName
 import querki.ecology._
 import querki.globals._
+import querki.identity.User
 import querki.spaces._
+import querki.spaces.messages.SpacePluginMsg
 import querki.util.{Contributor, Publisher}
+import querki.values.SpaceVersion
 
 object MOIDs extends EcotIds(59) {
   val CanBeAppOID = moid(1)
@@ -42,6 +45,20 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   def createPlugin[RM[_]](space:SpaceAPI[RM], rtc:RTCAble[RM]):SpacePlugin[RM] = 
     new AppsSpacePlugin(space, rtc, ecology)
     
+  /***********************************************
+   * API
+   ***********************************************/
+  
+  def addAppToSpace(user:User, spaceId:OID, appId:OID):Future[Unit] = {
+    // For the time being, we simply assume that you want the current version of the App:
+    SpaceOps.askSpace2(SpacePluginMsg(user, spaceId, AddApp(appId, SpaceVersion(Int.MaxValue)))) {
+      case AddAppResult(exOpt) => {
+        exOpt.map(ex => throw ex)
+        fut(())
+      }
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/

@@ -61,8 +61,8 @@ class SpaceInWorldWith(other:SpaceCoreSpaceBase, presetSpaceId:Option[OID] = Non
   
   def addApp(app:SpaceCoreSpaceBase) = {
     (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue)))) match {
-      case Some(ThingFound(appId, newState)) => // All okay
-      case wrong => throw new Exception(s"addApp() got unexpected result $wrong")
+      case Some(AddAppResult(exOpt)) => exOpt.map { ex => throw ex }
+      case other => throw new Exception(s"addApp() received unexpected result $other")
     }
   }
 }

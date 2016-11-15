@@ -21,6 +21,8 @@ private [apps] case class Extractees(state:SpaceState, typeModels:Set[OID], extr
  */
 private [apps] trait ExtracteeComputer { self:EcologyMember =>
   
+  private lazy val AccessControl = interface[querki.security.AccessControl]
+  private lazy val Apps = interface[Apps]
   private lazy val Core = interface[querki.core.Core]
   private lazy val System = interface[querki.system.System]
   
@@ -51,7 +53,12 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       SpaceState(
         state.id,
         systemId,
-        Map(Core.NameProp(name)),
+        Map(
+          Core.NameProp(name),
+          // TODO: eventually, we should allow users to create friend-private Apps. But for now, they're
+          // all Public:
+          Apps.CanUseAsAppPerm(AccessControl.PublicTag)
+        ),
         owner.mainIdentity.id,
         name,
         DateTime.now,

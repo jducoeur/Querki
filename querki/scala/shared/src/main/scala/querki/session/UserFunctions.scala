@@ -36,9 +36,10 @@ trait UserFunctions {
   def changeDisplayName(newDisplayName:String):Future[UserInfo]
   
   /**
-   * Creates a new Space with the given name, and returns its information.
+   * Creates a new Space with the given name, and returns its information. If an App is
+   * specified, this Space will be created as an instance of that App.
    */
-  def createSpace(name:String):Future[SpaceInfo]
+  def createSpace(name:String, appId:Option[TID]):Future[SpaceInfo]
   
   /**
    * Should only be called for new Users. Sends a fresh activation email for their account.

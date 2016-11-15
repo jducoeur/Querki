@@ -47,8 +47,10 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
       case AsOID(appId) => {
         // For the time being, we simply assume that you want the current version of the App:
         (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue)))) map {
-          case ThingFound(_, _) => ()
-          case ThingError(ex, _) => throw ex
+          case AddAppResult(exOpt) => {
+            exOpt.map(ex => throw ex)
+            ()
+          }
         }
       }
       case _ => throw new PublicException("Apps.notASpace")
