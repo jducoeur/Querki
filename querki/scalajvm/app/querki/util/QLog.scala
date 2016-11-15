@@ -4,6 +4,7 @@ import play.api.Logger
 
 import models._
 
+import querki.types.ModelTypeBase
 import querki.values.SpaceState
 
 object QLog {
@@ -136,5 +137,16 @@ $renderProps
       prop <- state.spaceProps.values
     }
       spewThing(prop)
+      
+    val types = state.types.values
+    if (!types.isEmpty) {
+      spew(s"Local Types")
+      spew(s"==========")
+      for {
+        tpe <- types
+        if (tpe.isInstanceOf[ModelTypeBase])
+      }
+        spew(s"${tpe.id}, based on ${tpe.asInstanceOf[ModelTypeBase].basedOn}")
+    }
   }
 }

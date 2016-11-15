@@ -5,7 +5,7 @@ import Thing._
 import querki.cluster.OIDAllocator._
 import querki.globals._
 import querki.spaces.RTCAble
-import querki.types.ModelTypeDefiner
+import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
 
 /**
  * This single-function trait deals with computing the OIDs for a newly extracted App.
@@ -72,16 +72,27 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
    * Remap any Links in this PropMap, if appropriate.
    */
   private def remapPropMap(t:Thing, state:SpaceState)(implicit oidMap:Map[OID, OID]):PropMap = {
-    (t.props /: t.props) { case (props, (propId, propVal)) =>
+    remapPropMap(t.props, state)
+  }
+  
+  private def remapPropMap(propsIn:PropMap, state:SpaceState)(implicit oidMap:Map[OID, OID]):PropMap = {
+    (propsIn /: propsIn) { case (props, (propId, propVal)) =>
       val propOpt = state.prop(propId)
       propOpt match {
-        // TODO: in principle, we also need to catch Model Types here, and run through their
-        // Property Bundles. In practice, it's an edge case of an edge case, so I'm not going
-        // to worry about it quite yet.
         case Some(prop) if (prop.pType == LinkType) => {
           val rawOIDs = propVal.rawList(LinkType)
           val newElemValues = rawOIDs.map(mappedOID(_)).map(LinkType(_))
           val newVal = prop.cType.makePropValue(newElemValues, LinkType)
+          props.updated(propId, newVal)
+        }
+        case Some(prop) if (prop.pType.isInstanceOf[ModelTypeDefiner#ModelType]) => {
+          val mtIn = prop.pType.asInstanceOf[ModelTypeDefiner#ModelType]
+          val rawVals = propVal.rawList(mtIn)
+          val mtOut = state.typ(mappedOID(mtIn.id)).asInstanceOf[ModelTypeDefiner#ModelType]
+          val mappedVals = rawVals.map { bundle => 
+            mtOut(SimplePropertyBundle(remapPropMap(bundle.props, state)))
+          }
+          val newVal = prop.cType.makePropValue(mappedVals, mtOut)
           props.updated(propId, newVal)
         }
         case _ => props

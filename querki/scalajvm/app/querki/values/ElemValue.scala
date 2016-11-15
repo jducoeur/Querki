@@ -1,6 +1,6 @@
 package querki.values
 
-import models.PType
+import models.{PType, UnknownOID}
 
 import querki.globals._
 
@@ -55,7 +55,12 @@ case class ElemValue(elem:Any, pType:PType[_]) {
 
 object ElemValue {
   def matchesTypeExact(left:PType[_], right:PType[_]):Boolean = {
-    left.realType == right.realType
+    // We have to compare by OID, because the "exact" match might actually be from an app parent and
+    // a shadow child. But internal types need to be matched by identity:
+    if (left.realType.id == UnknownOID)
+      left.realType == right.realType
+    else
+      left.realType.id == right.realType.id
   }
   
   def matchesTypeExact(elem:ElemValue, pt:PType[_]):Boolean = {
