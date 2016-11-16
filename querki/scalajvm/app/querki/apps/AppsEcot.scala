@@ -19,12 +19,13 @@ object MOIDs extends EcotIds(59) {
   val CanBeAppOID = moid(1)
   val CanManipulateAppsOID = moid(2)
   val ShadowFlagOID = moid(3)
+  val ShadowedThingOID = moid(4)
 }
 
 /**
  * @author jducoeur
  */
-class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Apps {
+class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with SpacePluginProvider with Apps {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -72,6 +73,28 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
    * FUNCTIONS
    ***********************************************/
   
+  lazy val ShadowedThingFunction = new InternalMethod(ShadowedThingOID,
+    toProps(
+      setName("_shadowedThing"),
+      Summary("Produces the actual Thing this Shadow is based upon."),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(AppsTag),
+      Signature(
+        expected = Some(Seq(LinkType), "A List of anything"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (LinkType, "The Thing this Shadow is based upon, or itself if it is not a Shadow")
+      ),
+      Details("""See [[_isShadow._self]] for more information about Shadows.""")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextAllThings
+      }
+        yield ExactlyOne(LinkType(getShadowedThing(thing)(inv.state)))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -97,6 +120,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       setName("_isShadow"),
       setInternal,
       SkillLevel(SkillLevelAdvanced),
+      NotInherited,
       Summary("Set to true by the system if this Thing is a shadow for a parent in an App."),
       Details("""When a Space is based on an App, it creates local "shadows" of the Things in that App,
         |so that you can customize the Space to suit yourself. The gory details:
@@ -118,6 +142,8 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
         |underlies it in the App.""".stripMargin)))
   
   override lazy val props = Seq(
+    ShadowedThingFunction,
+      
     CanUseAsAppPerm,
     CanManipulateAppsPerm,
     ShadowFlag

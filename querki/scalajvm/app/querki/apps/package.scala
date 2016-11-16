@@ -10,6 +10,8 @@ import querki.identity.User
  */
 package object apps {
   trait Apps extends EcologyInterface {
+    val AppsTag = "Apps"
+    
     def CanUseAsAppPerm:Property[OID,OID]
     def CanManipulateAppsPerm:Property[OID,OID]
     def ShadowFlag:Property[Boolean, Boolean]

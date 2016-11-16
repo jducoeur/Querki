@@ -135,6 +135,15 @@ class ExtractAppTests extends QuerkiTests {
         
         pql("""[[Local Instance 3 1 -> Complex Prop -> Int Property]]""") should equal("17")
         pql("""[[Local Instance 3 2 -> Complex Prop -> Int Property]]""") should equal("44")
+        
+        // Test _isShadow and _shadowedThing
+        pql("""[[Model 1 -> _isShadow]]""") should equal("true")
+        // It's not defined on the shadowed Thing, so it comes out blank:
+        pql("""[[Model 1 -> _shadowedThing -> _isShadow]]""") should equal("")
+        // In other words, the Shadow and its _shadowedThing are not the same:
+        pql("""[[Model 1 -> _shadowedThing -> _is(Model 1)]]""") should equal("false")
+        // The local instance is *not* shadowed, so _shadowedThing produces itself:
+        pql("""[[Local Instance 1 1 -> _shadowedThing -> _is(Local Instance 1 1)]]""") should equal("true")
       }
     }
   }
