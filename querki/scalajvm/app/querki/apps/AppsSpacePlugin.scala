@@ -32,7 +32,10 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
   
   def modelsToShadow(app:SpaceState):Seq[Thing] = {
-    app.things.values.filter(_.isModel(app)).toSeq
+    val (models, instances) = app.things.values.partition(_.isModel(app))
+    val (pages, plainInstances) = instances.partition(_.model == querki.basic.MOIDs.SimpleThingOID)
+    
+    (models ++ pages).toSeq
   }
   
   def addApp(req:User, appId:OID, appVersion:SpaceVersion)(state:SpaceState):RM[ChangeResult] = {

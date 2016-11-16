@@ -28,17 +28,20 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   def extractorSupport:AppExtractorSupport[RM]
   
   /**
-   * Given a proto-Space, this returns that State with all of the OIDs replaced by new ones.
+   * Given a proto-App, this returns that State with all of the OIDs replaced by new ones.
+   * Note that this already only contains the Things that are being extracted to the App.
    */
   def remapOIDs(state:SpaceState, includeSpace:Boolean):RM[(SpaceState, Map[OID, OID])] = 
   {
     val allThings = state.everythingLocal.toSeq
       
     // First, fetch new OIDs for the Models:
-    val models = state.things.values.filter(_.isModel(state))
-    extractorSupport.getOIDs(models.size + 1).map { oids =>
-      val pairs = models.map(_.id).zip(oids).toSeq :+ (state.id -> oids.last)
-      // This is now a Map from old to new OIDs:
+    val (models, instances) = state.things.values.partition(_.isModel(state))
+    val (pages, plainInstances) = instances.partition(_.model == querki.basic.MOIDs.SimpleThingOID)
+    val oidsToMap = (models.toSeq ++ pages :+ state).map(_.id)
+    extractorSupport.getOIDs(oidsToMap.size).map { oids =>
+      val pairs = oidsToMap.zip(oids)
+       // This is now a Map from old to new OIDs:
       implicit val oidMap = Map(pairs:_*)
 //      QLog.spew(s"Remappings:")
 //      oidMap.foreach { case (k, v) => QLog.spew(s"  $k -> $v") }

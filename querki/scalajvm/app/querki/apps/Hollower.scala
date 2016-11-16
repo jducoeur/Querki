@@ -31,10 +31,12 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
   private lazy val SystemSpace = System.State
   
   def hollowSpace(extractees:Extractees, childState:SpaceState, appState:SpaceState, idMap:Map[OID, OID]):SpaceState = {
+    // TODO: this is duplicating logic in AppRemapper. Can/should we merge them?
     val (models, instances) = extractees.state.things.values.partition(_.isModel(extractees.state))
+    val (pages, plainInstances) = instances.partition(_.model == querki.basic.MOIDs.SimpleThingOID)
     
-    val withoutInstances = deleteInstances(instances, childState)
-    val hollowedModels = hollowThings(models, withoutInstances, idMap)
+    val withoutInstances = deleteInstances(plainInstances, childState)
+    val hollowedModels = hollowThings(models ++ pages, withoutInstances, idMap)
     val shadowed = markShadows(extractees.state.spaceProps.values ++ extractees.state.types.values, hollowedModels)
     val hollowedSpace =
       if (extractees.extractState)
@@ -48,7 +50,13 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
   }
   
   /**
-   * This removes all of the extracted instances from the child Space. We do *not* shadow Instances.
+   * This removes most of the extracted instances from the child Space. We do *not* shadow Instances
+   * unless they are Pages.
+   * 
+   * Yes, this seems a bit arbitrary, but seems to match the best semantics. We don't want to shadow
+   * enum values, for example, but we *do* want to shadow Pages, so that you can edit them.
+   * 
+   * This may need further refinement as we go.
    */
   def deleteInstances(instances:Iterable[ThingState], childState:SpaceState):SpaceState = {
     (childState /: instances) { (curState, instance) =>
@@ -57,7 +65,7 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
   }
   
   /**
-   * For each of the extracted Things, hollow out the original version, give it the model in the App,
+   * For each of the extracted Models and Pages, hollow out the original version, give it the model in the App,
    * and mark it as a Shadow.
    */
   def hollowThings(things:Iterable[Thing], childState:SpaceState, idMap:Map[OID, OID]):SpaceState = {

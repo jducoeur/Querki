@@ -2,6 +2,8 @@ package querki.apps
 
 import scala.util.{Success}
 
+import org.scalatest.Assertions._
+
 import querki.globals._
 import querki.identity.User
 import querki.spaces._
@@ -130,7 +132,7 @@ class CoreAppTests extends QuerkiTests with AppTree {
   def testName(name:String, expected:OID)(implicit s:SpaceCoreSpaceBase) = {
     val tOpt = s.state.anythingByName(name)
     assert(tOpt.isDefined)
-    assert(tOpt.get.id == expected)      
+    assert(tOpt.get.id == expected, s"Failed when trying to test name $name")
   }
   
   "A Space built with AddApp" should {
@@ -140,9 +142,10 @@ class CoreAppTests extends QuerkiTests with AppTree {
       implicit val state = s.state
       
       testName("Simple Thing", Basic.SimpleThing)
-      testName("Highest Thing", highest.highestThing)
-      testName("Simple-Page", mid2.mySimplePage)
-      testName("Duplicate Thing", mid1.duplicateThing)
+      // Pages -- simple Things -- get shadowed in the child Space:
+      pql("""[[Highest Thing -> _shadowedThing -> _is(Highest Thing)]]""") should equal("false")
+      pql("""[[Simple Page -> _shadowedThing -> _is(Simple Page)]]""") should equal("false")
+      pql("""[[Duplicate Thing -> _shadowedThing -> _is(Duplicate Thing)]]""") should equal("false")
       pql("[[Num Thing -> My Nums -> Plus One -> First Two -> _commas]]") should
         equal("5, 7")
       pql("[[My Root Model._instances]]") should

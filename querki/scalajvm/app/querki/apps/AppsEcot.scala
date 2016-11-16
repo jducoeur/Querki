@@ -119,6 +119,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
     toProps(
       setName("_isShadow"),
       setInternal,
+      Categories(AppsTag),
       SkillLevel(SkillLevelAdvanced),
       NotInherited,
       Summary("Set to true by the system if this Thing is a shadow for a parent in an App."),

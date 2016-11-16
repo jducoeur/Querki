@@ -7,12 +7,16 @@ import querki.test._
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
 
 class SpaceToExtract(implicit e:Ecology) extends AppableSpace {
+  lazy val Basic = interface[querki.basic.Basic]
+  
   val textProp = addProperty(Core.TextType, Core.Optional, "Text Property")
   val numProp = addProperty(Core.IntType, Core.ExactlyOne, "Int Property")
   
   val modelForType = addSimpleModel("Model for Type", textProp("Type Model Default"), numProp(12))
   val typeModel = addType("Type Model", modelForType)
   val propOfModelType = addProperty(typeModel, Core.QList, "Complex Prop")
+  
+  val page1 = addSimpleThing("Page 1", Basic.DisplayTextProp("Page 1 View"))
   
   val model1 = addSimpleModel("Model 1", textProp("Default Text"))
   val model2 = addSimpleModel("Model 2")
@@ -51,7 +55,7 @@ class ExtractAppTests extends QuerkiTests {
       val extractor = original.makeExtractor()
       
       try {
-        extractor.extractApp(Seq(model1Id.toTID, original.model3.toTID), "My App")
+        extractor.extractApp(Seq(model1Id.toTID, original.model3.toTID, original.page1.toTID), "My App")
       } catch {
         case ex:Exception => {
           QLog.error("Got an exception while trying to extract an app", ex)
@@ -94,6 +98,7 @@ class ExtractAppTests extends QuerkiTests {
         pql("""[[Instance 3 1 -> Complex Prop -> Int Property]]""") should equal("")
         pql("""[[Instance 3 2 -> Complex Prop -> Int Property]]""") should equal("17")
         pql("""[[Instance 3 3 -> Complex Prop -> Text Property]]""") should equal("3 3 Value")
+        pql("""[[Page 1 -> Default View]]""") should equal("Page 1 View")
       }
       
       //
@@ -144,6 +149,10 @@ class ExtractAppTests extends QuerkiTests {
         pql("""[[Model 1 -> _shadowedThing -> _is(Model 1)]]""") should equal("false")
         // The local instance is *not* shadowed, so _shadowedThing produces itself:
         pql("""[[Local Instance 1 1 -> _shadowedThing -> _is(Local Instance 1 1)]]""") should equal("true")
+
+        // Check that the Page works, and is shadowed:
+        pql("""[[Page 1 -> Default View]]""") should equal("Page 1 View")
+        pql("""[[Page 1 -> _shadowedThing -> _is(Page 1)]]""") should equal("false")
       }
     }
   }
