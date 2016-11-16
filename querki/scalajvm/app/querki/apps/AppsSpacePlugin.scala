@@ -41,6 +41,10 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, req, state))
       throw new PublicException("Apps.notAllowed")
     
+    // Check that this App isn't already present for this Space:
+    if (state.appInfo.find(_._1 == appId).isDefined)
+      throw new PublicException("Apps.alreadyThere")
+    
     // Okay -- load the app:
     for {
       app <- api.loadAppVersion(appId, appVersion, state.allApps)
