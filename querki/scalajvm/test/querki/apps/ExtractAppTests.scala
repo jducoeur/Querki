@@ -3,6 +3,7 @@ package querki.apps
 import models.AsName
 import querki.globals._
 import querki.spaces.SpaceCoreSpaceBase
+import querki.spaces.messages.ThingError
 import querki.test._
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
 
@@ -17,6 +18,9 @@ class SpaceToExtract(implicit e:Ecology) extends AppableSpace {
   val propOfModelType = addProperty(typeModel, Core.QList, "Complex Prop")
   
   val page1 = addSimpleThing("Page 1", Basic.DisplayTextProp("Page 1 View"))
+  
+  val otherModel = addSimpleModel("Other Model")
+  val other1 = addThing("Other 1", otherModel)
   
   val model1 = addSimpleModel("Model 1", textProp("Default Text"))
   val model2 = addSimpleModel("Model 2")
@@ -55,7 +59,13 @@ class ExtractAppTests extends QuerkiTests {
       val extractor = original.makeExtractor()
       
       try {
-        extractor.extractApp(Seq(model1Id.toTID, original.model3.toTID, original.page1.toTID), "My App")
+        extractor.extractApp(Seq(
+          model1Id.toTID, 
+          original.model3.toTID, 
+          original.page1.toTID,
+          original.otherModel.toTID,
+          original.other1.toTID), 
+        "My App")
       } catch {
         case ex:Exception => {
           QLog.error("Got an exception while trying to extract an app", ex)
@@ -153,6 +163,25 @@ class ExtractAppTests extends QuerkiTests {
         // Check that the Page works, and is shadowed:
         pql("""[[Page 1 -> Default View]]""") should equal("Page 1 View")
         pql("""[[Page 1 -> _shadowedThing -> _is(Page 1)]]""") should equal("false")
+      }
+      
+      // Make sure we can edit Page 1:
+      val localPage1 = newState.localFrom(AsName("Page 1"), newState.things).get
+      newChild.changeThing(localPage1, Basic.DisplayTextProp("Child Page 1 View"))
+      
+      {
+        implicit val s = newChild
+        implicit val localState = newChild.state
+        
+        pql("""[[Page 1 -> Default View]]""") should equal("Child Page 1 View")
+      }
+      
+      // The non-Page Instance should *not* be shadowed, and should not be editable:
+      assert(newState.localFrom(AsName("Other 1"), newState.things).isEmpty)
+      val other1 = newChild.state.anythingByName("Other 1").get
+      newChild.changeThing(other1, Basic.DisplayTextProp("This should fail!")) match {
+        case Some(ThingError(ex, _)) => assert(ex.msgName == "Thing.find.noSuch")
+        case other => fail(s"Changing Other 1 should have failed, but returned $other!")
       }
     }
   }

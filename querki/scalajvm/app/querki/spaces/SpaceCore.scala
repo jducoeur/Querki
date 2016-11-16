@@ -400,7 +400,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     replaceAllProps:Boolean)(state:SpaceState):RM[ChangeResult] = 
   {
     implicit val s = state
-    val oldThingOpt = state.anything(thingId)
+    val oldThingOpt = state.anythingLocal(thingId)
     if (oldThingOpt.isEmpty)
       rtc.failed(new PublicException(UnknownPath))
     else {

@@ -190,15 +190,19 @@ case class SpaceState(
   def thing(ptr:ThingId) = resolve(ptr) (_.things)
   def coll(ptr:ThingId) = resolve(ptr) (_.colls)
   
-  def anything(oid:OID):Option[Thing] = {
-    walkTree { state =>
-      state.things.get(oid).orElse(
-        state.spaceProps.get(oid).orElse(
-          state.types.get(oid).orElse(
-            state.colls.get(oid).orElse(
-              state.selfByOID(oid)))))
-    }
+  private def anythingCore(state:SpaceState, oid:OID):Option[Thing] = {
+    state.things.get(oid).orElse(
+      state.spaceProps.get(oid).orElse(
+        state.types.get(oid).orElse(
+          state.colls.get(oid).orElse(
+            state.selfByOID(oid)))))    
   }
+  
+  def anything(oid:OID):Option[Thing] = {
+    walkTree { state => anythingCore(state, oid) }
+  }
+  
+  def anythingLocal(oid:OID):Option[Thing] = anythingCore(this, oid)
   
   private def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
     things.values.find { thing =>
@@ -220,14 +224,21 @@ case class SpaceState(
     if (tryName == NameUtils.toInternal(name)) Some(this) else None
   }
   
+  private def anythingByDisplayNameCore(state:SpaceState, name:String):Option[Thing] = {
+    thingWithDisplayName(name, state.things).orElse(
+      thingWithDisplayName(name, state.spaceProps).orElse(
+        thingWithDisplayName(name, state.types).orElse(
+          thingWithDisplayName(name, state.colls))))
+  }
+  
   def anythingByDisplayName(rawName:String):Option[Thing] = {
-    walkTree { state =>
-      val name = rawName.toLowerCase()
-      thingWithDisplayName(name, state.things).orElse(
-        thingWithDisplayName(name, state.spaceProps).orElse(
-          thingWithDisplayName(name, state.types).orElse(
-            thingWithDisplayName(name, state.colls))))
-    }
+    val name = rawName.toLowerCase()
+    walkTree { state => anythingByDisplayNameCore(state, name) }
+  }
+  
+  def anythingByDisplayNameLocal(rawName:String):Option[Thing] = {
+    val name = rawName.toLowerCase()
+    anythingByDisplayNameCore(this, name)
   }
   
   /**
@@ -253,17 +264,33 @@ case class SpaceState(
     (NameUtils.canonicalize(canonicalName.get) -> this)
   }
   
+  private def anythingByNameCore(state:SpaceState, name:String):Option[Thing] = {
+    state.byCanonicalName.get(name)
+  }
+  
   def anythingByName(rawName:String):Option[Thing] = {
+    val name = NameUtils.canonicalize(rawName)
     walkTree { state =>
-      val name = NameUtils.canonicalize(rawName)
-      state.byCanonicalName.get(name)
+      anythingByNameCore(state, name)
     }.orElse(anythingByDisplayName(rawName))
+  }
+  
+  def anythingByNameLocal(rawName:String):Option[Thing] = {
+    val name = NameUtils.canonicalize(rawName)
+    anythingByNameCore(this, name).orElse(anythingByDisplayNameLocal(rawName))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
     thingId match {
       case AsOID(oid) => anything(oid)
       case AsName(name) => anythingByName(name)
+    }
+  }
+  
+  def anythingLocal(thingId:ThingId):Option[Thing] = {
+    thingId match {
+      case AsOID(oid) => anythingLocal(oid)
+      case AsName(name) => anythingByNameLocal(name)
     }
   }
   
