@@ -124,6 +124,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def allocThingId():RM[OID]
   
   /**
+   * Fetches a set of new OIDs, for bulk operations.
+   */
+  def allocThingIds(nIds:Int):RM[Seq[OID]]
+  
+  /**
    * Tells any outside systems about the updated state. Originally part of Space.updateState().
    */
   def notifyUpdateState():Unit

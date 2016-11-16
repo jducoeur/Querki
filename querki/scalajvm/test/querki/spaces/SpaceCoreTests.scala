@@ -46,6 +46,10 @@ class TestSpaceCore(
     TestRTCAble.successful(testSpace.toid())
   }
   
+  def allocThingIds(nIds:Int):TCIdentity[Seq[OID]] = {
+    TestRTCAble.successful(testSpace.world.oidBlock(nIds))
+  }
+  
   def notifyUpdateState() = {
     // TODO: hook and test this?
   }

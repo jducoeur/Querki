@@ -59,7 +59,8 @@ object SpaceMessagePersistence {
     @KryoTag(1) req:UserRef,
     @KryoTag(2) modTime:DateTime,
     @KryoTag(3) appState:DHSpaceState,
-    @KryoTag(4) parentApps:Seq[DHSpaceState]) extends UseKryo with SpaceEvent
+    @KryoTag(4) parentApps:Seq[DHSpaceState],
+    @KryoTag(5) shadowMap:Map[OID, OID]) extends UseKryo with SpaceEvent
     
   /**
    * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,

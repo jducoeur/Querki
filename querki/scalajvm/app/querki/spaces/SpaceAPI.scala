@@ -61,6 +61,11 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * sends the local-only ThingFound response.
    */
   def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]]
+  
+  /**
+   * Fetches a set of new OIDs, for bulk operations.
+   */
+  def allocThingIds(nIds:Int):RM[Seq[OID]]
 }
 
 /**

@@ -59,6 +59,19 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
     }
   }
   
+  def getShadowedThing(t:Thing)(implicit state:SpaceState):Thing = {
+    if (t.ifSet(ShadowFlag)) {
+      val model = state.anything(t.model).getOrElse(throw new Exception(s"Shadow ${t.displayName} doesn't have a Model we can find!"))
+      getShadowedThing(model)
+    } else {
+      t
+    }
+  }
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -83,7 +96,26 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
     toProps(
       setName("_isShadow"),
       setInternal,
-      Summary("Set to true by the system if this Thing is a shadow for a parent in an App.")))
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Set to true by the system if this Thing is a shadow for a parent in an App."),
+      Details("""When a Space is based on an App, it creates local "shadows" of the Things in that App,
+        |so that you can customize the Space to suit yourself. The gory details:
+        |
+        |* All Models in the App get local Shadows. In this case, the Shadow Model has its own OID, and
+        |points to the real version in the App as *its* Model. You may enhance this Shadow Model with
+        |your own custom fields.
+        |
+        |* Any Model Types in the App get local Shadows. The Shadow Type will have the *same* OID as
+        |the real one in the App. It differs only in that it points to the local Shadow Model for that
+        |Type's real Model.
+        |
+        |* All Properties in the App get local Shadows, but these are direct copies of the versions in the
+        |App, with the same OID, so it will generally look the same to you. (The difference is mainly
+        |internal -- Model Properties point to the Shadow Type.
+        |
+        |You should usually be able to ignore shadowing -- it is intended to usually just work -- but
+        |you can use the [[_shadowedThing._self]] function to go from a Shadow to the real Thing that
+        |underlies it in the App.""".stripMargin)))
   
   override lazy val props = Seq(
     CanUseAsAppPerm,

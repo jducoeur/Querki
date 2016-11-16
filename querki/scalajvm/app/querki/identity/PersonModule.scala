@@ -50,7 +50,7 @@ private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState
   }     
   
   val (peopleById, peopleByIdentityId) = 
-    ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true)) { (maps, person) =>
+    ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true, false)) { (maps, person) =>
       val (personIdMap, identityIdMap) = maps
       val newPersonIdMap = personIdMap + (person.id -> person)
       val newIdentityIdMap = getPersonIdentityRaw(person).map(identityId => identityIdMap + (identityId -> person)).getOrElse(identityIdMap)

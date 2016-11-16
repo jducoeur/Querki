@@ -50,6 +50,7 @@ object MOIDs extends EcotIds(21) {
 class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.logic.YesNoUtils with querki.core.MethodDefs {
   import MOIDs._
   
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val QL = interface[querki.ql.QL]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
@@ -168,6 +169,14 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       setName("_instances"),
       Categories(DataModelTag),
       Summary("Returns all of the non-Model Things that are based on this"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Model"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("useAppModel", YesNoType, ExactlyOne(true), "Iff true, and this Model is from an App, this returns all the Things based on the App's version of it.")
+        ),
+        returns = (LinkType, "All of the Instances based on this Model")
+      ),
       Details("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
           |
           |An Instance is an actual Thing based on one of those Models: "Joe" or "In Through the Out Door" or "Macaroni and Cheese".
@@ -181,25 +190,41 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |If your Instances have Names or Link Names, this list will be sorted by those names.
           |
-          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.
+          |If you have sub-Models under *Model* (that add more Properties, for example), this will include Instance of those as well.
           |
-          |This will include Instances found in Apps, if there are any. (There usually aren't, but it's sometimes
-          |relevant.)""".stripMargin)))
+          |This will usually include Instances found in Apps, if there are any. (There usually aren't, but it's sometimes
+          |relevant.) If you only want Instances of the local Shadow Model, set useAppModel to false.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QFut = {
-      // We intentionally don't iterate in the usual way, because we want to combine the values. Note
-      // that descendants() returns SortedSets, which can be combined to preserve the sorting. The below
-      // logic is designed specifically to preserve that sorting until we're done.
-      val context = inv.definingContext.getOrElse(inv.context)
-      if (context.value.matchesType(LinkType)) {
-        val roots = context.value.rawList(LinkType)
-        val allSets = roots.map(root => inv.state.descendants(root, false, true, true))
+    def getAppModels(rootsIn:Seq[OID], state:SpaceState):Seq[OID] = {
+      rootsIn.map { rootId =>
+        state.anything(rootId) match {
+          case Some(root) => Apps.getShadowedThing(root)(state).id
+          case _ => rootId
+        }
+      }      
+    }
+    
+    override def qlApply(invIn:Invocation):QFut = {
+      val inv = invIn.preferDefiningContext
+      for {
+        useAppModel <- inv.processAs("useAppModel", YesNoType)
+        // We intentionally don't iterate in the usual way, because we want to combine the values. Note
+        // that descendants() returns SortedSets, which can be combined to preserve the sorting. The below
+        // logic is designed specifically to preserve that sorting until we're done.
+        context = inv.context
+        _ <- inv.test(context.value.matchesType(LinkType), "Func.notThing", displayName)
+        rootsIn = context.value.rawList(LinkType)
+        roots = {
+          if (useAppModel) {
+            getAppModels(rootsIn, inv.state)
+          } else
+            rootsIn
+        }
+        allSets = roots.map(root => inv.state.descendants(root, false, true, true))
         // At this point, we have to lock it down into sequence, since now we will transform it to OIDs:
-        val descendants = allSets.reduce(_ ++ _).toSeq
-        Future.successful(QList.makePropValue(descendants.map(desc => LinkType(desc)), LinkType))
-      } else {
-        throw new PublicException("Func.notThing", displayName)
+        descendants = allSets.reduce(_ ++ _).toSeq
       }
+        yield QList.makePropValue(descendants.map(desc => LinkType(desc)), LinkType)
     }
   }
   

@@ -11,7 +11,7 @@ import org.querki.requester._
 import models._
 import Kind.Kind
 import Thing.PropMap
-import querki.cluster.OIDAllocator.{NewOID, NextOID}
+import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
@@ -77,6 +77,12 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   def allocThingId():RequestM[OID] = {
     QuerkiCluster.oidAllocator.request(NextOID).map { 
       case NewOID(thingId) => thingId
+    }
+  }
+  
+  def allocThingIds(nIds:Int):RequestM[Seq[OID]] = {
+    QuerkiCluster.oidAllocator.request(GiveOIDBlock(nIds)).map {
+      case NewOIDs(ids) => ids
     }
   }
   

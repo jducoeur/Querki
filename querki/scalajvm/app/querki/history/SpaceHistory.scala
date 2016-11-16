@@ -114,7 +114,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
       case DHDeleteThing(req, thingId, modTime) => 
         fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
         
-      case DHAddApp(req, modTime, app, appParents) =>
+      case DHAddApp(req, modTime, app, appParents, shadowMapping) =>
         fill(req, Seq(app.id), AddAppSummary(sequenceNr, _, modTime.toTimestamp, app.id))
     }
   }

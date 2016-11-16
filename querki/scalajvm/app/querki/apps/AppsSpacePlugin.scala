@@ -4,7 +4,7 @@ import scala.util.{Failure, Success}
 
 import akka.actor._
 
-import models.ModelPersistence
+import models.{ModelPersistence, Thing}
 import models.Thing._
 
 import querki.globals._
@@ -31,6 +31,10 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   
   implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
   
+  def modelsToShadow(app:SpaceState):Seq[Thing] = {
+    app.things.values.filter(_.isModel(app)).toSeq
+  }
+  
   def addApp(req:User, appId:OID, appVersion:SpaceVersion)(state:SpaceState):RM[ChangeResult] = {
     // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
     // can only fail if something has changed significantly:
@@ -38,19 +42,26 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
       throw new PublicException("Apps.notAllowed")
     
     // Okay -- load the app:
-    api.loadAppVersion(appId, appVersion, state.allApps).map { app =>
+    for {
+      app <- api.loadAppVersion(appId, appVersion, state.allApps)
       // Secondary check: is this App willing to be used?
-      if (AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, state.ownerIdentity.get.id, app)) {
+      _ = {
+        if (!AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, state.ownerIdentity.get.id, app))
+          throw new PublicException("Apps.notAnApp")
+      }
+      appModels = modelsToShadow(app)
+      shadowIds <- api.allocThingIds(appModels.size)
+      idPairs = appModels.map(_.id).zip(shadowIds)
+      idMapping = Map(idPairs:_*)
+    }
+      yield {
         implicit val s = state
         val dhApp = dh(app)
         val dhParents = app.allApps.values.toSeq.map(dh(_))
-        val msg = DHAddApp(req, DateTime.now, dhApp, dhParents)
-        ChangeResult(List(msg), Some(appId), addFilledAppPure(app)(s))
-      } else {
-        // This App doesn't acknowledge that this person is allowed to use it:
-        throw new PublicException("Apps.notAnApp")
-      }
-    }    
+        val time = DateTime.now
+        val msg = DHAddApp(req, time, dhApp, dhParents, idMapping)
+        ChangeResult(List(msg), Some(appId), addFilledAppPure(app, idMapping, time)(s))
+      }    
   }
   
   /**

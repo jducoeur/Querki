@@ -146,7 +146,7 @@ $renderProps
         tpe <- types
         if (tpe.isInstanceOf[ModelTypeBase])
       }
-        spew(s"${tpe.id}, based on ${tpe.asInstanceOf[ModelTypeBase].basedOn}")
+        spew(s"${tpe.id} (${tpe.displayName}), based on ${tpe.asInstanceOf[ModelTypeBase].basedOn}")
     }
   }
 }
