@@ -77,7 +77,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     buildInfoPackage := "querki",
     EclipseKeys.skipParents in ThisBuild := false).
   enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin).//, ConductRPlugin).
-//  enablePlugins(PlayScala, BuildInfoPlugin).
+  // TODO: this aggregate is how we pull in the client and get it to compile, but it's too broad:
+  // it causes the system to run the Client during unit testing, which we don't want. We need to
+  // figure out how to restructure such that the client gets *built* but not *tested*, at least
+  // for now.
   aggregate(clients.map(projectToRef): _*).
   dependsOn(querkiSharedJvm)
 
@@ -161,9 +164,9 @@ lazy val sharedDependencies = Def.setting(Seq(
 ))
 
 // utst -- run the Unit Tests:
-addCommandAlias("utst", """test-only -- -l "org.scalatest.tags.Slow"""")
+addCommandAlias("utst", """querkiServer/test-only -- -l "org.scalatest.tags.Slow"""")
 // ftst -- run the Functional (browser) Tests:
-addCommandAlias("ftst", """test-only -- -n "org.scalatest.tags.Slow"""")
+addCommandAlias("ftst", """querkiServer/test-only -- -n "org.scalatest.tags.Slow"""")
 
 onLoad in Global := (Command.process("project querkiServer", _: State)) compose (onLoad in Global).value
 
