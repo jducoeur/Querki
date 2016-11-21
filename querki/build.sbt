@@ -50,6 +50,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // TEMP: until we have persistence up and running, we need this in order to
       // help Cluster Sharding work. Note there are corresponding entries in .conf:
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
+      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
       // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
       "com.lihaoyi" %% "pprint" % "0.4.1",
       // Powerful structural-diffing library: https://github.com/xdotai/diff
@@ -143,7 +144,7 @@ lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")
   jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"    
+      "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
     ),
     EclipseKeys.useProjectId := true
   )
@@ -156,7 +157,6 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.5.5",
   "com.lihaoyi" %%% "fastparse" % "0.2.1",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "org.querki" %%% "shocon" % "0.3"
 ))
 
