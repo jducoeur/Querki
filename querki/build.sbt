@@ -115,14 +115,14 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   buildInfoPackage := "querki",
   
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+    "org.scala-js" %%% "scalajs-dom" % "0.9.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-    "org.querki" %%% "querki-jsext" % "0.7",
-    "org.querki" %%% "jquery-facade" % "1.0-RC6",
-    "org.querki" %%% "bootstrap-datepicker-facade" % "0.7",
+    "org.querki" %%% "querki-jsext" % "0.8",
+    "org.querki" %%% "jquery-facade" % "1.0",
+    "org.querki" %%% "bootstrap-datepicker-facade" % "0.8",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
-    "org.querki" %%% "jstree-facade" % "0.4"
+    "org.querki" %%% "jstree-facade" % "0.5"
   )).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).
   dependsOn(querkiSharedJs)
