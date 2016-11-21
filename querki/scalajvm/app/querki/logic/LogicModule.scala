@@ -155,7 +155,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  }
 	}
 	
-  def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
+  def compareValues(firstIn:QValue, secondIn:QValue, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
   	var first = firstIn
 	  var second = secondIn
     
@@ -166,7 +166,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         case Some(coerced) => first = coerced
         case None => second.coerceTo(first.pType.realType) match {
           case Some(coerced) => second = coerced
-          case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
+          case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName, method)
         }
       }
     }
@@ -183,12 +183,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   /**
    * The general pattern for binary operators.
    */
-  def binaryComparer(inv:Invocation)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QFut = {
+  def binaryComparer(inv:Invocation, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QFut = {
   	for {
   	  first <- inv.processParamNofM(0, 2)
   	  second <- inv.processParamNofM(1, 2)
   	}
-  	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))
+  	  yield boolean2YesNoQValue(compareValues(first, second, method)(comparer))
   }
 	
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
@@ -209,7 +209,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv)( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
+  	  binaryComparer(inv, "_equals")( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
   	}
   }
 	
@@ -231,7 +231,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv)( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
+  	  binaryComparer(inv, "_lessThan")( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
   	}
   }
 	
@@ -253,7 +253,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
   {  
   	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv) { (pt, elem1, elem2) =>
+  	  binaryComparer(inv, "_greaterThan") { (pt, elem1, elem2) =>
   	    // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
   	    // the first. So we need to also do an equality comparison.
   	    !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
