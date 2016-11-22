@@ -521,13 +521,16 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         |of the received Thing.
         |
         |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
-        |ambiguous -- it always refers to one specific Thing.""".stripMargin)))
+        |ambiguous -- it always refers to one specific Thing.
+        |
+        |**Advanced:** This can be used to print out OIDs that do *not* correspond to Things in this Space. This is
+        |rarely useful, but is useful for a few very advanced situations.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        thing <- inv.contextAllThings
+        oid <- inv.contextAllAs(LinkType)
       }
-        yield Basic.TextValue(thing.id.toThingId)
+        yield Basic.TextValue(oid.toThingId)
     }
   }
 

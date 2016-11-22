@@ -46,7 +46,7 @@ class UserValueSpacePlugin[RM[_]](s:SpaceAPI[RM], rtc:RTCAble[RM])(implicit val 
   
   def receive = {
     case SpacePluginMsg(req, _, msg:SummarizeChange[_]) => {
-      space.runAndSendResponse("summarizeChange", summarizeChange(msg))(space.currentState)
+      space.runAndSendResponse("summarizeChange", false, summarizeChange(msg))(space.currentState)
     }
     
     case SpacePluginMsg(_, _, msg @ RecalculateSummaries(fromProp, summaryId, values)) => {

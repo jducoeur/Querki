@@ -101,6 +101,16 @@ private [spaces] object PersistMessages {
    * This will return either a Changed(), or ThingError.
    */
   case class CreateSpacePersist(ownerId:OID, spaceId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode)
+
+  /**
+   * This is a variant of CreateSpacePersist, that checks whether the Space already exists, and creates it if not.
+   * It is intended for creating standard "system" Spaces that are hardcoded in.
+   * 
+   * Responds with Changed() if it created the Space, or NoChangeNeeded() if not.
+   */
+  case class CreateSpaceIfMissing(ownerId:OID, spaceId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode)
+  
+  case class NoChangeNeeded(thingId:OID)
   
   /**
    * Command to fetch a Space by its path. OwnerId should be an Identity.

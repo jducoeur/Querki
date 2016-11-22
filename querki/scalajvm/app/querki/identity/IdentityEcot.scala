@@ -238,8 +238,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   lazy val ResolveIdentity = new InternalMethod(ResolveIdentityOID,
     toProps(
       setName("_resolveIdentity"),
-      Summary("Given a Link to an Identity, this fetches that Identity"),
-      Details("This function is currently a bit problematic. Please don't over-use it. Eventually it will be less dangerous.")))
+      Summary("Given a Link to an Identity, this fetches that Identity")))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {

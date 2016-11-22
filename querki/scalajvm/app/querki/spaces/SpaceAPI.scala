@@ -53,7 +53,7 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * of this transformation, and the resulting SpaceState. It then persists the events, updates the State
    * to the final State in the result list, and sends out the ThingFound/ThingError for the last entry.
    */
-  def runAndSendResponse(opName:String, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]]
+  def runAndSendResponse(opName:String, localCall:Boolean, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]]
   
   /**
    * Lower-level guts of runAndSendResponse. This runs the given functions, and persists them, but does *not*

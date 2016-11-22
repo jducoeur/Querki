@@ -75,7 +75,7 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
     case SpacePluginMsg(req, _, GetInstancePermissionsObject(thingId)) => {
       val state = api.currentState
       state.anything(thingId) match {
-        case Some(thing) => api.runAndSendResponse("getInstancePermissions", getInstancePermissionsThing(req, thing))(state)
+        case Some(thing) => api.runAndSendResponse("getInstancePermissions", true, getInstancePermissionsThing(req, thing))(state)
         case _ => api.respond(ThingError(PublicException("Thing.find.noSuch")))
       }
     }

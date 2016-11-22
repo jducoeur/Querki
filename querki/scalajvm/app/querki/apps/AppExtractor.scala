@@ -1,5 +1,6 @@
 package querki.apps
 
+import models.Thing.PropMap
 import querki.core.NameUtils
 import querki.data.TID
 import querki.globals._
@@ -12,6 +13,7 @@ trait AppExtractorSupport[RM[_]] {
   def createSpace(user:User, spaceId:OID, name:String, display:String):RM[OID]
   def setAppState(state:SpaceState):RM[Unit]
   def setChildState(state:SpaceState):RM[Any]
+  def addAppToGallery(props:PropMap):RM[Unit]
 }
 
 /**
@@ -34,7 +36,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
   implicit val rtc = rtcIn
   private implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
   
-  def extractApp(elements:Seq[TID], display:String):RM[Unit] = {
+  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):RM[Unit] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
@@ -55,8 +57,18 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       renumberedApp = remappedApp.copy(s = appId)
       // ... set the App's state...
       _ <- extractorSupport.setAppState(renumberedApp)
-      // ... and finally, update the child Space to reflect the new reality.
+      // ... update the child Space to reflect the new reality...
       _ <- extractorSupport.setChildState(hollowedSpace)
+      // ... and finally, add the App to the Gallery
+      props = 
+        Map(
+          Apps.GalleryAppId(remappedApp.id),
+          Basic.DisplayNameProp(display),
+          Apps.GalleryOwner(remappedApp.owner),
+          Apps.GallerySummary(summary),
+          Apps.GalleryDetails(details)
+        )
+      _ <- extractorSupport.addAppToGallery(props)
     }
       yield ()
   }

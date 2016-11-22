@@ -65,7 +65,9 @@ class ExtractAppTests extends QuerkiTests {
           original.page1.toTID,
           original.otherModel.toTID,
           original.other1.toTID), 
-        "My App")
+        "My App",
+        "My App Summary",
+        "My App Details")
       } catch {
         case ex:Exception => {
           QLog.error("Got an exception while trying to extract an app", ex)
@@ -182,6 +184,18 @@ class ExtractAppTests extends QuerkiTests {
       newChild.changeThing(other1, Basic.DisplayTextProp("This should fail!")) match {
         case Some(ThingError(ex, _)) => assert(ex.msgName == "Thing.find.noSuch")
         case other => fail(s"Changing Other 1 should have failed, but returned $other!")
+      }
+      
+      // Check that it got entered into the App Gallery:
+      {
+        implicit val g = newChild.world.getSpace(MOIDs.GallerySpaceOID)
+        implicit val gState = g.state
+        
+        pql("""[[_App Gallery Entry._instances -> Name]]""") should equal("My App")
+        pql("""[[_App Gallery Entry._instances -> _App Gallery Summary]]""") should equal("My App Summary")
+        pql("""[[_App Gallery Entry._instances -> _App Gallery Details]]""") should equal("My App Details")
+        pql("""[[_App Gallery Entry._instances -> _App Gallery Owner -> _oid]]""") should equal(appState.owner.toThingId.toString)
+        pql("""[[_App Gallery Entry._instances -> _App Gallery App Id -> _oid]]""") should equal(appState.id.toThingId.toString)
       }
     }
   }

@@ -4,7 +4,8 @@ import akka.actor.ActorRef
 
 import org.querki.requester._
 
-import models.{AsOID, ThingId}
+import models.{AsOID, Kind, ThingId}
+import models.Thing.PropMap
 
 import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
@@ -29,7 +30,9 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Cluster = interface[querki.cluster.QuerkiCluster]
   lazy val Core = interface[querki.core.Core]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Links = interface[querki.links.Links]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   lazy val System = interface[querki.system.System]
   
@@ -82,15 +85,22 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   def setChildState(state:SpaceState):RequestM[Any] = {
     spaceRouter.request(SetState(user, state.id, state))
   }
+  def addAppToGallery(props:PropMap):RequestM[Unit] = {
+    SpaceOps.spaceRegion.request(CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false)) map {
+      case ThingAck(_) => ()
+      case other => throw new Exception(s"appAppToGallery() got unexpected response $other")
+    }
+  }
+
   
   /**
    * Extracts an App from this Space, based on the received parameters.
    * 
    * Note that much of the guts of this enormous function is pulled out into separate classes.
    */
-  def extractApp(elements:Seq[TID], display:String):Future[Unit] = {
+  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):Future[Unit] = {
     val extractor = new AppExtractor(state, user)(RealRTCAble, this)
-    extractor.extractApp(elements, display)
+    extractor.extractApp(elements, display, summary, details)
   }
   
   val stylesheetId = querki.css.MOIDs.StylesheetBaseOID

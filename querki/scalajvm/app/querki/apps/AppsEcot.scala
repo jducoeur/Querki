@@ -1,10 +1,11 @@
 package querki.apps
 
+import akka.actor._
 import akka.pattern._
 import akka.util.Timeout
 import scala.concurrent.duration._
 
-import models.{Property}
+import models._
 
 import querki.api.commonName
 import querki.ecology._
@@ -14,12 +15,21 @@ import querki.spaces._
 import querki.spaces.messages.SpacePluginMsg
 import querki.util.{Contributor, Publisher}
 import querki.values.SpaceVersion
+import querki.spaces.StdSpaceCreator
 
 object MOIDs extends EcotIds(59) {
   val CanBeAppOID = moid(1)
   val CanManipulateAppsOID = moid(2)
   val ShadowFlagOID = moid(3)
   val ShadowedThingOID = moid(4)
+  
+  val GalleryEntryModelOID = moid(5)
+  val GallerySummaryOID = moid(6)
+  val GalleryDetailsOID = moid(7)
+  val GalleryOwnerOID = moid(8)
+  // This is the standard OID for the Gallery Space itself:
+  val GallerySpaceOID = moid(9)
+  val GalleryAppIdOID = moid(10)
 }
 
 /**
@@ -29,15 +39,31 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Basic = initRequires[querki.basic.Basic]
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
+  
+  def PlainTextType = Basic.PlainTextType
   
   override def postInit() = {
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[AppsFunctions, AppsFunctionsImpl](SpaceOps.spaceRegion, false)
     SpaceChangeManager.registerPluginProvider(this)
+  }
+  
+  override def createActors(createActorCb:CreateActorFunc):Unit = {
+    // Note that we create this Singleton, and then never talk to it. It basically boots, does its
+    // thing, and then doesn't do anything further.
+    val (mgr, proxy) = SystemManagement.createClusterSingleton(
+      createActorCb,
+      StdSpaceCreator.actorProps(GallerySpaceOID, "Querki App Gallery", "Querki App Gallery", ecology),
+      "GalleryCreator",
+      "UnuseGalleryProxyProxy",
+      PoisonPill
+    )
   }
   
   /**
@@ -142,11 +168,66 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
         |you can use the [[_shadowedThing._self]] function to go from a Shadow to the real Thing that
         |underlies it in the App.""".stripMargin)))
   
+  lazy val GallerySummary = new SystemProperty(GallerySummaryOID, PlainTextType, ExactlyOne,
+    toProps(
+      setName("_App Gallery Summary"),
+      setInternal,
+      Categories(AppsTag),
+      Summary("Specialized version of the usual Summary Property, which doesn't allow QL")))
+  
+  lazy val GalleryDetails = new SystemProperty(GalleryDetailsOID, PlainTextType, ExactlyOne,
+    toProps(
+      setName("_App Gallery Details"),
+      setInternal,
+      Categories(AppsTag),
+      Summary("Specialized version of the usual Details Property, which doesn't allow QL")))
+  
+  lazy val GalleryOwner = new SystemProperty(GalleryOwnerOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_App Gallery Owner"),
+      setInternal,
+      Categories(AppsTag),
+      Summary("The owner of this App")))
+  
+  lazy val GalleryAppId = new SystemProperty(GalleryAppIdOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_App Gallery App Id"),
+      setInternal,
+      Categories(AppsTag),
+      Summary("The OID of this App")))
+  
   override lazy val props = Seq(
     ShadowedThingFunction,
       
     CanUseAsAppPerm,
     CanManipulateAppsPerm,
-    ShadowFlag
+    ShadowFlag,
+    
+    GallerySummary,
+    GalleryDetails,
+    GalleryOwner,
+    GalleryAppId
+  )
+  
+  /***********************************************
+   * PROPERTIES
+   ***********************************************/
+  
+  lazy val GalleryEntryModel = ThingState(GalleryEntryModelOID, systemOID, Basic.SimpleThing,
+    toProps(
+      setName("_App Gallery Entry"),
+      Core.IsModelProp(true),
+      setInternal,
+      Categories(AppsTag),
+      Summary("An entry in the system-wide Public App Gallery"),
+      Basic.DisplayNameProp("_App Gallery Entry"),
+      GallerySummary(),
+      GalleryDetails(),
+      GalleryOwner()
+    )
+  )
+  
+  override lazy val things = Seq(
+    GalleryEntryModel
   )
 }

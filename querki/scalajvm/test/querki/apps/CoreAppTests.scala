@@ -4,6 +4,8 @@ import scala.util.{Success}
 
 import org.scalatest.Assertions._
 
+import models.Kind
+import models.Thing.PropMap
 import querki.globals._
 import querki.identity.User
 import querki.spaces._
@@ -13,6 +15,7 @@ import querki.values.SpaceVersion
 
 class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractorSupport[TCIdentity] {
   lazy val Apps = interface[Apps]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   def makeThisAnApp() = {
     val permProps = Apps.CanUseAsAppPerm(AccessControl.PublicTag)
@@ -47,6 +50,18 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   }
   def setChildState(state:SpaceState):TCIdentity[Any] = {
     success((this ! SetState(owner, state.id, state)).get)
+  }
+  def addAppToGallery(props:PropMap):TCIdentity[Unit] = {
+    val gallery = world.getSpaceOpt(MOIDs.GallerySpaceOID) match {
+      case Some(g:SpaceCoreSpaceBase) => g
+      case _ => new SpaceInWorldWith(this, Some(MOIDs.GallerySpaceOID))
+    }
+    val result = gallery ! CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false)
+    result match {
+      case Some(ThingAck(_)) =>
+      case other => throw new Exception(s"Adding app to Gallery resulting in $other")
+    }
+    success(())
   }
   
   /* ************************************** */

@@ -61,7 +61,14 @@ case class GetSpaceInfo(req:User, space:OID) extends SpaceMessage(req, space)
 case class SpaceId(id:OID)
 case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String)
 
-case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap) extends SpaceMessage(req, space)
+/**
+ * Create something.
+ * 
+ * IMPORTANT: the "localCall" parameter indicates that this request is coming from an Actor in the Space's
+ * own troupe. Iff not true, it means that we can't respond with a ThingFound(), so we respond with a simpler
+ * ThingAck() instead.
+ */
+case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(req, space)
 
 case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, space)
 
@@ -163,3 +170,6 @@ sealed trait SpaceResponse
 sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse
+// Specialized variant of ThingFound, solely for cross-node acknowledgement
+// TODO: this sucks. Come up with a better protocol, possibly using Akka Typed for inspiration.
+case class ThingAck(id:OID)

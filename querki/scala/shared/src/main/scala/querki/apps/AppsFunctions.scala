@@ -25,7 +25,7 @@ trait AppsFunctions {
   /**
    * Lift the specified elements from this Space into a newly-created App.
    */
-  def extractApp(elements:Seq[TID], name:String):Future[Unit]
+  def extractApp(elements:Seq[TID], name:String, summary:String, details:String):Future[Unit]
   
   /**
    * Fetches the list of Models that are available to Extract from this Space.

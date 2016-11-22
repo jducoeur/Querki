@@ -494,7 +494,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   /**
    * Simple wrapper around runChanges -- this runs them, and then sends the appropriate response.
    */
-  def runAndSendResponse(opName:String, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]] = {
+  def runAndSendResponse(opName:String, localCall:Boolean, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]] = {
     val result = runChanges(Seq(func))(state)
     
     // If there was an error, respond with that.
@@ -514,7 +514,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     // If it was successful, send the response for that.
     result.map { changes =>
-      changes.lastOption.foreach(change => change.changedThing.foreach(oid => respond(ThingFound(oid, change.resultingState))))
+      changes.lastOption.foreach(change => change.changedThing.foreach { oid =>
+        val msg = 
+          if (localCall)
+            ThingFound(oid, change.resultingState)
+          else
+            ThingAck(oid)
+        respond(msg)
+      })
       changes
     }
   }
@@ -569,7 +576,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
                 // yet exist, and _hasPermission gets confused:
 //                updateStateCore(s)
                 // This will cause the notifications to go out:
-                runAndSendResponse("createOwnerPerson", createOwnerPerson(identity))(s)
+                runAndSendResponse("createOwnerPerson", true, createOwnerPerson(identity))(s)
               } else {
                 // Normal situation:
                 updateState(s)
@@ -681,7 +688,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case SetState(who, spaceId, newState) => {
-      runAndSendResponse("setState", setState(who, newState))(currentState)
+      runAndSendResponse("setState", true, setState(who, newState))(currentState)
     }
     
     // This message is simple, since it isn't persisted:
@@ -689,8 +696,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       respond(SpaceInfo(currentState.id, currentState.name, currentState.displayName, currentState.ownerHandle))
     }
     
-    case CreateThing(who, spaceId, kind, modelId, props) => {
-      runAndSendResponse("createSomething", createSomething(who, modelId, props, kind))(currentState)
+    case CreateThing(who, spaceId, kind, modelId, props, localCall) => {
+      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind))(currentState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
@@ -698,7 +705,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     // world.
     case ChangeProps(who, spaceId, thingId, changedProps) => {
       val initialState = currentState
-      runAndSendResponse("changeProps", modifyThing(who, thingId, None, changedProps, false))(currentState).map { changes =>
+      runAndSendResponse("changeProps", true, modifyThing(who, thingId, None, changedProps, false))(currentState).map { changes =>
         // After we finish persisting everything, we need to deal with the possibility that
         // they've changed the name of the Space...
         changes.last.changedThing.map { lastThingId => 
@@ -721,11 +728,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
-      runAndSendResponse("modifyThing", modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
+      runAndSendResponse("modifyThing", true, modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      runAndSendResponse("deleteThing", deleteThing(who, thingId))(currentState)
+      runAndSendResponse("deleteThing", true, deleteThing(who, thingId))(currentState)
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything

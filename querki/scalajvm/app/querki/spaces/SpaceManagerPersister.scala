@@ -55,6 +55,72 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
   private val parseSpaceDetails =
     oid("id") ~ str("name") ~ str("display") ~ str("handle") map 
       { case id ~ name ~ display ~ ownerHandle => SpaceDetails(AsName(name), id, display, AsName(ownerHandle)) }
+  
+  def doCreateSpace(owner:OID, spaceId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode) = {
+    try {
+      QDB(System) { implicit conn =>
+        val numWithName = SQL("""
+            SELECT COUNT(*) AS c from Spaces 
+             WHERE owner = {owner} AND name = {name} AND status = 0
+            """)
+          .on("owner" -> owner.raw, "name" -> name)
+          .as(long("c").single)
+        if (numWithName > 0) {
+          throw new PublicException("Space.create.alreadyExists", name)
+        }
+      
+        if (userMaxSpaces < Int.MaxValue) {
+          val numOwned = SQL("""
+                SELECT COUNT(*) AS count FROM Spaces
+                WHERE owner = {owner} AND status = 0
+                """)
+              .on("owner" -> owner.id.raw)
+              .as(long("count").single)
+          if (numOwned >= userMaxSpaces)
+            throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
+        }
+      }
+      
+//        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>
+        // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
+        // part into System. That's unfortunate, but kind of a consequence of the architecture.
+        // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
+        // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
+        // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
+        // of the updates in the first transaction block failed, and the table was nonetheless created.
+        // TODO: once Conversations and User Values have been moved to Akka Persistence, we should no longer need
+        // to create and evolve the Space Table here. At that point, only the insertion into the Spaces table should
+        // be needed any more.
+        QDB(User) { implicit conn =>
+          SpacePersistence.SpaceSQL(spaceId, """
+              CREATE TABLE {tname} (
+                id bigint NOT NULL,
+                model bigint NOT NULL,
+                kind int NOT NULL,
+                props MEDIUMTEXT NOT NULL,
+                PRIMARY KEY (id))
+                DEFAULT CHARSET=utf8
+              """).executeUpdate()
+        }
+        QDB(System) { implicit conn =>
+          SQL("""
+              INSERT INTO Spaces
+              (id, shard, name, display, owner, size, status) VALUES
+              ({sid}, {shard}, {name}, {display}, {ownerId}, 0, {status})
+              """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
+                      "display" -> display, "ownerId" -> owner.raw, "status" -> initialStatus.underlying).executeUpdate()
+        }
+        QDB(User) { implicit conn =>
+          // We need to evolve the Space before we try to create anything in it:
+          Evolutions.checkEvolution(spaceId, 1)
+        }
+        
+        sender ! Changed(spaceId, DateTime.now)
+//        } 
+    } catch {
+      case ex:PublicException => sender ! ThingError(ex)
+    }    
+  }
 
   def receive = {
     case ListMySpaces(owner) => {
@@ -93,68 +159,23 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     // =========================================
     
     case CreateSpacePersist(owner, spaceId, userMaxSpaces, name, display, initialStatus) => {
-      try {
-        QDB(System) { implicit conn =>
-          val numWithName = SQL("""
-              SELECT COUNT(*) AS c from Spaces 
-               WHERE owner = {owner} AND name = {name} AND status = 0
-              """)
-            .on("owner" -> owner.raw, "name" -> name)
-            .as(long("c").single)
-          if (numWithName > 0) {
-            throw new PublicException("Space.create.alreadyExists", name)
-          }
-        
-          if (userMaxSpaces < Int.MaxValue) {
-            val numOwned = SQL("""
-                  SELECT COUNT(*) AS count FROM Spaces
-                  WHERE owner = {owner} AND status = 0
-                  """)
-                .on("owner" -> owner.id.raw)
-                .as(long("count").single)
-            if (numOwned >= userMaxSpaces)
-              throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
-          }
-        }
-        
-//        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>
-          // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
-          // part into System. That's unfortunate, but kind of a consequence of the architecture.
-          // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
-          // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
-          // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
-          // of the updates in the first transaction block failed, and the table was nonetheless created.
-          // TODO: once Conversations and User Values have been moved to Akka Persistence, we should no longer need
-          // to create and evolve the Space Table here. At that point, only the insertion into the Spaces table should
-          // be needed any more.
-          QDB(User) { implicit conn =>
-            SpacePersistence.SpaceSQL(spaceId, """
-                CREATE TABLE {tname} (
-                  id bigint NOT NULL,
-                  model bigint NOT NULL,
-                  kind int NOT NULL,
-                  props MEDIUMTEXT NOT NULL,
-                  PRIMARY KEY (id))
-                  DEFAULT CHARSET=utf8
-                """).executeUpdate()
-          }
-          QDB(System) { implicit conn =>
-            SQL("""
-                INSERT INTO Spaces
-                (id, shard, name, display, owner, size, status) VALUES
-                ({sid}, {shard}, {name}, {display}, {ownerId}, 0, {status})
-                """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
-                        "display" -> display, "ownerId" -> owner.raw, "status" -> initialStatus.underlying).executeUpdate()
-          }
-          QDB(User) { implicit conn =>
-            // We need to evolve the Space before we try to create anything in it:
-            Evolutions.checkEvolution(spaceId, 1)
-          }
-          
-          sender ! Changed(spaceId, DateTime.now)
-//        } 
-      } catch {
-        case ex:PublicException => sender ! ThingError(ex)
+      doCreateSpace(owner, spaceId, userMaxSpaces, name, display, initialStatus)
+    }
+    
+    case CreateSpaceIfMissing(owner, spaceId, userMaxSpaces, name, display, initialStatus) => {
+      val numFound = QDB(System) { implicit conn =>
+        SQL("""
+            SELECT COUNT(*) AS c from Spaces 
+             WHERE id = {id} AND status = 0
+            """)
+          .on("id" -> spaceId.raw)
+          .as(long("c").single)
+      }
+      
+      if (numFound > 0) {
+        sender ! NoChangeNeeded(spaceId)
+      } else {
+        doCreateSpace(owner, spaceId, userMaxSpaces, name, display, initialStatus)      
       }
     }
     
