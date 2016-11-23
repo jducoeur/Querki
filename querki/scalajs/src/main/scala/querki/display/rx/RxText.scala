@@ -11,15 +11,10 @@ import querki.globals._
 import querki.display.Gadget
 
 /**
- * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
+ * Some common functionality between RxText and RxTextArea.
  */
-class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
-  extends Gadget[dom.HTMLInputElement] with RxEmpty
-{
-  
-  def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
-  
-  private def curValue =
+trait RxTextBase[E <: dom.Element] extends Gadget[E] with RxEmpty {
+  protected def curValue =
     for {
       e <- elemOpt
       v = $(e).valueString
@@ -31,7 +26,7 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
   lazy val text = Rx { textOpt().getOrElse("") }
   lazy val isEmpty = Rx { textOpt().isEmpty }
   
-  def doRender() = input(tpe:=inputType, mods)
+  protected def update() = { textOpt() = curValue }
   
   def setValue(v:String) = {
     $(elem).value(v)
@@ -39,8 +34,17 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
   }
       
   def length = textOpt().map(_.length()).getOrElse(0)
+}
+
+/**
+ * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
+ */
+class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
+  extends RxTextBase[dom.HTMLInputElement]
+{
+  def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
   
-  private def update() = { textOpt() = curValue }
+  def doRender() = input(tpe:=inputType, mods)
   
   override def onCreate(e:dom.HTMLInputElement) = {
     // If a charFilter was specified, run each keystroke past it as a legality check:
@@ -77,3 +81,13 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
 }
 
 class RxText(mods:Modifier*)(implicit e:Ecology) extends RxInput("text", mods)
+
+class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
+  extends RxTextBase[dom.HTMLTextAreaElement]
+{
+  def doRender() = textarea(mods)
+  
+  override def onCreate(e:dom.HTMLTextAreaElement) = {
+    $(e).on("input", { e:dom.Element => update() })    
+  }
+}

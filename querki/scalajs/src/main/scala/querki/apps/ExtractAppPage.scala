@@ -13,7 +13,7 @@ import org.querki.facades.jstree._
 
 import querki.api.ThingFunctions
 import querki.data.{ThingInfo}
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget, Gadget, QText}
 import querki.display.rx._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
@@ -32,7 +32,14 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   
   val extractTree = GadgetRef[ExtractTree]
   val appNameInput = GadgetRef[RxText]
-  val appNameEmpty = Rx { appNameInput.flatMap(_.textOpt()).map { _.isEmpty }.getOrElse(true) }
+  val summaryInput = GadgetRef[RxText]
+  val detailsInput = GadgetRef[RxTextArea]
+  
+  val notReady = Rx { 
+    appNameInput.isContentEmpty() ||
+    summaryInput.isContentEmpty() ||
+    detailsInput.isContentEmpty()
+  }
   
   def pageContent = {
     for {
@@ -43,6 +50,18 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
       guts = 
         div(
           h1("Extract an App"),
+          QText("""This page lets you create an **App** based on this Space. You do this by "extracting" the structure
+                  |of the Space into the App, while leaving the data here. Afterwards, your Space will look essentially the
+                  |same, but you will now have an App that can be shared with others.
+                  |
+                  |For the time being, all Apps are public, and will appear in Querki's public App Gallery. By using this
+                  |feature, you are agreeing to let Querki share this App with everyone.""".stripMargin),
+          p("What should the new App be named?"),
+          appNameInput <= new RxText(),
+          p("Briefly describe the new App"),
+          summaryInput <= new RxText(),
+          p("Give a bit more description of the new App"),
+          detailsInput <= new RxTextArea(),
           p("In the list below, select the Models and Instances to lift into the new App."),
           p("""Initially, all Models and all Pages (Things based on Simple Thing) are selected. That is often just what you want,
               |but you can uncheck anything you don't want to have in the new App. You can also open a Model and add some or all of
@@ -50,10 +69,8 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
               |the ones that are part of the data of this Space.""".stripMargin),
           p("Any local Properties that are used by these Models and Pages will automatically be lifted into the App"),
           extractTree <= new ExtractTree(models, sortedPages),
-          p("What should the new App be named?"),
-          appNameInput <= new RxText(),
           p("When you have selected the elements you would like to bring into the App, press this button."),
-          new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space", disabled := appNameEmpty)
+          new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space", disabled := notReady)
           ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))

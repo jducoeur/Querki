@@ -65,6 +65,10 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
   }
 }
 
+object QText {
+  def apply(text:String)(implicit ecology:Ecology) = new QText(Wikitext(text))
+}
+
 /**
  * Minimalist container for inline-structured contents from the server.
  */
