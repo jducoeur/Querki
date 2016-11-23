@@ -17,12 +17,13 @@ trait RxEmptyable[T] {
 }
 
 object RxEmptyable {
-  implicit object RxEmptyableTextArea extends RxEmptyable[RxTextArea] {
-    def rxEmpty(elem:RxTextArea) = Rx { elem.textOpt().isEmpty }
-  }
-  implicit def RxEmptyableInput[T <: RxInput] = new RxEmptyable[T] {
+  implicit def RxEmptyableText[T <: RxTextBase[_]] = new RxEmptyable[T] {
     def rxEmpty(elem:T) = Rx { elem.textOpt().isEmpty }
   }
+  /**
+   * High-level version of .rxEmpty for GadgetRef -- basically, if the contained Gadget is itself
+   * RxEmptyable, then the GadgetRef is as well.
+   */
   implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable] = new RxEmptyable[GadgetRef[G]] {
     def rxEmpty(ref:GadgetRef[G]):Rx[Boolean] = {
       ref.map { g =>
