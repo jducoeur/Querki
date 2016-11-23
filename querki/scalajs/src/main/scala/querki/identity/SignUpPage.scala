@@ -11,6 +11,7 @@ import querki.comm._
 import querki.data.UserInfo
 import querki.display.ButtonGadget
 import querki.display.rx._
+import RxEmptyable._
 import querki.ecology._
 import querki.globals._
 import querki.pages._
@@ -41,7 +42,7 @@ class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
   lazy val emailOkay = Rx { emailInput.map(_.text().matches(emailRegex)).getOrElse(false) }
   lazy val passwordOkay = Rx { passwordInput.mapOrElse(_.length >= 8, false) }
   lazy val handleOkay = Rx { handleInput.mapOrElse(_.length >= 4, false) }
-  lazy val displayOkay = Rx { !displayInput.isContentEmpty() }
+  lazy val displayOkay = Rx { !displayInput.rxEmpty() }
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   lazy val signupEnabled = Rx { 

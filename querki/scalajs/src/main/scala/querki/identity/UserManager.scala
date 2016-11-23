@@ -11,6 +11,7 @@ import querki.globals._
 import querki.data.UserInfo
 import querki.display._
 import querki.display.rx._
+import RxEmptyable._
 import querki.pages.Page
 
 class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
@@ -64,7 +65,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
         passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2)
       ),
-      (ButtonGadget.Primary, Seq("Log in", disabled := Rx{ handleInput.get.isEmpty() || passwordInput.get.isEmpty() }, tabindex := 3), { dialog =>
+      (ButtonGadget.Primary, Seq("Log in", disabled := Rx{ handleInput.rxEmpty() || passwordInput.rxEmpty() }, tabindex := 3), { dialog =>
         doLogin()
       })
     )

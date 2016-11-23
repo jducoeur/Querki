@@ -13,7 +13,7 @@ import querki.display.Gadget
 /**
  * Some common functionality between RxText and RxTextArea.
  */
-trait RxTextBase[E <: dom.Element] extends Gadget[E] with RxEmpty {
+trait RxTextBase[E <: dom.Element] extends Gadget[E] {
   protected def curValue =
     for {
       e <- elemOpt
@@ -24,7 +24,6 @@ trait RxTextBase[E <: dom.Element] extends Gadget[E] with RxEmpty {
   
   lazy val textOpt = Var[Option[String]](curValue)
   lazy val text = Rx { textOpt().getOrElse("") }
-  lazy val isEmpty = Rx { textOpt().isEmpty }
   
   protected def update() = { textOpt() = curValue }
   

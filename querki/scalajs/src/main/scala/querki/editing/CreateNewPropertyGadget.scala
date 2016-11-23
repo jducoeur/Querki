@@ -11,6 +11,7 @@ import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, Gadget}
 import ButtonGadget._
 import querki.display.rx._
+import RxEmptyable._
 import querki.globals._
 import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils
@@ -145,7 +146,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     (pointerModelChoice.map { _.selectedValOpt() match {
       case Some(PointsToAny) => true
       case Some(PointsToExisting) => pointerModelSelector.map(_.selectedValOpt().isDefined).getOrElse(false)
-      case Some(PointsToNew) => pointerModelName.map(name => !(name.isEmpty())).getOrElse(false)
+      case Some(PointsToNew) => pointerModelName.map(name => !(name.rxEmpty())).getOrElse(false)
       case _ => false
     }}.getOrElse(false))
   }

@@ -206,19 +206,4 @@ class GadgetElementRef[T <: dom.Element](implicit e:Ecology) extends GadgetRef[G
 object GadgetRef {
   def apply[G <: Gadget[_]](implicit e:Ecology) = new GadgetRef[G]
   def of[T <: dom.Element](implicit e:Ecology) = new GadgetElementRef[T]
-  
-  /**
-   * Convenience wrapper, allowing the common notion of "emptiness" to propagate up. Note that
-   * a not-yet-defined GadgetRef is automatically "empty".
-   */
-  implicit class GadgetRefEmpty[T <: RxEmpty with Gadget[_]](ref:GadgetRef[T]) {
-    def isContentEmpty:Rx[Boolean] = ref.map(_.isEmpty).getOrElse(Rx{true})
-  }
-}
-
-/**
- * Useful trait for Rx types that have a concept of "emptiness". Yes, this should probably be a typeclass.
- */
-trait RxEmpty {
-  def isEmpty:Rx[Boolean]
 }

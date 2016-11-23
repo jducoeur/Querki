@@ -15,6 +15,7 @@ import querki.api.ThingFunctions
 import querki.data.{ThingInfo}
 import querki.display.{ButtonGadget, Gadget, QText}
 import querki.display.rx._
+import RxEmptyable._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 
@@ -36,9 +37,9 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   val detailsInput = GadgetRef[RxTextArea]
   
   val notReady = Rx { 
-    appNameInput.isContentEmpty() ||
-    summaryInput.isContentEmpty() ||
-    detailsInput.isContentEmpty()
+    appNameInput.rxEmpty() ||
+    summaryInput.rxEmpty() ||
+    detailsInput.rxEmpty()
   }
   
   def pageContent = {
