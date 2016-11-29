@@ -18,6 +18,7 @@ import querki.display.rx._
 import RxEmptyable._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
+import querki.util.InputUtils
 
 import AppsFunctions._
 
@@ -32,7 +33,7 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   val extractTree = GadgetRef[ExtractTree]
-  val appNameInput = GadgetRef[RxText]
+  val appNameInput = GadgetRef[RxInput]
   val summaryInput = GadgetRef[RxText]
   val detailsInput = GadgetRef[RxTextArea]
   
@@ -57,13 +58,15 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
                   |
                   |For the time being, all Apps are public, and will appear in Querki's public App Gallery. By using this
                   |feature, you are agreeing to let Querki share this App with everyone.""".stripMargin),
-          p("What should the new App be named?"),
-          appNameInput <= new RxText(),
-          p("Briefly describe the new App"),
-          summaryInput <= new RxText(),
-          p("Give a bit more description of the new App"),
-          detailsInput <= new RxTextArea(),
-          p("In the list below, select the Models and Instances to lift into the new App."),
+          br(), p(b("What should the new App be named?")),
+          appNameInput <= new RxInput(
+            Some(InputUtils.spaceNameFilter _), "text", 
+            id:="_newAppName", cls:="form-control", maxlength:=254, tabindex:=200),
+          br(), p(b("Briefly (one line) describe the new App")),
+          summaryInput <= new RxText(id:="_appSummary", cls:="form-control"),
+          br(), p(b("Give a bit more description of the new App")),
+          detailsInput <= new RxTextArea(id:="_appDetails", cls:="_largeTextEdit form-control"),
+          br(), p(b("In the list below, select the Models and Instances to lift into the new App.")),
           p("""Initially, all Models and all Pages (Things based on Simple Thing) are selected. That is often just what you want,
               |but you can uncheck anything you don't want to have in the new App. You can also open a Model and add some or all of
               |its Instances. In general, you want to includes all Things that are part of the structure of this App, but not

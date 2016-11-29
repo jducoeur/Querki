@@ -9,6 +9,7 @@ import rx.ops._
 import querki.globals._
 
 import querki.display.Gadget
+import querki.display.input.AutosizeFacade._
 
 /**
  * Some common functionality between RxText and RxTextArea.
@@ -87,6 +88,7 @@ class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
   def doRender() = textarea(mods)
   
   override def onCreate(e:dom.HTMLTextAreaElement) = {
-    $(e).on("input", { e:dom.Element => update() })    
+    $(e).on("input", { e:dom.Element => update() })
+    $(e).autosize()
   }
 }
