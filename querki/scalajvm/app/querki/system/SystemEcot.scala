@@ -62,6 +62,7 @@ object SystemMOIDs extends EcotIds(18)
 
 class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncInitTarget:ActorRef) extends QuerkiEcot(e) with System with SystemManagement {
   
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Tags = interface[querki.tags.Tags]
@@ -124,8 +125,8 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncIni
         setName("System"),
         Basic.DisplayTextProp(defaultSpaceRootView),
         Tags.ShowUnknownProp(querki.tags.defaultDisplayText),
-        Conventions.PropSummary(),
-        Conventions.PropDetails()))
+        Apps.GallerySummary(),
+        Apps.GalleryDetails()))
     _state = Some(state)
   }
   

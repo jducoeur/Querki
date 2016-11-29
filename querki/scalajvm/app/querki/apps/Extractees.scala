@@ -23,6 +23,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
   
   private lazy val AccessControl = interface[querki.security.AccessControl]
   private lazy val Apps = interface[Apps]
+  private lazy val Basic = interface[querki.basic.Basic]
   private lazy val Core = interface[querki.core.Core]
   private lazy val System = interface[querki.system.System]
   
@@ -36,7 +37,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
    * fair assumption -- a lot of things will break if there are -- but do we need to sanity-check
    * for that?
    */
-  def computeExtractees(elements:Seq[TID], name:String, owner:User)(implicit state:SpaceState):Extractees = {
+  def computeExtractees(elements:Seq[TID], name:String, canon:String, owner:User)(implicit state:SpaceState):Extractees = {
     val oids = elements
       .map(tid => ThingId(tid.underlying))
       .collect { case AsOID(oid) => oid }
@@ -72,11 +73,11 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       )
       
     val init = Extractees(initState, Set.empty, extractState)
-    val withRoot = extractStateRoot(init)
+    val withRoot = extractStateRoot(init, name, canon)
     (withRoot /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
   }
   
-  private def extractStateRoot(in:Extractees)(implicit state:SpaceState):Extractees = {
+  private def extractStateRoot(in:Extractees, name:String, canon:String)(implicit state:SpaceState):Extractees = {
     if (in.extractState) {
       // If the Space depends on local Properties, make sure to include those, too:
       val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
@@ -84,7 +85,8 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       // Actually copy in the Space's Properties, *except* for the Name.
       // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
       // multi-level Apps. (And enhance the SpaceBuilder accordingly.) One step at a time, though.
-      withProps.copy(state = s.copy(pf = (state.pf - Core.NameProp.id)))
+      withProps.copy(state = 
+        s.copy(pf = (state.pf - Core.NameProp.id - Basic.DisplayNameProp.id) + Core.NameProp(canon) + Basic.DisplayNameProp(name)))
     } else
       in
   }

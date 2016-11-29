@@ -20,26 +20,38 @@ class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
   lazy val spaceInfo = DataAccess.space.get
   
   def pageContent = {
-    val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.summaryProp.oid).call()
-    val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.detailsProp.oid).call()
+    val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.summaryProp.oid).call()
+    val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.detailsProp.oid).call()
     
     for {
       summaryOpt <- summaryFut
       summaryText = summaryOpt.getOrElse(Wikitext.empty)
       detailsOpt <- detailsFut
       detailsText = detailsOpt.getOrElse(Wikitext.empty)
+      allowExtract = DataAccess.request.isOwner && (SkillLevel.current == SkillLevel.AdvancedComplexity)
       guts =
         div(
           h1(s"Info about ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
+          
           p(b(new QText(summaryText))),
           new QText(detailsText),
-          if (DataAccess.request.isOwner && (SkillLevel.current == SkillLevel.AdvancedComplexity)) {
-            div(
+          
+          // Do we show the Apps section?
+          if (allowExtract || !spaceInfo.apps.isEmpty) {
+            MSeq(
               h2("Apps"),
-              a(
-                cls:="btn btn-default btn-xs btn-primary_noPrint", 
-                href:=Apps.extractAppFactory.pageUrl(),
-                "Extract an App from this Space")
+              for (app <- spaceInfo.apps)
+                yield QText(
+                  s"""**${IndexPage.spaceLink(app)}**"""),
+              
+              if (allowExtract) {
+                div(
+                  a(
+                    cls:="btn btn-default btn-xs btn-primary_noPrint", 
+                    href:=Apps.extractAppFactory.pageUrl(),
+                    "Extract an App from this Space")
+                )
+              }
             )
           }
         )

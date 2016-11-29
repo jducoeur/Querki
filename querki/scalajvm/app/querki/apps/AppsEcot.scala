@@ -170,17 +170,21 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
   
   lazy val GallerySummary = new SystemProperty(GallerySummaryOID, PlainTextType, ExactlyOne,
     toProps(
-      setName("_App Gallery Summary"),
+      setName(commonName(_.apps.summaryProp)),
       setInternal,
       Categories(AppsTag),
-      Summary("Specialized version of the usual Summary Property, which doesn't allow QL")))
+      Summary("""This is a specialized version of the standard Summary Property, designed for using on the
+        |Space or App itself. For security reasons, it does not allow you to use any QL expressions, but you
+        |can use all the usual QText markup.""".stripMargin)))
   
   lazy val GalleryDetails = new SystemProperty(GalleryDetailsOID, PlainTextType, ExactlyOne,
     toProps(
-      setName("_App Gallery Details"),
+      setName(commonName(_.apps.detailsProp)),
       setInternal,
       Categories(AppsTag),
-      Summary("Specialized version of the usual Details Property, which doesn't allow QL")))
+      Summary("""This is a specialized version of the standard Details Property, designed for using on the
+        |Space or App itself. For security reasons, it does not allow you to use any QL expressions, but you
+        |can use all the usual QText markup.""".stripMargin)))
   
   lazy val GalleryOwner = new SystemProperty(GalleryOwnerOID, LinkType, ExactlyOne,
     toProps(
@@ -210,7 +214,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
   )
   
   /***********************************************
-   * PROPERTIES
+   * THINGS
    ***********************************************/
   
   lazy val GalleryEntryModel = ThingState(GalleryEntryModelOID, systemOID, Basic.SimpleThing,

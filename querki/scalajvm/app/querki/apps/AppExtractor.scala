@@ -44,7 +44,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
     val canon = NameUtils.canonicalize(display)
     
     // First, take the list of Things to extract, and turn it into the State of the prospective App...
-    val extractees = computeExtractees(elements, display, user)(state)
+    val extractees = computeExtractees(elements, display, canon, user)(state)
     val appState = extractees.state
     for {
       // ... take extractees.extractState -- the raw version of the App -- and produce a version of it that
@@ -54,8 +54,14 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       hollowedSpace = hollowSpace(extractees, state, remappedApp, idMap)
       // ... create the App itself...
       appId <- extractorSupport.createSpace(user, remappedApp.id, canon, display)
-      // ... update its OID...
-      renumberedApp = remappedApp.copy(s = appId)
+      // ... update its OID and other props...
+      renumberedApp = 
+        remappedApp.copy(
+          s = appId,
+          pf = 
+            remappedApp.props
+            + Apps.GallerySummary(summary)
+            + Apps.GalleryDetails(details))
       // ... set the App's state...
       finalAppState <- extractorSupport.setAppState(renumberedApp)
       finalChildState = hollowedSpace.copy(

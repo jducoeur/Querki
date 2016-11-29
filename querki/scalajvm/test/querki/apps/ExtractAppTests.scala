@@ -199,8 +199,8 @@ class ExtractAppTests extends QuerkiTests {
         implicit val gState = g.state
         
         pql("""[[_App Gallery Entry._instances -> Name]]""") should equal("My App")
-        pql("""[[_App Gallery Entry._instances -> _App Gallery Summary]]""") should equal("My App Summary")
-        pql("""[[_App Gallery Entry._instances -> _App Gallery Details]]""") should equal("My App Details")
+        pql("""[[_App Gallery Entry._instances -> _Space Summary]]""") should equal("My App Summary")
+        pql("""[[_App Gallery Entry._instances -> _Space Details]]""") should equal("My App Details")
         pql("""[[_App Gallery Entry._instances -> _App Gallery Owner -> _oid]]""") should equal(appState.owner.toThingId.toString)
         pql("""[[_App Gallery Entry._instances -> _App Gallery App Id -> _oid]]""") should equal(appState.id.toThingId.toString)
       }
