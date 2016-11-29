@@ -189,12 +189,13 @@ class ReplayCoreSpace(oldSpace:SpaceCoreSpaceBase)(implicit e:Ecology) extends S
 
 class SpaceCoreTests extends QuerkiTests {  
   "SpaceCoreSpace" should {
-    "throw an exception if it doesn't start with InitialState" in {
+    // This used to throw an Exception, but the result was that, if a Space was corrupted, it
+    // was completely stuck: you couldn't even open it to archive it. So we're now being more
+    // forgiving, and just logging an error.
+    "no longer throw an exception if it doesn't start with InitialState" in {
       implicit val s = new SpaceCoreSpace
 
-      intercept[Exception] {
-        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-      }
+      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
     }
   }
 }

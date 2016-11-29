@@ -42,9 +42,14 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
     val app = new SpaceInWorldWith(this, Some(spaceId))
     success(app.spaceId)
   }
-  def setAppState(state:SpaceState):TCIdentity[Unit] = {
+  def setAppState(state:SpaceState):TCIdentity[SpaceState] = {
     world.getSpace(state.id) match {
-      case app:SpaceCoreSpaceBase => success((app ! SetState(owner, state.id, state)).get)
+      case app:SpaceCoreSpaceBase => {
+        (app ! SetState(owner, state.id, state)).get match {
+          case ThingFound(_, newState) => success(newState)
+          case other => throw new Exception(s"setAppState got unexpected return value $other")
+        }
+      }
       case _ => throw new Exception(s"Trying to set appState for non-Core Space ${state.id}!")
     }
   }

@@ -90,7 +90,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
    * Tells any outside systems about the updated state.
    */
   def notifyUpdateState():Unit = {
-    stateRouter ! CurrentState(_currentState.get)
+    stateRouter ! CurrentState(currentState)
   }
   
   /**
@@ -173,10 +173,11 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
    * its Apps in place. 
    */
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RequestM[SpaceState] = {
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, 0, version.v)
+    val appPersistenceId = toPersistenceId(appId)
+    val source = readJournal.currentEventsByPersistenceId(appPersistenceId, 0, version.v)
     implicit val mat = ActorMaterializer()
     loopback {
-      source.runFold(emptySpace) { case ((curState, EventEnvelope(offset, persistenceId, sequenceNr, evt:SpaceEvent))) =>
+      source.runFold(emptySpace.copy(s = appId)) { case ((curState, EventEnvelope(offset, appPersistenceId, sequenceNr, evt:SpaceEvent))) =>
         evolveState(Some(curState))(evt)
       }
     } flatMap { loadedState =>

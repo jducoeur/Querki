@@ -11,7 +11,8 @@ import querki.spaces.messages._
 trait AppExtractorSupport[RM[_]] {
   def getOIDs(nRequested:Int):RM[Seq[OID]]
   def createSpace(user:User, spaceId:OID, name:String, display:String):RM[OID]
-  def setAppState(state:SpaceState):RM[Unit]
+  // Sets the State of the App (identified by state.id). Returns the State of the App after saving.
+  def setAppState(state:SpaceState):RM[SpaceState]
   def setChildState(state:SpaceState):RM[Any]
   def addAppToGallery(props:PropMap):RM[Unit]
 }
@@ -56,15 +57,18 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       // ... update its OID...
       renumberedApp = remappedApp.copy(s = appId)
       // ... set the App's state...
-      _ <- extractorSupport.setAppState(renumberedApp)
+      finalAppState <- extractorSupport.setAppState(renumberedApp)
+      finalChildState = hollowedSpace.copy(
+        apps = hollowedSpace.apps :+ finalAppState, 
+        appInfo = hollowedSpace.appInfo :+ (finalAppState.id, finalAppState.version))
       // ... update the child Space to reflect the new reality...
-      _ <- extractorSupport.setChildState(hollowedSpace)
+      _ <- extractorSupport.setChildState(finalChildState)
       // ... and finally, add the App to the Gallery
       props = 
         Map(
-          Apps.GalleryAppId(remappedApp.id),
+          Apps.GalleryAppId(finalAppState.id),
           Basic.DisplayNameProp(display),
-          Apps.GalleryOwner(remappedApp.owner),
+          Apps.GalleryOwner(finalAppState.owner),
           Apps.GallerySummary(summary),
           Apps.GalleryDetails(details)
         )

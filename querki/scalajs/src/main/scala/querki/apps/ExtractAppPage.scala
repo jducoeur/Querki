@@ -75,12 +75,8 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
           ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), "PLACE SUMMARY HERE", "PLACE DETAILS HERE").call() foreach { _ =>
-//              ProgressDialog.showDialog(
-//                s"extracting App", 
-//                handle, 
-//                Apps.appMgmtFactory.showPage(), 
-//                StatusLine.showBriefly(s"Error while extracting an App!"))              
+            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), summaryInput.get.text(), detailsInput.get.text()).call() foreach { _ =>
+              Pages.infoFactory.showPage()
             }
           }),
           new ButtonGadget(ButtonGadget.Normal, "Cancel")({() => Pages.showSpacePage(DataAccess.space.get)})

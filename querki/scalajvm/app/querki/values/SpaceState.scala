@@ -260,8 +260,8 @@ case class SpaceState(
     addTable(things) ++
     addTable(spaceProps) ++
     addTable(types) ++
-    addTable(colls) +
-    (NameUtils.canonicalize(canonicalName.get) -> this)
+    addTable(colls) ++
+    canonicalName.map { s => (NameUtils.canonicalize(s) -> this) }
   }
   
   private def anythingByNameCore(state:SpaceState, name:String):Option[Thing] = {

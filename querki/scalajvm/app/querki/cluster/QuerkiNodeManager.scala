@@ -159,9 +159,9 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
   }
   
   def receive = handleRequestResponse orElse {
-    case OIDAllocator.NextOID => {
+    case msg:OIDAllocator.AllocMessage => {
       _allocator match {
-        case Some(alloc) => alloc.forward(OIDAllocator.NextOID)
+        case Some(alloc) => alloc.forward(msg)
         case None => stash()
       }
     }

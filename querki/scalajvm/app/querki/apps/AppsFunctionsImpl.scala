@@ -66,21 +66,21 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
    * These functions provide the Akka glue for extractApp(). They are replaced with dummies for unit testing.
    */
   def getOIDs(nRequested:Int):RequestM[Seq[OID]] = {
-    Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids) 
+    Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids)
   }
   def createSpace(user:User, spaceId:OID, name:String, display:String):RequestM[OID] = {
     createSpace(user, spaceId, name, display, StatusNormal)
   }
-  def setAppState(state:SpaceState):RequestM[Unit] = {
+  def setAppState(state:SpaceState):RequestM[SpaceState] = {
     val appId = state.id
-    val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, ActorRef.noSender, appId))
+    val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, requester.self, appId))
     for {
       // ... give it its initial state...
-      ThingFound(_, _) <- appRef.request(SetState(user, appId, state))
+      ThingFound(_, newState) <- appRef.request(SetState(user, appId, state))
       // ... shut it down again...
       _ = context.stop(appRef)      
     }
-      yield ()
+      yield newState
   }
   def setChildState(state:SpaceState):RequestM[Any] = {
     spaceRouter.request(SetState(user, state.id, state))

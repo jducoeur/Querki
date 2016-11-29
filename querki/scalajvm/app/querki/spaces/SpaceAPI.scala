@@ -59,8 +59,10 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * Lower-level guts of runAndSendResponse. This runs the given functions, and persists them, but does *not*
    * send anything. Anything that is potentially being called cross-node should use this, since runAndSendResponse
    * sends the local-only ThingFound response.
+   * 
+   * Returns the ChangeResults, and the *final*, post-persistence SpaceState. (With an updated version number.)
    */
-  def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]]
+  def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[(List[ChangeResult], SpaceState)]
   
   /**
    * Fetches a set of new OIDs, for bulk operations.

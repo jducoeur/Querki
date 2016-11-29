@@ -44,9 +44,7 @@ private [apps] trait Hollower extends EcologyMember with SpacePure {
       else
         shadowed
         
-    hollowedSpace.copy(
-      apps = hollowedSpace.apps :+ appState, 
-      appInfo = hollowedSpace.appInfo :+ (appState.id, appState.version))
+    hollowedSpace
   }
   
   /**

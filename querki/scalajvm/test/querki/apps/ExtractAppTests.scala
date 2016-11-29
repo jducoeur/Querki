@@ -2,7 +2,7 @@ package querki.apps
 
 import models.AsName
 import querki.globals._
-import querki.spaces.SpaceCoreSpaceBase
+import querki.spaces.{ReplayCoreSpace, SpaceCoreSpaceBase}
 import querki.spaces.messages.ThingError
 import querki.test._
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
@@ -49,6 +49,34 @@ class ExtractAppTests extends QuerkiTests {
   
   lazy val Apps = interface[Apps]
   
+  def testChildSpace(original:SpaceToExtract, space:SpaceCoreSpaceBase, appState:SpaceState) = {
+    implicit val s = space
+    implicit val childState = s.state
+    val extractedByName = appState.anythingByName("Model 1").get
+    val shadowModel = childState.localFrom(original.model1.id, childState.things).get
+    assert(shadowModel.ifSet(Apps.ShadowFlag))
+    assert(shadowModel.localProp(original.textProp.oid).isEmpty)
+    val shadowModelParent = shadowModel.model
+    val extractedById = appState.localFrom(shadowModelParent, appState.things).get
+    
+    pql("""[[Model 1._instances]]""") should equal(listOfLinkText(original.instance11, original.instance12))
+    pql("""[[Instance 1 2 -> Text Property]]""") should equal("Default Text")
+    
+    val shadowComplexModel = childState.localFrom(original.model3.id, childState.things).get
+    assert(shadowComplexModel.ifSet(Apps.ShadowFlag))
+    assert(shadowComplexModel.localProp(original.propOfModelType.oid).isEmpty)
+    val shadowMetaModel = childState.localFrom(original.modelForType.id, childState.things).get
+    val shadowType = childState.localFrom(original.typeModel.t, childState.types).get
+    shadowType match {
+      case mt:ModelTypeBase => assert(mt.basedOn == shadowMetaModel.id)
+      case _ => fail(s"$shadowType is not a ModelTypeBase!")
+    }
+    pql("""[[Instance 3 1 -> Complex Prop -> Int Property]]""") should equal("")
+    pql("""[[Instance 3 2 -> Complex Prop -> Int Property]]""") should equal("17")
+    pql("""[[Instance 3 3 -> Complex Prop -> Text Property]]""") should equal("3 3 Value")
+    pql("""[[Page 1 -> Default View]]""") should equal("Page 1 View")    
+  }
+  
   "An extracted App" should {
     "work normally" in {
       //
@@ -82,36 +110,15 @@ class ExtractAppTests extends QuerkiTests {
 //      println(s"\nThe child State")
 //      QLog.spewState(original.state)
       
+      val appVersion = original.state.appInfo.head._2
+      assert(appVersion.v > 0)
+      assert(appVersion == appState.version)
+      assert(appVersion == appSpace.state.version)
+      
       //
       // Step 2: test the extraction
       //
-      {
-        implicit val s = original
-        implicit val childState = s.state
-        val extractedByName = appState.anythingByName("Model 1").get
-        val shadowModel = childState.localFrom(model1Id, childState.things).get
-        assert(shadowModel.ifSet(Apps.ShadowFlag))
-        assert(shadowModel.localProp(s.textProp.oid).isEmpty)
-        val shadowModelParent = shadowModel.model
-        val extractedById = appState.localFrom(shadowModelParent, appState.things).get
-        
-        pql("""[[Model 1._instances]]""") should equal(listOfLinkText(s.instance11, s.instance12))
-        pql("""[[Instance 1 2 -> Text Property]]""") should equal("Default Text")
-        
-        val shadowComplexModel = childState.localFrom(s.model3.id, childState.things).get
-        assert(shadowComplexModel.ifSet(Apps.ShadowFlag))
-        assert(shadowComplexModel.localProp(s.propOfModelType.oid).isEmpty)
-        val shadowMetaModel = childState.localFrom(s.modelForType.id, childState.things).get
-        val shadowType = childState.localFrom(s.typeModel.t, childState.types).get
-        shadowType match {
-          case mt:ModelTypeBase => assert(mt.basedOn == shadowMetaModel.id)
-          case _ => fail(s"$shadowType is not a ModelTypeBase!")
-        }
-        pql("""[[Instance 3 1 -> Complex Prop -> Int Property]]""") should equal("")
-        pql("""[[Instance 3 2 -> Complex Prop -> Int Property]]""") should equal("17")
-        pql("""[[Instance 3 3 -> Complex Prop -> Text Property]]""") should equal("3 3 Value")
-        pql("""[[Page 1 -> Default View]]""") should equal("Page 1 View")
-      }
+      testChildSpace(original, original, appState)
       
       //
       // Step 3: make a new Space based on the App
@@ -197,6 +204,12 @@ class ExtractAppTests extends QuerkiTests {
         pql("""[[_App Gallery Entry._instances -> _App Gallery Owner -> _oid]]""") should equal(appState.owner.toThingId.toString)
         pql("""[[_App Gallery Entry._instances -> _App Gallery App Id -> _oid]]""") should equal(appState.id.toThingId.toString)
       }
+      
+      //
+      // Step 5: check that reloading the extracted child Space still works:
+      //
+      val replayedChild = new ReplayCoreSpace(original)
+      testChildSpace(original, replayedChild, appState)
     }
   }
 }

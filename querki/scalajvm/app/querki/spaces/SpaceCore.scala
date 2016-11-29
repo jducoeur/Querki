@@ -166,8 +166,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   
   //////////////////////////////////////////////////
   
-  
-  def persistenceId = id.toThingId.toString
+  def toPersistenceId(id:OID) = id.toThingId.toString
+  def persistenceId = toPersistenceId(id)
   
   
   /**
@@ -196,10 +196,16 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * Updates the internal state, but does *not* send out notifications. This is very occasionally correct,
    * but you should only use it when you have reason to believe that the state in question is dangerously incomplete, and
    * that another update is coming shortly.
+   * 
+   * This deals with updating caches, and updating the State's version number based on Akka Persistence.
    */
-  def updateStateCore(newState:SpaceState, evt:Option[SpaceMessage] = None):Unit = {
-    val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
-    _currentState = Some(withCaches.current)
+  def updateStateCore(newState:SpaceState, evt:Option[SpaceMessage] = None):SpaceState = {
+    val filledState = 
+      SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState)).
+      current.
+      copy(version = SpaceVersion(lastSequenceNr))
+    _currentState = Some(filledState)
+    filledState
   }
   
   /**
@@ -227,7 +233,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   def currentState = {
     _currentState match {
       case Some(s) => s
-      case None => throw new Exception("State not ready in Actor " + id)
+      case None => {
+        QLog.error("!!!! State not ready in Actor " + id)
+        emptySpace
+      }
     }
   }
   
@@ -255,8 +264,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           rtc.successful(appMap)
         else
           loadAppVersion(appId, appVersion, appMap).map { appState =>
-          appMap + (appId -> appState)
-        }
+            appMap + (appId -> appState)
+          }
       }
     }
     
@@ -471,7 +480,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
    * Note that this is ridiculous overkill for most cases, but is designed to work properly
    * for complex collections of operations.
    */
-  def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]] = {
+  def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[(List[ChangeResult], SpaceState)] = {
     // Run through all the functions, collect the results or the first error. Note
     // that the resulting list is in reverse order, simply because it's easier that way.
     val resultsRM = (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
@@ -484,11 +493,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     for {
       resultsReversed <- resultsRM
       results = resultsReversed.reverse
-      finalState <- persistAllThenFinalState(results)
-      _ = updateState(finalState)
+      persistedState <- persistAllThenFinalState(results)
+      finalState = updateState(persistedState)
       _ = checkSnapshot()
     }
-      yield results
+      yield (results, finalState)
   }
   
   /**
@@ -513,11 +522,11 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     // If it was successful, send the response for that.
-    result.map { changes =>
+    result.map { case (changes, finalState) =>
       changes.lastOption.foreach(change => change.changedThing.foreach { oid =>
         val msg = 
           if (localCall)
-            ThingFound(oid, change.resultingState)
+            ThingFound(oid, finalState)
           else
             ThingAck(oid)
         respond(msg)
@@ -558,30 +567,34 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       def readyState(originalOpt:Option[SpaceState]):RM[Unit] = {
         def afterOwnerIdentity = originalOpt match {
           case Some(original) => {
-            // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
-            // correct response?
-            fetchOwnerIdentity(original.owner).map { identity =>
-              val s = original.copy(ownerIdentity = Some(identity))
-              // Make sure that the owner is represented by a Person object in this Space. Since this requires
-              // fetching an OID, we need to loop through the standard creation pathway. Note that we can't
-              // use the CreateThing message, though, since the initializing flag is blocking that pathway; we
-              // have to use the call directly, and count on Requester to get around the stash.
-              if (Person.localPerson(identity.id)(s).isEmpty) {
-                // This Space doesn't contains a Person for the owner yet. This generally means that we're upgrading
-                // an old MySQL Space that hasn't been touched in a long time.
-                // TODO: this code path can probably go away eventually.
-                // Note that we are only doing the internal update here, *not* sending out notifications, because
-                // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
-                // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
-                // yet exist, and _hasPermission gets confused:
-//                updateStateCore(s)
-                // This will cause the notifications to go out:
-                runAndSendResponse("createOwnerPerson", true, createOwnerPerson(identity))(s)
-              } else {
-                // Normal situation:
-                updateState(s)
-              }
+            for {
+              withApps <- loadAppsFor(original)
+              // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
+              // correct response?
+              identity <- fetchOwnerIdentity(withApps.owner)
             }
+              yield {
+                val s = withApps.copy(ownerIdentity = Some(identity))
+                // Make sure that the owner is represented by a Person object in this Space. Since this requires
+                // fetching an OID, we need to loop through the standard creation pathway. Note that we can't
+                // use the CreateThing message, though, since the initializing flag is blocking that pathway; we
+                // have to use the call directly, and count on Requester to get around the stash.
+                if (Person.localPerson(identity.id)(s).isEmpty) {
+                  // This Space doesn't contains a Person for the owner yet. This generally means that we're upgrading
+                  // an old MySQL Space that hasn't been touched in a long time.
+                  // TODO: this code path can probably go away eventually.
+                  // Note that we are only doing the internal update here, *not* sending out notifications, because
+                  // we don't want to tell anybody else about it until we've added the Owner's local identity. If we
+                  // send out notifications here, we can get a UserSpaceSession for the Owner in which they don't
+                  // yet exist, and _hasPermission gets confused:
+  //                updateStateCore(s)
+                  // This will cause the notifications to go out:
+                  runAndSendResponse("createOwnerPerson", true, createOwnerPerson(identity))(s)
+                } else {
+                  // Normal situation:
+                  updateState(s)
+                }
+              }
           }
           
           // There's no existing Space, so we're assume this Space is newly-created. There is no actual
@@ -688,7 +701,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case SetState(who, spaceId, newState) => {
-      runAndSendResponse("setState", true, setState(who, newState))(currentState)
+      val prevState = _currentState.getOrElse(emptySpace)
+      runAndSendResponse("setState", true, setState(who, newState))(prevState)
     }
     
     // This message is simple, since it isn't persisted:
