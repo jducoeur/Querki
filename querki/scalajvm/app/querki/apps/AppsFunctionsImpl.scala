@@ -98,9 +98,9 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
    * 
    * Note that much of the guts of this enormous function is pulled out into separate classes.
    */
-  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):Future[Unit] = {
+  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):Future[SpaceInfo] = {
     val extractor = new AppExtractor(state, user)(RealRTCAble, this)
-    extractor.extractApp(elements, display, summary, details)
+    extractor.extractApp(elements, display, summary, details).map(ClientApi.spaceInfo(_, user))
   }
   
   val stylesheetId = querki.css.MOIDs.StylesheetBaseOID

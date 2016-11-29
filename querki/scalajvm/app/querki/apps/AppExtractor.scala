@@ -37,7 +37,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
   implicit val rtc = rtcIn
   private implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
   
-  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):RM[Unit] = {
+  def extractApp(elements:Seq[TID], display:String, summary:String, details:String):RM[SpaceState] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
@@ -80,6 +80,6 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
         )
       _ <- extractorSupport.addAppToGallery(props)
     }
-      yield ()
+      yield finalChildState
   }
 }

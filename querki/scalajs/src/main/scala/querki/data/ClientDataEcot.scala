@@ -18,7 +18,8 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   
   var _request:Option[RequestInfo] = None
   def request = _request.get
-  def space = _request.flatMap(_.space)
+  var _space:Option[SpaceInfo] = None
+  def space = _space.orElse(_request.flatMap(_.space))
   
   var mainThing:Option[ThingInfo] = None
   var mainModel:Option[ThingInfo] = None
@@ -30,6 +31,7 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   // on them to be more explicit instead.
   def setThing(thing:Option[ThingInfo]) = mainThing = thing
   def setModel(model:Option[ThingInfo]) = mainModel = model
+  def setSpace(space:Option[SpaceInfo]) = _space = space
   
   val standardThingPromise = Promise[StandardThings]
   def standardThings:Future[StandardThings] = standardThingPromise.future

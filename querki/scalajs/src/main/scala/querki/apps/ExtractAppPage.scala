@@ -29,6 +29,7 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   
   lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]
+  lazy val DataSetting = interface[querki.data.DataSetting]
   lazy val ProgressDialog = interface[querki.display.ProgressDialog]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -78,7 +79,8 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
           ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), summaryInput.get.text(), detailsInput.get.text()).call() foreach { _ =>
+            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), summaryInput.get.text(), detailsInput.get.text()).call() foreach { spaceInfo =>
+              DataSetting.setSpace(Some(spaceInfo))
               Pages.infoFactory.showPage()
             }
           }),

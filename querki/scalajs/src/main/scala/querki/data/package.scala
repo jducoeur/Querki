@@ -91,5 +91,6 @@ package object data {
     def unpickleRequest(pickled:String)
     def setThing(thing:Option[ThingInfo])
     def setModel(model:Option[ThingInfo])
+    def setSpace(space:Option[SpaceInfo])
   }
 }

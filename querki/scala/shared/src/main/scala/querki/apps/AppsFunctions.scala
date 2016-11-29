@@ -23,9 +23,10 @@ trait AppsFunctions {
   def addApp(appId:String):Future[Unit]
   
   /**
-   * Lift the specified elements from this Space into a newly-created App.
+   * Lift the specified elements from this Space into a newly-created App. Returns the updated info
+   * for this Space, including the App.
    */
-  def extractApp(elements:Seq[TID], name:String, summary:String, details:String):Future[Unit]
+  def extractApp(elements:Seq[TID], name:String, summary:String, details:String):Future[SpaceInfo]
   
   /**
    * Fetches the list of Models that are available to Extract from this Space.
