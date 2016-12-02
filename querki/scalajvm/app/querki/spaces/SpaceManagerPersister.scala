@@ -16,7 +16,7 @@ import messages._
 
 import models.{AsName, OID}
 import models.{Kind, Thing}
-
+import querki.core.NameUtils
 import querki.db._
 import ShardKind._
 
@@ -56,7 +56,8 @@ private [spaces] class SpaceManagerPersister(e:Ecology) extends Actor with Reque
     oid("id") ~ str("name") ~ str("display") ~ str("handle") map 
       { case id ~ name ~ display ~ ownerHandle => SpaceDetails(AsName(name), id, display, AsName(ownerHandle)) }
   
-  def doCreateSpace(owner:OID, spaceId:OID, userMaxSpaces:Int, name:String, display:String, initialStatus:SpaceStatusCode) = {
+  def doCreateSpace(owner:OID, spaceId:OID, userMaxSpaces:Int, nameIn:String, display:String, initialStatus:SpaceStatusCode) = {
+    val name = NameUtils.canonicalize(nameIn)
     try {
       QDB(System) { implicit conn =>
         val numWithName = SQL("""
