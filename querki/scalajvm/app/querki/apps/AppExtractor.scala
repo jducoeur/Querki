@@ -61,7 +61,8 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
           pf = 
             remappedApp.props
             + Apps.GallerySummary(summary)
-            + Apps.GalleryDetails(details))
+            + Apps.GalleryDetails(details)
+            + Apps.IsAppFlag(true))
       // ... set the App's state...
       finalAppState <- extractorSupport.setAppState(renumberedApp)
       finalChildState = hollowedSpace.copy(

@@ -114,6 +114,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     toProps(
       setName("_createHere"),
       Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
       Summary("Create a new Thing as part of displaying this expression"),
       Details("""```
         |MODEL -> LINK PROPERTY._createHere -> THING
@@ -121,7 +122,13 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         |
         |This allows you to create a new Thing, right here on the page, as part of 
         |displaying. It is useful to put inside of a _QLButton, so that you can create something
-        |and edit it, on the press of a button, without changing pages.""".stripMargin)))
+        |and edit it, on the press of a button, without changing pages.
+        |
+        |**Warning:** this function is a little suspicious in how it works. It might get
+        |replaced by some other approach in the future, so don't get too attached to it.
+        |(Technically speaking, the problem is that this function is *impure* -- it has
+        |major side-effects. It is just about the only impure function in Querki, and we
+        |may want to find a purer way to get the same result.)""".stripMargin)))
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       // Need to shortcut with some mutation, since we don't have a good way to get this

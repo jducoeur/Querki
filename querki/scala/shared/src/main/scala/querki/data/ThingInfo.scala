@@ -60,7 +60,8 @@ case class SpaceInfo(
   ownerId:String,
   ownerHandle:String,
   apps:Seq[SpaceInfo],
-  permissions:Set[TID]) extends BasicThingInfo
+  permissions:Set[TID],
+  isApp:Boolean) extends BasicThingInfo
 
 case class PropInfo(
   oid:TID,

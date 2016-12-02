@@ -19,6 +19,8 @@ class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
   // be a *parameter* to this Page instead?
   lazy val spaceInfo = DataAccess.space.get
   
+  lazy val isApp = spaceInfo.isApp
+  
   def pageContent = {
     val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.summaryProp.oid).call()
     val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.detailsProp.oid).call()
@@ -28,7 +30,11 @@ class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
       summaryText = summaryOpt.getOrElse(Wikitext.empty)
       detailsOpt <- detailsFut
       detailsText = detailsOpt.getOrElse(Wikitext.empty)
-      allowExtract = DataAccess.request.isOwner && (SkillLevel.current == SkillLevel.AdvancedComplexity)
+      // For the moment, we only allow you to extract an App if there isn't already an App. This will change.
+      allowExtract = 
+        DataAccess.request.isOwner && 
+        (SkillLevel.current == SkillLevel.AdvancedComplexity) &&
+        spaceInfo.apps.isEmpty
       guts =
         div(
           h1(s"Info about ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
@@ -36,8 +42,8 @@ class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
           p(b(new QText(summaryText))),
           new QText(detailsText),
           
-          // Do we show the Apps section?
-          if (allowExtract || !spaceInfo.apps.isEmpty) {
+          // Do we show the Apps section? For the time being, we specifically don't do so in Apps:
+          if (!isApp && (allowExtract || !spaceInfo.apps.isEmpty)) {
             MSeq(
               h2("Apps"),
               for (app <- spaceInfo.apps)

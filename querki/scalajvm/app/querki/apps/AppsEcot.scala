@@ -30,6 +30,8 @@ object MOIDs extends EcotIds(59) {
   // This is the standard OID for the Gallery Space itself:
   val GallerySpaceOID = moid(9)
   val GalleryAppIdOID = moid(10)
+  
+  val IsAppOID = moid(11)
 }
 
 /**
@@ -200,6 +202,14 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
       Categories(AppsTag),
       Summary("The OID of this App")))
   
+  lazy val IsAppFlag = new SystemProperty(IsAppOID, YesNoType, Optional,
+    toProps(
+      setName("_Is an App"),
+      setInternal,
+      Categories(AppsTag),
+      Core.NotInheritedProp(true),
+      Summary("Set on a Space if that Space is an App")))
+  
   override lazy val props = Seq(
     ShadowedThingFunction,
       
@@ -210,7 +220,9 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
     GallerySummary,
     GalleryDetails,
     GalleryOwner,
-    GalleryAppId
+    GalleryAppId,
+    
+    IsAppFlag
   )
   
   /***********************************************

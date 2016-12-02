@@ -38,7 +38,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   implicit def spaceDetails2Info(details:SpaceDetails):SpaceInfo = {
     // TODO: this should probably include the Apps:
-    SpaceInfo(TID(details.id.toThingId), Some(details.handle), details.display, "", details.ownerHandle, Seq.empty, Set.empty)
+    SpaceInfo(TID(details.id.toThingId), Some(details.handle), details.display, "", details.ownerHandle, Seq.empty, Set.empty, false)
   }
   
   def listSpaces():Future[AllSpaces] = {

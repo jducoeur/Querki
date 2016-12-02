@@ -20,6 +20,7 @@ package object apps {
     def GalleryDetails:Property[PlainText, String]
     def GalleryOwner:Property[OID,OID]
     def GalleryAppId:Property[OID,OID]
+    def IsAppFlag:Property[Boolean, Boolean]
     
     def addAppToSpace(user:User, spaceId:OID, appId:OID):Future[Unit]
     def getShadowedThing(t:Thing)(implicit state:SpaceState):Thing

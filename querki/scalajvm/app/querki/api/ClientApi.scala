@@ -109,7 +109,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       state.owner.toThingId.toString,
       state.ownerHandle,
       state.apps.map(spaceInfo(_, user)),
-      perms)
+      perms,
+      state.ifSet(Apps.IsAppFlag)(state))
   }
   
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
@@ -119,7 +120,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo = {
     val querki.spaces.messages.SpaceInfo(spaceId, linkName, display, ownerHandle) = info
     // TODO: we should probably add the Apps to the internal SpaceInfo, to get them here?
-    SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle, Seq.empty, Set.empty)
+    SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle, Seq.empty, Set.empty, false)
   }
   
   def identityInfo(identity:PublicIdentity):IdentityInfo = {
