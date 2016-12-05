@@ -56,17 +56,18 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   def setChildState(state:SpaceState):TCIdentity[Any] = {
     success((this ! SetState(owner, state.id, state)).get)
   }
-  def addAppToGallery(props:PropMap):TCIdentity[OID] = {
-    val gallery = world.getSpaceOpt(MOIDs.GallerySpaceOID) match {
+  def sendSpaceMessage(msg:SpaceMessage):TCIdentity[OID] = {
+    val targetSpaceId = msg.spaceId
+    val targetSpace = world.getSpaceOpt(targetSpaceId) match {
       case Some(g:SpaceCoreSpaceBase) => g
-      case _ => new SpaceInWorldWith(this, Some(MOIDs.GallerySpaceOID))
+      case _ => new SpaceInWorldWith(this, Some(targetSpaceId))
     }
-    val result = gallery ! CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false)
-    val entryId = result match {
+    val result = targetSpace ! msg
+    val resultId = result match {
       case Some(ThingAck(id)) => id
-      case other => throw new Exception(s"Adding app to Gallery resulting in $other")
+      case other => throw new Exception(s"sendSpaceMessage($msg) returned $other")
     }
-    success(entryId)
+    success(resultId)    
   }
   
   /* ************************************** */

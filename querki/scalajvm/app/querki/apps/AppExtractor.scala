@@ -1,5 +1,6 @@
 package querki.apps
 
+import models.Kind
 import models.Thing.PropMap
 import querki.core.NameUtils
 import querki.data.TID
@@ -14,8 +15,9 @@ trait AppExtractorSupport[RM[_]] {
   // Sets the State of the App (identified by state.id). Returns the State of the App after saving.
   def setAppState(state:SpaceState):RM[SpaceState]
   def setChildState(state:SpaceState):RM[Any]
-  // Adds the App, and returns the OID of the Gallery entry for it
-  def addAppToGallery(props:PropMap):RM[OID]
+  // Sends the given message to the target Space. The Space should reply with ThingAck, and this
+  // returns the OID of the relevant Thing. Note that this requires non-localCall messages!
+  def sendSpaceMessage(msg:SpaceMessage):RM[OID]
 }
 
 /**
@@ -27,6 +29,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   // These are required by SpacePure, a ways down the stack:
   lazy val Basic = interface[querki.basic.Basic]
@@ -73,7 +76,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
           Apps.GallerySummary(summary),
           Apps.GalleryDetails(details)
         )
-      galleryId <- extractorSupport.addAppToGallery(props)
+      galleryId <- extractorSupport.sendSpaceMessage(CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false))
       // ... record the entry ID of this App, so we can get back to it...
       appWithGallery = renumberedApp.copy(pf = renumberedApp.props + (Apps.GalleryEntryId(galleryId)))
       // ... set the App's state...
