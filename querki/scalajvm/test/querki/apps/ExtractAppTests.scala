@@ -194,9 +194,19 @@ class ExtractAppTests extends QuerkiTests {
       }
       
       // Check that it got entered into the App Gallery:
+      val entryId = appState.first(Apps.GalleryEntryId)(appState)
+      
       {
         implicit val g = newChild.world.getSpace(MOIDs.GallerySpaceOID)
         implicit val gState = g.state
+        
+        // Check that the App and Gallery agree about the entry ID:
+        gState.anything(entryId) match {
+          case Some(entry) => {
+            entry.first(Basic.DisplayNameProp).text should equal ("My App")
+          }
+          case None => fail(s"Gallery doesn't contain an entry numbered $entryId!")
+        }
         
         pql("""[[_App Gallery Entry._instances -> Name]]""") should equal("My App")
         pql("""[[_App Gallery Entry._instances -> _Space Summary]]""") should equal("My App Summary")

@@ -32,6 +32,7 @@ object MOIDs extends EcotIds(59) {
   val GalleryAppIdOID = moid(10)
   
   val IsAppOID = moid(11)
+  val GalleryEntryOID = moid(12)
 }
 
 /**
@@ -202,6 +203,14 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
       Categories(AppsTag),
       Summary("The OID of this App")))
   
+  lazy val GalleryEntryId = new SystemProperty(GalleryEntryOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_Gallery Entry Id"),
+      setInternal,
+      Categories(AppsTag),
+      Core.NotInheritedProp(true),
+      Summary("This is set on the App, and contains the OID for this App in the Gallery")))
+  
   lazy val IsAppFlag = new SystemProperty(IsAppOID, YesNoType, Optional,
     toProps(
       setName("_Is an App"),
@@ -221,6 +230,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
     GalleryDetails,
     GalleryOwner,
     GalleryAppId,
+    GalleryEntryId,
     
     IsAppFlag
   )

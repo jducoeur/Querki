@@ -85,9 +85,9 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   def setChildState(state:SpaceState):RequestM[Any] = {
     spaceRouter.request(SetState(user, state.id, state))
   }
-  def addAppToGallery(props:PropMap):RequestM[Unit] = {
+  def addAppToGallery(props:PropMap):RequestM[OID] = {
     SpaceOps.spaceRegion.request(CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false)) map {
-      case ThingAck(_) => ()
+      case ThingAck(id) => id
       case other => throw new Exception(s"appAppToGallery() got unexpected response $other")
     }
   }

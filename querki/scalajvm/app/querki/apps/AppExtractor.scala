@@ -14,7 +14,8 @@ trait AppExtractorSupport[RM[_]] {
   // Sets the State of the App (identified by state.id). Returns the State of the App after saving.
   def setAppState(state:SpaceState):RM[SpaceState]
   def setChildState(state:SpaceState):RM[Any]
-  def addAppToGallery(props:PropMap):RM[Unit]
+  // Adds the App, and returns the OID of the Gallery entry for it
+  def addAppToGallery(props:PropMap):RM[OID]
 }
 
 /**
@@ -63,23 +64,25 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
             + Apps.GallerySummary(summary)
             + Apps.GalleryDetails(details)
             + Apps.IsAppFlag(true))
-      // ... set the App's state...
-      finalAppState <- extractorSupport.setAppState(renumberedApp)
-      finalChildState = hollowedSpace.copy(
-        apps = hollowedSpace.apps :+ finalAppState, 
-        appInfo = hollowedSpace.appInfo :+ (finalAppState.id, finalAppState.version))
-      // ... update the child Space to reflect the new reality...
-      _ <- extractorSupport.setChildState(finalChildState)
-      // ... and finally, add the App to the Gallery
+      // ... add the App to the Gallery...
       props = 
         Map(
-          Apps.GalleryAppId(finalAppState.id),
+          Apps.GalleryAppId(renumberedApp.id),
           Basic.DisplayNameProp(display),
-          Apps.GalleryOwner(finalAppState.owner),
+          Apps.GalleryOwner(renumberedApp.owner),
           Apps.GallerySummary(summary),
           Apps.GalleryDetails(details)
         )
-      _ <- extractorSupport.addAppToGallery(props)
+      galleryId <- extractorSupport.addAppToGallery(props)
+      // ... record the entry ID of this App, so we can get back to it...
+      appWithGallery = renumberedApp.copy(pf = renumberedApp.props + (Apps.GalleryEntryId(galleryId)))
+      // ... set the App's state...
+      finalAppState <- extractorSupport.setAppState(appWithGallery)
+      finalChildState = hollowedSpace.copy(
+        apps = hollowedSpace.apps :+ finalAppState, 
+        appInfo = hollowedSpace.appInfo :+ (finalAppState.id, finalAppState.version))
+      // ... and update the child Space to reflect the new reality.
+      _ <- extractorSupport.setChildState(finalChildState)
     }
       yield finalChildState
   }
