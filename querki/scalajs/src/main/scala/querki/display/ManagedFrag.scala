@@ -4,12 +4,9 @@ import scala.annotation.tailrec
 
 import scala.scalajs.js
 import js.UndefOr
-import scalatags.JsDom.all._
 import org.scalajs.dom
 import org.querki.jquery._
 import _root_.rx._
-
-import querki.globals._
 
 /**
  * A controlled wrapper around a Scalatags Frag, which gives you access to the lifecycle and

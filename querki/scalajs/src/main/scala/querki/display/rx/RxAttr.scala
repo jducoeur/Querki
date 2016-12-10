@@ -6,7 +6,6 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import querki.globals._
-import querki.display.ManagedFrag
   
 private [rx] class RxAttrBase[T <% AttrVal, R <: Rx[T]] extends AttrValue[R] {
   def apply(t:dom.Element, a:Attr, v:R):Unit = {
