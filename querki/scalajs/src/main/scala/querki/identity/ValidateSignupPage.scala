@@ -16,7 +16,7 @@ import querki.session.UserFunctions
 /**
  * @author jducoeur
  */
-class ValidateSignupPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "validateSignup") {
+class ValidateSignupPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("validateSignup") {
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]

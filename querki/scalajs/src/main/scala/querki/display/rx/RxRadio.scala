@@ -12,7 +12,9 @@ import querki.display.Gadget
 
 case class RadioButton(v:String, label:String, mods:Modifier*)
 
-class RxRadio(groupName:String, buttons:RadioButton*)(implicit val ecology:Ecology) extends Gadget[dom.html.Form] {
+class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology) extends Gadget[dom.html.Form] {
+  val ecology = e
+  
   private def curSelected = {
     elemOpt.map(e => $(e).find(s"input[name=$groupName]:checked"))
   }

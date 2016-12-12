@@ -29,10 +29,7 @@ object PageContents {
   def apply(content:TypedTag[dom.HTMLDivElement]):PageContents = PageContents("", content)  
 }
 
-abstract class Page(e:Ecology, pageName:String = "") extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
-  
-  implicit val ecology = e
-  
+abstract class Page(pageName:String = "") extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   lazy val DataAccess = interface[querki.data.DataAccess]

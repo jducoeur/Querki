@@ -22,7 +22,7 @@ import querki.conversations.ConversationPane
 import querki.data.ThingInfo
 import querki.display.{Gadget, QLButtonGadget, QText, WrapperDiv}
 
-class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]

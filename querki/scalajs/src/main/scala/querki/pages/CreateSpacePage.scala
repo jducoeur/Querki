@@ -19,7 +19,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e, "createSpace") with EcologyMember {
+class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Page("createSpace") {
   lazy val Client = interface[querki.client.Client]
   
   val spaceName = GadgetRef[RxInput]

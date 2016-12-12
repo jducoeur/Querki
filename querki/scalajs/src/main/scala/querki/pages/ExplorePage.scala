@@ -16,7 +16,7 @@ import querki.display.{ButtonGadget, QText, WrapperDiv}
 import ButtonGadget.Normal
 import querki.display.input.{InputGadget, ManifestItem, MarcoPoloInput, TagSetKind}
 
-class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class ExplorePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Client = interface[querki.client.Client]
   lazy val History = interface[querki.history.History]

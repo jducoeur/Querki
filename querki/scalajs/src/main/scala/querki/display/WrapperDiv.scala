@@ -13,7 +13,7 @@ import querki.globals._
  * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
 class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit val ecology:Ecology) 
-  extends MetaGadget[dom.HTMLDivElement] with EcologyMember 
+  extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
   lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
@@ -37,7 +37,11 @@ object AfterLoading {
  * 
  * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
+class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+  
+  lazy val Pages = interface[querki.pages.Pages]
+  
+  def updatePage() = Pages.updatePage(this)
   
   var contentsOpt:Option[dom.Element] = None
   

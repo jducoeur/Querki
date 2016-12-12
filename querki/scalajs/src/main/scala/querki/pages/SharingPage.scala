@@ -22,7 +22,7 @@ import querki.display.rx._
 import querki.editing.EditFunctions
 import querki.security.{PersonInfo, SecurityFunctions}
 
-class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMember {
+class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
@@ -51,8 +51,6 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
       
   // TODO: this should probably become an RxSelect instead?
   class RoleSelector(parent:RoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
-    def ecology = SharingPage.this.ecology
-    
     val roleName = Rx(role().displayName)
     
     override def onCreate(e:dom.HTMLSelectElement) = {
@@ -127,8 +125,6 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
   }
   
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
-    def ecology = SharingPage.this.ecology
-    
     def doRender() =
       tr(cls:=showCls,
 	    td({
@@ -189,7 +185,6 @@ class SharingPage(implicit e:Ecology) extends Page(e, "sharing") with EcologyMem
   lazy val collaboratorInput = new CollaboratorInput
   
   class CustomRoleManager(customRoles:RoleInfo) extends Gadget[dom.HTMLDivElement] {
-    def ecology = SharingPage.this.ecology
     val roleAdder = GadgetRef[RxText]
     
     def createRole(name:String) = {

@@ -73,7 +73,10 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
   def registerSimpleGadgets[Output <: dom.Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit = {
     val fullConstr = { e:dom.Element =>
       val gadgets = constr
-      gadgets.foreach(_.setElem(e))
+      // TODO: this is a clear bad smell. Really, this anonymous function should be
+      // taking an Output, not an Element. But that requires rewriting the GadgetsConstr()
+      // to be a fuller class, with Output as a dependent type.
+      gadgets.foreach(_.setElem(e.asInstanceOf[Output]))
       gadgets
     }
     registerGadgets(hookClass, fullConstr)

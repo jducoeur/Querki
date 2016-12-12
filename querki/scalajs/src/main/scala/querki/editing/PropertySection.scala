@@ -21,6 +21,8 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val Pages = interface[querki.pages.Pages]
   
+  def updatePage() = Pages.updatePage(this)
+  
   val tid = thing.urlName
   
   /**

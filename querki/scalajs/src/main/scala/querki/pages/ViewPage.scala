@@ -7,7 +7,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 
-class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class ViewPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Client = interface[querki.client.Client]
   

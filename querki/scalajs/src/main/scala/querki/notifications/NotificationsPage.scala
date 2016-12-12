@@ -14,7 +14,7 @@ import querki.globals._
 import querki.display.QText
 import querki.pages.{Page, PageContents, ParamMap}
 
-class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class NotificationsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
   lazy val Notifications = interface[Notifications]

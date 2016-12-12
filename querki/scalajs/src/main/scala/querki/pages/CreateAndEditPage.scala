@@ -21,7 +21,7 @@ object EditQL {
                     |""""".stripMargin
 }
 
-class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "createAndEdit") with EcologyMember  {
+class CreateAndEditPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("createAndEdit") {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]

@@ -28,7 +28,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]

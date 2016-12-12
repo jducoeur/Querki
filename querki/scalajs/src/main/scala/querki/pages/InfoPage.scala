@@ -8,7 +8,7 @@ import querki.api.ThingFunctions
 import querki.display.QText
 import querki.globals._
 
-class InfoPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Apps = interface[querki.apps.Apps]
   lazy val Client = interface[querki.client.Client]

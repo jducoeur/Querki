@@ -15,11 +15,11 @@ import EditFunctions._
 import querki.api.ThingFunctions
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}
-import querki.display.input.{DeleteInstanceButton, InputGadget}
+import querki.display.input.{InputGadget}
 import querki.display.rx.{RxThingSelector}
 import querki.pages._
 
-class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "modelDesigner") with EcologyMember  {
+class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("modelDesigner") {
   
   lazy val rawModelIdOpt = params.get("modelId").orElse(params.get("thingId"))
   var _modelId:Option[TID] = None

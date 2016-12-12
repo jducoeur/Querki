@@ -12,7 +12,7 @@ import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 /**
  * @author jducoeur
  */
-class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class AppManagementPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]

@@ -23,5 +23,7 @@ class RxTextFrag(rx:Rx[String]) extends ManagedFrag[dom.Text] {
     }
   }
   
-  override def onCreate(txt:dom.Text) = obs
+  def onRendered(node:dom.Text):Unit = {
+    obs
+  }
 }

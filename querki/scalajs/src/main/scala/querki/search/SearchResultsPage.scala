@@ -39,7 +39,7 @@ class SearchGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLInputElement
   }
 }
 
-class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "search") with EcologyMember {
+class SearchResultsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("search") {
   
   lazy val Client = interface[querki.client.Client]
   

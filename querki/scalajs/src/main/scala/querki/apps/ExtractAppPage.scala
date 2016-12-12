@@ -25,7 +25,7 @@ import AppsFunctions._
 /**
  * @author jducoeur
  */
-class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]

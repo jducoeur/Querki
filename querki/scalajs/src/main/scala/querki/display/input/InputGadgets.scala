@@ -33,13 +33,13 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   override def postInit() = {
     Gadgets.registerSimpleGadget("._textEdit", { new TextInputGadget(Seq.empty) })
     Gadgets.registerSimpleGadget("._largeTextEdit", { new LargeTextInputGadget })
-    Gadgets.registerGadget("._tagSetInput", { TagSetInput(_) })
-    Gadgets.registerGadget("._tagInput", { MarcoPoloInput(_) })
+    Gadgets.registerGadget("._tagSetInput", { e => TagSetInput(e.asInstanceOf[dom.html.Input]) })
+    Gadgets.registerGadget("._tagInput", { e => MarcoPoloInput(e.asInstanceOf[dom.html.Input]) })
     // TODO: this ought to start with an underscore:
     Gadgets.registerSimpleGadget(".sortableList", { new SortableListGadget })
     // Note that we currently assume all selects are inputs:
     Gadgets.registerSimpleGadget("select", { new SelectGadget })
-    Gadgets.registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
+    Gadgets.registerGadget("._deleteInstanceButton", { e => DeleteInstanceButton(e.asInstanceOf[dom.html.Span]) })
     Gadgets.registerSimpleGadget("._rating", { new RatingGadget })
     Gadgets.registerSimpleGadget("._optYesNo", { new OptYesNoGadget })
     Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)

@@ -14,7 +14,7 @@ import UserFunctions._
 /**
  * @author jducoeur
  */
-class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "index") with EcologyMember  {
+class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("index") {
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]

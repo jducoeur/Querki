@@ -11,7 +11,7 @@ import querki.globals._
 import models.Wikitext
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.{QText, TypedGadget}
+import querki.display.{QText, Gadget}
 
 class PrintEcot(e:Ecology) extends ClientEcot(e) with Print {
   
@@ -32,7 +32,7 @@ class PrintEcot(e:Ecology) extends ClientEcot(e) with Print {
    * Basically, we create a hidden iframe, stuff the pageView contents into it, and print *that*.
    */
   def printPrintView(thing:ThingInfo, printView:Wikitext) = {
-    val printFrame:TypedGadget[dom.HTMLIFrameElement] = iframe(cls:="_printFrame", display:="none", visibility:="hidden")
+    val printFrame:Gadget[dom.HTMLIFrameElement] = iframe(cls:="_printFrame", display:="none", visibility:="hidden")
     $(window.document.body).append(printFrame.render)
     val printDoc = printFrame.elem.contentDocument.asInstanceOf[dom.HTMLDocument]
     // The styles from the main page don't affect the contents of the iframe, so we need to copy them in.

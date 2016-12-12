@@ -51,7 +51,7 @@ object DeleteInstanceButton extends querki.display.QuerkiUIUtils {
   import autowire._
   import querki.api.ThingFunctions
   
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+  def apply(rawElement:dom.html.Span)(implicit e:Ecology) = {
     (new DeleteInstanceButton(deleteFunc(rawElement, e))).setElem(rawElement)
   }
   

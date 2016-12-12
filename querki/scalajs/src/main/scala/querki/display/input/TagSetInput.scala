@@ -100,7 +100,7 @@ object TagSetInput {
    * Create a TagSetInput from an existing DOM Element. The Element is required to have several data
    * attributes set, giving the critical details.
    */
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+  def apply(rawElement:dom.HTMLInputElement)(implicit e:Ecology) = {
     // Required data attributes of any Tag Set Input:
     val isNames = $(rawElement).data("isnames").asInstanceOf[Boolean]
     val initialValuesJs = $(rawElement).data("current")
@@ -161,7 +161,7 @@ object MarcoPoloInput {
    * Create a TagSetInput from an existing DOM Element. The Element is required to have several data
    * attributes set, giving the critical details.
    */
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+  def apply(rawElement:dom.HTMLInputElement)(implicit e:Ecology) = {
     // Required data attributes of any Tag Set Input:
     val isNames = $(rawElement).data("isnames").asInstanceOf[Boolean]
     val propId = $(rawElement).data("prop").asInstanceOf[String]

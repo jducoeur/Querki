@@ -7,6 +7,10 @@ import dom.Element
 import org.querki.jquery
 import jquery._
 
+import scalatags.JsDom.TypedTag
+
+import querki.display.{Gadget, ManagedFrag, TypedGadget}
+
 /**
  * This package provides the "global imports" that are commonly used across the client. It
  * is specifically intended that most files will say:
@@ -38,10 +42,11 @@ package object globals {
   val TID = querki.data.TID
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
-  /**
-   * This allows you to use a TypedTag in any context where a Gadget is expected.
-   */
-  implicit def tag2Gadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output])(implicit ecology:Ecology) = new querki.display.TypedGadget[Output](guts, { elem:Output => })
+  // TODO: this conversion needs to get lifted into the new Gadgets library!
+  implicit def tag2Gadget[Output <: dom.Element](
+    guts:TypedTag[Output]
+  )(implicit ecology:Ecology):Gadget[Output]
+    = new querki.display.TypedGadget[Output](guts)
   
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.

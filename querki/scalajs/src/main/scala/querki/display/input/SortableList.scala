@@ -20,6 +20,9 @@ import EditFunctions._
 class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElement](e)  {
   
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val Pages = interface[querki.pages.Pages]
+  
+  def updatePage() = Pages.updatePage(this)
 
   def values = ???
   

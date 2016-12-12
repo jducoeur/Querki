@@ -14,7 +14,7 @@ import AdminFunctions._
 /**
  * @author jducoeur
  */
-class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class MonitorPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
   

@@ -20,7 +20,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class SignUpPage(implicit e:Ecology) extends Page(e, "signup") {
+class SignUpPage(implicit val ecology:Ecology) extends Page("signup") {
   
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]

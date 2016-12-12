@@ -14,7 +14,7 @@ import querki.display.rx.GadgetRef
 import querki.globals._
 import querki.security.SecurityFunctions
 
-class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "advancedCommands") with EcologyMember {
+class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("advancedCommands") {
   lazy val thingId = TID(params("thingId"))
   
   lazy val Apps = interface[querki.apps.Apps]

@@ -26,7 +26,7 @@ import SecurityFunctions._
 /**
  * @author jducoeur
  */
-class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "security") with EcologyMember {
+class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("security") with EcologyMember {
   
   lazy val thingId = TID(params("thingId"))
   
@@ -52,7 +52,7 @@ class SecurityPage(params:ParamMap)(implicit e:Ecology) extends Page(e, "securit
           customDisplay.empty()
           customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
           Gadgets.hookPendingGadgets()
-          updatePage()
+          Pages.updatePage(this)
         }
         customDisplay.show()
       } else {

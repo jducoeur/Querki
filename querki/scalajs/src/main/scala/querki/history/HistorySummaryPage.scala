@@ -18,8 +18,8 @@ import querki.time.Common.Timestamp
 
 import HistoryFunctions._
 
-class HistorySummaryPage(params:ParamMap)(implicit e:Ecology) 
-  extends Page(e, "historySummary") with EcologyMember with querki.util.ScalatagUtils
+class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology) 
+  extends Page("historySummary") with querki.util.ScalatagUtils
 {
   lazy val Client = interface[querki.client.Client]
   lazy val History = interface[History]

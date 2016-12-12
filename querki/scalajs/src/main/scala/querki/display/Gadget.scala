@@ -1,6 +1,7 @@
 package querki.display
 
 import scala.scalajs.js
+import js.UndefOr
 
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
@@ -23,13 +24,14 @@ import querki.util.ScalatagUtils
  * If you need complex behaviour, subclass this and extend it. If you just need to be able to
  * access the DOM created by the rendered Scalatags, just use the Gadget(scalatags) entry point.
  */
-trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUtils with EcologyMember {
-  def ecology:Ecology
-  
+trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUtils {
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
+   * 
+   * Note that this can be filled with a conventional Scalatags TypedTag thanks to an
+   * implicit conversion in globals.
    */
-  def doRender():TypedTag[Output]
+  def doRender():ManagedFrag[Output]
   
   def underlyingTag = doRender()
   
@@ -45,32 +47,25 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
   }
   
   /**
-   * Indicates that something has changed significantly to alter the page layout, so the
-   * Page should be recalculated as necessary. Note that this doesn't actually change
-   * anything visible; rather, this does the needed adjustments after visible changes
-   * have happened.
-   * 
-   * By and large, it is appropriate to call this after any significant alterations to
-   * the page's structure, especially asynchronous changes. (It should not be called
-   * during normal page setup; that's just extra work.)
+   * Concrete Gadgets can override this to perform actions after we've created the actual Element.
    */
-  def updatePage() = {
-    val Pages = interface[querki.pages.Pages]
-    Pages.findPageFor(this).map(_.reindex())
+  def onCreate(elem:Output) = {}
+  
+  def onRendered(e:Output):Unit = {
+    val gadgets =
+      if ($(elem).hasClass("_withGadget")) {
+        val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
+        existingGadgets :+ this
+      } else {
+        Seq(this)
+      }
+    // TODO: this should be a Seq of Gadgets, not a single one, so we can attach multiple
+    // Gadgets to a single Element!
+    $(elem).data("gadgets", gadgets.asInstanceOf[js.Any])
+    $(elem).addClass("_withGadget")
+    onCreate(e)
   }
-}
-
-/**
- * Similar to Gadget, but this is specifically for Gadgets that wrap around other Gadgets. Only use
- * this if you need the alternate doRender() signature -- that is, when doRender's top level is itself
- * another Gadget.
- */
-trait MetaGadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils with QuerkiUIUtils {
-  def doRender():Gadget[Output]
   
-  def underlyingTag = doRender()
-  
-  def createFrag = underlyingTag.render
 }
 
 /**
@@ -83,12 +78,13 @@ class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element
 }
 
 /**
- * Wrapper around a TypedTag. You don't need to specify this explicitly unless you need a hook -- there
+ * Wrapper around a TypedTag. You don't need to specify this explicitly -- there
  * is an implicit def in globals that transforms TypedTag into TypedGadget.
  */
-class TypedGadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output], hook: Output => Unit)(implicit val ecology:Ecology) extends Gadget[Output] {
+class TypedGadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output])(implicit val ecology:Ecology) extends Gadget[Output] {
   def doRender() = guts
-  override def onCreate(e:Output) = { hook(e) }
+  // We need to override this in order to break what would otherwise be an infinite loop:
+  override def createFrag = guts.render
 }
 
 object Gadget {

@@ -14,8 +14,11 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
   
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val Pages = interface[querki.pages.Pages]
   
   def doRender() = tag
+  
+  def updatePage() = Pages.updatePage(this)
   
   def hook() = {
     val jq = $(elem)

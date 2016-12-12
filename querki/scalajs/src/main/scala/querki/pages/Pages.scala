@@ -99,4 +99,8 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   def findPageFor(node:ManagedFrag[_]):Option[Page] = {
     node.findParentGadget(_.isInstanceOf[Page]).map(_.asInstanceOf[Page])
   }
+  
+  def updatePage(node:ManagedFrag[_]) = {
+    findPageFor(node).map(_.reindex())
+  }
 }

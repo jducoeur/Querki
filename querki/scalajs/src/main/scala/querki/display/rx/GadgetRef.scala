@@ -49,8 +49,13 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] {
+class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] with EcologyMember {
 
+  // TODO: this interface, and the EcologyMember trait in general, is solely here to
+  // support Pages.updatePage(). We need to make this more generally hookable, so we
+  // can extract GadgetRef up to the library.
+  lazy val Pages = interface[querki.pages.Pages]
+  
   def doRender = ???
   
   /**
@@ -135,7 +140,7 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
       opt() = Some(g)
 
       // Since we're changing the page layout, update things:
-      updatePage()
+      Pages.updatePage(this)
     }
     this    
   }
@@ -199,8 +204,8 @@ class GadgetElementRef[T <: dom.Element](implicit e:Ecology) extends GadgetRef[G
    * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
    * Gadget. This is used when you declared it with GadgetRef.of[].
    */
-  def <=(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag, { elem:T => }), false)
-  def <~(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag, { elem:T => }), true)
+  def <=(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), false)
+  def <~(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), true)
 }
 
 object GadgetRef {

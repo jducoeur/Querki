@@ -8,7 +8,7 @@ import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
 
-class StatisticsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
+class StatisticsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
   

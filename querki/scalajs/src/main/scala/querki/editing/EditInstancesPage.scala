@@ -23,7 +23,7 @@ import querki.pages._
  * We would then pull the rendering code from the CreateAnotherButton, and use that for all of them
  * in a nice consistent way.
  */
-class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class EditInstancesPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Client = interface[querki.client.Client]
   
@@ -70,7 +70,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           $(newEditor).insertBefore($(elem))
           Gadgets.hookPendingGadgets()
           PageManager.instantScrollToBottom()
-          updatePage()
+          Pages.updatePage(this)
           // TODO: is this the right way to do this in the new world? It begs for an abstraction: 
           $(newEditor).find(".propEditor").first().focus()
         }

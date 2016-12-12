@@ -14,7 +14,7 @@ import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
 
-class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
@@ -40,8 +40,6 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   lazy val myLevel = DataAccess.request.userLevel
     
   class UserView(user:AdminUserView) extends Gadget[dom.html.TableRow] {
-    def ecology = ManageUsersPage.this.ecology
-    
     lazy val levelOptions = 
       Var(levels.map { level =>
         option(

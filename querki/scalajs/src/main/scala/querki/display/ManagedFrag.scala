@@ -12,6 +12,10 @@ import _root_.rx._
  * A controlled wrapper around a Scalatags Frag, which gives you access to the lifecycle and
  * the resulting DOM objects.
  * 
+ * Note that a ManagedFrag corresponds to a DOM *Node*, which is almost anything: an Element,
+ * an Attribute, a Text, etc. A Gadget (which is a subclass of ManagedFrag) corresponds to
+ * a DOM Element.
+ * 
  * In and of itself, ManagedFrag is a bit weak, but it is the basis of multiple forms of
  * useful gadgetry.
  */
@@ -29,24 +33,13 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def jq = $(elem)
   
   /**
-   * Slam the element for this Gadget. You should only call this iff the element was actually called from
-   * an external mechanism (eg, via QText), and you're building this Gadget around that element.
+   * Slam the element for this Gadget. You should only call this iff the element was created from
+   * an external mechanism and you're building this Gadget around that element.
    * 
    * This is intentionally designed for chaining, for ease of use -- it returns this Gadget.
    */
-  def setElem(e:dom.Node):this.type = {
-    elemOptRx() = Some(e.asInstanceOf[Output])
-    val gadgets =
-      if ($(elem).hasClass("_withGadget")) {
-        val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
-        existingGadgets :+ this
-      } else {
-        Seq(this)
-      }
-    // TODO: this should be a Seq of Gadgets, not a single one, so we can attach multiple
-    // Gadgets to a single Element!
-    $(elem).data("gadgets", gadgets.asInstanceOf[js.Any])
-    $(elem).addClass("_withGadget")
+  def setElem(e:Output):this.type = {
+    elemOptRx() = Some(e)
     this
   }
   
@@ -56,9 +49,10 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def createFrag:Output
   
   /**
-   * Concrete Gadgets can override this to perform actions after we've created the actual Element.
+   * Subclasses can override this to define behaviour that happens in the middle of the render
+   * function. Generally used by infrastructure, not concrete classes.
    */
-  def onCreate(elem:Output) = {}
+  def onRendered(node:Output):Unit
   
   /**
    * This is called immediately after this fragment is inserted into its parent, so that you can
@@ -76,7 +70,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def render = {
     val result = createFrag
     setElem(result)
-    onCreate(result)
+    onRendered(result)
     // Note that we intentionally don't return result at this point, in case onCreate()
     // mutates elem:
     elem

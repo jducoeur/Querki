@@ -21,7 +21,7 @@ import UserFunctions._
  * 
  * @author jducoeur
  */
-class AccountPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class AccountPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[querki.identity.UserAccess]
