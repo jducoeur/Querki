@@ -12,6 +12,14 @@ import _root_.rx._
  * A controlled wrapper around a Scalatags Frag, which gives you access to the lifecycle and
  * the resulting DOM objects.
  * 
+ * IMPORTANT: unlike pure ScalaTags, the Gadgets library assumes that Frags are single-use!
+ * That is, in conventional ScalaTags you can create a Frag or TypedTag and render it over
+ * and over, getting a new Node each time. By contrast, rendering a ManagedFrag records the
+ * resulting Node in its elemOptRx (also exposed as elemOpt or simply elem), and you are
+ * encouraged to use the rendered method instead if there is any risk of accessing it
+ * multiple times -- the idea is that you create a separate Frag for each bit, and render
+ * that once.
+ * 
  * Note that a ManagedFrag corresponds to a DOM *Node*, which is almost anything: an Element,
  * an Attribute, a Text, etc. A Gadget (which is a subclass of ManagedFrag) corresponds to
  * a DOM Element.
@@ -20,9 +28,19 @@ import _root_.rx._
  * useful gadgetry.
  */
 trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
-  
+
+  /**
+   * An Rx member containing the actual Node iff it has been rendered.
+   */
   val elemOptRx = Var[Option[Output]](None)
   def elemOpt = elemOptRx()
+  /**
+   * Fetches the actual rendered DOM Node for this Frag.
+   * 
+   * IMPORTANT: this is convenient, but fundamentally unsafe! Only use it in places where
+   * you are *certain* that the Node has already been rendered; otherwise, use the safer
+   * elemOpt or elemOptRx!
+   */
   def elem = elemOpt.get
   
   /**

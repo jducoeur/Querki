@@ -111,7 +111,7 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
    * 
    * This is usually called via the <= or <~ operators.
    * 
-   * TODO: the are a bunch of grungy asInstanceOfs in here. Is there any way to pick up the actual type of the
+   * TODO: there is a grungy asInstanceOf in here. Is there any way to pick up the actual type of the
    * underlying Gadget without polluting the type signature of this call in such a way that you have to
    * redundantly state it every time?
    */
@@ -162,7 +162,8 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
   
   /**
    * This defines a callback for when the Gadget actually gets defined. Note that this does *not*
-   * mean that the underlying Element has been created!
+   * mean that the underlying Element has been created! If you care about the underlying DOM element,
+   * use whenRendered() instead.
    * 
    * This function is chainable.
    */
@@ -174,7 +175,8 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
   }
   
   /**
-   * Similar to whenSet(), but fires when the underlying Gadget actually gets *rendered*.
+   * Invoke the given function when this Gadget is actually rendered. At that point, the Gadget's elem
+   * has been set, so you can operate on it. This is sometimes the right place to add, eg, event hooks.
    */
   def whenRendered(f:G => Unit) = {
     whenSet { g =>
@@ -209,6 +211,12 @@ class GadgetElementRef[T <: dom.Element](implicit e:Ecology) extends GadgetRef[G
 }
 
 object GadgetRef {
+  /**
+   * The usual way to create a GadgetRef for a particular type of Gadget.
+   */
   def apply[G <: Gadget[_]](implicit e:Ecology) = new GadgetRef[G]
+  /**
+   * This allows you to create a GadgetRef that will work with an underlying TypedTag.
+   */
   def of[T <: dom.Element](implicit e:Ecology) = new GadgetElementRef[T]
 }
