@@ -45,7 +45,7 @@ package object globals {
   // TODO: this conversion needs to get lifted into the new Gadgets library!
   implicit def tag2Gadget[Output <: dom.Element](
     guts:TypedTag[Output]
-  )(implicit ecology:Ecology):Gadget[Output]
+  ):Gadget[Output]
     = new querki.display.TypedGadget[Output](guts)
   
   /**

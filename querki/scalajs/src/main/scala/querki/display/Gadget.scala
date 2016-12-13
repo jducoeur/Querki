@@ -72,7 +72,7 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
  * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
  * have a handle to the resulting elem. Usually accessed as Gadget(...).
  */
-class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit)(implicit val ecology:Ecology) extends Gadget[dom.Element] {
+class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) extends Gadget[dom.Element] {
   def doRender() = guts
   override def onCreate(e:dom.Element) = { hook(e) }
 }
@@ -81,7 +81,7 @@ class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element
  * Wrapper around a TypedTag. You don't need to specify this explicitly -- there
  * is an implicit def in globals that transforms TypedTag into TypedGadget.
  */
-class TypedGadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output])(implicit val ecology:Ecology) extends Gadget[Output] {
+class TypedGadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output]) extends Gadget[Output] {
   def doRender() = guts
   // We need to override this in order to break what would otherwise be an infinite loop:
   override def createFrag = guts.render
@@ -95,13 +95,13 @@ object Gadget {
    * You shouldn't often need to call this explicitly; there is an implicit def in globals that will
    * do it for you.
    */
-  def apply(guts:scalatags.JsDom.TypedTag[dom.Element])(implicit ecology:Ecology) = new SimpleGadget(guts, { elem:dom.Element => })
+  def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts, { elem:dom.Element => })
   
   /**
    * Create a SimpleGadget from the given Scalatags. This is typically enough when all you need is
    * to get at the resulting DOM element.
    */
-  def apply(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit)(implicit ecology:Ecology) = new SimpleGadget(guts, hook)
+  def apply(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) = new SimpleGadget(guts, hook)
 }
 
 /**
