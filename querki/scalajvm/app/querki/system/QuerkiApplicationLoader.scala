@@ -82,6 +82,9 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     QLog.spew(s"WEB_HOST: ${env("WEB_HOST")}")
     QLog.spew(s"WEB_OTHER_PORTS: ${env("WEB_OTHER_PORTS")}")
     
+    // If the context wants to do something before the Ecology, do it here:
+    QuerkiApplicationLoader._preEcologyFunc(app)
+    
     // Tell the QuerkiRoot to initialize and wait for it to be ready. Yes, this is one of those
     // very rare times when we really and for true want to block, because we don't want to consider
     // ourselves truly started until it's done:
@@ -114,6 +117,14 @@ object QuerkiApplicationLoader {
   // it can shut it all down?
   var _appSystem:ActorSystem = null  
   var _root:ActorRef = null
+  
+  /**
+   * HACK: this is a function that will be called after Play initializes, but before the Ecology and
+   * Actors boot up. It is mainly intended as a hook for the functional tests.
+   * 
+   * TODO: think about whether we can do this more cleanly (if more verbosely) using an injected interface.
+   */
+  var _preEcologyFunc:Application => Unit = { app => }
 }
 
 /**

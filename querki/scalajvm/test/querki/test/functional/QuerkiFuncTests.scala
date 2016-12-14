@@ -90,6 +90,8 @@ class QuerkiFuncTests
         "querki.mail.test" -> "true"
       ))
       
+    // We run setupDatabase *during* load -- after Play initializes but before the Ecology:
+    QuerkiApplicationLoader._preEcologyFunc = setupDatabase
     val app = new QuerkiApplicationLoader().load(context)
     
     app
@@ -100,8 +102,6 @@ class QuerkiFuncTests
   "Run the main functional tests" in {
     // Fetch the actual running Ecology, so that tests can introspect into the system.
     ecology = QuerkiRoot.ecology
-    
-    setupDatabase()
     
     // Starting point: go to the Querki root page, not yet logged in.
     // 19001 is the default port used for Play Functional Testing. We can and probably
