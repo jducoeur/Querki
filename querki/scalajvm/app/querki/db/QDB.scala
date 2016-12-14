@@ -3,8 +3,7 @@ package querki.db
 import javax.inject._
 
 import java.sql.Connection
-import play.api.db.DB
-import play.api.db.{Database, DBApi}
+import play.api.db.DBApi
 
 import querki.ecology.PlayEcology
 import querki.globals._
