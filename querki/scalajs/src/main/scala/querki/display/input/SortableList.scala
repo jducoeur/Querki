@@ -11,6 +11,7 @@ import querki.globals._
 
 import querki.editing.EditFunctions
 import EditFunctions._
+import querki.display.GadgetLookup
 
 /**
  * TODO: all of this is way too incestuous with the fine details of how things get built
@@ -137,7 +138,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       // Important: we only try to save the new value *after* the server acks the creation of the new
       // element. Otherwise, there's a horribly easy race condition.
       if (response == PropertyChanged) {
-	    val newGadgets = findGadgetsFor($(newLiElem), { frag => frag.isInstanceOf[InputGadget[_]] })
+	    val newGadgets = GadgetLookup.findGadgetsFor($(newLiElem), { frag => frag.isInstanceOf[InputGadget[_]] })
 	    newGadgets.foreach { gadget =>
 	      gadget.asInstanceOf[InputGadget[_]].save()
 	    }          

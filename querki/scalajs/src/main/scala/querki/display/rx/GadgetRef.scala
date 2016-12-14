@@ -47,6 +47,9 @@ import querki.globals._
  * TODO: is there any way to make this sensitive to the actual element type of the Gadget, without
  * forcing us to add another type parameter everywhere?
  * 
+ * TODO: this is annoyingly dependent on jQuery. If we could make it work with raw DOM, we could
+ * extract an inner "core" library with no jQuery dependency. That's worth doing, I think.
+ * 
  * @author jducoeur
  */
 class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Element] with EcologyMember {

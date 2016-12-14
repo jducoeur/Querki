@@ -1,10 +1,12 @@
 package querki
 
+import org.scalajs.dom
+
 import querki.globals._
 
 import querki.comm.URL
 import querki.data.{BasicThingInfo, SpaceInfo}
-import querki.display.ManagedFrag
+import querki.display.{AnyNode, ManagedFrag}
 
 package object pages {
   
@@ -97,7 +99,7 @@ package object pages {
     /**
      * Returns the Page that contains the given Frag.
      */
-    def findPageFor(node:ManagedFrag[_]):Option[Page]
+    def findPageFor[N <: dom.Node](node:ManagedFrag[N]):Option[Page]
     
     /**
      * Indicates that something has changed significantly to alter the page layout, so the
@@ -109,7 +111,7 @@ package object pages {
      * the page's structure, especially asynchronous changes. (It should not be called
      * during normal page setup; that's just extra work.)
      */
-    def updatePage(node:ManagedFrag[_]):Unit
+    def updatePage[N <: dom.Node](node:ManagedFrag[N]):Unit
   }
   
   /**

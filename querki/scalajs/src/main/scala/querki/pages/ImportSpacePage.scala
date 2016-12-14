@@ -18,6 +18,7 @@ import org.querki.jquery._
 import querki.api.SpaceExistsException
 import querki.comm._
 import querki.data.SpaceInfo
+import querki.display.GadgetLookup
 import querki.display.rx._
 import querki.imexport.ImportSpaceFunctions
 import querki.globals._
@@ -72,14 +73,14 @@ class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
           case None if (progress.failed) => {
             // Failure!
             finished()
-            progressMsg.jq.text(s"Error -- ${progress.msg}")
+            $(progressMsg.elem).text(s"Error -- ${progress.msg}")
           }
           
           case _ => {
             // Normal progress:
-            progressMsg.jq.text(progress.msg)
-            progressBar.jq.width(s"${progress.progress}%")
-            progressBar.jq.text(s"${progress.progress}%")
+            $(progressMsg.elem).text(progress.msg)
+            $(progressBar.elem).width(s"${progress.progress}%")
+            $(progressBar.elem).text(s"${progress.progress}%")
           }
         }
       }
@@ -96,8 +97,8 @@ class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
               case Success(path) => {
                 data.url = controllers.ClientController.upload(path).url
                 val deferred = data.submit()
-                buttonSection.jq.hide()
-                spinnerSection.jq.show()
+                $(buttonSection.elem).hide()
+                $(spinnerSection.elem).show()
                 startProgressTimer(path)
                 // We no longer care about this; we're polling the state instead:
                 // deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => }

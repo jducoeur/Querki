@@ -52,17 +52,7 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
   def onCreate(elem:Output) = {}
   
   def onRendered(e:Output):Unit = {
-    val gadgets =
-      if ($(elem).hasClass("_withGadget")) {
-        val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
-        existingGadgets :+ this
-      } else {
-        Seq(this)
-      }
-    // TODO: this should be a Seq of Gadgets, not a single one, so we can attach multiple
-    // Gadgets to a single Element!
-    $(elem).data("gadgets", gadgets.asInstanceOf[js.Any])
-    $(elem).addClass("_withGadget")
+    GadgetLookup.annotateGadget(this)
     onCreate(e)
   }
   

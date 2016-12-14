@@ -73,7 +73,7 @@ class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement
   } 
   
   override def onInserted() = contentsOpt.map { contents => 
-    findGadgets($(contents)).foreach {
+    GadgetLookup.findGadgets($(contents)).foreach {
       case g:Gadget[_] => g.onInserted()
       case _ =>
     }

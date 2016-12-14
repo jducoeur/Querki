@@ -8,7 +8,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.QText
+import querki.display.{GadgetLookup, QText}
 import querki.display.input.InputGadget
 import querki.editing.EditFunctions
 import EditFunctions.{ChangePropertyValue, PropertyChange}
@@ -102,7 +102,7 @@ class CreateAndEditPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     // should exist as an ID:
     val path = Editing.propPathOldStyleHack(prop, thingInfoOpt.map(_.oid))
     val control = $(elem).find(s"#$path")
-    findGadgets(control).foreach {
+    GadgetLookup.findGadgets(control).foreach {
       case gadget:InputGadget[_] => {
         gadget.setValue(v)
       }

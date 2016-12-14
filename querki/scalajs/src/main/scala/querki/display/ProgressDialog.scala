@@ -6,6 +6,8 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 
+import org.querki.jquery._
+
 import querki.api._
 import querki.display.rx.GadgetRef
 import querki.globals._
@@ -53,9 +55,10 @@ class ProgressDialogEcot(e:Ecology) extends ClientEcot(e) with ProgressDialog {
           }
         } else {
           // Normal progress:
-          progressMsg.jq.text(progress.msg)
-          progressBar.jq.width(s"${progress.percent}%")
-          progressBar.jq.text(s"${progress.percent}%")            
+          val progElem = $(progressMsg.elem)
+          progElem.text(progress.msg)
+          progElem.width(s"${progress.percent}%")
+          progElem.text(s"${progress.percent}%")            
         }
       }
     }

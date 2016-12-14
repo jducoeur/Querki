@@ -1,9 +1,12 @@
 package querki.pages
 
+import org.scalajs.dom
+
 import querki.globals._
 
 import querki.comm.URL
 import querki.data.SpaceInfo
+import querki.display.{AnyNode, GadgetLookup}
 import querki.search.SearchResultsPage
 
 import querki.display.ManagedFrag
@@ -96,11 +99,11 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     }
   }
   
-  def findPageFor(node:ManagedFrag[_]):Option[Page] = {
-    node.findParentGadget(_.isInstanceOf[Page]).map(_.asInstanceOf[Page])
+  def findPageFor[N <: dom.Node](node:ManagedFrag[N]):Option[Page] = {
+    GadgetLookup.findParentGadget(node, _.isInstanceOf[Page]).map(_.asInstanceOf[Page])
   }
   
-  def updatePage(node:ManagedFrag[_]) = {
+  def updatePage[N <: dom.Node](node:ManagedFrag[N]) = {
     findPageFor(node).map(_.reindex())
   }
 }

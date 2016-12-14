@@ -1,11 +1,6 @@
 package querki.display
 
-import scala.annotation.tailrec
-
-import scala.scalajs.js
-import js.UndefOr
 import org.scalajs.dom
-import org.querki.jquery._
 import _root_.rx._
 
 /**
@@ -42,13 +37,6 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    * elemOpt or elemOptRx!
    */
   def elem = elemOpt.get
-  
-  /**
-   * Fetch a JQuery for the underlying Element of this Ref.
-   * 
-   * IMPORTANT: this will throw an Exception if the Ref isn't assigned, or the Gadget isn't rendered yet!
-   */
-  def jq = $(elem)
   
   /**
    * Slam the element for this Gadget. You should only call this iff the element was created from
@@ -92,50 +80,6 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     // Note that we intentionally don't return result at this point, in case onCreate()
     // mutates elem:
     elem
-  }
-  
-  type AnyNode <: dom.Node
-  type AnyFrag = ManagedFrag[AnyNode]
-  
-  def findGadgetsFor(root:JQuery, pred:AnyFrag => Boolean):Seq[AnyFrag] = {
-    val gadgetOptsArray = root.find("._withGadget").map({ (e:dom.Element) =>
-      val frags = $(e).data("gadgets").asInstanceOf[Seq[AnyFrag]]
-      frags.filter(pred(_))
-    }:js.ThisFunction0[dom.Element, Any]).get()
-    
-    val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]]
-        
-    gadgetOptsSeq.flatten
-  }
-  
-  @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):Option[AnyFrag] = {
-    if (node.length == 0)
-      // Implication is that we've gone all the way to the top of the hierarchy without a match, so
-      // give up:
-      None
-    else {
-      val frags = findGadgets(node)
-      frags.find(pred(_)) match {
-        case Some(result) => Some(result)
-        case None => {
-          val parent = node.parent()
-          if (parent.length > 0 && parent.get(0).get == dom.document)
-            None
-          else
-            findParentGadgetRec(node.parent(), pred)
-        }
-      }
-    }
-  }
-  def findParentGadget(pred:AnyFrag => Boolean):Option[AnyFrag] = {
-    elemOpt.flatMap(e => findParentGadgetRec($(e), pred))
-  }
-  
-  def findGadgets(node:JQuery):Seq[AnyFrag] = {
-    if (node.hasClass("_withGadget"))
-      node.data("gadgets").map(_.asInstanceOf[Seq[AnyFrag]]).getOrElse(Seq.empty)
-    else
-      Seq.empty
   }
   
   /**

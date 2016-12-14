@@ -13,6 +13,9 @@ import querki.util.Notifier
 
 package object display {
   
+  type AnyNode <: dom.Node
+  type AnyFrag = ManagedFrag[AnyNode]
+  
   /**
    * The factory function for a Gadget. It is consistent and trivial, but we don't have
    * reflection here, so can't just automate it.
