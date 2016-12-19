@@ -7,10 +7,11 @@ import autowire._
 
 import org.widok.moment._
 
+import org.querki.gadgets.core.SimpleGadget
 import org.querki.jquery._
 
 import models.Kind
-import querki.display.{ButtonGadget, Gadget, SimpleGadget}
+import querki.display.{ButtonGadget}
 import querki.globals._
 import querki.pages._
 import querki.time._

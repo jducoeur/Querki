@@ -18,7 +18,7 @@ import models.Wikitext
 import querki.globals._
 
 import querki.comm._
-import querki.display.{Gadget, HookedGadget, RawSpan}
+import querki.display.{HookedGadget, RawSpan}
 import querki.pages.Page
 
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have

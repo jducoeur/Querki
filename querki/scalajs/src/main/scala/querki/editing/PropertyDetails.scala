@@ -6,7 +6,7 @@ import rx._
 
 import querki.globals._
 
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget}
 import querki.display.rx.RxThingSelector
   
 class PropertyDetails(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.html.Div] {

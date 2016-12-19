@@ -4,6 +4,7 @@ import org.scalajs.dom.html
 
 import org.querki.jquery._
 
+import querki.display.QuerkiUIUtils
 import querki.display.input.InputGadget
 import querki.globals._
 
@@ -16,7 +17,7 @@ import EditFunctions._
  * 
  * @author jducoeur
  */
-class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e)  {
+class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with QuerkiUIUtils {
   
   lazy val Editing = interface[querki.editing.Editing]
   

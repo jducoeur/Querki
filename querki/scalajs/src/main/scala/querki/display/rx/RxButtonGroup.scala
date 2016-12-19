@@ -8,13 +8,13 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.Gadget
-
 case class ButtonInfo(value:String, display:String, initiallyActive:Boolean, labelMods:Modifier*)
 
 // TODO: this might get refactored together with RxSelect -- they share a lot of code. They may be an
 // underlying RxSelector to be pulled out of here.
-class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
+class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ecology:Ecology) 
+  extends Gadget[dom.HTMLDivElement] with querki.display.QuerkiUIUtils
+{
   
   lazy val selectedValOpt = Var[Option[String]](None)
   lazy val selectedTIDOpt = selectedValOpt.map(_.map(TID(_)))

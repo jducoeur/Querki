@@ -20,9 +20,9 @@ import querki.api.ThingFunctions
 import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
-import querki.display.{Gadget, QLButtonGadget, QText, WrapperDiv}
+import querki.display.{QLButtonGadget, QText, QuerkiUIUtils, WrapperDiv}
 
-class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends Page() {
+class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends Page() with QuerkiUIUtils {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
@@ -74,7 +74,9 @@ class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends
   }
 }
 
-class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecology) 
+  extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils with EcologyMember 
+{
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]

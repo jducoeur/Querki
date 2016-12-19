@@ -8,8 +8,6 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.Gadget
-
 case class RadioButton(v:String, label:String, mods:Modifier*)
 
 class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology) extends Gadget[dom.html.Form] {

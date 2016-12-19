@@ -1,12 +1,10 @@
 package querki
 
 import org.scalajs.dom
-
 import querki.globals._
-
 import querki.comm.URL
 import querki.data.{BasicThingInfo, SpaceInfo}
-import querki.display.{AnyNode, ManagedFrag}
+import org.querki.gadgets.core.ManagedFrag
 
 package object pages {
   

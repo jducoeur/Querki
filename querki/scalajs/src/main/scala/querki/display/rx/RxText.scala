@@ -8,7 +8,6 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.Gadget
 import querki.display.input.AutosizeFacade._
 
 /**

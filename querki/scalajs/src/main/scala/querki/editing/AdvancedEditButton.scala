@@ -9,7 +9,7 @@ import querki.globals._
 
 import querki.display.HookedGadget
 
-class AdvancedEditButton(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) {
+class AdvancedEditButton(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) with querki.display.QuerkiUIUtils {
   
   lazy val Editing = interface[Editing]
   

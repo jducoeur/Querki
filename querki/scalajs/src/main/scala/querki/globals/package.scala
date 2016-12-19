@@ -2,14 +2,15 @@ package querki
 
 import scala.scalajs.js
 import js.annotation.JSName
+
 import org.scalajs.dom
 import dom.Element
+
 import org.querki.jquery
 import jquery._
+import org.querki.gadgets.core._
 
 import scalatags.JsDom.TypedTag
-
-import querki.display.{Gadget, ManagedFrag, TypedGadget}
 
 /**
  * This package provides the "global imports" that are commonly used across the client. It
@@ -42,11 +43,14 @@ package object globals {
   val TID = querki.data.TID
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
-  // TODO: this conversion needs to get lifted into the new Gadgets library!
+  val Gadget = org.querki.gadgets.core.Gadget
+  type Gadget[E <: dom.Element] = org.querki.gadgets.core.Gadget[E]
+  
+  // TODO: this is now duplicated in the Gadgets library. Can I get rid of it here?
   implicit def tag2Gadget[Output <: dom.Element](
     guts:TypedTag[Output]
   ):Gadget[Output]
-    = new querki.display.TypedGadget[Output](guts)
+    = new TypedGadget[Output](guts)
   
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.

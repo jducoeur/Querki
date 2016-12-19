@@ -7,7 +7,7 @@ import rx._
 
 import querki.globals._
 import querki.data._
-import querki.display.{Gadget, RawDiv, WithTooltip}
+import querki.display.{QuerkiUIUtils, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
 import querki.display.rx._
 import EditFunctions.PropEditInfo
@@ -17,7 +17,7 @@ import EditFunctions.PropEditInfo
  * Something broke in the transition to Bootstrap 3. We should probably investigate getting that working again.
  */
 class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEditorInitially:Boolean = false)(implicit val ecology:Ecology) 
-  extends Gadget[dom.HTMLLIElement] 
+  extends Gadget[dom.HTMLLIElement] with QuerkiUIUtils
 {
     val propInfo = info.propInfo
     val propId = propInfo.oid

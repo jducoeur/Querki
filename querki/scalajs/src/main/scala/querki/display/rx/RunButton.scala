@@ -5,7 +5,7 @@ import scalatags.JsDom.all._
 import rx._
 import org.querki.jquery._
 
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget}
 import querki.globals._
 
 /**

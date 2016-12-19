@@ -8,7 +8,9 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
+class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) 
+  extends InputGadget[dom.HTMLInputElement](e) with querki.display.QuerkiUIUtils
+{
   
   def values = List(elem.value)
   

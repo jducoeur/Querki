@@ -1,7 +1,7 @@
-package querki.display
+package org.querki.gadgets.core
 
 import org.scalajs.dom
-import _root_.rx._
+import rx._
 
 /**
  * A controlled wrapper around a Scalatags Frag, which gives you access to the lifecycle and

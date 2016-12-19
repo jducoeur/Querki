@@ -10,11 +10,9 @@ import querki.api.OperationHandle
 import querki.comm.URL
 import querki.pages.{Page, ParamMap}
 import querki.util.Notifier
+import org.querki.gadgets.core.ManagedFrag
 
 package object display {
-  
-  type AnyNode <: dom.Node
-  type AnyFrag = ManagedFrag[AnyNode]
   
   /**
    * The factory function for a Gadget. It is consistent and trivial, but we don't have

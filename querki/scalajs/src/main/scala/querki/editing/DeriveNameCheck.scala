@@ -6,11 +6,12 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.display.Gadget
 import querki.display.input.InputGadget
 import querki.display.rx._
   
-class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) {
+class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology) 
+  extends InputGadget[dom.HTMLDivElement](e) with querki.display.QuerkiUIUtils
+{
   
   lazy val Editing = interface[Editing]
   lazy val PageManager = interface[querki.display.PageManager]

@@ -13,7 +13,7 @@ import org.querki.jquery._
 import models.Kind
 
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, Gadget, RawDiv}
+import querki.display.{ButtonGadget, RawDiv}
 import querki.display.input.InputGadget
 import querki.display.rx._
 import querki.ecology._

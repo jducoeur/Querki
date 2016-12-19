@@ -8,11 +8,13 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.data.{TID => _TID, _}
-import querki.display.{AfterLoading, ButtonGadget, Gadget, WrapperDiv}
+import querki.display.{AfterLoading, ButtonGadget, QuerkiUIUtils, WrapperDiv}
 import ButtonGadget._
 import querki.display.rx.GadgetRef
 
-class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology)
+  extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils with EcologyMember 
+{
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   

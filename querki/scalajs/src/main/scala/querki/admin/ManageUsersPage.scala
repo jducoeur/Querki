@@ -8,7 +8,7 @@ import org.querki.jquery._
 
 import querki.api._
 import AdminFunctions._
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget}
 import querki.display.rx._
 import querki.globals._
 import querki.identity.UserLevel._

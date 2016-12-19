@@ -4,9 +4,9 @@ import org.scalajs.dom
 import dom.Element
 import scalatags.JsDom.all._
 import rx._
+import org.querki.gadgets.core.TypedGadget
 import org.querki.jquery._
 
-import querki.display.{Gadget, TypedGadget}
 import querki.globals._
 
 /**

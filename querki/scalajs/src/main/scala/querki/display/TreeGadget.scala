@@ -30,7 +30,7 @@ class TreeGadget(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
 
 case class NodeData(ql:Option[String], thingId:TID)
 
-class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
+class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) with QuerkiUIUtils {
 
   lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]

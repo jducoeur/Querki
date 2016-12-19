@@ -1,4 +1,4 @@
-package querki.display
+package org.querki.gadgets.core
 
 import scala.annotation.tailrec
 

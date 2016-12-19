@@ -6,7 +6,6 @@ import org.scalajs.dom.{raw => domRaw, _}
 import org.querki.jquery._
 import scalatags.JsDom.all.{html => htmlTag, _}
 
-import querki.display.Gadget
 import querki.globals._
 
 /**

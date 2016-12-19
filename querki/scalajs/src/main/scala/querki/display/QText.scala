@@ -52,8 +52,8 @@ trait ServerHtmlHolder extends EcologyMember {
   }
 }
 
-class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
-  with EcologyMember with ServerHtmlHolder 
+class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) 
+  extends Gadget[dom.Element] with QuerkiUIUtils with EcologyMember with ServerHtmlHolder 
 {
   override def onCreate(root:dom.Element) = prepContents(root)
   

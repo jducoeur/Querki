@@ -14,7 +14,7 @@ import querki.globals._
 import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, Gadget, SmallButtonGadget, WrapperDiv}
+import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
 import querki.display.rx.{GadgetRef, RxDiv}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
@@ -29,7 +29,9 @@ object PageContents {
   def apply(content:TypedTag[dom.HTMLDivElement]):PageContents = PageContents("", content)  
 }
 
-abstract class Page(pageName:String = "") extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
+abstract class Page(pageName:String = "") 
+  extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils with EcologyMember with PageImplicits 
+{
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   lazy val DataAccess = interface[querki.data.DataAccess]

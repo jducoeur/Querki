@@ -1,15 +1,12 @@
 package querki.pages
 
 import org.scalajs.dom
-
 import querki.globals._
-
 import querki.comm.URL
 import querki.data.SpaceInfo
-import querki.display.{AnyNode, GadgetLookup}
+import org.querki.gadgets.core.GadgetLookup
 import querki.search.SearchResultsPage
-
-import querki.display.ManagedFrag
+import org.querki.gadgets.core.ManagedFrag
 
 class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   

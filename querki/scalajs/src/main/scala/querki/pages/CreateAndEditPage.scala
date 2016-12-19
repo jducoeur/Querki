@@ -3,12 +3,11 @@ package querki.pages
 import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
-
 import querki.globals._
-
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.{GadgetLookup, QText}
+import querki.display.{QText}
+import org.querki.gadgets.core.GadgetLookup
 import querki.display.input.InputGadget
 import querki.editing.EditFunctions
 import EditFunctions.{ChangePropertyValue, PropertyChange}

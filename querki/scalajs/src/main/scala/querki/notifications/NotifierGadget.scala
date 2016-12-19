@@ -6,7 +6,6 @@ import scalatags.JsDom.all._
 import rx._
 import rx.ops._
 import querki.globals._
-import querki.display.{Gadget}
 import querki.display.rx.RxTextFrag
 
 class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] with EcologyMember {

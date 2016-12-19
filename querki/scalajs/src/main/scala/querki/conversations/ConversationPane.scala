@@ -12,7 +12,7 @@ import org.widok.moment._
 import querki.globals._
 
 import querki.data.ThingInfo
-import querki.display.{Gadget, QText, WrapperDiv}
+import querki.display.{QText, WrapperDiv}
 import querki.display.input.DeleteButton
 import querki.display.input.AutosizeFacade._
 import querki.time._

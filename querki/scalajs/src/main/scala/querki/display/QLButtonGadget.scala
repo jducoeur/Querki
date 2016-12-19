@@ -10,7 +10,9 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 
-class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) extends HookedGadget[Output](e) with EcologyMember {
+class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) 
+  extends HookedGadget[Output](e) with QuerkiUIUtils with EcologyMember 
+{
   
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]

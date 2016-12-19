@@ -8,7 +8,7 @@ import rx._
 
 import EditFunctions._
 import querki.data.{TID => _TID, _}
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget}
 import ButtonGadget._
 import querki.display.rx._
 import RxEmptyable._
@@ -17,7 +17,7 @@ import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils
   
 class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) 
-  extends Gadget[dom.HTMLDivElement] with SkillLevelsNeeded with EcologyMember 
+  extends Gadget[dom.HTMLDivElement] with querki.display.QuerkiUIUtils with SkillLevelsNeeded with EcologyMember 
 {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]

@@ -2,7 +2,7 @@ package querki.display.rx
 
 import rx._
 
-import querki.display.Gadget
+import org.querki.gadgets.core.Gadget
 
 /**
  * A handy typeclass for asking whether a reactive Gadget is "empty" or not. The

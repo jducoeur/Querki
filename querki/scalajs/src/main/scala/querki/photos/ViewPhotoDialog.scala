@@ -9,8 +9,6 @@ import querki.globals._
 
 import org.querki.facades.bootstrap._
 
-import querki.display.Gadget
-
 class ViewPhotoDialog(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
 
   def showFrom(thumbnail:Thumbnail) = {

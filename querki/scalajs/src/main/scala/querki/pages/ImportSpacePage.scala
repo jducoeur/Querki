@@ -18,7 +18,7 @@ import org.querki.jquery._
 import querki.api.SpaceExistsException
 import querki.comm._
 import querki.data.SpaceInfo
-import querki.display.GadgetLookup
+import org.querki.gadgets.core.GadgetLookup
 import querki.display.rx._
 import querki.imexport.ImportSpaceFunctions
 import querki.globals._

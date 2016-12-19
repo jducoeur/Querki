@@ -4,7 +4,7 @@ import org.scalajs.dom
 import org.querki.jquery._
 import rx._
 import querki.globals._
-import querki.display.ManagedFrag
+import org.querki.gadgets.core.ManagedFrag
 
 /**
  * A reactive text Modifier, which lets you place some Text into Scalatags, and have it change

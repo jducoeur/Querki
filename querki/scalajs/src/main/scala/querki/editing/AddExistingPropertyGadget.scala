@@ -6,12 +6,13 @@ import scalatags.JsDom.all._
 import rx._
 
 import querki.data.{TID => _TID, _}
-import querki.display.{ButtonGadget, Gadget}
+import querki.display.{ButtonGadget, QuerkiUIUtils}
 import querki.display.rx._
 import querki.globals._
+import querki.util.ScalatagUtils.FSeq
 
 class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
-  extends Gadget[dom.HTMLDivElement] 
+  extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils
 {
   val optLabel = "label".attr
   

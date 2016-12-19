@@ -8,8 +8,6 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.Gadget
-
 trait RxThingSelector {
   def selectedText:Rx[String]
   def selectedTID:Rx[TID]

@@ -10,8 +10,6 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.Gadget
-
 /**
  * A div whose contents can be updated reactively.
  * 

@@ -13,7 +13,7 @@ import org.querki.facades.jstree._
 
 import querki.api.ThingFunctions
 import querki.data.{ThingInfo}
-import querki.display.{ButtonGadget, Gadget, QText}
+import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import RxEmptyable._
 import querki.globals._

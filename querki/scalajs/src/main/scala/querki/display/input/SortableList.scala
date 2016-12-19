@@ -11,7 +11,7 @@ import querki.globals._
 
 import querki.editing.EditFunctions
 import EditFunctions._
-import querki.display.GadgetLookup
+import org.querki.gadgets.core.GadgetLookup
 
 /**
  * TODO: all of this is way too incestuous with the fine details of how things get built

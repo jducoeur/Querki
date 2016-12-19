@@ -16,7 +16,7 @@ import querki.globals._
 
 import querki.api._
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, Gadget, HookedGadget, RawDiv}
+import querki.display.{ButtonGadget, HookedGadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx._
 import querki.editing.EditFunctions

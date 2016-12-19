@@ -11,7 +11,7 @@ import querki.globals._
 import models.Wikitext
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.{QText, Gadget}
+import querki.display.{QText}
 
 class PrintEcot(e:Ecology) extends ClientEcot(e) with Print {
   
