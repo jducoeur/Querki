@@ -8,6 +8,7 @@ import scalatags.JsDom.TypedTag
 import rx._
 import org.querki.jsext._
 import org.querki.jquery._
+import org.querki.squery.FormEvents._
 
 import querki.globals._
 
@@ -181,7 +182,7 @@ abstract class Page(pageName:String = "")
   private def reindex(e:dom.Element, from:Int):Int = {
     var i = from
     
-    if (canFocus(e) &&
+    if (e.canFocus &&
         // Omit things that should explicitly not be in the tab order:
         !($(e).data("notab").toOption == Some(true))) 
     {
