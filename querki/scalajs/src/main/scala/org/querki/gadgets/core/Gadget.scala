@@ -1,6 +1,6 @@
 package org.querki.gadgets.core
 
-import org.scalajs.dom
+import org.scalajs.dom.html.Element
 
 import org.querki.squery.Focusable
 import Focusable._
@@ -13,7 +13,7 @@ import org.querki.squery.Searchable._
  * If you need complex behaviour, subclass this and extend it. If you just need to be able to
  * access the DOM created by the rendered Scalatags, just use the Gadget(scalatags) entry point.
  */
-trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] {
+trait Gadget[Output <: Element] extends ManagedFrag[Output] {
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
    * 
@@ -34,7 +34,7 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] {
    * 
    * TBD: this suggests that sQuery should be smarter about Element subclasses.
    */
-  def mapElementOrElse[R](default:R, f:dom.Element => R):R = {
+  def mapElementOrElse[R](default:R, f:Element => R):R = {
     elemOpt.map(f).getOrElse(default)
   }
   
@@ -53,9 +53,9 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] {
  * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
  * have a handle to the resulting elem. Usually accessed as Gadget(...).
  */
-class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) extends Gadget[dom.Element] {
+class SimpleGadget(guts:scalatags.JsDom.TypedTag[Element], hook: Element => Unit) extends Gadget[Element] {
   def doRender() = guts
-  override def onCreate(e:dom.Element) = { hook(e) }
+  override def onCreate(e:Element) = { hook(e) }
 }
 
 object Gadget {
@@ -66,13 +66,13 @@ object Gadget {
    * You shouldn't often need to call this explicitly; there is an implicit def in globals that will
    * do it for you.
    */
-  def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts, { elem:dom.Element => })
+  def apply(guts:scalatags.JsDom.TypedTag[Element]) = new SimpleGadget(guts, { elem:Element => })
   
   /**
    * Create a SimpleGadget from the given Scalatags. This is typically enough when all you need is
    * to get at the resulting DOM element.
    */
-  def apply(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) = new SimpleGadget(guts, hook)
+  def apply(guts:scalatags.JsDom.TypedTag[Element], hook: Element => Unit) = new SimpleGadget(guts, hook)
   
   implicit def GadgetFocusable[G <: Gadget[_]] = new Focusable[G] {
     /**
@@ -95,7 +95,7 @@ object Gadget {
  * Wrapper around a TypedTag. You don't need to specify this explicitly -- there
  * is an implicit def in globals that transforms TypedTag into TypedGadget.
  */
-class TypedGadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output]) extends Gadget[Output] {
+class TypedGadget[Output <: Element](guts:scalatags.JsDom.TypedTag[Output]) extends Gadget[Output] {
   def doRender() = guts
   // We need to override this in order to break what would otherwise be an infinite loop:
   override def createFrag = guts.render

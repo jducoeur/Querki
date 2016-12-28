@@ -3,6 +3,7 @@ package org.querki.gadgets.core
 import scala.annotation.tailrec
 
 import org.scalajs.dom
+import dom.html.Element
 import scala.scalajs.js
 import js.UndefOr
 
@@ -13,7 +14,7 @@ import org.querki.jquery._
  */
 object GadgetLookup {
   
-  def annotateGadget[Output <: dom.Element](g:Gadget[Output]):Unit = {
+  def annotateGadget[Output <: Element](g:Gadget[Output]):Unit = {
     g.elemOpt.map { elem =>
       val gadgets =
         if ($(elem).hasClass("_withGadget")) {

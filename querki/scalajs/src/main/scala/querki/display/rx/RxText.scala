@@ -1,6 +1,7 @@
 package querki.display.rx
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
+import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
@@ -13,7 +14,7 @@ import querki.display.input.AutosizeFacade._
 /**
  * Some common functionality between RxText and RxTextArea.
  */
-trait RxTextBase[E <: dom.Element] extends Gadget[E] {
+trait RxTextBase[E <: Element] extends Gadget[E] {
   protected def curValue =
     for {
       e <- elemOpt
@@ -39,13 +40,13 @@ trait RxTextBase[E <: dom.Element] extends Gadget[E] {
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
 class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
-  extends RxTextBase[dom.HTMLInputElement]
+  extends RxTextBase[dom.html.Input]
 {
   def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
   
   def doRender() = input(tpe:=inputType, mods)
   
-  override def onCreate(e:dom.HTMLInputElement) = {
+  override def onCreate(e:dom.html.Input) = {
     // If a charFilter was specified, run each keystroke past it as a legality check:
     $(e).keydown { evt:JQueryEventObject =>
       val which = evt.which
@@ -82,11 +83,11 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
 class RxText(mods:Modifier*)(implicit e:Ecology) extends RxInput("text", mods)
 
 class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
-  extends RxTextBase[dom.HTMLTextAreaElement]
+  extends RxTextBase[dom.html.TextArea]
 {
   def doRender() = textarea(mods)
   
-  override def onCreate(e:dom.HTMLTextAreaElement) = {
+  override def onCreate(e:dom.html.TextArea) = {
     $(e).on("input", { e:dom.Element => update() })
     $(e).autosize()
   }

@@ -44,10 +44,10 @@ package object globals {
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
   val Gadget = org.querki.gadgets.core.Gadget
-  type Gadget[E <: dom.Element] = org.querki.gadgets.core.Gadget[E]
+  type Gadget[E <: dom.html.Element] = org.querki.gadgets.core.Gadget[E]
   
   // TODO: this is now duplicated in the Gadgets library. Can I get rid of it here?
-  implicit def tag2Gadget[Output <: dom.Element](
+  implicit def tag2Gadget[Output <: dom.html.Element](
     guts:TypedTag[Output]
   ):Gadget[Output]
     = new TypedGadget[Output](guts)

@@ -3,6 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import js.ThisFunction._
 import org.scalajs.dom
+import dom.html.Element
 import org.querki.jquery._
 import querki.globals._
 import querki.display.HookedGadget
@@ -51,7 +52,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
    * TODO: this probably should be a general registry itself, based on the collection and type of the
    * editor.
    */
-  def hookOtherPropEditor[Output <: dom.Element](elem:Output):Seq[Gadget[Output]] = {
+  def hookOtherPropEditor[Output <: Element](elem:Output):Seq[Gadget[Output]] = {
     val e = $(elem)
     val tagName = e.prop("tagName").asInstanceOf[String].toLowerCase
     val tagType = e.attr("type")

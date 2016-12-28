@@ -3,6 +3,7 @@ package querki
 import scala.concurrent.Future
 
 import org.scalajs.dom
+import dom.html.Element
 
 import querki.globals._
 
@@ -18,27 +19,27 @@ package object display {
    * The factory function for a Gadget. It is consistent and trivial, but we don't have
    * reflection here, so can't just automate it.
    */
-  type GadgetConstr[Output <: dom.Element] = (dom.Element => Gadget[Output])
-  type GadgetsConstr[Output <: dom.Element] = (dom.Element => Seq[Gadget[Output]])
+  type GadgetConstr[Output <: Element] = (Element => Gadget[Output])
+  type GadgetsConstr[Output <: Element] = (Element => Seq[Gadget[Output]])
   
   trait Gadgets extends EcologyInterface {
     /**
      * Register an InputGadget. Whenever the specified hookClass is encountered, the given Gadget
      * will be wrapped around that Element.
      */
-    def registerGadget[Output <: dom.Element](hookClass:String, constr:GadgetConstr[Output]):Unit
-    def registerGadgets[Output <: dom.Element](hookClass:String, constr:GadgetsConstr[Output]):Unit
+    def registerGadget[Output <: Element](hookClass:String, constr:GadgetConstr[Output]):Unit
+    def registerGadgets[Output <: Element](hookClass:String, constr:GadgetsConstr[Output]):Unit
 
     /**
      * Registers a constructor that can potentially produce multiple Gadgets, or none.
      */
-    def registerSimpleGadgets[Output <: dom.Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit
+    def registerSimpleGadgets[Output <: Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit
     
     /**
      * Register an InputGadget that doesn't require fancy construction. This is usually the right
      * answer when the InputGadget doesn't take constructor parameters.
      */
-    def registerSimpleGadget[Output <: dom.Element](hookClass:String, constr: => Gadget[Output]):Unit
+    def registerSimpleGadget[Output <: Element](hookClass:String, constr: => Gadget[Output]):Unit
     
     /**
      * The very simplest form, when you simply want to hook a function that will be run on all elements
@@ -46,7 +47,7 @@ package object display {
      * used when you don't care about that, and don't plan to create this Gadget in a strongly-typed
      * way on the Client.
      */
-    def registerHook(selector:String)(hook:dom.Element => Unit):Unit
+    def registerHook(selector:String)(hook:Element => Unit):Unit
     
     /**
      * Given a root element (usually one that has been newly created from server-sent, non-Scalatags code),
@@ -55,7 +56,7 @@ package object display {
      * IMPORTANT: these Gadgets are (intentionally) not immediately hooked! Their hook() method will
      * be called when they actually get added to the DOM and shown, since some controls depend on that.
      */
-    def createGadgets(root:dom.Element):Unit    
+    def createGadgets(root:Element):Unit    
     
     /**
      * Hook all Gadgets that have been created but not yet hooked.

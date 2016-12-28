@@ -10,7 +10,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 
-class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) 
+class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) 
   extends HookedGadget[Output](e) with QuerkiUIUtils with EcologyMember 
 {
   

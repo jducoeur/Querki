@@ -2,6 +2,7 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom
+import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -59,19 +60,19 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
    */
   var registry = Map.empty[String, Seq[GadgetsConstr[_]]]
   
-  def registerGadgets[Output <: dom.Element](hookClass:String, constr:GadgetsConstr[Output]) = {
+  def registerGadgets[Output <: Element](hookClass:String, constr:GadgetsConstr[Output]) = {
     registry += (registry.get(hookClass) match {
       case Some(entry) => (hookClass -> (entry :+ constr))
       case None => (hookClass -> Seq(constr))
     })
   }
   
-  def registerGadget[Output <: dom.Element](hookClass:String, constr:GadgetConstr[Output]):Unit = {
-    registerGadgets(hookClass, { elem:dom.Element => Seq(constr(elem)) })
+  def registerGadget[Output <: Element](hookClass:String, constr:GadgetConstr[Output]):Unit = {
+    registerGadgets(hookClass, { elem:Element => Seq(constr(elem)) })
   }
   
-  def registerSimpleGadgets[Output <: dom.Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit = {
-    val fullConstr = { e:dom.Element =>
+  def registerSimpleGadgets[Output <: Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit = {
+    val fullConstr = { e:Element =>
       val gadgets = constr
       // TODO: this is a clear bad smell. Really, this anonymous function should be
       // taking an Output, not an Element. But that requires rewriting the GadgetsConstr()
@@ -82,19 +83,19 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
     registerGadgets(hookClass, fullConstr)
   }
   
-  def registerSimpleGadget[Output <: dom.Element](hookClass:String, constr: => Gadget[Output]):Unit =
+  def registerSimpleGadget[Output <: Element](hookClass:String, constr: => Gadget[Output]):Unit =
     registerSimpleGadgets(hookClass, { Seq(constr) })
   
-  def registerHook(selector:String)(hook:dom.Element => Unit) = {
+  def registerHook(selector:String)(hook:Element => Unit) = {
     registerSimpleGadgets(selector, { Seq(new HookGadget(hook)) })
   }
   
-  def createGadgets(root:dom.Element) = {
+  def createGadgets(root:Element) = {
     registry.foreach { pair =>
       val (className, constrs) = pair
       if ($(root).is(s"$className")) { constrs.map(_(root)) }
       $(root).find(s"$className").each({ (elem:dom.Element) =>
-        constrs.map(_(elem))
+        constrs.map(_(elem.asInstanceOf[Element]))
       }:js.ThisFunction0[dom.Element, Any])
     }
   }

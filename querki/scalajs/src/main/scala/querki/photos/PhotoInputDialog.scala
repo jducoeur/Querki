@@ -65,7 +65,7 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
   lazy val addReadyIcon = Gadget(i(cls:="glyphicon glyphicon-camera _addPhotoIcon"))
   lazy val addRunningIcon = Gadget(i(cls:="fa fa-spinner fa-3x fa-pulse _addPhotoIcon"))
   
-  def showState(indicator:Gadget[dom.Element]) = {
+  def showState(indicator:Gadget[dom.html.Element]) = {
     val frame = $(elem)
     frame.find("._addPhotoIcon").detach()
     val indicatorElem = indicator.rendered

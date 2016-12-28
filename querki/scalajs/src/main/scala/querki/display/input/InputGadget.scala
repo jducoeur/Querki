@@ -6,7 +6,8 @@ import js.UndefOr
 
 import upickle._
 import autowire._
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
+import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -21,7 +22,7 @@ import EditFunctions._
  * Base class for input controls. When you create a new concrete class, make sure to add it to
  * InputGadgets.registry.
  */
-abstract class InputGadget[T <: dom.Element](e:Ecology) extends HookedGadget[T](e) with EcologyMember {
+abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]  
   lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
@@ -107,7 +108,7 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends HookedGadget[T](
     InputGadgetsInternal.startingEdits(this)
   }
   
-  var errorWrapper:Option[dom.HTMLDivElement] = None
+  var errorWrapper:Option[dom.html.Div] = None
   def showValidationError(msg:String) = {
     val wrapper =
       div(cls:="_validationError",

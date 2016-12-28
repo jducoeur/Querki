@@ -1,7 +1,6 @@
 package querki.display.rx
 
-import org.scalajs.dom
-import dom.Element
+import org.scalajs.dom.html.Element
 import scalatags.JsDom.all._
 import rx._
 import org.querki.gadgets.core.TypedGadget
@@ -204,7 +203,7 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
  * 
  * Create this using GadgetRef.of[].
  */
-class GadgetElementRef[T <: dom.Element](implicit e:Ecology) extends GadgetRef[Gadget[T]] {
+class GadgetElementRef[T <: Element](implicit e:Ecology) extends GadgetRef[Gadget[T]] {
   /**
    * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
    * Gadget. This is used when you declared it with GadgetRef.of[].
@@ -221,5 +220,5 @@ object GadgetRef {
   /**
    * This allows you to create a GadgetRef that will work with an underlying TypedTag.
    */
-  def of[T <: dom.Element](implicit e:Ecology) = new GadgetElementRef[T]
+  def of[T <: Element](implicit e:Ecology) = new GadgetElementRef[T]
 }

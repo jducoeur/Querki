@@ -2,6 +2,7 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom
+import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -17,7 +18,7 @@ trait ServerHtmlHolder extends EcologyMember {
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val QTextUtils = interface[querki.qtext.QTextUtils]
   
-  def prepContents(root:dom.Element) = {
+  def prepContents(root:Element) = {
     val currentHash = PageManager.currentHash
     $(root).find("a").foreach({ child:dom.Element =>
       try {
@@ -53,9 +54,9 @@ trait ServerHtmlHolder extends EcologyMember {
 }
 
 class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) 
-  extends Gadget[dom.Element] with QuerkiUIUtils with EcologyMember with ServerHtmlHolder 
+  extends Gadget[Element] with QuerkiUIUtils with EcologyMember with ServerHtmlHolder 
 {
-  override def onCreate(root:dom.Element) = prepContents(root)
+  override def onCreate(root:Element) = prepContents(root)
   
   def doRender() = {
     // TODO: putting this in a div() is WrongityWrongWrong, since it sometimes might be span-ish.
@@ -72,10 +73,10 @@ object QText {
 /**
  * Minimalist container for inline-structured contents from the server.
  */
-class RawSpan(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+class RawSpan(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[Element] 
   with EcologyMember with ServerHtmlHolder 
 {
-  override def onCreate(root:dom.Element) = prepContents(root)
+  override def onCreate(root:Element) = prepContents(root)
   
   def doRender() = span(raw(contents), mods)
 }
@@ -83,10 +84,10 @@ class RawSpan(contents:String, mods:Modifier*)(implicit val ecology:Ecology) ext
 /**
  * Minimalist container for block-structured contents from the server.
  */
-class RawDiv(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+class RawDiv(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[Element] 
   with EcologyMember with ServerHtmlHolder 
 {
-  override def onCreate(root:dom.Element) = prepContents(root)
+  override def onCreate(root:Element) = prepContents(root)
   
   def doRender() = div(raw(contents), mods)
 }

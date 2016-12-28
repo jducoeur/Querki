@@ -1,6 +1,6 @@
 package querki.display
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -13,8 +13,8 @@ import org.querki.gadgets.core.GadgetLookup
  * 
  * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit val ecology:Ecology) 
-  extends Gadget[dom.HTMLDivElement] with EcologyMember 
+class AfterLoading[T, Output <: dom.html.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit val ecology:Ecology) 
+  extends Gadget[dom.html.Div] with EcologyMember 
 {
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
   lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
@@ -27,7 +27,7 @@ class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Out
   }
 }
 object AfterLoading {
-  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit ecology:Ecology) = new AfterLoading(fut)(guts)
+  def apply[T, Output <: dom.html.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit ecology:Ecology) = new AfterLoading(fut)(guts)
 }
 
 /**
@@ -38,7 +38,7 @@ object AfterLoading {
  * 
  * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
  */
-class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class WrapperDiv(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
   lazy val Pages = interface[querki.pages.Pages]
   

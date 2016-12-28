@@ -6,6 +6,9 @@ import dom.html.{Element => HTMLElement}
 
 import AttrFunctions._
 
+/**
+ * This typeclass represents the ability to put the browser "focus" on something on-screen.
+ */
 trait Focusable[A] {
   /**
    * Returns true iff this can receive focus.
@@ -21,10 +24,6 @@ trait Focusable[A] {
 object Focusable {
   /**
    * Implements focus functions for Elements.
-   * 
-   * TODO: this is wrong -- it should only be implemented for HTMLElements, not
-   * all Elements. But the Gadgets library is too broad at this point. Refine
-   * Gadgets to be HTMLElement-centric, and then tighten this up!
    */
   implicit val ElementFormEvents = new Focusable[Element] {
     /**
@@ -50,7 +49,9 @@ object Focusable {
      * 
      * TBD: should this be restricted to HTMLElement in the first place? I can make a
      * very good case that it should be, but the unfortunate reality of the DOM is
-     * currently that Element and HTMLElement get pretty mushed together.
+     * currently that Element and HTMLElement get pretty mushed together. Limiting this
+     * to HTMLElement probably requires some careful analysis to see what would break, 
+     * and a heavy rewrite of both sQuery and Gadgets.
      */
     def focus(e:Element):Unit = {
       e match {

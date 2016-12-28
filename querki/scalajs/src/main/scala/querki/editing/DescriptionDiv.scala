@@ -64,7 +64,7 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
     }
   }
   
-  val selectionDescription = Var[Gadget[dom.Element]](emptyDescription)
+  val selectionDescription = Var[Gadget[dom.html.Element]](emptyDescription)
     
   val descriptionDiv = RxDiv(Rx {Seq(selectionDescription())})
 }
