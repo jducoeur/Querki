@@ -9,6 +9,8 @@ import autowire._
 
 import org.widok.moment._
 
+import org.querki.squery.FormEvents._
+
 import querki.globals._
 
 import querki.data.ThingInfo

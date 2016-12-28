@@ -2,7 +2,8 @@ package org.querki.gadgets.core
 
 import org.scalajs.dom
 
-import org.querki.squery.FormEvents._
+import org.querki.squery.FormEvents
+import FormEvents._
 import org.querki.squery.Searchable._
 
 /**
@@ -26,14 +27,15 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] {
   def createFrag = underlyingTag.render
   
   /**
-   * Focuses on the first useful thing in this Gadget.
+   * Convenience function for operating on the Element, if this Gadget has been rendered.
    * 
-   * TODO: this should be in a typeclass.
+   * Yes, this deliberately squashes Output to Element for purposes of the function call.
+   * That is typically good enough, and is kinder to the sQuery type inference.
+   * 
+   * TBD: this suggests that sQuery should be smarter about Element subclasses.
    */
-  def focus() = {
-    elemOpt.foreach { e =>
-      e.findFirst(_.canFocus).map(_.focus())
-    }
+  def mapElementOrElse[R](default:R, f:dom.Element => R):R = {
+    elemOpt.map(f).getOrElse(default)
   }
   
   /**
@@ -71,6 +73,22 @@ object Gadget {
    * to get at the resulting DOM element.
    */
   def apply(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) = new SimpleGadget(guts, hook)
+  
+  implicit def GadgetFormEvents[G <: Gadget[_]] = new FormEvents[G] {
+    /**
+     * The Gadget is considered focusable iff it contains something focusable.
+     */
+    def canFocus(g:G):Boolean = {
+      g.mapElementOrElse(false, _.findFirst(_.canFocus).isDefined)
+    }
+    
+    /**
+     * Focus on the first sub-element that *can* be focused.
+     */
+    def focus(g:G):Unit = {
+      g.mapElementOrElse((), _.findFirst(_.canFocus).map(_.focus()))
+    }
+  }
 }
 
 /**

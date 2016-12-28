@@ -13,9 +13,9 @@ trait FormEvents[A] {
   def canFocus(a:A):Boolean
   
   /**
-   * Puts the input focus on a, and returns it.
+   * Side-effecting: puts the input focus on a.
    */
-  def focus(a:A):A
+  def focus(a:A):Unit
 }
 
 object FormEvents {
@@ -52,19 +52,18 @@ object FormEvents {
      * very good case that it should be, but the unfortunate reality of the DOM is
      * currently that Element and HTMLElement get pretty mushed together.
      */
-    def focus(e:Element):Element = {
+    def focus(e:Element):Unit = {
       e match {
         case html:HTMLElement => {
           html.focus()
-          e
         }
-        case _ => e
+        case _ =>
       }
     }
   }
   
-  implicit class ElementFormEventsEasy(e:Element) {
-    def canFocus:Boolean = ElementFormEvents.canFocus(e)
-    def focus():Element = ElementFormEvents.focus(e)
+  implicit class FormEventsEasy[T : FormEvents](t:T) {
+    def canFocus:Boolean = implicitly[FormEvents[T]].canFocus(t)
+    def focus():Unit = implicitly[FormEvents[T]].focus(t)
   }
 }

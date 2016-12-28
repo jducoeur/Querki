@@ -5,6 +5,8 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
+import org.querki.squery.FormEvents._
+
 import querki.globals._
 
 import querki.display.{ButtonGadget}

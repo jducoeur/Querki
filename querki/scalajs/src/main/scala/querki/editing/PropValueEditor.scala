@@ -5,6 +5,8 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 
+import org.querki.squery.FormEvents._
+
 import querki.globals._
 import querki.data._
 import querki.display.{QuerkiUIUtils, RawDiv, WithTooltip}
