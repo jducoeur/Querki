@@ -3,6 +3,7 @@ package org.querki.squery
 import org.scalajs.dom
 import dom.Element
 import dom.ext._
+import dom.raw.HTMLCollection
 
 /**
  * The Findable typeclass represents the ability to "find" within a given entity.
@@ -20,15 +21,10 @@ trait Findable[A] {
   def findAll(a:A, pred:Element => Boolean):Seq[Element]
   
   /**
-   * Given a collection of A, this returns any of them or their descendants that match
-   * the predicate.
-   * 
-   * The semantics of the "search" depend on the typeclass instance, but are
-   * generally depth-first.
-   * 
-   * Note that, unlike findAll(), the result set may include the inputs.
+   * Similar to findAll(), but will include the given element in the possible results.
+   * This is what findAll() usually recurses into.
    */
-  def findInclusive(as:Seq[A], pred:Element => Boolean):Seq[Element]
+  def findInclusive(a:A, pred:Element => Boolean):Seq[Element]
   
   /**
    * This searches through a, and returns the first B found, if any.
@@ -42,12 +38,14 @@ trait Findable[A] {
 }
 
 object Findable {
-  implicit val FindableElement = new Findable[Element] {
-    def findAll(a:Element, pred:Element => Boolean):Seq[Element] = {
-      findInclusive(a.children, pred)
+  implicit val FindableSeq = new Findable[HTMLCollection] {
+    def findAll(as:HTMLCollection, pred:Element => Boolean):Seq[Element] = {
+      (Seq.empty[Element] /: as) { (results, a) =>
+        results ++ findInclusive(a.children, pred)
+      }      
     }
     
-    def findInclusive(as:Seq[Element], pred:Element => Boolean):Seq[Element] = {
+    def findInclusive(as:HTMLCollection, pred:Element => Boolean):Seq[Element] = {
       (Seq.empty[Element] /: as) { (results, a) =>
         val thisResult = 
           if (pred(a))
@@ -59,11 +57,27 @@ object Findable {
         
         thisResult ++ childResults
       }
+    }    
+  }
+  
+  implicit def FindableElement[E <: Element] = new Findable[E] {
+    def findAll(a:E, pred:Element => Boolean):Seq[Element] = {
+      FindableSeq.findInclusive(a.children, pred)
+    }
+    
+    def findInclusive(a:E, pred:Element => Boolean):Seq[Element] = {
+      val thisResult =
+        if (pred(a))
+          Seq(a)
+        else
+          Seq()
+          
+      thisResult ++ FindableSeq.findInclusive(a.children, pred)
     }
   }
   
-  implicit class FindableElementEasy(e:Element) {
-    def findAll(pred:Element => Boolean):Seq[Element] = FindableElement.findAll(e, pred)
-    def findFirst(pred:Element => Boolean):Option[Element] = FindableElement.findFirst(e, pred)
+  implicit class FindableBuilder[T : Findable](t:T) {
+    def findAll(pred:Element => Boolean):Seq[Element] = implicitly[Findable[T]].findAll(t, pred)
+    def findFirst(pred:Element => Boolean):Option[Element] = implicitly[Findable[T]].findFirst(t, pred)
   }
 }

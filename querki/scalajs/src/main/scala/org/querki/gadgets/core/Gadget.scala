@@ -1,10 +1,12 @@
 package org.querki.gadgets.core
 
 import org.scalajs.dom.html.Element
+import org.scalajs.dom.{Element => AnyElement}
 
 import org.querki.squery.Focusable
 import Focusable._
-import org.querki.squery.Findable._
+import org.querki.squery.Findable
+import Findable._
 
 /**
  * Wrapper around Scalatags, to provide support for tracking and updating the rendered elements
