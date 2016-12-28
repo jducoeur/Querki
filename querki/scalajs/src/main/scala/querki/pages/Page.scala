@@ -8,7 +8,7 @@ import scalatags.JsDom.TypedTag
 import rx._
 import org.querki.jsext._
 import org.querki.jquery._
-import org.querki.squery.FormEvents._
+import org.querki.squery.Focusable._
 
 import querki.globals._
 

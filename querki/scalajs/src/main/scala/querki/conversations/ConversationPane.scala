@@ -9,7 +9,7 @@ import autowire._
 
 import org.widok.moment._
 
-import org.querki.squery.FormEvents._
+import org.querki.squery.Focusable._
 
 import querki.globals._
 

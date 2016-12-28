@@ -5,7 +5,7 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
-import org.querki.squery.FormEvents._
+import org.querki.squery.Focusable._
 
 import querki.globals._
 

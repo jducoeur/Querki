@@ -6,7 +6,7 @@ import dom.html.{Element => HTMLElement}
 
 import AttrFunctions._
 
-trait FormEvents[A] {
+trait Focusable[A] {
   /**
    * Returns true iff this can receive focus.
    */
@@ -18,7 +18,7 @@ trait FormEvents[A] {
   def focus(a:A):Unit
 }
 
-object FormEvents {
+object Focusable {
   /**
    * Implements focus functions for Elements.
    * 
@@ -26,7 +26,7 @@ object FormEvents {
    * all Elements. But the Gadgets library is too broad at this point. Refine
    * Gadgets to be HTMLElement-centric, and then tighten this up!
    */
-  implicit val ElementFormEvents = new FormEvents[Element] {
+  implicit val ElementFormEvents = new Focusable[Element] {
     /**
      * Returns true iff this Element can *currently* receive focus.
      * 
@@ -62,8 +62,8 @@ object FormEvents {
     }
   }
   
-  implicit class FormEventsEasy[T : FormEvents](t:T) {
-    def canFocus:Boolean = implicitly[FormEvents[T]].canFocus(t)
-    def focus():Unit = implicitly[FormEvents[T]].focus(t)
+  implicit class FocusableBuilder[T : Focusable](t:T) {
+    def canFocus:Boolean = implicitly[Focusable[T]].canFocus(t)
+    def focus():Unit = implicitly[Focusable[T]].focus(t)
   }
 }

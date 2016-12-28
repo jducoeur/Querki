@@ -2,8 +2,8 @@ package org.querki.gadgets.core
 
 import org.scalajs.dom
 
-import org.querki.squery.FormEvents
-import FormEvents._
+import org.querki.squery.Focusable
+import Focusable._
 import org.querki.squery.Searchable._
 
 /**
@@ -74,7 +74,7 @@ object Gadget {
    */
   def apply(guts:scalatags.JsDom.TypedTag[dom.Element], hook: dom.Element => Unit) = new SimpleGadget(guts, hook)
   
-  implicit def GadgetFormEvents[G <: Gadget[_]] = new FormEvents[G] {
+  implicit def GadgetFocusable[G <: Gadget[_]] = new Focusable[G] {
     /**
      * The Gadget is considered focusable iff it contains something focusable.
      */
