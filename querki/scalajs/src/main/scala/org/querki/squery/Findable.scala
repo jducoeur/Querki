@@ -5,9 +5,9 @@ import dom.Element
 import dom.ext._
 
 /**
- * The Searchable typeclass represents the ability to "find" within a given entity.
+ * The Findable typeclass represents the ability to "find" within a given entity.
  */
-trait Searchable[A] {
+trait Findable[A] {
   /**
    * This does a potentially recursive search through the descendants of a, and returns
    * all the Elements that fit the predicate.
@@ -41,8 +41,8 @@ trait Searchable[A] {
   def findFirst(a:A, pred:Element => Boolean):Option[Element] = findAll(a, pred).headOption
 }
 
-object Searchable {
-  implicit val SearchableElement = new Searchable[Element] {
+object Findable {
+  implicit val FindableElement = new Findable[Element] {
     def findAll(a:Element, pred:Element => Boolean):Seq[Element] = {
       findInclusive(a.children, pred)
     }
@@ -62,8 +62,8 @@ object Searchable {
     }
   }
   
-  implicit class SearchableElementEasy(e:Element) {
-    def findAll(pred:Element => Boolean):Seq[Element] = SearchableElement.findAll(e, pred)
-    def findFirst(pred:Element => Boolean):Option[Element] = SearchableElement.findFirst(e, pred)
+  implicit class FindableElementEasy(e:Element) {
+    def findAll(pred:Element => Boolean):Seq[Element] = FindableElement.findAll(e, pred)
+    def findFirst(pred:Element => Boolean):Option[Element] = FindableElement.findFirst(e, pred)
   }
 }

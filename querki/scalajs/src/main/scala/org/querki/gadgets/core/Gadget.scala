@@ -4,7 +4,7 @@ import org.scalajs.dom.html.Element
 
 import org.querki.squery.Focusable
 import Focusable._
-import org.querki.squery.Searchable._
+import org.querki.squery.Findable._
 
 /**
  * Wrapper around Scalatags, to provide support for tracking and updating the rendered elements
