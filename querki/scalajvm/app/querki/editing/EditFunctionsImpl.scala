@@ -302,7 +302,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     
     val instanceProps:Option[Seq[TID]] = for {
       instancePropsPair <- propList.find(_._1.id == querki.editing.MOIDs.InstanceEditPropsOID)
-      instancePropsQV <- instancePropsPair._2.v
+      instancePropsQV <- instancePropsPair._2.effectiveV
       instanceProps = instancePropsQV.rawList(Core.LinkType)
     }
       yield instanceProps.map(oid => TID(oid.toThingId))
