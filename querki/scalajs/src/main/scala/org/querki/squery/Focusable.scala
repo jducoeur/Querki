@@ -4,7 +4,7 @@ import org.scalajs.dom
 import dom.Element
 import dom.html.{Element => HTMLElement}
 
-import AttrFunctions._
+import Disableable._
 
 /**
  * This typeclass represents the ability to put the browser "focus" on something on-screen.
@@ -24,6 +24,10 @@ trait Focusable[A] {
 object Focusable {
   /**
    * Implements focus functions for Elements.
+   * 
+   * TODO: Note that this currently applies to *all* Elements, not just HTMLElements.
+   * This is arguably wrong, but we need to tweak other parts of the sQuery API to make
+   * it practical to restrict this.
    */
   implicit val ElementFormEvents = new Focusable[Element] {
     /**
@@ -46,12 +50,6 @@ object Focusable {
      * Put the browser focus on this, if it is an HTMLElement. Note that this does not
      * check whether this is a valid focus target; if not, nothing will happen. Use
      * canFocus() if you want to be smart about this.
-     * 
-     * TBD: should this be restricted to HTMLElement in the first place? I can make a
-     * very good case that it should be, but the unfortunate reality of the DOM is
-     * currently that Element and HTMLElement get pretty mushed together. Limiting this
-     * to HTMLElement probably requires some careful analysis to see what would break, 
-     * and a heavy rewrite of both sQuery and Gadgets.
      */
     def focus(e:Element):Unit = {
       e match {

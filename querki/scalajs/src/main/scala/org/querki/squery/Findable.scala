@@ -16,7 +16,8 @@ trait Findable[A] {
    * Conceptually, this function corresponds to jQuery's $(element).find(selector) function.
    * In particular, note that root Element a is *not* included in the result set.
    * 
-   * TBD: can/should the Elements in this signature be generalized?
+   * TBD: can/should the Elements in this signature be generalized? Or specialized? Can/should
+   * they be HTMLElement instead? Can/should they be a dependent type of A?
    */
   def findAll(a:A, pred:Element => Boolean):Seq[Element]
   
