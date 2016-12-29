@@ -5,7 +5,7 @@ import autowire._
 
 import models.Wikitext
 import querki.api.ThingFunctions
-import querki.display.QText
+import querki.display.{ButtonGadget, QText}
 import querki.globals._
 
 class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
@@ -37,12 +37,19 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
         spaceInfo.apps.isEmpty
       guts =
         div(
-          h1(s"Info about ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
+          h1(s"Info about ${if(isApp) "App" else ""} ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
           
           p(b(new QText(summaryText))),
           new QText(detailsText),
           
-          // Do we show the Apps section? For the time being, we specifically don't do so in Apps:
+          if (isApp)
+            // Let the user instantiate this App:
+            div(
+              p(b("Press this button to use this App yourself:")),
+              p(new ButtonGadget(ButtonGadget.Normal, s"Create a Space using ${spaceInfo.displayName}")({ () => Apps.useApp() }))
+            ),
+          
+          // Do we show the Apps section? For the time being, we specifically don't do so for Apps:
           if (!isApp && (allowExtract || !spaceInfo.apps.isEmpty)) {
             MSeq(
               h2("Apps"),
