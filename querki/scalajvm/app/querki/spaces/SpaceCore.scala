@@ -276,18 +276,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       state.copy(apps = spaceApps)
     }
   }
-  
-  /**
-   * Given a SpaceState, load the Apps for that Space. Returns the RequestM of the updated Space.
-   * 
-   * This runs recursively, loading the Apps for each App as needed.
-   * 
-   * TODO: this should deal more elegantly with diamond dependencies, but be careful of that: you could
-   * have multiple dependencies on the same App at different versions.
-   */
-  def loadAppsFor(state:SpaceState):RM[SpaceState] = {
-    loadAppsFor(state, Map.empty)
-  }
 
   def canCreate(who:User, modelId:OID)(implicit state:SpaceState):Boolean = AccessControl.canCreate(state, who, modelId)
   def canDesign(who:User, modelId:OID)(implicit state:SpaceState):Boolean = AccessControl.canDesign(state, who, modelId)
@@ -568,13 +556,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         def afterOwnerIdentity = originalOpt match {
           case Some(original) => {
             for {
-              withApps <- loadAppsFor(original)
               // TODO: this should cope with the rare case where we can't find the owner's Identity. What's the
               // correct response?
-              identity <- fetchOwnerIdentity(withApps.owner)
+              identity <- fetchOwnerIdentity(original.owner)
             }
               yield {
-                val s = withApps.copy(ownerIdentity = Some(identity))
+                val s = original.copy(ownerIdentity = Some(identity))
                 // Make sure that the owner is represented by a Person object in this Space. Since this requires
                 // fetching an OID, we need to loop through the standard creation pathway. Note that we can't
                 // use the CreateThing message, though, since the initializing flag is blocking that pathway; we

@@ -117,9 +117,17 @@ $renderProps
     spew(rendered)
   }
   
-  def spewState(state:SpaceState) = {
+  def spewState(state:SpaceState):Unit = {
     spew(s"Full details of $state")
     implicit val s = state
+    
+    spew("Apps")
+    state.apps.foreach { app =>
+      spew("=============================================")
+      spewState(app)
+      spew("=============================================")
+    }
+    
     spew(s"The State Itself")
     spew(s"==========")
     spewThing(state)
