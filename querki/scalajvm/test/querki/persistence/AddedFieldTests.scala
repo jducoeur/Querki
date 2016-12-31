@@ -34,6 +34,21 @@ class AddedFieldTests extends QuerkiTests {
       kryo
   }
   
+  def write(kryo:Kryo, v:Any):Array[Byte] = {
+    val outputStream = new ByteArrayOutputStream()
+    val output = new Output(outputStream)
+    kryo.writeClassAndObject(output, v)
+    output.flush()
+    outputStream.close()
+    outputStream.toByteArray()    
+  }
+  
+  def read(kryo:Kryo, bytes:Array[Byte]):Object = {
+    val inStream = new ByteArrayInputStream(bytes)
+    val input = new Input(inStream)
+    kryo.readClassAndObject(input)
+  }
+  
   "AddedField" should {
     "work in the ordinary case" in {
       case class Bar(@KryoTag(1) baz:String)
@@ -48,19 +63,8 @@ class AddedFieldTests extends QuerkiTests {
         (classOf[Floob], 102)
       )
       
-      val v = Floob(42, Bar("hi"))
-      val outputStream = new ByteArrayOutputStream()
-      val output = new Output(outputStream)
-      kryo.writeClassAndObject(output, v)
-      output.flush()
-      outputStream.close()
-      val bytes = outputStream.toByteArray()
-      
-      val inStream = new ByteArrayInputStream(bytes)
-      val input = new Input(inStream)
-      val v2 = kryo.readClassAndObject(input)
-      
-      v2 match {
+      val bytes = write(kryo, Floob(42, Bar("hi")))      
+      read(kryo, bytes) match {
         case Floob(foo, bar) => {
           assert(foo == 42)
           bar match {
