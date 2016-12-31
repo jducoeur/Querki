@@ -127,6 +127,8 @@ object KryoInit {
       kryo.register(classOf[scala.Tuple4[_, _, _, _]], new ScalaProductSerializer(kryo), 113)
       
       kryo.register(classOf[scala.collection.immutable.Stream[_]], new ScalaStreamSerializer, 114)
+      
+      kryo.register(classOf[AddedField[_]], new AddedFieldSerializer, 115)
     }
   }
   

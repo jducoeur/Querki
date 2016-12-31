@@ -27,3 +27,13 @@ class ThingIdSerializer extends Serializer[ThingId] {
     output.writeString(obj.toString)
   }  
 }
+
+class AddedFieldSerializer() extends Serializer[AddedField[_]] {
+  override def read(kryo: Kryo, input: Input, typ: Class[AddedField[_]]): AddedField[_] = {
+    AddedFieldImpl(kryo.readClassAndObject(input))
+  }
+
+  override def write(kryo: Kryo, output: Output, af: AddedField[_]) = {
+    af.map(kryo.writeClassAndObject(output, _))
+  }
+}
