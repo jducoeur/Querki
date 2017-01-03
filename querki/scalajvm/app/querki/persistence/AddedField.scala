@@ -13,8 +13,8 @@ package querki.persistence
  * AddedFieldImpl. That's intentional, so that you can't accidentally get a hold of the contents
  * directly.
  * 
- * Access to an AddedField is, thus, intentionally limited -- you can use getOrElse
- * and map, and that's it. But it's null-safe, and thus works for schema evolution.
+ * Access to an AddedField is, thus, intentionally limited -- you can only use the functions that
+ * are defined in AddedField.AddedFieldMethods. But it's null-safe, and thus works for schema evolution.
  */
 sealed trait AddedField[T]
 
@@ -38,6 +38,15 @@ object AddedField {
           case AddedFieldImpl(c) =>  Some(f(c))
         }
       }
+    def isEmpty:Boolean = af == null
+    def isDefined:Boolean = !isEmpty
+    def toOption:Option[T] =
+      if (af == null)
+        None
+      else
+        af match {
+          case AddedFieldImpl(c) => Some(c)
+        }
   }
   
   implicit def t2AddedField[T](t:T):AddedField[T] = AddedFieldImpl(t)
