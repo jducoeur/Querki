@@ -8,7 +8,7 @@ import org.scalajs.dom
 import org.querki.jquery._
 
 import scalatags.JsDom.all._
-import upickle._
+import upickle.default._
 
 import org.querki.facades.bootstrap._
 import org.querki.facades.fileupload._
@@ -131,7 +131,7 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
         }
         
         // The result should be the pickled Wikitext of the new thumbnail:
-        val wiki = upickle.read[Wikitext](data.result.asInstanceOf[String])
+        val wiki = read[Wikitext](data.result.asInstanceOf[String])
         val wikiStr = wiki.raw.html.toString
         val rawGadget = new RawSpan(wikiStr)
         rawGadget.render

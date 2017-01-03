@@ -15,7 +15,7 @@ import play.api.mvc._
 // before too long.
 import play.api.i18n.Messages.Implicits._
 
-import upickle._
+import upickle.default._
 
 import models._
 

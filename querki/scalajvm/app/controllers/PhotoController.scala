@@ -8,7 +8,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 
-import upickle._
+import upickle.default._
 
 import play.api.libs.streams.Streams
 import play.api.mvc._
@@ -54,7 +54,7 @@ class PhotoController @Inject() (val appProv:Provider[play.api.Application]) ext
       workerRef.ask(UploadDone(rc, propId, thingId))(30 seconds).map {
         // Once we get this, the Actor is finished, and shutting down
         case PhotoInfo(wikitext) => {
-          val pickled = upickle.write(wikitext)
+          val pickled = write(wikitext)
           Ok(pickled)
         }
         case PhotoFailed => {

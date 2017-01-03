@@ -2,7 +2,7 @@ package querki.data
 
 import scala.concurrent.Future
 
-import upickle._
+import upickle.default._
 import autowire._
 
 import querki.globals._

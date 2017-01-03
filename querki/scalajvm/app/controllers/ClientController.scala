@@ -12,7 +12,7 @@ import play.api.data.Forms._
 import play.api.libs.streams.Streams
 import play.api.mvc._
 
-import upickle._
+import upickle.default._
 import autowire._
 
 import models.{AsName, AsOID, MIMEType, Thing, ThingId}

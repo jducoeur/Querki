@@ -7,7 +7,7 @@ import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
 
-import upickle._
+import upickle.default._
 import autowire._
 
 import org.querki.requester._
@@ -39,7 +39,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  */
 private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with ReceivePipeline with TimeoutChild
-  with autowire.Server[String, upickle.Reader, upickle.Writer]
+  with autowire.Server[String, Reader, Writer]
 {
   implicit val ecology = e
   
@@ -301,8 +301,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   }
   
   // Autowire functions
-  def write[Result: Writer](r: Result) = upickle.write(r)
-  def read[Result: Reader](p: String) = upickle.read[Result](p)
+  def write[Result: Writer](r: Result) = upickle.default.write(r)
+  def read[Result: Reader](p: String) = upickle.default.read[Result](p)
   
   def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
@@ -313,17 +313,6 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
         th match {
           case aex:querki.api.ApiException => {
-            // TODO: IMPORTANT: these two lines totally should not be necessary, but without
-            // them, the write() currently is failing, apparently because it is failing to grok
-            // that Edit/SecurityException are themselves traits.
-            // There might be a bug in upickle, possibly having to do with SI-7046:
-            //   https://issues.scala-lang.org/browse/SI-7046
-            // Investigate this further when I have a minute. Possibly something like this needs
-            // to be automated into the macro? Or possibly we have to tweak the way we're using
-            // knownDirectSubclasses in the macro...
-            val d1 = upickle.Writer.macroW[EditException]
-            val d2 = upickle.Writer.macroW[SecurityException]
-            val d3 = upickle.Writer.macroW[AdminException]
             s ! ClientError(write(aex))
           }
           case pex:PublicException => {

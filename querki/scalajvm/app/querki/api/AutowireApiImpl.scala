@@ -3,7 +3,7 @@ package querki.api
 import scala.concurrent.{Promise}
 import scala.util.{Failure, Success}
 import akka.actor._
-import upickle._
+import upickle.default._
 import autowire._
 
 import rx._
@@ -68,7 +68,7 @@ case class AutowireParams(
  * Remember, functional programming is your friend...
  */
 abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMember with RequesterImplicits 
-  with autowire.Server[String, upickle.Reader, upickle.Writer]
+  with autowire.Server[String, Reader, Writer]
 {
   def user = info.user
   def rc = info.rc
@@ -83,23 +83,13 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
    * Wrapping code
    */
   // Autowire functions
-  def write[Result: Writer](r: Result) = upickle.write(r)
-  def read[Result: Reader](p: String) = upickle.read[Result](p)
+  def write[Result: Writer](r: Result) = upickle.default.write(r)
+  def read[Result: Reader](p: String) = upickle.default.read[Result](p)
   
   def handleException(th:Throwable, req:Request) = {
     def apiName = req.path(2)
     th match {
       case aex:querki.api.ApiException => {
-        // TODO: IMPORTANT: these two lines totally should not be necessary, but without
-        // them, the write() currently is failing, apparently because it is failing to grok
-        // that Edit/SecurityException are themselves traits.
-        // There might be a bug in upickle, possibly having to do with SI-7046:
-        //   https://issues.scala-lang.org/browse/SI-7046
-        // Investigate this further when I have a minute. Possibly something like this needs
-        // to be automated into the macro? Or possibly we have to tweak the way we're using
-        // knownDirectSubclasses in the macro...
-        val y = upickle.Writer.macroW[EditException]
-        val x = upickle.Writer.macroW[SecurityException]
         sender ! ClientError(write(aex))
       }
       case pex:PublicException => {

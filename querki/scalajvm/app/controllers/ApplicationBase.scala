@@ -5,6 +5,8 @@ import javax.inject._
 import play.api.Logger
 import play.api.mvc._
 
+import upickle.default._
+
 import models._
 
 import querki.api._
@@ -200,7 +202,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   /**
    * Allows purely server-side code to invoke Session functions, the same way the Client does.
    */
-  class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
+  class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, Reader, Writer] {
     override def doCall(req: Request): Future[String] = {
       ApiInvocation.routeRequest(ClientRequest(req, rc)) {
         case ClientResponse(pickled) => Future.successful(pickled)
@@ -209,8 +211,8 @@ trait ApplicationBase extends Controller with EcologyMember {
       }
     }
     
-    def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
-    def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+    def read[Result: Reader](p: String) = upickle.default.read[Result](p)
+    def write[Result: Writer](r: Result) = upickle.default.write(r)
   }
   
   def withLocalClient(ownerId:String, spaceIdStr:String)(cb:(PlayRequestContext, LocalClient) => Future[Result]) = 

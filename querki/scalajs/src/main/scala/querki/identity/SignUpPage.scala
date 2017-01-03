@@ -3,7 +3,7 @@ package querki.identity
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
-import upickle._
+import upickle.default._
 import org.querki.jquery._
 
 import querki.api._

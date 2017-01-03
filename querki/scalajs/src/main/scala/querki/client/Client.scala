@@ -2,6 +2,8 @@ package querki.client
 
 import scala.concurrent.Future
 
+import upickle.default._
+
 import querki.globals._
 
 import querki.api._
@@ -37,12 +39,6 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
           }
           
           try {
-            // TODO: Argh! these dummy values are needed in order to hint the read system to pick up
-            // on the subtypes, but this is a gigantic code smell. Is there any way around it?
-            val dummy1 = upickle.Reader.macroR[EditException]
-            val dummy2 = upickle.Reader.macroR[SecurityException]
-            val dummy3 = upickle.Reader.macroR[AdminException]
-            val dummy4 = upickle.Reader.macroR[ImportException]
             val aex = read[ApiException](jqXHR.responseText)
             throw aex
           } catch {
@@ -81,7 +77,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         else
           PageManager.currentPageParams
       val metadata = RequestMetadata(DataAccess.querkiVersion, params)
-      interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
+      interceptFailures(ajax.callAjax("pickledRequest" -> write(req), "pickledMetadata" -> write(metadata)))
     }
   }
   
@@ -108,9 +104,9 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
     }
   }
 
-  def read[Result: upickle.Reader](p: String) = {
+  def read[Result: upickle.default.Reader](p: String) = {
     try {
-      upickle.read[Result](p)
+      upickle.default.read[Result](p)
     } catch {
       case ex:Exception => {
         println(s"Exception while trying to unpickle response $p: $ex")
@@ -118,5 +114,5 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
       }
     }
   }
-  def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+  def write[Result: upickle.default.Writer](r: Result) = upickle.default.write(r)
 }

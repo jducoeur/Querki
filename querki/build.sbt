@@ -6,6 +6,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.8"
 lazy val akkaV = "2.4.10"
+lazy val enumeratumV = "1.5.3"
 lazy val appV = "2.1.3"
 
 lazy val sharedSrcDir = "scala"
@@ -155,12 +156,14 @@ lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.2.7",
+  "com.lihaoyi" %%% "upickle" % "0.4.3",
   "com.lihaoyi" %%% "scalarx" % "0.2.8",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.5.5",
   "com.lihaoyi" %%% "fastparse" % "0.2.1",
-  "org.querki" %%% "shocon" % "0.3"
+  "org.querki" %%% "shocon" % "0.3",
+  "com.beachape" %%% "enumeratum" % enumeratumV,
+  "com.beachape" %%% "enumeratum-upickle" % enumeratumV
 ))
 
 // utst -- run the Unit Tests:
