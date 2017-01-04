@@ -16,6 +16,7 @@ import Thing.PropMap
 
 import querki.data.TID
 import querki.globals._
+import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
@@ -24,7 +25,7 @@ import querki.time._
 import querki.util.{QuerkiActor, SingleRoutingParent, TimeoutChild}
 import querki.values.{SpaceState, SpaceVersion}
 import querki.spaces.SpacePure
-import querki.spaces.messages.CurrentState
+import querki.spaces.messages._
 
 import HistoryFunctions._
 
@@ -34,8 +35,8 @@ import HistoryFunctions._
  * 
  * This lives under SpaceRouter, as part of the standard troupe.
  */
-class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with ReceivePipeline with SingleRoutingParent {
-  def createChild():ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id))
+class SpaceHistoryParent(e:Ecology, val id:OID, val spaceRouter:ActorRef) extends Actor with ReceivePipeline with SingleRoutingParent {
+  def createChild():ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id, spaceRouter))
   
   def receive = {
     case msg => routeToChild(msg)
@@ -46,7 +47,7 @@ class SpaceHistoryParent(e:Ecology, val id:OID) extends Actor with ReceivePipeli
  * This is essentially a variant of the PersistentSpaceActor, which reads in the complete history
  * of a Space, and provides access to it.
  */
-private [history] class SpaceHistory(e:Ecology, val id:OID) 
+private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:ActorRef) 
   extends QuerkiActor(e) with SpacePure with ModelPersistence with ReceivePipeline with TimeoutChild
 {
   lazy val Basic = interface[querki.basic.Basic]
@@ -158,6 +159,20 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     }    
   }
   
+  def getHistoryRecord(v:HistoryVersion):RequestM[HistoryRecord] = {
+    readCurrentHistory() map { _ =>
+      if (history.size < v)
+        // TODO: ugly, but this *is* conceptually an internal error. Is there anything smarter
+        // we can/should do here?
+        throw new Exception(s"Space $id got a request for unknown History Version $v!")
+      else {
+        // Adjust for the 1-indexed version numbers
+        val idx = (v - 1).toInt
+        history(idx)
+      }
+    }
+  }
+  
   def doReceive = {
     case GetHistorySummary() => {
       readCurrentHistory() map { _ =>
@@ -178,21 +193,26 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     }
     
     case GetHistoryVersion(v) => {
-      readCurrentHistory() map { _ =>
-        if (history.size < v) 
-          throw new Exception(s"Space $id got a request for unknown History Version $v!")
-        
-        // Adjust for the 1-indexed version numbers
-        val idx = (v - 1).toInt
-        val record = history(idx)
+      getHistoryRecord(v) map { record =>
         sender ! CurrentState(record.state)
+      }
+    }
+    
+    case RollbackTo(v, user) => {
+      getHistoryRecord(v) map { record =>
+        spaceRouter.request(SetState(user, id, record.state, SetStateReason.RolledBack, v.toString)) foreach {
+          _ match {
+            case resp:ThingFound => sender ! resp
+            case other => throw new Exception(s"Tried to roll space $id back to version $v, but received response $other")
+          }
+        }
       }
     }
   }
 }
 
 object SpaceHistory {
-  def actorProps(e:Ecology, id:OID) = Props(classOf[SpaceHistoryParent], e, id)
+  def actorProps(e:Ecology, id:OID, spaceRouter:ActorRef) = Props(classOf[SpaceHistoryParent], e, id, spaceRouter)
   
   sealed trait HistoryMessage
   /**
@@ -204,4 +224,12 @@ object SpaceHistory {
    * Fetch a specific version of the history of this Space. Returns a CurrentState().
    */
   case class GetHistoryVersion(v:HistoryVersion) extends HistoryMessage
+  
+  /**
+   * Resets the current state of this Space to the specified Version.
+   * 
+   * The caller is expected to have already done confirmation! This doesn't precisely lose
+   * information, but can hide a lot!
+   */
+  case class RollbackTo(v:HistoryVersion, user:User) extends HistoryMessage
 }

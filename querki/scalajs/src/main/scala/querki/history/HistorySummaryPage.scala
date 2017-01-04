@@ -11,7 +11,7 @@ import org.querki.gadgets.core.SimpleGadget
 import org.querki.jquery._
 
 import models.Kind
-import querki.display.{ButtonGadget}
+import querki.display.{ButtonGadget, Dialog}
 import querki.globals._
 import querki.pages._
 import querki.time._
@@ -23,6 +23,7 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
   extends Page("historySummary") with querki.util.ScalatagUtils
 {
   lazy val Client = interface[querki.client.Client]
+  lazy val DataSetting = interface[querki.data.DataSetting]
   lazy val History = interface[History]
   
   lazy val spaceInfo = DataAccess.space.get
@@ -61,6 +62,28 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
     }
   }
   
+  def rollbackTo(info:SummaryDisplayInfo) = {
+    val confirmDialog = new Dialog("Confirm Revert",
+      div(
+        s"""This will revert the state of this Space back to version ${info.idx}, dated ${displayTime(info.time)}. It will not
+           |lose any data, but any changes made since then will be hidden. You can undo this change by reverting again, to
+           |the most recent previous event. Are you sure you want to do this?""".stripMargin
+      ),
+      (ButtonGadget.Warning, Seq("Revert", id:="_confirmRevert"), { dialog =>
+        Client[HistoryFunctions].rollbackTo(info.idx).call().map { reloadedSpaceInfo =>
+          dialog.done()
+          DataSetting.setSpace(Some(reloadedSpaceInfo))
+          PageManager.reload()
+        }
+      }),
+      (ButtonGadget.Normal, Seq("Cancel", id:="_cancelRevert"), { dialog =>
+        dialog.done()
+      })
+    )
+    
+    confirmDialog.show()
+  }
+  
   def evtDisplay(summary:EvtSummary, whoMap:IdentityMap, thingNames:ThingNames) = {
     val info = getEvtDisplayInfo(summary, whoMap, thingNames)
     
@@ -86,11 +109,21 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
               cls:=info.colorClass,
               display:="none",
               td(
-                colspan:=4,
+                colspan:=1,
                 new ButtonGadget(ButtonGadget.Info, "View Space") ({ () =>
                   History.setHistoryVersion(info.idx, info.time)
                   Pages.showSpacePage(spaceInfo)
                 })
+              ),
+              td(
+                colspan:=2,
+                new ButtonGadget(ButtonGadget.Warning, "Revert to Here") ({ () =>
+                  rollbackTo(info)
+                })
+              ),
+              td(
+                colspan:=1,
+                " "
               )
             ).render
           $(e).after(sib)

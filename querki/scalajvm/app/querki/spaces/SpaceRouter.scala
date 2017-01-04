@@ -54,7 +54,7 @@ private[spaces] class SpaceRouter(e:Ecology)
 //      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
   val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
   val members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
-  val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId))
+  val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
   
   var state:SpaceState = null
   

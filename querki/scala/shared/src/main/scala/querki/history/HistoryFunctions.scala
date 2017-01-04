@@ -16,6 +16,11 @@ trait HistoryFunctions {
    * Fetch the complete history of this Space.
    */
   def getHistorySummary():Future[HistorySummary]
+  
+  /**
+   * Rolls this Space back to the specified version. The UI should do confirmation first!
+   */
+  def rollbackTo(v:HistoryVersion):Future[SpaceInfo]
 }
 
 object HistoryFunctions {
@@ -35,6 +40,7 @@ object HistoryFunctions {
     case object ImportedFromMySQL extends SetStateReason(value = 1, msgName = "importFromOld")
     case object ExtractedAppFromHere extends SetStateReason(value = 2, msgName = "extractedApp")
     case object InitialAppState extends SetStateReason(value = 3, msgName = "initialAppState")
+    case object RolledBack extends SetStateReason(value = 4, msgName = "rolledBack")
   }
   
   /**
