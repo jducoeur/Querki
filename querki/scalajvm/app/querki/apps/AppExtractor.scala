@@ -5,6 +5,7 @@ import models.Thing.PropMap
 import querki.core.NameUtils
 import querki.data.TID
 import querki.globals._
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
 import querki.spaces.{PersistentSpaceActor, RTCAble, SpaceCreator, StatusNormal}
 import querki.spaces.messages._
@@ -14,10 +15,12 @@ trait AppExtractorSupport[RM[_]] {
   def createSpace(user:User, spaceId:OID, name:String, display:String):RM[OID]
   // Sets the State of the App (identified by state.id). Returns the State of the App after saving.
   def setAppState(state:SpaceState):RM[SpaceState]
-  def setChildState(state:SpaceState):RM[Any]
+  def setChildState(state:SpaceState, app:SpaceState):RM[Any]
   // Sends the given message to the target Space. The Space should reply with ThingAck, and this
   // returns the OID of the relevant Thing. Note that this requires non-localCall messages!
   def sendSpaceMessage(msg:SpaceMessage):RM[OID]
+  // Sends the given message to *this* Space. This allows any message.
+  def sendMessageToSelf(msg:SpaceMessage):RM[Any]
 }
 
 /**
@@ -81,12 +84,11 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       appWithGallery = renumberedApp.copy(pf = renumberedApp.props + (Apps.GalleryEntryId(galleryId)))
       // ... set the App's state...
       finalAppState <- extractorSupport.setAppState(appWithGallery)
-      finalChildState = hollowedSpace.copy(
-        apps = hollowedSpace.apps :+ finalAppState, 
-        appInfo = hollowedSpace.appInfo :+ (finalAppState.id, finalAppState.version))
-      // ... and update the child Space to reflect the new reality.
-      _ <- extractorSupport.setChildState(finalChildState)
+      // ... update the child Space to reflect the new reality...
+      _ <- extractorSupport.sendMessageToSelf(SetState(user, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
+      // ... and add the App to the child Space.
+      _ <- extractorSupport.sendMessageToSelf(SpacePluginMsg(user, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true)))
     }
-      yield finalChildState
+      yield hollowedSpace
   }
 }

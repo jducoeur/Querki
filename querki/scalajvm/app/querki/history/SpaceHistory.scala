@@ -101,7 +101,15 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
     }
     
     evt match {
-      case DHSetState(dh, modTime) => (BootSummary(sequenceNr, "", modTime.toTimestamp), identities, thingNames)
+      case DHSetState(dh, modTime, reason, details) => 
+        (SetStateSummary(
+          sequenceNr, 
+          "", 
+          modTime.toTimestamp, 
+          SetStateReason.withValue(reason.getOrElse(0)),
+          details.getOrElse("")), 
+        identities, 
+        thingNames)
       
       case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
@@ -114,7 +122,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID)
       case DHDeleteThing(req, thingId, modTime) => 
         fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
         
-      case DHAddApp(req, modTime, app, appParents, shadowMapping) =>
+      case DHAddApp(req, modTime, app, appParents, shadowMapping, _) =>
         fill(req, Seq(app.id), AddAppSummary(sequenceNr, _, modTime.toTimestamp, app.id))
     }
   }

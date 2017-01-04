@@ -12,6 +12,7 @@ import Thing.PropMap
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
@@ -308,9 +309,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     failedProp map { propId => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName) }
   }
   
-  def setState(who:User, newState:SpaceState)(state:SpaceState):RM[ChangeResult] = {
+  def setState(who:User, newState:SpaceState, reason:SetStateReason, details:String)(state:SpaceState):RM[ChangeResult] = {
     implicit val s = state
-    val evt = DHSetState(dh(newState), DateTime.now)
+    val evt = DHSetState(dh(newState), DateTime.now, reason.value, details)
     rtc.successful(ChangeResult(List(evt), Some(state.id), newState))
   }
   
@@ -602,7 +603,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case Some(oldState) => {
             QLog.spew(s"Recovered old Space ${oldState.name} from MySQL; recording the BootSpace event")
             // There *is* an old Space from MySQL, so we should record that as the first event in the log:
-            val msg = DHSetState(dh(oldState), DateTime.now)
+            val msg = DHSetState(dh(oldState), DateTime.now, SetStateReason.ImportedFromMySQL.value, "")
             // Once we've recorded that, *then* we get the Space ready:
             doPersist(msg)(_ => readyState(Some(oldState)))            
           }
@@ -687,9 +688,9 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
     }
     
-    case SetState(who, spaceId, newState) => {
+    case SetState(who, spaceId, newState, reason, details) => {
       val prevState = _currentState.getOrElse(emptySpace)
-      runAndSendResponse("setState", true, setState(who, newState))(prevState)
+      runAndSendResponse("setState", true, setState(who, newState, reason, details))(prevState)
     }
     
     // This message is simple, since it isn't persisted:

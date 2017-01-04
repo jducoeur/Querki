@@ -7,6 +7,7 @@ import models.Kind.Kind
 import ModelPersistence._
 
 import querki.globals._
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.{User, IdentityPersistence}
 import IdentityPersistence._
 import querki.persistence._
@@ -60,7 +61,8 @@ object SpaceMessagePersistence {
     @KryoTag(2) modTime:DateTime,
     @KryoTag(3) appState:DHSpaceState,
     @KryoTag(4) parentApps:Seq[DHSpaceState],
-    @KryoTag(5) shadowMap:Map[OID, OID]) extends UseKryo with SpaceEvent
+    @KryoTag(5) shadowMap:Map[OID, OID],
+    @KryoTag(6) afterExtraction:AddedField[Boolean]) extends UseKryo with SpaceEvent
     
   /**
    * This is similar to SpaceSnapshot, but isn't a snapshot -- instead, this is an *event*,
@@ -70,10 +72,17 @@ object SpaceMessagePersistence {
    * 
    * Note that this doesn't have a "req" field, because we often don't have that information
    * when this happens. Generally, the requester is the owner, which is in the SpaceState.
+   * 
+   * @param state The State that is being slammed into this Space.
+   * @param modTime When this happened
+   * @param reason The reason for the change; this is an index into HistoryFunctions.SetStateReason.
+   * @param details Additional information about the reason, only used for displaying the history message.
    */
   case class DHSetState(
     @KryoTag(1) state:DHSpaceState,
-    @KryoTag(2) modTime:DateTime) extends UseKryo with SpaceEvent
+    @KryoTag(2) modTime:DateTime,
+    @KryoTag(3) reason:AddedField[Int],
+    @KryoTag(4) details:AddedField[String]) extends UseKryo with SpaceEvent
     
   /**
    * The official Snapshot type, which serializes the current state of this Space *and* that

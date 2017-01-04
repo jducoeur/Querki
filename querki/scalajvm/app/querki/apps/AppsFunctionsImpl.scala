@@ -11,6 +11,7 @@ import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
 import querki.data.{SpaceInfo, TID}
 import querki.globals._
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
 import querki.spaces.{PersistentSpaceActor, RealRTCAble, SpaceCreator, StatusNormal}
 import querki.spaces.messages._
@@ -49,7 +50,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     ThingId(appIdStr) match {
       case AsOID(appId) => {
         // For the time being, we simply assume that you want the current version of the App:
-        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue)))) map {
+        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue), false))) map {
           case AddAppResult(exOpt) => {
             exOpt.map(ex => throw ex)
             ()
@@ -76,20 +77,23 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, requester.self, appId))
     for {
       // ... give it its initial state...
-      ThingFound(_, newState) <- appRef.request(SetState(user, appId, state))
+      ThingFound(_, newState) <- appRef.request(SetState(user, appId, state, SetStateReason.InitialAppState, state.displayName))
       // ... shut it down again...
       _ = context.stop(appRef)      
     }
       yield newState
   }
-  def setChildState(state:SpaceState):RequestM[Any] = {
-    spaceRouter.request(SetState(user, state.id, state))
+  def setChildState(state:SpaceState, app:SpaceState):RequestM[Any] = {
+    spaceRouter.request(SetState(user, state.id, state, SetStateReason.ExtractedAppFromHere, app.displayName))
   }
   def sendSpaceMessage(msg:SpaceMessage):RequestM[OID] = {
     SpaceOps.spaceRegion.request(msg) map {
       case ThingAck(id) => id
       case other => throw new Exception(s"sendSpaceMessage() got unexpected response $other")
     }
+  }
+  def sendMessageToSelf(msg:SpaceMessage):RequestM[Any] = {
+    spaceRouter.request(msg)
   }
   
   /**

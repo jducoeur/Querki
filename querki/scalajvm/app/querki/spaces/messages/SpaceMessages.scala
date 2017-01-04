@@ -9,6 +9,7 @@ import models.Thing.PropMap
 import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.conversations.messages.ConversationMessage
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.{IdentityId, User}
 import querki.session.messages.SessionMessage
 import querki.spaces.{SpaceStatusCode, StatusNormal}
@@ -95,7 +96,7 @@ case object StateInitialized
  * sometimes after major changes. Either way, it may *ONLY* be sent from within the Space's own troupe, because
  * it contains a SpaceState!
  */
-case class SetState(req:User, space:OID, state:SpaceState) extends SpaceMessage(req, space)
+case class SetState(req:User, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(req, space)
 
 /**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.

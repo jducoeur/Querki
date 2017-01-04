@@ -72,3 +72,12 @@ pages : {
     pageTitle : "Validating your email address"
   }
 }
+
+history : {
+  setStateReasons : {
+    unknown : "Set space state"
+    importFromOld : "Converted from pre-History Querki"
+    extractedApp : "Extracted App $details"
+    initialAppState : "Initial state of the App"
+  }
+}

@@ -198,7 +198,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
    * which takes the current history as a curried parameter.
    */
   def evolveStateCore(stateOpt:Option[SpaceState]):PartialFunction[SpaceEvent, SpaceState] = {
-    case DHSetState(dh, modTime) => rehydrate(dh)
+    case DHSetState(dh, modTime, reason, details) => rehydrate(dh)
     
     case DHInitState(userRef, display) => initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
     

@@ -81,7 +81,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
   
   def addAppToSpace(user:User, spaceId:OID, appId:OID):Future[Unit] = {
     // For the time being, we simply assume that you want the current version of the App:
-    SpaceOps.askSpace2(SpacePluginMsg(user, spaceId, AddApp(appId, SpaceVersion(Int.MaxValue)))) {
+    SpaceOps.askSpace2(SpacePluginMsg(user, spaceId, AddApp(appId, SpaceVersion(Int.MaxValue), false))) {
       case AddAppResult(exOpt) => {
         exOpt.map(ex => throw ex)
         fut(())

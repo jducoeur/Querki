@@ -38,7 +38,7 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
     (models ++ pages).toSeq
   }
   
-  def addApp(req:User, appId:OID, appVersion:SpaceVersion)(state:SpaceState):RM[ChangeResult] = {
+  def addApp(req:User, appId:OID, appVersion:SpaceVersion, afterExtraction:Boolean)(state:SpaceState):RM[ChangeResult] = {
     // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
     // can only fail if something has changed significantly:
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, req, state))
@@ -66,8 +66,8 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
         val dhApp = dh(app)
         val dhParents = app.allApps.values.toSeq.map(dh(_))
         val time = DateTime.now
-        val msg = DHAddApp(req, time, dhApp, dhParents, idMapping)
-        ChangeResult(List(msg), Some(appId), addFilledAppPure(app, idMapping, time)(s))
+        val msg = DHAddApp(req, time, dhApp, dhParents, idMapping, afterExtraction)
+        ChangeResult(List(msg), Some(appId), addFilledAppPure(app, idMapping, time, afterExtraction)(s))
       }    
   }
   
@@ -78,8 +78,8 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   def receive:Actor.Receive = {
     // Note that this can be called cross-node, so we specifically do *not* use
     // runAndSendResponse. (Since that tries to send the new State.)
-    case SpacePluginMsg(req, _, AddApp(appId, appVersion)) => {
-      api.runChanges(Seq(addApp(req, appId, appVersion)))(api.currentState).onComplete {
+    case SpacePluginMsg(req, _, AddApp(appId, appVersion, afterExtraction)) => {
+      api.runChanges(Seq(addApp(req, appId, appVersion, afterExtraction)))(api.currentState).onComplete {
         case Success(_) => api.respond(AddAppResult(None))
         case Failure(th) => {
           th match {
@@ -98,8 +98,11 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
 /**
  * Sent from AppsFunctions to the Plugin, so that app-adding can happen inside the Space's own context.
  * To add the current version of the App, use Int.MaxValue as the version.
+ * 
+ * @param afterExtraction This should be set to true only right after the App has been extracted *from* this
+ *   Space. In that case, we shouldn't do any remapping -- it's already been done.
  */
-private [apps] case class AddApp(appId:OID, appVersion:SpaceVersion)
+private [apps] case class AddApp(appId:OID, appVersion:SpaceVersion, afterExtraction:Boolean)
 /**
  * Response from AddApp. Should be considered successful unless there is an Exception here.
  */

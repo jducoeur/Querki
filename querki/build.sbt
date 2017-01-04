@@ -140,14 +140,14 @@ lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")
   // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
   jvmConfigure(_ enablePlugins SbtTwirl).
   jvmSettings(
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= sharedDependencies.value ++ Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
     )
   ).
   jsConfigure(_ enablePlugins ScalaJSPlay).
   jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= sharedDependencies.value ++ Seq(
       "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
     ),
     EclipseKeys.useProjectId := true

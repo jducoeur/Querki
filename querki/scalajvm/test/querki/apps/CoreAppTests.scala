@@ -7,6 +7,7 @@ import org.scalatest.Assertions._
 import models.Kind
 import models.Thing.PropMap
 import querki.globals._
+import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
 import querki.spaces._
 import querki.spaces.messages._
@@ -45,7 +46,7 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   def setAppState(state:SpaceState):TCIdentity[SpaceState] = {
     world.getSpace(state.id) match {
       case app:SpaceCoreSpaceBase => {
-        (app ! SetState(owner, state.id, state)).get match {
+        (app ! SetState(owner, state.id, state, SetStateReason.InitialAppState, "")).get match {
           case ThingFound(_, newState) => success(newState)
           case other => throw new Exception(s"setAppState got unexpected return value $other")
         }
@@ -53,8 +54,8 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
       case _ => throw new Exception(s"Trying to set appState for non-Core Space ${state.id}!")
     }
   }
-  def setChildState(state:SpaceState):TCIdentity[Any] = {
-    success((this ! SetState(owner, state.id, state)).get)
+  def setChildState(state:SpaceState, app:SpaceState):TCIdentity[Any] = {
+    success((this ! SetState(owner, state.id, state, SetStateReason.ExtractedAppFromHere, app.displayName)).get)
   }
   def sendSpaceMessage(msg:SpaceMessage):TCIdentity[OID] = {
     val targetSpaceId = msg.spaceId
@@ -68,6 +69,9 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
       case other => throw new Exception(s"sendSpaceMessage($msg) returned $other")
     }
     success(resultId)    
+  }
+  def sendMessageToSelf(msg:SpaceMessage):TCIdentity[Any] = {
+    success((this ! msg).get)
   }
   
   /* ************************************** */
@@ -83,7 +87,7 @@ class SpaceInWorldWith(other:SpaceCoreSpaceBase, presetSpaceId:Option[OID] = Non
   override lazy val spaceId = presetSpaceId.getOrElse(toid())
   
   def addApp(app:SpaceCoreSpaceBase) = {
-    (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue)))) match {
+    (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue), false))) match {
       case Some(AddAppResult(exOpt)) => exOpt.map { ex => throw ex }
       case other => throw new Exception(s"addApp() received unexpected result $other")
     }

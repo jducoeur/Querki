@@ -27,6 +27,8 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
   
   lazy val spaceInfo = DataAccess.space.get
   
+  lazy val setStateMsgs = Localization.messages("history").getPackage("setStateReasons")
+  
   case class SummaryDisplayInfo(idx:Long, who:String, time:Timestamp, title:String, details:String, colorClass:String)
   
   def getEvtDisplayInfo(summary:EvtSummary, whoMap:IdentityMap, thingNames:ThingNames):SummaryDisplayInfo = {
@@ -42,8 +44,10 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
     }
     
     summary match {
-      case BootSummary(idx, who, time) => 
-        SummaryDisplayInfo(idx, who, time, s"Created Space '${spaceInfo.displayName}'", "", "success")
+      case SetStateSummary(idx, who, time, reason, details) => {
+        val msg = setStateMsgs.msg(reason.msgName, ("details" -> details))
+        SummaryDisplayInfo(idx, who, time, msg, "", "success")
+      }
       case ImportSummary(idx, who, time) => 
         SummaryDisplayInfo(idx, who, time, s"Imported/converted Space '${spaceInfo.displayName}'", "", "success")
       case CreateSummary(idx, who, time, kind, id, model) => 

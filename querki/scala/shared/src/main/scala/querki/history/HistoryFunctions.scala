@@ -2,6 +2,9 @@ package querki.history
 
 import scala.concurrent.Future
 
+import enumeratum.EnumEntry._
+import enumeratum.values._
+
 import models._
 import querki.data._
 import querki.time.Common.Timestamp
@@ -18,6 +21,21 @@ trait HistoryFunctions {
 object HistoryFunctions {
   
   type HistoryVersion = Long
+  
+  /**
+   * Enumeration of the reasons why this Space's State was slammed.
+   * 
+   * @param value The concrete enum value that gets persisted.
+   */
+  sealed abstract class SetStateReason(val value:Int, val msgName:String) extends IntEnumEntry
+  case object SetStateReason extends IntEnum[SetStateReason] with IntUPickleEnum[SetStateReason] {
+    val values = findValues
+    
+    case object Unknown extends SetStateReason(value = 0, msgName = "unknown")
+    case object ImportedFromMySQL extends SetStateReason(value = 1, msgName = "importFromOld")
+    case object ExtractedAppFromHere extends SetStateReason(value = 2, msgName = "extractedApp")
+    case object InitialAppState extends SetStateReason(value = 3, msgName = "initialAppState")
+  }
   
   /**
    * The subtypes of EvtSummary represent summary descriptions of history events.
@@ -38,7 +56,7 @@ object HistoryFunctions {
      */
     def time:Timestamp
   }
-  case class BootSummary(idx:HistoryVersion, who:String, time:Timestamp) extends EvtSummary
+  case class SetStateSummary(idx:HistoryVersion, who:String, time:Timestamp, reason:SetStateReason, details:String) extends EvtSummary
   case class ImportSummary(idx:HistoryVersion, who:String, time:Timestamp) extends EvtSummary
   case class CreateSummary(idx:HistoryVersion, who:String, time:Timestamp, kind:Kind.Kind, id:TID, model:TID) extends EvtSummary
   case class ModifySummary(idx:HistoryVersion, who:String, time:Timestamp, id:TID, props:Seq[TID]) extends EvtSummary
