@@ -89,4 +89,10 @@ object IndexPage {
     val spaceName = space.linkName.getOrElse(space.oid.underlying)
     a(href:=s"/u/${space.ownerHandle}/$spaceName/#!$spaceName", space.displayName)    
   }
+  
+  def spaceLink(space:SpaceInfo, display:String, page:PageFactory, params:(String, String)*) = {
+    val pageUrl = page.pageUrl(params:_*)
+    val spaceName = space.linkName.getOrElse(space.oid.underlying)
+    a(href:=s"/u/${space.ownerHandle}/$spaceName/$pageUrl", display)    
+  }
 }

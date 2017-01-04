@@ -54,8 +54,9 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
             MSeq(
               h2("Apps"),
               for (app <- spaceInfo.apps)
+                // Link to the Info Page of the App:
                 yield QText(
-                  s"""**${IndexPage.spaceLink(app)}**"""),
+                  s"""**${IndexPage.spaceLink(app, app.displayName, Pages.infoFactory)}**"""),
               
               if (allowExtract) {
                 div(
