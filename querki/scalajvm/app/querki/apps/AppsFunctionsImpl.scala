@@ -83,9 +83,6 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     }
       yield newState
   }
-  def setChildState(state:SpaceState, app:SpaceState):RequestM[Any] = {
-    spaceRouter.request(SetState(user, state.id, state, SetStateReason.ExtractedAppFromHere, app.displayName))
-  }
   def sendSpaceMessage(msg:SpaceMessage):RequestM[OID] = {
     SpaceOps.spaceRegion.request(msg) map {
       case ThingAck(id) => id

@@ -54,9 +54,6 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
       case _ => throw new Exception(s"Trying to set appState for non-Core Space ${state.id}!")
     }
   }
-  def setChildState(state:SpaceState, app:SpaceState):TCIdentity[Any] = {
-    success((this ! SetState(owner, state.id, state, SetStateReason.ExtractedAppFromHere, app.displayName)).get)
-  }
   def sendSpaceMessage(msg:SpaceMessage):TCIdentity[OID] = {
     val targetSpaceId = msg.spaceId
     val targetSpace = world.getSpaceOpt(targetSpaceId) match {

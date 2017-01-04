@@ -15,7 +15,6 @@ trait AppExtractorSupport[RM[_]] {
   def createSpace(user:User, spaceId:OID, name:String, display:String):RM[OID]
   // Sets the State of the App (identified by state.id). Returns the State of the App after saving.
   def setAppState(state:SpaceState):RM[SpaceState]
-  def setChildState(state:SpaceState, app:SpaceState):RM[Any]
   // Sends the given message to the target Space. The Space should reply with ThingAck, and this
   // returns the OID of the relevant Thing. Note that this requires non-localCall messages!
   def sendSpaceMessage(msg:SpaceMessage):RM[OID]
