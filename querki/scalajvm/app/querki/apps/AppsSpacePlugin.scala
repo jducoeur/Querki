@@ -78,12 +78,12 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   def receive:Actor.Receive = {
     // Note that this can be called cross-node, so we specifically do *not* use
     // runAndSendResponse. (Since that tries to send the new State.)
-    case SpacePluginMsg(req, _, AddApp(appId, appVersion, afterExtraction)) => {
+    case SpacePluginMsg(req, _, AddApp(appId, appVersion, afterExtraction, replyWithState)) => {
       api.runChanges(Seq(addApp(req, appId, appVersion, afterExtraction)))(api.currentState).onComplete {
-        case Success(_) => api.respond(AddAppResult(None))
+        case Success(newState) => api.respond(AddAppResult(None, if (replyWithState) Some(newState._2) else None))
         case Failure(th) => {
           th match {
-            case ex:PublicException => api.respond(AddAppResult(Some(ex)))
+            case ex:PublicException => api.respond(AddAppResult(Some(ex), None))
             case ex => {
               QLog.error(s"AddApp received an unexpected exception", ex)
               api.respond(ThingError(UnexpectedPublicException))
@@ -102,8 +102,8 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
  * @param afterExtraction This should be set to true only right after the App has been extracted *from* this
  *   Space. In that case, we shouldn't do any remapping -- it's already been done.
  */
-private [apps] case class AddApp(appId:OID, appVersion:SpaceVersion, afterExtraction:Boolean)
+private [apps] case class AddApp(appId:OID, appVersion:SpaceVersion, afterExtraction:Boolean, replyWithState:Boolean)
 /**
  * Response from AddApp. Should be considered successful unless there is an Exception here.
  */
-private [apps] case class AddAppResult(exceptionOpt:Option[PublicException])
+private [apps] case class AddAppResult(exceptionOpt:Option[PublicException], stateOpt:Option[SpaceState])

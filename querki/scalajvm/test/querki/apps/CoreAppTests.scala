@@ -84,8 +84,8 @@ class SpaceInWorldWith(other:SpaceCoreSpaceBase, presetSpaceId:Option[OID] = Non
   override lazy val spaceId = presetSpaceId.getOrElse(toid())
   
   def addApp(app:SpaceCoreSpaceBase) = {
-    (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue), false))) match {
-      case Some(AddAppResult(exOpt)) => exOpt.map { ex => throw ex }
+    (this ! SpacePluginMsg(owner, sc.id, AddApp(app.sc.id, SpaceVersion(Int.MaxValue), false, false))) match {
+      case Some(AddAppResult(exOpt, _)) => exOpt.map { ex => throw ex }
       case other => throw new Exception(s"addApp() received unexpected result $other")
     }
   }

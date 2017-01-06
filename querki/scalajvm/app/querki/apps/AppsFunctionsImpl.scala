@@ -50,8 +50,8 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     ThingId(appIdStr) match {
       case AsOID(appId) => {
         // For the time being, we simply assume that you want the current version of the App:
-        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue), false))) map {
-          case AddAppResult(exOpt) => {
+        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue), false, false))) map {
+          case AddAppResult(exOpt, _) => {
             exOpt.map(ex => throw ex)
             ()
           }

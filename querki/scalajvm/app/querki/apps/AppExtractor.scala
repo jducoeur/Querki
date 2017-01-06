@@ -88,8 +88,14 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       // ... update the child Space to reflect the new reality...
       _ <- extractorSupport.sendMessageToSelf(SetState(user, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
       // ... and add the App to the child Space.
-      _ <- extractorSupport.sendMessageToSelf(SpacePluginMsg(user, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true)))
+      AddAppResult(exOpt, stateOpt) <- 
+        extractorSupport.sendMessageToSelf(SpacePluginMsg(user, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true, true)))
     }
-      yield hollowedSpace
+      yield {
+        // If there was an Exception, propagate it:
+        exOpt.map { ex => throw new Exception("AddApp resulted in Exception", ex) }
+        // Otherwise, we expect to have the resulting State:
+        stateOpt.getOrElse(throw new Exception("AddApp didn't return the completed SpaceState!"))
+      }
   }
 }
