@@ -181,8 +181,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   var snapshotCounter = 0
   def doSaveSnapshot() = {
     val dhSpace = dh(currentState)
-    val dhApps = currentState.allApps.values.toSeq.map(dh(_))
-    val snapshot = SpaceSnapshot(dhSpace, dhApps)
+//    val dhApps = currentState.allApps.values.toSeq.map(dh(_))
+    val snapshot = SpaceSnapshot(dhSpace, Seq.empty)
     saveSnapshot(snapshot)
     snapshotCounter = 0
   }
@@ -537,13 +537,20 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     case SnapshotOffer(metadata, SpaceSnapshot(dh, dhApps)) => {
       val rawSpace = rehydrate(dh)
-      val rawApps = for {
-        dhApp <- dhApps
-        rawApp = rehydrate(dhApp)
-      }
-        yield (rawApp.id -> rawApp)
-      val filledSpace = fillInApps(rawSpace, Map(rawApps:_*), Map.empty)
-      updateStateCore(filledSpace._1)
+      val filledSpace = 
+        if (dhApps.isEmpty)
+          // Current code (2.2.0.1 and newer) encapsulates the Apps inside the dehydrated Space
+          rawSpace
+        else {
+          // Old events put the Apps separately:
+          val rawApps = for {
+            dhApp <- dhApps
+            rawApp = rehydrate(dhApp)
+          }
+            yield (rawApp.id -> rawApp)
+          fillInApps(rawSpace, Map(rawApps:_*), Map.empty)._1
+        }
+      updateStateCore(filledSpace)
     }
     
     case RecoveryCompleted => {

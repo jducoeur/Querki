@@ -93,6 +93,8 @@ object SpaceMessagePersistence {
    */
   case class SpaceSnapshot(
     @KryoTag(1) state:DHSpaceState,
+    // TODO: we're no longer using this. It exists in some older records, and it's essential for
+    // these old snapshots. How do we get rid of it?
     @KryoTag(2) apps:Seq[DHSpaceState]) extends UseKryo
 }
 
