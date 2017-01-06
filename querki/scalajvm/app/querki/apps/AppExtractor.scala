@@ -69,20 +69,22 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
             + Apps.GallerySummary(summary)
             + Apps.GalleryDetails(details)
             + Apps.IsAppFlag(true))
-      // ... add the App to the Gallery...
-      props = 
-        Map(
-          Apps.GalleryAppId(renumberedApp.id),
-          Basic.DisplayNameProp(display),
-          Apps.GalleryOwner(renumberedApp.owner),
-          Apps.GallerySummary(summary),
-          Apps.GalleryDetails(details)
-        )
-      galleryId <- extractorSupport.sendSpaceMessage(CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false))
-      // ... record the entry ID of this App, so we can get back to it...
-      appWithGallery = renumberedApp.copy(pf = renumberedApp.props + (Apps.GalleryEntryId(galleryId)))
+      // TODO: I'm removing the automatic enrollment of Apps in the Gallery. The more I think about it, the
+      // worse an idea this seems. We should make it a voluntary procedure later.
+//      // ... add the App to the Gallery...
+//      props = 
+//        Map(
+//          Apps.GalleryAppId(renumberedApp.id),
+//          Basic.DisplayNameProp(display),
+//          Apps.GalleryOwner(renumberedApp.owner),
+//          Apps.GallerySummary(summary),
+//          Apps.GalleryDetails(details)
+//        )
+//      galleryId <- extractorSupport.sendSpaceMessage(CreateThing(IdentityAccess.SystemUser, MOIDs.GallerySpaceOID, Kind.Thing, MOIDs.GalleryEntryModelOID, props, localCall = false))
+//      // ... record the entry ID of this App, so we can get back to it...
+//      appWithGallery = renumberedApp.copy(pf = renumberedApp.props + (Apps.GalleryEntryId(galleryId)))
       // ... set the App's state...
-      finalAppState <- extractorSupport.setAppState(appWithGallery)
+      finalAppState <- extractorSupport.setAppState(renumberedApp) // (appWithGallery)
       // ... update the child Space to reflect the new reality...
       _ <- extractorSupport.sendMessageToSelf(SetState(user, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
       // ... and add the App to the child Space.
