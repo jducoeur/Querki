@@ -68,6 +68,10 @@ pages : {
     pageTitle : "Terms of Service"
   }
   
+  undelete : {
+    pageTitle : "Undeleting $thingName..."
+  }
+  
   validateSignup : {
     pageTitle : "Validating your email address"
   }

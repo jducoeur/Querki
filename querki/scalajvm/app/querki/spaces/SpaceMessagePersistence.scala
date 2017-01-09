@@ -37,7 +37,8 @@ object SpaceMessagePersistence {
     @KryoTag(3) kind:Kind, 
     @KryoTag(4) modelId:OID, 
     @KryoTag(5) props:DHPropMap, 
-    @KryoTag(6) modTime:DateTime) extends UseKryo with SpaceEvent
+    @KryoTag(6) modTime:DateTime,
+    @KryoTag(7) recreated:AddedField[Boolean]) extends UseKryo with SpaceEvent
     
   case class DHModifyThing(
     @KryoTag(1) req:UserRef, 

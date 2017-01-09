@@ -66,8 +66,10 @@ case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String
  * IMPORTANT: the "localCall" parameter indicates that this request is coming from an Actor in the Space's
  * own troupe. Iff not true, it means that we can't respond with a ThingFound(), so we respond with a simpler
  * ThingAck() instead.
+ * 
+ * If thingIdOpt is set, then we are re-creating a previously existing Thing from the History.
  */
-case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(req, space)
+case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(req, space)
 
 case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, space)
 

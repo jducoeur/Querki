@@ -1,7 +1,9 @@
 package querki.history
 
+import models.{AsOID, ThingId}
+
 import querki.api._
-import querki.data.SpaceInfo
+import querki.data.{SpaceInfo, ThingInfo, TID}
 import querki.globals._
 import querki.spaces.messages.ThingFound
 
@@ -33,5 +35,21 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
       ThingFound(id, newState) <- spaceRouter.request(RollbackTo(v, user))
     }
       yield ClientApi.spaceInfo(newState, user)
+  }
+  
+  def restoreDeletedThing(tid:TID):Future[ThingInfo] = {
+    // TODO: this abstraction is leaking all over the place. Can we come up with a better-typed way of saying
+    // that this parameter is specifically an OID, and converting it as such?
+    ThingId(tid.underlying) match {
+      case AsOID(oid) => {
+        for {
+          ThingFound(id, newState) <- spaceRouter.request(RestoreDeletedThing(user, oid))
+          restored = newState.anything(id).getOrElse(throw new Exception(s"Couldn't find Thing $tid!"))
+          result <- ClientApi.thingInfo(restored, rc)(newState)
+        }
+          yield result
+      }
+      case _ => throw new Exception(s"restoreDeletedThing currently only works with OIDs!")
+    }
   }
 }

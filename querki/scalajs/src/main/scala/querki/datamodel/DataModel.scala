@@ -31,6 +31,14 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
   lazy val ProgressDialog = interface[querki.display.ProgressDialog]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
+  def showSpaceAfterDelete(thing:ThingInfo, recoverMsg:Option[String] = None) = {
+    Pages.showSpacePage(DataAccess.space.get).
+      flashing(false, 
+        s"${thing.displayName} deleted. ",
+        a(href:=Pages.undeleteFactory.pageUrl("thingId" -> thing.oid.underlying, "thingName" -> thing.displayName), "Undelete"),
+        s" ${recoverMsg.getOrElse("")}")
+  }
+  
   def deleteAfterConfirm(thing:ThingInfo) = {
     if (thing.kind == Kind.Property) {
       Client[EditFunctions].getPropertyUsage(thing.oid).call() foreach { usage =>
@@ -50,7 +58,8 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                   ProgressDialog.showDialog(
                     s"deleting ${thing.displayName}", 
                     handle, 
-                    Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted."), 
+                    showSpaceAfterDelete(thing),
+//                    Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted."), 
                     StatusLine.showBriefly(s"Error while deleting ${thing.displayName}"))
                 }
               }),
@@ -60,7 +69,8 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         } else {
           // The Property isn't in use, so just let it go:
           Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
-            Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
+            showSpaceAfterDelete(thing)
+//            Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
           }          
         }
       }
@@ -90,10 +100,11 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                 dialog.done()
                 val recoverMsg =
                   if (nInstances > 0)
-                    "You can find the ophaned Instanced by going to Actions -> Advanced..."
+                    "You can find the ophaned Instances by going to Actions -> Advanced..."
                   else
                     ""
-                Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
+                showSpaceAfterDelete(thing, Some(recoverMsg))
+//                Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
               }
             }),
             (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })

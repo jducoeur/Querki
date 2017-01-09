@@ -114,7 +114,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
       
       case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
-      case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => 
+      case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) => 
         fill(req, dhProps.keys.toSeq :+ thingId, CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId))
       
       case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => 
@@ -208,6 +208,34 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
         }
       }
     }
+    
+    case RestoreDeletedThing(user, thingId) => {
+      readCurrentHistory() map { _ =>
+        // Seek backwards through the History until we find this Thing.
+        // There might be an abstraction fighting to break out here: keep an eye open for
+        // other functions that want this "look backwards until" behavior.
+        @annotation.tailrec
+        def findThingRec(index:Int):Option[Thing] = {
+          if (index < 0)
+            None
+          else
+            history(index).state.anything(thingId) match {
+              case Some(thing) => Some(thing)
+              case None => findThingRec(index - 1)
+            }
+        }
+        
+        findThingRec(history.size - 1) match {
+          case Some(thing) => {
+            spaceRouter.request(CreateThing(user, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
+              case resp:ThingFound => sender ! resp
+              case other => throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
+            }
+          }
+          case None => throw new Exception(s"RestoreDeletedThing couldn't find Thing $thingId!")
+        }
+      }
+    }
   }
 }
 
@@ -232,4 +260,9 @@ object SpaceHistory {
    * information, but can hide a lot!
    */
   case class RollbackTo(v:HistoryVersion, user:User) extends HistoryMessage
+  
+  /**
+   * Finds the last existing revision of the specified Thing, and re-creates it in this Space.
+   */
+  case class RestoreDeletedThing(user:User, thingId:OID) extends HistoryMessage
 }

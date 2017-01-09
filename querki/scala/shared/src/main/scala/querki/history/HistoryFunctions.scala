@@ -21,6 +21,13 @@ trait HistoryFunctions {
    * Rolls this Space back to the specified version. The UI should do confirmation first!
    */
   def rollbackTo(v:HistoryVersion):Future[SpaceInfo]
+  
+  /**
+   * Restores the specified Thing, as of the last version where it existed.
+   * 
+   * We assume that the given TID is specifically from the oid field.
+   */
+  def restoreDeletedThing(tid:TID):Future[ThingInfo]
 }
 
 object HistoryFunctions {

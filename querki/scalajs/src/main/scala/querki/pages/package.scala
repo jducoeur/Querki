@@ -83,6 +83,7 @@ package object pages {
     def thingPageFactory:ThingPageFactory
     def securityFactory:ThingPageFactory
     def infoFactory:PageFactory
+    def undeleteFactory:PageFactory
     
     /**
      * The URL of the given Space.

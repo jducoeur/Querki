@@ -202,7 +202,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
     
     case DHInitState(userRef, display) => initStatePure(userRef.userId, userRef.identityIdOpt.get, None, display)
     
-    case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime) => {
+    case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) => {
       implicit val s = stateOpt.get
       createPure(kind, thingId, modelId, dhProps, modTime)(s)
     }

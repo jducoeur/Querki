@@ -105,7 +105,7 @@ abstract class Page(pageName:String = "")
    * TBD: instead of isError, we should probably take an enumeration of the four standard Alert types from
    * Bootstrap: success, info, warning and danger.
    */
-  def flash(isError:Boolean, msg:String) = {
+  def flash(isError:Boolean, msg:Modifier*) = {
     val newAlert:Gadget[_] = 
             div(
               id := "_alertMsg",

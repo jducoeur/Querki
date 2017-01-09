@@ -324,10 +324,10 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         Core.setName(identity.handle),
         Basic.DisplayNameProp(identity.name),
         Person.IdentityLink(identity.id)),
-      Kind.Thing)(state)
+      Kind.Thing, None)(state)
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind)(state:SpaceState):RM[ChangeResult] = {
+  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
     implicit val s = state
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
@@ -370,7 +370,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        doCreate(who, modelId, props, kind)(state)
+        doCreate(who, modelId, props, kind, thingIdOpt)(state)
       }
     }
   }
@@ -378,13 +378,14 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
   /**
    * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind)(state:SpaceState):RM[ChangeResult] = {
+  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
     // All tests have passed, so now we actually persist the change: 
     val modTime = DateTime.now
-    allocThingId().flatMap { thingId =>
+    val thingIdRM = thingIdOpt.map(rtc.successful(_)).getOrElse(allocThingId())
+    thingIdRM.flatMap { thingId =>
       val msg = {
         implicit val s = state
-        DHCreateThing(who, thingId, kind, modelId, props, modTime)
+        DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
       }
       rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(kind, thingId, modelId, props, modTime)(state)))    
     }    
@@ -705,8 +706,8 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       respond(SpaceInfo(currentState.id, currentState.name, currentState.displayName, currentState.ownerHandle))
     }
     
-    case CreateThing(who, spaceId, kind, modelId, props, localCall) => {
-      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind))(currentState)
+    case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
+      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt))(currentState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
