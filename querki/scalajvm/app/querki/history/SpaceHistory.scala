@@ -211,28 +211,39 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     
     case RestoreDeletedThing(user, thingId) => {
       readCurrentHistory() map { _ =>
-        // Seek backwards through the History until we find this Thing.
-        // There might be an abstraction fighting to break out here: keep an eye open for
-        // other functions that want this "look backwards until" behavior.
-        @annotation.tailrec
-        def findThingRec(index:Int):Option[Thing] = {
-          if (index < 0)
-            None
-          else
-            history(index).state.anything(thingId) match {
-              case Some(thing) => Some(thing)
-              case None => findThingRec(index - 1)
-            }
-        }
-        
-        findThingRec(history.size - 1) match {
+        // Sanity-check: don't try to recreate the Thing if it currently exists!
+        history.last.state.anything(thingId) match {
           case Some(thing) => {
-            spaceRouter.request(CreateThing(user, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
-              case resp:ThingFound => sender ! resp
-              case other => throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
+            // We don't need to do anything, because it's not currently deleted
+            sender ! ThingFound(thingId, history.last.state)
+          }
+          
+          case None => {
+            // The normal case: it's not there
+            // Seek backwards through the History until we find this Thing.
+            // There might be an abstraction fighting to break out here: keep an eye open for
+            // other functions that want this "look backwards until" behavior.
+            @annotation.tailrec
+            def findThingRec(index:Int):Option[Thing] = {
+              if (index < 0)
+                None
+              else
+                history(index).state.anything(thingId) match {
+                  case Some(thing) => Some(thing)
+                  case None => findThingRec(index - 1)
+                }
+            }
+            
+            findThingRec(history.size - 1) match {
+              case Some(thing) => {
+                spaceRouter.request(CreateThing(user, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
+                  case resp:ThingFound => sender ! resp
+                  case other => throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
+                }
+              }
+              case None => throw new Exception(s"RestoreDeletedThing couldn't find Thing $thingId!")
             }
           }
-          case None => throw new Exception(s"RestoreDeletedThing couldn't find Thing $thingId!")
         }
       }
     }

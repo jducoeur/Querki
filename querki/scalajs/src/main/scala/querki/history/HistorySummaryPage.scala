@@ -121,10 +121,20 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
                   rollbackTo(info)
                 })
               ),
-              td(
-                colspan:=1,
-                " "
-              )
+              summary match {
+                case DeleteSummary(idx, who, time, id) =>
+                  td(
+                    colspan:=1,
+                    new ButtonGadget(ButtonGadget.Warning, "Undelete") ({ () =>
+                      Pages.undeleteFactory.showPage("thingId" -> id.underlying, "thingName" -> thingNames.get(id).map(name => s"'$name'").getOrElse(""))
+                    })
+                  )
+                case _ => 
+                  td(
+                    colspan:=1,
+                    " "
+                  )
+              }
             ).render
           $(e).after(sib)
           $(sib).show("fast")
