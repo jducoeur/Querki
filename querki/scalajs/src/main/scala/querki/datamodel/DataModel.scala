@@ -39,6 +39,13 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         s" ${recoverMsg.getOrElse("")}")
   }
   
+  def doDelete(thing:ThingInfo, dialogOpt:Option[Dialog] = None, recoverMsg:Option[String] = None) = {
+    Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
+      dialogOpt.map(_.done())
+      showSpaceAfterDelete(thing, recoverMsg)
+    }
+  }
+  
   def deleteAfterConfirm(thing:ThingInfo) = {
     if (thing.kind == Kind.Property) {
       Client[EditFunctions].getPropertyUsage(thing.oid).call() foreach { usage =>
@@ -59,7 +66,6 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
                     s"deleting ${thing.displayName}", 
                     handle, 
                     showSpaceAfterDelete(thing),
-//                    Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted."), 
                     StatusLine.showBriefly(s"Error while deleting ${thing.displayName}"))
                 }
               }),
@@ -68,10 +74,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
           deleteDialog.show()
         } else {
           // The Property isn't in use, so just let it go:
-          Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
-            showSpaceAfterDelete(thing)
-//            Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
-          }          
+          doDelete(thing)      
         }
       }
     } else {
@@ -79,37 +82,31 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         if (thing.isModel) {
           Client[ThingFunctions].getNumInstances(thing).call() map { nInstances =>
             if (nInstances == 0)
-              (s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!", 0)
+              None
             else
-              (s"""There are currently $nInstances instances of ${thing.displayName}. If you delete it, they will be
+              Some(s"""There are currently $nInstances instances of ${thing.displayName}. If you delete it, they will be
                 |left orphaned, and may no longer work right! You will not be able to undo this! Are you sure you
-                |want to delete ${thing.displayName}?""".stripMargin, nInstances)
+                |want to delete ${thing.displayName}?""".stripMargin)
           }
         } else {
-          Future.successful((s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!", 0))
+          Future.successful(None)
         }
       }
-      fut foreach { contents =>
-        val (msg, nInstances) = contents
-        val deleteDialog:Dialog = 
-          new Dialog("Confirm Delete",
-            p(b(raw(msg))),
-            (ButtonGadget.Warning, Seq("Delete", id := "_confirmDelete"), { dialog => 
-              // TODO: display a spinner
-              Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
-                dialog.done()
-                val recoverMsg =
-                  if (nInstances > 0)
-                    "You can find the ophaned Instances by going to Actions -> Advanced..."
-                  else
-                    ""
-                showSpaceAfterDelete(thing, Some(recoverMsg))
-//                Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
-              }
-            }),
-            (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })
-          )
-        deleteDialog.show()
+      fut foreach { msgOpt =>
+        msgOpt match {
+          case Some(msg) => {
+            val deleteDialog:Dialog = 
+              new Dialog("Confirm Delete",
+                p(b(raw(msg))),
+                (ButtonGadget.Warning, Seq("Delete", id := "_confirmDelete"), { dialog => 
+                  doDelete(thing, Some(dialog), Some("You can find the ophaned Instances by going to Actions -> Advanced..."))
+                }),
+                (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })
+              )
+            deleteDialog.show()            
+          }
+          case None => doDelete(thing)
+        }
       }
     }
   }
