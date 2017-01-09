@@ -35,7 +35,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     Pages.showSpacePage(DataAccess.space.get).
       flashing(false, 
         s"${thing.displayName} deleted. ",
-        a(href:=Pages.undeleteFactory.pageUrl("thingId" -> thing.oid.underlying, "thingName" -> thing.displayName), "Undelete"),
+        b(a(href:=Pages.undeleteFactory.pageUrl("thingId" -> thing.oid.underlying, "thingName" -> thing.displayName), "Click here to undelete it.")),
         s" ${recoverMsg.getOrElse("")}")
   }
   
@@ -50,7 +50,6 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     if (thing.kind == Kind.Property) {
       Client[EditFunctions].getPropertyUsage(thing.oid).call() foreach { usage =>
         // We require pretty dire confirmation if the Property is used anywhere.
-        // TODO: we might soften this for Models, but for now we're going to be hardcore.
         if (usage.nModels > 0 || usage.nInstances > 0) {
           val deleteDialog:Dialog = 
             new Dialog("Confirm Delete",
@@ -78,35 +77,28 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         }
       }
     } else {
-      val fut = {
-        if (thing.isModel) {
-          Client[ThingFunctions].getNumInstances(thing).call() map { nInstances =>
-            if (nInstances == 0)
-              None
-            else
-              Some(s"""There are currently $nInstances instances of ${thing.displayName}. If you delete it, they will be
-                |left orphaned, and may no longer work right! You will not be able to undo this! Are you sure you
-                |want to delete ${thing.displayName}?""".stripMargin)
-          }
-        } else {
-          Future.successful(None)
-        }
-      }
-      fut foreach { msgOpt =>
-        msgOpt match {
-          case Some(msg) => {
+      if (thing.isModel) {
+        Client[ThingFunctions].getNumInstances(thing).call() map { nInstances =>
+          if (nInstances == 0)
+            // It's an unused Model, so safe to delete:
+            doDelete(thing)
+          else {
             val deleteDialog:Dialog = 
               new Dialog("Confirm Delete",
-                p(b(raw(msg))),
+                p(b(raw(s"""There are currently $nInstances instances of ${thing.displayName}. If you delete it, they will be
+                |left orphaned, and may no longer work right! You will not be able to undo this! Are you sure you
+                |want to delete ${thing.displayName}?""".stripMargin))),
                 (ButtonGadget.Warning, Seq("Delete", id := "_confirmDelete"), { dialog => 
                   doDelete(thing, Some(dialog), Some("You can find the ophaned Instances by going to Actions -> Advanced..."))
                 }),
                 (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDelete"), { dialog => dialog.done() })
               )
-            deleteDialog.show()            
+            deleteDialog.show()
           }
-          case None => doDelete(thing)
         }
+      } else {
+        // It's just an Instance:
+        doDelete(thing)
       }
     }
   }
