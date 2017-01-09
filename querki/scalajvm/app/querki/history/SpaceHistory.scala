@@ -115,7 +115,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
       case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
       case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) => 
-        fill(req, dhProps.keys.toSeq :+ thingId, CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId))
+        fill(req, dhProps.keys.toSeq :+ thingId, CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId, restored.getOrElse(false)))
       
       case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => 
         fill(req, propChanges.keys.toSeq :+ thingId, ModifySummary(sequenceNr, _, modTime.toTimestamp, thingId, propChanges.keys.toSeq.map(OID2TID)))

@@ -51,8 +51,8 @@ class HistorySummaryPage(params:ParamMap)(implicit val ecology:Ecology)
       }
       case ImportSummary(idx, who, time) => 
         SummaryDisplayInfo(idx, who, time, s"Imported/converted Space '${spaceInfo.displayName}'", "", "success")
-      case CreateSummary(idx, who, time, kind, id, model) => 
-        SummaryDisplayInfo(idx, who, time, s"Created ${showType(kind)}${lookup(id)}", "", "success")
+      case CreateSummary(idx, who, time, kind, id, model, restored) => 
+        SummaryDisplayInfo(idx, who, time, s"${if (restored) "Undeleted" else "Created"} ${showType(kind)}${lookup(id)}", "", "success")
       case ModifySummary(idx, who, time, id, props) => 
         SummaryDisplayInfo(idx, who, time, s"Edited ${lookup(id)}", s"Changed: ${props.map(lookup(_)).mkString(", ")}", "info")
       case DeleteSummary(idx, who, time, id) =>

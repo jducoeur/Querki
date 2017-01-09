@@ -71,7 +71,7 @@ object HistoryFunctions {
   }
   case class SetStateSummary(idx:HistoryVersion, who:String, time:Timestamp, reason:SetStateReason, details:String) extends EvtSummary
   case class ImportSummary(idx:HistoryVersion, who:String, time:Timestamp) extends EvtSummary
-  case class CreateSummary(idx:HistoryVersion, who:String, time:Timestamp, kind:Kind.Kind, id:TID, model:TID) extends EvtSummary
+  case class CreateSummary(idx:HistoryVersion, who:String, time:Timestamp, kind:Kind.Kind, id:TID, model:TID, restored:Boolean) extends EvtSummary
   case class ModifySummary(idx:HistoryVersion, who:String, time:Timestamp, id:TID, props:Seq[TID]) extends EvtSummary
   case class DeleteSummary(idx:HistoryVersion, who:String, time:Timestamp, id:TID) extends EvtSummary
   case class AddAppSummary(idx:HistoryVersion, who:String, time:Timestamp, appId:TID) extends EvtSummary
