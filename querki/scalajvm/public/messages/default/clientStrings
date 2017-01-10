@@ -14,6 +14,10 @@ pages : {
 	importButton : "Import a Space from a file"
   }
   
+  editSpaceInfo : {
+    pageTitle : "Edit Space Info"
+  }
+  
   handleInvite : {
     pageTitle : "You've been invited to join $spaceName!"
   }

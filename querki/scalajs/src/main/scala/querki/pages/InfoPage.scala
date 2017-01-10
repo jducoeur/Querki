@@ -5,7 +5,7 @@ import autowire._
 
 import models.Wikitext
 import querki.api.ThingFunctions
-import querki.display.{ButtonGadget, QText}
+import querki.display._
 import querki.globals._
 
 class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
@@ -37,7 +37,7 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
         spaceInfo.apps.isEmpty
       guts =
         div(
-          h1(s"Info about ${if(isApp) "App" else ""} ${spaceInfo.displayName} ", a(cls:="cancelButton btn btn-default", href:=thingUrl(spaceInfo), "Done")),
+          h1(s"Info about ${if(isApp) "App" else ""} ${spaceInfo.displayName} ", SpaceLinkButton(ButtonGadget.Primary, "Done")),
           
           p(b(new QText(summaryText))),
           new QText(detailsText),

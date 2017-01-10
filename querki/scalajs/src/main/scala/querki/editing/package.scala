@@ -1,10 +1,10 @@
 package querki
 
 import querki.globals._
-
 import querki.pages.{PageFactory, ThingPageFactory}
 
 package object editing {
+  
   trait Editing extends EcologyInterface {
     /**
      * The page that lets you edit all of the instances of a given Model.
@@ -33,5 +33,12 @@ package object editing {
      * raw OIDs that don't start with a dot. Fix that, and this should be able to go away.
      */
     def propPathOldStyleHack(propId:TID, thingIdOpt:Option[TID]):String
+    
+    /**
+     * Convenience function to fetch a specific selection of PropEditInfos on something. This
+     * specifically runs the queries in parallel and sums them, so it's relatively efficient.
+     * This *might* eventually become an API unto itself.
+     */
+    def getSomePropertyEditors(thingId:TID, propIds:TID*):Future[Map[TID, Gadget[_]]]
   }
 }
