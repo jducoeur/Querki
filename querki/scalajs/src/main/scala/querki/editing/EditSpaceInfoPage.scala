@@ -19,21 +19,25 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     for {
       propEditors <- 
         Editing.getSomePropertyEditors(spaceInfo.oid, 
-          std.apps.summaryProp,
-          std.apps.detailsProp)
+          std.conventions.summaryProp,
+          std.conventions.detailsProp,
+          std.basic.displayNameProp)
       guts =
         div(
-          h1("Edit Space Info"),
+          h1(cls:="_defaultTitle", "Edit Space Info"),
           
           p(cls:="_smallSubtitle", a(href:=Editing.advancedEditorFactory.pageUrl(spaceInfo), "Advanced Editor")),
           
           p("These are the most common properties to edit for your Space. When you are finished, press the Done button."),
           
+          p(b("Space Name:")),
+          propEditors(std.basic.displayNameProp),
+          
           br(), p(b("Summary (a one-line description of this Space):")),
-          propEditors(std.apps.summaryProp),
+          propEditors(std.conventions.summaryProp),
           
           br(), p(b("Details (more information about this Space):")),
-          propEditors(std.apps.detailsProp),
+          propEditors(std.conventions.detailsProp),
           
           br(), p(SpaceLinkButton(ButtonGadget.Primary, "Done"))
         )
