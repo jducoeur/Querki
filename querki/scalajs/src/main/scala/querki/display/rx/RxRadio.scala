@@ -8,7 +8,7 @@ import rx.ops._
 
 import querki.globals._
 
-case class RadioButton(v:String, label:String, mods:Modifier*)
+case class RadioButton(v:String, label:String, checked:Boolean, mods:Modifier*)
 
 class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology) extends Gadget[dom.html.Form] {
   val ecology = e
@@ -27,7 +27,12 @@ class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology) extend
     def ecology = RxRadio.this.ecology
     
     def doRender =
-      input(tpe:="radio", name:=s"$groupName", id:=s"$groupName-${btn.v}", value:=btn.v)
+      input(
+        tpe:="radio", 
+        name:=s"$groupName", 
+        id:=s"$groupName-${btn.v}", 
+        value:=btn.v,
+        if (btn.checked) checked := "checked")
       
     override def onCreate(e:dom.html.Input) = {
       $(e).change({ e:dom.Element => updateSelected() })

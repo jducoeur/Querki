@@ -409,7 +409,7 @@ class AccessControlModule(e:Ecology)
   lazy val CanReadProp = 
     new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
-        setName("Who Can Read"),
+        setName(commonName(_.security.canReadPerm)),
         setInternal,
         isPermissionProp(true),
         IsInstancePermissionProp(true),

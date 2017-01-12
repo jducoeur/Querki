@@ -24,14 +24,9 @@ import querki.pages._
 import SecurityFunctions._
 
 /**
- * @author jducoeur
+ * This is lifted out so that EditSpaceInfoPage can also use it.
  */
-class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("security") with EcologyMember {
-  
-  lazy val thingId = TID(params("thingId"))
-  
-  lazy val Client = interface[querki.client.Client]
-  lazy val Editing = interface[querki.editing.Editing]
+trait LevelMap { page:Page =>
   
   lazy val levelMap:Map[SecurityLevel, TID] = 
     Map(
@@ -41,6 +36,29 @@ class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
       (SecurityCustom -> TID("custom")),
       (SecurityInherited -> TID("inherit"))
     )
+    
+  def currentPermLevel(permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean):SecurityLevel = {
+    thingPerm.map(_.currently)
+    // At the Space level, we show the defaults; otherwise, inherit from the Space:
+    .getOrElse(if (isSpace) permInfo.default else SecurityInherited)
+  }
+  def currentPermOID(permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean):String = {
+    levelMap(currentPermLevel(permInfo, thingPerm, isSpace)).underlying    
+  }
+  
+}
+
+/**
+ * @author jducoeur
+ */
+class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) 
+  extends Page("security") with LevelMap 
+{
+  
+  lazy val thingId = TID(params("thingId"))
+  
+  lazy val Client = interface[querki.client.Client]
+  lazy val Editing = interface[querki.editing.Editing]
   
   class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean) extends InputGadget[html.Div](ecology) {
     
@@ -97,14 +115,7 @@ class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
     // more consistent, replace this with plain old path:
     val namePath = Editing.propPathOldStyleHack(permInfo.id, Some(t))
     
-    val currently =
-      Var(
-        levelMap(
-          thingPerm
-          .map(_.currently)
-          // At the Space level, we show the defaults; otherwise, inherit from the Space:
-          .getOrElse(if (isSpace) permInfo.default else SecurityInherited)
-        ).underlying)
+    val currently = Var(currentPermOID(permInfo, thingPerm, isSpace))
     val isCustom = Rx { currently() == "custom" }
     val isInherit = Rx { currently() == "inherit" }
       

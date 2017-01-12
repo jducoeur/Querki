@@ -105,6 +105,7 @@ class StandardThings(h:PassthroughHandlerBase) {
   }
   
   object security {
+    val canReadPerm = h.pass("Who Can Read")
     val canCreatePerm = h.pass("Who Can Create")
     val canDesignPerm = h.pass("Who Can Design")
     val customRoleModel = h.pass("_customRoleModel")

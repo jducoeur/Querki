@@ -264,6 +264,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
                 RadioButton(
                   PointsToExisting,
                   "It should use existing Model ",
+                  false,
                   pointerModelSelector <= RxSelect(
                     Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}),
                     "Choose a Model...",
@@ -273,6 +274,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
                 RadioButton(
                   PointsToNew,
                   "Create a new Model named ",
+                  false,
                   pointerModelName <= new RxInput(
                     Some(InputUtils.nameFilter(true, false) _), 
                     "text", 
@@ -282,7 +284,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
                 ),
                 RadioButton(
                   PointsToAny,
-                  "It can indicate anything in this Space"
+                  "It can indicate anything in this Space",
+                  false
                 )
               )
             )
