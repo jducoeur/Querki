@@ -25,6 +25,8 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology) extends P
         div(
           h1("Edit Space Info"),
           
+          p(cls:="_smallSubtitle", a(href:=Editing.advancedEditorFactory.pageUrl(spaceInfo), "Advanced Editor")),
+          
           p("These are the most common properties to edit for your Space. When you are finished, press the Done button."),
           
           br(), p(b("Summary (a one-line description of this Space):")),
