@@ -21,6 +21,8 @@ package object editing {
      */
     def advancedEditorFactory:ThingPageFactory
     
+    def editSpaceInfoFactory:PageFactory
+    
     /**
      * Constructs a server-compatible "path" to identify a Property.
      */
