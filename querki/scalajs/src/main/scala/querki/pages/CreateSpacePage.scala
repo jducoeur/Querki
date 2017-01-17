@@ -73,9 +73,12 @@ class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
 object CreateSpacePage {
   def navigateToSpace(space:SpaceInfo)(implicit ecology:Ecology) = {
     val PageManager = ecology.api[querki.display.PageManager]
+    val Editing = ecology.api[querki.editing.Editing]
     
     val spaceName = space.linkName.getOrElse(space.oid.underlying)
-    val url = s"/u/${space.ownerHandle}/$spaceName/#!$spaceName"
+    // After creating a new Space, we start the user out in Edit Space Info.
+    // TODO: this hardcoded URL bites. How can we make this suck less?
+    val url = s"/u/${space.ownerHandle}/$spaceName/${Editing.editSpaceInfoFactory.pageUrl()}"
     PageManager.navigateTo(url)    
   }
 }
