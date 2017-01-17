@@ -673,3 +673,20 @@ dd {
 ._signupGood {
   color: #328a32;
 }
+
+/***************************
+ * The Edit Space Info page
+ */
+._editSpaceTitle {
+  margin-top: 15px;
+  margin-bottom: 3px;
+}
+
+._editSpaceSubtitle {
+  margin-top: 0px;
+  font-size: x-small;
+}
+
+._editSpaceShim {
+  height: 10px;
+}

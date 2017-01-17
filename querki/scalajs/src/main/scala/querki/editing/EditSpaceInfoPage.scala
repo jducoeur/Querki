@@ -96,24 +96,25 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
           
           p("These are the most common properties to edit for your Space. When you are finished, press the Done button."),
           
-          p(b("Space Name:")),
+          p(cls:="_editSpaceTitle", b("Space Name:")),
           propEditors(std.basic.displayNameProp),
           
-          br(), p(b("Summary (a one-line description of this Space):")),
+          p(cls:="_editSpaceTitle", b("Summary (a one-line description of this Space):")),
           propEditors(std.conventions.summaryProp),
           
-          br(), p(b("Details (more information about this Space):")),
+          p(cls:="_editSpaceTitle", b("Details (more information about this Space):")),
           propEditors(std.conventions.detailsProp),
           
-          br(), p(b("Who can read this Space, broadly speaking?")),
-          p(cls:="_smallSubtitle", "(You can make specific Things public or private using the Security page)"),
+          p(cls:="_editSpaceShim", raw("&nbsp;")),
+          p(cls:="_editSpaceTitle", b("Who can read this Space, broadly speaking?")),
+          p(cls:="_editSpaceSubtitle", "(You can make specific Things public or private using the Security page)"),
           spaceSaver <= new ReadSaver(spaceInfo),
           spacePermsSaver <= new ReadSaver(spacePerms.instancePermThing.get),
           securityRadio <= 
             new RxRadio("_securityRadio",
               oneRadioButton(SecurityPublic, "Everybody -- this Space is public", isPublic),
-              oneRadioButton(SecurityMembers, "Only Members of the Space", isMembers),
-              oneRadioButton(SecurityCustom, "Custom", (!isPublic && !isMembers))),
+              oneRadioButton(SecurityMembers, "Only Members of the Space", isMembers)),
+          p("Or you can ", a(href:=Pages.securityFactory.pageUrl(spaceInfo), "customize the permissions however you prefer.")),
           
           br(), p(SpaceLinkButton(ButtonGadget.Primary, "Done"))
         )
