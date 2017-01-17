@@ -12,7 +12,7 @@ import org.querki.jquery._
 import org.querki.facades.jstree._
 
 import querki.api.ThingFunctions
-import querki.data.{ThingInfo}
+import querki.data.{PropValInfo, ThingInfo}
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import RxEmptyable._
@@ -44,12 +44,17 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
     detailsInput.rxEmpty()
   }
   
+  def getPropVal(propId:TID, spaceProps:Seq[PropValInfo]):String = {
+    spaceProps.find(_.propInfo.oid == propId).map(_.raw).getOrElse("")
+  }
+  
   def pageContent = {
     for {
       modelsUnsorted <- Client[AppsFunctions].getExtractableModels().call()
       models = modelsUnsorted.sortBy(_.displayName)
       pages <- Client[ThingFunctions].getChildren(std.basic.simpleThing, false, true).call()
       sortedPages = pages.sortBy(_.displayName)
+      spaceProps <- Client[ThingFunctions].getProperties(DataAccess.spaceId).call()
       guts = 
         div(
           h1("Extract an App"),
@@ -64,9 +69,10 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
             Some(InputUtils.spaceNameFilter _), "text", 
             id:="_newAppName", cls:="form-control", maxlength:=254, tabindex:=200),
           br(), p(b("Briefly (one line) describe the new App")),
-          summaryInput <= new RxText(id:="_appSummary", cls:="form-control"),
+          summaryInput <= new RxText(id:="_appSummary", cls:="form-control", value:=getPropVal(std.conventions.summaryProp, spaceProps)),
           br(), p(b("Give a bit more description of the new App")),
-          detailsInput <= new RxTextArea(id:="_appDetails", cls:="_largeTextEdit form-control"),
+          detailsInput <= new RxTextArea(id:="_appDetails", cls:="_largeTextEdit form-control",
+            getPropVal(std.conventions.detailsProp, spaceProps)),
           br(), p(b("In the list below, select the Models and Instances to lift into the new App.")),
           p("""Initially, all Models and all Pages (Things based on Simple Thing) are selected. That is often just what you want,
               |but you can uncheck anything you don't want to have in the new App. You can also open a Model and add some or all of

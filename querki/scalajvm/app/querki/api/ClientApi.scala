@@ -188,6 +188,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[Seq[PropValInfo]] = {
     def oneProp(prop:AnyProp, v:QValue):Future[PropValInfo] = {
       val prompt = futOpt(prop.getPropOpt(Editor.PromptProp).map(_.renderPlain))
+      val rawV = v.cv.map(elem => v.pType.toUser(elem)).mkString("\n")
       val renderedV =
         if (v.pType.isInstanceOf[querki.core.IsTextType]) {
           // These are heading for View Source, where they are used pretty literally, so we need to
@@ -203,7 +204,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         r <- renderedV
         t <- tooltip
       }
-        yield PropValInfo(propInfo(prop, rc), p, r, t)
+        yield PropValInfo(propInfo(prop, rc), p, r, t, rawV)
     }
     
     val infoOpts = for {

@@ -80,7 +80,8 @@ case class PropValInfo(
   propInfo:PropInfo,
   prompt:Option[Wikitext],
   renderedV:Wikitext,
-  tooltip:Option[Wikitext]
+  tooltip:Option[Wikitext],
+  raw:String
 )
 
 case class SpaceProps(
