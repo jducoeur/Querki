@@ -45,7 +45,7 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
           if (isApp)
             // Let the user instantiate this App:
             div(
-              p(b("Press this button to use this App yourself:")),
+              h3("Press this button to use this App yourself:"),
               p(new ButtonGadget(ButtonGadget.Normal, s"Create a Space using ${spaceInfo.displayName}")({ () => Apps.useApp() }))
             ),
           

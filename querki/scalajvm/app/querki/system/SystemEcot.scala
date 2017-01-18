@@ -67,7 +67,9 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncIni
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Tags = interface[querki.tags.Tags]
             
-  val defaultSpaceRootView = """{{well well-sm _root-well:
+  val defaultSpaceRootView = """[[Summary -> ""**____**""]] [[_if(_isNonEmpty(Details), _QLButton(label=""Details"", ql=Details))]]
+    |
+    |{{well well-sm _root-well:
     |{{row:
     |{{col-md-3:
     |### Pages
