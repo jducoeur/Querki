@@ -22,8 +22,8 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   lazy val isApp = spaceInfo.isApp
   
   def pageContent = {
-    val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.summaryProp.oid).call()
-    val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.apps.detailsProp.oid).call()
+    val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.summaryProp.oid).call()
+    val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.detailsProp.oid).call()
     
     for {
       summaryOpt <- summaryFut
