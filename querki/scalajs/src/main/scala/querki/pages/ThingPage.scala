@@ -93,6 +93,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   def viewingHistory = History.viewingHistory
   
   def isSpace = thing.kind == Kind.Space
+  def isApp =
+    if (isSpace) {
+      DataAccess.space.map(_.isApp).getOrElse(false)
+    } else
+      false
   
   lazy val topEditButton =
     new QLButtonGadget(
@@ -110,6 +115,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     div(cls:="page-header",
         
       h1(cls:="_defaultTitle", 
+        if (isApp)
+          b("App: "),
         raw(thingName), " ",
         if (isSpace)
           querkiButton(faIcon("info"))(
