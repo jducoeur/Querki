@@ -205,6 +205,13 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
     waitForTitle(CreateSpace)
     textField("_newSpaceName").value = space.display
     click on "_createSpaceButton"
+    // After creating the Space, we get taken to the Edit Space Info Page:
+    waitForTitle(EditSpaceInfoPage)
+    // TODO: we should actually play with the settings here. We should set the Summary and Details,
+    // and play with access control, and confirm that those work as expected. But note that doing so
+    // will probably require embedding _thingOID into the Edit Space Info page, and doing the below
+    // waitUntilCreated stuff and rebuilding state *before* editing those fields.
+    click on "_spaceInfoDoneButton"
     val createdSpace = waitUntilCreated(space).copy(url = currentUrl)
     val spaceThing = TInstance(createdSpace.display, createdSpace.tid)
     val fullSpace = createdSpace + spaceThing

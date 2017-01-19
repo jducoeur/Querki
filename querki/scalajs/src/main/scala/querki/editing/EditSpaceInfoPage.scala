@@ -116,7 +116,7 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
               oneRadioButton(SecurityMembers, "Only Members of the Space", isMembers)),
           p("Or you can ", a(href:=Pages.securityFactory.pageUrl(spaceInfo), "customize the permissions however you prefer.")),
           
-          br(), p(SpaceLinkButton(ButtonGadget.Primary, "Done"))
+          br(), p(SpaceLinkButton(ButtonGadget.Primary, id:="_spaceInfoDoneButton", "Done"))
         )
     }
      yield PageContents(pageTitle, guts)

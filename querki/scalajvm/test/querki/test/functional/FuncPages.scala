@@ -143,4 +143,8 @@ trait FuncPages { this:FuncMixin =>
   case object AdvancedCommandsPage extends QPage {
     val name = "advancedCommands"
   }
+  
+  case object EditSpaceInfoPage extends QPage {
+    val name = "editSpaceInfo"
+  }
 }
