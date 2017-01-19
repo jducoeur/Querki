@@ -55,7 +55,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
       "com.lihaoyi" %% "pprint" % "0.4.1",
       // Powerful structural-diffing library: https://github.com/xdotai/diff
-      "ai.x" %% "diff" % "1.2.0" % "test"
+      "ai.x" %% "diff" % "1.2.0" % "test",
+      // Only used for debugging at this point:
+      "com.github.pathikrit" %% "better-files" % "2.17.1"
     ),
     
     // ConductR params

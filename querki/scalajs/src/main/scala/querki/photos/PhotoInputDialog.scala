@@ -95,7 +95,6 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
     
     $(elem).after(photoInputElem.rendered)
     val agent = dom.window.navigator.userAgent
-    val disableResize = (agent.contains("Opera") || (agent.contains("Android") && !agent.contains("Chrome")))
     $(photoInputElem.elem).fileupload(FileUploadOptions
       .url(
         controllers.PhotoController.upload(
@@ -106,16 +105,11 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
           thing).url + "&propId=" + propId)
       .multipart(false)
       .maxFileSize(5000000) // 5 MB
-      // Enable image resizing, except for Android and Opera,
-      // which actually support image resizing, but fail to
-      // send Blob objects via XHR requests:
-      .disableImageResize(disableResize)
-      // Cap it at 1000 on a side, which is the current Querki maximum. Note that the server
-      // may reduce this further based on user preference, but we leave it to do further
-      // reduction there, since the server's algorithm does it more cleanly, with less aliasing.
-      // Here, we are reducing it mainly to reduce unnecessary transmission time. 
-      .imageMaxWidth(1000)
-      .imageMaxHeight(1000)
+      // We deliberately disable image resizing in *all* cases. Originally we only disabled this
+      // for Opera and the old Android browser, which were known to be unreliable, but it appears
+      // that it also fails erratically for Safari on the Mac. Resizing server-side turns out
+      // to work better anyway, and we have the maxFileSize as a check against abuse.
+      .disableImageResize(true)
       .processstart({ evt:JQueryEventObject =>
         showRunning()
       })

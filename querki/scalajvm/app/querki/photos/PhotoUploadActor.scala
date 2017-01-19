@@ -15,6 +15,8 @@ import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
 
+import better.files._
+
 import org.querki.requester.Requester
 
 import models.{MIMEType, OID, Wikitext}
@@ -55,6 +57,24 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
   // TODO: restructure this Actor to be more conventional
   def processBuffer(rc:RequestContext):Unit = {}
   
+  def printBuffer() = {
+    QLog.spew(s"Dumping photo to photodump.txt for debugging")
+    val file = File.home / "photodump.txt"
+    file.clear()
+    
+    def printBytes(start:Int):String = {
+      val end = scala.math.min(start + 16, chunkBuffer.size - 1)
+      (start until end).map { i =>
+        val byte = chunkBuffer(i)
+        f"$byte%2x"
+      }.mkString(" ")
+    }
+    
+    for (i <- 0 until chunkBuffer.size by 16) {
+      file.appendLine(f"$i%8x: ${printBytes(i)}")
+    }
+  }
+  
   override def receive = LoggingReceive (handleChunks orElse {
     
     case BeginProcessingPhoto(_, spaceId, tpe) => {
@@ -62,11 +82,11 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
     }
     
     case UploadDone(rc, propId, thingId) => {
-      QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
-      QLog.spew(s"First bytes: ${chunkBuffer.take(8)}; last bytes: ${chunkBuffer.takeRight(8)}")
+//      QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
+//      printBuffer()
       val originalImage = ImageIO.read(uploadedStream)
       
-      QLog.spew(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
+//      QLog.spew(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
       
       implicit val s = state
       
@@ -145,7 +165,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
       }
       uploadToS3(outputStream, filename)
       uploadToS3(thumbnailOutputStream, thumbnailFilename)
-      QLog.spew("Uploaded!")
+//      QLog.spew("Uploaded!")
       
       // Okay -- now, rebuild the actual QValue
       val rawBundle = SimplePropertyBundle(
@@ -193,7 +213,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
         self ! ImageComplete        
       }
       
-      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
+//      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
       router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
         response match {
           case ThingFound(thingId, newState) => {
