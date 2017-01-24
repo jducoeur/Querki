@@ -8,6 +8,7 @@ import controllers.{PageEventManager, PlayRequestContext}
 
 import querki.ecology._
 import querki.identity.User
+import querki.session.UserFunctions._
 import querki.util._
 
 object MOIDs extends EcotIds(8)
@@ -36,6 +37,14 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   }
   
   def currentTOS:TOSVersion = TOSModule.currentVersion
+  
+  def checkTOS(user:User):TOSState = {
+    if (user.tosVersion == currentVersion.version
+     || user.tosVersion == noTOSUserVersion)
+      TOSOkay
+    else
+      TOSOld
+  }
   
   /**
    * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!

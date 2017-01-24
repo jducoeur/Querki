@@ -2,7 +2,7 @@ package querki.identity
 
 import scala.util.Success
 
-import upickle._
+import upickle.default._
 import rx._
 import scalatags.JsDom.all.{name => nm, _}
 
@@ -54,6 +54,8 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
           StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
           loginPromise.failure(new Exception("Wasn't a legal login"))
         } else {
+          val userInfoOpt = read[Option[UserInfo]](result)
+          setUser(userInfoOpt)
           loginDialog.done()
           finishLogin()
         }

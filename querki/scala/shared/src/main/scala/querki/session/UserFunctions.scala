@@ -59,6 +59,11 @@ trait UserFunctions {
   def setComplexity(level:TID):Future[TID]
   
   /**
+   * Checks whether this User's TOS agreement is up to date.
+   */
+  def checkTOS():Future[TOSState]
+  
+  /**
    * Fetch the current Terms of Service.
    */
   def fetchTOS():Future[TOSInfo]
@@ -78,4 +83,8 @@ object UserFunctions {
    * Describes the current Terms of Service.
    */
   case class TOSInfo(version:Int, text:Wikitext)
+  
+  sealed trait TOSState
+  case object TOSOkay extends TOSState
+  case object TOSOld extends TOSState
 }

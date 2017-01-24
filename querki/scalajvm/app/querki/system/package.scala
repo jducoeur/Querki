@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import querki.ecology._
 
 import querki.identity.User
+import querki.session.UserFunctions.TOSState
 import querki.values.SpaceState
 
 package object system {
@@ -18,6 +19,7 @@ package object system {
   }
   
   trait TermsOfService extends EcologyInterface {
+    def checkTOS(user:User):TOSState
     def currentTOS:TOSVersion
     def recordAccept(user:User, version:Int):Future[User]
   }

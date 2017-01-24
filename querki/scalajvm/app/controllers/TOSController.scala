@@ -15,6 +15,8 @@ case class TOSForm(version:Int = -1, agreed:Boolean = false)
 
 /**
  * Handle Terms of Service. This class works hand-in-glove with querki.system.TOSModule.
+ * 
+ * TODO: this is deprecated, and maybe dead.
  */
 class TOSController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
   val tosForm = Form(

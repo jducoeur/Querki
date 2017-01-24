@@ -6,16 +6,21 @@ import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
+import autowire._
 
 import querki.globals._
 
 import querki.comm.URL
+import querki.identity.TOSPage
 import querki.pages.{MissingPageParameterException, Page, ParamMap}
+import querki.session.UserFunctions
+import UserFunctions._
 import querki.util.Notifier
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
+  lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val Pages = interface[querki.pages.Pages]
@@ -73,8 +78,16 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         invokeFromHash()
     })
     
-    // The system should all be booted, so let's go render:
-    invokeFromHash()
+    // The system should all be booted, so let's go render. But first, check if we need a fresh
+    // TOS:
+    // TODO: this is conceptually a lousy place for this check, but it's the right place in the
+    // pipeline to do "stuff after loading". Can we find a better factoring?
+    Client[UserFunctions].checkTOS().call().flatMap {
+      _ match {
+        case TOSOkay => invokeFromHash()
+        case TOSOld => TOSPage.run.flatMap { _ => invokeFromHash() }
+      }
+    }
   }
   
   var _imagePath:Option[String] = None
