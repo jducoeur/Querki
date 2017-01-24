@@ -13,5 +13,6 @@ package object identity {
     def name:String
     
     def login():Future[Page]
+    def loginCore():Future[Unit]
   }
 }

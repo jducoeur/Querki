@@ -2,6 +2,7 @@ package querki.session
 
 import scala.concurrent.Future
 
+import models.Wikitext
 import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.identity.UserLevel
 
@@ -56,9 +57,25 @@ trait UserFunctions {
    * Changes the complexity level preferred by this user.
    */
   def setComplexity(level:TID):Future[TID]
+  
+  /**
+   * Fetch the current Terms of Service.
+   */
+  def fetchTOS():Future[TOSInfo]
+  
+  /**
+   * Officially records that the logged-in User has agreed to the specified version of the
+   * TOS.
+   */
+  def agreeToTOS(version:Int):Future[Unit]
 }
 
 object UserFunctions {
   case class AllSpaces(mySpaces:Seq[SpaceInfo], memberOf:Seq[SpaceInfo])
   case class AccountInfo(handle:String, displayName:String, email:String, level:UserLevel.UserLevel)
+  
+  /**
+   * Describes the current Terms of Service.
+   */
+  case class TOSInfo(version:Int, text:Wikitext)
 }

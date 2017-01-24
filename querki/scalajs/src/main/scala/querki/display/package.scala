@@ -175,6 +175,12 @@ package object display {
      * We need to expose these so that they can be passed as metadata to the server.
      */
     def currentPageParams:ParamMap
+    
+    /**
+     * The internal render mechanism. You should *not* normally use this! It is exposed solely so that workflows
+     * can build and use Pages directly.
+     */
+    def renderPage(page:Page):Future[Page]
   }
   
   trait StatusLine extends EcologyInterface {

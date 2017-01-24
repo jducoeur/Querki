@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import autowire._
 
-import models.{AsOID, OID, ThingId}
+import models.{AsOID, OID, ThingId, Wikitext}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{TID, SpaceInfo, UserInfo}
@@ -28,6 +28,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val System = interface[querki.system.System]
+  lazy val TermsOfService = interface[querki.system.TermsOfService]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val spaceManager = SpaceOps.spaceManager
@@ -130,5 +131,14 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     sessionActorRef ? UserSessionMessages.SetSkillLevel(OID(level.underlying)) map { 
       case UserSessionMessages.SkillLevelAck => level
     }
+  }
+  
+  def fetchTOS():Future[TOSInfo] = {
+    val current = TermsOfService.currentTOS
+    fut(TOSInfo(current.version, Wikitext(current.text)))
+  }
+  
+  def agreeToTOS(version:Int):Future[Unit] = {
+    TermsOfService.recordAccept(user, version).map(_ => ())
   }
 }

@@ -1,5 +1,7 @@
 package querki.identity
 
+import scala.util.Success
+
 import upickle._
 import rx._
 import scalatags.JsDom.all.{name => nm, _}
@@ -29,8 +31,16 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def name = _user.map(_.mainIdentity.name).getOrElse("Not logged in")
   
-  def login:Future[Page] = {
-    val loginPromise = Promise[Page]
+  def login():Future[Page] = {
+    loginCore().flatMap(_ => PageManager.reload())
+  }
+  
+  def loginCore():Future[Unit] = {
+    val loginPromise = Promise[Unit]
+    
+    def finishLogin() = {
+      loginPromise.complete(Success(()))
+    }
     
     // The order of the logic here is a tad convoluted, because it's a bit recursive: we want to
     // allow Enter, in the passwordInput, which is inside the Dialog, to *close* that Dialog.
@@ -45,9 +55,9 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
           loginPromise.failure(new Exception("Wasn't a legal login"))
         } else {
           loginDialog.done()
-          loginPromise.completeWith(PageManager.reload())
+          finishLogin()
         }
-      }      
+      }
     }
     
     lazy val handleInput = GadgetRef[RxText]
@@ -60,8 +70,20 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
         }
       }
     
+    def showSignup():Unit = {
+      loginDialog.done()
+      SignUpPage.run.foreach { userInfo =>
+        finishLogin()
+      }      
+    }
+    
     lazy val loginDialog = new Dialog("Log in to Querki",
       div(
+        p("""If you are already a member of Querki, enter your login info here, or """,
+          new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki")({ () =>
+            showSignup()
+          })
+        ),
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
         passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2)
       ),

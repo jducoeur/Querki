@@ -168,6 +168,9 @@ class GadgetRef[G <: Gadget[_]](implicit val ecology:Ecology) extends Gadget[Ele
    * use whenRendered() instead.
    * 
    * This function is chainable.
+   * 
+   * TBD: is this *ever* the right answer? We might consider deprecating this as a public entry point,
+   * since you usually want whenRendered() instead.
    */
   def whenSet(f:G => Unit) = {
     Obs(opt) {

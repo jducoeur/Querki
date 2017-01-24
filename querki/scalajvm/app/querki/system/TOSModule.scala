@@ -28,12 +28,14 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   override def init = {
-    PageEventManager.requestReceived += TOSChecker
+//    PageEventManager.requestReceived += TOSChecker
   }
   
   override def term = {
-    PageEventManager.requestReceived -= TOSChecker
+//    PageEventManager.requestReceived -= TOSChecker
   }
+  
+  def currentTOS:TOSVersion = TOSModule.currentVersion
   
   /**
    * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!
@@ -47,6 +49,8 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
    * URL is an invitation to join this Space, and goes to the Invitation workflow if so.
    * 
    * TODO: this is dependent on PlayRequestContext, which means that it really belongs in controllers!
+   * 
+   * TODO: this is now dead, and should be removed once the new TOS system is working.
    */
   object TOSChecker extends Contributor[PlayRequestContext,PlayRequestContext] {
     def notify(rc:PlayRequestContext, sender:Publisher[PlayRequestContext, PlayRequestContext]):PlayRequestContext = {

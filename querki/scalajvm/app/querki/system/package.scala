@@ -18,6 +18,7 @@ package object system {
   }
   
   trait TermsOfService extends EcologyInterface {
+    def currentTOS:TOSVersion
     def recordAccept(user:User, version:Int):Future[User]
   }
 }

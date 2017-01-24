@@ -1,5 +1,7 @@
 package querki.identity
 
+import scala.util.Success
+
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
@@ -20,7 +22,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class SignUpPage(implicit val ecology:Ecology) extends Page("signup") {
+class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology) extends Page("signup") {
   
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
@@ -81,7 +83,12 @@ class SignUpPage(implicit val ecology:Ecology) extends Page("signup") {
   def signup() = {
     doSignup().map { user =>
       UserAccess.setUser(Some(user))
-      PageManager.showIndexPage()
+      // Okay, we have a User -- now, deal with Terms of Service:
+      TOSPage.run.map { _ =>
+        // Iff an onReady was passed in, we're part of a workflow, so invoke that. Otherwise, we're
+        // running imperatively, so just show the Index: 
+        onReady.map(_(user)).getOrElse(PageManager.showIndexPage())        
+      }
     }.onFailure { case th =>
       th match {
         case PlayAjaxException(jqXHR, textStatus, thrown) => {
@@ -118,4 +125,18 @@ class SignUpPage(implicit val ecology:Ecology) extends Page("signup") {
     ))
   }
     yield PageContents(guts)
+}
+
+object SignUpPage {
+  /**
+   * Encapsulates the SignUp workflow so that other systems can compose it.
+   */
+  def run(implicit ecology:Ecology):Future[UserInfo] = {
+    val promise = Promise[UserInfo]
+    val completeFunc:UserInfo => Unit = user => promise.complete(Success(user))
+    val page = new SignUpPage(Some(completeFunc))
+    // NOTE: this doesn't actually change the URL! This is arguably a horrible hack.
+    ecology.api[querki.display.PageManager].renderPage(page)
+    promise.future
+  }
 }
