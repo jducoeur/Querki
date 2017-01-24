@@ -24,17 +24,7 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   
   import TOSModule._
   
-  val PageEventManager = initRequires[controllers.PageEventManager]
-  
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
-  override def init = {
-//    PageEventManager.requestReceived += TOSChecker
-  }
-  
-  override def term = {
-//    PageEventManager.requestReceived -= TOSChecker
-  }
   
   def currentTOS:TOSVersion = TOSModule.currentVersion
   
@@ -51,27 +41,6 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
    */
   def recordAccept(user:User, version:Int):Future[User] =  {
     UserAccess.setTOSVersion(user.id, version).map(_.get)
-  }
-  
-  /**
-   * This is called via callbacks when we are beginning to render a page. It looks to see whether the
-   * URL is an invitation to join this Space, and goes to the Invitation workflow if so.
-   * 
-   * TODO: this is dependent on PlayRequestContext, which means that it really belongs in controllers!
-   * 
-   * TODO: this is now dead, and should be removed once the new TOS system is working.
-   */
-  object TOSChecker extends Contributor[PlayRequestContext,PlayRequestContext] {
-    def notify(rc:PlayRequestContext, sender:Publisher[PlayRequestContext, PlayRequestContext]):PlayRequestContext = {
-      val newRCOpt = for (
-        user <- rc.requester;
-        if (user.tosVersion != noTOSUserVersion);
-        if (user.tosVersion != currentVersion.version)
-          )
-        yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate, redirectTo = Some(controllers.routes.TOSController.showTOS))
-        
-      newRCOpt.getOrElse(rc)
-    }
   }
 }
 

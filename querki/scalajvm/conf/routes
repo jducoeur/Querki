@@ -9,9 +9,6 @@ GET     /robots.txt					@controllers.Application.robots
 GET     /help/                      @controllers.ClientController.space(userName = "systemUser", spaceId = "documentation")
 GET     /help/:thingId              @controllers.ClientController.thingRedirect(userName = "systemUser", spaceId = "documentation", thingId)
 
-GET     /TOS                        @controllers.TOSController.showTOS
-POST    /TOS                        @controllers.TOSController.handleTOS
-
 # The direct-signup pathway:
 GET     /signup/                    @controllers.ClientController.signup
 POST    /signupStart/               @controllers.LoginController.signupStart()

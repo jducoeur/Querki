@@ -18,31 +18,40 @@ import UserFunctions._
 class TOSPage(onReady:Option[Unit => Unit])(implicit val ecology:Ecology) extends Page("tos")  {
   lazy val Client = interface[querki.client.Client]
   
-  val agreed = Var[Boolean](false) 
+  val agreed = Var[Boolean](false)
   
-  def pageContent = for {
-    TOSInfo(version, text) <- Client[UserFunctions].fetchTOS().call()
-    guts =
-      div(
-        h1(s"Querki Terms of Service, version $version"),
-        p("Please read and agree to the following agreement in order to use Querki."),
-        div(cls:="row",
-          div(cls:="well col-md-offset1 col-md-10",
-            new QText(text)
-          ),
-          
-          div(cls:="col-md-12",
-            p(new RxCheckbox(agreed, "I agree to the above Terms and Conditions.", id := "_TOSagree")),
-            p(new ButtonGadget(ButtonGadget.Primary, "Submit", disabled := Rx { !agreed() } ) ({ () =>
-              Client[UserFunctions].agreeToTOS(version).call().foreach { _ =>
-                onReady.map(_(())).getOrElse(PageManager.reload())
-              }
-            }))
+  def pageContent = {
+    val tosFut = Client[UserFunctions].fetchTOS().call()
+    val checkFut = Client[UserFunctions].checkTOS().call()
+    for {
+      TOSInfo(version, text) <- tosFut
+      curTOSState <- checkFut
+      _ = {
+        if (curTOSState == TOSOkay)
+          agreed() = true
+      }
+      guts =
+        div(
+          h1(s"Querki Terms of Service, version $version"),
+          p("Please read and agree to the following agreement in order to use Querki."),
+          div(cls:="row",
+            div(cls:="well col-md-offset1 col-md-10",
+              new QText(text)
+            ),
+            
+            div(cls:="col-md-12",
+              p(new RxCheckbox(agreed, "I agree to the above Terms and Conditions.", id := "_TOSagree")),
+              p(new ButtonGadget(ButtonGadget.Primary, "Submit", disabled := Rx { !agreed() } ) ({ () =>
+                Client[UserFunctions].agreeToTOS(version).call().foreach { _ =>
+                  onReady.map(_(())).getOrElse(PageManager.showRoot())
+                }
+              }))
+            )
           )
         )
-      )
+    }
+      yield PageContents(guts)
   }
-    yield PageContents(guts)
 }
 
 object TOSPage {

@@ -82,12 +82,16 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     // TOS:
     // TODO: this is conceptually a lousy place for this check, but it's the right place in the
     // pipeline to do "stuff after loading". Can we find a better factoring?
-    Client[UserFunctions].checkTOS().call().flatMap {
-      _ match {
-        case TOSOkay => invokeFromHash()
-        case TOSOld => TOSPage.run.flatMap { _ => invokeFromHash() }
+    if (DataAccess.request.user.isDefined) {
+      Client[UserFunctions].checkTOS().call().flatMap {
+        _ match {
+          case TOSOkay => invokeFromHash()
+          case TOSOld => TOSPage.run.flatMap { _ => invokeFromHash() }
+        }
       }
-    }
+    } else
+      // Anonymous access, so TOS is irrelevant:
+      invokeFromHash()
   }
   
   var _imagePath:Option[String] = None
