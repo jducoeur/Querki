@@ -64,11 +64,6 @@ trait UserFunctions {
   def checkTOS():Future[TOSState]
   
   /**
-   * Fetch the current Terms of Service.
-   */
-  def fetchTOS():Future[TOSInfo]
-  
-  /**
    * Officially records that the logged-in User has agreed to the specified version of the
    * TOS.
    */
@@ -78,11 +73,6 @@ trait UserFunctions {
 object UserFunctions {
   case class AllSpaces(mySpaces:Seq[SpaceInfo], memberOf:Seq[SpaceInfo])
   case class AccountInfo(handle:String, displayName:String, email:String, level:UserLevel.UserLevel)
-  
-  /**
-   * Describes the current Terms of Service.
-   */
-  case class TOSInfo(version:Int, text:Wikitext)
   
   sealed trait TOSState
   case object TOSOkay extends TOSState

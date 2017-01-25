@@ -137,11 +137,6 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     fut(TermsOfService.checkTOS(user))
   }
   
-  def fetchTOS():Future[TOSInfo] = {
-    val current = TermsOfService.currentTOS
-    fut(TOSInfo(current.version, Wikitext(current.text)))
-  }
-  
   def agreeToTOS(version:Int):Future[Unit] = {
     TermsOfService.recordAccept(user, version).map(_ => ())
   }

@@ -7,22 +7,31 @@ import scalatags.JsDom.all._
 import rx._
 import autowire._
 
+import querki.api.CommonFunctions
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import querki.globals._
 import querki.pages._
 import querki.session.UserFunctions
 
+import CommonFunctions._
 import UserFunctions._
 
 class TOSPage(onReady:Option[Unit => Unit])(implicit val ecology:Ecology) extends Page("tos")  {
   lazy val Client = interface[querki.client.Client]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   val agreed = Var[Boolean](false)
   
+  val isUser = UserAccess.user.isDefined
+  
   def pageContent = {
-    val tosFut = Client[UserFunctions].fetchTOS().call()
-    val checkFut = Client[UserFunctions].checkTOS().call()
+    val tosFut = Client[CommonFunctions].fetchTOS().call()
+    val checkFut =
+      if (isUser)
+        Client[UserFunctions].checkTOS().call()
+      else
+        Future.successful(TOSOkay)
     for {
       TOSInfo(version, text) <- tosFut
       curTOSState <- checkFut
@@ -39,14 +48,15 @@ class TOSPage(onReady:Option[Unit => Unit])(implicit val ecology:Ecology) extend
               new QText(text)
             ),
             
-            div(cls:="col-md-12",
-              p(new RxCheckbox(agreed, "I agree to the above Terms and Conditions.", id := "_TOSagree")),
-              p(new ButtonGadget(ButtonGadget.Primary, "Submit", disabled := Rx { !agreed() } ) ({ () =>
-                Client[UserFunctions].agreeToTOS(version).call().foreach { _ =>
-                  onReady.map(_(())).getOrElse(PageManager.showRoot())
-                }
-              }))
-            )
+            if (isUser)
+              div(cls:="col-md-12",
+                p(new RxCheckbox(agreed, "I agree to the above Terms and Conditions.", id := "_TOSagree")),
+                p(new ButtonGadget(ButtonGadget.Primary, "Submit", disabled := Rx { !agreed() } ) ({ () =>
+                  Client[UserFunctions].agreeToTOS(version).call().foreach { _ =>
+                    onReady.map(_(())).getOrElse(PageManager.showRoot())
+                  }
+                }))
+              )
           )
         )
     }

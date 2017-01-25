@@ -2,10 +2,12 @@ package querki.api
 
 import scala.concurrent.Future
 
-import querki.globals._
-
+import models.Wikitext
 import querki.data.ThingInfo
+import querki.globals._
 import querki.values.RequestContext
+
+import CommonFunctions._
 
 class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends PassthroughHandlerBase with EcologyMember {
   val ClientApi = interface[ClientApi]
@@ -35,6 +37,8 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Passthr
 
 class CommonFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with CommonFunctions
 { 
+  lazy val TermsOfService = interface[querki.system.TermsOfService]
+  
   def doRoute(req:Request):Future[String] = route[CommonFunctions](this)(req)
 
   def getStandardThings():Future[Map[String, ThingInfo]] = {
@@ -64,5 +68,10 @@ class CommonFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autow
       }
       case _ => throw new Exception(s"Received unknown OperationHandle $handle")
     }    
+  }
+  
+  def fetchTOS():Future[TOSInfo] = {
+    val current = TermsOfService.currentTOS
+    fut(TOSInfo(current.version, Wikitext(current.text)))
   }
 }

@@ -2,9 +2,12 @@ package querki.api
 
 import scala.concurrent.Future
 
+import models.Wikitext
 import querki.data.ThingInfo
 
 trait CommonFunctions {
+  import CommonFunctions._
+  
   /**
    * Pro-actively fetches the "standard" Things (from System Space) that the Client cares about.
    * This list is pretty ad-hoc, but it's useful to get them in advance.
@@ -24,6 +27,20 @@ trait CommonFunctions {
   def getProgress(handle:OperationHandle):Future[OperationProgress]
   
   def acknowledgeComplete(handle:OperationHandle):Unit
+  
+  /**
+   * Fetch the current Terms of Service.
+   */
+  def fetchTOS():Future[TOSInfo]
+}
+
+object CommonFunctions {
+  
+  /**
+   * Describes the current Terms of Service.
+   */
+  case class TOSInfo(version:Int, text:Wikitext)
+
 }
 
 /**
