@@ -14,6 +14,8 @@ package object identity {
     
     def user:Option[UserInfo]
     
+    def loggedIn:Boolean = user.isDefined
+    
     def name:String
     
     def login():Future[Page]

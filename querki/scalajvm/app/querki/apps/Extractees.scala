@@ -30,6 +30,10 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
   private lazy val SystemSpace = System.State
   private lazy val systemId = SystemSpace.id
   
+  // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
+  // multi-level Apps. (And enhance the SpaceBuilder accordingly.) One step at a time, though.
+  private lazy val appPerm = Apps.CanUseAsAppPerm(AccessControl.PublicTag)
+  
   /**
    * Creates the complete Extractees structure, with all the stuff we expect to pull out.
    * 
@@ -49,16 +53,15 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       } else {
         (oids, false)
       }
-    
+      
     val initState = 
       SpaceState(
         state.id,
         systemId,
         Map(
-          Core.NameProp(name),
-          // TODO: eventually, we should allow users to create friend-private Apps. But for now, they're
-          // all Public:
-          Apps.CanUseAsAppPerm(AccessControl.PublicTag)
+          Core.NameProp(canon),
+          Basic.DisplayNameProp(name),
+          appPerm
         ),
         owner.mainIdentity.id,
         name,
@@ -83,10 +86,12 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
       val s = withProps.state
       // Actually copy in the Space's Properties, *except* for the Name.
-      // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
-      // multi-level Apps. (And enhance the SpaceBuilder accordingly.) One step at a time, though.
       withProps.copy(state = 
-        s.copy(pf = (state.pf - Core.NameProp.id - Basic.DisplayNameProp.id) + Core.NameProp(canon) + Basic.DisplayNameProp(name)))
+        s.copy(
+          pf = (state.pf - Core.NameProp.id - Basic.DisplayNameProp.id) 
+            + Core.NameProp(canon) 
+            + Basic.DisplayNameProp(name)
+            + appPerm))
     } else
       in
   }

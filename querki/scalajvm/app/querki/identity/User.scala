@@ -87,10 +87,12 @@ trait User {
   def mainIdentity = loginIdentity getOrElse identityBy(_ => true).get
   
   /**
-   * This defines whether this User is allowed to own Spaces or not. Basically, Pending Users aren't
-   * allowed to create or receive Spaces.
+   * This defines whether this User is allowed to own Spaces or not. Originally, PendingUsers weren't
+   * allowed to own Spaces, but it turns out to be necessary to loosen this in order to make the
+   * signup workflow not suck. (Especially for instantiating Apps: we want to be able to create the
+   * Space *before* responding to the validation email.)
    */
-  def canOwnSpaces = level >= FreeUser
+  def canOwnSpaces = level >= PendingUser
   
   def isAdmin = UserLevel.isAdmin(level)
   
