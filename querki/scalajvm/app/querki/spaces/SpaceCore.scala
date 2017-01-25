@@ -711,8 +711,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
-    // TODO: remove the sync flag from ChangeProps, since it is a non-sequiteur in the Akka Persistence
-    // world.
     case ChangeProps(who, spaceId, thingId, changedProps, localCall) => {
       val initialState = currentState
       runAndSendResponse("changeProps", localCall, modifyThing(who, thingId, None, changedProps, false))(currentState).map { changes =>
@@ -737,8 +735,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
       }
     }
     
-    case ModifyThing(who, spaceId, thingId, modelId, newProps) => {
-      runAndSendResponse("modifyThing", true, modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
+    case ModifyThing(who, spaceId, thingId, modelId, newProps, localCall) => {
+      runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
+    }
+    
+    case ChangeModel(who, spaceId, thingId, newModelId, localCall) => {
+      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), Thing.emptyProps, false))(currentState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {

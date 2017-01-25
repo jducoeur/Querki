@@ -110,7 +110,12 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         val result = ClientApi.spaceInfo(info)
         appIdOpt match {
           case Some(appId) => {
-            Apps.addAppToSpace(user, info.id, appId).map { _ => result }
+            for {
+              _ <- Apps.addAppToSpace(user, info.id, appId)
+              // The new Space should have the App as its Model:
+              ThingAck(_) <- SpaceOps.spaceRegion ? ChangeModel(user, info.id, info.id, appId, false)
+            }
+              yield result
           }
           case _ => fut(result)
         }

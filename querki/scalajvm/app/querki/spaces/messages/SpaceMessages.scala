@@ -71,7 +71,12 @@ case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String
  */
 case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(req, space)
 
-case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, space)
+/**
+ * TODO: this is largely redundant with ChangeProps and ChangeModel at this point. It should be removed.
+ */
+case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(req, space)
+
+case class ChangeModel(req:User, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(req, space)
 
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
