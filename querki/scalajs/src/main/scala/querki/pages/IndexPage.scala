@@ -32,32 +32,8 @@ class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("ind
       )
     )    
   }
-  
-  def normalIndexPage(canCreate:Boolean, allSpaces:AllSpaces) = 
-    div(
-      h1(pageTitle),
-      if (allSpaces.mySpaces.isEmpty && allSpaces.memberOf.isEmpty)
-        // New user, who has no Spaces
-        div(cls:="jumbotron",
-          h1("Welcome to Querki!"),
-          p(s"""You're all set -- your Querki account is up and running. You can now create Spaces of your own by pressing
-              |the ${msg("createButton")} button, below.""".stripMargin)
-        )
-      else
-        // Normal situation
-        div(cls:="row",
-          spaceSection(msg("ownSection"), allSpaces.mySpaces),
-          spaceSection(msg("memberSection"), allSpaces.memberOf)
-        ),
-      p(new ButtonGadget(ButtonGadget.Normal, msg("createButton"), id:="_createSpaceButton", if (!canCreate) {disabled:=true})({ () =>
-        Pages.createSpaceFactory.showPage()
-      })),
-      if (!canCreate) {
-        p(cls:="_smallSubtitle", msg("notAllowedYet"))
-      }
-    )
       
-  def waitingIndexPage =
+  def awaitingValidationSection =
     div(cls:="jumbotron",
       h1("Welcome to Querki!"),
       p("""An email has been sent to your address, with a validation link. Please find that email and click on the
@@ -69,17 +45,43 @@ class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("ind
         }
       }))
     )
-      
+    
+  def welcomeSection =
+    div(cls:="jumbotron",
+      h1("Welcome to Querki!"),
+      p(s"""You're all set -- your Querki account is up and running. You can now create Spaces of your own by pressing
+          |the ${msg("createButton")} button, below.""".stripMargin)
+    )
+          
   def pageContent = for {
     allSpaces <- Client[UserFunctions].listSpaces().call()
-    canCreate = (DataAccess.request.userLevel > PendingUser)
-    // This is a bit indirect. Should we let the server declare this instead?
-    awaitingValidation = (!canCreate && allSpaces.mySpaces.isEmpty && allSpaces.memberOf.isEmpty)
+    awaitingValidation = (DataAccess.request.userLevel == PendingUser)
+    noSpaces = allSpaces.mySpaces.isEmpty && allSpaces.memberOf.isEmpty
     guts =
-      if (awaitingValidation)
-        waitingIndexPage
-      else
-        normalIndexPage(canCreate, allSpaces)
+      div(
+        h1(pageTitle),
+        
+        if (awaitingValidation)
+          awaitingValidationSection
+        else if (noSpaces)
+          // New user, who has no Spaces
+          welcomeSection,
+          
+        if (!noSpaces)
+          // Normal situation
+          div(cls:="row",
+            spaceSection(msg("ownSection"), allSpaces.mySpaces),
+            spaceSection(msg("memberSection"), allSpaces.memberOf)
+          ),
+          
+        // The CreateButton is disabled for unvalidated users. They can instantiate Apps, but that's it.
+        p(new ButtonGadget(ButtonGadget.Normal, msg("createButton"), id:="_createSpaceButton", if (awaitingValidation) {disabled:=true})({ () =>
+          Pages.createSpaceFactory.showPage()
+        })),
+        if (awaitingValidation) {
+          p(cls:="_smallSubtitle", msg("notAllowedYet"))
+        }
+      )
   }
     yield PageContents(guts)
 }
