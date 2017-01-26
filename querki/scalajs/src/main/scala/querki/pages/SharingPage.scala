@@ -20,7 +20,9 @@ import querki.display.{ButtonGadget, HookedGadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx._
 import querki.editing.EditFunctions
+import querki.identity.UserLevel._
 import querki.security.{PersonInfo, SecurityFunctions}
+import querki.session.UserFunctions
 
 class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
   
@@ -218,6 +220,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
     (roles, custom) <- Client[SecurityFunctions].getRoles().call()
     inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
+    awaitingValidation = (DataAccess.request.userLevel == PendingUser)
     roleMap = makeRoleMap(roles)
     customMap = makeRoleMap(noRole +: custom)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
@@ -282,7 +285,8 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
                   ButtonGadget.Normal, 
                   "Invite Members",
                   "Inviting...",
-                  id := "_inviteButton")
+                  id := "_inviteButton", 
+                  if (awaitingValidation) {disabled:=true})
                 ({ btn =>
                   val emails = inviteeInput.values
                   val collabs = collaboratorInput.values.map(TID(_))
@@ -305,7 +309,14 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
                       }
                     }
                   }
-                })
+                }),
+                if (awaitingValidation) {
+                  flash(true, msg("notAllowedYet"), " ", new ButtonGadget(ButtonGadget.Normal, "Resend my activation email")({ () =>
+                    Client[UserFunctions].resendActivationEmail().call().foreach { _ =>
+                      StatusLine.showBriefly("Activation email sent!")
+                    }
+                  }))
+                }
               )
             ),
              

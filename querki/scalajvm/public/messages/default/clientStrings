@@ -58,6 +58,7 @@ pages : {
   
   sharing : {
     pageTitle : "Sharing for $spaceName"
+    notAllowedYet : "You can not invite people into your Spaces until you validate your email address. Please look for a validation email in your Inbox."
   }
   
   signup : {
