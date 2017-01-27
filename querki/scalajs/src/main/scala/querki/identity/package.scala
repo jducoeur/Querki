@@ -2,6 +2,7 @@ package querki
 
 import querki.globals._
 import querki.data.UserInfo
+import querki.display.ButtonGadget
 import querki.pages.{Page, PageFactory}
 
 package object identity {
@@ -20,5 +21,7 @@ package object identity {
     
     def login():Future[Page]
     def loginCore():Future[Unit]
+    
+    def resendActivationButton:ButtonGadget
   }
 }

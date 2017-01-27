@@ -7,11 +7,13 @@ import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import autowire._
+import _root_.rx._
 
 import querki.globals._
 
 import querki.comm.URL
 import querki.identity.TOSPage
+import querki.identity.UserLevel.PendingUser
 import querki.pages.{MissingPageParameterException, Page, ParamMap}
 import querki.session.UserFunctions
 import UserFunctions._
@@ -61,6 +63,9 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     menuHolder.replaceContents((new MenuBar(DataAccess.std)).render)
   }
   
+  case class FlashContents(isError:Boolean, mods:Modifier*)
+  val waitingFlash = Var[Option[FlashContents]](None)
+  
   /**
    * Declare the top-level container that we are going to render the page into. This
    * is typically going to be the body itself, but we're deliberately not assuming that.
@@ -78,8 +83,17 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         invokeFromHash()
     })
     
-    // The system should all be booted, so let's go render. But first, check if we need a fresh
-    // TOS:
+    // The system should all be booted, so let's go render. But first, check whether we should
+    // show the activation reminder:
+    if (DataAccess.request.userLevel == PendingUser) {
+      waitingFlash() = Some(FlashContents(false, 
+          """An activation email has been sent to your address; please click on the link in that
+            |email to finish activating your account. Some Querki functions will be restricted until
+            |you do so. """.stripMargin,
+          UserAccess.resendActivationButton))
+    }
+    
+    // ... check if we need a fresh TOS:
     // TODO: this is conceptually a lousy place for this check, but it's the right place in the
     // pipeline to do "stuff after loading". Can we find a better factoring?
     if (DataAccess.request.user.isDefined) {
@@ -238,6 +252,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    */
   def renderPage(page:Page):Future[Page] = {
     val fut = nextChangeFuture
+    
+    // Yes, this is icky and mutable-ish. Note sure how better to handle this requirement, though.
+    waitingFlash() map { f => page.flash(f.isError, f.mods) }
+    waitingFlash() = None
     
     for {
       std <- DataAccess.standardThings

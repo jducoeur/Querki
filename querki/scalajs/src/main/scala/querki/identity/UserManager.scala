@@ -5,6 +5,7 @@ import scala.util.Success
 import upickle.default._
 import rx._
 import scalatags.JsDom.all.{name => nm, _}
+import autowire._
 
 import org.querki.jquery._
 
@@ -15,12 +16,14 @@ import querki.display._
 import querki.display.rx._
 import RxEmptyable._
 import querki.pages.Page
+import querki.session.UserFunctions
 
 class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def implements = Set(classOf[UserAccess])
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -97,4 +100,11 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     
     loginPromise.future
   }
+  
+  def resendActivationButton =
+    new ButtonGadget(ButtonGadget.Normal, "Resend my activation email")({ () =>
+      Client[UserFunctions].resendActivationEmail().call().foreach { _ =>
+        StatusLine.showBriefly("Activation email sent!")
+      }
+    })
 }

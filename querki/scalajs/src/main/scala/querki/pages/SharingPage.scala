@@ -30,6 +30,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
   lazy val Editing = interface[querki.editing.Editing]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val space = DataAccess.space.get
   
@@ -311,11 +312,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
                   }
                 }),
                 if (awaitingValidation) {
-                  flash(true, msg("notAllowedYet"), " ", new ButtonGadget(ButtonGadget.Normal, "Resend my activation email")({ () =>
-                    Client[UserFunctions].resendActivationEmail().call().foreach { _ =>
-                      StatusLine.showBriefly("Activation email sent!")
-                    }
-                  }))
+                  flash(true, msg("notAllowedYet"), " ", UserAccess.resendActivationButton)
                 }
               )
             ),
