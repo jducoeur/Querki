@@ -51,7 +51,7 @@ class TOSPage(onReady:Option[Unit => Unit])(implicit val ecology:Ecology) extend
             if (isUser)
               div(cls:="col-md-12",
                 p(new RxCheckbox(agreed, "I agree to the above Terms and Conditions.", id := "_TOSagree")),
-                p(new ButtonGadget(ButtonGadget.Primary, "Submit", disabled := Rx { !agreed() } ) ({ () =>
+                p(new ButtonGadget(ButtonGadget.Primary, "Submit", id := "_TOSsubmit", disabled := Rx { !agreed() } ) ({ () =>
                   Client[UserFunctions].agreeToTOS(version).call().foreach { _ =>
                     onReady.map(_(())).getOrElse(PageManager.showRoot())
                   }

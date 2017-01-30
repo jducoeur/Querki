@@ -106,6 +106,7 @@ trait Security { this:FuncMixin =>
             // It appears that in practice this goes to None instead Some("false")?
             eventually { find("signupButton").get.attribute("disabled") should be (None) }
             click on "signupButton"
+            acceptTermsOfService()(state)
             waitFor(IndexPage)
             
             // Okay, now let's go to the email we received, and "click" on its link:

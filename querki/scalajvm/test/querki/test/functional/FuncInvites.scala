@@ -65,6 +65,13 @@ trait FuncInvites { self:FuncMixin =>
     }
   }
   
+  def acceptTermsOfService()(state:State):State = {
+    waitForTitle(TermsOfServicePage)
+    checkbox("_TOSagree").select()
+    click on "_TOSsubmit"
+    state
+  }
+  
   /**
    * Assumes the most recent email session contains an email to join this Space.
    */
@@ -85,10 +92,7 @@ trait FuncInvites { self:FuncMixin =>
         textField("display").value = user.display
         click on "_signUpButton"
         
-        waitForTitle(TermsOfServicePage)
-        checkbox("agreed").select()
-        click on "submitButton"
-        
+        acceptTermsOfService()(state)
         
         val finalPage = RootPage(state.getSpace(space)) 
         waitFor(finalPage)
