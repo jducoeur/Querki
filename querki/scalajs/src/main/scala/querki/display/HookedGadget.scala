@@ -2,6 +2,8 @@ package querki.display
 
 import org.scalajs.dom
 import org.querki.jquery._
+import org.querki.gadgets.core.GadgetLookup
+
 import querki.globals._
 
 /**
@@ -31,6 +33,7 @@ abstract class HookedGadget[T <: dom.html.Element](e:Ecology) extends Gadget[T] 
     // Don't hook templates! That causes nothing but havoc.
     // TODO: inputTemplate should simply go away ASAP -- it's an old approach to adding new list items.
     if (!$(elem).hasClass("inputTemplate")) {
+      GadgetLookup.annotateGadget(this)
       hook()
     }
   }
