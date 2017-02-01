@@ -1,9 +1,12 @@
 package querki.apps
 
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 
-import querki.display.{ButtonGadget, Dialog}
+import org.querki.jquery._
+
+import querki.display.{ButtonGadget, Dialog, HookedGadget}
 import querki.display.rx.{GadgetRef, RxInput}
 import querki.ecology._
 import querki.globals._
@@ -19,6 +22,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -28,10 +32,25 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
   override def postInit() = {
     appMgmtFactory
     extractAppFactory
+    
+    Gadgets.registerSimpleGadget("._instantiateAppButton", { new UseAppGadget })
   }
     
   lazy val spaceInfo = DataAccess.space.get
   lazy val isApp = spaceInfo.isApp
+  
+  /**
+   * A simple hook, so that anything with the class "_instantiateAppButton" becomes a button to pop the dialog.
+   */
+  class UseAppGadget extends HookedGadget[dom.html.Element](ecology) {
+    def doRender = ???
+    
+    def hook() = {
+      $(elem).click { evt:JQueryEventObject =>
+        useApp()
+      }
+    }
+  }
   
   /**
    * The guts of useApp(), which expect that we have a logged-in user.
