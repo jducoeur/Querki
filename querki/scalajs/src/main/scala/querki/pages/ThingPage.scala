@@ -16,7 +16,7 @@ import models.{Kind, Wikitext}
 
 import querki.globals._
 
-import querki.api.ThingFunctions
+import querki.api.{ModelLoopException, ThingFunctions}
 import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
@@ -26,6 +26,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   // If there is a "prop" parameter, that declares a Property that we're trying to render
   // instead of Default View:
@@ -48,8 +49,15 @@ class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends
       PageManager.update(info.displayName)
     }
     
+    val pageFut = Client[ThingFunctions].getThingPage(name, propOpt).call()
+    pageFut.onFailure {
+      case ModelLoopException() => StatusLine.showUntilChange("It appears you have a Model loop. Please go into the Advanced Editor and change models there.")
+      case ex:Exception => StatusLine.showUntilChange(ex.getMessage)
+      case _ => StatusLine.showUntilChange("Unexpected error")
+    }
+    
     for {
-      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
+      pageDetails:ThingPageDetails <- pageFut
       rendered = pageDetails.rendered
       convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {

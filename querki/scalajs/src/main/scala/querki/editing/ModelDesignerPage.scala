@@ -12,7 +12,7 @@ import rx.ops._
 import querki.globals._
 
 import EditFunctions._
-import querki.api.ThingFunctions
+import querki.api.{ModelLoopException, ThingFunctions}
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{RawDiv, WithTooltip}
 import querki.display.input.{InputGadget}
@@ -173,66 +173,74 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
   }
 
   def pageContent = {
-    checkParams getOrElse (for {
-      model <- DataAccess.getThing(modelId)
-      _ = DataSetting.setThing(Some(model))
-      modelModel <- DataAccess.getThing(model.modelOid)
-      fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
-      allProps = fullEditInfo.propInfos
-      (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
-      sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
-        instanceProps.find(_.propInfo.oid == propId) match {
-          case Some(prop) => current :+ prop
-          case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
+    checkParams getOrElse {
+      for {
+        model <- DataAccess.getThing(modelId)
+        _ = DataSetting.setThing(Some(model))
+        modelModel <- DataAccess.getThing(model.modelOid)
+        fullEditInfo <- 
+          Client[EditFunctions].getPropertyEditors(modelId).call()
+            .recover {
+              case ModelLoopException() => {
+                StatusLine.showUntilChange("You appear to have a Model Loop. Please change Models to fix this.")
+                FullEditInfo(Seq.empty, "", true, Seq.empty)
+              }
+            }
+        allProps = fullEditInfo.propInfos
+        (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
+        sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
+          instanceProps.find(_.propInfo.oid == propId) match {
+            case Some(prop) => current :+ prop
+            case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
+          }
         }
+        pageTitle = {
+          val prefix = 
+            if (model.isModel)
+              msg("modelPrefix")
+            else
+              msg("thingPrefix")
+          msg("pageTitle", ("modelName" -> model.unsafeName), ("prefix" -> prefix))
+        }
+  	    guts = 
+          div(cls:="_advancedEditor",
+            h1(pageTitle),
+            p(cls:="_smallSubtitle", 
+              s"Model: ${modelModel.displayName} -- ",
+              a("Change Model", 
+                href:=PageManager.currentHash,
+                onclick:={ () => 
+                  DataModel.changeModel(
+                    model,
+                    { newThingInfo => PageManager.reload() }) 
+              })
+            ),
+            if (model.isModel) {
+              MSeq(
+                h3(cls:="_defaultTitle", "Instance Properties"),
+                p(cls:="_smallSubtitle", 
+                  """These are the Properties that can be different for each Instance. Drag a Property into here if you
+                    |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
+                    |the order they show up in the Instance Editor.""".stripMargin),
+                instancePropSection.make(model, sortedInstanceProps, fullEditInfo, fullEditInfo.instancePropPath),
+                new AddPropertyGadget(this, model),
+                h3(cls:="_defaultTitle", "Model Properties"),
+                p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
+                modelPropSection.make(model, modelProps, fullEditInfo, "modelProps")
+              )
+            } else {
+              MSeq(
+                instancePropSection.make(model, allProps, fullEditInfo, "allProps"),
+                new AddPropertyGadget(this, model)
+              )
+            },
+            a(cls:="btn btn-primary",
+              id:="_doneDesigning",
+              "Done",
+              href:=thingUrl(model.oid))
+          )
       }
-      pageTitle = {
-        val prefix = 
-          if (model.isModel)
-            msg("modelPrefix")
-          else
-            msg("thingPrefix")
-        msg("pageTitle", ("modelName" -> model.unsafeName), ("prefix" -> prefix))
-      }
-	    guts = 
-        div(cls:="_advancedEditor",
-          h1(pageTitle),
-          p(cls:="_smallSubtitle", 
-            s"Model: ${modelModel.displayName} -- ",
-            a("Change Model", 
-              href:=PageManager.currentHash,
-              onclick:={ () => 
-                DataModel.changeModel(
-                  model,
-                  { newThingInfo => PageManager.reload() }) 
-            })
-          ),
-          if (model.isModel) {
-            MSeq(
-              h3(cls:="_defaultTitle", "Instance Properties"),
-              p(cls:="_smallSubtitle", 
-                """These are the Properties that can be different for each Instance. Drag a Property into here if you
-                  |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
-                  |the order they show up in the Instance Editor.""".stripMargin),
-              instancePropSection.make(model, sortedInstanceProps, fullEditInfo, fullEditInfo.instancePropPath),
-              new AddPropertyGadget(this, model),
-              h3(cls:="_defaultTitle", "Model Properties"),
-              p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-              modelPropSection.make(model, modelProps, fullEditInfo, "modelProps")
-            )
-          } else {
-            MSeq(
-              instancePropSection.make(model, allProps, fullEditInfo, "allProps"),
-              new AddPropertyGadget(this, model)
-            )
-          },
-          a(cls:="btn btn-primary",
-            id:="_doneDesigning",
-            "Done",
-            href:=thingUrl(model.oid))
-        )
+        yield PageContents(pageTitle, guts)
     }
-      yield PageContents(pageTitle, guts)
-    )
   }
 }

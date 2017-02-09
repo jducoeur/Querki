@@ -2,6 +2,7 @@ package models
 
 import scala.annotation.tailrec
 
+import querki.api.ModelLoopException
 import querki.basic.PlainText
 import querki.ecology._
 import querki.globals._
@@ -274,7 +275,7 @@ abstract class Thing(
       if (prop.notInherited)
         localProp(prop)
       else
-        getUntypedPropOptRec(prop)
+        getUntypedPropOptRec(prop, this)
     }
   }
   // TODO: fix the duplication of these two methods. It appears that the compiler occasionally is choosing
@@ -287,16 +288,28 @@ abstract class Thing(
     if (prop.notInherited)
       localProp(prop)
     else
-      getPropOptRec(prop)
+      getPropOptRec(prop, this)
   }
   
   // TBD: is it possible to combine these? The Untyped version seems to be necessary to make 
   // getPropOpt(OID) work, but it really feels like there should be a way to work around it...
-  private def getPropOptRec[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
-    localProp(prop).orElse(getModelOpt.flatMap(_.getPropOptRec(prop)))
+  private def getPropOptRec[VT](prop:Property[VT, _], original:Thing)(implicit state:SpaceState):Option[PropAndVal[VT]] = {
+    localProp(prop).orElse(getModelOpt.flatMap { parent =>
+      // Loop detection, so that we don't wind up with StackOverflow errors:
+      if (parent.id == original.id)
+        throw new ModelLoopException()
+      else
+        parent.getPropOptRec(prop, original)
+    })
   }
-  private def getUntypedPropOptRec(prop:Property[_, _])(implicit state:SpaceState):Option[PropAndVal[_]] = {
-    localProp(prop).orElse(getModelOpt.flatMap(_.getUntypedPropOptRec(prop)))
+  private def getUntypedPropOptRec(prop:Property[_, _], original:Thing)(implicit state:SpaceState):Option[PropAndVal[_]] = {
+    localProp(prop).orElse(getModelOpt.flatMap { parent =>
+      // Loop detection, so that we don't wind up with StackOverflow errors:
+      if (parent.id == original.id)
+        throw new ModelLoopException()
+      else
+        parent.getUntypedPropOptRec(prop, original)
+    })
   }
   
   /**

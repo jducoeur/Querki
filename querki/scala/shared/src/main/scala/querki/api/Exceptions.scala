@@ -35,6 +35,11 @@ case class GeneralChangeFailure(msg:String) extends EditException
  * in the Client. But this serves as a decent belt-and-suspenders check.
  */
 case class ValidationException(msg:String) extends EditException
+/**
+ * Indicates that we hit an inheritance loop. This is propagated to the client
+ * so that the Editor can allow you to fix it.
+ */
+case class ModelLoopException() extends EditException
 
 
 /**

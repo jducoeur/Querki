@@ -101,7 +101,7 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
         sender ! ClientError(UnexpectedPublicException.display(Some(rc)))                
       }
       case _ => {
-        QLog.error(s"Got exception from $apiName when invoking $req: $th")
+        QLog.error(s"Got throwable from $apiName when invoking $req", th)
         sender ! ClientError(UnexpectedPublicException.display(Some(rc)))
       }
     }              
