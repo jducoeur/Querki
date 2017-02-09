@@ -27,9 +27,13 @@ object QLog {
   }
   
   def error(message: => String, error: => Throwable) = {
-    if (inPlay)
+    if (inPlay) {
       Logger.error(message, error)
-    else {
+      // Annoyingly, Logger.error only displays the top of the stack trace.
+      // Can we fix Logger.error?
+      println("Full error trace:")
+      error.printStackTrace()
+    } else {
       println(message + "\n" + error.toString())
       error.printStackTrace()
     }

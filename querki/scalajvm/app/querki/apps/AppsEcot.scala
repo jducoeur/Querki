@@ -91,7 +91,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
   
   def getShadowedThing(t:Thing)(implicit state:SpaceState):Thing = {
     if (t.ifSet(ShadowFlag)) {
-      val model = state.anything(t.model).getOrElse(throw new Exception(s"Shadow ${t.displayName} doesn't have a Model we can find!"))
+      val model = state.anything(t.model).getOrElse(throw new Exception(s"Shadow ${t.displayName} calls for Model ${t.model}, but we can't find it!"))
       getShadowedThing(model)
     } else {
       t
