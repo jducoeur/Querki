@@ -322,35 +322,43 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
    */
   def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], Links:querki.links.Links, prop:Property[_,_]):Future[Seq[(String, Thing)]] = {
     implicit val s = state
-
-    // Note that linkCandidateLocal comes out pre-sorted if ChoiceOrder is set:
-    val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      state.accumulateAll[Seq[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
-    else
-      linkCandidatesLocal(state, Links, prop)
-      
-    val namePairsFut = namePairs(links, state, rcOpt)
     
-    // This code is annoyingly duplicate with linkCandidatesLocal, but it's cleaner to separate the concerns:
-    val hasChoiceOrderOpt =
+    val choiceOrderOpt =
       for {
         linkModelId <- prop.firstOpt(Links.LinkModelProp)
         linkModel <- state.anything(linkModelId)
+        pv <- linkModel.getPropOpt(Links.ChoiceOrderProp)
+        instanceIds = pv.rawList
       }
-        yield linkModel.hasProp(Links.ChoiceOrderProp)
-    val hasChoiceOrder = hasChoiceOrderOpt.getOrElse(false)
-  
-    // If there is *not* an explicit ChoiceOrder Property, sort the options by name.
-    if (hasChoiceOrder)
-      namePairsFut
-    else
-      namePairsFut.map(_.sortBy(_._1))    
+        yield instanceIds.map(state.anything(_)).flatten
+    
+    choiceOrderOpt match {
+      // If the Model specifies a Choice Order, we just return that. Note that this can include results that
+      // don't really make sense, but we give the user as much rope as ze wants:
+      case Some(choiceOrder) => {
+        namePairs(choiceOrder, state, rcOpt)
+      }
+      case None => {
+        // We convert the candidates to a Set, to de-duplicate as we go up the App chain:
+        val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
+          state.accumulateAll[Set[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
+        else
+          linkCandidatesLocal(state, Links, prop)
+          
+        val namePairsFut = namePairs(links.toSeq, state, rcOpt)
+
+        // Since there isn't a Choice Order, sort by name:
+        namePairsFut.map(_.sortBy(_._1))        
+      }
+    }
   }
 
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
+   * 
+   * This explicitly assumes that the Property does *not* point to a Model with Choice Order.
    */
-  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Set[Thing] = {
     implicit val s = state
     
     // First, filter the candidates based on LinkKind:
@@ -381,16 +389,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     // is n**2 (maybe worse) in context.
     val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
       prop.firstOpt(Links.LinkModelProp) match {
-        case Some(modelId) => {
-          val explicitChoices = for {
-            model <- state.anything(modelId)
-            pv <- model.getPropOpt(Links.ChoiceOrderProp)
-            instanceIds = pv.rawList
-          }
-            yield instanceIds.map(state.anything(_)).flatten
-          
-          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)))
-        }
+        case Some(modelId) => allCandidates filter (_.isAncestor(modelId))
         case None => allCandidates
       }
     } else {
@@ -404,7 +403,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     }
     
     // We need to make sure we don't count Shadows, or we might wind up with duplicates:
-    filteredAsModel.filterNot(_.ifSet(InternalProp)).filterNot(_.ifSet(Apps.ShadowFlag))
+    filteredAsModel.filterNot(_.ifSet(InternalProp)).filterNot(_.ifSet(Apps.ShadowFlag)).toSet
   }
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {
