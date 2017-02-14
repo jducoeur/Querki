@@ -23,19 +23,19 @@ import org.querki.requester._
  * querki.test.MonadTests for an example of how it ought to work.
  */
 trait RequestTC[A, F[_]] {
-  def flatMap[B](f: A => F[B]):F[B]
-  def map[B](f: A => B):F[B]
-  def filter(p:A => Boolean):F[A]
-  def withFilter(p:A => Boolean):F[A] = filter(p)
+  def flatMap[B](f: A => F[B])(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[B]
+  def map[B](f: A => B)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[B]
+  def filter(p:A => Boolean)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[A]
+  def withFilter(p:A => Boolean)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[A] = filter(p)
   def onComplete(f: PartialFunction[Try[A],Unit]):Unit
   def resolve(v:Try[A]):Unit
 }
 
 trait RTCAble[F[_]] {
   def toRTC[A](f:F[A]):RequestTC[A, F]
-  def successful[A](a: A):F[A]
-  def failed[T](ex:Exception):F[T]
-  def prep[T]:F[T]
+  def successful[A](a: A)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[A]
+  def failed[T](ex:Exception)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[T]
+  def prep[T](implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line):F[T]
 }
 
 /**
@@ -45,9 +45,12 @@ trait RTCAble[F[_]] {
  * counts as a universal trait.
  */
 class RealRequestTC[A](rm:RequestM[A]) extends RequestTC[A, RequestM] {
-  def flatMap[B](f: A => RequestM[B]) = rm.flatMap(f)
-  def map[B](f: A => B) = rm.map(f)
-  def filter(p:A => Boolean) = rm.filter(p)
+  def flatMap[B](f: A => RequestM[B])(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    rm.flatMap(f)(enclosing, file, line)
+  def map[B](f: A => B)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    rm.map(f)(enclosing, file, line)
+  def filter(p:A => Boolean)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    rm.filter(p)(enclosing, file, line)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
   def resolve(v:Try[A]):Unit = rm.resolve(v)
 }
@@ -58,7 +61,10 @@ class RealRequestTC[A](rm:RequestM[A]) extends RequestTC[A, RequestM] {
  */
 object RealRTCAble extends RTCAble[RequestM] {
   def toRTC[A](f:RequestM[A]) = new RealRequestTC(f)
-  def successful[A](a: A) = RequestM.successful(a)
-  def failed[T](ex:Exception) = RequestM.failed(ex)
-  def prep[T] = RequestM.prep[T]()
+  def successful[A](a: A)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    RequestM.successful(a)(enclosing, file, line)
+  def failed[T](ex:Exception)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    RequestM.failed(ex)(enclosing, file, line)
+  def prep[T](implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = 
+    RequestM.prep[T]()(enclosing, file, line)
 }

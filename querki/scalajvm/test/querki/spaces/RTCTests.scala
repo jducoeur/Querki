@@ -38,9 +38,9 @@ class TCIdentity[A](vtIn:Try[A]) {
 }
 
 class TestRequestTC[A](rm:TCIdentity[A]) extends RequestTC[A, TCIdentity] {
-  def flatMap[B](f: A => TCIdentity[B]) = rm.flatMap(f)
-  def map[B](f: A => B) = rm.map(f)
-  def filter(p:A => Boolean) = rm.filter(p)
+  def flatMap[B](f: A => TCIdentity[B])(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = rm.flatMap(f)
+  def map[B](f: A => B)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = rm.map(f)
+  def filter(p:A => Boolean)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = rm.filter(p)
   def onComplete(f: PartialFunction[Try[A],Unit]) = rm.onComplete(f)
   def resolve(v:Try[A]):Unit = rm.resolve(v)
 }
@@ -52,9 +52,9 @@ class TestRequestTC[A](rm:TCIdentity[A]) extends RequestTC[A, TCIdentity] {
  */
 object TestRTCAble extends RTCAble[TCIdentity] {
   def toRTC[A](f:TCIdentity[A]) = new TestRequestTC(f)
-  def successful[A](a: A) = new TCIdentity(Success(a))
-  def failed[T](ex:Exception) = new TCIdentity(Failure(ex))
-  def prep[T] = new TCIdentity(Failure(new NotYetResolvedException))
+  def successful[A](a: A)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = new TCIdentity(Success(a))
+  def failed[T](ex:Exception)(implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = new TCIdentity(Failure(ex))
+  def prep[T](implicit enclosing:sourcecode.FullName, file:sourcecode.File, line:sourcecode.Line) = new TCIdentity(Failure(new NotYetResolvedException))
 }
 
 /**

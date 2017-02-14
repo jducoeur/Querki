@@ -150,11 +150,25 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   /**
    * Based on the owner's OID, go get the actual Identity.
    */
-  def fetchOwnerIdentity(ownerId:OID):RequestM[PublicIdentity] = {
-    IdentityAccess.getIdentity(ownerId).flatMap { idOpt:Option[PublicIdentity] =>
-      idOpt match {
-        case Some(identity) => Future.successful(identity)
-        case None => Future.failed(new Exception(s"Couldn't find owner Identity ${ownerId} for Space $id!"))
+  def fetchOwnerIdentity(ownerIdIn:OID):RequestM[PublicIdentity] = {
+    // Belt and suspenders protection -- we've hit cases where the ownerIdIn simply fails. In that case,
+    // fall back to the MySQL layer, but complain about it.
+    def getOwnerId():RequestM[OID] = {
+      if (ownerIdIn == UnknownOID) {
+        QLog.error(s"Space $id got UnknownOID as its owner in fetchOwnerIdentity(). Falling back to MySQL...")
+        persister.request(GetOwner).map {
+          case SpaceOwner(id) => id
+        }
+      } else
+        RequestM.successful(ownerIdIn)
+    }
+    
+    getOwnerId().flatMap { ownerId =>
+      IdentityAccess.getIdentity(ownerId).flatMap { idOpt:Option[PublicIdentity] =>
+        idOpt match {
+          case Some(identity) => Future.successful(identity)
+          case None => Future.failed(new Exception(s"Couldn't find owner Identity ${ownerId} for Space $id!"))
+        }
       }
     }
   }

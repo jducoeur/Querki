@@ -598,7 +598,12 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
           case None => rtc.successful(())
         }
         
-        afterOwnerIdentity.map(_ => readied())
+        val result = afterOwnerIdentity.map(_ => readied())
+        result.onComplete {
+          case Success(_) => // That's fine
+          case Failure(ex) => QLog.error("SpaceCore.readyState got an async failure", ex)
+        }
+        result
       }
       
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing
@@ -609,7 +614,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
         initializing = true
         recoverOldSpace().map { _ match {
           case Some(oldState) => {
-            QLog.spew(s"Recovered old Space ${oldState.name} from MySQL; recording the BootSpace event")
             // There *is* an old Space from MySQL, so we should record that as the first event in the log:
             val msg = DHSetState(dh(oldState), DateTime.now, SetStateReason.ImportedFromMySQL.value, "")
             // Once we've recorded that, *then* we get the Space ready:
@@ -698,7 +702,15 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     
     case SetState(who, spaceId, newState, reason, details) => {
       val prevState = _currentState.getOrElse(emptySpace)
-      runAndSendResponse("setState", true, setState(who, newState, reason, details))(prevState)
+      // We can't currently count on newState having the ownerIdentity right; it is often coming from History, which doesn't
+      // know about the MySQL side of the world. See QI.7w4g8h7, a crash bug that was apparently due to ownerIdentity
+      // never getting set.
+      val filledState =
+        if (newState.ownerIdentity.isEmpty)
+          newState.copy(ownerIdentity = prevState.ownerIdentity)
+        else
+          newState
+      runAndSendResponse("setState", true, setState(who, filledState, reason, details))(prevState)
     }
     
     // This message is simple, since it isn't persisted:
