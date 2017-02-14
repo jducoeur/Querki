@@ -300,6 +300,7 @@ trait IntTypeBasis { self:CoreEcot =>
 
 trait LinkUtils { self:CoreEcot with NameUtils =>
   
+  private lazy val Apps = interface[querki.apps.Apps]
   def InternalProp:Property[Boolean,Boolean]
   def Links:querki.links.Links
   
@@ -321,22 +322,35 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
    */
   def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], Links:querki.links.Links, prop:Property[_,_]):Future[Seq[(String, Thing)]] = {
     implicit val s = state
-    
+
+    // Note that linkCandidateLocal comes out pre-sorted if ChoiceOrder is set:
     val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      // Make sure to de-duplicate entries, which is why we use Set here:
-      state.accumulateAll[Set[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
+      state.accumulateAll[Seq[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
     else
       linkCandidatesLocal(state, Links, prop)
       
-    val namePairsFut = namePairs(links.toSeq, state, rcOpt)
-      
-    namePairsFut.map(_.sortBy(_._1))    
+    val namePairsFut = namePairs(links, state, rcOpt)
+    
+    // This code is annoyingly duplicate with linkCandidatesLocal, but it's cleaner to separate the concerns:
+    val hasChoiceOrderOpt =
+      for {
+        linkModelId <- prop.firstOpt(Links.LinkModelProp)
+        linkModel <- state.anything(linkModelId)
+      }
+        yield linkModel.hasProp(Links.ChoiceOrderProp)
+    val hasChoiceOrder = hasChoiceOrderOpt.getOrElse(false)
+  
+    // If there is *not* an explicit ChoiceOrder Property, sort the options by name.
+    if (hasChoiceOrder)
+      namePairsFut
+    else
+      namePairsFut.map(_.sortBy(_._1))    
   }
 
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */
-  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Set[Thing] = {
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
     // First, filter the candidates based on LinkKind:
@@ -389,8 +403,9 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
       filteredByModel
     }
     
-    filteredAsModel.filterNot(_.ifSet(InternalProp)).toSet
-  }    
+    // We need to make sure we don't count Shadows, or we might wind up with duplicates:
+    filteredAsModel.filterNot(_.ifSet(InternalProp)).filterNot(_.ifSet(Apps.ShadowFlag))
+  }
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {
     val state = context.state
