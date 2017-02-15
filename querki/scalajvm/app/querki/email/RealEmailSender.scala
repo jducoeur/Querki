@@ -65,11 +65,26 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     |  margin-bottom: 7px;
     |}
     |
+    |.logocontainer {
+    |  text-align: center;
+    |}
+    |
+    |.logo {
+    |  width: 97px;
+    |}
+    |
+    |hr {
+    |  border-top: 1px solid #0A9826;
+    |  height: 1px;
+    |  padding: 0;
+    |  opacity: 0.5;
+    |}
+    |
     |.maindiv {
     |  border: 2px solid;
     |  border-color: #0A9826;
     |  border-radius: 25px;
-    |  padding: 20px;
+    |  padding: 10px 20px 20px 20px;
     |}
     |
     |.footer {
@@ -102,6 +117,8 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     
     val body =
       Wikitext("""{{maindiv:
+        |<div class="logocontainer"><img class="logo" alt="Querki Logo" src="http://querki.dyndns.org:9000/assets/images/Logo-green.png"></div>
+        |
         |""".stripMargin) +
       bodyMain + 
       Wikitext("""
