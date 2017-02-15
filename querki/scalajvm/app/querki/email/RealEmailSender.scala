@@ -117,7 +117,7 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     
     val body =
       Wikitext("""{{maindiv:
-        |<div class="logocontainer"><img class="logo" alt="Querki Logo" src="http://querki.dyndns.org:9000/assets/images/Logo-green.png"></div>
+        |<div class="logocontainer"><img class="logo" alt="Querki Logo" src="http://www.querki.net/assets/images/Logo-green.png"></div>
         |
         |""".stripMargin) +
       bodyMain + 
