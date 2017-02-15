@@ -126,17 +126,23 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |        _val -> _rawVal)]]</dd>""
       """
     
+    val instanceGuts = """
+          |<dl>
+          |[[+$thing
+          |  Instance Properties -> _foreach(
+          |    +$prop
+          |    ""<dt>[[$prop._self]]</dt><dd>[[
+          |      _if(Property Type -> _is(Thing Type),
+          |        $thing -> $prop -> _commas,
+          |        $thing -> $prop)]]</dd>""
+          |)]]
+          |</dl>
+      """
+    
     val text =
       if (isModel)
         s"""### Instance Properties
-          |<dl>
-          |[[+$$thing
-          |  _foreachProperty -> _foreach(
-          |    +$$propInfo
-          |    _filter($$thing -> Instance Properties -> _contains($$propInfo -> _prop)) ->
-          |$guts 
-          |)]]
-          |</dl>
+          |$instanceGuts
           |
           |### Model Properties
           |<dl>
@@ -150,11 +156,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           |[[_QLButton(""Show Instances"", ql=_instances -> _sort -> _bulleted)]]""".stripMargin
       else 
         s"""
-          |<dl>
-          |[[_foreachProperty ->
-          |$guts 
-          |]]
-          |</dl>
+          |$instanceGuts
           |[[_QLButton(""Things that use [[Name]]"", ql=_allRefs -> _sort -> _bulleted)]]""".stripMargin
           
     QL.process(QLText(text), thing.thisAsContext, None, Some(thing))
