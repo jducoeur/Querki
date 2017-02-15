@@ -203,7 +203,7 @@ trait BaseParsers extends RegexParsers {
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
     def xmlName:Parser[String] = "big" | "blockquote" | "br" | "button" |
       "cite" | "code" | "div" | "em" |
-      "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "input" |
+      "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "img" | "input" |
       "p" | "pre" | "q" | "span" | "strike" | "strong" | "sub" | "sup" |
       "dl" | "dd" | "dt" | "ul" | "ol" | "li" |
       "table" | "thead" | "tbody" | "tfoot" | "tr" | "th" | "td" | "caption" | "col" | "colgroup" |
@@ -248,6 +248,7 @@ trait BaseParsers extends RegexParsers {
     def xmlAttrName:Parser[String] = "class" | "id" | "title" | "name" | "href" |
       "colspan" | "rowspan" |
       "type" | "value" |
+      "src" | "alt" |
       dataAttrName
     
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.
