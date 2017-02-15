@@ -57,6 +57,28 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
   }
   
   /**
+   * This is the stylesheet used for Querki's emails. In theory it would be nice to have this in the
+   * database itself, to make it more easily modifiable, but for now this is a start.
+   */
+  val emailStylesheet = """<style>
+    |.para {
+    |  margin-bottom: 7px;
+    |}
+    |
+    |.maindiv {
+    |  border: 2px solid;
+    |  border-color: #0A9826;
+    |  border-radius: 25px;
+    |  padding: 20px;
+    |}
+    |
+    |.footer {
+    |  margin: 8px 50px 0px 50px;
+    |  font-size: 11px;
+    |}
+    |</style>""".stripMargin
+  
+  /**
    * The guts of actually sending email. Note that this can be invoked from a number of different circumstances,
    * some user-initiated and some not.
    */
@@ -78,15 +100,27 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     
     msg.setSubject(subject.plaintext)
     
-    val body = bodyMain + Wikitext("""
+    val body =
+      Wikitext("""{{maindiv:
+        |""".stripMargin) +
+      bodyMain + 
+      Wikitext("""
+      |}}
       |
-      |------
-      |
+      |{{footer:
       |If you believe you have received this message in error, please drop a note to "betaemail@querki.net". (We're
-      |working on the one-click unsubscribe, but not quite there yet; sorry.)""".stripMargin)
+      |working on the one-click unsubscribe, but not quite there yet; sorry.)
+      |}}""".stripMargin)
     
     // Attach the HTML...
-    val bodyHtml = body.display
+    val bodyHtml = s"""<html>
+      |<head>
+      |$emailStylesheet
+      |</head>
+      |<body>
+      |${body.display}
+      |</body>
+      |</html>""".stripMargin
     val bodyPartHtml = new MimeBodyPart()
     bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
     // ... and the plaintext...
