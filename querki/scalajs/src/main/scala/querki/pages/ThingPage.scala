@@ -96,6 +96,9 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   val thingName = thing.displayName
   val std = page.std
   
+  val appPrefix =
+    thing.importedFrom.map(spaceInfo => s"${spaceInfo.displayName}::").getOrElse("")
+  
   val modelOpt = DataAccess.mainModel
   
   def viewingHistory = History.viewingHistory
@@ -125,6 +128,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       h1(cls:="_defaultTitle", 
         if (isApp)
           b("App: "),
+        raw(appPrefix),
         raw(thingName), " ",
         if (isSpace)
           querkiButton(faIcon("info"))(
