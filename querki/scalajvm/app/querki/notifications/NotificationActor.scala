@@ -34,6 +34,9 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
             loopback(AdminOps.getAllUserIds(req)) foreach { ids =>
               // Dole the actual sending out to each User Session
               // TODO: this does not scale well. We really ought to handle System Messages in some other way!
+              // Specifically, we should be streaming those UserIds in, and sending out the messages from that
+              // stream. This may be the straw that breaks the camel's back and forces us to begin to transition
+              // to Slick.
               ids.foreach { id => Notifications.userNotifications ! NewNotification(id, note) }
             }
           } else {
