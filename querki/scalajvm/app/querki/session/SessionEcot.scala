@@ -22,8 +22,6 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
 
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
-  
-  lazy val cassandraEnabled = Config.getBoolean("querki.cassandra.enabled", false)
 
   /**
    * The one true handle to UserSessions.
@@ -43,14 +41,7 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   }
   
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TEMP: only while we're in transition. Once Cassandra is firmly up, OldUserSession should
-    // go away:
-    val props =
-      if (cassandraEnabled)
-        UserSession.actorProps(ecology)
-      else
-        OldUserSession.actorProps(ecology)
-        
+    val props = UserSession.actorProps(ecology)
     _ref = SystemManagement.createShardRegion("User", props, 
         idExtractor, shardResolver)
   }
