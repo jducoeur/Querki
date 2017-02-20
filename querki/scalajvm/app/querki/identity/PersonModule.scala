@@ -153,6 +153,44 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val urlBase = Config.getString("querki.app.urlRoot")
   
   /***********************************************
+   * THINGS
+   ***********************************************/
+  
+  lazy val InvitationStatusModel = ThingState(InvitationStatusOID, systemOID, RootOID,
+    toProps(
+      setName("_Invitation Status Model"),
+      setInternal,
+      Core.IsModelProp(true)))
+      
+  lazy val StatusInvited = ThingState(StatusInvitedOID, systemOID, InvitationStatusModel,
+    toProps(
+      setName("_Status Invited"),
+      setInternal))
+      
+  lazy val StatusRequested = ThingState(StatusRequestedOID, systemOID, InvitationStatusModel,
+    toProps(
+      setName("_Status Requested"),
+      setInternal))
+      
+  lazy val StatusMember = ThingState(StatusMemberOID, systemOID, InvitationStatusModel,
+    toProps(
+      setName("_Status Member"),
+      setInternal))
+      
+  lazy val StatusRejected = ThingState(StatusRejectedOID, systemOID, InvitationStatusModel,
+    toProps(
+      setName("_Status Rejected"),
+      setInternal))
+      
+  override lazy val things = Seq(
+    InvitationStatusModel,
+    StatusInvited,
+    StatusRequested,
+    StatusMember,
+    StatusRejected
+  )
+
+  /***********************************************
    * PROPERTIES
    ***********************************************/
 
@@ -173,6 +211,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           |
           |This is included in the Sharing and Security page, so you don't usually need to do anything
           |directly with it.""".stripMargin)))
+  
+  lazy val InvitationStatusProp = new SystemProperty(InvitationStatusPropOID, LinkType, Optional,
+    toProps(
+      setName("_Invitation Status"),
+      setInternal,
+      Links.LinkModelProp(InvitationStatusModel),
+      Summary("The status of this Person's membership in this Space.")))
       
   /***********************************************
    * FUNCTIONS
@@ -226,6 +271,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     IdentityLink,
     InviteText,
     spaceInvite,
+    InvitationStatusProp,
     
     meMethod,
     PersonIdentityFunction

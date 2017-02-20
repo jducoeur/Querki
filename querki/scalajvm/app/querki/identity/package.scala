@@ -42,6 +42,13 @@ package object identity {
     val InviteTextOID = moid(8)
     val SpaceInviteOID = moid(9)
     val PersonIdentityFunctionOID = moid(10)
+    
+    val InvitationStatusOID = moid(11)
+    val StatusInvitedOID = moid(12)
+    val StatusRequestedOID = moid(13)
+    val StatusMemberOID = moid(14)
+    val StatusRejectedOID = moid(15)
+    val InvitationStatusPropOID = moid(16)
   }
   
   val IdentityTag = "Users, Identities and Invitations"
@@ -238,5 +245,8 @@ package object identity {
     def setTOSVersion(userId:OID, version:Int):Future[Option[User]]
     def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId]
     def getUserVersion(userId:UserId):Option[Int]
+    // Intended for use when inviting somebody by email address. If this email address is already known,
+    // that Identity is returned; otherwise, it creates a new, empty SimpleEmail Identity.
+    def findOrCreateIdentityByEmail(email:String):Identity
   }
 }

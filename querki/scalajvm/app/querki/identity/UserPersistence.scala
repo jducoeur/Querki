@@ -8,7 +8,7 @@ import play.api._
 import play.api.db._
 import play.api.mvc._
 
-import models.{AsName, AsOID, OID, ThingId}
+import models.{AsName, AsOID, OID, ThingId, UnknownOID}
 
 import querki.core.NameUtils
 import querki.db._
@@ -257,6 +257,51 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     // Finally, make sure that things load correctly
     // TBD: this fails if I try to do it in the same transaction. Why?
     checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+  }
+  
+  private val identityParser:RowParser[Identity] =
+    for {
+      email <- str("email")
+      identityOID <- oid("id")
+      name <- str("name")
+      auth <- str("authentication")
+      handle <- str("handle")
+      kind <- int("kind")
+    }
+      yield 
+        Identity(identityOID, EmailAddress(email), auth, handle, name, kind)
+      
+  def findOrCreateIdentityByEmail(email:String):Identity = {
+    val query = SQL("""
+            SELECT id, name, authentication, email, handle, kind
+              FROM Identity
+            WHERE email = {email}""")
+          .on("email" -> email)
+    QDB(ShardKind.System) { implicit conn =>
+      query.as(identityParser.singleOpt) match {
+        // We found an Identity with that email address:
+        case Some(identity) => identity
+        // There isn't one, so create a trivial Identity so we can send and track emails to it:
+        case None => {
+          val identityId = OID.next(ShardKind.System)
+          val identityInsert = SQL("""
+              INSERT Identity
+                (id, name, userId, kind, handle, email, authentication)
+                VALUES
+                ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
+              """).on(
+                "identityId" -> identityId.raw,
+                "display" -> email,
+                "userId" -> UnknownOID.raw,
+                "kind" -> IdentityKind.SimpleEmail,
+                "handle" -> "",
+                "email" -> email,
+                "authentication" -> "")
+          identityInsert.execute
+          Identity(identityId, EmailAddress(email), "", "", email, IdentityKind.SimpleEmail)
+        }
+      }
+    }
   }
   
   def changePassword(requester:User, identity:Identity, newPassword:String):Try[User] = Try {
