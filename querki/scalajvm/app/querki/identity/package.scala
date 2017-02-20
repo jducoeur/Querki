@@ -121,6 +121,12 @@ package object identity {
     def members(implicit state:SpaceState):Iterable[Thing]
     
     def user2Ref(user:User)(implicit state:SpaceState):UserRef
+    
+    /**
+     * True iff this Person record has been offered and accepted membership in this Space.
+     * (Or requested and been accepted -- same difference.)
+     */
+    def isAcceptedMember(person:Thing)(implicit state:SpaceState):Boolean
   }
   
   /**
@@ -247,6 +253,6 @@ package object identity {
     def getUserVersion(userId:UserId):Option[Int]
     // Intended for use when inviting somebody by email address. If this email address is already known,
     // that Identity is returned; otherwise, it creates a new, empty SimpleEmail Identity.
-    def findOrCreateIdentityByEmail(email:String):Identity
+    def findOrCreateIdentityByEmail(email:String):FullIdentity
   }
 }

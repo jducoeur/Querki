@@ -75,7 +75,7 @@ trait User {
     for {
       identity <- identityById(identityId)
     }
-      yield FullIdentity(identity.id, identity.email, identity.handle, identity.name, id)
+      yield FullIdentity(identity.id, identity.email, identity.handle, identity.name, id, identity.kind)
   }
   
   // TODO: this is a bit crude so far, and doesn't cope with the notion that I might have
@@ -143,6 +143,8 @@ object IdentityKind {
 }
 import IdentityKind._
 
+// TODO: In all of the below, handle should be Option[String]!!!!!
+
 /**
  * This represents the information that others can see about someone.
  */
@@ -156,7 +158,7 @@ case class SimpleIdentity(id:OID, handle:String, name:String) extends PublicIden
 
 case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind) extends PublicIdentity
 
-case class FullIdentity(id:OID, email:EmailAddress, handle:String, name:String, userId:UserId) extends PublicIdentity
+case class FullIdentity(id:OID, email:EmailAddress, handle:String, name:String, userId:UserId, kind:IdentityKind) extends PublicIdentity
 
 object Identity {
   val AnonymousOID = OID(-2)

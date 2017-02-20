@@ -15,7 +15,7 @@ import querki.email.emailSepChar
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.spaces.{CacheUpdate, SpaceManager}
-import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
+import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingAck, ThingResponse}
 import querki.util.{Contributor, Publisher, Hasher, SignedHash}
 import querki.values._
 
@@ -42,20 +42,22 @@ private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState
   lazy val Person = interface[Person]
   
   private def getPersonIdentityRaw(person:Thing):Option[OID] = {
-    for (
-      identityVal <- person.getPropOpt(Person.IdentityLink);
+    for {
+      identityVal <- person.getPropOpt(Person.IdentityLink)
       identityId <- identityVal.firstOpt
-        )
+    }
       yield identityId  
   }     
   
-  val (peopleById, peopleByIdentityId) = 
+  val (allPeopleById, allPeopleByIdentityId) = 
     ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true, false)) { (maps, person) =>
       val (personIdMap, identityIdMap) = maps
       val newPersonIdMap = personIdMap + (person.id -> person)
       val newIdentityIdMap = getPersonIdentityRaw(person).map(identityId => identityIdMap + (identityId -> person)).getOrElse(identityIdMap)
       (newPersonIdMap, newIdentityIdMap)
     }
+  lazy val peopleById = allPeopleById.filter { case (k,v) => Person.isAcceptedMember(v) }
+  lazy val peopleByIdentityId = allPeopleByIdentityId.filter { case (k,v) => Person.isAcceptedMember(v) }
     
   def allPeople = peopleById.values
   def hasPerson(id:IdentityId) = peopleByIdentityId.contains(id)
@@ -288,6 +290,24 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   def encodeURL(url:String):String = java.net.URLEncoder.encode(url, "UTF-8")
   def decodeURL(url:String):String = java.net.URLDecoder.decode(url, "UTF-8")
   
+  def inviteStatus(person:Thing)(implicit state:SpaceState):OID = {
+    person.getFirstOpt(InvitationStatusProp) match {
+      case Some(statusId) => statusId
+      case None => {
+        // There is no InvitationStatus present, which means this is an old invitation, and we need to
+        // suss the status based on whether there is an Identity:
+        if (person.getPropOpt(IdentityLink).isDefined)
+          StatusMemberOID
+        else
+          StatusInvitedOID
+      }
+    }
+  }
+  
+  def isAcceptedMember(person:Thing)(implicit state:SpaceState):Boolean = {
+    inviteStatus(person) == StatusMemberOID
+  }
+  
   lazy val spaceInvite = new InternalMethod(SpaceInviteOID,
     toProps(
       setName("_spaceInvitation"), 
@@ -328,8 +348,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     }
   }
   
-  case class Invitee(email:EmailAddress, display:String)
-  
   /**
    * Given a user that has just signed up, send the email to validate their email address.
    * 
@@ -361,9 +379,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   /**
    * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
    * we get here.
-   * 
-   * TODO: *boy*, this is mapping a lot of Futures together. Can we rewrite this as a clean for comprehension over
-   * Futures, with some subroutines?
    */
   def inviteMembers(rc:RequestContext, inviteeEmails:Seq[EmailAddress], collaboratorIds:Seq[OID], originalState:SpaceState):Future[InvitationResult] = {
     // TODO: this is much too arbitrary:
@@ -381,105 +396,147 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         actual
     }
     
-    // Filter out any of these email addresses that have already been invited:
-    val currentMembers = originalState.descendants(PersonOID, false, true)
-    // This is a Map[address,Person] of all the members of this Space:
-    // TODO: make this smarter! Should work for *all* addresses of the members, not just the ones in the Person
-    // records! Sadly, that probably means a DB lookup.
-    // TODO: the use of toLowerCase in this method is an abstraction break, as is the fact that we're digging
-    // into EmailAddress.addr. Instead, the Email PType should provide enough machinery to be able to do this
-    // properly, by extending matches() with some proper comparators.
-    val currentEmails = currentMembers.
-      map(member => (member.getPropOptTyped(EmailAddressProp)(originalState) -> member)).
-      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
-      map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
-      toMap
-    val (existingEmails, explicitEmails) = inviteeEmails.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
-    
-    // TODO: merge this clause with the above one, instead of running through the whole list twice. Maybe rethink the
-    // whole bloody approach, which is fairly ancient. In general, note that we are doing a lot of duplication of fairly
-    // similar processes, one with email addresses and one with OIDs; there is almost certainly a higher-level function
-    // or three crying to get factored out here.
-    val currentCollabs = currentMembers.
-      map(member => (member.getPropOptTyped(IdentityLink)(originalState) -> member)).
-      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
-      map(entry => (entry._1.get.first, entry._2)).
-      toMap
-    val (existingCollabs, newCollabs) = collaboratorIds.partition(collabId => currentCollabs.contains(collabId))
-    
-    val existingPeople = 
-      existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase())) ++
-      existingCollabs.flatMap(id => currentCollabs.get(id))
-      
-    val emailInvitees = explicitEmails.map { email => 
-      val prefix = email.addr.takeWhile(_ != '@')
-      val displayName = "Invitee " + prefix
-
-      Invitee(email, displayName) 
-    }
-
-    val emailFut:Future[Seq[Invitee]] =
-      if (collaboratorIds.length > 0) {
-        // If we're inviting Collaborators, we need to go ask the Identity Cache for their info, to find out their email
-        // addresses:
-        IdentityAccess.getFullIdentities(collaboratorIds).map { found =>
-          val collabIdentities = found.values
-          val collabInvitees = collabIdentities.map { identity =>
-            Invitee(identity.email, identity.name)
-          }
-          collabInvitees.toSeq ++ emailInvitees
+    // Fetches/creates the Identities of the email Invitees:
+    def getEmailIdentities():Future[Map[OID, FullIdentity]] = {
+      val futs = inviteeEmails
+        .map { email =>
+          Future { UserAccess.findOrCreateIdentityByEmail(email.addr) }
         }
-      } else {
-        // We're just doing invites by email, so this Future becomes a no-op:
-        Future.successful(emailInvitees)      
-      }
+      Future.sequence(futs).map(_.map(identity => (identity.id -> identity))).map(_.toMap)
+    }
     
-    emailFut.flatMap { invitees =>
-	    // Create Person records for all the new ones:
-	    // We need to do this as a fairly complex fold, instead of simply blasting out the asks in parallel, to
-	    // make sure that we end correctly with the *last* version of the state:
-	    // TODO: add a CreateThings message that allows me to do multi-create, so we can avoid this complexity:
-	    val start = Future.successful((originalState, Seq.empty[Thing]))
-	    val futs = (start /: invitees) { (fut, invitee) =>
-	      fut.flatMap { case (state, people) =>
-	        // TODO: this really shouldn't hold the email address, since that is privileged information:
+    // Add Person records for anybody who isn't already in this Space:
+    def createPersons(identities:Iterable[FullIdentity]):Future[Unit] = {
+      (Future.successful(()) /: identities) { (stateFut, identity) =>
+        stateFut.flatMap { state =>
 	        val propMap = 
 	          toProps(
-	            EmailAddressProp(invitee.email.addr),
-	            DisplayNameProp(invitee.display),
+              IdentityLink(identity.id),
+              InvitationStatusProp(StatusInvitedOID),
+	            DisplayNameProp(identity.name),
 	            AccessControl.PersonRolesProp(inviteeRoles:_*),
 	            AccessControl.CanReadProp(AccessControl.OwnerTag))
-	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
+	        // Note that we are currently sending this as non-local-call, since we don't need the State back:
+	        val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap, None, false)
 	        val nextFuture = SpaceOps.spaceRegion ? msg
-          // TODO: this code is fundamentally suspicious. It *probably* doesn't actually send SpaceState
-          // cross-node, but it comes closer than I like:
-	        nextFuture.mapTo[ThingFound].map { case ThingFound(id, newState) =>
-	          (newState, people :+ newState.anything(id).get)
-	        }        
-	      }
-	    }
-	    
-	    futs.map { case (updatedState, people) =>
-	      implicit val finalState = updatedState
-	      val context = updatedState.thisAsContext(rc, finalState, ecology)
-	      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
-	      val inviteLink = QLText("""
-	        |
-	        |------
-	        |
-	        |[[_spaceInvitation]]""".stripMargin)
-	      val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
-	      // TODO: we probably should test that sentTo includes everyone we expected:
-	      // TODO: this shouldn't be explicitly email. Instead, this should be sending a Notification, which goes
-	      // to email under certain circumstances:
-	      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
-	    
-	      val existingIds = existingPeople.map(_.id).toSet
-	      val newPeople = people.filterNot(p => existingIds.contains(p.id))
-	      InvitationResult(newPeople.map(_.displayName), existingPeople.map(_.displayName))  
-	    }          
-    }
-
+	        nextFuture.mapTo[ThingAck].map { case ThingAck(personId) => () }
+        }
+      }
+    }  
+    
+    // Make use of the existing CachedPeople for this Space:
+    withCache { cache =>
+      for {
+        collabMap <- IdentityAccess.getFullIdentities(collaboratorIds)
+        emailMap <- getEmailIdentities()
+        // Note that this will squish out any duplicates:
+        inviteeMap = collabMap ++ emailMap
+        (existing, newInvites) = inviteeMap.values.partition { identity => cache.allPeopleByIdentityId.contains(identity.id) }
+        // Anybody who isn't already in this Space should be invited:
+        _ <- createPersons(newInvites)
+      }
+        yield InvitationResult(newInvites.toSeq.map(_.name), existing.toSeq.map(_.name))
+    }(originalState)
+    
+    // TODO: all this code is old and dead. It is here for now as reference while we build the new system:
+//    // Filter out any of these email addresses that have already been invited:
+//    val currentMembers = originalState.descendants(PersonOID, false, true)
+//    // This is a Map[address,Person] of all the members of this Space:
+//    // TODO: make this smarter! Should work for *all* addresses of the members, not just the ones in the Person
+//    // records! Sadly, that probably means a DB lookup.
+//    // TODO: the use of toLowerCase in this method is an abstraction break, as is the fact that we're digging
+//    // into EmailAddress.addr. Instead, the Email PType should provide enough machinery to be able to do this
+//    // properly, by extending matches() with some proper comparators.
+//    val currentEmails = currentMembers.
+//      map(member => (member.getPropOptTyped(EmailAddressProp)(originalState) -> member)).
+//      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
+//      map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
+//      toMap
+//    val (existingEmails, explicitEmails) = inviteeEmails.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
+//    
+//    // TODO: merge this clause with the above one, instead of running through the whole list twice. Maybe rethink the
+//    // whole bloody approach, which is fairly ancient. In general, note that we are doing a lot of duplication of fairly
+//    // similar processes, one with email addresses and one with OIDs; there is almost certainly a higher-level function
+//    // or three crying to get factored out here.
+//    val currentCollabs = currentMembers.
+//      map(member => (member.getPropOptTyped(IdentityLink)(originalState) -> member)).
+//      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
+//      map(entry => (entry._1.get.first, entry._2)).
+//      toMap
+//    val (existingCollabs, newCollabs) = collaboratorIds.partition(collabId => currentCollabs.contains(collabId))
+//    
+//    val existingPeople = 
+//      existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase())) ++
+//      existingCollabs.flatMap(id => currentCollabs.get(id))
+//      
+//    val emailInvitees = explicitEmails.map { email => 
+//      val prefix = email.addr.takeWhile(_ != '@')
+//      val displayName = "Invitee " + prefix
+//
+//      Invitee(email, displayName) 
+//    }
+//
+//    val emailFut:Future[Seq[Invitee]] =
+//      if (collaboratorIds.length > 0) {
+//        // If we're inviting Collaborators, we need to go ask the Identity Cache for their info, to find out their email
+//        // addresses:
+//        IdentityAccess.getFullIdentities(collaboratorIds).map { found =>
+//          val collabIdentities = found.values
+//          val collabInvitees = collabIdentities.map { identity =>
+//            Invitee(identity.email, identity.name)
+//          }
+//          collabInvitees.toSeq ++ emailInvitees
+//        }
+//      } else {
+//        // We're just doing invites by email, so this Future becomes a no-op:
+//        Future.successful(emailInvitees)      
+//      }
+//    
+//    emailFut.flatMap { invitees =>
+//	    // Create Person records for all the new ones:
+//	    // We need to do this as a fairly complex fold, instead of simply blasting out the asks in parallel, to
+//	    // make sure that we end correctly with the *last* version of the state:
+//	    // TODO: add a CreateThings message that allows me to do multi-create, so we can avoid this complexity:
+//	    val start = Future.successful((originalState, Seq.empty[Thing]))
+//	    val futs = (start /: invitees) { (fut, invitee) =>
+//	      fut.flatMap { case (state, people) =>
+//	        // TODO: this really shouldn't hold the email address, since that is privileged information:
+//	        val propMap = 
+//	          toProps(
+//	            EmailAddressProp(invitee.email.addr),
+//	            DisplayNameProp(invitee.display),
+//	            AccessControl.PersonRolesProp(inviteeRoles:_*),
+//	            AccessControl.CanReadProp(AccessControl.OwnerTag))
+//	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
+//	        val nextFuture = SpaceOps.spaceRegion ? msg
+//          // TODO: this code is fundamentally suspicious. It *probably* doesn't actually send SpaceState
+//          // cross-node, but it comes closer than I like:
+//	        nextFuture.mapTo[ThingFound].map { case ThingFound(id, newState) =>
+//	          (newState, people :+ newState.anything(id).get)
+//	        }        
+//	      }
+//	    }
+//	    
+//	    futs.map { case (updatedState, people) =>
+//	      implicit val finalState = updatedState
+//	      val context = updatedState.thisAsContext(rc, finalState, ecology)
+//	      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
+//	      val inviteLink = QLText("""
+//	        |
+//	        |------
+//	        |
+//	        |[[_spaceInvitation]]""".stripMargin)
+//	      val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
+//	      // TODO: we probably should test that sentTo includes everyone we expected:
+//	      // TODO: this shouldn't be explicitly email. Instead, this should be sending a Notification, which goes
+//	      // to email under certain circumstances:
+//	      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
+//	    
+//	      val existingIds = existingPeople.map(_.id).toSet
+//	      val newPeople = people.filterNot(p => existingIds.contains(p.id))
+//	      InvitationResult(newPeople.map(_.displayName), existingPeople.map(_.displayName))  
+//	    }          
+//    }
   }
   
   /**
@@ -552,6 +609,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       membershipResult = UserAccess.addSpaceMembership(identity.id, state.id);
       changeRequest = ChangeProps(IdentityAccess.SystemUser, state.id, person.toThingId, 
           toProps(
+            InvitationStatusProp(StatusInvitedOID),
+            // TODO: this should be redundant in the new world, after Feb '17. But we need to keep doing it
+            // for now, since older invites don't have the IdentityLink:
             IdentityLink(identity.id),
             DisplayNameProp(identity.name)))
     )

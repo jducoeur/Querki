@@ -3,7 +3,8 @@ package querki.identity
 import scala.util.Try
 
 import anorm._
-import anorm.SqlParser._
+import anorm.SqlParser
+import SqlParser._
 import play.api._
 import play.api.db._
 import play.api.mvc._
@@ -37,7 +38,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       userOID <- oid("userId")
       name <- str("name")
       auth <- str("authentication")
-      handle <- str("handle")
+      // TODO: handle really should be an Option[String]!
+      handle <- SqlParser.get[Option[String]]("handle").map(_.getOrElse(""))
       level <- int("level")
       tosV <- int("tosVersion")
     }
@@ -259,21 +261,23 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
   }
   
-  private val identityParser:RowParser[Identity] =
+  private val identityParser:RowParser[FullIdentity] =
     for {
       email <- str("email")
       identityOID <- oid("id")
+      userOID <- oid("userId")
       name <- str("name")
-      auth <- str("authentication")
-      handle <- str("handle")
+      handle <- SqlParser.get[Option[String]]("handle").map(_.getOrElse(""))
       kind <- int("kind")
     }
       yield 
-        Identity(identityOID, EmailAddress(email), auth, handle, name, kind)
+        FullIdentity(identityOID, EmailAddress(email), handle, name, userOID, kind)
       
-  def findOrCreateIdentityByEmail(email:String):Identity = {
+  def findOrCreateIdentityByEmail(emailIn:String):FullIdentity = {
+    // Make sure that email gets normalized:
+    val email = emailIn.toLowerCase()
     val query = SQL("""
-            SELECT id, name, authentication, email, handle, kind
+            SELECT id, name, userId, authentication, email, handle, kind
               FROM Identity
             WHERE email = {email}""")
           .on("email" -> email)
@@ -284,6 +288,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         // There isn't one, so create a trivial Identity so we can send and track emails to it:
         case None => {
           val identityId = OID.next(ShardKind.System)
+          // For the preliminary display name, we just use whatever comes before the @
+          val displayName = email.takeWhile(_ != '@')
           val identityInsert = SQL("""
               INSERT Identity
                 (id, name, userId, kind, handle, email, authentication)
@@ -291,14 +297,15 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
                 ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
               """).on(
                 "identityId" -> identityId.raw,
-                "display" -> email,
+                "display" -> displayName,
                 "userId" -> UnknownOID.raw,
                 "kind" -> IdentityKind.SimpleEmail,
-                "handle" -> "",
+                // There is no handle for the time being:
+                "handle" -> null,
                 "email" -> email,
                 "authentication" -> "")
           identityInsert.execute
-          Identity(identityId, EmailAddress(email), "", "", email, IdentityKind.SimpleEmail)
+          FullIdentity(identityId, EmailAddress(email), "", "", UnknownOID, IdentityKind.SimpleEmail)
         }
       }
     }
