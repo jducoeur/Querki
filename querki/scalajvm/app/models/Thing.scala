@@ -11,18 +11,6 @@ import querki.time.DateTime
 import querki.util.QLog
 import querki.values._
 
-object Thing {
-  type PropMap = Map[OID, QValue]
-  
-  def emptyProps = Map.empty[OID, QValue]
-  
-  implicit def bundle2Ops(thing:PropertyBundle)(implicit ecology:Ecology):PropertyBundleOps = thing.thingOps(ecology)
-  implicit def thing2Ops(thing:Thing)(implicit ecology:Ecology):ThingOps = thing.thingOps(ecology)
-  implicit def space2Ops(state:SpaceState)(implicit ecology:Ecology) = state.spaceStateOps
-}
-
-import Thing._
-
 /**
  * The root concept of the entire world. Thing is the Querki equivalent of Object,
  * the basis of the entire type system.

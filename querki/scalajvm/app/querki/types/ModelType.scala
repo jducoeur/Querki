@@ -2,8 +2,7 @@ package querki.types
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PropertyBundle, PropertyBundleOps, PType, PTypeBuilder, Thing, Wikitext}
-import models.Thing.{PropMap, emptyProps}
+import models._
 
 import querki.ecology._
 import querki.globals._
@@ -180,7 +179,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
         // The "default value" for a Model Type simply passes through to the Model. Note that this
         // is a change from the old code, which copied the props from the model into the bundle. That
         // was wrong, because it meant that changes to the Model's values didn't pass through.
-        case Some(model) => ModeledPropertyBundle(this, basedOn, Thing.emptyProps)
+        case Some(model) => ModeledPropertyBundle(this, basedOn, emptyProps)
         case None => throw new Exception(s"Model $basedOn for Model Type $id no longer exists!")
       }
     }

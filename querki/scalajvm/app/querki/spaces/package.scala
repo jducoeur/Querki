@@ -8,8 +8,7 @@ import anorm.SqlQuery
 
 import org.querki.requester._
 
-import models.{Kind, OID, PType, Thing}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.identity.User

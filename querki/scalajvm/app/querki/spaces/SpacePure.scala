@@ -2,7 +2,6 @@ package querki.spaces
 
 import models._
 import Kind.Kind
-import Thing._
 
 import querki.apps.AppsPure
 import querki.core.NameUtils
@@ -34,7 +33,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
     SpaceState(
       id,
       SystemState.id,
-      Thing.emptyProps,
+      emptyProps,
       UnknownOID,
       "",
       DateTime.now,

@@ -4,7 +4,7 @@ import querki.globals._
 
 import querki.ecology._
 
-import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models._
 
 import querki.basic.PlainText
 import querki.core.{IsTextType, QLText}
@@ -133,7 +133,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }
   
-  lazy val EmptyListCutColl = new QListBase(UnknownOID, Thing.emptyProps) {
+  lazy val EmptyListCutColl = new QListBase(UnknownOID, emptyProps) {
     def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing  
   }
   def EmptyListCut() = EmptyListCutColl()

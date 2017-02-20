@@ -5,7 +5,6 @@ import fastparse.all._
 import XMLParser._
 
 import models._
-import Thing._
 
 import querki.core.MOIDs.UrTypeOID
 import querki.time.DateTime

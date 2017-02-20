@@ -1,7 +1,6 @@
 package querki.uservalues
 
 import models._
-import Thing._
 
 import querki.globals._
 import querki.identity.{Identity, User}

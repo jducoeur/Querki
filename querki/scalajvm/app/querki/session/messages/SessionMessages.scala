@@ -1,7 +1,6 @@
 package querki.session.messages
 
-import models.ThingId
-import models.Thing.PropMap
+import models._
 import querki.values.RequestContext
 import autowire.Core
 

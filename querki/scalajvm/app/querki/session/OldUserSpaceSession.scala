@@ -12,8 +12,7 @@ import autowire._
 
 import org.querki.requester._
 
-import models.{AsName, AsOID, OID, PType, Thing, ThingId, ThingState, UnknownOID}
-import models.Thing.PropMap
+import models._
 
 import querki.globals._
 

@@ -9,8 +9,6 @@ import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.values.SpaceState
 
-import Thing.PropMap
-
 /**
  * The Ecot for the Models. This is mainly responsible for dealing with serialization.
  */

@@ -5,8 +5,7 @@ import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 import scalatags.Text.all.{id => idAttr, i => iAttr, _}
 import scalatags.Text.TypedTag
 
-import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
-import models.Thing.PropMap
+import models._
 
 import querki.core.URLableType
 import querki.ecology._

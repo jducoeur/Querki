@@ -1,7 +1,6 @@
 package querki.types
 
-import models.{FormFieldInfo, IndexedOID, ThingState}
-import models.Thing.emptyProps
+import models._
 
 import querki.ecology._
 import querki.test._

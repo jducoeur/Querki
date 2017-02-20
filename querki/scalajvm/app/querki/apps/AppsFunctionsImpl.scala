@@ -4,8 +4,7 @@ import akka.actor.ActorRef
 
 import org.querki.requester._
 
-import models.{AsOID, Kind, ThingId}
-import models.Thing.PropMap
+import models._
 
 import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.cluster.OIDAllocator._

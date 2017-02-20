@@ -9,8 +9,6 @@ import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.values.{SpaceState, SpaceVersion}
 
-import Thing.PropMap
-
 trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =>
   
   import ModelPersistence._

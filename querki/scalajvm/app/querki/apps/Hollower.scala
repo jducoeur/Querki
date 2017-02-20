@@ -5,7 +5,6 @@ import akka.actor._
 import org.querki.requester._
 
 import models._
-import Thing.PropMap
 
 import querki.globals._
 import querki.identity.User

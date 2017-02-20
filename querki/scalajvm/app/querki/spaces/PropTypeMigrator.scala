@@ -1,7 +1,6 @@
 package querki.spaces
 
-import models.{Property, PType, PTypeBuilder, Thing, ThingState}
-import models.Thing.PropMap
+import models._
 
 import querki.core.IsTextType
 import querki.ecology._

@@ -4,8 +4,7 @@ import akka.actor._
 
 import org.querki.requester._
 
-import models.{Kind, OID, Thing, ThingId}
-import models.Thing.PropMap
+import models._
 
 import querki.identity.User
 import querki.persistence.{PersistentActorCore, UseKryo}

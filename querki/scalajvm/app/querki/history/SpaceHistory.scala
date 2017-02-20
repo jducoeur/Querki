@@ -12,7 +12,6 @@ import akka.stream.ActorMaterializer
 import org.querki.requester._
 
 import models._
-import Thing.PropMap
 
 import querki.data.TID
 import querki.globals._

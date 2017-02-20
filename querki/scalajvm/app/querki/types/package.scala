@@ -1,6 +1,6 @@
 package querki
 
-import models.{DisplayPropVal, FormFieldInfo, IndexedOID, OID, Property, PropertyBundle, PType, PTypeBuilder, Thing}
+import models._
 
 import querki.core.PropList
 import querki.ecology._
@@ -29,7 +29,7 @@ package object types {
    */
   trait ModelTypeBase extends PType[ModeledPropertyBundle] with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]  {
     def basedOn:OID
-    def copy(newModelId:OID, newProps:Thing.PropMap):ModelTypeBase
+    def copy(newModelId:OID, newProps:PropMap):ModelTypeBase
   }
   
   trait Types extends EcologyInterface {

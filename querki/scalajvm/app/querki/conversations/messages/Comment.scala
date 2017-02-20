@@ -1,7 +1,6 @@
 package querki.conversations.messages
 
-import models.OID
-import models.Thing.PropMap
+import models.{OID, PropMap}
 import querki.identity.IdentityId
 import querki.time.{DateTime, epoch}
 

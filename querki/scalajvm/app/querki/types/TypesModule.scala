@@ -2,9 +2,7 @@ package querki.types.impl
 
 import scala.concurrent.Future
 
-import models.SimplePTypeBuilder
-import models.{FormFieldInfo, IndexedOID, Kind, OID, PropertyBundle, PType, UnknownOID, Wikitext}
-import models.Thing.emptyProps
+import models._
 
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._

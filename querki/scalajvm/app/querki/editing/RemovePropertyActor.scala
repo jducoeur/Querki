@@ -4,8 +4,7 @@ import akka.actor._
 
 import org.querki.requester._
 
-import models.{Thing}
-import Thing._
+import models._
 
 import querki.api.ProgressActor
 import querki.globals._

@@ -5,13 +5,9 @@ import language.existentials
 import scala.collection.immutable.{SortedSet, TreeSet}
 import scala.math.Ordering
 
-import models.{AnyProp, Collection, Property, PType, Thing, ThingState}
-import models.{Kind}
-import models.{AsName, AsOID, OID, ThingId}
+import models._
 
 import com.github.nscala_time.time.Imports._
-
-import Thing.PropMap
 
 import querki.core.NameUtils
 import querki.ecology._
@@ -19,7 +15,6 @@ import querki.globals._
 import querki.identity.User
 
 import querki.util._
-import querki.values._
 
 /**
  * The keys for the SpaceState's cache. Each element is owned by a specific Ecot, which assigns

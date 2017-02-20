@@ -8,7 +8,6 @@ import akka.pattern._
 import akka.util.Timeout
 
 import models._
-import Thing._
 
 import querki.api.ClientRequest
 import querki.core.NameUtils

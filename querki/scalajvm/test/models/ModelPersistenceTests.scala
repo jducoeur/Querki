@@ -3,8 +3,6 @@ package models
 import ai.x.diff.DiffShow
 import ai.x.diff.conversions._
 
-import Thing._
-
 import querki.globals._
 import querki.persistence._
 import querki.test._

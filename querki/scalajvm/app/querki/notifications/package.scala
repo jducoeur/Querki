@@ -6,7 +6,7 @@ import akka.actor.{ActorRef, Props}
 
 import anorm.SqlQuery
 
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.identity.{IdentityId, PublicIdentity, User, UserId}

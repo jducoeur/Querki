@@ -2,10 +2,9 @@ package querki.spaces
 
 import org.joda.time.DateTime
 
-import models.{OID}
+import models._
 import models.Kind.Kind
 import models.MIMEType.MIMEType
-import models.Thing.PropMap
 
 import querki.identity.User
 import querki.values.SpaceState

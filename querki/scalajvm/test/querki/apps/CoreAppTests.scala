@@ -4,8 +4,7 @@ import scala.util.{Success}
 
 import org.scalatest.Assertions._
 
-import models.Kind
-import models.Thing.PropMap
+import models._
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User

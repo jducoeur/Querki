@@ -8,8 +8,7 @@ import akka.event.LoggingReceive
 import akka.pattern._
 import akka.util.Timeout
 
-import models.{Kind, PropertyBundle, PType, ThingState, Wikitext}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.globals._

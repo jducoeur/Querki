@@ -4,8 +4,7 @@ import scala.concurrent.Future
 
 import querki.ecology._
 
-import models.{OID, Property, PropertyBundle, PTypeBuilder, Wikitext}
-import models.Thing.PropMap
+import models._
 
 import querki.core.{IsTextType, NameableType, TextTypeBasis}
 

@@ -6,8 +6,7 @@ import akka.actor.Actor
 
 import org.querki.requester._
 
-import models.{OID, Thing}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.identity.User

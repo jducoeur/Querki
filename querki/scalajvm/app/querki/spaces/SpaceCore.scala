@@ -8,7 +8,6 @@ import akka.persistence._
 
 import models._
 import models.ModelPersistence.DHSpaceState
-import Thing.PropMap
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
@@ -752,7 +751,7 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     }
     
     case ChangeModel(who, spaceId, thingId, newModelId, localCall) => {
-      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), Thing.emptyProps, false))(currentState)
+      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false))(currentState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {

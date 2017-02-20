@@ -4,7 +4,6 @@ import akka.actor._
 import akka.persistence._
 
 import models._
-import Thing.PropMap
 
 import querki.globals._
 import querki.identity._

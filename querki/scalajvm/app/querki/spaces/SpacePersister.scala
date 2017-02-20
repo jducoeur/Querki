@@ -9,11 +9,9 @@ import play.api.db._
 
 import org.querki.requester._
 
-import models.{OID, UnknownOID}
-import models.{Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
+import models._
 import models.Kind._
 import models.MIMEType.MIMEType
-import models.Thing.PropMap
 
 import querki.cluster.OIDAllocator._
 import querki.db._

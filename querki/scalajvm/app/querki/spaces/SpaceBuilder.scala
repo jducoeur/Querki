@@ -188,7 +188,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   private def createThings(p:FoldParams, things:Seq[Thing])(implicit imp:SpaceState):RequestM[FoldParams] = {
     things.headOption match {
       case Some(thing) => {
-        p.actor.request(CreateThing(p.user, p.spaceId, Kind.Thing, model(thing, p.idMap), Thing.emptyProps)) flatMap {
+        p.actor.request(CreateThing(p.user, p.spaceId, Kind.Thing, model(thing, p.idMap), emptyProps)) flatMap {
           case found @ ThingFound(intId, state) => {
             // QLog.spew(s"Mapped Thing ${thing.id} -> $intId")
             createThings(p + (thing.id, found), things.tail)
@@ -336,7 +336,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
    * TODO: this is not yet sufficient for dealing with Model Types. If it's a Model Type
    * value, we need to dive into it and translate all of the nested values in there.
    */
-  private def translateProps(pb:PropertyBundle, p:FoldParams)(implicit imp:SpaceState):Thing.PropMap = {
+  private def translateProps(pb:PropertyBundle, p:FoldParams)(implicit imp:SpaceState):PropMap = {
     val translated = pb.props filter { pair =>
       val (propId, qv) = pair
       if (deferredProperties.contains(propId)) {
@@ -456,7 +456,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   /**
    * We specifically do *not* want to import the space's old Name or Display Name.
    */
-  def filterSpaceProps(props:Thing.PropMap):Thing.PropMap = {
+  def filterSpaceProps(props:PropMap):PropMap = {
     props filter { pair =>
       val (propId, qv) = pair
       propId != Core.NameProp.id && propId != Basic.DisplayNameProp.id

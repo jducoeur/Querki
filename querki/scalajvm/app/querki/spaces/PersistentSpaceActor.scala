@@ -10,7 +10,6 @@ import org.querki.requester._
 
 import models._
 import Kind.Kind
-import Thing.PropMap
 import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
@@ -222,7 +221,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     }
 
     // Gather up the Instance Permissions on this Thing, if any:
-    val props = (Thing.emptyProps /: instancePermissions) { (map, perm) => 
+    val props = (emptyProps /: instancePermissions) { (map, perm) => 
       map ++ addPerm(perm)
     } 
       

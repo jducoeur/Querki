@@ -5,7 +5,6 @@ import akka.persistence._
 
 import models._
 import Kind.Kind
-import Thing.{emptyProps, PropMap}
 import querki.basic.MOIDs.SimpleThingOID
 import querki.conversations.TestConversations
 import querki.core.MOIDs.{UrPropOID, UrTypeOID}

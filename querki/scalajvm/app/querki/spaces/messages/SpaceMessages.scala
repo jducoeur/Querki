@@ -2,10 +2,9 @@ package querki.spaces.messages
 
 import language.implicitConversions
 
-import models.{Kind, MIMEType, Thing}
+import models._
 import Kind._
 import MIMEType.MIMEType
-import models.Thing.PropMap
 import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.conversations.messages.ConversationMessage

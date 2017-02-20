@@ -1,6 +1,6 @@
 package querki.spaces
 
-import models.{Kind, Thing}
+import models._
 
 import querki.globals._
 import querki.persistence._
@@ -27,6 +27,6 @@ class SpaceMessagePersistenceTests(env:PersistEnv) extends PersistTest(env) with
   val time = DateTime.now
   val nextId = s.toid()
   checkDH(DHCreateThing(s.owner, nextId, Kind.Thing, s.testModel.id, s.instance.props, time, false))
-  checkDH(DHModifyThing(s.member2.user, s.instance.id, Some(s.testModel.id), Thing.emptyProps, true, time))
+  checkDH(DHModifyThing(s.member2.user, s.instance.id, Some(s.testModel.id), emptyProps, true, time))
   checkDH(DHDeleteThing(s.owner, s.instance.id, time))
 }

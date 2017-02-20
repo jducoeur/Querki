@@ -2,8 +2,7 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PType}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.globals._

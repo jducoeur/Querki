@@ -1,12 +1,14 @@
 package models
 
-import models.Thing.{PropMap, emptyProps}
-
 import querki.globals._
 import querki.values.{PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
 /**
  * PropertyBundle is the abstraction of "a bunch of Properties", from which you can fetch a specific Property value.
+ * 
+ * TODO: this really *should* be a typeclass, but I didn't know typeclasses when I wrote it. Fixing that is a *big* project,
+ * but would make the code a fair bit more sensible. (In particular, get rid of the verdammt thingOps, which are a major
+ * code smell.)
  */
 trait PropertyBundle {
   /**

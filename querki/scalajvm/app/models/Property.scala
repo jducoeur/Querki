@@ -4,8 +4,6 @@ import language.existentials
 
 import scala.concurrent.Future
 
-import Thing._
-
 import querki.core.MOIDs._
 import querki.ecology._
 import querki.globals._

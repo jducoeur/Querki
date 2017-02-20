@@ -1,7 +1,6 @@
 package querki.collections
 
 import models._
-import Thing._
 import querki.core.IsLinkType
 import querki.ecology._
 import querki.globals._

@@ -1,7 +1,6 @@
 package querki.system
 
-import models.{Collection, OIDMap, Property, PType, ThingState}
-import models.Thing.emptyProps
+import models._
 
 import querki.ecology._
 

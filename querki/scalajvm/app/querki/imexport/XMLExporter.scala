@@ -5,7 +5,6 @@ import scalatags.generic
 import scalatags.text._
 
 import models._
-import Thing.PropMap
 
 import querki.core.{IsLinkType, NameUtils}
 import querki.core.MOIDs._

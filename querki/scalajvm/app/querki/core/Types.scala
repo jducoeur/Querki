@@ -2,8 +2,7 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{Collection, DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
-import models.Thing.PropMap
+import models._
 
 import querki.api.commonName
 import querki.basic.PlainTextBaseType

@@ -4,8 +4,7 @@ import scala.util.{Failure, Success}
 
 import akka.actor._
 
-import models.{ModelPersistence, Thing}
-import models.Thing._
+import models._
 
 import querki.globals._
 import querki.identity.{IdentityPersistence, User}

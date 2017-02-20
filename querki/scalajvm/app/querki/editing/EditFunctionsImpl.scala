@@ -2,8 +2,7 @@ package querki.editing
 
 import akka.actor._
 
-import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
-import models.Thing.{emptyProps, PropMap}
+import models._
 
 import querki.api.{SpaceApiImpl, AutowireParams, OperationHandle, ProgressActor}
 import querki.globals._
@@ -14,7 +13,6 @@ import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
 import querki.util.{PublicException}
 import querki.values.QLRequestContext
 import models.OID.thing2OID
-import models.Thing.thing2Ops
 import models.ThingId.thingId2Str
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with EditFunctions {

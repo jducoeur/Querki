@@ -2,7 +2,7 @@ package querki
 
 import collection.immutable.TreeMap
 
-import models.{Collection, DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, Thing}
+import models._
 
 import querki.basic.PlainText
 import querki.ecology._
@@ -106,7 +106,7 @@ package object core {
     
     // Ecots have these built-in, but non-Ecots can use this:
     def setName(str:String):(OID,QValue)
-    def toProps(pairs:(OID,QValue)*):models.Thing.PropMap
+    def toProps(pairs:(OID,QValue)*):PropMap
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

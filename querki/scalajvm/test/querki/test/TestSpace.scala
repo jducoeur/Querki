@@ -2,9 +2,7 @@ package querki.test
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import models.{IndexedOID, OID, OIDMap}
-import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
-import models.Thing.PropMap
+import models._
 
 import querki.core.MOIDs._
 import querki.ecology._

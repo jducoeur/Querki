@@ -1,7 +1,6 @@
 package querki.uservalues
 
-import models.ModelPersistence
-import models.Thing.PropMap
+import models._
 
 import querki.globals._
 import querki.identity.IdentityId

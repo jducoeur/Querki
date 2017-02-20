@@ -1,7 +1,6 @@
 package querki.apps
 
 import models._
-import Thing._
 import querki.cluster.OIDAllocator._
 import querki.globals._
 import querki.spaces.RTCAble

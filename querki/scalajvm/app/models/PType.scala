@@ -3,8 +3,6 @@ package models
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-import Thing.{PropMap, emptyProps}
-
 import querki.ecology.Ecology
 import querki.ql.Invocation
 import querki.util.QLog

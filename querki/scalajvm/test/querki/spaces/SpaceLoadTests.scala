@@ -2,8 +2,7 @@ package querki.spaces
 
 import querki.test._
 
-import models.{OID, Thing}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.time.DateTime

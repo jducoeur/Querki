@@ -1,7 +1,6 @@
 package querki.spaces
 
-import models.{Collection, Kind, OID, Property, PType, PTypeBuilder, Thing, ThingState}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology.EcologyMember
 import querki.time.{DateTime, epoch}

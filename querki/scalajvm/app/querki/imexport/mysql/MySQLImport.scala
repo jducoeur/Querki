@@ -3,7 +3,6 @@ package querki.imexport.mysql
 import scala.annotation.tailrec
 
 import models._
-import Thing._
 
 import querki.globals._
 import querki.time._

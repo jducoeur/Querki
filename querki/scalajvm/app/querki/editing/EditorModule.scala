@@ -5,8 +5,7 @@ import scala.xml.Elem
 import scalatags.Text.all.{id => idAttr, _}
 import scalatags.Text.TypedTag
 
-import models.{DisplayPropVal, Kind, OID, Property, PropertyBundle, Thing, ThingState, Wikitext}
-import Thing._
+import models._
 
 import querki.api.commonName
 import querki.core.{LinkCandidateProvider, QLText}

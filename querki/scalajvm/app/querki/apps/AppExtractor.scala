@@ -1,7 +1,6 @@
 package querki.apps
 
-import models.Kind
-import models.Thing.PropMap
+import models._
 import querki.core.NameUtils
 import querki.data.TID
 import querki.globals._

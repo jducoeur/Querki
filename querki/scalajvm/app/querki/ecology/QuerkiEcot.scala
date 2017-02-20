@@ -17,7 +17,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   type SystemType[T] = querki.core.TypeUtils.SystemType[T]
   type OID = models.OID
   type Property[VT, RT] = models.Property[VT,RT]
-  type PropMap = models.Thing.PropMap
+  type PropMap = models.PropMap
   type QValue = querki.values.QValue
   type Thing = models.Thing
   type ThingState = models.ThingState

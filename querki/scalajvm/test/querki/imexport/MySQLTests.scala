@@ -5,7 +5,6 @@ import mysql._
 import fastparse.all._
 
 import models._
-import models.Thing._
 
 import querki.ecology._
 import querki.test._

@@ -4,8 +4,7 @@ import scala.concurrent.Future
 
 import anorm.{Success=>AnormSuccess,_}
 
-import models.{OID, PropertyBundle, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
-import models.Thing.PropMap
+import models._
 
 import querki.ecology._
 import querki.time.DateTime
