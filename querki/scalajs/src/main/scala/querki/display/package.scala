@@ -107,7 +107,7 @@ package object display {
     /**
      * Show the root of the current Space.
      */
-    def showRoot():Future[Page]
+    def showRoot(paramMap:ParamMap = Map.empty):Future[Page]
     
     /**
      * If you need to be signaled when the page next changes, use this.

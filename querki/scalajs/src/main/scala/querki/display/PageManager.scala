@@ -176,7 +176,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
 	        case None => Map.empty[String, String]
 	      }
 	    
-	      renderPage(pageName, paramMap)
+    	  if (pageName.length == 0)
+    	    showRoot(paramMap)
+    	  else
+  	      renderPage(pageName, paramMap)
 	    }
     }
   }
@@ -205,12 +208,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     fut
   }
   
-  def showRoot():Future[Page] = {
+  def showRoot(paramMap:ParamMap = Map.empty):Future[Page] = {
     DataAccess.space match {
       case Some(space) => {
         // TBD: in principle, this ought to be going through a factory for the Space Thing.
         // But we don't actually *have* a factory for Thing pages. Should we?
-        showPage(space.urlName.underlying, Map.empty)
+        showPage(space.urlName.underlying, paramMap)
       }
       case None => {
         Pages.indexFactory.showPage()

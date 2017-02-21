@@ -561,11 +561,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * URL is an invitation to join this Space, and goes to the Invitation workflow if so.
    * 
    * TODO: this is dependent on PlayRequestContext, which means that it really belongs in controllers!
+   * 
+   * TODO: move this whole thing into the Client! This is one of very few code paths still in the old system.
    */
   object InviteLoginChecker extends Contributor[PlayRequestContext,PlayRequestContext] {
     def notify(rc:PlayRequestContext, sender:Publisher[PlayRequestContext, PlayRequestContext]):PlayRequestContext = {
       val rcOpt =
-        for (
+        for {
           encodedInvite <- rc.firstQueryParam(inviteParam);
           spaceId <- rc.spaceIdOpt;
           ownerHandle <- rc.reqOwnerHandle;
@@ -576,7 +578,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           Array(personIdStr, emailAddrStr, _*) = msg.split(":");
           emailAddr = EmailAddress(emailAddrStr);
           updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
-        )
+        }
           yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate ++ updates,
               redirectTo = Some(controllers.routes.LoginController.handleInvite(ownerHandle, spaceId)))
               
@@ -617,21 +619,21 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * TODO: this depends on Play, so it should be in controllers!
    */
   def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:ThingResponse => Future[B])(implicit state:SpaceState):Option[Future[B]] = {
-    for (
-      person <- state.anything(personId);
-      user <- rc.requester;
+    for {
+      person <- state.anything(personId)
+      user <- rc.requester
       // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able
       // to choose which of my identities is joining this Space:
-      identity <- user.identityBy(_ => true);
-      membershipResult = UserAccess.addSpaceMembership(identity.id, state.id);
+      identity <- user.identityBy(_ => true)
+      membershipResult = UserAccess.addSpaceMembership(identity.id, state.id)
       changeRequest = ChangeProps(IdentityAccess.SystemUser, state.id, person.toThingId, 
           toProps(
-            InvitationStatusProp(StatusInvitedOID),
+            InvitationStatusProp(StatusMemberOID),
             // TODO: this should be redundant in the new world, after Feb '17. But we need to keep doing it
             // for now, since older invites don't have the IdentityLink:
             IdentityLink(identity.id),
             DisplayNameProp(identity.name)))
-    )
+    }
       yield SpaceOps.askSpace[ThingResponse, B](changeRequest)(cb)
   }
   

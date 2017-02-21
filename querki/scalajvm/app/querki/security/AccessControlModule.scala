@@ -94,104 +94,108 @@ class AccessControlModule(e:Ecology)
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
-    hasPermissionProfile.profile {
-      if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
-        true
-      else {
-        implicit val s = state
-        val thingOpt = state.anything(thingId)
-        
-        val isLocalUser = isMember(identityId, state)
-        
-        /**
-         * Note that we check the Roles in two different ways: if a Role is explicitly named
-         * in the ACL for this permission somewhere (fine-grained), or if this Role grants this
-         * Permission space-wide (coarse-grained).
-         */
-        val personRoles:Seq[OID] = {
-          val raw = for {
-            person <- Person.localPerson(identityId)
-            rolesPV <- person.getPropOpt(PersonRolesProp)
-          }
-            yield rolesPV.rawList
-            
-          raw.getOrElse(Seq.empty)
-        }
-        
-        val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
-        
-        /**
-         * We've found the permission defined somewhere along the chain, so we're going to use this
-         * setting. Does it let this person do this?
-         */
-        def checkPerms(perms:PropAndVal[OID]):Boolean = {
-          if (publicAllowed && perms.contains(PublicTagOID))
-            // Anybody's allowed, so just do it
-            true
-          else if (isLocalUser && perms.contains(MembersTagOID))
-            // This person is allowed because they're a Member
-            true
-          else if (perms.exists(Person.isPerson(identityId, _)))
-            // This person is explicitly named
-            true
-          else if (perms.exists(personRoles.contains(_)))
-            // One of the Roles this person has is named
-            true 
-          else
-            // *NOT* default. If the properly exists, and is left unset, then we
-            // always default to false! The default is only used if the permission
-            // isn't specified anywhere!
-            false          
-        }
-
-        /**
-         * This deals with checking the default Instance Permissions on the Space or the Model.
-         */
-        def checkInstancePermsFrom(t:Thing):Option[Boolean] = {
-          for {
-            instancePermsOID <- t.getFirstOpt(InstancePermissionsProp)
-            instanceThing <- state.anything(instancePermsOID)
-            perms <- instanceThing.getPropOpt(aclProp)
-          }
-            yield checkPerms(perms)
-        }
-        
-        def roleHasPerm(roleId:OID):Boolean = {
-          val result = for {
-            role <- state.anything(roleId)
-            perms <- role.getPropOpt(RolePermissionsProp)
-          }
-            yield perms.contains(aclProp)
-              
-          result.getOrElse(false)
-        }
+    try {
+      hasPermissionProfile.profile {
+        if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
+          true
+        else {
+          implicit val s = state
+          val thingOpt = state.anything(thingId)
           
-        /**
-         * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
-         * easier to use.
-         */
-        def hasRole:Option[Boolean] = {  
-          if (personRoles.exists(roleHasPerm(_)))
-            Some(true)
-          else
-            None
+          val isLocalUser = isMember(identityId, state)
+          
+          /**
+           * Note that we check the Roles in two different ways: if a Role is explicitly named
+           * in the ACL for this permission somewhere (fine-grained), or if this Role grants this
+           * Permission space-wide (coarse-grained).
+           */
+          val personRoles:Seq[OID] = {
+            val raw = for {
+              person <- Person.localPerson(identityId)
+              rolesPV <- person.getPropOpt(PersonRolesProp)
+            }
+              yield rolesPV.rawList
+              
+            raw.getOrElse(Seq.empty)
+          }
+          
+          val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
+          
+          /**
+           * We've found the permission defined somewhere along the chain, so we're going to use this
+           * setting. Does it let this person do this?
+           */
+          def checkPerms(perms:PropAndVal[OID]):Boolean = {
+            if (publicAllowed && perms.contains(PublicTagOID))
+              // Anybody's allowed, so just do it
+              true
+            else if (isLocalUser && perms.contains(MembersTagOID))
+              // This person is allowed because they're a Member
+              true
+            else if (perms.exists(Person.isPerson(identityId, _)))
+              // This person is explicitly named
+              true
+            else if (perms.exists(personRoles.contains(_)))
+              // One of the Roles this person has is named
+              true 
+            else
+              // *NOT* default. If the properly exists, and is left unset, then we
+              // always default to false! The default is only used if the permission
+              // isn't specified anywhere!
+              false          
+          }
+  
+          /**
+           * This deals with checking the default Instance Permissions on the Space or the Model.
+           */
+          def checkInstancePermsFrom(t:Thing):Option[Boolean] = {
+            for {
+              instancePermsOID <- t.getFirstOpt(InstancePermissionsProp)
+              instanceThing <- state.anything(instancePermsOID)
+              perms <- instanceThing.getPropOpt(aclProp)
+            }
+              yield checkPerms(perms)
+          }
+          
+          def roleHasPerm(roleId:OID):Boolean = {
+            val result = for {
+              role <- state.anything(roleId)
+              perms <- role.getPropOpt(RolePermissionsProp)
+            }
+              yield perms.contains(aclProp)
+                
+            result.getOrElse(false)
+          }
+            
+          /**
+           * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
+           * easier to use.
+           */
+          def hasRole:Option[Boolean] = {  
+            if (personRoles.exists(roleHasPerm(_)))
+              Some(true)
+            else
+              None
+          }
+          
+          // Try the permissions directly on this Thing...
+          thingOpt.flatMap(_.localProp(aclProp)).map(checkPerms(_)).getOrElse(
+              // ... or try the Instance Permissions on its Model...
+              thingOpt.flatMap(thing => thing.getModelOpt.flatMap(checkInstancePermsFrom(_))).getOrElse(
+              // ... or the Person has a Role that gives them the permission...
+              // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
+              // the Space settings, but are overridden by Thing/Model.
+              hasRole.getOrElse(
+              // ... or the Instance Permissions on the Space, if that's not what we're looking at...
+              {if (thingId == state.id) None else checkInstancePermsFrom(state)}.getOrElse(
+              // ... or the default permissions for this ACL...
+              aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
+              // ... or just give up and say no.
+              false)))))
         }
-        
-        // Try the permissions directly on this Thing...
-        thingOpt.flatMap(_.localProp(aclProp)).map(checkPerms(_)).getOrElse(
-            // ... or try the Instance Permissions on its Model...
-            thingOpt.flatMap(thing => thing.getModelOpt.flatMap(checkInstancePermsFrom(_))).getOrElse(
-            // ... or the Person has a Role that gives them the permission...
-            // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
-            // the Space settings, but are overridden by Thing/Model.
-            hasRole.getOrElse(
-            // ... or the Instance Permissions on the Space, if that's not what we're looking at...
-            {if (thingId == state.id) None else checkInstancePermsFrom(state)}.getOrElse(
-            // ... or the default permissions for this ACL...
-            aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
-            // ... or just give up and say no.
-            false)))))
       }
+    } catch {
+      case ex:Exception => { QLog.error("Exception while checking permissions", ex); false }
     }
   }
   

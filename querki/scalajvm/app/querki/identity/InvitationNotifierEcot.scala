@@ -125,7 +125,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
     
     val senderId = payload.getFirst(InvitationSender)
     val textQVOpt = payload.get(InvitationText)
-    val url = payload.getFirst(InvitationURL)
+    val url = payload.getFirst(InvitationURL).text
     val senderName = payload.getFirst(InvitationSenderName).text
     val spaceName = payload.getFirst(InvitationSpaceName).text
     
