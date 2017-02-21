@@ -127,6 +127,8 @@ package object identity {
      * (Or requested and been accepted -- same difference.)
      */
     def isAcceptedMember(person:Thing)(implicit state:SpaceState):Boolean
+    
+    private [identity] def withCache[T](f:CachedPeople => T)(implicit state:SpaceState):T
   }
   
   /**
@@ -212,6 +214,10 @@ package object identity {
      * behalf that they cannot do themselves. That automatically requires a security audit.
      */
     def SystemUser:User
+  }
+  
+  trait NotifyInvitations extends EcologyInterface {
+    private [identity] def notifyInvitation(req:User, textOpt:Option[QLText], invitees:Seq[FullIdentity])(implicit state:SpaceState):Unit
   }
   
   /**

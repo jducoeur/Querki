@@ -15,7 +15,7 @@ import querki.email.emailSepChar
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.spaces.{CacheUpdate, SpaceManager}
-import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingAck, ThingResponse}
+import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
 import querki.util.{Contributor, Publisher, Hasher, SignedHash}
 import querki.values._
 
@@ -33,6 +33,10 @@ import MOIDs._
 /**
  * This is an internal cache of the People in a Space (that is to say, all Person records), indexed
  * by PersonId and IdentityId. It is stored in the Space's cache, and is private to the Identity system.
+ * 
+ * IMPORTANT: most of the functions in here filter out anyone who isn't a fully-accepted Member. If you
+ * want to access someone who is invited/requested, you need to use allPeopleById or allPeopleByIdentityId
+ * directly.
  */
 private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState) extends EcologyMember {
   
@@ -60,6 +64,7 @@ private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState
   lazy val peopleByIdentityId = allPeopleByIdentityId.filter { case (k,v) => Person.isAcceptedMember(v) }
     
   def allPeople = peopleById.values
+  def allPeopleIncludingInvitees = allPeopleById.values
   def hasPerson(id:IdentityId) = peopleByIdentityId.contains(id)
   def localPerson(id:IdentityId) = peopleByIdentityId.get(id)
 }
@@ -78,6 +83,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val NotifyInvitations = interface[NotifyInvitations]
   lazy val Profiler = interface[querki.tools.Profiler]
   lazy val QL = interface[querki.ql.QL]
   lazy val Roles = interface[querki.security.Roles]
@@ -140,7 +146,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   /**
    * All the people who have been invited into this Space who have not yet accepted.
    */
-  def invitees(implicit state:SpaceState):Iterable[Thing] = people.filterNot(_.hasProp(IdentityLink))
+  def invitees(implicit state:SpaceState):Iterable[Thing] = {
+    // Note that we have to be careful about this -- it shouldn't pick up people who have
+    // *requested* membership, which is different. (And NYI.)
+    withCache(_.allPeopleIncludingInvitees).filter(inviteStatus(_) == StatusInvitedOID)
+  }
   /**
    * All the people who have joined this Space.
    */
@@ -308,6 +318,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     inviteStatus(person) == StatusMemberOID
   }
   
+  // TODO: this can go away soon...
   lazy val spaceInvite = new InternalMethod(SpaceInviteOID,
     toProps(
       setName("_spaceInvitation"), 
@@ -384,9 +395,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     // TODO: this is much too arbitrary:
     implicit val timeout = Timeout(30 seconds)
     
+    implicit val s = originalState
+    
     val inviteeRoles:Seq[OID] = {
       val actual = originalState.
-        getPropOpt(AccessControl.PersonRolesProp)(originalState).
+        getPropOpt(AccessControl.PersonRolesProp).
         map(_.rawList).
         getOrElse(Seq())
         
@@ -405,9 +418,10 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       Future.sequence(futs).map(_.map(identity => (identity.id -> identity))).map(_.toMap)
     }
     
-    // Add Person records for anybody who isn't already in this Space:
-    def createPersons(identities:Iterable[FullIdentity]):Future[Unit] = {
-      (Future.successful(()) /: identities) { (stateFut, identity) =>
+    // Add Person records for anybody who isn't already in this Space, and return the resulting
+    // SpaceState:
+    def createPersons(identities:Iterable[FullIdentity]):Future[SpaceState] = {
+      (Future.successful(originalState) /: identities) { (stateFut, identity) =>
         stateFut.flatMap { state =>
 	        val propMap = 
 	          toProps(
@@ -416,10 +430,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	            DisplayNameProp(identity.name),
 	            AccessControl.PersonRolesProp(inviteeRoles:_*),
 	            AccessControl.CanReadProp(AccessControl.OwnerTag))
-	        // Note that we are currently sending this as non-local-call, since we don't need the State back:
-	        val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap, None, false)
+	        // Note the explicit and important assumption here, that this is being run local to the
+	        // Space!
+	        val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap)
 	        val nextFuture = SpaceOps.spaceRegion ? msg
-	        nextFuture.mapTo[ThingAck].map { case ThingAck(personId) => () }
+	        nextFuture.mapTo[ThingFound].map { case ThingFound(personId, newState) => newState }
         }
       }
     }  
@@ -433,10 +448,12 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         inviteeMap = collabMap ++ emailMap
         (existing, newInvites) = inviteeMap.values.partition { identity => cache.allPeopleByIdentityId.contains(identity.id) }
         // Anybody who isn't already in this Space should be invited:
-        _ <- createPersons(newInvites)
+        newState <- createPersons(newInvites)
+        inviteText = originalState.getFirstOpt(InviteText)(originalState)
+        _ = NotifyInvitations.notifyInvitation(rc.requesterOrAnon, inviteText, inviteeMap.values.toSeq)(newState)
       }
         yield InvitationResult(newInvites.toSeq.map(_.name), existing.toSeq.map(_.name))
-    }(originalState)
+    }
     
     // TODO: all this code is old and dead. It is here for now as reference while we build the new system:
 //    // Filter out any of these email addresses that have already been invited:

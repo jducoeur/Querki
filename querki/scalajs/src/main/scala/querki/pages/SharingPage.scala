@@ -322,7 +322,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
             
             table(cls:="table table-hover",
               tbody(
-                for (member <- invitees) 
+                for (member <- invitees.sortBy(_.person.displayName)) 
                   yield new PersonDisplay("warning", member, roleMap, customMap)
               )
             )

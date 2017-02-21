@@ -1,5 +1,7 @@
 package querki.spaces
 
+import scala.util.{Failure, Success}
+
 import akka.actor._
 import akka.event.LoggingReceive
 import akka.pattern.pipe
@@ -54,8 +56,13 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
           // This is just a belt-and-suspenders check -- SecurityFunctionImpl should already have screened for this:
 	        sender ! InvitationResult(Seq.empty, Seq.empty)
 	      } else {
+	        val inviteRM = loopback(Person.inviteMembers(rc, inviteeEmails, collabs, state))
+	        inviteRM.onComplete {
+	          case Success(_) => 
+	          case Failure(ex) => QLog.error("Got an Exception while processing InviteRequest", ex)
+	        }
           for {
-            result <- loopback(Person.inviteMembers(rc, inviteeEmails, collabs, state))
+            result <- inviteRM
           }
             sender ! result
         }

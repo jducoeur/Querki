@@ -105,6 +105,7 @@ object SystemCreator {
     new querki.location.LocationEcot(ecology)                      // 63
     new models.ModelEcot(ecology)                                  // 64
     new querki.history.HistoryEcot(ecology)                        // 65
+    new querki.identity.InvitationNotifierEcot(ecology)            // 66
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {
