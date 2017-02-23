@@ -649,6 +649,10 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * 
    * This has a hardcoded switch built into it for initialization, because PersistentActor doesn't appear to
    * implement become().
+   * 
+   * TODO: how does this work? This code is extremely suspicious -- I don't think it works as intended.
+   * receiveCommand should only be called *once*, and is returning *one* Receive, which is used thereafter.
+   * We should instead be using a guard in receiveCommand. See IdentityEmailCore for a more sensible approach.
    */
   def receiveCommand:Receive = {
     if (initializing) {
