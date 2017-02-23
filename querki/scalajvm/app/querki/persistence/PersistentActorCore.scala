@@ -1,5 +1,7 @@
 package querki.persistence
 
+import scala.util.Success
+
 import akka.actor.Actor.Receive
 
 /**
@@ -55,5 +57,38 @@ trait PersistentActorCore {
    * SaveSnapshotSuccess or SaveSnapshotFailure message.
    */
   def saveSnapshot(snapshot:Any):Unit
+}
+
+/**
+ * Common code for PersistentActorCores that use the RM abstraction.
+ * 
+ * TODO: this whole thing is pretty crappy. In retrospect, the RM/RTC thing should have been handled with a
+ * typeclass. When we get a chance, rewrite it as such.
+ */
+trait PersistentRMCore[RM[_]] { self:PersistentActorCore =>
+  def rtc:querki.spaces.RTCAble[RM]
   
+  /**
+   * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
+   */
+  implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
+    
+  /**
+   * A wrapper around persist() that allows us to chain from it. No clue why this isn't built into Akka Persistence.
+   */
+  def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]] = {
+    val rm = rtc.prep[Seq[UseKryo]]
+    doPersistAll(events) { _ =>
+      rm.resolve(Success(events))
+    }
+    rm
+  }
+  
+  def persistAnd[A <: UseKryo](event:A)(handler: (A) => Unit):RM[A] = {
+    val rm = rtc.prep[A]
+    doPersist(event) { _ =>
+      rm.resolve(Success(event))
+    }
+    rm
+  }
 }

@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import models.{OID, Wikitext}
 
+import querki.email.EmailNotifier
 import querki.identity.{IdentityId, UserId, UserLevel}
 import querki.time.DateTime
 import querki.values.QLContext
@@ -47,6 +48,11 @@ trait Notifier {
    * Says how to display this Notification.
    */
   def render(context:QLContext, note:Notification):Future[RenderedNotification]
+  
+  /**
+   * Iff this sort of Notification can be emailed, this is a pointer saying how.
+   */
+  def emailNotifier:Option[EmailNotifier]
 }
 
 /**

@@ -2,12 +2,15 @@ package querki.email
 
 import scala.util.{Failure, Success, Try}
 
+import akka.actor._
+import akka.cluster.sharding._
+
 import models.{LiteralTransformWrapper, PropertyBundle, PTypeBuilder, ThingState, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
-import querki.identity.{Identity}
+import querki.identity.{FullIdentity, Identity}
 import querki.util.SafeUrl
 import querki.values.{ElemValue, QLContext}
 
@@ -23,19 +26,35 @@ private [email] trait EmailSession
  */
 private [email] trait EmailSender extends EcologyInterface {
   /**
+   * DEPRECATED
+   * 
    * The details of the session are intentionally hidden, since they are completely different
    * depending on the EmailSender.
    */
   type TSession <: EmailSession
 
   /**
+   * DEPRECATED
+   * 
    * This lets us create one Session, and send a bunch of emails during it, for efficiency.
    */
   def createSession():TSession
   def sendInternal(session:TSession, from:String, 
       recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
       subject:Wikitext, bodyMain:Wikitext):Try[Unit]
+  
+  def sendEmail(msg:EmailMsg):Unit
 }
+
+case class EmailMsg(
+  from:EmailAddress,
+  to:EmailAddress,
+  toName:String,
+  senderName:String,
+  subject:Wikitext,
+  body:Wikitext,
+  footer:Wikitext
+)
 
 class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.MethodDefs {
 
@@ -43,6 +62,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
+  val SystemManagement = initRequires[querki.system.SystemManagement]
   
   lazy val EmailSender = interface[EmailSender]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
@@ -66,6 +86,31 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     new TestEmailSender(ecology)
   } else {
     new RealEmailSender(ecology)
+  }
+  
+  var _identityEmailRegion:Option[ActorRef] = None
+  def identityEmail = _identityEmailRegion.get
+  
+  var _sender:Option[ActorRef] = None
+  def sender = _sender.get
+    
+  val idExtractor:ShardRegion.ExtractEntityId = {
+    case msg:IdentityEmailMessages.IdentityEmailMsg => (msg.to.toString, msg) 
+  }
+  
+  val shardResolver:ShardRegion.ExtractShardId = {
+    case msg:IdentityEmailMessages.IdentityEmailMsg => msg.to.shard
+  }
+
+  override def createActors(createActorCb:CreateActorFunc):Unit = {
+    _identityEmailRegion = SystemManagement.createShardRegion(
+        "IdentityEmail", IdentityEmailActor.actorProps(ecology), 
+        idExtractor, shardResolver)
+    _sender = createActorCb(Props(classOf[EmailSendingActor], ecology), "EmailSender")
+  }
+  
+  def sendEmail(msg:EmailMsg):Unit = {
+    sender ! msg
   }
   
   def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {

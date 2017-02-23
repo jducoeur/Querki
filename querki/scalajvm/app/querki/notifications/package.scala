@@ -58,6 +58,11 @@ package object notifications {
     def userNotifications:ActorRef
     
     /**
+     * Fetch the Notifier for this Notification.
+     */
+    def notifierFor(note:Notification):Notifier
+    
+    /**
      * Send this Notification to all of the specified Recipients. Fire and Forget!
      */
     def send(req:User, recipients:Recipients, note:Notification)

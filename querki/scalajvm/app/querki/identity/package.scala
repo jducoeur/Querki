@@ -174,6 +174,13 @@ package object identity {
     def getIdentity(handle:String):Future[Option[PublicIdentity]]
     
     /**
+     * Fetch the email address for a single Identity.
+     * 
+     * Use with care! This is *not* public information!
+     */
+    def getFullIdentity(id:OID):Future[Option[FullIdentity]]
+    
+    /**
      * Fetch a number of identities at once.
      * 
      * IMPORTANT: it is *absolutely forbidden* to cast this PublicIdentity to FullIdentity. Yes, it's true

@@ -2,7 +2,7 @@ package querki.identity
 
 import models._
 import querki.ecology._
-import querki.email.{EmailAddress, emailSepChar}
+import querki.email.{EmailAddress, EmailMsg, EmailNotifier, emailSepChar}
 import querki.globals._
 import querki.notifications._
 import querki.core.QLText
@@ -18,11 +18,12 @@ private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val InvitationSpaceNameOID = moid(5)
 }
 
-class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with NotifyInvitations  {
+class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations  {
   import InvitationNotifierMOIDs._ 
   
   val Basic = initRequires[querki.basic.Basic]
   
+  lazy val Email = interface[querki.email.Email]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val Person = interface[Person]
@@ -45,6 +46,12 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   object Notifiers {
     val InvitationNotifierId:Short = 1
   }
+  
+  ////////////////////////////////////
+  //
+  // Implementation of Notifier
+  //
+  ////////////////////////////////////
   
   def id = NotifierId(InvitationNotifierMOIDs.ecotId, Notifiers.InvitationNotifierId)
 
@@ -119,7 +126,8 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
       "?" + inviteParam + "=" + encoded
   }
   
-  def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
+  case class InvitePayload(senderId:IdentityId, textQVOpt:Option[QValue], inviteUrl:String, senderName:String, spaceName:String)
+  def parsePayload(note:Notification):InvitePayload = {
     val rawPayload = note.payload
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
     
@@ -129,12 +137,49 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
     val senderName = payload.getFirst(InvitationSenderName).text
     val spaceName = payload.getFirst(InvitationSpaceName).text
     
+    InvitePayload(senderId, textQVOpt, url, senderName, spaceName)
+  }
+  
+  def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
+    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName) = parsePayload(note)
+    
     for {
       body <- textQVOpt.map(_.wikify(context)).getOrElse(Future.successful(Wikitext("")))
       headline = Wikitext(s"""$senderName has invited you to join $spaceName!""")
       joinButton = HtmlWikitext(s"""<a href="$url" class="btn btn-primary">Join Space $spaceName</a>""".stripMargin)
     }
       yield RenderedNotification(headline, body + Wikitext("\n\n") + joinButton)
+  }
+  
+  def emailNotifier:Option[EmailNotifier] = Some(this)
+  
+  ////////////////////////////////////
+  //
+  // Implementation of EmailNotifier
+  //
+  ////////////////////////////////////
+  
+  // TODO: this should get fleshed out to deal with Unsubs:
+  def shouldSendEmail(note:Notification):Boolean = true
+  
+  def toEmail(note:Notification, recipient:FullIdentity):Future[EmailMsg] = {
+    val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
+    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName) = parsePayload(note)
+
+    for {
+      body <- textQVOpt.map(_.wikify(querki.values.EmptyContext(ecology))).getOrElse(Future.successful(Wikitext("")))
+      headline = Wikitext(s"""$senderName has invited you to join $spaceName!""")
+      joinButton = HtmlWikitext(s"""<a href="$url" class="btn btn-primary">Join Space $spaceName</a>""".stripMargin)
+    }    
+      yield EmailMsg(
+        EmailAddress(Email.from),
+        recipient.email,
+        recipient.name,
+        senderName,
+        headline,
+        body + Wikitext("\n\n") + joinButton,
+        Wikitext("Place the footer text here")
+      )
   }
   
   /***********************************************

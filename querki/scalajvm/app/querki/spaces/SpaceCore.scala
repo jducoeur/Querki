@@ -49,14 +49,10 @@ case class ChangeResult(events:List[SpaceEvent with UseKryo], changedThing:Optio
  *    operations, and via the rm2rtc method provides instances of the abstraction. Think of those
  *    instances as being essentially instances of RequestM, and rtc as the RequestM companion object.
  */
-abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology) 
-  extends SpaceMessagePersistenceBase with SpaceAPI[RM] with PersistentActorCore with SpacePure with EcologyMember with ModelPersistence 
+abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecology) 
+  extends SpaceMessagePersistenceBase with SpaceAPI[RM] with PersistentActorCore with PersistentRMCore[RM]
+  with SpacePure with EcologyMember with ModelPersistence 
 {
-  /**
-   * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
-   */
-  implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
-
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[querki.apps.Apps]
   lazy val Basic = interface[querki.basic.Basic]
@@ -215,17 +211,6 @@ abstract class SpaceCore[RM[_]](rtc:RTCAble[RM])(implicit val ecology:Ecology)
     updateStateCore(newState, evt)
     notifyUpdateState()
     currentState
-  }
-  
-  /**
-   * A wrapper around persist() that allows us to chain from it. No clue why this isn't built into Akka Persistence.
-   */
-  def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]] = {
-    val rm = rtc.prep[Seq[UseKryo]]
-    doPersistAll(events) { _ =>
-      rm.resolve(Success(events))
-    }
-    rm
   }
   
   var _currentState:Option[SpaceState] = None

@@ -74,6 +74,12 @@ private [email] class TestEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     }
   }
   
+  def sendEmail(msg:EmailMsg):Unit = {
+    val session = createSession()
+    val details = TestEmailMessageDetails(msg.from.addr, msg.to, msg.toName, null, msg.subject, msg.body)
+    session.append(details)
+  }
+  
   def sendInternal(session:TSession, from:String, 
       recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
       subject:Wikitext, bodyMain:Wikitext):Try[Unit] = 

@@ -14,6 +14,7 @@ import models.Wikitext
 
 import querki.core.QLText
 import querki.ecology._
+import querki.email.EmailNotifier
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User, UserId}
 import querki.notifications._
@@ -141,6 +142,8 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
         case None => throw new Exception("SystemMessageNotifier received badly-formed Notification?")
       }
     }
+    
+    def emailNotifier:Option[EmailNotifier] = None
   }
     
   def createMsg(from:PublicIdentity, header:String, body:String):Notification = {

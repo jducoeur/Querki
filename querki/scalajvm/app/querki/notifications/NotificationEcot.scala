@@ -81,12 +81,14 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
    * Notifications IMPLEMENTATION
    ***********************************************/
   
+  def notifierFor(note:Notification):Notifier = notifiers(note.notifier)
+  
   def send(req:User, recipients:Recipients, note:Notification) = {
     noteActor ! SendNotification(req, recipients, note)
   }
   
   def render(rc:RequestContext, note:Notification):Future[RenderedNotification] = {
-    val notifier = notifiers(note.notifier)
+    val notifier = notifierFor(note)
     // Note that notifications, necessarily, render against SystemState. That has to be the case,
     // because the Notifications page displays notes from many different Spaces.
     val context = QLRequestContext(rc)(System.State, ecology)

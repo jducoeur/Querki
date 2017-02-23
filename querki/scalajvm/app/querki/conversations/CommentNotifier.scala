@@ -3,6 +3,7 @@ package querki.conversations
 import models.{HtmlWikitext, PType, Wikitext}
 
 import querki.ecology._
+import querki.email.EmailNotifier
 import querki.globals._
 import querki.html.QHtml
 import querki.identity.User
@@ -174,6 +175,8 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       Future.successful(RenderedNotification(Wikitext("INTERNAL ERROR"), Wikitext("We're sorry, but this message seems to have gotten messed up")))
     }
   }
+  
+  def emailNotifier:Option[EmailNotifier] = None
   
   /***********************************************
    * PROPERTIES

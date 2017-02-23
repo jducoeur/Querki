@@ -2,6 +2,8 @@ package querki
 
 import scala.concurrent.Future
 
+import akka.actor.ActorRef
+
 import models.Property
 
 // For the HACKs below:
@@ -50,6 +52,16 @@ package object email {
      * The email address that ordinary user emails will come from.
      */
     def from:String
+    
+    /**
+     * The place to send Notifications that want to go to Email.
+     */
+    def identityEmail:ActorRef
+    
+    /**
+     * Sends an email, as specified in the EmailMsg.
+     */
+    def sendEmail(msg:EmailMsg):Unit
     
     /**
      * Sends an "official" email in the name of Querki itself.

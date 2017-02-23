@@ -92,8 +92,79 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     |  font-size: 11px;
     |}
     |</style>""".stripMargin
+    
+  def sendEmail(msgInfo:EmailMsg):Unit = {
+    val SessionWrapper(session) = createSession()
+    val EmailMsg(from, to, toName, senderName, subjectWiki, bodyWiki, footerWiki) = msgInfo
+    val msg = new MimeMessage(session)
+    msg.setFrom(new InternetAddress(from.addr))
+  
+    val replyAddrs = Array(new InternetAddress(from.addr, senderName).asInstanceOf[Address])
+    msg.setReplyTo(replyAddrs)
+  
+    // TBD: there must be a better way to do this. It's a nasty workaround for the fact
+    // that setRecipients() is invariant, I believe.
+    val toAddrs = Array(new InternetAddress(to.addr, toName).asInstanceOf[Address])  
+    msg.setRecipients(Message.RecipientType.TO, toAddrs)
+    
+    msg.setSubject(subjectWiki.plaintext)
+    
+    val body =
+      Wikitext("""{{maindiv:
+        |<div class="logocontainer"><img class="logo" alt="Querki Logo" src="http://www.querki.net/assets/images/Logo-green.png"></div>
+        |
+        |""".stripMargin) +
+      bodyWiki + 
+      Wikitext("""
+      |}}
+      |
+      |{{footer:
+      |""".stripMargin) +
+      footerWiki +
+      Wikitext("""
+      |}}""".stripMargin)
+    
+    // Attach the HTML...
+    val bodyHtml = s"""<html>
+      |<head>
+      |$emailStylesheet
+      |</head>
+      |<body>
+      |${body.display}
+      |</body>
+      |</html>""".stripMargin
+    val bodyPartHtml = new MimeBodyPart()
+    bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
+    // ... and the plaintext...
+    val bodyPlain = body.plaintext
+    val bodyPartPlain = new MimeBodyPart()
+    bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
+    // ... and set the body to the multipart:
+    val multipart = new MimeMultipart("alternative")
+    // IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
+    // one by preference:
+    multipart.addBodyPart(bodyPartPlain)
+    multipart.addBodyPart(bodyPartHtml)
+    msg.setContent(multipart)
+        
+    msg.setHeader("X-Mailer", "Querki")
+    msg.setSentDate(new java.util.Date())
+        
+    if (username.length > 0) {
+      val transport = session.getTransport("smtp").asInstanceOf[SMTPTransport]
+      transport.connect(username, password)
+      transport.sendMessage(msg, msg.getAllRecipients)
+      if (debug)
+        QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+    } else {
+      // Non-TLS -- running on a test server, so just do it the easy way:
+      Transport.send(msg)
+    }
+  }
   
   /**
+   * DEPRECATED
+   * 
    * The guts of actually sending email. Note that this can be invoked from a number of different circumstances,
    * some user-initiated and some not.
    */

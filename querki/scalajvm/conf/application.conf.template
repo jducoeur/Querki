@@ -71,6 +71,7 @@ querki {
     smtpUsername : ""
     smtpPassword : ""
     debug : false
+    identityTimeout : 30 seconds
   }
   
   security {

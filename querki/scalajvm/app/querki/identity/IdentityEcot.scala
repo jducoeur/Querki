@@ -103,6 +103,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   implicit val cacheTimeout = defaultTimeout
 
   def getIdentity(id:OID):Future[Option[PublicIdentity]] = {
+    getIdentityInternal(id)
+  }
+  
+  def getIdentityInternal(id:OID):Future[Option[FullIdentity]] = {
     val fut = identityCache ? GetIdentityRequest(id)
     fut map {
       case IdentityFound(identity) => Some(identity)
@@ -120,6 +124,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       case UserNotFound => None
       case _ => None
     }
+  }
+  
+  def getFullIdentity(id:OID):Future[Option[FullIdentity]] = {
+    getIdentityInternal(id)
   }
 
   // TODO: this is too important a function to be this inefficient and unreliable. It works like this because the
