@@ -6,7 +6,7 @@ import akka.actor._
 
 import org.querki.requester.Requester
 
-import models.{OID}
+import models.{OID, UnknownOID}
 
 import querki.ecology._
 import querki.globals._
@@ -59,7 +59,13 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
     
     case RouteToUser(id, router, msg) => {
       fetchAndThen(id) {
-        case IdentityFound(identity) => router.forward(msg.toUser(identity.userId))
+        case IdentityFound(identity) => {
+          // Note that it is entirely legit for an Identity to have no User, especially if it is
+          // IdentityKind.SimpleEmail.
+          if (identity.userId != UnknownOID) {
+            router.forward(msg.toUser(identity.userId))
+          }
+        }
         case IdentityNotFound => {}
       }
     }

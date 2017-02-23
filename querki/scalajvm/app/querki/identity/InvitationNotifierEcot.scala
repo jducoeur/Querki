@@ -180,7 +180,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           Wikitext("")
       instructions =
         if (recipient.kind == IdentityKind.SimpleEmail)
-          Wikitext("""Clicking on this link will let you set up a Querki login (for free) and begin using '$spaceName'.""".stripMargin)
+          Wikitext(s"""Clicking on this link will let you set up a Querki login (for free) and begin using '$spaceName'.""".stripMargin)
         else
           Wikitext("")
       joinButton = HtmlWikitext(s"""<div class="bottomlinkdiv"><a href="$url" class="btn btn-primary">Join Space '$spaceName'</a></div>""".stripMargin)

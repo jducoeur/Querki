@@ -176,8 +176,6 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
   
-  def getFullIdentity(id:IdentityId):Option[FullIdentity] = getUserForIdentity(id).flatMap(_.fullIdentityById(id))
-  
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   private def checkQuerkiLoginByEmail(email:EmailAddress, passwordEntered:String):Option[User] = {
     loadByEmail(
@@ -273,6 +271,17 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       yield 
         FullIdentity(identityOID, EmailAddress(email), handle, name, userOID, kind)
       
+  def getFullIdentity(id:IdentityId):Option[FullIdentity] = {
+    val query = SQL("""
+            SELECT id, name, userId, authentication, email, handle, kind
+              FROM Identity
+            WHERE id = {id}""")
+          .on("id" -> id.raw)
+    QDB(ShardKind.System) { implicit conn =>
+      query.as(identityParser.singleOpt)
+    }
+  }
+  
   def findOrCreateIdentityByEmail(emailIn:String):FullIdentity = {
     // Make sure that email gets normalized:
     val email = emailIn.toLowerCase()
@@ -301,11 +310,11 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
                 "userId" -> UnknownOID.raw,
                 "kind" -> IdentityKind.SimpleEmail,
                 // There is no handle for the time being:
-                "handle" -> null,
+                "handle" -> "",
                 "email" -> email,
                 "authentication" -> "")
           identityInsert.execute
-          FullIdentity(identityId, EmailAddress(email), "", "", UnknownOID, IdentityKind.SimpleEmail)
+          FullIdentity(identityId, EmailAddress(email), "", displayName, UnknownOID, IdentityKind.SimpleEmail)
         }
       }
     }
