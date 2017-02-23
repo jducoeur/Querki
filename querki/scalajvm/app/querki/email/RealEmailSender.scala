@@ -65,6 +65,20 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     |  margin-bottom: 7px;
     |}
     |
+    |.title {
+    |  font-weight: bold;
+    |  font-size: 16px;
+    |}
+    |
+    |.bottomlinkdiv {
+    |  margin-top: 7px;
+    |  margin-bottom: 7px;
+    |  text-align: center;
+    |  color: #0A9826;
+    |  font-weight: bold;
+    |  font-size: 20px;
+    |}
+    |
     |.logocontainer {
     |  text-align: center;
     |}

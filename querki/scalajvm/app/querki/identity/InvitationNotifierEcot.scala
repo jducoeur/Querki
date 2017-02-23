@@ -162,22 +162,42 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   // TODO: this should get fleshed out to deal with Unsubs:
   def shouldSendEmail(note:Notification):Boolean = true
   
+  val wikibreak = Wikitext("\n\n")
+  
   def toEmail(note:Notification, recipient:FullIdentity):Future[EmailMsg] = {
     val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
     val InvitePayload(senderId, textQVOpt, url, senderName, spaceName) = parsePayload(note)
+    
+    val hasBody = textQVOpt.isDefined
 
     for {
       body <- textQVOpt.map(_.wikify(querki.values.EmptyContext(ecology))).getOrElse(Future.successful(Wikitext("")))
       headline = Wikitext(s"""$senderName has invited you to join $spaceName!""")
-      joinButton = HtmlWikitext(s"""<a href="$url" class="btn btn-primary">Join Space $spaceName</a>""".stripMargin)
-    }    
+      hr = 
+        if (hasBody) 
+          HtmlWikitext("<hr/>") 
+        else 
+          Wikitext("")
+      instructions =
+        if (recipient.kind == IdentityKind.SimpleEmail)
+          Wikitext("""Clicking on this link will let you set up a Querki login (for free) and begin using '$spaceName'.""".stripMargin)
+        else
+          Wikitext("")
+      joinButton = HtmlWikitext(s"""<div class="bottomlinkdiv"><a href="$url" class="btn btn-primary">Join Space '$spaceName'</a></div>""".stripMargin)
+      fullBody =
+        Wikitext("{{title:") + wikibreak + headline + wikibreak + Wikitext("}}") + wikibreak +
+        body + wikibreak +
+        hr + wikibreak +
+        instructions + wikibreak +
+        joinButton
+    }
       yield EmailMsg(
         EmailAddress(Email.from),
         recipient.email,
         recipient.name,
         senderName,
         headline,
-        body + Wikitext("\n\n") + joinButton,
+        fullBody,
         Wikitext("Place the footer text here")
       )
   }
