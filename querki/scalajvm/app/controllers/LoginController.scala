@@ -132,6 +132,8 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           
           case None => {
             withSpaceInfo { (info, ownerIdentity) =>
+              // TODO: Detect if the identity (as given in the sessionCookie) is already a full user. If so,
+              // skip the signup process and just give them login!
               // Nope. Let them sign up for Querki. This will loop through to signup, below:
               val startForm = SignupInfo(email, "", "", "")
               Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info))
@@ -194,11 +196,16 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           case None => {
   	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
     	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
+    	    	// This is the email address they were *originally* invited through.
+            val emailOpt = rc.sessionCookie(querki.identity.identityEmail)
+            // This is the identity that was created for this invitation:
+            val identityIdOpt = rc.sessionCookie(querki.identity.identityParam).map(OID(_))
     	    	personOpt match {
     	    	  case Some(personId) => {
-                // This pathway is considered "confirmed" -- we got here through an invitation from a Space, so it's
-                // already routed through this person's email:
-    		    	  val result = UserAccess.createUser(info, true)
+                // This pathway is considered "confirmed" if it came from an invitation to the same email
+    	    	    // address as the one being signed up for:
+    	    	    val emailConfirmed = emailOpt.map(_.toLowerCase() == info.email.toLowerCase()).getOrElse(false)
+    		    	  val result = UserAccess.createUser(info, emailConfirmed, identityIdOpt)
     		        result match {
     		          case Success(user) => {
     		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
@@ -213,7 +220,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     		          }
     		        }    	    
     	    	  }
-    	    	  case None => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+    	    	  case _ => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
     	    	}
           }
         }

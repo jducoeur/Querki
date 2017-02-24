@@ -82,6 +82,7 @@ package object identity {
   // fact that we have to expose this here suggests we have an abstraction break to fix...
   val identityEmail = "identityEmail"
   val personParam = "person"
+  val identityParam = "identity"
   
   trait Person extends EcologyInterface {
     def IdentityLink:Property[OID,OID]
@@ -242,7 +243,7 @@ package object identity {
     def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User]
     def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Future[Option[User]]
     def checkQuerkiLogin(login:String, passwordEntered:String):Option[User]
-    def createUser(info:SignupInfo, confirmedEmail:Boolean):Try[User]
+    def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None):Try[User]
     def get(request:RequestHeader):Option[User]
     
     // TODO: neither of these calls are scalable! We need to come up with better ways to implement both of

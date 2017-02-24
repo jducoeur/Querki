@@ -575,9 +575,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           // TODO: we should do something smarter if this fails:
           if (Hasher.checkSignature(hash));
           SignedHash(_, _, msg, _) = hash;
-          Array(personIdStr, emailAddrStr, _*) = msg.split(":");
+          Array(personIdStr, emailAddrStr, identityIdStr, _*) = msg.split(":");
           emailAddr = EmailAddress(emailAddrStr);
-          updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
+          updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr), (identityParam -> identityIdStr))
         }
           yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate ++ updates,
               redirectTo = Some(controllers.routes.LoginController.handleInvite(ownerHandle, spaceId)))

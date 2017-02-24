@@ -85,7 +85,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         // Note that we have to dig directly into the cache to get at this Person, since they presumably are not
         // an accepted Member:
         val person = cache.allPeopleByIdentityId.get(invitee.id).getOrElse(throw new Exception(s"Space ${state.id} doesn't contain a Person record for Identity $invitee!"))
-        val url = generateInviteLink(person, invitee.email, state)
+        val url = generateInviteLink(person, invitee.id, invitee.email, state)
         val payload = toProps(
           InvitationSender(sender.id),
           InvitationURL(url),
@@ -114,8 +114,9 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   
   val inviteParam = "invite"
   
-  def generateInviteLink(person:Thing, email:EmailAddress, state:SpaceState):String = {
-    val idString = person.id.toString + ":" + email.addr
+  // TODO: this is *completely* incestuous with Person.InviteLoginChecker. Refactor!!!
+  def generateInviteLink(person:Thing, inviteeId:IdentityId, email:EmailAddress, state:SpaceState):String = {
+    val idString = person.id.toString + ":" + email.addr + ":" + inviteeId.toString
     val signed = Hasher.sign(idString, emailSepChar)
     val encoded = SafeUrl(signed.toString)
     // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.

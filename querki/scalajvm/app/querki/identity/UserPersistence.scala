@@ -206,7 +206,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * Creates a user based on the given information. Gets created as Pending or Free depending on
    * whether the email address is confirmed. (Different pathways get here in different ways.)
    */
-  def createUser(info:SignupInfo, confirmedEmail:Boolean):Try[User] = Try {
+  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None):Try[User] = Try {
     // Note that both of these will either return None or throw an exception.
     // We intentionally check email first, to catch the case where you've already created an
     // account and have forgotten about it.
@@ -214,17 +214,30 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         Some({_ => throw new PublicException("User.emailExists", info.email)}))
     val existingOpt = loadByHandle(info.handle, 
         Some({_ => throw new PublicException("User.handleExists", info.handle)}))
+    // Belt and suspenders checks if this claims to be a SimpleEmail Identity that we are upgrading:
+    identityIdOpt.map { identityId =>
+      getFullIdentity(identityId) match {
+        case Some(identity) =>
+          if (identity.kind != IdentityKind.SimpleEmail) {
+            QLog.logAndThrowException(new Exception(s"Somehow attempting to upgrade an Identity that already has a User!"))
+          }
+        case None => {
+          QLog.logAndThrowException(new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!"))
+        }
+      }
+    }
+        
+    val level =
+      if (confirmedEmail)
+        UserLevel.FreeUser
+      else
+        UserLevel.PendingUser
+    val userId = OID.next(ShardKind.System)
+    val timestamp = org.joda.time.DateTime.now()
+    val authentication = Encryption.calcHash(info.password)
       
     QDB(ShardKind.System) { implicit conn =>
       // Okay, seems to be legit
-      val userId = OID.next(ShardKind.System)
-      // TODO: we should have a standardized utility to deal with this
-      val timestamp = org.joda.time.DateTime.now()
-      val level =
-        if (confirmedEmail)
-          UserLevel.FreeUser
-        else
-          UserLevel.PendingUser
       val userInsert = SQL("""
           INSERT User
             (id, level, join_date)
@@ -233,25 +246,51 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
           """).on("userId" -> userId.raw, "level" -> level, "now" -> timestamp.toDate())
       // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
       userInsert.execute
-//      if (!userInsert.execute)
-//        throw new Exception("Unable to create new User!")
-      val identityId = OID.next(ShardKind.System)
-      val identityInsert = SQL("""
-          INSERT Identity
-            (id, name, userId, kind, handle, email, authentication)
-            VALUES
-            ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
-          """).on(
-            "identityId" -> identityId.raw,
-            "display" -> info.display,
-            "userId" -> userId.raw,
-            "kind" -> IdentityKind.QuerkiLogin,
-            "handle" -> info.handle,
-            "email" -> info.email,
-            "authentication" -> Encryption.calcHash(info.password))
-        identityInsert.execute
-//      if (!identityInsert.execute)
-//        throw new Exception("Unable to create new Identity!")
+      
+      identityIdOpt match {
+        case Some(identityId) => {
+          // We're upgrading an existing Identity.
+          QLog.spew(s"Upgrading an existing SimpleEmail Identity")
+          val identityUpdate = SQL("""
+              UPDATE Identity
+                 SET  name = {display},
+                    userId = {userId},
+                      kind = {kind},
+                    handle = {handle},
+                     email = {email},
+            authentication = {authentication}
+               WHERE    id = {id}
+            """).on(
+              "id" -> identityId.raw,
+              "display" -> info.display,
+              "userId" -> userId.raw,
+              "kind" -> IdentityKind.QuerkiLogin,
+              "handle" -> info.handle,
+              "email" -> info.email,
+              "authentication" -> authentication
+            )
+          identityUpdate.executeUpdate()
+        }
+        case _ => {
+          // There is no pre-existing Identity, so create it from scratch:
+          QLog.spew(s"Creating a brand new Identity")
+          val identityId = OID.next(ShardKind.System)
+          val identityInsert = SQL("""
+              INSERT Identity
+                (id, name, userId, kind, handle, email, authentication)
+                VALUES
+                ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
+              """).on(
+                "identityId" -> identityId.raw,
+                "display" -> info.display,
+                "userId" -> userId.raw,
+                "kind" -> IdentityKind.QuerkiLogin,
+                "handle" -> info.handle,
+                "email" -> info.email,
+                "authentication" -> authentication)
+          identityInsert.execute
+        }
+      }
     }
     
     // Finally, make sure that things load correctly

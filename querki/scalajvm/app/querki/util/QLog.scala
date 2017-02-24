@@ -44,6 +44,11 @@ object QLog {
     else
       println(message)
   }
+  // Convenience function:
+  def logAndThrowException(ex: => Throwable):Nothing = {
+    error("", ex)
+    throw ex
+  }
 
   /**
    * warn() should be used for situations that are unexpected not plausible: inconsistencies
