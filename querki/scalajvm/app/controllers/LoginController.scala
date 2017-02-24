@@ -208,6 +208,10 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     		    	  val result = UserAccess.createUser(info, emailConfirmed, identityIdOpt)
     		        result match {
     		          case Success(user) => {
+    		            // Edge case: if they signed up using a different email address than the one the invitation went
+    		            // to, we need to send their activation email:
+    		            if (emailOpt.isDefined && !emailConfirmed)
+      		            Person.sendValidationEmail(rc, EmailAddress(info.email), user)
     		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
     		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
     		          }
