@@ -210,10 +210,11 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     		          case Success(user) => {
     		            // Edge case: if they signed up using a different email address than the one the invitation went
     		            // to, we need to send their activation email:
-    		            if (emailOpt.isDefined && !emailConfirmed)
+    		            if (emailOpt.isDefined && !emailConfirmed) {
       		            Person.sendValidationEmail(rc, EmailAddress(info.email), user)
+    		            }
     		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-    		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
+                    withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(this, rc, info, ownerIdentity)).withSession(Session(request.session.data ++ user.toSession)) }
     		          }
     		          case Failure(error) => {
     		            val msg = error match {
@@ -224,7 +225,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     		          }
     		        }    	    
     	    	  }
-    	    	  case _ => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+    	    	  case _ => doError(indexRoute, "Error -- you seem to have somehow gotten here without a valid invitation! Please drop us a note; this shouldn't be possible.")
     	    	}
           }
         }
