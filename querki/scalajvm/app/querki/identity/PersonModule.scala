@@ -282,7 +282,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   override lazy val props = Seq(
     IdentityLink,
     InviteText,
-    spaceInvite,
     InvitationStatusProp,
     
     meMethod,
@@ -318,52 +317,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     inviteStatus(person) == StatusMemberOID
   }
   
-  // TODO: this can go away soon...
-  lazy val spaceInvite = new InternalMethod(SpaceInviteOID,
-    toProps(
-      setName("_spaceInvitation"), 
-      Core.InternalProp(true),
-      Summary("Generate a Link to invite someone to join this Space."), 
-      Details("""This is intended for internal use only. It is used to generate
-          |the link that is sent to invitees to your Space""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
-      val mainContext = inv.context
-      implicit val state = inv.state
-      
-      // TODO: we're using EmailModule to inject the Person as the root context. That's ghastly, and
-      // no longer necessary: add a backdoor to add the Person as an annotation instead.
-      val inviteOpt =
-        for {
-          rootId <- mainContext.root.value.firstAs(LinkType);
-          person <- state.anything(rootId);
-          if (person.isAncestor(PersonOID));
-          emailPropOpt <- person.getPropOptTyped(EmailAddressProp);
-          email <- emailPropOpt.firstOpt;
-          rc <- mainContext.requestOpt;
-          // This is the value that we're going to use to identify this person when they
-          // click on the link. We need to include the email address, to guard against it
-          // being changed in the Person record after the email is sent. (Which could be
-          // used as a spam vector, I suspect.)
-          idString = person.id.toString + ":" + email.addr;
-          signed = Hasher.sign(idString, emailSepChar);
-          encoded = encodeURL(signed.toString);
-          // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
-	      // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
-	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId + "/" + 
-	        "?" + inviteParam + "=" + encoded
-        }
-        yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
-        
-      Future.successful(inviteOpt.getOrElse(QL.WarningValue("This appears to be an incorrect use of _spaceInvitation.")))
-    }
-  }
-  
   /**
    * Given a user that has just signed up, send the email to validate their email address.
-   * 
-   * TODO: wow, this is a lot simpler than inviteMembers(). Are there ways we can rework the
-   * latter to be more like this?
    */
   def sendValidationEmail(rc:RequestContext, email:EmailAddress, user:User):Future[Unit] = {
     val idString = user.id.toString + ":" + email.addr
@@ -454,106 +409,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       }
         yield InvitationResult(newInvites.toSeq.map(_.name), existing.toSeq.map(_.name))
     }
-    
-    // TODO: all this code is old and dead. It is here for now as reference while we build the new system:
-//    // Filter out any of these email addresses that have already been invited:
-//    val currentMembers = originalState.descendants(PersonOID, false, true)
-//    // This is a Map[address,Person] of all the members of this Space:
-//    // TODO: make this smarter! Should work for *all* addresses of the members, not just the ones in the Person
-//    // records! Sadly, that probably means a DB lookup.
-//    // TODO: the use of toLowerCase in this method is an abstraction break, as is the fact that we're digging
-//    // into EmailAddress.addr. Instead, the Email PType should provide enough machinery to be able to do this
-//    // properly, by extending matches() with some proper comparators.
-//    val currentEmails = currentMembers.
-//      map(member => (member.getPropOptTyped(EmailAddressProp)(originalState) -> member)).
-//      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
-//      map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
-//      toMap
-//    val (existingEmails, explicitEmails) = inviteeEmails.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
-//    
-//    // TODO: merge this clause with the above one, instead of running through the whole list twice. Maybe rethink the
-//    // whole bloody approach, which is fairly ancient. In general, note that we are doing a lot of duplication of fairly
-//    // similar processes, one with email addresses and one with OIDs; there is almost certainly a higher-level function
-//    // or three crying to get factored out here.
-//    val currentCollabs = currentMembers.
-//      map(member => (member.getPropOptTyped(IdentityLink)(originalState) -> member)).
-//      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
-//      map(entry => (entry._1.get.first, entry._2)).
-//      toMap
-//    val (existingCollabs, newCollabs) = collaboratorIds.partition(collabId => currentCollabs.contains(collabId))
-//    
-//    val existingPeople = 
-//      existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase())) ++
-//      existingCollabs.flatMap(id => currentCollabs.get(id))
-//      
-//    val emailInvitees = explicitEmails.map { email => 
-//      val prefix = email.addr.takeWhile(_ != '@')
-//      val displayName = "Invitee " + prefix
-//
-//      Invitee(email, displayName) 
-//    }
-//
-//    val emailFut:Future[Seq[Invitee]] =
-//      if (collaboratorIds.length > 0) {
-//        // If we're inviting Collaborators, we need to go ask the Identity Cache for their info, to find out their email
-//        // addresses:
-//        IdentityAccess.getFullIdentities(collaboratorIds).map { found =>
-//          val collabIdentities = found.values
-//          val collabInvitees = collabIdentities.map { identity =>
-//            Invitee(identity.email, identity.name)
-//          }
-//          collabInvitees.toSeq ++ emailInvitees
-//        }
-//      } else {
-//        // We're just doing invites by email, so this Future becomes a no-op:
-//        Future.successful(emailInvitees)      
-//      }
-//    
-//    emailFut.flatMap { invitees =>
-//	    // Create Person records for all the new ones:
-//	    // We need to do this as a fairly complex fold, instead of simply blasting out the asks in parallel, to
-//	    // make sure that we end correctly with the *last* version of the state:
-//	    // TODO: add a CreateThings message that allows me to do multi-create, so we can avoid this complexity:
-//	    val start = Future.successful((originalState, Seq.empty[Thing]))
-//	    val futs = (start /: invitees) { (fut, invitee) =>
-//	      fut.flatMap { case (state, people) =>
-//	        // TODO: this really shouldn't hold the email address, since that is privileged information:
-//	        val propMap = 
-//	          toProps(
-//	            EmailAddressProp(invitee.email.addr),
-//	            DisplayNameProp(invitee.display),
-//	            AccessControl.PersonRolesProp(inviteeRoles:_*),
-//	            AccessControl.CanReadProp(AccessControl.OwnerTag))
-//	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
-//	        val nextFuture = SpaceOps.spaceRegion ? msg
-//          // TODO: this code is fundamentally suspicious. It *probably* doesn't actually send SpaceState
-//          // cross-node, but it comes closer than I like:
-//	        nextFuture.mapTo[ThingFound].map { case ThingFound(id, newState) =>
-//	          (newState, people :+ newState.anything(id).get)
-//	        }        
-//	      }
-//	    }
-//	    
-//	    futs.map { case (updatedState, people) =>
-//	      implicit val finalState = updatedState
-//	      val context = updatedState.thisAsContext(rc, finalState, ecology)
-//	      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
-//	      val inviteLink = QLText("""
-//	        |
-//	        |------
-//	        |
-//	        |[[_spaceInvitation]]""".stripMargin)
-//	      val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
-//	      // TODO: we probably should test that sentTo includes everyone we expected:
-//	      // TODO: this shouldn't be explicitly email. Instead, this should be sending a Notification, which goes
-//	      // to email under certain circumstances:
-//	      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
-//	    
-//	      val existingIds = existingPeople.map(_.id).toSet
-//	      val newPeople = people.filterNot(p => existingIds.contains(p.id))
-//	      InvitationResult(newPeople.map(_.displayName), existingPeople.map(_.displayName))  
-//	    }          
-//    }
   }
   
   /**
