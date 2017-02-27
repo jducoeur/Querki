@@ -214,7 +214,8 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
       		            Person.sendValidationEmail(rc, EmailAddress(info.email), user)
     		            }
     		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-                    withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(this, rc, info, ownerIdentity)).withSession(Session(request.session.data ++ user.toSession)) }
+    		            // Note that we auto-join the Space through this route:
+    		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
     		          }
     		          case Failure(error) => {
     		            val msg = error match {

@@ -37,7 +37,8 @@ trait FuncInvites { self:FuncMixin =>
     )
   }
   
-  val inviteLinkRegex = """<b><a href=\"([^\"]*)\">Click here</a></b> to accept the invitation.""".r.unanchored
+  val inviteLinkRegex = 
+    """<div class="bottomlinkdiv"><a href="([^\"]*)" class="btn btn-primary">Join Space 'Explore Restricted Space'</a></div>""".r.unanchored
   val validateLinkRegex = """\[([^\"]*)\]""".r.unanchored
   
   def fetchLatestEmailBody():String = {
