@@ -203,11 +203,18 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
   def loginSection = {
     UserAccess.user match {
       case Some(user) => {
-        NavSection(truncateName(user.mainIdentity.name), Seq(
-          NavLink("Your Account", Pages.accountFactory.pageUrl()),
-          NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() }), id="_skillLevelButton"),
-          NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
-        ), 1900, id="_profile_menu")  
+        if (user.actualUser) {
+          NavSection(truncateName(user.mainIdentity.name), Seq(
+            NavLink("Your Account", Pages.accountFactory.pageUrl()),
+            NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() }), id="_skillLevelButton"),
+            NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
+          ), 1900, id="_profile_menu")
+        } else {
+          // It's a guest:
+          NavSection(truncateName(user.mainIdentity.name), Seq(
+            NavLink("Log in / Sign up", onClick = Some({ () => UserAccess.login() }))
+          ), 1900, id="_profile_menu")          
+        }
       }
       case None => {
         NavSection("Not logged in", Seq(
