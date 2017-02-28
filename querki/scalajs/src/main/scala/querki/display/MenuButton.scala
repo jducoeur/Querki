@@ -21,6 +21,8 @@ class MenuButton(implicit e:Ecology) extends HookedGadget[dom.html.Button](e) wi
   def hook() = {
     // Copy the referenced menu item's address to this button:
     val id = $(elem).dataString("menuid")
-    $(elem).attr("href", $(s"#$id").attr("href").get)
+    $(s"#$id").attr("href").map { href =>
+      $(elem).attr("href", href)
+    }
   }
 }

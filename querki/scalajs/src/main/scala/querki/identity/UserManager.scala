@@ -84,15 +84,22 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
       }      
     }
     
+    def dismiss():Unit = loginDialog.done()
+    
     lazy val loginDialog = new Dialog("Log in to Querki",
       div(
-        p("""If you are already a member of Querki, enter your login info here, or """,
-          new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki")({ () =>
-            showSignup()
-          })
-        ),
+        p("""If you are already a member of Querki, enter your login info here:"""),
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
-        passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2)
+        passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
+        p("or, if you are new to Querki:"),
+        new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki")({ () =>
+          showSignup()
+        }),
+        if (user.isDefined && !user.get.actualUser)
+          div(
+            p("or:"),
+            new ButtonGadget(ButtonGadget.Normal, "Continue as a Guest")({ () => dismiss() })
+          )
       ),
       (ButtonGadget.Primary, Seq("Log in", disabled := Rx{ handleInput.rxEmpty() || passwordInput.rxEmpty() }, tabindex := 3), { dialog =>
         doLogin()

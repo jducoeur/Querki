@@ -212,7 +212,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
         } else {
           // It's a guest:
           NavSection(truncateName(user.mainIdentity.name), Seq(
-            NavLink("Log in / Sign up", onClick = Some({ () => UserAccess.login() }))
+            NavLink("Log in / Sign up", onClick = Some({ () => UserAccess.login() })),
+            NavLink("Log out of Guest", controllers.LoginController.logout(), id="logout_button")            
           ), 1900, id="_profile_menu")          
         }
       }
