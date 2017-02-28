@@ -32,8 +32,11 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
     doInvite().flatMap { userInfo =>
       UserAccess.setUser(Some(userInfo))
       PageManager.showRoot().map { _ =>
-        // Pop the Login dialog, to encourage the user to log in or create an account:
-        UserAccess.login()
+        if (!UserAccess.isActualUser) {
+          // We're not currently logged in
+          // Pop the Login dialog, to encourage the user to log in or create an account:
+          UserAccess.login()
+        }
       }
     }
   }
