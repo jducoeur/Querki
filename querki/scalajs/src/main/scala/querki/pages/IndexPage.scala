@@ -18,6 +18,7 @@ class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("ind
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def showSpace(space:SpaceInfo) = {
     li(IndexPage.spaceLink(space))
@@ -52,6 +53,14 @@ class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("ind
       p(s"""You're all set -- your Querki account is up and running. You can now create Spaces of your own by pressing
           |the ${msg("createButton")} button, below.""".stripMargin)
     )
+    
+  def guestSection =
+    div(cls:="jumbotron",
+      h1("Welcome to Querki!"),
+      p("""You are currently logged in as a Guest, because you've accepted someone's invitation to join their Space.
+          |To make it easier to access this Space and others, and to create your own Spaces, press the
+          |"Log in / Sign up" button from the menu in the upper right.""".stripMargin)
+    )
           
   def pageContent = for {
     allSpaces <- Client[UserFunctions].listSpaces().call()
@@ -63,9 +72,14 @@ class IndexPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("ind
         
         if (awaitingValidation)
           awaitingValidationSection
-        else if (noSpaces)
-          // New user, who has no Spaces
-          welcomeSection,
+        else if (noSpaces) {
+          if (UserAccess.isActualUser)
+            // New user, who has no Spaces
+            welcomeSection
+          else
+            // It's a Guest, so encourage them to sign up
+            guestSection
+        },
           
         if (!noSpaces)
           // Normal situation
