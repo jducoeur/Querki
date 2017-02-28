@@ -49,6 +49,7 @@ package object identity {
     val StatusMemberOID = moid(14)
     val StatusRejectedOID = moid(15)
     val InvitationStatusPropOID = moid(16)
+    val GuestUserOID = moid(17)
   }
   
   val IdentityTag = "Users, Identities and Invitations"
@@ -77,6 +78,8 @@ package object identity {
   type UserId = OID
 
   case class InvitationResult(invited:Seq[String], alreadyInvited:Seq[String])
+  
+  case class ParsedInvitation(personId:OID, user:User)
   
   // The cookie parameter that indicates the email address of the target identity. The
   // fact that we have to expose this here suggests we have an abstraction break to fix...
@@ -196,6 +199,11 @@ package object identity {
     private [identity] def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]]
     
     /**
+     * Creates a GuestUser.
+     */
+    private [identity] def makeGuest(identityIdStr:String, emailAddrStr:String):User
+    
+    /**
      * Send the given message to the given router for all the provided IDs.
      */
     def routeToUsers(identityIds:Seq[OID], router:ActorRef, msg:UserRouteableMessage):Unit
@@ -226,6 +234,8 @@ package object identity {
   
   trait NotifyInvitations extends EcologyInterface {
     private [identity] def notifyInvitation(req:User, textOpt:Option[QLText], invitees:Seq[FullIdentity])(implicit state:SpaceState):Unit
+    
+    def parseInvite(encodedInvite:String):Option[ParsedInvitation]
   }
   
   /**

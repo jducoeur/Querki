@@ -42,7 +42,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc, personId) {
   	      case ThingFound(id, state) => Future.successful(Joined) 
   	      case ThingError(error, stateOpt) => Future.successful(JoinFailed(error))
-  	      case _ => Future.successful(JoinFailed(new PublicException("Space.join.unknownError", state.displayName)))
+  	      case _ => Future.successful(JoinFailed(new PublicException("Space.join.unknownError", state.displayName))) 
   	    }
   	    result match {
   	      case Some(fut) => pipe(fut) to sender

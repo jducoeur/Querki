@@ -2,7 +2,11 @@ package controllers
 
 import javax.inject._
 
+import scala.concurrent.duration._
 import scala.util._
+
+import akka.pattern._
+import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
@@ -19,6 +23,7 @@ import upickle.default._
 
 import models._
 
+import querki.data.UserInfo
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
@@ -34,6 +39,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Email = interface[querki.email.Email]
   lazy val Encryption = interface[querki.security.Encryption]
+  lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Person = interface[querki.identity.Person]
   lazy val UserSession = interface[querki.session.Session]
   
@@ -105,6 +111,52 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         case info:SpaceInfo => cb(info, ownerId)
       }
     }
+  }
+  
+  case class InviteString(invite:String)
+  val handleInviteForm = Form(
+    mapping(
+      "invite" -> nonEmptyText
+    )(InviteString.apply)(InviteString.unapply)
+  )
+  /**
+   * The newer invite-handling function. This is designed to be called from the Client's
+   * _handleInvite page. Returns the UserInfo for the current User, which might be a newly-synthesized
+   * Guest User if nobody's logged in.
+   */
+  def handleInvite2(ownerIdStr:String, spaceIdStr:String) = withRouting(ownerIdStr, spaceIdStr) { implicit rc =>
+    implicit val request = rc.request
+    val rawForm = handleInviteForm.bindFromRequest
+    rawForm.fold(
+      errorForm => { BadRequest("Error: badly formatted request!") },
+      info => {
+        val loggedIn = rc.requester.isDefined
+        // TODO: ideally, we should do something more graceful if parseInvite() fails, but don't be
+        // *too* nice -- odds are fairly high that it's a hack attempt.
+        val invite = NotifyInvitations.parseInvite(info.invite).get
+        val updatedRc =
+          if (rc.requester.isDefined)
+            rc
+          else
+            rc.copy(requester = Some(invite.user))
+        implicit val timeout = Timeout(10 seconds)
+        for {
+          spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
+          // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
+          // to the Client as a proper error. But again, it might well be an attempted security breach.
+          dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinRequest(updatedRc, invite.personId))
+          userOpt = updatedRc.requester
+          userInfoOpt <- ClientApi.userInfo(userOpt)
+        }
+          yield {
+            if (loggedIn)
+              Ok(write(userInfoOpt.get))
+            else
+              // Set up the Session for this Guest:
+              Ok(write(userInfoOpt.get)).withSession(invite.user.toSession:_*)
+          }
+      }
+    )        
   }
 
   def handleInvite(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>

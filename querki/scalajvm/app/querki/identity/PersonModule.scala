@@ -472,10 +472,15 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * local Person record to the Identity. If it all succeeds, this will eventually produce a ThingFound(personId, state).
    * 
    * TODO: this depends on Play, so it should be in controllers!
+   * 
+   * TODO: this is *horribly* incestuous with SpaceMembersActor.JoinRequest. Rewrite this horror! And for heaven's
+   * sake, redo it to compose properly -- I outgrew this callback-hell approach years ago.
    */
   def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:ThingResponse => Future[B])(implicit state:SpaceState):Option[Future[B]] = {
     for {
       person <- state.anything(personId)
+      // If they're not currently invited, cut this off. This is important: the code below will choke if they're already a full member!
+      if (inviteStatus(person)(state) == StatusInvitedOID)
       user <- rc.requester
       // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able
       // to choose which of my identities is joining this Space:

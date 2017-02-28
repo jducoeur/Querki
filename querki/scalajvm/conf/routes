@@ -24,6 +24,7 @@ GET     /raw/:userName/:spaceId/:thingId @controllers.RawController.thing(userNa
 # Note that these are still direct pages, not through the Client:
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
 POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)
+POST    /u/:userName/:spaceId/_handleInvite2 @controllers.LoginController.handleInvite2(userName, spaceId)
 POST    /u/:userName/:spaceId/_joinLogin  @controllers.LoginController.joinlogin(userName, spaceId)
 GET     /u/:userName/:spaceId/_joinSpace  @controllers.LoginController.joinSpace(userName, spaceId)
 GET     /u/:userName/:spaceId/_getCollaborators @controllers.LoginController.getCollaborators(userName, spaceId, q)

@@ -44,6 +44,8 @@ trait User {
   
   def levelName:String = UserLevel.levelName(level)
   
+  def isActualUser = UserLevel.isActualUser(level)
+  
   // TODO: this probably needs to be rethought. It is what we current use for Security.username,
   // but won't exist for non-login accounts. So we need to be able to do other things for those.
   // Possibly we should be putting the OID in there instead.
@@ -124,6 +126,8 @@ case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, l
 object User {
   val userIdSessionParam = "userId"
   val levelSessionParam = "lvl"
+  val guestIdSessionParam = "guestId"
+  val guestEmailSessionParam = "guestEmail"
     
   case object Anonymous extends User {
     val id = UnknownOID
@@ -131,6 +135,24 @@ object User {
     val identities = Seq(Identity.AnonymousIdentity)
     val level = UnknownUserLevel
     val tosVersion = noTOSUserVersion
+  }
+}
+
+/**
+ * Pseudo-User for SimpleEmail Identities.
+ */
+case class GuestUser(identity:Identity) extends User {
+  val id = GuestUserOID
+  val name = ""
+  val identities = Seq(identity)
+  val level = SpaceSpecific
+  val tosVersion = noTOSUserVersion
+  
+  override def toSession:Seq[(String, String)] = {
+    Seq(
+      (User.guestIdSessionParam -> identity.id.toString),
+      (User.guestEmailSessionParam -> identity.email.addr)
+    )
   }
 }
 

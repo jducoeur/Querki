@@ -42,7 +42,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
     PageManager.afterPageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {
         // We should only be asking for the number of notifications if we're logged in in the first place:
-        if (UserAccess.user.isDefined)
+        if (UserAccess.isActualUser)
           checkNotifications()
       }
     }

@@ -7,7 +7,7 @@ import akka.util.Timeout
 
 import play.api.mvc.{RequestHeader, Security}
 
-import models.{PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
+import models._
 
 import querki.ecology._
 import querki.email.EmailAddress
@@ -179,8 +179,21 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
           case _ => None
         }
       }
-      case None => Future.successful(None)
+      case None => {
+        // There isn't a User. Is there a Guest?
+        (request.session.get(User.guestIdSessionParam), request.session.get(User.guestEmailSessionParam)) match {
+          case (Some(identityId), Some(emailAddr)) => {
+            fut(Some(makeGuest(identityId, emailAddr)))
+          }
+          // Nope -- there's no Session here:
+          case _ => fut(None)
+        }
+      }
     }
+  }
+  
+  def makeGuest(identityIdStr:String, emailAddrStr:String):User = {
+    GuestUser(Identity(OID(identityIdStr), EmailAddress(emailAddrStr), "", "", s"Guest $emailAddrStr", IdentityKind.SimpleEmail))
   }
   
   def updateCacheAndThen(user:User):Future[Any] = {

@@ -22,12 +22,18 @@ object UserLevel {
     case FreeUser => "free"
     case PaidUser => "paid"
     case PermanentUser => "permanent"
+    case SpaceSpecific => "guest"
     case AdminUser => "admin"
-	case TestUser => "test"
+  	case TestUser => "test"
     case SuperadminUser => "superadmin"
       
     case _ => "Unknown: " + level.toString
   }
   
   def isAdmin(level:UserLevel) = (level == AdminUser || level == SuperadminUser)
+  
+  def isActualUser(level:UserLevel) = level match {
+    case PendingUser | FreeUser | PaidUser | PermanentUser | AdminUser | TestUser | SuperadminUser => true
+    case _ => false
+  }
 }

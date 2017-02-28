@@ -12,7 +12,7 @@ import querki.globals._
 import querki.core.NameUtils
 import querki.data._
 import querki.ecology._
-import querki.identity.{PublicIdentity, User}
+import querki.identity.{PublicIdentity, User, UserLevel}
 import querki.session.UserSessionMessages._
 import querki.tags.IsTag
 import querki.types.ModelTypeBase
@@ -129,13 +129,18 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   
   def userInfo(uopt:Option[User]):Future[Option[UserInfo]] = {
     futOpt(uopt.map { user =>
-      implicit val timeout = ActorHelpers.timeout
-      Session.sessionManager askRetry FetchUserSessionInfo(user.id) map { case UserSessionInfo(level) =>
-        // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
-        val identityInfos = user.identities.map { identity =>
-          identityInfo(identity)
+      if (user.level == UserLevel.SpaceSpecific) {
+        // This is a Guest, so there is no SkillLevel to fetch:
+        fut(UserInfo(AsOID(user.id), Seq(identityInfo(user.mainIdentity)), querki.identity.skilllevel.MOIDs.SkillLevelStandardOID, false))
+      } else {
+        implicit val timeout = ActorHelpers.timeout
+        Session.sessionManager askRetry FetchUserSessionInfo(user.id) map { case UserSessionInfo(level) =>
+          // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
+          val identityInfos = user.identities.map { identity =>
+            identityInfo(identity)
+          }
+          UserInfo(AsOID(user.id), identityInfos, level, user.isActualUser)
         }
-        UserInfo(AsOID(user.id), identityInfos, level)
       }
     })
   }

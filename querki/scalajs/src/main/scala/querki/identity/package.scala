@@ -15,6 +15,8 @@ package object identity {
     
     def user:Option[UserInfo]
     
+    def isActualUser:Boolean
+    
     def loggedIn:Boolean = user.isDefined
     
     def name:String

@@ -370,7 +370,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
                     new SearchGadget()))
               },
                   
-              if (UserAccess.user.isDefined) {
+              if (UserAccess.isActualUser) {
                 ul(cls:="nav navbar-nav navbar-right",
                   tabindex:=1700,
                   li(new NotifierGadget)

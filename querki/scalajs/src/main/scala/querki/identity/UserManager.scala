@@ -34,6 +34,8 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def name = _user.map(_.mainIdentity.name).getOrElse("Not logged in")
   
+  def isActualUser = user.map(_.actualUser).getOrElse(false)
+  
   def login():Future[Page] = {
     loginCore().flatMap(_ => PageManager.reload())
   }

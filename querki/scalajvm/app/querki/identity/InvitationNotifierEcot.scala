@@ -7,7 +7,7 @@ import querki.globals._
 import querki.notifications._
 import querki.core.QLText
 import querki.time.DateTime
-import querki.util.{Hasher, SafeUrl}
+import querki.util.{Hasher, SafeUrl, SignedHash}
 import querki.values.{QLContext, SpaceState}
 
 private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
@@ -18,12 +18,13 @@ private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val InvitationSpaceNameOID = moid(5)
 }
 
-class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations  {
+class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations {
   import InvitationNotifierMOIDs._ 
   
   val Basic = initRequires[querki.basic.Basic]
   
   lazy val Email = interface[querki.email.Email]
+  lazy val IdentityAccess = interface[IdentityAccess]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val Person = interface[Person]
@@ -45,6 +46,20 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
 
   object Notifiers {
     val InvitationNotifierId:Short = 1
+  }
+  
+  def parseInvite(encodedInvite:String):Option[ParsedInvitation] = {
+    val hash = SignedHash(encodedInvite, emailSepChar)
+    if (!Hasher.checkSignature(hash))
+      None
+    else {
+      val SignedHash(_, _, msg, _) = hash
+      val Array(personIdStr, emailAddrStr, identityIdStr, _*) = msg.split(":")
+      Some(
+        ParsedInvitation(
+          OID(personIdStr), 
+          IdentityAccess.makeGuest(identityIdStr, emailAddrStr)))
+    }
   }
   
   ////////////////////////////////////
@@ -124,6 +139,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
     urlBase + 
       "u/" + state.ownerHandle + 
       "/" + state.toThingId + "/" + 
+      "#_handleInvite" +
       "?" + inviteParam + "=" + encoded
   }
   
