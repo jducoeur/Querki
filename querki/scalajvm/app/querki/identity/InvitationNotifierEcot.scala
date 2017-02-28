@@ -16,6 +16,7 @@ private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val InvitationURLOID = moid(3)
   val InvitationSenderNameOID = moid(4)
   val InvitationSpaceNameOID = moid(5)
+  val InvitationSpaceOwnerOID = moid(6)
 }
 
 class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations {
@@ -105,7 +106,8 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           InvitationSender(sender.id),
           InvitationURL(url),
           InvitationSenderName(sender.name),
-          InvitationSpaceName(state.displayName)
+          InvitationSpaceName(state.displayName),
+          InvitationSpaceOwner(state.owner)
         ) ++ textOpt.map { text => toProps(InvitationText(text.text)) }.getOrElse(emptyProps)
         
         // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
@@ -143,7 +145,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
       "?" + inviteParam + "=" + encoded
   }
   
-  case class InvitePayload(senderId:IdentityId, textQVOpt:Option[QValue], inviteUrl:String, senderName:String, spaceName:String)
+  case class InvitePayload(senderId:IdentityId, textQVOpt:Option[QValue], inviteUrl:String, senderName:String, spaceName:String, spaceOwner:OID)
   def parsePayload(note:Notification):InvitePayload = {
     val rawPayload = note.payload
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
@@ -153,12 +155,13 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
     val url = payload.getFirst(InvitationURL).text
     val senderName = payload.getFirst(InvitationSenderName).text
     val spaceName = payload.getFirst(InvitationSpaceName).text
+    val spaceOwner = payload.getFirst(InvitationSpaceOwner)
     
-    InvitePayload(senderId, textQVOpt, url, senderName, spaceName)
+    InvitePayload(senderId, textQVOpt, url, senderName, spaceName, spaceOwner)
   }
   
   def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
-    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName) = parsePayload(note)
+    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName, spaceOwner) = parsePayload(note)
     
     for {
       body <- textQVOpt.map(_.wikify(context)).getOrElse(Future.successful(Wikitext("")))
@@ -183,13 +186,15 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   
   def toEmail(note:Notification, recipient:FullIdentity):Future[EmailMsg] = {
     val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
-    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName) = parsePayload(note)
+    val InvitePayload(senderId, textQVOpt, url, senderName, spaceName, spaceOwner) = parsePayload(note)
     
     val hasBody = textQVOpt.isDefined
 
     for {
       body <- textQVOpt.map(_.wikify(querki.values.EmptyContext(ecology))).getOrElse(Future.successful(Wikitext("")))
-      headline = Wikitext(s"""$senderName has invited you to join $spaceName!""")
+      subject = Wikitext(s"""$senderName has invited you to join $spaceName!""")
+      spaceUrl = urlBase + "u/" + spaceOwner.toThingId + "/" + spaceIdOpt.get.toThingId + "/"
+      headline = Wikitext(s"""$senderName has invited you to join [$spaceName]($spaceUrl)!""")
       hr = 
         if (hasBody) 
           HtmlWikitext("<hr/>") 
@@ -213,7 +218,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         recipient.email,
         recipient.name,
         senderName,
-        headline,
+        subject,
         fullBody,
         Wikitext("Place the footer text here")
       )
@@ -253,11 +258,18 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
       setInternal,
       Summary("The name of the Space this invitation is for")))
   
+  lazy val InvitationSpaceOwner = new SystemProperty(InvitationSpaceOwnerOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_invitationSpaceOwner"),
+      setInternal,
+      Summary("The Identity that owns the Space that is being invited to.")))
+  
   override lazy val props = Seq(
     InvitationSender,
     InvitationText,
     InvitationURL,
     InvitationSenderName,
-    InvitationSpaceName
+    InvitationSpaceName,
+    InvitationSpaceOwner
   )
 }
