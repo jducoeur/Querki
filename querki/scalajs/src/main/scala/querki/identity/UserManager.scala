@@ -92,7 +92,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
         passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
         p("or, if you are new to Querki:"),
-        new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki")({ () =>
+        new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki", id := "_signupButton")({ () =>
           showSignup()
         }),
         if (user.isDefined && !user.get.actualUser)

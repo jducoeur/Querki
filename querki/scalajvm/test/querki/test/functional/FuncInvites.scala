@@ -82,16 +82,18 @@ trait FuncInvites { self:FuncMixin =>
         
         val inviteLink = extractInviteLink()
         go to inviteLink
-        val handleInvitePage = HandleInvitePage(state.getSpace(space))
-        // Note that this isn't part of the client, so we can't use the normal waitFor() --
-        // the page will never be "rendered".
-        waitForTitle(handleInvitePage)
         
-        textField("email").value = user.email
-        pwdField("password").value = user.password
-        textField("handle").value = user.handle
-        textField("display").value = user.display
-        click on "_signUpButton"
+        // This takes us to the Space in question, with the Login dialog open.
+        waitFor(RootPage(space))
+        waitFor("_signupButton")
+        click on "_signupButton"
+        waitFor(SignupPage)
+        
+        textField("emailInput").value = user.email
+        pwdField("passwordInput").value = user.password
+        textField("handleInput").value = user.handle
+        textField("displayInput").value = user.display
+        click on "signupButton"
         
         acceptTermsOfService()(state)
         
