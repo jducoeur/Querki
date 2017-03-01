@@ -46,6 +46,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val History = interface[querki.history.History]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
@@ -145,9 +146,40 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * This is effectively a lazy val that gets recalculated after we get a new rawState.
    */
   def state = {
-    if (_enhancedState.isEmpty)
+    if (_enhancedState.isEmpty) {
       _enhancedState = Some(makeEnhancedState())
+      whenStateReady(_enhancedState.get)
+    }
     _enhancedState.get
+  }
+  
+  /**
+   * This is executed each time we receive a new SpaceState.
+   */
+  def whenStateReady(implicit state:SpaceState) = {
+    // Do I have the right Display Name? If I've changed my Identity's Display Name (which is very common
+    // during the invite-accept process), update it.
+    // TODO: there's a hard-to-avoid implication here, that the Person's Display Name property may be a
+    // bad denormalization. I suspect we should be just going through the Identity itself.
+    for {
+      person <- localPerson
+      personName = person.displayName
+      localIdentity <- Person.localIdentities(user)
+      identityId = localIdentity.id
+      actualIdentity <- user.identityById(identityId)
+      if (actualIdentity.name != personName)
+    }
+    {
+      // Okay, we need to fix the name
+      // TBD: note that this is being sent in the name of System. That's because I may well not have
+      // Edit rights within the Space. This is a bit of a hack, but I'm not sure there is a better
+      // answer -- the obvious alternative is to say that I can always change my own Person, but it
+      // isn't at all clear that that's correct. In the case of, eg, whitelisted Commentators, it
+      // very well might not be.
+      val msg = ChangeProps(IdentityAccess.SystemUser, state.id, person.id, Map(Basic.DisplayNameProp(actualIdentity.name)))
+      // TODO: we really ought to do something if this fails. But what?
+      spaceRouter ? msg
+    }
   }
   
   /**
