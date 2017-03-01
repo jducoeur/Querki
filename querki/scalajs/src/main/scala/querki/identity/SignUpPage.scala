@@ -6,6 +6,8 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import upickle.default._
+
+import org.querki.squery._
 import org.querki.jquery._
 
 import querki.api._
@@ -27,7 +29,7 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
   
-  if (UserAccess.user.isDefined)
+  if (UserAccess.isActualUser)
     // Already logged in, so this page isn't going to work right:
     PageManager.showIndexPage()
     
@@ -35,6 +37,16 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   lazy val emailRegex = ".+@.+\\..+"
     
   lazy val emailInput = GadgetRef[RxInput]
+    .whenRendered { g =>
+      for {
+        // If we are currently showing a Guest (there's a User, and we've already established above
+        // that it isn't an actual User), and there's an email cookie (set in handleInvite2()), then
+        // use that as the default.
+        user <- UserAccess.user
+        guestEmail <- Cookies.get("guestEmail")
+      }
+        g.setValue(guestEmail)
+    }
   lazy val passwordInput = GadgetRef[RxInput]
   lazy val handleInput = GadgetRef[RxInput]
   lazy val displayInput = GadgetRef[RxInput]

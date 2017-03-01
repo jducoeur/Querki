@@ -122,6 +122,10 @@ querki {
     # How long to keep alive in memory the history of a Space 
     timeout : 5 minutes
   }
+  
+  invitations {
+    inviteTimeout : 5 minutes
+  }
 }
 
 play.http.session {

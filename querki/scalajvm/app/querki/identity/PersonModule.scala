@@ -6,6 +6,8 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 
+import org.querki.requester._
+
 import models._
 
 import querki.api.commonName
@@ -486,15 +488,37 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       // to choose which of my identities is joining this Space:
       identity <- user.identityBy(_ => true)
       membershipResult = UserAccess.addSpaceMembership(identity.id, state.id)
+      identityProps =
+        if (user.isActualUser)
+          toProps(
+            IdentityLink(identity.id),
+            DisplayNameProp(identity.name))
+        else
+          // Iff this is a Guest, don't slam the DisplayName, which might have been right in
+          // the first place!
+          emptyProps
       changeRequest = ChangeProps(IdentityAccess.SystemUser, state.id, person.toThingId, 
           toProps(
-            InvitationStatusProp(StatusMemberOID),
-            // TODO: this should be redundant in the new world, after Feb '17. But we need to keep doing it
-            // for now, since older invites don't have the IdentityLink:
-            IdentityLink(identity.id),
-            DisplayNameProp(identity.name)))
+            InvitationStatusProp(StatusMemberOID))
+            ++ identityProps)
     }
       yield SpaceOps.askSpace[ThingResponse, B](changeRequest)(cb)
+  }
+  
+  def replacePerson(guestId:OID, actualId:PublicIdentity)(implicit state:SpaceState, requester:Requester):RequestM[Any] = {
+    import requester.RequestableActorRef
+    
+    withCache { cache =>
+      cache.localPerson(guestId).map { person =>
+        val changeRequest = 
+          ChangeProps(IdentityAccess.SystemUser, state.id, person.id,
+            toProps(
+              IdentityLink(actualId.id),
+              DisplayNameProp(actualId.name)),
+            false)
+        SpaceOps.spaceRegion.request(changeRequest)
+      }.getOrElse(RequestM.successful(()))
+    }
   }
   
   def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {

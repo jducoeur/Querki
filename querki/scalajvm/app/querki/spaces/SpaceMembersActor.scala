@@ -49,6 +49,12 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	      case None => sender ! JoinFailed(new PublicException("Space.join.unknownError", state.displayName))
   	    }
   	  }
+  	  
+  	  case ReplacePerson(guestId, actualIdentity) => {
+  	    Person.replacePerson(guestId, actualIdentity)(state, this).map { _ =>
+  	      sender ! PersonReplaced
+  	    }
+  	  }
   	    
   	  case InviteRequest(rc, inviteeEmails, collabs) => {
   	    val nCurrentMembers = Person.people(state).size

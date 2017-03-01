@@ -113,6 +113,14 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     }
   }
   
+  val inviteTimeoutParam = "inviteTimeout"
+  val inviteTimeout = Config.getDuration("querki.invitations.inviteTimeout", 5 minutes).toMillis
+  def withinTimeout(request:RequestHeader):Boolean = {
+    request.session.get(inviteTimeoutParam)
+      .map { param => new DateTime(param.toLong) isAfter DateTime.now }
+      .getOrElse(false)
+  }
+  val inviteSpaceIdParam = "inviteSpaceId"
   case class InviteString(invite:String)
   val handleInviteForm = Form(
     mapping(
@@ -152,8 +160,13 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
             if (loggedIn)
               Ok(write(userInfoOpt.get))
             else
-              // Set up the Session for this Guest:
-              Ok(write(userInfoOpt.get)).withSession(invite.user.toSession:_*)
+              // Set up the Session for this Guest, and record when the "invitation" period expires:
+              Ok(write(userInfoOpt.get)).withSession(
+                (invite.user.toSession :+ 
+                  (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
+                  (inviteSpaceIdParam -> spaceId.toString)):_*)
+                // We add the Email address as its own cookie, for Client use:
+                .withCookies(Cookie(User.guestEmailSessionParam, invite.user.mainIdentity.email.addr, httpOnly = false))
           }
       }
     )        
@@ -301,12 +314,33 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     rawForm.fold(
       errorForm => { BadRequest("Error: badly formatted request!") },
       info => {
-        // This user is *not* yet validated -- that happens when they click on their email:
-        val result = UserAccess.createUser(info, false)
+        
+        // Iff this is already a validated Guest session, then incorporate that Guest into the
+        // new User:
+        val (isValidatedEmail, identityIdOpt) = rc.requester.map { curUser =>
+          if (curUser.isActualUser)
+            throw new Exception(s"Somehow trying to create a new User, but we're already logged in!")
+          
+          // Sanity-check: we only allow you to claim the Guest session for a few minutes, to guard
+          // against account theft if somebody walks away from their screen.
+          if (withinTimeout(request)) {
+            // Okay, we're a Guest:
+            val identity = curUser.mainIdentity
+            (identity.email.addr.toLowerCase == info.email.toLowerCase, Some(identity.id))
+          } else
+            (false, None)
+        }.getOrElse((false, None))
+        
+        val result = UserAccess.createUser(info, isValidatedEmail, identityIdOpt)
         result match {
           case Success(user) => {
-            // Okay -- user is created, so send out the validation email:
-            Person.sendValidationEmail(rc, EmailAddress(info.email), user) flatMap { _ =>
+            // Okay -- user is created, so send out the validation email if needed:
+            val validateFut =
+              if (isValidatedEmail)
+                fut(())
+              else
+                Person.sendValidationEmail(rc, EmailAddress(info.email), user) 
+            validateFut flatMap { _ =>
               // Email sent, so we're ready to move on:
               ClientApi.userInfo(Some(user)) map { userInfoOpt =>
                 Ok(write(userInfoOpt.get)).withSession(user.toSession:_*)
@@ -443,12 +477,38 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     val rc = PlayRequestContextFull(request, None, UnknownOID)
     userForm.bindFromRequest.fold(
       errors => Ok("failed"),
-      form => {
+      form => {        
+        val guestUserOpt = IdentityAccess.guestFromSession(request)
+        
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => {
-            ClientApi.userInfo(Some(user)) map { userInfoOpt =>
-              Ok(write(userInfoOpt)).withSession(user.toSession:_*)
+            def writeUserInfo() = {
+              ClientApi.userInfo(Some(user)) map { userInfoOpt =>
+                Ok(write(userInfoOpt)).withSession(user.toSession:_*)
+              }              
+            }
+            
+            // SUBTLE CASE: iff we were logged in as a Guest (thus, an invitee to a Space),
+            // and we've logged in with a *different* Identity within the inviteTimeout (to mitigate
+            // against account takeovers if somebody leaves a Guest logged in), then replace the invited
+            // Identity. This is necessary for the edge cases where I have been invited
+            // via Email A, but I actually use Querki with Email B.
+            (guestUserOpt, request.session.get(inviteSpaceIdParam)) match {
+              case (Some(guestUser), Some(spaceIdStr)) if (withinTimeout(request) && !user.hasIdentity(guestUser.mainIdentity.id)) => 
+              {
+                val spaceId = OID(spaceIdStr)
+                val realIdentity = guestUser.mainIdentity
+                val msg = SpaceMembersMessage(rc.requesterOrAnon, spaceId, ReplacePerson(guestUser.mainIdentity.id, user.mainIdentity))
+                implicit val timeout = Timeout(10 seconds)
+                (SpaceOps.spaceRegion ? msg) flatMap { _ =>
+                  writeUserInfo()
+                }
+              }
+              
+              case _ => {
+                writeUserInfo()
+              }
             }
           }
           case None => Ok("failed")

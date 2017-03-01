@@ -9,7 +9,7 @@ import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.conversations.messages.ConversationMessage
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{IdentityId, User}
+import querki.identity.{IdentityId, PublicIdentity, User}
 import querki.session.messages.SessionMessage
 import querki.spaces.{SpaceStatusCode, StatusNormal}
 import querki.values.{RequestContext, SpaceState, SpaceVersion}
@@ -169,6 +169,9 @@ case class JoinFailed(ex:PublicException) extends JoinResult
 
 case class IsSpaceMemberP(rc:RequestContext) extends SpaceMembersBase
 case class IsSpaceMember(result:Boolean)
+
+case class ReplacePerson(guestId:OID, actualIdentity:PublicIdentity) extends SpaceMembersBase
+case object PersonReplaced
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait SpaceResponse

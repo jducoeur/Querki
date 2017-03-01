@@ -8,6 +8,8 @@ import akka.actor.ActorRef
 // TODO: this is an unfortunate abstraction break:
 import play.api.mvc.RequestHeader
 
+import org.querki.requester._
+
 import models.{OID, Property, PType, SimplePTypeBuilder, Thing, ThingId}
 
 import querki.ecology._
@@ -132,6 +134,8 @@ package object identity {
      */
     def isAcceptedMember(person:Thing)(implicit state:SpaceState):Boolean
     
+    def replacePerson(guestId:OID, actualId:PublicIdentity)(implicit state:SpaceState, requester:Requester):RequestM[Any]
+    
     private [identity] def withCache[T](f:CachedPeople => T)(implicit state:SpaceState):T
   }
   
@@ -220,6 +224,11 @@ package object identity {
      * Given the specified header from Play, fetch the User itself.
      */
     def userFromSession(req:RequestHeader):Future[Option[User]]
+    
+    /**
+     * Iff there is a GuestUser in the current Session, return that Guest.
+     */
+    def guestFromSession(request:RequestHeader):Option[User]
     
     /**
      * Internal System User. This should be used for making internal changes to Spaces that are *not* under the
