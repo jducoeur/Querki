@@ -172,6 +172,9 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     )        
   }
 
+  /**
+   * DEPRECATED
+   */
   def handleInvite(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
     // in through the back door:
@@ -212,6 +215,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   
   // TODO: can we factor this together with dologin in a sensible way? The trick is that we want to finish login by showing
   // joinSpace...
+  // DEPRECATED
   def joinlogin(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     userForm.bindFromRequest.fold(
@@ -240,6 +244,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   
   val minPasswordLen = 8
   
+  // DEPRECATED
   def passwordValidationError(password:String):Option[String] = {
     // For now, we're not doing much except the most trivial check:
     if (password.length >= minPasswordLen)
@@ -248,6 +253,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
       Some(s"Password must be at least $minPasswordLen characters long")
   }
     
+  // DEPRECATED
   def signup(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     val rawForm = signupForm.bindFromRequest
@@ -359,6 +365,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
     )    
   }
   
+  // DEPRECATED
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
     rc.sessionCookie(querki.identity.personParam).map(OID(_)).map { personId => 
       askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {

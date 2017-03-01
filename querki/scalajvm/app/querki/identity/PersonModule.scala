@@ -420,6 +420,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * TODO: this is dependent on PlayRequestContext, which means that it really belongs in controllers!
    * 
    * TODO: move this whole thing into the Client! This is one of very few code paths still in the old system.
+   * 
+   * DEPRECATED.
    */
   object InviteLoginChecker extends Contributor[PlayRequestContext,PlayRequestContext] {
     def notify(rc:PlayRequestContext, sender:Publisher[PlayRequestContext, PlayRequestContext]):PlayRequestContext = {
