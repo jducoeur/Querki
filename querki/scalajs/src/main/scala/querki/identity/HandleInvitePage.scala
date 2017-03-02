@@ -5,6 +5,7 @@ import upickle.default._
 
 import querki.comm._
 import querki.data.UserInfo
+import querki.display._
 import querki.globals._
 import querki.pages._
 
@@ -31,11 +32,14 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
   def handleInvite():Unit = {
     doInvite().flatMap { userInfo =>
       UserAccess.setUser(Some(userInfo))
-      PageManager.showRoot().map { _ =>
+      PageManager.showRoot().map { page =>
         if (!UserAccess.isActualUser) {
           // We're not currently logged in
-          // Pop the Login dialog, to encourage the user to log in or create an account:
-          UserAccess.login()
+          // Suggest to the user to log in or create an account:
+          page.flash(false, 
+            """You're logged in as a Guest. If you log into your Querki account, or create one, you will
+              |be able to more easily come back here. """.stripMargin,
+              new ButtonGadget(ButtonGadget.Primary, "Log in / Sign up")({() => UserAccess.login() }))
         }
       }
     }
