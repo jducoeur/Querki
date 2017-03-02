@@ -270,7 +270,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Goes through the Props, and figures out what is actually changing.
    */
   def changedProperties(oldProps:PropMap, newProps:PropMap):Seq[OID] = {
-    val allIds = oldProps.keySet ++ newProps.keySet
+    val allIds = newProps.keySet
     allIds.toSeq.filterNot { propId =>
       val matchesOpt = for {
         oldVal <- oldProps.get(propId)
