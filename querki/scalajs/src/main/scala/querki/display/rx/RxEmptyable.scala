@@ -20,6 +20,11 @@ object RxEmptyable {
   implicit def RxEmptyableText[T <: RxTextBase[_]] = new RxEmptyable[T] {
     def rxEmpty(elem:T) = Rx { elem.textOpt().isEmpty }
   }
+  
+  implicit val RxEmptyableRadio = new RxEmptyable[RxRadio] {
+    def rxEmpty(elem:RxRadio) = Rx { elem.selectedOption().isEmpty }
+  }
+  
   /**
    * High-level version of .rxEmpty for GadgetRef -- basically, if the contained Gadget is itself
    * RxEmptyable, then the GadgetRef is as well.

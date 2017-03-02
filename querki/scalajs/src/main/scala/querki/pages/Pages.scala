@@ -26,6 +26,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val createSpaceFactory = registerStandardFactory("_createSpace", { (params) => new CreateSpacePage(params) })
   lazy val importSpaceFactory = registerStandardFactory("_importSpace", { (params) => new ImportSpacePage(params) })
   lazy val securityFactory = registerThingPageFactory("_security", { (params) => new querki.security.SecurityPage(params) }, "thingId")
+  lazy val shareableLinkFactory = registerThingPageFactory("_makeShareable", { (params) => new querki.security.MakeShareableLinkPage(params) }, "thingId")
   lazy val infoFactory = registerStandardFactory("_spaceInfo", { (params) => new InfoPage(params) })
   lazy val undeleteFactory = registerStandardFactory("_undelete", { (params) => new UndeletePage(params) })
   
@@ -43,6 +44,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     importSpaceFactory
     thingPageFactory
     securityFactory
+    shareableLinkFactory
     infoFactory
     undeleteFactory
   }

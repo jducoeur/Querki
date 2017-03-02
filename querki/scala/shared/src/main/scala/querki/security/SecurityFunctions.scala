@@ -50,6 +50,28 @@ trait SecurityFunctions {
    * mostly the System ones.)
    */
   def getAllPerms():Future[Seq[PermInfo]]
+  
+  /**
+   * Fetch the available permission levels for Shareable Links. These should be presented to
+   * the user who is creating the Link, and the actual permissions passed in to
+   * makeShareableLink().
+   * 
+   * Note that this is deliberately a bit over-designed, to make it easier to change these
+   * levels, or even add custom options, down the road. It also allows for a possible
+   * fine-grained UI in the Client, which lets a power user specify the permissions more
+   * precisely.
+   */
+  def getLinkPermChoices():Future[Seq[LinkPermsChoice]]
+  
+  /**
+   * This creates a new Open Invitation, and returns a signed URL for getting into it.
+   * 
+   * @param name The name of the resulting Custom Role.
+   * @param thingOpt Iff this Invitation is specific to a particular Thing, that Thing.
+   *   Otherwise, the Invitation is to the entire Space.
+   * @param perms The permissions granted by this Link.
+   */
+  def makeShareableLink(name:String, thingOpt:Option[TID], perms:Seq[TID]):Future[String]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])
@@ -87,4 +109,6 @@ object SecurityFunctions {
     default:SecurityLevel,
     appliesTo:Seq[TID]
   )
+  
+  case class LinkPermsChoice(name:String, perms:Seq[TID])
 }

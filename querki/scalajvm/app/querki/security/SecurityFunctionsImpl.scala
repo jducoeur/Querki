@@ -181,4 +181,45 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     val infos = perms.map(perm2Api(_))
     fut(infos)
   }
+  
+  def getLinkPermChoices():Future[Seq[LinkPermsChoice]] = {
+    val choices:Seq[LinkPermsChoice] = Seq(
+      LinkPermsChoice("View Only", Seq(
+          AccessControl.CanReadProp,
+          Conversations.CanReadComments
+        )
+      ),
+      
+      LinkPermsChoice("Fill in Polls", Seq(
+          AccessControl.CanReadProp,
+          Conversations.CanReadComments,
+          UserValues.UserValuePermission
+        )
+      ),
+      
+      LinkPermsChoice("Comment", Seq(
+          AccessControl.CanReadProp,
+          Conversations.CanReadComments,
+          UserValues.UserValuePermission,
+          Conversations.CanComment
+        )
+      ),
+      
+      LinkPermsChoice("Edit", Seq(
+          AccessControl.CanReadProp,
+          Conversations.CanReadComments,
+          UserValues.UserValuePermission,
+          Conversations.CanComment,
+          AccessControl.CanEditProp,
+          AccessControl.CanCreateProp
+        )
+      )
+    )
+    
+    fut(choices)
+  }
+  
+  def makeShareableLink(name:String, thingOpt:Option[TID], perms:Seq[TID]):Future[String] = {
+    ???
+  }
 }
