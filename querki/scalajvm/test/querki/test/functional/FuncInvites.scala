@@ -83,8 +83,11 @@ trait FuncInvites { self:FuncMixin =>
         val inviteLink = extractInviteLink()
         go to inviteLink
         
-        // This takes us to the Space in question, with the Login dialog open.
+        // This takes us to the Space in question, and then we need to go to the Login dialog.
         waitFor(RootPage(space))
+        waitFor("_openLoginButton")
+        click on "_openLoginButton"
+        
         waitFor("_signupButton")
         click on "_signupButton"
         waitFor(SignupPage)

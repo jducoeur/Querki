@@ -39,7 +39,7 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
           page.flash(false, 
             """You're logged in as a Guest. If you log into your Querki account, or create one, you will
               |be able to more easily come back here. """.stripMargin,
-              new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up")({() => UserAccess.login() }))
+              new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
         }
       }
     }
