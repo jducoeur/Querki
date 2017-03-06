@@ -1,5 +1,7 @@
 package querki.security
 
+import org.scalajs.dom.html
+
 import scalatags.JsDom.all._
 import rx._
 import autowire._
@@ -17,6 +19,11 @@ class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) exten
   
   val nameInput = GadgetRef[RxText]
   val permChoiceInput = GadgetRef[RxRadio]
+  val showLinkSection = GadgetRef.of[html.Div]
+  val showLinkText = GadgetRef[RxText]
+  
+  val sharedLink:Var[Option[String]] = Var(None)
+  val sharedLinkAsText = Rx { sharedLink().getOrElse("") }
   
   val spaceName = DataAccess.space.get.displayName
   
@@ -40,8 +47,14 @@ class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) exten
       p(new ButtonGadget(ButtonGadget.Primary, "Get Shareable Link", 
           disabled := Rx { nameInput.rxEmpty() || permChoiceInput.rxEmpty() })(
        {() =>
-        // TODO: call makeShareableLink(), display the result, and copy it to the clipboard
-       }))
+         Client[SecurityFunctions].makeShareableLink(nameInput.get.text(), choiceMap(permChoiceInput.get.selectedVal())).call().map { link =>
+           sharedLink() = Some(link)
+         }
+       })),
+      showLinkSection <= div(display := Rx { if (sharedLink().isEmpty) "none" else "block" },
+        p(b("Here is the link:")),
+        p(new RxTextFrag(sharedLinkAsText))
+      )
     )
   }
     yield PageContents(guts)

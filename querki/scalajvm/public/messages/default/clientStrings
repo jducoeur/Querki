@@ -38,6 +38,10 @@ pages : {
     pageTitle : "Welcome to Querki"
   }
   
+  makeShareable : {
+    pageTitle : "Make a Shareable Link"
+  }
+  
   modelDesigner : {
     pageTitle : "$prefix $modelName"
     modelPrefix : "Designing Model"

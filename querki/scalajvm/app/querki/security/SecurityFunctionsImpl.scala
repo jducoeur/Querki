@@ -228,7 +228,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   }
   
   def makeShareableLink(name:String, permTIDs:Seq[TOID]):Future[String] = {
-    if (rc.isOwner)
+    if (!rc.isOwner)
       throw new NotAllowedException()
     
     val makeRoleMsg = CreateThing(user, state.id, Kind.Thing, RolesMOIDs.CustomRoleModelOID, 
