@@ -13,13 +13,12 @@ import querki.pages._
 
 class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("makeShareable") {
   
-  lazy val thingId = TID(params("thingId"))
-  lazy val isLinkToSpace = thingId == DataAccess.spaceId
-  
   lazy val Client = interface[querki.client.Client]
   
   val nameInput = GadgetRef[RxText]
   val permChoiceInput = GadgetRef[RxRadio]
+  
+  val spaceName = DataAccess.space.get.displayName
   
   def pageContent = for {
     permChoices <- Client[SecurityFunctions].getLinkPermChoices().call()
@@ -30,11 +29,10 @@ class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) exten
     choiceButtons = permChoices.map { choice =>
       RadioButton(choice.name, choice.name, false)
     }
-    thingInfo <- Client[ThingFunctions].getThingInfo(thingId).call()
     guts = div(
-      h1(s"Make a Shareable Link for ${thingInfo.displayName}"),
+      h1(s"Make a Shareable Link for $spaceName"),
       QText(s"""This will give you a link that you can put in email, web pages, Facebook posts and so on. *Anyone*
-               |who can see the link will be able to access ${thingInfo.displayName}, so use it with care!""".stripMargin),
+               |who can see the link will be able to access $spaceName, so use it with care!""".stripMargin),
       p("Give this Link a name:"),
       nameInput <= new RxText(cls:="form-control"),
       p("What should the users of this link be able to do?"),

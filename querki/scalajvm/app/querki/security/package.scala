@@ -120,5 +120,6 @@ package object security {
     def CustomRoleModel:Thing
     
     def CanExplorePerm:Property[OID,OID]
+    def IsOpenInvitation:Property[Boolean,Boolean]
   }
 }

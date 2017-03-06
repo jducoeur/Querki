@@ -49,20 +49,6 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
     val InvitationNotifierId:Short = 1
   }
   
-  def parseInvite(encodedInvite:String):Option[ParsedInvitation] = {
-    val hash = SignedHash(encodedInvite, emailSepChar)
-    if (!Hasher.checkSignature(hash))
-      None
-    else {
-      val SignedHash(_, _, msg, _) = hash
-      val Array(personIdStr, emailAddrStr, identityIdStr, _*) = msg.split(":")
-      Some(
-        ParsedInvitation(
-          OID(personIdStr), 
-          IdentityAccess.makeGuest(identityIdStr, emailAddrStr)))
-    }
-  }
-  
   ////////////////////////////////////
   //
   // Implementation of Notifier
@@ -131,18 +117,48 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   
   val inviteParam = "invite"
   
-  // TODO: this is *completely* incestuous with Person.InviteLoginChecker. Refactor!!!
-  def generateInviteLink(person:Thing, inviteeId:IdentityId, email:EmailAddress, state:SpaceState):String = {
-    val idString = person.id.toString + ":" + email.addr + ":" + inviteeId.toString
-    val signed = Hasher.sign(idString, emailSepChar)
-    val encoded = SafeUrl(signed.toString)
+  def makeInviteLink(encoded:String, state:SpaceState):String = {
     // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
     // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
     urlBase + 
       "u/" + state.ownerHandle + 
       "/" + state.toThingId + "/" + 
       "#_handleInvite" +
-      "?" + inviteParam + "=" + encoded
+      "?" + inviteParam + "=" + encoded    
+  }
+  
+  def generateInviteLink(person:Thing, inviteeId:IdentityId, email:EmailAddress, state:SpaceState):String = {
+    val idString = person.id.toString + ":" + email.addr + ":" + inviteeId.toString
+    val signed = Hasher.sign(idString, emailSepChar)
+    val encoded = SafeUrl(signed.toString)
+    makeInviteLink(encoded, state)
+  }
+  
+  val sharePrefix = "share;"
+  
+  def generateShareableLink(roleId:OID, state:SpaceState):String = {
+    val idString = roleId.toString
+    val signed = Hasher.sign(idString, emailSepChar)
+    val encoded = SafeUrl(sharePrefix + signed.toString)
+    makeInviteLink(encoded, state)
+  }
+  
+  def parseInvite(encodedInvite:String):Option[ParsedInvitation] = {
+    val hash = SignedHash(encodedInvite, emailSepChar)
+    if (!Hasher.checkSignature(hash))
+      None
+    else {
+      val SignedHash(_, _, msg, _) = hash
+      if (msg.startsWith(sharePrefix)) {
+        ???
+      } else {
+        val Array(personIdStr, emailAddrStr, identityIdStr, _*) = msg.split(":")
+        Some(
+          ParsedInvitation(
+            OID(personIdStr), 
+            IdentityAccess.makeGuest(identityIdStr, emailAddrStr)))
+      }
+    }
   }
   
   case class InvitePayload(senderId:IdentityId, textQVOpt:Option[QValue], inviteUrl:String, senderName:String, spaceName:String, spaceOwner:OID)

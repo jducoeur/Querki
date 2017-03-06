@@ -10,7 +10,7 @@ import play.api.db._
 import play.api.Play.current
 
 import querki.core.NameUtils
-import querki.data.TID
+import querki.data.{TID, TOID}
 import querki.db.QDB
 import querki.db.ShardKind._
 import querki.globals._
@@ -36,6 +36,7 @@ case class OID(val raw:Long) {
   def toThingId = AsOID(this)
   def id = this
   def toTID = TID(toThingId.toString)
+  def toTOID = TOID(toThingId.toString)
   
   override def equals(other:Any) = {
     other match {
@@ -62,6 +63,8 @@ object OID {
     new OID(java.lang.Long.parseLong(n, 36))
   }
   def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)
+  
+  def fromTOID(toid:TOID) = OID(toid.underlying)
 
   // TBD: at this point, this is only being used for generating Users and Identities;
   // everything else is going through OIDAllocator. We might leave things like this,
@@ -90,6 +93,7 @@ object OID {
   
   implicit def thing2OID(t:Thing):OID = t.id
   implicit def OID2ThingId(oid:OID):ThingId = oid.toThingId
+  implicit def thing2TOID(t:Thing):TOID = t.id.toTOID
 }
 
 object OIDMap {

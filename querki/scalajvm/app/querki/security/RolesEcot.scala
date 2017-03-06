@@ -13,6 +13,7 @@ object RolesMOIDs extends EcotIds(51) {
   val BasicMemberOID = moid(5)
   val CanExplorePermOID = moid(6)
   val CustomRoleModelOID = moid(7)
+  val OpenInvitationOID = moid(8)
 }
 
 /**
@@ -56,8 +57,15 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       false,
       true)
       
+  lazy val IsOpenInvitation = new SystemProperty(OpenInvitationOID, YesNoType, Optional,
+    toProps(
+      setName("_isOpenInvitation"),
+      setInternal,
+      Summary("Flag on a Custom Role, indicating that it represents an Open Invitation")))
+      
   override lazy val props = Seq(
-    CanExplorePerm
+    CanExplorePerm,
+    IsOpenInvitation
   )
 
   /***********************************************

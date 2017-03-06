@@ -66,12 +66,19 @@ trait SecurityFunctions {
   /**
    * This creates a new Open Invitation, and returns a signed URL for getting into it.
    * 
+   * IMPORTANT: this uses the coarse-grained security model, and the permissions are Space-wide.
+   * This is intentional -- trying to get it to work correctly with the fine-grained model is
+   * tricky at best, since that would involve adding explicit overrides to specific Things, and
+   * thus overriding the expected default behavior. It would likely result in unexpected behavior
+   * on the target Thing.
+   * 
+   * We would really *like* to be able to have Model/Instance-specific invitations, but it requires
+   * enhancements to the fine-grained Security system. See QI.7w4g8ht.
+   * 
    * @param name The name of the resulting Custom Role.
-   * @param thingOpt Iff this Invitation is specific to a particular Thing, that Thing.
-   *   Otherwise, the Invitation is to the entire Space.
    * @param perms The permissions granted by this Link.
    */
-  def makeShareableLink(name:String, thingOpt:Option[TID], perms:Seq[TID]):Future[String]
+  def makeShareableLink(name:String, perms:Seq[TOID]):Future[String]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])
@@ -110,5 +117,5 @@ object SecurityFunctions {
     appliesTo:Seq[TID]
   )
   
-  case class LinkPermsChoice(name:String, perms:Seq[TID])
+  case class LinkPermsChoice(name:String, perms:Seq[TOID])
 }

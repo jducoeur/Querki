@@ -13,6 +13,14 @@ case class TID(val underlying:String) extends AnyVal {
   def isEmpty:Boolean = underlying.length() == 0
 }
 
+/**
+ * Variant of TID, to be used for times that can *only* contain an OID, not a
+ * ThingName. This is simpler to process.
+ */
+case class TOID(val underlying:String) extends AnyVal {
+  def isEmpty:Boolean = underlying.length() == 0  
+}
+
 trait BasicThingInfo {
   def oid:TID
   def linkName:Option[String]

@@ -66,11 +66,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   // Utility functions for constructing Things:
   def setName(str:String):(OID,QValue)
   
-  def toProps(pairs:(OID,QValue)*):PropMap = {
-    (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
-      m + (pair._1 -> pair._2)
-    }
-  }
+  def toProps(pairs:(OID,QValue)*):PropMap = models.toProps(pairs:_*)
   
   // The standard convenience sugar for defining a Property in an Ecot:
   class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap, modelId:OID = querki.core.MOIDs.UrPropOID) 

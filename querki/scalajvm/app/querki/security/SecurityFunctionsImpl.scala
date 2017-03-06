@@ -2,7 +2,7 @@ package querki.security
 
 import scala.concurrent.Future
 
-import models.{AsOID, Kind, Property, Thing, ThingId}
+import models._
 import querki.api._
 import querki.data._
 import querki.globals._
@@ -18,15 +18,19 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   
   lazy val AccessControl = interface[AccessControl]
   lazy val Apps = interface[querki.apps.Apps]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
   lazy val Email = interface[querki.email.Email]
+  lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Person = interface[querki.identity.Person]
   lazy val Roles = interface[Roles]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserValues = interface[querki.uservalues.UserValues]
+  
+  lazy val InstancePermissionsProp = AccessControl.InstancePermissionsProp
   
   def doRoute(req:Request):Future[String] = route[SecurityFunctions](this)(req)
   
@@ -213,13 +217,31 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
           AccessControl.CanEditProp,
           AccessControl.CanCreateProp
         )
-      )
+      ),
+      
+      // This option is intended for advanced use: you can take the resulting Role and
+      // apply it manually to specific Things.
+      LinkPermsChoice("Nothing", Seq())
     )
     
     fut(choices)
   }
   
-  def makeShareableLink(name:String, thingOpt:Option[TID], perms:Seq[TID]):Future[String] = {
-    ???
+  def makeShareableLink(name:String, permTIDs:Seq[TOID]):Future[String] = {
+    if (rc.isOwner)
+      throw new NotAllowedException()
+    
+    val makeRoleMsg = CreateThing(user, state.id, Kind.Thing, RolesMOIDs.CustomRoleModelOID, 
+      toProps(
+        Basic.DisplayNameProp(name),
+        AccessControl.RolePermissionsProp(permTIDs.map(OID.fromTOID(_)):_*),
+        Roles.IsOpenInvitation(true)))
+        
+    for {
+      ThingFound(roleId, newState) <- spaceRouter ? makeRoleMsg
+      url = NotifyInvitations.generateShareableLink(roleId, newState)
+    }
+      yield url
+
   }
 }
