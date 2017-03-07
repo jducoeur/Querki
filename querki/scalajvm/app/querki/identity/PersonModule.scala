@@ -232,6 +232,12 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       setInternal,
       Links.LinkModelProp(InvitationStatusModel),
       Summary("The status of this Person's membership in this Space.")))
+  
+  lazy val IsSimpleGuestProp = new SystemProperty(IsSimpleGuestOID, YesNoType, Optional,
+    toProps(
+      setName("_Is Simple Guest"),
+      setInternal,
+      Summary("Set to true iff this Person appears to be coming from an Open Invitation, with no other Identity.")))
       
   /***********************************************
    * FUNCTIONS
@@ -285,6 +291,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     IdentityLink,
     InviteText,
     InvitationStatusProp,
+    IsSimpleGuestProp,
     
     meMethod,
     PersonIdentityFunction
@@ -533,7 +540,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
                   InvitationStatusProp(StatusMemberOID),
     	            DisplayNameProp(identity.name),
     	            AccessControl.PersonRolesProp(roleId),
-    	            AccessControl.CanReadProp(AccessControl.OwnerTag))
+    	            AccessControl.CanReadProp(AccessControl.OwnerTag)) ++
+    	          (if (identity.kind == IdentityKind.Trivial)
+    	             toProps(IsSimpleGuestProp(true))
+    	           else
+    	             emptyProps)
     	        // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
     	        // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
     	        val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)

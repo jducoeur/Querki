@@ -53,6 +53,7 @@ package object identity {
     val StatusRejectedOID = moid(15)
     val InvitationStatusPropOID = moid(16)
     val GuestUserOID = moid(17)
+    val IsSimpleGuestOID = moid(18)
   }
   
   val IdentityTag = "Users, Identities and Invitations"
