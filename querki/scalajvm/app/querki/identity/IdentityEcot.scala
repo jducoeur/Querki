@@ -191,13 +191,20 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       case (Some(identityId), Some(emailAddr)) => {
         Some(makeGuest(identityId, emailAddr))
       }
+      case (Some(identityId), None) => {
+        Some(makeTrivial(OID(identityId)))
+      }
       // Nope -- there's no Session here:
       case _ => None
-    }    
+    }
   }
   
   def makeGuest(identityIdStr:String, emailAddrStr:String):User = {
     GuestUser(Identity(OID(identityIdStr), EmailAddress(emailAddrStr), "", "", s"Guest $emailAddrStr", IdentityKind.SimpleEmail))
+  }
+  
+  def makeTrivial(identityId:OID):User = {
+    GuestUser(Identity(identityId, EmailAddress(""), "", "", s"Guest User", IdentityKind.Trivial))
   }
   
   def updateCacheAndThen(user:User):Future[Any] = {

@@ -24,6 +24,7 @@ import upickle.default._
 import models._
 
 import querki.data.UserInfo
+import querki.db.ShardKind
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
@@ -134,6 +135,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
    */
   def handleInvite2(ownerIdStr:String, spaceIdStr:String) = withRouting(ownerIdStr, spaceIdStr) { implicit rc =>
     implicit val request = rc.request
+    implicit val timeout = Timeout(10 seconds)
     val rawForm = handleInviteForm.bindFromRequest
     rawForm.fold(
       errorForm => { BadRequest("Error: badly formatted request!") },
@@ -141,33 +143,69 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         val loggedIn = rc.requester.isDefined
         // TODO: ideally, we should do something more graceful if parseInvite() fails, but don't be
         // *too* nice -- odds are fairly high that it's a hack attempt.
-        val invite = NotifyInvitations.parseInvite(info.invite).get
-        val updatedRc =
-          if (rc.requester.isDefined)
-            rc
-          else
-            rc.copy(requester = Some(invite.user))
-        implicit val timeout = Timeout(10 seconds)
-        for {
-          spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
-          // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
-          // to the Client as a proper error. But again, it might well be an attempted security breach.
-          dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinRequest(updatedRc, invite.personId))
-          userOpt = updatedRc.requester
-          userInfoOpt <- ClientApi.userInfo(userOpt)
-        }
-          yield {
-            if (loggedIn)
-              Ok(write(userInfoOpt.get))
-            else
-              // Set up the Session for this Guest, and record when the "invitation" period expires:
-              Ok(write(userInfoOpt.get)).withSession(
-                (invite.user.toSession :+ 
-                  (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
-                  (inviteSpaceIdParam -> spaceId.toString)):_*)
-                // We add the Email address as its own cookie, for Client use:
-                .withCookies(Cookie(User.guestEmailSessionParam, invite.user.mainIdentity.email.addr, httpOnly = false))
+        NotifyInvitations.parseInvite(info.invite).get match {
+          // This was an invitation to a particular person, by email address. We have the email and
+          // Identity ID, which has been wrapped up into a GuestUser:
+          case SpecificInvitation(personId, inviteUser) => {
+            val updatedRc =
+              if (rc.requester.isDefined)
+                rc
+              else
+                rc.copy(requester = Some(inviteUser))
+            for {
+              spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
+              // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
+              // to the Client as a proper error. But again, it might well be an attempted security breach.
+              dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinRequest(updatedRc, personId))
+              userOpt = updatedRc.requester
+              userInfoOpt <- ClientApi.userInfo(userOpt)
+            }
+              yield {
+                if (loggedIn)
+                  Ok(write(userInfoOpt.get))
+                else
+                  // Set up the Session for this Guest, and record when the "invitation" period expires:
+                  Ok(write(userInfoOpt.get)).withSession(
+                    (inviteUser.toSession :+ 
+                      (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
+                      (inviteSpaceIdParam -> spaceId.toString)):_*)
+                    // We add the Email address as its own cookie, for Client use:
+                    .withCookies(Cookie(User.guestEmailSessionParam, inviteUser.mainIdentity.email.addr, httpOnly = false))
+              }
           }
+          
+          // This was an Open Invitation, sent out through a Shared Link. We have the ID of the
+          // Custom Role that represents the Invitation:
+          case OpenInvitation(roleId) => {
+            // TODO: this is the single most important place for us to switch away from System Shard:
+            val identityId = OID.next(ShardKind.System)
+            val inviteUser = IdentityAccess.makeTrivial(identityId)
+            val updatedRc =
+              if (rc.requester.isDefined)
+                rc
+              else
+                rc.copy(requester = Some(inviteUser))
+            for {
+              spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
+              // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
+              // to the Client as a proper error.
+              dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinByOpenInvite(updatedRc, roleId))
+              userOpt = updatedRc.requester
+              userInfoOpt <- ClientApi.userInfo(userOpt)              
+            }
+              yield {
+                if (loggedIn)
+                  Ok(write(userInfoOpt.get))
+                else
+                  // Set up the Session for this Guest, and record when the "invitation" period expires. Note
+                  // that, unlike the clause above, there is no email cookie.
+                  Ok(write(userInfoOpt.get)).withSession(
+                    (inviteUser.toSession :+ 
+                      (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
+                      (inviteSpaceIdParam -> spaceId.toString)):_*)
+              }
+            }
+        }
       }
     )        
   }

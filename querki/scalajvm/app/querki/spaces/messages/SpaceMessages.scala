@@ -167,6 +167,8 @@ sealed trait JoinResult
 case object Joined extends JoinResult
 case class JoinFailed(ex:PublicException) extends JoinResult
 
+case class JoinByOpenInvite(rc:RequestContext, roleId:OID) extends SpaceMembersBase
+
 case class IsSpaceMemberP(rc:RequestContext) extends SpaceMembersBase
 case class IsSpaceMember(result:Boolean)
 

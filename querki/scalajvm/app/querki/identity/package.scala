@@ -17,6 +17,7 @@ import querki.ecology._
 import querki.core.QLText
 import querki.email.EmailAddress
 import querki.session.UserSessionMessages.UserSessionMsg
+import querki.util.PublicException
 import querki.values.{RequestContext, SpaceState}
 
 package object identity {
@@ -81,7 +82,9 @@ package object identity {
 
   case class InvitationResult(invited:Seq[String], alreadyInvited:Seq[String])
   
-  case class ParsedInvitation(personId:OID, user:User)
+  sealed trait ParsedInvitation
+  case class SpecificInvitation(personId:OID, user:User) extends ParsedInvitation
+  case class OpenInvitation(roleId:OID) extends ParsedInvitation
   
   // The cookie parameter that indicates the email address of the target identity. The
   // fact that we have to expose this here suggests we have an abstraction break to fix...
@@ -99,6 +102,7 @@ package object identity {
     def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID], originalState:SpaceState):Future[InvitationResult]
     
     def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:querki.spaces.messages.ThingResponse => Future[B])(implicit state:SpaceState):Option[scala.concurrent.Future[B]]
+    def acceptOpenInvitation(rc:RequestContext, roleId:OID)(implicit state:SpaceState):Future[Option[PublicException]]
     
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean
@@ -206,6 +210,8 @@ package object identity {
      * Creates a GuestUser.
      */
     private [identity] def makeGuest(identityIdStr:String, emailAddrStr:String):User
+    
+    def makeTrivial(identityId:OID):User
     
     /**
      * Send the given message to the given router for all the provided IDs.

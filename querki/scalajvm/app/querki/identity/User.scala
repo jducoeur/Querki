@@ -142,7 +142,8 @@ object User {
  * Pseudo-User for SimpleEmail Identities.
  */
 case class GuestUser(identity:Identity) extends User {
-  val id = GuestUserOID
+  // We reuse the IdentityId as the UserId, so that the different Guests get different Sessions:
+  def id = identity.id
   val name = ""
   val identities = Seq(identity)
   val level = SpaceSpecific
@@ -156,10 +157,16 @@ case class GuestUser(identity:Identity) extends User {
   }
 }
 
+// TODO: these Kinds really ought to be represented by different classes! Note that Trivial
+// is even simpler than PublicIdentity -- it is an id and *nothing* else. So we ought to
+// have Identity as a base trait, with subtraits and base classes under it. The current
+// approach is kind of horribly fragile, with the "significant" fields defined more by
+// convention than anything rigorous.
 object IdentityKind {
   val SimpleEmail = 1
   val QuerkiLogin = 2
   val Anonymous = 3
+  val Trivial = 4
   
   type IdentityKind = Int
 }

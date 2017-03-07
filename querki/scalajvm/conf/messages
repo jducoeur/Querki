@@ -36,6 +36,8 @@ Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export it
 Imexport.unknownTag=That XML file contained unknown tag "{0}"
 Imexport.ownerOnly=Only the owner of the Space is allowed to export it.
 
+Invites.unknownInvitation=That invitation is no longer valid.
+
 Logic.equals.typeMismatch=The parameters to {2} must be the same Type: got _equals({0}, {1})
 
 QL.invocation.notASpace=The _space parameter must be a Space -- either this Space or one of its Apps.

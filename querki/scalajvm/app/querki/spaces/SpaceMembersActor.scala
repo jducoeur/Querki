@@ -50,6 +50,18 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	    }
   	  }
   	  
+  	  case JoinByOpenInvite(rc, roleId) => {
+  	    implicit val s = state
+  	    loopback(Person.acceptOpenInvitation(rc, roleId)).map {
+  	      // acceptOpenInvitation returns an Exception iff something went wrong. Otherwise,
+  	      // it's strictly side-effecting.
+  	      _ match {
+  	        case Some(ex) => sender ! JoinFailed(ex)
+  	        case None => sender ! Joined
+  	      }
+  	    }
+  	  }
+  	  
   	  case ReplacePerson(guestId, actualIdentity) => {
   	    Person.replacePerson(guestId, actualIdentity)(state, this).map { _ =>
   	      sender ! PersonReplaced

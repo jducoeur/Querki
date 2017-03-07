@@ -144,17 +144,22 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   }
   
   def parseInvite(encodedInvite:String):Option[ParsedInvitation] = {
-    val hash = SignedHash(encodedInvite, emailSepChar)
+    val (actualInvite, isOpen) =
+      if (encodedInvite.startsWith(sharePrefix))
+        (encodedInvite.drop(sharePrefix.length), true)
+      else
+        (encodedInvite, false)
+    val hash = SignedHash(actualInvite, emailSepChar)
     if (!Hasher.checkSignature(hash))
       None
     else {
       val SignedHash(_, _, msg, _) = hash
-      if (msg.startsWith(sharePrefix)) {
-        ???
+      if (isOpen) {
+        Some(OpenInvitation(OID(msg)))
       } else {
         val Array(personIdStr, emailAddrStr, identityIdStr, _*) = msg.split(":")
         Some(
-          ParsedInvitation(
+          SpecificInvitation(
             OID(personIdStr), 
             IdentityAccess.makeGuest(identityIdStr, emailAddrStr)))
       }
