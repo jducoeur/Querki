@@ -23,6 +23,7 @@ import upickle.default._
 
 import models._
 
+import querki.cluster.OIDAllocator._
 import querki.data.UserInfo
 import querki.db.ShardKind
 import querki.ecology._
@@ -42,6 +43,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Person = interface[querki.identity.Person]
+  lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val UserSession = interface[querki.session.Session]
   
   case class UserForm(name:String, password:String)
@@ -177,15 +179,16 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           // This was an Open Invitation, sent out through a Shared Link. We have the ID of the
           // Custom Role that represents the Invitation:
           case OpenInvitation(roleId) => {
-            // TODO: this is the single most important place for us to switch away from System Shard:
-            val identityId = OID.next(ShardKind.System)
-            val inviteUser = IdentityAccess.makeTrivial(identityId)
-            val updatedRc =
-              if (rc.requester.isDefined)
-                rc
-              else
-                rc.copy(requester = Some(inviteUser))
             for {
+              // Note that these Identities do *not* exist in the System Shard. This should, in principle, be fine.
+              // In the medium term, we will probably move away from System Shard more or less completely.
+              NewOID(identityId) <- QuerkiCluster.oidAllocator ? NextOID
+              inviteUser = IdentityAccess.makeTrivial(identityId)
+              updatedRc =
+                if (rc.requester.isDefined)
+                  rc
+                else
+                  rc.copy(requester = Some(inviteUser))
               spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
               // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
               // to the Client as a proper error.
