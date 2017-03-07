@@ -364,7 +364,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         
         // Iff this is already a validated Guest session, then incorporate that Guest into the
         // new User:
-        val (isValidatedEmail, identityIdOpt) = rc.requester.map { curUser =>
+        val (isValidatedEmail, identityOpt:Option[Identity]) = rc.requester.map { curUser =>
           if (curUser.isActualUser)
             throw new Exception(s"Somehow trying to create a new User, but we're already logged in!")
           
@@ -373,12 +373,14 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           if (withinTimeout(request)) {
             // Okay, we're a Guest:
             val identity = curUser.mainIdentity
-            (identity.email.addr.toLowerCase == info.email.toLowerCase, Some(identity.id))
+            (identity.email.addr.toLowerCase == info.email.toLowerCase, Some(identity))
           } else
             (false, None)
         }.getOrElse((false, None))
+        // If what we have is currently a Trivial Identity, then it doesn't really exist in MySQL yet:
+        val identityExists = identityOpt.map(_.kind != IdentityKind.Trivial).getOrElse(false)
         
-        val result = UserAccess.createUser(info, isValidatedEmail, identityIdOpt)
+        val result = UserAccess.createUser(info, isValidatedEmail, identityOpt.map(_.id), identityExists)
         result match {
           case Success(user) => {
             // Okay -- user is created, so send out the validation email if needed:

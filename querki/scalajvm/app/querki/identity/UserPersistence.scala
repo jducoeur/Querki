@@ -206,7 +206,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * Creates a user based on the given information. Gets created as Pending or Free depending on
    * whether the email address is confirmed. (Different pathways get here in different ways.)
    */
-  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None):Try[User] = Try {
+  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None, identityExists:Boolean = true):Try[User] = Try {
     // Note that both of these will either return None or throw an exception.
     // We intentionally check email first, to catch the case where you've already created an
     // account and have forgotten about it.
@@ -216,15 +216,16 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         Some({_ => throw new PublicException("User.handleExists", info.handle)}))
     // Belt and suspenders checks if this claims to be a SimpleEmail Identity that we are upgrading:
     identityIdOpt.map { identityId =>
-      getFullIdentity(identityId) match {
-        case Some(identity) =>
-          if (identity.kind != IdentityKind.SimpleEmail) {
-            QLog.logAndThrowException(new Exception(s"Somehow attempting to upgrade an Identity that already has a User!"))
+      if (identityExists)
+        getFullIdentity(identityId) match {
+          case Some(identity) =>
+            if (identity.kind != IdentityKind.SimpleEmail) {
+              QLog.logAndThrowException(new Exception(s"Somehow attempting to upgrade an Identity that already has a User!"))
+            }
+          case None => {
+            QLog.logAndThrowException(new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!"))
           }
-        case None => {
-          QLog.logAndThrowException(new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!"))
         }
-      }
     }
         
     val level =
@@ -248,9 +249,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       userInsert.execute
       
       identityIdOpt match {
-        case Some(identityId) => {
+        case Some(identityId) if (identityExists) => {
           // We're upgrading an existing Identity.
-          QLog.spew(s"Upgrading an existing SimpleEmail Identity")
           val identityUpdate = SQL("""
               UPDATE Identity
                  SET  name = {display},
@@ -273,8 +273,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         }
         case _ => {
           // There is no pre-existing Identity, so create it from scratch:
-          QLog.spew(s"Creating a brand new Identity")
-          val identityId = OID.next(ShardKind.System)
+          val identityId = identityIdOpt.getOrElse(OID.next(ShardKind.System))
           val identityInsert = SQL("""
               INSERT Identity
                 (id, name, userId, kind, handle, email, authentication)

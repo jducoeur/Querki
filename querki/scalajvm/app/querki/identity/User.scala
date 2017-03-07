@@ -150,10 +150,16 @@ case class GuestUser(identity:Identity) extends User {
   val tosVersion = noTOSUserVersion
   
   override def toSession:Seq[(String, String)] = {
-    Seq(
-      (User.guestIdSessionParam -> identity.id.toString),
-      (User.guestEmailSessionParam -> identity.email.addr)
-    )
+    if (identity.email.addr.length == 0) {
+      Seq(
+        (User.guestIdSessionParam -> identity.id.toString)
+      )
+    } else {
+      Seq(
+        (User.guestIdSessionParam -> identity.id.toString),
+        (User.guestEmailSessionParam -> identity.email.addr)
+      )
+    }
   }
 }
 
