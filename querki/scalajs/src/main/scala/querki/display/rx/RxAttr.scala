@@ -7,6 +7,8 @@ import scalatags.JsDom.all._
 import rx._
 import querki.globals._
   
+// TODO: the view bounds used below are all a bit smelly -- view bounds aren't exactly
+// a favorite mechanism in idiomatic Scala. Can we redo this as a typeclass?
 private [rx] class RxAttrBase[T <% AttrVal, R <: Rx[T]] extends AttrValue[R] {
   def apply(t:dom.Element, a:Attr, v:R):Unit = {
     Obs(v) {
