@@ -6,10 +6,11 @@ import scala.scalajs.js
 import upickle._
 import autowire._
 
+import org.scalajs.{dom => fulldom}
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 
-import scalatags.JsDom.all._
+import scalatags.JsDom.all.{data => dta, _}
 import scalatags.JsDom.tags2
 
 import models.{Kind, Wikitext}
@@ -122,6 +123,29 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                   href:=page.thingUrl(thing))
     )
   
+  // Note that this is a Bootstrap button with a drop-down menu.
+  // TODO: this probably wants to become a standard utility type.
+  lazy val shareButton =
+    div(cls:="btn-group",
+      button(
+        tpe:="button", 
+        cls:="btn btn-default btn-xs btn-primary _noPrint querki-icon-button",
+        dta.toggle:="dropdown",
+        aria.haspopup:="true", aria.expanded:="false",
+        i(cls:="fa fa-share-alt", aria.hidden:="true"), " ",
+        span(cls:="caret"),
+        title:="Share..."
+      ),
+      ul(cls:="dropdown-menu",
+        li(a(
+          href:=s"mailto:?subject=${thing.displayName}&body=${js.URIUtils.encodeURI(fulldom.window.location.href)}",
+          target:="_blank",
+          "Share via Email...")),
+        if (isSpace && DataAccess.request.isOwner)
+          li(a(href:=Pages.shareableLinkFactory.pageUrl(), "Get Shareable Link..."))
+      )
+    )
+  
   def doRender =
     div(cls:="page-header",
         
@@ -191,6 +215,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             )
           }
         },
+        " ",
+        shareButton,
         Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
           $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
         })

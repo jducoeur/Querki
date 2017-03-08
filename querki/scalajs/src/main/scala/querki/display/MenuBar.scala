@@ -236,16 +236,6 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       None
   }
   
-  def shareSection = {
-    thingOpt.map { thing =>
-      NavSection("Share", Seq(
-        NavLink("Share via...", enabled = false),
-        NavDivider,
-        NavLink("Email", url = s"mailto:?subject=${thing.displayName}&body=${js.URIUtils.encodeURI(fulldom.window.location.href)}", newWindow = true)
-      ), 1600, icon = Some("glyphicon glyphicon-share-alt"), iconOnly = true)
-    }
-  }
-  
   //////////////////////////////////////
   
   def displayNavLink(link:NavLink) = {
@@ -383,13 +373,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
                   tabindex:=1700,
                   li(new NotifierGadget)
                 )
-              },
-              
-              shareSection.map( section =>
-                ul(cls:="nav navbar-nav navbar-right",
-                  displayNavigable(section)
-                )
-              )
+              }
             )
           )
         )
