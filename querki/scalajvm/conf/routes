@@ -42,6 +42,9 @@ POST    /_upload                    @controllers.ClientController.upload(targetA
 # Display some root-level page
 GET     /c/                         @controllers.ClientController.showClient
 
+# Root-level version of the Client, which gets loaded when you click an Unsubscribe link
+GET     /unsub                      @controllers.ClientController.unsub(unsubInfo)
+
 POST    /dologin                    @controllers.LoginController.dologin
 POST    /clientlogin                @controllers.LoginController.clientlogin
 GET     /logout                     @controllers.LoginController.logout

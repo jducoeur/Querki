@@ -11,6 +11,7 @@ import querki.core.QLText
 import querki.ecology._
 import querki.globals._
 import querki.identity.{FullIdentity, Identity}
+import querki.notifications.NotifierId
 import querki.util.SafeUrl
 import querki.values.{ElemValue, QLContext}
 
@@ -46,16 +47,6 @@ private [email] trait EmailSender extends EcologyInterface {
   def sendEmail(msg:EmailMsg):Unit
 }
 
-case class EmailMsg(
-  from:EmailAddress,
-  to:EmailAddress,
-  toName:String,
-  senderName:String,
-  subject:Wikitext,
-  body:Wikitext,
-  footer:Wikitext
-)
-
 class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.MethodDefs {
 
   import querki.email.MOIDs._
@@ -64,8 +55,11 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Links = initRequires[querki.links.Links]
   val SystemManagement = initRequires[querki.system.SystemManagement]
   
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val EmailSender = interface[EmailSender]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val QL = interface[querki.ql.QL]
     
   lazy val DeprecatedProp = Basic.DeprecatedProp
@@ -100,6 +94,10 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   val shardResolver:ShardRegion.ExtractShardId = {
     case msg:IdentityEmailMessages.IdentityEmailMsg => msg.to.shard
+  }
+
+  override def postInit() = {
+    ApiRegistry.registerApiImplFor[EmailFunctions, EmailFunctionsImpl](ClientApi.anonHandler, false)
   }
 
   override def createActors(createActorCb:CreateActorFunc):Unit = {
@@ -381,6 +379,13 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   /***********************************************
    * METHOD CONTENTS
    ***********************************************/
+  
+  def emailNotifier(id:NotifierId):EmailNotifier = {
+    Notifications.notifier(id) match {
+      case en:EmailNotifier => en
+      case _ => throw new Exception(s"Notifier $id isn't an EmailNotifier!")
+    }
+  }
     
   lazy val AccessControl = interface[querki.security.AccessControl]
   

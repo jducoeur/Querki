@@ -12,7 +12,17 @@ import querki.values.QLContext
 /**
  * Identifies a particular Notifier. Used so that we know who handles a given Notification.
  */
-case class NotifierId(ecotId:Short, notificationType:Short)
+case class NotifierId(ecotId:Short, notificationType:Short) {
+  override def toString = ((ecotId << 16) + notificationType).toString
+}
+object NotifierId {
+  def apply(str:String):NotifierId = {
+    val raw = str.toInt
+    val ecotId = (raw >> 16).toShort
+    val notificationType = (raw & 0xffff).toShort
+    NotifierId(ecotId, notificationType)
+  }
+}
   
 /**
  * The basic information about a given User.

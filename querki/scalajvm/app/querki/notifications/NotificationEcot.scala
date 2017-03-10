@@ -64,6 +64,9 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
 
   /***********************************************
    * NotifierRegister IMPLEMENTATION
+   * 
+   * Yes, this is mutable. The (not currently enforced) intent is that all Notifiers should be
+   * registered during postInit().
    ***********************************************/
   
   var notifiers = Map.empty[NotifierId, Notifier]
@@ -80,6 +83,8 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   /***********************************************
    * Notifications IMPLEMENTATION
    ***********************************************/
+  
+  def notifier(id:NotifierId):Notifier = notifiers(id)
   
   def notifierFor(note:Notification):Notifier = notifiers(note.notifier)
   

@@ -31,7 +31,9 @@ import querki.util.PublicException
 class ClientController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Tags = interface[querki.tags.Tags]
+  lazy val Unsubscribe = interface[querki.email.Unsubscribe]
   
   def apiTrace = ApiInvocation.apiTrace _
   
@@ -258,5 +260,21 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
     } recoverWith {
       case pex:PublicException => doError(indexRoute, pex) 
     }
+  }
+  
+  def unsub(unsubInfoStr:String) = withUser(false) { rc =>
+    Unsubscribe.parseUnsub(unsubInfoStr).map { unsubInfo => 
+      val updatedRc =
+        if (rc.requester.isDefined && rc.requester.get.hasIdentity(unsubInfo.user.mainIdentity.id))
+          rc
+        else
+          rc.copy(requester = Some(unsubInfo.user))
+      ClientApi.rootRequestInfo(rc).map { requestInfo =>
+        val fullRequestInfo = requestInfo.copy(navigateToOpt = Some(s"_doUnsub"), payloadOpt = Some(unsubInfoStr))
+        Ok(views.html.client(rc, write(fullRequestInfo), "", mode))
+          .withSession(updatedRc.requester.get.toSession:_*)
+      }
+    // TODO: do something more polite if we get an illegal link:
+    }.getOrElse(throw new Exception("That isn't a legal unsubscribe link!"))
   }
 }

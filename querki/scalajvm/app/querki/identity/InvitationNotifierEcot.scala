@@ -2,13 +2,15 @@ package querki.identity
 
 import models._
 import querki.ecology._
-import querki.email.{EmailAddress, EmailMsg, EmailNotifier, emailSepChar}
+import querki.email._
 import querki.globals._
 import querki.notifications._
 import querki.core.QLText
 import querki.time.DateTime
 import querki.util.{Hasher, SafeUrl, SignedHash}
 import querki.values.{QLContext, SpaceState}
+
+import EmailFunctions._
 
 private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val InvitationSenderOID = moid(1)
@@ -17,6 +19,9 @@ private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val InvitationSenderNameOID = moid(4)
   val InvitationSpaceNameOID = moid(5)
   val InvitationSpaceOwnerOID = moid(6)
+  
+  val UnsubSenderOID = moid(7)
+  val UnsubAllInvitesOID = moid(8)
 }
 
 class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations {
@@ -31,6 +36,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   lazy val Person = interface[Person]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
+  lazy val Unsubscribe = interface[querki.email.Unsubscribe]
   
   lazy val PlainTextType = Basic.PlainTextType 
   lazy val SystemState = System.State
@@ -208,13 +214,14 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   def toEmail(note:Notification, recipient:FullIdentity):Future[EmailMsg] = {
     val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
     val InvitePayload(senderId, textQVOpt, url, senderName, spaceName, spaceOwner) = parsePayload(note)
+    val spaceId = spaceIdOpt.getOrElse(throw new Exception(s"Somehow got InvitationNotification with no spaceId: $note"))
     
     val hasBody = textQVOpt.isDefined
 
     for {
       body <- textQVOpt.map(_.wikify(querki.values.EmptyContext(ecology))).getOrElse(Future.successful(Wikitext("")))
       subject = Wikitext(s"""$senderName has invited you to join $spaceName!""")
-      spaceUrl = urlBase + "u/" + spaceOwner.toThingId + "/" + spaceIdOpt.get.toThingId + "/"
+      spaceUrl = urlBase + "u/" + spaceOwner.toThingId + "/" + spaceId.toThingId + "/"
       headline = Wikitext(s"""$senderName has invited you to join [$spaceName]($spaceUrl)!""")
       hr = 
         if (hasBody) 
@@ -233,6 +240,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         hr + wikibreak +
         instructions + wikibreak +
         joinButton
+      unsubLink = Unsubscribe.generateUnsubLink(this, recipient.id, recipient.email, spaceId.toString, senderId.toString, spaceName)
     }
       yield EmailMsg(
         EmailAddress(Email.from),
@@ -241,8 +249,41 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         senderName,
         subject,
         fullBody,
-        Wikitext("Place the footer text here")
+        Wikitext(s"If you don't want to see these invitations, just click [Unsubscribe]($unsubLink).")
       )
+  }
+  
+  def unsubOptions(unsubInfo:UnsubInfo):Future[(Wikitext, Seq[UnsubOption])] = {
+    val spaceIdStr :: senderIdStr :: spaceName :: Nil = unsubInfo.rest
+    val senderId = OID(senderIdStr)
+    
+    IdentityAccess.getIdentity(senderId).map { senderOpt =>
+      val sender = senderOpt.getOrElse(throw new Exception(s"Somehow got Invitation Unsub from unknown sender $senderId!"))
+      (
+        Wikitext(s"""**${sender.name}** invited you to join the Querki Space *$spaceName*. 
+                    |[Click here for more information about Querki.](https://www.querki.net/help/#!What-is-Querki) 
+                    |
+                    |Use the buttons below to keep ${sender.name} from inviting you to this or any other Space,
+                    |or to suppress Querki invitations entirely.""".stripMargin),
+        
+        Seq(
+          UnsubOption(
+            UnsubSenderOID.toTOID,
+            Some(senderIdStr),
+            s"Block invitations from ${sender.name}",
+            s"""Pressing this button will prevent ${sender.name} from sending you any more invitations to join
+               |Spaces in Querki, but you will still be able to get invitations from other people.""".stripMargin
+          ),
+          
+          UnsubOption(
+            UnsubAllInvitesOID.toTOID,
+            None,
+            s"Block all invitations to join Querki Spaces",
+            s"""This will prevent anyone from inviting you to join their Spaces, permanently.""".stripMargin
+          )
+        )
+      )
+    }
   }
   
   /***********************************************

@@ -29,6 +29,8 @@ package object api {
     def thing2TID(t:Thing):TID
     def OID2TID(oid:OID):TID
     
+    def anonHandler:ActorRef
+    
     def requestInfo(rc:RequestContext)(implicit state:SpaceState):Future[RequestInfo]
     def rootRequestInfo(rc:RequestContext):Future[RequestInfo]
     

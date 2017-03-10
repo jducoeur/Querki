@@ -11,7 +11,8 @@ import scala.util.Try
 import models.{OID, Thing, Wikitext}
 
 import querki.core.QLText
-import querki.identity.Identity
+import querki.identity.{Identity, IdentityId, User}
+import querki.notifications.NotifierId
 import querki.values.{QLContext, SpaceState}
 
 import querki.ecology._
@@ -40,12 +41,6 @@ package object email {
    * because it is not a legal character in email addresses.
    */
   val emailSepChar = ';'
-    
-  /**
-   * Represents an email address. For the moment this is basically just a String, but we'll gradually
-   * add things like validation, so it's useful to get the abstraction clean now.
-   */
-  case class EmailAddress(addr:String)
     
   trait Email extends EcologyInterface {  
     /**
@@ -83,6 +78,24 @@ package object email {
      */
     def sendRaw(recipientEmail:EmailAddress, recipientName:String, subject:Wikitext, body:Wikitext, from:String, requester:Identity):Future[Unit]
     
+    /**
+     * Fetch the EmailNotifier with a given ID.
+     */
+    def emailNotifier(id:NotifierId):EmailNotifier
+    
     def EmailAddressProp:Property[EmailAddress,String]
+  }
+    
+  /**
+   * This system works with EmailNotifiers to implement Unsubscribe functionality. All EmailNotifiers should
+   * implement an Unsubscribe link in their footers unless they have *very* good reason not to! This is a
+   * legal requirement!
+   */
+  trait Unsubscribe extends EcologyInterface {
+    def unsubParam:String
+    
+    def generateUnsubLink(notifier:EmailNotifier, identityId:IdentityId, email:EmailAddress, rest:String*):String
+    
+    def parseUnsub(encodedUnsub:String):Option[UnsubInfo]    
   }
 }

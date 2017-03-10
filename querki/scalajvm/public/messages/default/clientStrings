@@ -81,6 +81,10 @@ pages : {
     pageTitle : "Undeleting $thingName..."
   }
   
+  unsubscribe : {
+    pageTitle : "Unsubscribe"
+  }
+  
   validateSignup : {
     pageTitle : "Validating your email address"
   }

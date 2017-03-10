@@ -210,7 +210,7 @@ package object identity {
     /**
      * Creates a GuestUser.
      */
-    private [identity] def makeGuest(identityIdStr:String, emailAddrStr:String):User
+    def makeGuest(identityIdStr:String, emailAddrStr:String):User
     
     def makeTrivial(identityId:OID):User
     

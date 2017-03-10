@@ -58,6 +58,11 @@ package object notifications {
     def userNotifications:ActorRef
     
     /**
+     * Fetch a registered Notifier.
+     */
+    def notifier(id:NotifierId):Notifier
+    
+    /**
      * Fetch the Notifier for this Notification.
      */
     def notifierFor(note:Notification):Notifier

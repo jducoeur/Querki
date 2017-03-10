@@ -93,19 +93,29 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
           UserAccess.resendActivationButton))
     }
     
+    def doInitialNavigate() = {
+      DataAccess.request.navigateToOpt match {
+        // We've been told by the server to load a specific page at start. For example,
+        // this is used for Unsubscribe:
+        case Some(navigateTo) => showPage(navigateTo, Map.empty)
+        // Normal case -- just load whatever page the URL says:
+        case _ => invokeFromHash()
+      }
+    }
+    
     // ... check if we need a fresh TOS:
     // TODO: this is conceptually a lousy place for this check, but it's the right place in the
     // pipeline to do "stuff after loading". Can we find a better factoring?
     if (DataAccess.request.user.isDefined) {
       Client[UserFunctions].checkTOS().call().flatMap {
         _ match {
-          case TOSOkay => invokeFromHash()
-          case TOSOld => TOSPage.run.flatMap { _ => invokeFromHash() }
+          case TOSOkay => doInitialNavigate()
+          case TOSOld => TOSPage.run.flatMap { _ => doInitialNavigate() }
         }
       }
     } else
       // Anonymous access, so TOS is irrelevant:
-      invokeFromHash()
+      doInitialNavigate()
   }
   
   var _imagePath:Option[String] = None

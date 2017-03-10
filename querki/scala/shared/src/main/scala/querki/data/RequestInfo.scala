@@ -11,5 +11,9 @@ case class RequestInfo(
   space:Option[SpaceInfo],
   isOwner:Boolean,
   userLevel:UserLevel,
+  // If specified, the PageManager will go to this page immediately after load:
+  navigateToOpt:Option[String] = None,
+  // An opaque payload, intended to go with navigateToOpt:
+  payloadOpt:Option[String] = None,
   forbidden:Boolean = false
   )
