@@ -6,7 +6,7 @@ import akka.persistence._
 
 import querki.globals._
 import querki.identity.{FullIdentity, IdentityId}
-import querki.notifications.Notification
+import querki.notifications._
 import querki.persistence._
 import querki.spaces.RTCAble
 
@@ -20,6 +20,7 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
   extends PersistentActorCore with PersistentRMCore[RM] with IdentityEmailPure with EcologyMember
 {
   lazy val Email = interface[querki.email.Email]
+  lazy val Unsubscribe = interface[Unsubscribe]
   lazy val Notifications = interface[querki.notifications.Notifications]
   
   /////////////////////////////////////////////////////////
@@ -44,7 +45,21 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
   var _identity:Option[FullIdentity] = None
   def identity = _identity.get
   
+  var unsubsByNotifier:Map[NotifierId, List[UnsubEvent]] = Map.empty
+  def addUnsub(notifierStr:String, evt:UnsubEvent) = {
+    val notifierId = NotifierId(notifierStr)
+    val allEvts = unsubsByNotifier.get(notifierId) match {
+      case Some(evts) => evt :: evts
+      case _ => List(evt)
+    }
+    unsubsByNotifier += (notifierId -> allEvts)
+  }
+  
   def receiveRecover:Receive = {
+    case UnsubscribeEvent(notifierStr, unsubEvt) => {
+      addUnsub(notifierStr, unsubEvt)
+    }
+    
     case RecoveryCompleted => {
       fetchIdentity(identityId) map { identityOpt =>
         identityOpt match {
@@ -70,8 +85,8 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
     case NotificationToEmail(note) => {
       Notifications.notifierFor(note).emailNotifier match {
         case Some(notifier) => {
-          // TODO: we need to pass Unsubs into here:
-          if (notifier.shouldSendEmail(note)) {
+          val unsubs = unsubsByNotifier.get(notifier.id)
+          if (unsubs.isEmpty || notifier.shouldSendEmail(note, unsubs.get)) {
             // Convert it to an email...
             toEmail(note, identity).map { msg =>
               // ... persist the email for introspection?
@@ -85,9 +100,23 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
                 Email.sendEmail(msg)
 //              }
             }
+          } else {
+            // Note that we drop the email on the floor if shouldSendEmail() returns false. That is *entirely*
+            // intentional: for privacy reasons, the sender doesn't get feedback that they've been blocked.
+//            QLog.spew(s"Dropping $note due to Unsubscription")
           }
         }
         case None => QLog.error(s"IdentityEmailCore somehow received notification without an EmailNotifier: $note")
+      }
+    }
+    
+    case DoUnsubscribe(to, notifierStr, unsubId, context) => {
+      val notifier = Email.emailNotifier(NotifierId(notifierStr))
+      val (message, unsubEvt) = notifier.getUnsubEvent(unsubId, context)
+      val evt = UnsubscribeEvent(notifierStr, unsubEvt)
+      doPersist(evt) { _ =>
+        addUnsub(notifierStr, unsubEvt)
+        respond(Unsubscribed(message))
       }
     }
   }

@@ -2,11 +2,18 @@ package querki.email
 
 import scala.concurrent.Future
 
-import models.Wikitext
+import models.{OID, Wikitext}
 import querki.identity.FullIdentity
 import querki.notifications.{Notification, NotifierId}
+import querki.persistence.UseKryo
 
 import EmailFunctions._
+
+/**
+ * Marker trait signifying that this is a single "Unsubscribe" event. Deliberately opaque -- its
+ * Notifier is responsible for actually processing it.
+ */
+trait UnsubEvent
 
 /**
  * This is a companion trait to Notifier. If a Notifier has an EmailNotifier, then Notifications of that
@@ -23,7 +30,7 @@ trait EmailNotifier {
   /**
    * Decides whether this specific Notification should get sent out, based on existing Unsubs.
    */
-  def shouldSendEmail(note:Notification):Boolean
+  def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]):Boolean
   
   /**
    * Turn this Notification into an EmailMsg, ready to send out.
@@ -34,4 +41,10 @@ trait EmailNotifier {
    * Gets the Unsubscription options the User has for the provided Unsubscribe link.
    */
   def unsubOptions(unsubInfo:UnsubInfo):Future[(Wikitext, Seq[UnsubOption])]
+  
+  /**
+   * Based on the given info (which comes from unsubOptions()), generate a persistable
+   * Event. Note that the returned structure *must* be Persistable!
+   */
+  def getUnsubEvent(unsubId:OID, context:Option[String]):(Wikitext, UnsubEvent with UseKryo)
 }

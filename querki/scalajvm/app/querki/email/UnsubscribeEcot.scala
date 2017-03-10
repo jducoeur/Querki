@@ -4,11 +4,21 @@ import models._
 import querki.globals._
 import querki.identity._
 import querki.notifications.NotifierId
+import querki.persistence._
 import querki.util.{Hasher, SafeUrl, SignedHash}
+
+case class UnsubscribeEvent(
+  @KryoTag(1) notifierId:String,
+  @KryoTag(2) details:UnsubEvent with UseKryo
+) extends UseKryo
 
 class UnsubscribeEcot(e:Ecology) extends QuerkiEcot(e) with Unsubscribe {
   
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  
+  override def persistentMessages = persist(67,
+    (classOf[UnsubscribeEvent] -> 100)
+  )
 
   // TODO: this is duplicated in multiple Ecots. It really should be defined in one, and used in the rest:  
   lazy val urlBase = Config.getString("querki.app.urlRoot")

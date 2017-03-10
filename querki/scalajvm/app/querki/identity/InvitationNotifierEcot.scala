@@ -6,6 +6,7 @@ import querki.email._
 import querki.globals._
 import querki.notifications._
 import querki.core.QLText
+import querki.persistence._
 import querki.time.DateTime
 import querki.util.{Hasher, SafeUrl, SignedHash}
 import querki.values.{QLContext, SpaceState}
@@ -23,6 +24,12 @@ private [identity] object InvitationNotifierMOIDs extends EcotIds(66) {
   val UnsubSenderOID = moid(7)
   val UnsubAllInvitesOID = moid(8)
 }
+
+case class DHUnsubSenderInvites(
+  @KryoTag(1) sender:OID
+) extends UnsubEvent with UseKryo
+
+case class DHUnsubAllInvites() extends UnsubEvent with UseKryo
 
 class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with NotifyInvitations {
   import InvitationNotifierMOIDs._ 
@@ -50,7 +57,12 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   override def term() = {
     NotifierRegistry.unregister(this)
   }
-
+  
+  override def persistentMessages = persist(66,
+    (classOf[DHUnsubSenderInvites] -> 100),
+    (classOf[DHUnsubAllInvites] -> 101)
+  )
+  
   object Notifiers {
     val InvitationNotifierId:Short = 1
   }
@@ -206,8 +218,17 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   //
   ////////////////////////////////////
   
-  // TODO: this should get fleshed out to deal with Unsubs:
-  def shouldSendEmail(note:Notification):Boolean = true
+  def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]):Boolean = {
+    def violation(unsub:UnsubEvent):Boolean = {
+      unsub match {
+        case DHUnsubAllInvites() => true
+        case DHUnsubSenderInvites(sender) => note.sender == sender
+        case _ => throw new Exception(s"InvitationNotifierEcot.shouldSendEmail() got unexpected UnsubEvent $unsub")
+      }
+    }
+    
+    !unsubs.exists(violation)
+  }
   
   val wikibreak = Wikitext("\n\n")
   
@@ -268,6 +289,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         
         Seq(
           UnsubOption(
+            id.toString,
             UnsubSenderOID.toTOID,
             Some(senderIdStr),
             s"Block invitations from ${sender.name}",
@@ -276,6 +298,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           ),
           
           UnsubOption(
+            id.toString,
             UnsubAllInvitesOID.toTOID,
             None,
             s"Block all invitations to join Querki Spaces",
@@ -283,6 +306,17 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           )
         )
       )
+    }
+  }
+  
+  def getUnsubEvent(unsubId:OID, context:Option[String]):(Wikitext, UnsubEvent with UseKryo) = {
+    unsubId match {
+      case UnsubSenderOID => {
+        val sender = context.map(OID(_)).getOrElse(throw new Exception(s"Somehow got an UnsubSender request without the sender!"))
+        (Wikitext("Saved -- they will no longer be able to send you invitations."), DHUnsubSenderInvites(sender))
+      }
+      case UnsubAllInvitesOID => 
+        (Wikitext("Saved -- you will no longer receive invitations to Querki."), DHUnsubAllInvites())
     }
   }
   
