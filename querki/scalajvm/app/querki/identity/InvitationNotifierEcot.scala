@@ -254,12 +254,14 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           Wikitext(s"""Clicking on this link will let you set up a Querki login (for free) and begin using '$spaceName'.""".stripMargin)
         else
           Wikitext("")
+      onlyYou = Wikitext("This link is intended for you personally; please do not share it with others.")
       joinButton = HtmlWikitext(s"""<div class="bottomlinkdiv"><a href="$url" class="btn btn-primary">Join Space '$spaceName'</a></div>""".stripMargin)
       fullBody =
         Wikitext("{{title:") + wikibreak + headline + wikibreak + Wikitext("}}") + wikibreak +
         body + wikibreak +
         hr + wikibreak +
         instructions + wikibreak +
+        onlyYou + wikibreak +
         joinButton
       unsubLink = Unsubscribe.generateUnsubLink(this, recipient.id, recipient.email, spaceId.toString, senderId.toString, spaceName)
     }
@@ -270,7 +272,8 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
         senderName,
         subject,
         fullBody,
-        Wikitext(s"If you don't want to see these invitations, just click [Unsubscribe]($unsubLink).")
+        Wikitext(s"""You received this email because $senderName invited you. 
+          |If you don't want to receive these invitations, just click [Unsubscribe]($unsubLink).""".stripMargin)
       )
   }
   

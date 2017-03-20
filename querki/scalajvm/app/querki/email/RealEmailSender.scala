@@ -105,6 +105,11 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     |  margin: 8px 50px 0px 50px;
     |  font-size: 11px;
     |}
+    |
+    |.footerAddr {
+    |  margin: 6px 50px 0px 50px;
+    |  font-size: 8px;
+    |}
     |</style>""".stripMargin
     
   def sendEmail(msgInfo:EmailMsg):Unit = {
@@ -136,6 +141,10 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
       |""".stripMargin) +
       footerWiki +
       Wikitext("""
+      |}}
+      |
+      |{{footerAddr:
+      |Querki Inc, 28 Murdock St. #B, Somerville, MA 02145
       |}}""".stripMargin)
     
     // Attach the HTML...
