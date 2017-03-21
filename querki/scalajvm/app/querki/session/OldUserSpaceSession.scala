@@ -89,38 +89,41 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       case Some(rs) => {
         val isOwner = user.hasIdentity(rs.owner)
         val safeState =
-    	  {
-          // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
-          // caching, and do much more sensitive updating as things change.
-          val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
-            val (thingId, thing) = thingPair
-            // Note that we need to pass rs into canRead(), not curState. That is because curState can
-            // be in an inconsistent state while we're in the middle of all this. For example, we may
-            // have already exised a Model from curState (because we don't have permission) when we get
-            // to an Instance of that Model. Things can then get horribly confused when we try to look
-            // at the Instance, try to examine its Model, and *boom*.
-            if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
-              // Remove any SystemHidden Properties from this Thing, if there are any:
-              if (hiddenOIDs.exists(thing.props.contains(_))) {
-                val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
-                curState.copy(things = (curState.things + (newThing.id -> newThing)))
-              } else
-                curState
-            } else
-              curState.copy(things = (curState.things - thingId))
-          }
-          
-          if (AccessControl.canRead(readFiltered, user, rs.id))
-            readFiltered
+          if (isOwner)
+            rs
           else {
-            // This user isn't allowed to read the Root Page, so give them a stub instead.
-            // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
-            // bits of the Space while not breaking it entirely is tricky. Think about how to
-            // do this better.
-            readFiltered.copy(pf = readFiltered.props + 
-                (Basic.DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
+            // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
+            // caching, and do much more sensitive updating as things change.
+            val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
+              val (thingId, thing) = thingPair
+              // Note that we need to pass rs into canRead(), not curState. That is because curState can
+              // be in an inconsistent state while we're in the middle of all this. For example, we may
+              // have already exised a Model from curState (because we don't have permission) when we get
+              // to an Instance of that Model. Things can then get horribly confused when we try to look
+              // at the Instance, try to examine its Model, and *boom*.
+              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
+                // Remove any SystemHidden Properties from this Thing, if there are any:
+                if (hiddenOIDs.exists(thing.props.contains(_))) {
+                  val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
+                  curState.copy(things = (curState.things + (newThing.id -> newThing)))
+                } else
+                  curState
+              } else
+                curState.copy(things = (curState.things - thingId))
+            }
+            
+            if (AccessControl.canRead(readFiltered, user, rs.id))
+              readFiltered
+            else {
+              // This user isn't allowed to read the Root Page, so give them a stub instead.
+              // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
+              // bits of the Space while not breaking it entirely is tricky. Think about how to
+              // do this better.
+              readFiltered.copy(pf = readFiltered.props + 
+                  (Basic.DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
+            }
           }
-        }
+        
         (safeState /: userValues) { (curState, uv) =>
           if (uv.thingId == curState.id) {
             // We're enhancing the Space itself:
