@@ -6,7 +6,7 @@ import akka.event.LoggingReceive
 import org.querki.requester._
 
 import models.OID
-
+import querki.admin.SpaceTimingActor
 import querki.api.ClientRequest
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
@@ -33,6 +33,7 @@ import querki.values.SpaceState
 private[spaces] class SpaceRouter(e:Ecology) 
   extends Actor with EcologyMember with Requester with ClusterTimeoutChild
 {  
+  lazy val AdminOps = interface[querki.admin.AdminOps]
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -40,12 +41,19 @@ private[spaces] class SpaceRouter(e:Ecology)
   
   lazy val spaceId:OID = OID(self.path.name)
   
+  val isBeingTimed = AdminOps.isTimedSpace(spaceId)
+  
   // How long we can be inactive before timing out this entire hive:
   def timeoutConfig:String = "querki.space.timeout"
   
   // The components of the troupe, which get immediately set up as soon as we start:
+  val timingOpt =
+    if (isBeingTimed)
+      Some(context.actorOf(SpaceTimingActor.actorProps(ecology), "SpaceTiming"))
+    else
+      None
   val space =
-      context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+      context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId, timingOpt.isDefined), "Space")
   val conversations = 
 //    if (useNewPersist)
       context.actorOf(Conversations.conversationsManagerProps(self))
@@ -104,6 +112,10 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Messages for the SpaceHistory:
     case msg:SpaceHistory.HistoryMessage => history.forward(msg)
+    
+    // Messages for the SpaceTimingActor, if one is running for this Space:
+    case msg:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
+    case msg:TimingRequest => timingOpt.map(_.forward(msg))
     
     case msg:ShutdownSpace => {
       sender ! ShutdownAck

@@ -53,7 +53,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   lazy val LinkType = Core.LinkType
   
   def startSpaceActor(spaceId:OID):ActorRef = {
-    context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId), "Space")
+    context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
   
   /**

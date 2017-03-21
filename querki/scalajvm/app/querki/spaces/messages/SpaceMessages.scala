@@ -121,6 +121,11 @@ case class SessionRequest(req:User, space:OID, payload:SessionMessage) extends S
 case class UserValuePersistRequest(req:User, space:OID, payload:querki.uservalues.PersistMessages.ExternallyExposed) extends SpaceMessage(req, space)
 
 /**
+ * Routing for messages to the troupe's SpaceTimingActor, if it exists.
+ */
+case class TimingRequest(req:User, space:OID, payload:querki.admin.SpaceTimingActor.SpaceTimingMsg) extends SpaceMessage(req, space)
+
+/**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
  * specifically for use by SpacePlugins.
  * 

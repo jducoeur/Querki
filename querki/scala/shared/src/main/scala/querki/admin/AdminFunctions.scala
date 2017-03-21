@@ -1,7 +1,7 @@
 package querki.admin
 
 import scala.concurrent.Future
-import querki.data.TID
+import querki.data.{TID, TOID}
 import querki.identity.UserLevel._
 import AdminFunctions.AdminUserView
 import AdminFunctions.QuerkiStats
@@ -46,6 +46,28 @@ trait AdminFunctions {
    * system dashboard.
    */
   def monitor():Future[MonitorCurrent]
+  
+  /**
+   * Starts doing some profiling on the specified Space.
+   */
+  def beginSpaceTiming(spaceId:TOID):Future[Unit]
+  
+  /**
+   * Gets the currently collection of Timed Spaces. This is *usually* empty. Note that for now it
+   * is super-primitive -- just a set of OIDs. We might decide to make it fancier later, but this
+   * is a rare edge-case admin feature, and I don't want to overbuild it prematurely.
+   */
+  def getTimedSpaces():Future[Set[TOID]]
+  
+  /**
+   * Stop profiling this Space.
+   */
+  def stopSpaceTiming(spaceId:TOID):Future[Unit]
+  
+  /**
+   * Update the timing messages we've gotten from this Space.
+   */
+  def getSpaceTimingsSince(since:Int, spaceId:TOID):Future[TimingMsgs]
 }
 
 object AdminFunctions {
@@ -72,4 +94,6 @@ object AdminFunctions {
   
   case class RunningSpace(name:String, cluster:String, nUsers:Int, size:Int, timestamp:Long)
   case class MonitorCurrent(monitorNode:String, state:QCurrentClusterState, spaces:Seq[RunningSpace])
+  
+  case class TimingMsgs(nowAt:Int, msgs:Seq[String])
 }

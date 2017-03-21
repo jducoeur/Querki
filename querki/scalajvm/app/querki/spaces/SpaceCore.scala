@@ -160,6 +160,11 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    */
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):RM[SpaceState]
   
+  /**
+   * Iff this Space is being monitored, emit a message about what is going on.
+   */
+  def monitor(msg: => String):Unit
+  
   //////////////////////////////////////////////////
   
   def toPersistenceId(id:OID) = id.toThingId.toString
@@ -509,6 +514,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
   }
   
+  monitor("Booting Space...")
+  
   /**
    * Handler for the "meta-events" that are built into Akka Persistence.
    * 
@@ -540,6 +547,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     
     case RecoveryCompleted => {
       def readied() = {
+        monitor("Space is readied -- notifying the State")
         initializing = false
         notifyUpdateState()
         unstashAll() 

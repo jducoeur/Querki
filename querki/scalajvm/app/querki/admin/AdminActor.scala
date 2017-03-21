@@ -3,8 +3,10 @@ package querki.admin
 import scala.concurrent.duration._
 
 import akka.actor._
+import akka.cluster.ddata._
+import Replicator._
 
-import models.Wikitext
+import models._
 
 import querki.ecology._
 import querki.identity.{User, UserId}
@@ -23,7 +25,16 @@ import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
  */
 private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyMember {
   
+  lazy val AdminInternal = interface[AdminInternal]
+  
+  lazy val TimedSpaceKey = AdminInternal.TimedSpaceKey
+  
   import AdminActor._
+  
+  // We need to hear from the Replicator when a TimedSpace is added or removed, so we
+  // can make sure our node is paying attention:
+  val replicator = DistributedData(context.system).replicator
+  replicator ! Subscribe(TimedSpaceKey, self)
   
   def toWorker[T <: Actor](msg:Any)(implicit tag:scala.reflect.ClassTag[T]) = {
     // Fire it off to a worker:
@@ -37,6 +48,13 @@ private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyM
     case msg:SendSystemMessage => toWorker[AdminSystemMessageWorker](msg)
     
     case msg:GetAllUserIdsForAdmin => toWorker[AdminUserIdFetcher](msg)
+    
+    case c @ Changed(TimedSpaceKey) => {
+      val curORSet = c.get(TimedSpaceKey)
+      val curSpaceStrings = curORSet.elements
+      val curTimedSpaces = curSpaceStrings.map(OID(_))
+      AdminInternal.setTimedSpaces(curTimedSpaces)
+    }
   }
 }
 

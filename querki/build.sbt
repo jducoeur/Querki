@@ -48,8 +48,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
       "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2-SNAPSHOT",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
-      // TEMP: until we have persistence up and running, we need this in order to
-      // help Cluster Sharding work. Note there are corresponding entries in .conf:
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
       "org.scalatest" %% "scalatest" % "2.2.6" % "test",
       // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/

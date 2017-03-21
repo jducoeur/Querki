@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor._
+import akka.cluster.ddata._
 import akka.cluster.singleton._
 import akka.pattern._
 import akka.util.Timeout
@@ -32,6 +33,9 @@ private[admin] object MOIDs extends EcotIds(43) {
 
 private[admin] trait AdminInternal extends EcologyInterface {
   def createMsg(from:PublicIdentity, header:String, body:String):Notification
+  def TimedSpaceKey:ORSetKey[String]
+  def setTimedSpaces(spaces:Set[OID]):Unit
+  def curTimedSpaces:Set[OID]
 }
 
 class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOps with AdminInternal with querki.core.MethodDefs {
@@ -82,6 +86,15 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   override def term() = {
     NotifierRegistry.unregister(SystemMessageNotifier)
   }
+  
+  val TimedSpaceKey = ORSetKey[String]("TimedSpaces")
+  // Ick. Yes, this is a var. This reflects the fact that we want all of the Spaces on this node
+  // to be able to quickly check whether they are being timed. I'd like a better approach, but I'm
+  // not sure it's worth doing this entirely cleanly.
+  var _curTimedSpaces = collection.immutable.Set.empty[OID]
+  def setTimedSpaces(spaces:Set[OID]) = _curTimedSpaces = spaces
+  def curTimedSpaces = _curTimedSpaces
+  def isTimedSpace(spaceId:OID) = _curTimedSpaces.contains(spaceId)
   
   def getSpacesStatus[B](req:User)(cb: SystemStatus => B):Future[B] = {
     akka.pattern.ask(adminActor, GetSpacesStatus(req))(Timeout(5 seconds)).mapTo[SystemStatus].map(cb)

@@ -4,24 +4,30 @@ import scala.concurrent.Future
 
 import akka.cluster._
 import ClusterEvent._
+import akka.cluster.ddata._
+import Replicator._
 
-import models.{AsOID, ThingId}
+import models._
 
 import querki.api._
 import AdminFunctions._
 import querki.cluster.QuerkiNodeManager._
-import querki.data.TID
+import querki.data.{TID, TOID}
 import querki.globals._
 import querki.identity.{User, UserLevel}
 import UserLevel._
 import querki.spaces.messages._
+
+import SpaceTimingActor._
 
 class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with AdminFunctions {
   
   // Head off illegal access here in the constructor, before we even try processing the request:
   if (!info.user.isAdmin)
     throw new NotAnAdminException
-  
+
+  lazy val AdminInternal = interface[AdminInternal]
+  lazy val AdminOps = interface[AdminOps]
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
@@ -133,6 +139,37 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
         QLog.error("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
         throw new Exception("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
       }
+    }
+  }
+  
+  /**
+   * Space Timing -- this is a quick-and-dirty mechanism allowing the Admin UI to turn on "timing" for a specific
+   * Space, so that we can do some rough profiling. These commands manage a distributed ORSet of Space IDs, which
+   * get picked up in AdminActor and stuffed into AdminEcot. It's a fairly dreadful system, and deserves a rethink
+   * if we have some time.
+   */  
+  lazy val replicator = DistributedData(context.system).replicator
+  lazy val TimedSpaceKey = AdminInternal.TimedSpaceKey
+  
+  def beginSpaceTiming(spaceId:TOID):Future[Unit] = {
+    implicit val node = Cluster(context.system)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ + spaceId.underlying)
+    fut(())
+  }
+  
+  def getTimedSpaces():Future[Set[TOID]] = {
+    fut(AdminInternal.curTimedSpaces.map(_.toTOID))
+  }
+  
+  def stopSpaceTiming(spaceId:TOID):Future[Unit] = {
+    implicit val node = Cluster(context.system)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ - spaceId.underlying)
+    fut(())    
+  }
+  
+  def getSpaceTimingsSince(since:Int, spaceId:TOID):Future[TimingMsgs] = {
+    SpaceOps.spaceRegion.request(TimingRequest(user, OID.fromTOID(spaceId), FetchMsgsSince(since))).map { case NewMsgs(nowAt, msgs) =>
+      TimingMsgs(nowAt, msgs)
     }
   }
 }

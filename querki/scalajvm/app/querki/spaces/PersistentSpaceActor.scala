@@ -10,6 +10,7 @@ import org.querki.requester._
 
 import models._
 import Kind.Kind
+import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
@@ -39,7 +40,7 @@ import SpaceMessagePersistence.SpaceEvent
  * TODO: the current workflow doesn't have anywhere for the old "Evolve" mechanism to fit.
  * Where should that go?
  */
-class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory) 
+class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory, timeSpaceOps:Boolean) 
   extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor
 {  
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
@@ -172,6 +173,12 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     }
   }
   
+  def monitor(msg: => String):Unit = {
+    if (timeSpaceOps) {
+      stateRouter ! MonitorMsg(msg, DateTime.now)
+    }
+  }
+  
   ///////////////////////////////////////////
   //
   // App Loading
@@ -271,6 +278,6 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
 }
 
 object PersistentSpaceActor {
-  def actorProps(e:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) =
-    Props(classOf[PersistentSpaceActor], e, id, stateRouter, persistenceFactory)
+  def actorProps(e:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID, timeSpaceOps:Boolean) =
+    Props(classOf[PersistentSpaceActor], e, id, stateRouter, persistenceFactory, timeSpaceOps)
 }

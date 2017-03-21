@@ -73,7 +73,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   }
   def setAppState(state:SpaceState):RequestM[SpaceState] = {
     val appId = state.id
-    val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, requester.self, appId))
+    val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, requester.self, appId, false))
     for {
       // ... give it its initial state...
       ThingFound(_, newState) <- appRef.request(SetState(user, appId, state, SetStateReason.InitialAppState, state.displayName))

@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import akka.actor.ActorRef
 
-import models.Wikitext
+import models._
 
 import querki.ecology._
 import querki.identity.{User, UserId}
@@ -36,5 +36,11 @@ package object admin {
      * as soon as I have a chance.
      */
     def getAllUserIds(req:User):Future[Seq[UserId]]
+    
+    /**
+     * Returns true iff Admin is currently giving special scrutiny to this Space, in which case the Space
+     * should activate its SpaceTimingActor. Really only exists for realtime profiling.
+     */
+    def isTimedSpace(spaceId:OID):Boolean
   }
 }
