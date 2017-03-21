@@ -9,6 +9,7 @@ import Replicator._
 import models._
 
 import querki.ecology._
+import querki.globals._
 import querki.identity.{User, UserId}
 import querki.notifications.{AllUsers}
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
@@ -76,7 +77,6 @@ private [admin] class AdminStatusWorker(val ecology:Ecology) extends Actor with 
     case req @ GetSpacesStatus(requester) => {
       statusRequestFrom = sender
       statuses = Seq.empty
-      import context.dispatcher
       context.system.scheduler.scheduleOnce(3 seconds, self, StatusTimeout)
       SpaceOps.spaceManager ! req 
     }

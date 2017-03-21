@@ -230,7 +230,8 @@ class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.H
       Some(NavSection("Admin", Seq(
         NavLink("Querki Statistics", Admin.statisticsFactory.pageUrl()),
         NavLink("Manage Users", Admin.manageUsersFactory.pageUrl()),
-        NavLink("Show Space Status", Admin.monitorFactory.pageUrl())
+        NavLink("Show Space Status", Admin.monitorFactory.pageUrl()),
+        NavLink("Debug Space Timing", Admin.spacesTimingFactory.pageUrl())
       ), 1300))
     else
       None

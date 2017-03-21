@@ -11,11 +11,13 @@ class AdminEcot(e:Ecology) extends ClientEcot(e) with Admin {
   lazy val statisticsFactory = Pages.registerStandardFactory("_adminStats", { new StatisticsPage(_) })
   lazy val manageUsersFactory = Pages.registerStandardFactory("_manageUsers", { new ManageUsersPage(_) })
   lazy val monitorFactory = Pages.registerStandardFactory("_monitor", { new MonitorPage(_) })
+  lazy val spacesTimingFactory = Pages.registerStandardFactory("_spacesTiming", { new SpacesTimingPage(_) })
   
   override def postInit() = {
     // Instantiate the Pages:
     statisticsFactory
     manageUsersFactory
     monitorFactory
+    spacesTimingFactory
   }
 }
