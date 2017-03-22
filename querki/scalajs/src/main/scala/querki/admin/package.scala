@@ -10,6 +10,7 @@ package object admin {
     def manageUsersFactory:PageFactory
     def monitorFactory:PageFactory
     def spacesTimingFactory:PageFactory
+    def spaceTimingFactory:PageFactory
   }
 
 }

@@ -95,5 +95,5 @@ object AdminFunctions {
   case class RunningSpace(name:String, cluster:String, nUsers:Int, size:Int, timestamp:Long)
   case class MonitorCurrent(monitorNode:String, state:QCurrentClusterState, spaces:Seq[RunningSpace])
   
-  case class TimingMsgs(nowAt:Int, msgs:Seq[String])
+  case class TimingMsgs(error:Boolean, nowAt:Int, msgs:Seq[String])
 }
