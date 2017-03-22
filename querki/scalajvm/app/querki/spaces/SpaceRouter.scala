@@ -60,7 +60,7 @@ private[spaces] class SpaceRouter(e:Ecology)
 //    else
       // TODO: remove the old ConversationsActor, and then this:
 //      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
-  val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
+  val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self, timingOpt.isDefined), "Sessions")
   val members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
   val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
   

@@ -69,6 +69,8 @@ class TestSpaceCore(
     TestRTCAble.successful(testSpace.owner.mainIdentity)
   }
   
+  def monitor(msg: => String):Unit = {}
+  
   /**
    * Note that calling this only makes sense if you are operating in the same world as the specified App.
    * See querki.apps.SpaceInWorldWith to set this up properly.

@@ -16,6 +16,7 @@ import models._
 
 import querki.globals._
 
+import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.api._
 import querki.identity.{Identity, User}
 import querki.history.SpaceHistory._
@@ -36,7 +37,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
  */
-private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
+private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef, timeSpaceOps:Boolean)
   extends Actor with Stash with Requester with EcologyMember with ReceivePipeline with TimeoutChild
   with autowire.Server[String, Reader, Writer]
 {
@@ -50,6 +51,12 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   lazy val Person = interface[querki.identity.Person]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
+  
+  def monitor(msg: => String):Unit = {
+    if (timeSpaceOps) {
+      spaceRouter ! MonitorMsg(msg, DateTime.now)
+    }
+  }
   
   /**
    * IMPORTANT: this must be set before we begin any serious work! This is why we start
@@ -89,9 +96,11 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       case Some(rs) => {
         val isOwner = user.hasIdentity(rs.owner)
         val safeState =
-          if (isOwner)
+          if (isOwner) {
+            monitor(s"makeEnhancedState() skipped -- it is the owner")
             rs
-          else {
+          } else {
+            monitor(s"makeEnhancedState() starting read filtering for User ${user.id}...")
             // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
             // caching, and do much more sensitive updating as things change.
             val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
@@ -111,6 +120,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
               } else
                 curState.copy(things = (curState.things - thingId))
             }
+            monitor(s"... finished read filtering")
             
             if (AccessControl.canRead(readFiltered, user, rs.id))
               readFiltered
@@ -414,5 +424,6 @@ object OldUserSpaceSession {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new OldUserSpaceSession(ecology, spaceId, user, spaceRouter, persister))
+  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef, timeSpaceOps:Boolean):Props = 
+    Props(new OldUserSpaceSession(ecology, spaceId, user, spaceRouter, persister, timeSpaceOps))
 }
