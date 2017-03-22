@@ -141,8 +141,13 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           href:=s"mailto:?subject=${thing.displayName}&body=${js.URIUtils.encodeURI(fulldom.window.location.href)}",
           target:="_blank",
           "Share via Email...")),
-        if (isSpace && DataAccess.request.isOwner)
-          li(a(href:=Pages.shareableLinkFactory.pageUrl(), "Get Shareable Link..."))
+        if (isSpace && DataAccess.request.isOwner) {
+          MSeq(
+            li(a(href:=Pages.shareableLinkFactory.pageUrl(), "Get Shareable Link...")),
+            li(a(href:=Pages.sharingFactory.pageUrl("tab" -> SharingPage.Tab.Invite.entryName), "Invite Members...")),
+            li(a(href:=Pages.sharingFactory.pageUrl("tab" -> SharingPage.Tab.Members.entryName), "Show Members"))
+          )
+        }
       )
     )
   

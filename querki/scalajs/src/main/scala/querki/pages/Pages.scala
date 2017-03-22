@@ -19,7 +19,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val exploreFactory = registerThingPageFactory("_explore", { (params) => new ExplorePage(params) }, "thingId")
   lazy val viewFactory = registerThingPageFactory("_view", { (params) => new ViewPage(params) }, "thingId")
   lazy val createAndEditFactory = registerThingPageFactory("_createAndEdit", { (params) => new CreateAndEditPage(params) }, "model")
-  lazy val sharingFactory = registerStandardFactory("_sharing", { (params) => new SharingPage })
+  lazy val sharingFactory = registerStandardFactory("_sharing", { (params) => new SharingPage(params) })
   lazy val advancedFactory = registerThingPageFactory("_advanced", { (params) => new AdvancedPage(params) }, "thingId")
   lazy val indexFactory = registerStandardFactory("_index", { (params) => new IndexPage(params) })
   lazy val accountFactory = registerStandardFactory("_account", { (params) => new AccountPage(params) })

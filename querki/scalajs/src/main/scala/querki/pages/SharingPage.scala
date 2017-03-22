@@ -9,6 +9,7 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
 import autowire._
 import rx._
+import enumeratum._
 
 import org.querki.facades.manifest._
 
@@ -24,7 +25,9 @@ import querki.identity.UserLevel._
 import querki.security.{PersonInfo, SecurityFunctions}
 import querki.session.UserFunctions
 
-class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
+class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("sharing") {
+  
+  import SharingPage._
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
@@ -35,6 +38,18 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
   lazy val space = DataAccess.space.get
   
   lazy val isAdvanced = SkillLevel.current == SkillLevel.AdvancedComplexity
+  
+  // TODO: the tab code here is pretty ugly and duplicative. We should really pull it all out
+  // into a standard mechanism.
+  lazy val initTabNameOpt = params.get("tab")
+  lazy val initTab = initTabNameOpt.flatMap(Tab.withNameOption(_)).getOrElse(Tab.Invite)
+  
+  def tabCls(tab:Tab) = {
+    if (initTab == tab)
+      cls:="tab-pane active"
+    else
+      cls:="tab-pane"
+  }
   
   val noRole = ThingInfo(
     TID(""),
@@ -234,14 +249,14 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
         p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
         ul(cls:="nav nav-tabs", role:="tablist",
-          li(role:="presentation", cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
-          li(role:="presentation", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
+          li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
+          li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
           if (isAdvanced)
-            li(role:="presentation", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
+            li(role:="presentation", if (initTab == Tab.CustomRoles) cls:="active", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
         ),
           
         div(cls:="tab-content",
-          section(role:="tabpanel", cls:="tab-pane active", id:="sendInvitations",
+          section(role:="tabpanel", tabCls(Tab.Invite), id:="sendInvitations",
             h3("Send Invitations to Join this Space"),
             
             p("""Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
@@ -328,7 +343,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
             )
           ),
         
-          section(role:="tabpanel", cls:="tab-pane", id:="members",
+          section(role:="tabpanel", tabCls(Tab.Members), id:="members",
             h3("Members"),
             p("The following people are members of this Space. Click on a member's Role in order to change it."),
             
@@ -341,7 +356,7 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
           ),
         
           if (isAdvanced)
-            section(role:="tabpanel", cls:="tab-pane", id:="custom",
+            section(role:="tabpanel", tabCls(Tab.CustomRoles), id:="custom",
               h3("Custom Roles"),
               p(b("Advanced: "),
                 """You can define special custom Roles for your Space, if you need more control. For the moment, you
@@ -354,4 +369,15 @@ class SharingPage(implicit val ecology:Ecology) extends Page("sharing") {
       )
   }
     yield PageContents(pageTitle, guts)
+}
+
+object SharingPage {
+  sealed trait Tab extends EnumEntry
+  object Tab extends Enum[Tab] {
+    val values = findValues
+    
+    case object Invite extends Tab
+    case object Members extends Tab
+    case object CustomRoles extends Tab
+  }
 }
