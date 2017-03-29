@@ -22,7 +22,7 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val actorSystem = SystemManagement.actorSystem
   
-  implicit val timeout = defaultTimeout
+  implicit val timeout = Timeout(Config.getDuration("querki.api.timeout", 60 seconds))
   
   case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
   

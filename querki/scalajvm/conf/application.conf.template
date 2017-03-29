@@ -26,6 +26,11 @@ querki {
     timeout : 30 seconds
   }
   
+  api {
+    # The timeout for Client API calls (specifically, ClientRequest messages):
+    timeout : 60 seconds
+  }
+  
   admin {
     # The interval for sending heartbeats to the AdminMonitor
     monitorHeartbeat : 1 minute
