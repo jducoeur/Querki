@@ -169,13 +169,18 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   }
   
   def getSpaceTimingsSince(since:Int, spaceId:TOID):Future[TimingMsgs] = {
-    SpaceOps.spaceRegion.request(TimingRequest(user, OID.fromTOID(spaceId), FetchMsgsSince(since))).map { 
-      case NewMsgs(nowAt, msgs) => {
-        TimingMsgs(false, nowAt, msgs)
+    SpaceOps.spaceRegion.request(TimingRequest(user, OID.fromTOID(spaceId), FetchMsgsSince(since)))
+      .map { 
+        case NewMsgs(nowAt, msgs) => {
+          TimingMsgs(false, nowAt, msgs)
+        }
+        case other => {
+          TimingMsgs(true, 0, Seq.empty)
+        }
       }
-      case other => {
-        TimingMsgs(true, 0, Seq.empty)
+      .recover {
+        case ex:akka.pattern.AskTimeoutException => TimingMsgs(true, 0, Seq.empty)
+        case ex => { QLog.error("getSpaceTimingsSince got unexpected error", ex); TimingMsgs(true, 0, Seq.empty) }
       }
-    }
   }
 }
