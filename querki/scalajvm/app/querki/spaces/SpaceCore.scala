@@ -518,9 +518,6 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   
   /**
    * Handler for the "meta-events" that are built into Akka Persistence.
-   * 
-   * TBD: wow, this is horrible code. I really want a more functional version of receiveRecover, which
-   * is basically folding over the incoming message stream to produce the SpaceState.
    */
   def recoverPersistence:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
@@ -648,8 +645,17 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * The standard recovery procedure for PersistentActors.
    */
-  def receiveRecover:Receive = recoverPersistence orElse 
-    (recoverSpaceCommand andThen { newState => updateStateCore(newState) })
+  def receiveRecover:Receive =
+    // If we're monitoring this Space, record the name of the recovered message
+    // TODO: we should probably eventually turn this clause off unless monitoring is turned on
+    // for this Space
+    PartialFunction[Any, Any] {
+      case msg => { monitor(s"receiveRecover: ${msg.getClass().getName}"); msg }
+    } andThen
+    // Recovery of high-level stuff like Snapshots:
+    (recoverPersistence orElse 
+      // Recovery of individual persisted messages:
+      (recoverSpaceCommand andThen { newState => updateStateCore(newState) }))
   
   /**
    * The standard PersistentActor receiveCommand, which receives and processes the messages that
