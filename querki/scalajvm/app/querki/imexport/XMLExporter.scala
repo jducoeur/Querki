@@ -165,7 +165,14 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
             }
               yield thing
               
-            topt.map(tnameAndId(_))
+            topt.flatMap { thing =>
+              // Elide illegal links. These currently arise from Required Link Properties
+              // that never get filled in, which are a failure in the data model.
+              if (thing.id == UnknownOID)
+                None
+              else
+                Some(tnameAndId(thing))
+            }
           }
           
           case mt:ModelTypeBase => {
