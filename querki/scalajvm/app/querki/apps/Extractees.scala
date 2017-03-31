@@ -31,7 +31,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
   private lazy val systemId = SystemSpace.id
   
   // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
-  // multi-level Apps. (And enhance the SpaceBuilder accordingly.) One step at a time, though.
+  // multi-level Apps. One step at a time, though.
   private lazy val appPerm = Apps.CanUseAsAppPerm(AccessControl.PublicTag)
   
   /**
