@@ -48,6 +48,7 @@ object HistoryFunctions {
     case object ExtractedAppFromHere extends SetStateReason(value = 2, msgName = "extractedApp")
     case object InitialAppState extends SetStateReason(value = 3, msgName = "initialAppState")
     case object RolledBack extends SetStateReason(value = 4, msgName = "rolledBack")
+    case object ImportedFromExport extends SetStateReason(value = 5, msgName = "importFromExport")
   }
   
   /**

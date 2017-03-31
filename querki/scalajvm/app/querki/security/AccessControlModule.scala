@@ -44,6 +44,7 @@ class AccessControlModule(e:Ecology)
   import MOIDs._
 
   val Basic = initRequires[querki.basic.Basic]
+  val DeriveName = initRequires[querki.types.DeriveName]
   val Email = initRequires[querki.email.Email]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
@@ -289,6 +290,10 @@ class AccessControlModule(e:Ecology)
       setName("Person"),
       Core.InternalProp(true),
       Core.IsModelProp(true),
+      // This is to fix a specific edge case: when importing a Space, it might contain a Thing with the same
+      // name as the Owner of the Space, causing all sorts of havoc. And more generally, when we add someone to
+      // a Space, there might already be a Thing with that name, so we have to cope.
+      DeriveName.DeriveNameProp(DeriveName.DeriveAlways),
       Categories(SecurityTag),
       Summary("""This represents a Member of this Space.""")))
   

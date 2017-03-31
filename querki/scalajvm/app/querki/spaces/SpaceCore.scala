@@ -308,9 +308,10 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Create a Person for this Space's owner.
    */
   def createOwnerPerson(identity:PublicIdentity)(state:SpaceState):RM[ChangeResult] = {
-    createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id, 
+    createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id,
+      // Note that we specifically can *not* set the Name of the Person record. We used to do this, but
+      // it meant that we could have Name collisions that prevented the Person from being created.
       Core.toProps(
-        Core.setName(identity.handle),
         Basic.DisplayNameProp(identity.name),
         Person.IdentityLink(identity.id)),
       Kind.Thing, None)(state)
@@ -574,7 +575,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
                   // yet exist, and _hasPermission gets confused:
   //                updateStateCore(s)
                   // This will cause the notifications to go out:
-                  runAndSendResponse("createOwnerPerson", true, createOwnerPerson(identity))(s)
+                  runChanges(Seq(createOwnerPerson(identity)))(s)
                 } else {
                   // Normal situation:
                   updateState(s)
@@ -695,7 +696,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
           // because that function responds at the end with ThingFound, which we can't
           // use for InitialState -- we're getting this call from a SpaceManager, often
           // one on a different node, and ThingFound doesn't work cross-node:
-          runChanges(Seq(createOwnerPerson(identityOpt.get)))(currentState).map { _ =>
+          runChanges(Seq(createOwnerPerson(identityOpt.get)))(currentState).map { resp =>
             respond(StateInitialized)
           }
         }

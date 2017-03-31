@@ -97,5 +97,6 @@ history : {
     extractedApp : "Extracted App '$details'"
     initialAppState : "Initial state of the App"
     rolledBack : "Reverted to version $details"
+    importFromExport : "Imported from Exported Space '$details'"
   }
 }
