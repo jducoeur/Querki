@@ -72,18 +72,12 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
     case GetProgress => {
       // The client is asking for an update, so calculate where we are:
       if (!uploadComplete) {
-        // We arbitrarily count the uploading as the first 20% of the total process:
-        val percent = ((uploaded.size / totalSize) * 20).toInt
+        // We arbitrarily count the uploading as the first 50% of the total process:
+        val percent = ((uploaded.size / totalSize) * 50).toInt
         sender ! ImportProgress("Uploading...", percent, spaceInfo, failed)
       } else {
         // We're into processing.
-        val processPercent = 
-          if (thingOps == 0)
-            20
-          else
-            ((thingOps.toFloat / totalThingOps) * 80).toInt + 20
-            
-        sender ! ImportProgress(importMsg, processPercent, spaceInfo, failed)
+        sender ! ImportProgress("Processing...", processPercent, spaceInfo, failed)
       }
     }
     
@@ -92,10 +86,7 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
   
   var importMsg:String = "Uploading"
   
-  // How many roundtrips do we expect to make to the DB?
-  var totalThingOps = 0
-  // How many roundtrips have we made so far?
-  var thingOps = 0
+  var processPercent:Int = 0
   
   // Set when we are complete
   var spaceInfo:Option[querki.data.SpaceInfo] = None
@@ -103,22 +94,13 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
   // Set to true iff the upload process fails
   var failed = false
   
-  // Needed for buildSpace:
-//  def setMsg(msg:String):Unit = importMsg = msg
-//  def setTotalThingOps(n:Int) = totalThingOps = n 
-//  def incThingOps():Unit = thingOps = thingOps + 1
-//  def createMsg:String = "Creating new Space"
-//  def buildingMsg:String = "Creating uploader"
-//  def thingsMsg:String = "Importing Things into the Space"
-//  def typesMsg:String = "Importing Types into the Space"
-//  def propsMsg:String = "Importing Properties into the Space"
-//  def valuesMsg:String = "Importing Values into the Space"
-  
   def startSpaceActor(spaceId:OID):ActorRef = {
     context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
   
   def processBuffer(rc:RequestContext) = {
+    processPercent = 50
+    
     if (rc.requester.isEmpty)
       throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
     
@@ -134,6 +116,7 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
     try {
       // Given the XML or MySQL file, build a SpaceState:
       val rawState = buildSpaceState(rc)
+      processPercent = 60
       val canon = canonicalize(name)
       val renamedState = rawState.copy(
         name = canon,
@@ -147,12 +130,15 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
       for {
         // Remap all of the OIDs in the SpaceState to use new ones:
         (remappedState, oidMap) <- remapOIDs(renamedState)
+        _ = processPercent = 70
         // This just creates the Space in MySQL, but doesn't boot it yet:
         newSpaceId <- createSpace(user, remappedState.id, canon, name, StatusInitializing)
+        _ = processPercent = 80
         // Boot the new Space *locally*, so we can throw the State over the wall:
         spaceActor = startSpaceActor(newSpaceId)
         // Slam the State:
         ThingFound(_, finalState) <- spaceActor.request(SetState(user, newSpaceId, remappedState, SetStateReason.ImportedFromExport, rawState.displayName))
+        _ = processPercent = 90
         // Finally, once it's all built, shut down this temp Actor:
         _ = context.stop(spaceActor)
         // And tell the SpaceManager that this Space is now ready to be treated normally:
