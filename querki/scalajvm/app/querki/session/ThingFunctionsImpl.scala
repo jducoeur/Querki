@@ -21,6 +21,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   lazy val Core = interface[querki.core.Core]
   lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val Profiler = interface[querki.tools.Profiler]
   lazy val QL = interface[querki.ql.QL]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val Stylesheets = interface[querki.css.Stylesheets]
@@ -33,7 +34,10 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     ClientApi.thingInfo(thing, rc)(state)
   }
 
-  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):Future[ThingPageDetails] = withThing(thingId) { thing =>
+  lazy val getThingPageProfiler = Profiler.createHandle("Session.getThingPage")
+  lazy val pageRenderProfiler = Profiler.createHandle("Session.renderThingPage")
+  
+  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):Future[ThingPageDetails] = getThingPageProfiler.profileFut { withThing(thingId) { thing =>
     implicit val s = state
     
     // Note that both the root Thing and (more importantly) TagThings won't have a Model:
@@ -57,13 +61,13 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     
     for {
-      rendered <- thing.render(rc, state, renderPropOpt)
+      rendered <- pageRenderProfiler.profileFut { thing.render(rc, state, renderPropOpt) }
       thingInfo <- ClientApi.thingInfo(thing, rc)
       modelInfo <- modelInfoOptFut.map(_.map(Some(_))).getOrElse(Future.successful(None))
       customHeaderOpt <- futOpt(customHeaderPropOpt)
     }
       yield ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered, styleinfo.sheets, styleinfo.headers)
-  }
+  }}
   
   def evaluateQL(thingId:TID, ql:String):Future[Wikitext] = withThing(thingId) { thing =>
     implicit val r = rc

@@ -1,6 +1,7 @@
 package querki.tools
 
 import scala.collection.concurrent.TrieMap
+import scala.util.{Failure, Success}
 
 import querki.globals._
 
@@ -52,6 +53,7 @@ private [tools] case object NullProfileHandle extends ProfileHandle {
   def start(namePlus:String = "") = NullProfileInstance
   def profileAs[T](namePlus:String)(f: => T):T = f
   def profile[T](f: => T):T = f
+  def profileFut[T](f: => Future[T]):Future[T] = f
 }
 
 private [tools] case object NullProfileInstance extends ProfileInstance {
@@ -73,6 +75,20 @@ private [tools] case class ProfileHandleImpl(ecot:ProfilerEcot, name:String) ext
   }
   
   def profile[T](f: => T):T = profileAs("")(f)
+  
+  def profileFut[T](f: => Future[T]):Future[T] = {
+    val instance = start("")
+    try {
+      val fut = f
+      fut.onComplete {
+        case Success(_) => instance.stop()
+        case Failure(_) => instance.stop()
+      }
+      fut
+    } catch {
+      case th:Throwable => { instance.stop(); throw th }
+    }
+  }
 }
 
 private [tools] case class ProfileInstanceImpl(handle:ProfileHandleImpl, startTime:DateTime, namePlus:String) extends ProfileInstance {

@@ -20,7 +20,7 @@ import querki.values._
 private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMember {
   lazy val Profiler = interface[querki.tools.Profiler]  
   
-  lazy val parseMethod = Profiler.createHandle("QLParser.parseMethod")
+  lazy val parse = Profiler.createHandle("QLParser.parse")
   lazy val processMethod = Profiler.createHandle("QLParser.processMethod")
   lazy val processCall = Profiler.createHandle("QLParser.processCall")
   lazy val processTextStage = Profiler.createHandle("QLParser.processTextStage")
@@ -642,7 +642,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     Future.fold(futures)(Wikitext(""))(_ + _)
   }
   
-  def parse = parseAll(qlText, input.text)
+  def parse = qlProfilers.parse.profile { parseAll(qlText, input.text) }
   
   def consumeReader[T](reader:scala.util.parsing.input.Reader[T]):String = {
     reader.first.toString + (if (reader.atEnd) "" else consumeReader(reader.rest))
@@ -697,7 +697,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   def parsePhrase():Option[QLPhrase] = {
-    val parseResult = parseAll(qlPhrase, input.text)
+    val parseResult = qlProfilers.parse.profile { parseAll(qlPhrase, input.text) }
     parseResult match {
       case Success(result, _) => Some(result)
       case _ => None
@@ -705,7 +705,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private[ql] def processMethodToWikitext:Future[Wikitext] = {
-    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlExp, input.text) }
+    val parseResult = qlProfilers.parse.profile { parseAll(qlExp, input.text) }
     parseResult match {
       case Success(result, _) => 
         qlProfilers.processMethod.profile { 
@@ -717,7 +717,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private[ql] def processMethod:Future[QLContext] = {
-    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlExp, input.text) }
+    val parseResult = qlProfilers.parse.profile { parseAll(qlExp, input.text) }
     parseResult match {
       case Success(result, _) => 
         qlProfilers.processMethod.profile { 

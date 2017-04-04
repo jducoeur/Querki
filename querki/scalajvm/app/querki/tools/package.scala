@@ -10,7 +10,7 @@ package object tools {
      * @param name The name of this particular profiler, which should be unique -- use something based on the
      *   class name. This is used to turn profilers on an off in config. If this name is *not* defined as true
      *   in config, under the "profile" node, the returned handle will be empty: you can use it as normal, but
-     *   it will do nothing, as efficiently as possible.
+     *   it will do nothing, as efficiently as possible. (This is, in practice, very cheap.)
      */
     def createHandle(name:String):ProfileHandle
   }
@@ -39,6 +39,11 @@ package object tools {
      * the easy way to do things if the code is synchronous. Just put the code to time in a block, and go.
      */
     def profile[T](f: => T):T
+    
+    /**
+     * Similar to profile, but groks Futures. This profiles until the returned Future is *complete*.
+     */
+    def profileFut[T](f: => Future[T]):Future[T]
     
     def profileAs[T](namePlus:String)(f: => T):T
   }
