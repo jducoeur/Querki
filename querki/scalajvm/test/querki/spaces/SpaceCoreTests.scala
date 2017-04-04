@@ -199,4 +199,42 @@ class SpaceCoreTests extends QuerkiTests {
       s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
     }
   }
+  
+  "Reloading a Space" should {
+    // Regression test for QI.bu6obzy
+    "increment the snapshotCounter correctly when reloading" in {
+      def doTest(maxHist:Int) = {
+        class TestSpace extends SpaceCoreSpaceBase {
+          // This is all about snapshotting, so pull the parameter in tight:
+          def configOpt:Option[TestSpaceConfig] = Some(TestSpaceConfig(Some(maxHist)))
+          lazy val world = new TestWorld
+          val sc = new TestSpaceCore(spaceId, this, configOpt)
+        }
+        
+        val s = new TestSpace
+        s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
+        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        
+        val s2 = new ReplayCoreSpace(s)
+        s2 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s2 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        
+        val s3 = new ReplayCoreSpace(s2)
+        s3 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s3 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        
+        val s4 = new ReplayCoreSpace(s3)
+        s4 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s4 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        
+        // Need to add 1 to maxHist, to account for the Snapshot:
+        assert(s4.sc.history.length <= (maxHist + 1))
+      }
+      
+      doTest(3)
+      doTest(4)
+      doTest(5)
+    }
+  }
 }

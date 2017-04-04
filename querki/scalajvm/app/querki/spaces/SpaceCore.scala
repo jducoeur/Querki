@@ -190,7 +190,10 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     if (snapshotCounter > snapshotInterval)
       doSaveSnapshot()
     else
-      snapshotCounter += 1
+      incrementSnapshot()
+  }
+  def incrementSnapshot() = {
+    snapshotCounter += 1
   }
 
   /**
@@ -635,7 +638,11 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   def recoverSpaceCommand:PartialFunction[Any, SpaceState] =
     PartialFunction { any =>
       any match {
-        case evt:SpaceEvent => evolveState(_currentState)(evt)
+        case evt:SpaceEvent => {
+          // Make sure we update the snapshotCounter -- otherwise, it might never trigger a Snapshot:
+          incrementSnapshot()
+          evolveState(_currentState)(evt)
+        }
         // TBD: This is horrible -- we really want to be able to filter the types without these
         // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
         // checking ourselves.
