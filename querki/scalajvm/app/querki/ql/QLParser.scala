@@ -30,6 +30,10 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
   lazy val wikify = Profiler.createHandle("QLParser.wikify")
 }
 
+sealed trait QLParseResult[T <: QLParseResultVal]
+case class QLParseSuccess[T <: QLParseResultVal](result:T) extends QLParseResult[T]
+case class QLParseFailure[T <: QLParseResultVal](msgFut:Future[Wikitext]) extends QLParseResult[T]
+
 case class QLScope(bindings:Map[String, QValue] = Map.empty) {
   def bind(pair:(String, QValue)) = copy(bindings = bindings + pair)
   def lookup(name:String) = bindings.get(name)
@@ -642,7 +646,24 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     Future.fold(futures)(Wikitext(""))(_ + _)
   }
   
-  def parse = qlProfilers.parse.profile { parseAll(qlText, input.text) }
+  /**
+   * Wrapper around all text parsing. Deals with both profiling and memoizing the result.
+   */
+  private def parseMemoized[T <: QLParseResultVal](parser:Parser[T]):QLParseResult[T] = {
+    qlProfilers.parse.profile { 
+      input.memoizedParse {
+        val result = parseAll(parser, input.text)
+        result match {
+          case Success(result, _) => QLParseSuccess(result)
+          case Failure(msg, next) => QLParseFailure(renderError(msg, next))
+          // TODO: we should probably do something more serious in case of Error:
+          case Error(msg, next) => QLParseFailure { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
+        }
+      }
+    }
+  }
+  
+  def parse = parseMemoized(qlText)
   
   def consumeReader[T](reader:scala.util.parsing.input.Reader[T]):String = {
     reader.first.toString + (if (reader.atEnd) "" else consumeReader(reader.rest))
@@ -669,15 +690,13 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     try {
       val parseResult = parse
       parseResult match {
-        case Success(result, _) => {
+        case QLParseSuccess(result) => {
           processParseTree(result, initialContext)
             .recoverWith {
               case ex:PublicException => WarningValue(ex.display(initialContext.requestOpt)).wikify(initialContext)
             }
         }
-        case Failure(msg, next) => { renderError(msg, next) }
-        // TODO: we should probably do something more serious in case of Error:
-        case Error(msg, next) => { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
+        case QLParseFailure(msgFut) => msgFut
       }
     } catch {
       case overflow:java.lang.StackOverflowError => {
@@ -697,37 +716,35 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   def parsePhrase():Option[QLPhrase] = {
-    val parseResult = qlProfilers.parse.profile { parseAll(qlPhrase, input.text) }
+    val parseResult = parseMemoized(qlPhrase)
     parseResult match {
-      case Success(result, _) => Some(result)
+      case QLParseSuccess(result) => Some(result)
       case _ => None
     }
   }
   
   private[ql] def processMethodToWikitext:Future[Wikitext] = {
-    val parseResult = qlProfilers.parse.profile { parseAll(qlExp, input.text) }
+    val parseResult = parseMemoized(qlExp)
     parseResult match {
-      case Success(result, _) => 
+      case QLParseSuccess(result) => 
         qlProfilers.processMethod.profile { 
           contextsToWikitext(processExpAll(result, initialContext, false), false)
         }
-      case Failure(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
-      case Error(msg, next) => { renderError(msg, next).flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
+      case QLParseFailure(msgFut) => { msgFut.flatMap(err => initialContext.next(QL.WikitextValue(err)).value.wikify(initialContext)) }
     }
   }
   
   private[ql] def processMethod:Future[QLContext] = {
-    val parseResult = qlProfilers.parse.profile { parseAll(qlExp, input.text) }
+    val parseResult = parseMemoized(qlExp)
     parseResult match {
-      case Success(result, _) => 
+      case QLParseSuccess(result) => 
         qlProfilers.processMethod.profile { 
           processExp(result, initialContext, false)
           .recoverWith {
             case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt))
           }
         }
-      case Failure(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
-      case Error(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
+      case QLParseFailure(msgFut) => { msgFut.map(err => initialContext.next(QL.WikitextValue(err))) }
     }
   }
 }

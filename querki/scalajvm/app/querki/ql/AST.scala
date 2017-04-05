@@ -13,11 +13,14 @@ import querki.values.QLContext
 //
 // **************************************************
 
+// Marker trait for the types that can be results of parsing a complete QLText.
+sealed trait QLParseResultVal
+
 case class QLNumber(n:Int) extends QLStage(None) {
   def reconstructString = n.toString
 }
 
-case class QLPhrase(ops:Seq[QLStage]) {
+case class QLPhrase(ops:Seq[QLStage]) extends QLParseResultVal {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }
 
@@ -85,14 +88,14 @@ private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String
 case class QLExpStage(exp:QLExp) extends QLStage(None) {
   def reconstructString = "(" + exp.reconstructString + ")"
 }
-case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
+case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart with QLParseResultVal {
   def reconstructStandalone = phrases.map(_.reconstructString).mkString("\n")
   def reconstructString = "[[" + reconstructStandalone + "]]"
 }
 private[ql] case class QLLink(contents:ParsedQLText) extends QLTextPart {
   def reconstructString = "__" + contents.reconstructString + "__"
 }
-private[ql] case class ParsedQLText(parts:Seq[QLTextPart]) {
+case class ParsedQLText(parts:Seq[QLTextPart]) extends QLParseResultVal {
   def reconstructString = parts.map(_.reconstructString).mkString
 }
 private[ql] case class QLSpace(text:String)

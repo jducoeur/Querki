@@ -75,6 +75,23 @@ package object core {
    */
   case class QLText(text:String) {
     def +(other:QLText) = QLText(text + other.text)
+    
+    // Used solely by QLParser, as a memoizing cache of parse results.
+    // The "_" here is unobvious, but dealing with the fact that there is no *static*
+    // guarantee of the parsed result. It could be any of QLParseResultVal.
+    // TODO: This is ugly, but hugely useful. It presumes that memoizedParse
+    // is only every called with the same result type for a given QLText, which I *think*
+    // is always true, but it's far from a law of nature. Is there a more typesafe way
+    // to do this?
+    import querki.ql.{QLParseResult, QLParseResultVal}
+    private var _memo:Option[QLParseResult[_]] = None
+    def memoizedParse[T <: QLParseResultVal](f: => QLParseResult[T]):QLParseResult[T] = {
+      _memo.map(_.asInstanceOf[QLParseResult[T]]).getOrElse {
+        val result = f
+        _memo = Some(result)
+        result
+      }
+    }
   }
   
   trait Core extends EcologyInterface {
