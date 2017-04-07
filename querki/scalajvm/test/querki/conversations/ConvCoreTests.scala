@@ -30,7 +30,7 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
   /**
    * Shorthand for ordinary ConversationRequests, coming from the Space's owner.
    */
-  def convReq(msg:ConversationMessage) = this ! ConversationRequest(owner, state.id, msg)
+  def convReq(msg:ConversationMessage) = this ! SpaceSubsystemRequest(owner, state.id, msg)
   
   /**
    * Replay the history of the old Conversation if there is one; otherwise, create a new one.
@@ -56,7 +56,7 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
         None
       }
       
-      case msg:ConversationRequest => {
+      case msg:SpaceSubsystemRequest => {
         val thingId = msg.payload match {
           case GetConversations(thingId) => thingId
           case NewComment(comment) => comment.thingId

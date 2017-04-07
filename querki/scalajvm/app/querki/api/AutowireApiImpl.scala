@@ -16,7 +16,7 @@ import querki.data.TID
 import querki.globals._
 import querki.identity.User
 import querki.session.messages.SessionMessage
-import querki.spaces.messages.SessionRequest
+import querki.spaces.messages.SpaceSubsystemRequest
 import querki.streaming._
 import querki.util.UnexpectedPublicException
 import querki.values.{RequestContext, SpaceState}
@@ -182,8 +182,8 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
    * 
    * TODO: can we refactor this out of the general AutowireApiImpl?
    */
-  def createSelfRequest(msg:SessionMessage):SessionRequest = {
-    SessionRequest(user, state.id, msg)
+  def createSelfRequest(msg:SessionMessage):SpaceSubsystemRequest = {
+    SpaceSubsystemRequest(user, state.id, msg)
   }
 
 }

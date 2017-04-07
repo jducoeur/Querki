@@ -14,7 +14,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.InvocationValue
 import querki.spaces._
-import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
+import querki.spaces.messages.{SpacePluginMsg, SpaceSubsystemRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
 import querki.util.{ActorHelpers, Contributor, Publisher, QLog, UnexpectedPublicException}
@@ -199,7 +199,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         // First, figure out the Thing and Prop we're working with:
         thingId <- inv.contextAllAs(LinkType)
         prop <- inv.definingContextAsProperty
-        msg = UserValuePersistRequest(
+        msg = SpaceSubsystemRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadThingPropValues(thingId, prop.id, inv.state))
         uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
@@ -230,7 +230,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     override def qlApply(inv:Invocation):QFut = {
       for {
         identity <- inv.contextAllAs(IdentityType)
-        msg = UserValuePersistRequest(
+        msg = SpaceSubsystemRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadUserPropValues(identity, inv.state))
         uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
@@ -268,7 +268,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         summaryPropPV <- inv.opt(prop.getPropOpt(SummaryLink)(inv.state))
         summaryPropId <- inv.opt(summaryPropPV.firstOpt)        
         // ... go fetch the actual User Values for this Property...
-        userValueRequest = UserValuePersistRequest(
+        userValueRequest = SpaceSubsystemRequest(
                 inv.context.request.requesterOrAnon, inv.state.id, 
                 LoadAllPropValues(prop, inv.state))
         ValuesForUser(values) <- inv.fut(SpaceOps.spaceRegion ? userValueRequest)

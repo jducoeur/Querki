@@ -11,7 +11,7 @@ import querki.data.TID
 import querki.globals._
 import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
-import querki.spaces.messages.{ConversationRequest, ThingError}
+import querki.spaces.messages.{SpaceSubsystemRequest, ThingError}
 import querki.values.RequestContext
 
 import messages._
@@ -109,7 +109,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    implicit val theRc = rc
 	    
 	    for {
-        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
+        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](SpaceSubsystemRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
         identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
         apiConvs <- Future.sequence(filterDeadThreads(convs).map(toApi(thing, _)(identities, theRc)))
       }
@@ -142,7 +142,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     
     val theRc = rc
     for {
-      AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, state.id, NewComment(comment)))
+      AddedNode(parentId, node) <- spaceRouter.request(SpaceSubsystemRequest(user, state.id, NewComment(comment)))
       dummy1 = convTrace(s"    Have added the node for the new comment")
       IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
       dummy2 = convTrace(s"    Have found the Identity of the comment's author")
@@ -152,7 +152,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-	  spaceRouter.request(ConversationRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
+	  spaceRouter.request(SpaceSubsystemRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
 	    case CommentDeleted => ()
 	    case CommentNotDeleted => throw new Exception("Unable to delete comment")      
 	  }

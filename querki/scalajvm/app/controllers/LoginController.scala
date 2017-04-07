@@ -158,7 +158,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
               spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
               // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
               // to the Client as a proper error. But again, it might well be an attempted security breach.
-              dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinRequest(updatedRc, personId))
+              dummy <- SpaceOps.spaceRegion ? SpaceSubsystemRequest(updatedRc.requesterOrAnon, spaceId, JoinRequest(updatedRc, personId))
               userOpt = updatedRc.requester
               userInfoOpt <- ClientApi.userInfo(userOpt)
             }
@@ -192,7 +192,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
               spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
               // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
               // to the Client as a proper error.
-              dummy <- SpaceOps.spaceRegion ? SpaceMembersMessage(updatedRc.requesterOrAnon, spaceId, JoinByOpenInvite(updatedRc, roleId))
+              dummy <- SpaceOps.spaceRegion ? SpaceSubsystemRequest(updatedRc.requesterOrAnon, spaceId, JoinByOpenInvite(updatedRc, roleId))
               userOpt = updatedRc.requester
               userInfoOpt <- ClientApi.userInfo(userOpt)              
             }
@@ -226,7 +226,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         rc.requester match {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
-            askSpace(rc.ownerId, spaceId)(SpaceMembersMessage(rc.requesterOrAnon, _, IsSpaceMemberP(rc))) {
+            askSpace(rc.ownerId, spaceId)(SpaceSubsystemRequest(rc.requesterOrAnon, _, IsSpaceMemberP(rc))) {
               case IsSpaceMember(isMember) => {
                 if (isMember) {
                   // Yes. Okay, just go the Space, since there's nothing to do here:
@@ -266,7 +266,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         userOpt match {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
-            askSpace(rc.ownerId, spaceId)(SpaceMembersMessage(rc.requesterOrAnon, _, IsSpaceMemberP(rc))) {
+            askSpace(rc.ownerId, spaceId)(SpaceSubsystemRequest(rc.requesterOrAnon, _, IsSpaceMemberP(rc))) {
               case IsSpaceMember(isMember) => {
                 if (isMember) {
                   // Yes. Okay, just go the Space, since there's nothing to do here:
@@ -411,7 +411,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   // DEPRECATED
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
     rc.sessionCookie(querki.identity.personParam).map(OID(_)).map { personId => 
-      askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {
+      askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceSubsystemRequest(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {
         case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
         case JoinFailed(error) => doError(indexRoute, error)(rc)
       }
@@ -549,7 +549,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
               {
                 val spaceId = OID(spaceIdStr)
                 val realIdentity = guestUser.mainIdentity
-                val msg = SpaceMembersMessage(rc.requesterOrAnon, spaceId, ReplacePerson(guestUser.mainIdentity.id, user.mainIdentity))
+                val msg = SpaceSubsystemRequest(rc.requesterOrAnon, spaceId, ReplacePerson(guestUser.mainIdentity.id, user.mainIdentity))
                 implicit val timeout = Timeout(10 seconds)
                 (SpaceOps.spaceRegion ? msg) flatMap { _ =>
                   writeUserInfo()

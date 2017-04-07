@@ -169,7 +169,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   }
   
   def getSpaceTimingsSince(since:Int, spaceId:TOID):Future[TimingMsgs] = {
-    SpaceOps.spaceRegion.request(TimingRequest(user, OID.fromTOID(spaceId), FetchMsgsSince(since)))
+    SpaceOps.spaceRegion.request(SpaceSubsystemRequest(user, OID.fromTOID(spaceId), FetchMsgsSince(since)))
       .map { 
         case NewMsgs(nowAt, msgs) => {
           TimingMsgs(false, nowAt, msgs)

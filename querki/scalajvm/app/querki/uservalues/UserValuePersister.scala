@@ -16,7 +16,7 @@ import querki.db.ShardKind._
 import querki.ecology._
 import querki.identity.{Identity, PublicIdentity}
 import querki.identity.IdentityCacheMessages._
-import querki.spaces.messages.UserValuePersistRequest
+import querki.spaces.messages.SpaceSubsystemRequest
 import querki.time.DateTime
 import querki.time.TimeAnorm._
 import querki.util.QLog
@@ -71,7 +71,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
-    case UserValuePersistRequest(req, space, LoadThingPropValues(thingId, propId, state)) => {
+    case SpaceSubsystemRequest(req, space, LoadThingPropValues(thingId, propId, state)) => {
       val rawUVs = QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
 	          SELECT * FROM {uvname} 
@@ -92,7 +92,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
-    case UserValuePersistRequest(req, space, LoadUserPropValues(identity, state)) => {
+    case SpaceSubsystemRequest(req, space, LoadUserPropValues(identity, state)) => {
       QDB(ShardKind.User) { implicit conn =>
         val rawUVs = SpaceSQL("""
 	          SELECT * FROM {uvname} 
@@ -109,7 +109,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     
     // TODO: this should probably get refactored with LoadThingPropValues above -- they are close
     // to identical:
-    case UserValuePersistRequest(req, space, LoadAllPropValues(propId, state)) => {
+    case SpaceSubsystemRequest(req, space, LoadAllPropValues(propId, state)) => {
       val rawUVs = QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
 	          SELECT * FROM {uvname} 

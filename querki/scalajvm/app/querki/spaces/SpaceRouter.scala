@@ -88,19 +88,21 @@ private[spaces] class SpaceRouter(e:Ecology)
       }
         sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
     }
-    
-    // Message for the Conversation system:
-    case req:ConversationRequest => conversations.forward(req)
+
+    // Messages for the various subsystems get routed based on the payload type:
+    case msg @ SpaceSubsystemRequest(_, _, payload) => {
+      payload match {
+        case p:querki.conversations.messages.ConversationMessage => conversations.forward(msg)
+        case p:querki.session.messages.SessionMessage => sessions.forward(msg)
+        // HACK: messages heading for the User Value Persister:
+        case p:querki.uservalues.PersistMessages.ExternallyExposed => sessions.forward(msg)
+        case p:SpaceMembersBase => members.forward(msg)
+        case p:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
+      }
+    }
     
     // Message for a Session:
-    case req:SessionRequest => sessions.forward(req)
     case req:ClientRequest => sessions.forward(req)
-    
-    // HACK: messages heading for the User Value Persister:
-    case msg:UserValuePersistRequest => sessions.forward(msg)
-    
-    // Messages for the SpaceMembersActor:
-    case msg:SpaceMembersMessage => members.forward(msg)
     
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
@@ -115,7 +117,6 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Messages for the SpaceTimingActor, if one is running for this Space:
     case msg:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
-    case msg:TimingRequest => timingOpt.map(_.forward(msg))
     
     case msg:ShutdownSpace => {
       sender ! ShutdownAck

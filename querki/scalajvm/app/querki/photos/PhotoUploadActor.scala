@@ -25,7 +25,7 @@ import querki.core.QLText
 import querki.ecology._
 import querki.globals._
 import querki.session.messages.ChangeProps2
-import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SessionRequest, ThingError, ThingFound}
+import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SpaceSubsystemRequest, ThingError, ThingFound}
 import querki.streaming.UploadActor
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
@@ -214,7 +214,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
       }
       
 //      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
-      router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
+      router ? SpaceSubsystemRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
         response match {
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:

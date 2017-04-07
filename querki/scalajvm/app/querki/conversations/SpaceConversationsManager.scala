@@ -46,7 +46,7 @@ private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorR
     
     case GetActiveThings => sender ! ActiveThings(nChildren)
     
-    case msg @ ConversationRequest(req, _, payload) => {
+    case msg @ SpaceSubsystemRequest(req, _, payload) => {
       val thingId = payload match {
         case GetConversations(tid) => tid
         case NewComment(comment) => comment.thingId

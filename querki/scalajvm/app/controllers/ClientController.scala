@@ -23,7 +23,7 @@ import querki.globals._
 import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
 import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
-import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
+import querki.spaces.messages.{SpaceSubsystemRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
 import querki.streaming.UploadMessages._
 import querki.util.PublicException
@@ -58,7 +58,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       case AsOID(id) => id
       case AsName(name) => throw new Exception(s"Trying to send message $msg, but only have Space name $name!")
     } 
-    SpaceOps.askSpace2(SessionRequest(rc.requesterOrAnon, spaceId, msg))(cb)
+    SpaceOps.askSpace2(SpaceSubsystemRequest(rc.requesterOrAnon, spaceId, msg))(cb)
   }
   
   def askUserSession[B](rc:PlayRequestContext, msg:ClientRequest)(cb: PartialFunction[Any, Future[B]]):Future[B] = {

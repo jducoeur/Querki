@@ -21,7 +21,7 @@ import querki.api._
 import querki.identity.{Identity, User}
 import querki.history.SpaceHistory._
 import querki.session.messages._
-import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
+import querki.spaces.messages.{ChangeProps, CurrentState, SpaceSubsystemRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
 import querki.uservalues.SummarizeChange
@@ -248,7 +248,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   /**
    * This is here in order to check that the user's Display Name hasn't changed.
    * 
-   * TODO: we're currently checking this on every SessionRequest, which is certainly overkill. Once we have a
+   * TODO: we're currently checking this on every SpaceSubsystemRequest, which is certainly overkill. Once we have a
    * real UserSession object, and it knows about the UserSpaceSessions, that should instead pro-actively notify
    * all of them about the change, so we don't have to hack around it.
    * 
@@ -273,7 +273,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
 
   /**
    * Initial state: stash everything until we get the SpaceState. CurrentState will *typically* come first, but
-   * might not in cases where the SessionRequest is bootstrapping this hive, or comes in while bootstrap is still
+   * might not in cases where the SpaceSubsystemRequest is bootstrapping this hive, or comes in while bootstrap is still
    * in process.
    * 
    * Note that this state only persists until we get a SpaceState, at which point we switch to normalReceive, and
@@ -400,7 +400,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       }
     }
         
-    case request @ SessionRequest(req, space, payload) => { 
+    case request @ SpaceSubsystemRequest(req, space, payload) => { 
       checkDisplayName(req, space)
       payload match {    
         case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")

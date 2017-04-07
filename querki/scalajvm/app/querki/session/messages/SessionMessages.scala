@@ -4,7 +4,7 @@ import models._
 import querki.values.RequestContext
 import autowire.Core
 
-sealed trait SessionMessage
+sealed trait SessionMessage extends querki.spaces.messages.SpaceMessagePayload
 
 case object GetActiveSessions extends SessionMessage
 case class ActiveSessions(n:Int)

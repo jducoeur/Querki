@@ -4,6 +4,7 @@ import models.{OID, ThingId}
 
 import querki.conversations._
 import querki.identity.User
+import querki.spaces.messages.SpaceMessagePayload
 
 /**
  * Request from the Space to the Conversation system, to find out how many Things are currently loaded
@@ -21,7 +22,7 @@ case class ActiveThings(n:Int)
  * ConversationRequest, and routed through the Space. The subclasses of ConversationMessage are the
  * payloads of ConversationRequest.
  */
-sealed trait ConversationMessage
+sealed trait ConversationMessage extends SpaceMessagePayload
 
 /**
  * This should get a ThingConversations as its response.

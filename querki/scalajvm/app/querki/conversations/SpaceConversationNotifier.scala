@@ -35,7 +35,7 @@ private [conversations] class SpaceConversationNotifier(e:Ecology, initState:Spa
    
   override def preStart() = {
     for {
-      ValuesForUser(prefs) <- spaceRouter.request(UserValuePersistRequest(User.Anonymous, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+      ValuesForUser(prefs) <- spaceRouter.request(SpaceSubsystemRequest(User.Anonymous, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
     }
     {
       commentNotifyPrefs = prefs

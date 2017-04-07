@@ -28,7 +28,7 @@ object PersistMessages {
   /**
    * Marker trait for the messages we are accepting from static, non-Space code.
    */
-  sealed trait ExternallyExposed
+  sealed trait ExternallyExposed extends querki.spaces.messages.SpaceMessagePayload
   
   /**
    * Loads all of the User Values for the specified Thing/Property. Returns a ValuesForUser.

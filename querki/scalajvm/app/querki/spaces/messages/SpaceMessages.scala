@@ -105,32 +105,24 @@ case object StateInitialized
 case class SetState(req:User, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(req, space)
 
 /**
- * All Conversation-oriented messages get wrapped in a ConversationRequest.
+ * The "payload" in a SpaceSubsystemRequest. Note that this is intentionally and necessarily *not* sealed --
+ * these types are scattered around in various subsystems.
+ * 
+ * TBD: in a perfect world (that is, Dotty), we might instead define this as a type union of those scattered
+ * types. But I'm not sure what's better.
  */
-case class ConversationRequest(req:User, space:OID, payload:ConversationMessage) extends SpaceMessage(req, space)
-
+trait SpaceMessagePayload
 /**
- * All User Session-oriented messages get wrapped in a SessionRequest.
+ * A message that is intended to be routed to a different member of the Space's troupe.
  */
-case class SessionRequest(req:User, space:OID, payload:SessionMessage) extends SpaceMessage(req, space)
-
-/**
- * TODO: HACK: this exposes the UserValues for a Space, outside that Space. It should really go away, but is necessary for
- * _userValues and _thingValues.
- */
-case class UserValuePersistRequest(req:User, space:OID, payload:querki.uservalues.PersistMessages.ExternallyExposed) extends SpaceMessage(req, space)
-
-/**
- * Routing for messages to the troupe's SpaceTimingActor, if it exists.
- */
-case class TimingRequest(req:User, space:OID, payload:querki.admin.SpaceTimingActor.SpaceTimingMsg) extends SpaceMessage(req, space)
+case class SpaceSubsystemRequest(req:User, space:OID, payload:SpaceMessagePayload) extends SpaceMessage(req, space)
 
 /**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
- * specifically for use by SpacePlugins.
+ * specifically for use by SpacePlugins, and gets routed through the Space Actor itself, which is why it is
+ * separate from SpaceSubsystemRequest.
  * 
- * (Why the indirection through payload? So that we can leave this mechanism open-ended, while still leaving SpaceMgrMsg and SpaceMessage
- * sealed here.)
+ * TBD: can/should these messages be unified? Maybe...
  */
 case class SpacePluginMsg(req:User, space:OID, payload:Any) extends SpaceMessage(req, space) 
   
@@ -160,8 +152,7 @@ import SpaceError._
 // important.
 case class CurrentState(state:SpaceState)
 
-case class SpaceMembersMessage(req:User, space:OID, msg:SpaceMembersBase) extends SpaceMessage(req, space)
-sealed trait SpaceMembersBase
+sealed trait SpaceMembersBase extends SpaceMessagePayload
 
 case class InviteRequest(rc:RequestContext, emails:Seq[querki.email.EmailAddress], collabs:Seq[OID]) 
   extends SpaceMembersBase
