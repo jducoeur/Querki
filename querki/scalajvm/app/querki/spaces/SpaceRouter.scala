@@ -46,23 +46,35 @@ private[spaces] class SpaceRouter(e:Ecology)
   // How long we can be inactive before timing out this entire hive:
   def timeoutConfig:String = "querki.space.timeout"
   
-  // The components of the troupe, which get immediately set up as soon as we start:
-  val timingOpt =
+  // The components of the troupe. All are started when needed, but several deliberately reference space, because
+  // they can't fully start until they receive the initial CurrentState message.
+  lazy val timingOpt =
     if (isBeingTimed)
       Some(context.actorOf(SpaceTimingActor.actorProps(ecology), "SpaceTiming"))
     else
       None
-  val space =
-      context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId, timingOpt.isDefined), "Space")
-  val conversations = 
-//    if (useNewPersist)
-      context.actorOf(Conversations.conversationsManagerProps(self))
-//    else
-      // TODO: remove the old ConversationsActor, and then this:
-//      context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
-  val sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self, timingOpt.isDefined), "Sessions")
-  val members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
-  val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
+  lazy val space =
+    context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId, timingOpt.isDefined), "Space")
+  lazy val conversations = {
+    bootSpaceActor()
+    context.actorOf(Conversations.conversationsManagerProps(self))
+  }
+  lazy val sessions = {
+    bootSpaceActor()
+    context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self, timingOpt.isDefined), "Sessions")
+  }
+  lazy val members = {
+    bootSpaceActor()
+    context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
+  }
+  lazy val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
+  
+  // This function just references the SpaceActor, so that it will boot and send CurrentState.
+  // TODO: this is a dreadfully brittle approach. How can we restructure it to be more sensible
+  // and robust?
+  def bootSpaceActor() = {
+    val dummy = space
+  }
   
   var state:SpaceState = null
   
