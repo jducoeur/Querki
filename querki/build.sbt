@@ -43,7 +43,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
       "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
       "com.lihaoyi" %% "utest" % "0.3.1",
-      "org.querki" %% "requester" % "2.5",
+      "org.querki" %% "requester" % "2.6",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
       "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2-SNAPSHOT",
@@ -55,7 +55,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // Powerful structural-diffing library: https://github.com/xdotai/diff
       "ai.x" %% "diff" % "1.2.0" % "test",
       // Only used for debugging at this point:
-      "com.github.pathikrit" %% "better-files" % "2.17.1"
+      "com.github.pathikrit" %% "better-files" % "2.17.1",
+      "org.typelevel" %% "cats" % "0.9.0"
     ),
     
     // ConductR params

@@ -1,0 +1,111 @@
+package org.querki.funcakka
+
+import cats._
+import cats.instances._
+
+import akka.actor.Actor.Receive
+
+/**
+ * Abstraction of an ActorRef.
+ * 
+ * TODO: this is untested at this point, and we don't yet really have a good representation of "?".
+ * That should be added before too long.
+ */
+trait ActorRefLike[T] {
+  def !(t:T)(message:Any)(implicit sender:ActorRefLike[T]):Unit
+}
+
+/**
+ * This trait abstracts the concept of a PersistentActor, so that the same code can be written against either
+ * the real Actor or a synchronous test world.
+ * 
+ * Note that this is intentionally *not* a typeclass. Doing it that way turns out to be problematic, because
+ * you have to concretely instantiate abstract methods like receiveRecover() from the base class. So it's just
+ * not really worth trying to shove this into a typeclass.
+ * 
+ * There are two distinct implementations of this. RealActorCore gets mixed into your actor Actor, and provides
+ * the glue to relate this to PersistentActor. TestActorCore, OTOH, is a synchronous test harness for unit testing
+ * and introspecting on your core code.
+ * 
+ * You should implement a "Core" trait that extends PersistentActorCore, and implements persistenceId,
+ * receiveCommand and receiveRecover. You then mix that into your real PersistentActor along with RealActorCore
+ * and Requester.
+ * 
+ * TODO: refactor this stuff so that you can use it with Actor, PersistentActor and Requester separately!
+ * 
+ * TODO: this abstraction isn't complete yet -- it's just the parts that I have found myself needing in practice.
+ * In the long run, it should be fleshed out more.
+ */
+trait PersistentActorCore {
+  
+  /**
+   * The actual type of our MonadErrors.
+   */
+  type ME[T]
+  def monadError:MonadError[ME, Throwable]
+  
+  /**
+   * The actual type for ActorRefs.
+   */
+  type AR
+  def actorRefLike:ActorRefLike[AR]
+  
+  def sender:AR
+  def self:AR
+  
+  /**
+   * The ID of this PersistentActor. Your Core trait should usually implement this.
+   */
+  def persistenceId:String
+  
+  /**
+   * Handle a Command from the outside. Your Core trait should usually implement this.
+   */
+  def receiveCommand:Receive
+  
+  /**
+   * Handle a recovered Event from the Persistence stream. Your Core trait should usually implement this.
+   */
+  def receiveRecover:Receive
+  
+  /**
+   * The standard Requester function.
+   */
+  def handleRequestResponse:Receive
+  
+  /**
+   * The usual function, inherited from PersistentActor.
+   */
+  def stash:Unit
+  
+  def unstashAll:Unit
+
+  /**
+   * Our own version of persist().
+   * 
+   * IMPORTANT: this is *not* just a simple shell around the build-in persist() function! This
+   * is coded to return a proper Monad instead of using a callback, so that you can chain things
+   * without tying yourself in knots.
+   * 
+   * The returned MonadError will resolve once persistence is complete. This is *not* guaranteed to
+   * happen synchronously in the general case, but will do so if ME == RequestM, as in the normal
+   * RealActorCore. (This signature is not recommended if ME == Future.)
+   * 
+   * There is no corresponding wrapper for persistAll(), because there is no obvious way to
+   * implement that. (persistAll() calls its callback for *each* persisted event, and there
+   * is no clear way to hook "all events have been persisted".)
+   */
+  def doPersist[Evt](event:Evt):ME[Evt]
+  
+  /**
+   * The sequence ID of the most recently-processed persistence message. Normally implemented by
+   * PersistentActor.
+   */
+  def lastSequenceNr:Long
+  
+  /**
+   * From PersistentActor, this saves the state of this Space as a whole, and will fire a
+   * SaveSnapshotSuccess or SaveSnapshotFailure message.
+   */
+  def saveSnapshot(snapshot:Any):Unit
+}
