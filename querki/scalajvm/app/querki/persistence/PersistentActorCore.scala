@@ -4,6 +4,8 @@ import scala.util.Success
 
 import akka.actor.Actor.Receive
 
+import querki.globals._
+
 /**
  * This is a base trait that abstracts PersistentActor, so that we can write synchronous unit tests
  * for the various "Core" classes.
@@ -40,6 +42,8 @@ trait PersistentActorCore {
   def doPersist[A <: UseKryo](event:A)(handler: (A) => Unit):Unit
   
   def doPersistAll(events:collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit):Unit
+  
+  def deferAsync[A](event: A)(handler: (A) ⇒ Unit): Unit
   
   /**
    * The sequence ID of the most recently-processed persistence message. Normally implemented by
@@ -78,8 +82,18 @@ trait PersistentRMCore[RM[_]] { self:PersistentActorCore =>
    */
   def persistAllAnd(events:collection.immutable.Seq[UseKryo]):RM[Seq[UseKryo]] = {
     val rm = rtc.prep[Seq[UseKryo]]
-    doPersistAll(events) { _ =>
+    if (events.isEmpty) {
+      // Work around a bug in persistAll + deferAsync:
       rm.resolve(Success(events))
+    } else {
+      doPersistAll(events) { event =>
+        // Note that this callback occurs element-by-element, which isn't what we want. So we need to
+        // instead resolve the RM in deferAsync().
+      }
+      // Once *all* of the events are persisted, resolve the chain:
+      deferAsync(events) { evts =>
+        rm.resolve(Success(evts))      
+      }
     }
     rm
   }

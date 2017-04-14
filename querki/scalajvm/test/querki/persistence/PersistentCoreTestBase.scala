@@ -68,11 +68,17 @@ trait PersistentCoreTestBase extends PersistentActorCore {
     val (seqNr, recs) = ((lastSequenceNr, List.empty[HistoryRecord]) /: events) { case ((curSeqNr, recs), event) =>
       val seqNr = curSeqNr + 1
       if (_spewHistory) QLog.spew(s"Persisting $event")
-      (seqNr, HistoryRecord(seqNr, event) :: recs)
+      val res = (seqNr, HistoryRecord(seqNr, event) :: recs)
+      handler(event)
+      res
     }
     lastSequenceNr = seqNr
     history = recs.reverse ::: history
-    handler(events.last)
+  }
+  
+  def deferAsync[A](event: A)(handler: (A) ⇒ Unit): Unit = {
+    // In the synchronous environment, this one is trivial:
+    handler(event)
   }
   
   var lastSequenceNr:Long = 0

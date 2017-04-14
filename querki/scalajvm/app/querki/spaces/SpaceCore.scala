@@ -370,6 +370,11 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   
   /**
    * The internal guts of createSomething. Note that this is exposed so that Space plugins can use it.
+   * 
+   * TODO: the allocThingId() below is a severe wart from a FP perspective. Conceptually, we really want
+   * to be using the State monad here, I think, so that subsequent functions can operate on the *concept*
+   * of an OID to be allocated at the end of time. Not at all clear how to do that without seriously ripping the
+   * system apart, though.
    */
   def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
     // All tests have passed, so now we actually persist the change: 

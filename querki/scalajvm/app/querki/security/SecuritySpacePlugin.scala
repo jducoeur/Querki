@@ -42,6 +42,8 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
         yield t
   
       // Either we have the Instance Permissions Thing, or we create it:
+      // Note that the actual creation happens in the wrapping code -- this just describes the changes to be
+      // made. It's *almost* good FP code, aside from the horrible wart of doCreate() allocating an OID.
       permThingOpt match {
         case Some(t) => rtc.successful(ChangeResult(List.empty, Some(t.id), state))
         case _ => {
@@ -55,8 +57,6 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
             // And point the main Thing to it:
             modifyResult <- api.modifyThing(req, thing.id, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false)(newState)
             ChangeResult(modifyEvents, _, fullState) = modifyResult
-            // Okay, everything seems to check out. Persist the whole thing atomically:
-            _ <- api.persistAllAnd(createEvents ++ modifyEvents)
           }
             yield ChangeResult(createEvents ++ modifyEvents, Some(permThingId), fullState) 
         }
