@@ -1,6 +1,7 @@
 package org.querki.funcakka
 
 import cats._
+import cats.implicits._
 import cats.instances._
 
 import akka.actor.Actor.Receive
@@ -8,11 +9,17 @@ import akka.actor.Actor.Receive
 /**
  * Abstraction of an ActorRef.
  * 
- * TODO: this is untested at this point, and we don't yet really have a good representation of "?".
- * That should be added before too long.
+ * TODO: we don't yet really have a good representation of "?". That should be added before too long.
+ * Note that it's a complex problem, though, since it is tied up with PersistentActorCore.monadError.
+ * (That is, "?" shouldn't return Future, it should return ME.)
  */
 trait ActorRefLike[T] {
-  def !(t:T)(message:Any)(implicit sender:ActorRefLike[T]):Unit
+  def !(t:T)(message:Any)(implicit sender:T):Unit
+}
+object ActorRefLike {
+  class Ops[T : ActorRefLike](t:T) {
+    def !(message:Any)(implicit sender:T):Unit = implicitly[ActorRefLike[T]].!(t)(message)
+  }
 }
 
 /**
@@ -42,15 +49,21 @@ trait PersistentActorCore {
    * The actual type of our MonadErrors.
    */
   type ME[T]
-  def monadError:MonadError[ME, Throwable]
+  implicit def monadError:MonadError[ME, Throwable]
+  
+  /**
+   * This is a sad abstraction break that is necessary for the moment: there are a lot of functions
+   * that explicitly return Futures, and it's going to take quite some time before we can eliminate those.
+   */
+  def fromFuture[T : scala.reflect.ClassTag](fut:scala.concurrent.Future[T]):ME[T]
   
   /**
    * The actual type for ActorRefs.
    */
   type AR
-  def actorRefLike:ActorRefLike[AR]
+  implicit val actorRefLike:ActorRefLike[AR]
   
-  def sender:AR
+  implicit def sender:AR
   def self:AR
   
   /**
@@ -76,9 +89,9 @@ trait PersistentActorCore {
   /**
    * The usual function, inherited from PersistentActor.
    */
-  def stash:Unit
+  def stash():Unit
   
-  def unstashAll:Unit
+  def unstashAll():Unit
 
   /**
    * Our own version of persist().
@@ -90,12 +103,17 @@ trait PersistentActorCore {
    * The returned MonadError will resolve once persistence is complete. This is *not* guaranteed to
    * happen synchronously in the general case, but will do so if ME == RequestM, as in the normal
    * RealActorCore. (This signature is not recommended if ME == Future.)
-   * 
-   * There is no corresponding wrapper for persistAll(), because there is no obvious way to
-   * implement that. (persistAll() calls its callback for *each* persisted event, and there
-   * is no clear way to hook "all events have been persisted".)
    */
-  def doPersist[Evt](event:Evt):ME[Evt]
+  def persistAnd[Evt](event:Evt):ME[Evt]
+  
+  /**
+   * Our version of persistAll().
+   * 
+   * Note that the MonadError will resolve after *all* of the events have been persisted! This is
+   * very different from the built-in callback on the native persistAll(), which calls the callback
+   * for *each* event.
+   */
+  def persistAllAnd[Evt](events:collection.immutable.Seq[Evt]):ME[Seq[Evt]]
   
   /**
    * The sequence ID of the most recently-processed persistence message. Normally implemented by

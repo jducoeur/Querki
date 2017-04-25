@@ -113,6 +113,9 @@ package object identity {
     def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean
     /**
      * Returns the Identities (if any) that are Members of this Space.
+     * 
+     * TODO: this should only return one Identity! The notion of multiple Identities per Space has
+     * been officially outlawed -- it makes astroturfing too easy.
      */
     def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity]
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]

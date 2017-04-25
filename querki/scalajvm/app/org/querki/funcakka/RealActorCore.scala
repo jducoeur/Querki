@@ -11,7 +11,7 @@ import org.querki.requester.{Requester, RequestM}
 
 object RealActorRefLike {
   implicit val RERLInstance = new ActorRefLike[ActorRef] {
-    def !(t:ActorRef)(message:Any)(implicit sender:ActorRefLike[ActorRef]):Unit = {
+    def !(t:ActorRef)(message:Any)(implicit sender:ActorRef):Unit = {
       t ! message
     }
   }
@@ -30,6 +30,10 @@ trait RealActorCore extends PersistentActorCore { actor:PersistentActor with Req
   type ME[T] = RequestM[T]
   val monadError = RequestMInstances.catsStdInstancesForRequestM
   
+  def fromFuture[T : scala.reflect.ClassTag](fut:scala.concurrent.Future[T]):RequestM[T] = {
+    loopback(fut)
+  }
+  
   type AR = ActorRef
   val actorRefLike = RealActorRefLike.RERLInstance
   
@@ -42,7 +46,7 @@ trait RealActorCore extends PersistentActorCore { actor:PersistentActor with Req
    * so we can abstract over it? Is it even possible to do a pure/synchronous version of that abstraction over
    * Either, for unit-testing? (Maybe not without cheating and involving a mutable var.)
    */
-  def doPersist[Evt](event:Evt):RequestM[Evt] = {
+  def persistAnd[Evt](event:Evt):RequestM[Evt] = {
     val rm = RequestM.prep[Evt]
     persist(event) { persisted =>
       rm.resolve(Success(persisted))
@@ -50,7 +54,7 @@ trait RealActorCore extends PersistentActorCore { actor:PersistentActor with Req
     rm
   }
   
-  def doPersistAll[Evt](events:collection.immutable.Seq[Evt]):RequestM[Seq[Evt]] = {
+  def persistAllAnd[Evt](events:collection.immutable.Seq[Evt]):RequestM[Seq[Evt]] = {
     val rm = RequestM.prep[Seq[Evt]]
     persistAll(events) { persisted =>
       // Note that this is called for *each* persisted...

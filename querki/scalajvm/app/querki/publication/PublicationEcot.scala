@@ -8,7 +8,8 @@ import PublicationEvents._
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) {
   
   override def persistentMessages = persist(68,
-    (classOf[PublishEvent] -> 100)
+    (classOf[PublishEvent] -> 100),
+    (classOf[PublishedThingInfo] -> 101)
   )
 
 }

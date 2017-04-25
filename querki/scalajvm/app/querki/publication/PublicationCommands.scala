@@ -15,10 +15,14 @@ object PublicationCommands {
   case class Update(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
   case class GetEvents(
     who:User, 
-    since:DateTime, 
-    until:DateTime, 
-    changesTo:Seq[OID], 
+    since:Option[DateTime], 
+    until:Option[DateTime], 
+    changesTo:Set[OID], 
     includeMinor:Boolean, 
-    viewAsPublic:Boolean, 
     coalesce:Boolean) extends PublicationCommand
+  
+  /**
+   * The events that correspond to a GetEvents request. Note that this may be empty!
+   */
+  case class RequestedEvents(events:Seq[RawPublishEvent])
 }
