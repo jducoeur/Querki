@@ -1,4 +1,4 @@
-package org.querki.funcakka
+package funcakka
 
 import scala.util.Success
 

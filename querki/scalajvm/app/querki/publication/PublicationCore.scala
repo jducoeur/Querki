@@ -8,8 +8,8 @@ import cats.implicits._
 import akka.actor.Actor.Receive
 import akka.persistence.RecoveryCompleted
 
-import org.querki.funcakka._
-import org.querki.funcakka.Implicits._
+import funcakka._
+import funcakka.Implicits._
 
 import models._
 import querki.globals._

@@ -2,7 +2,7 @@ package querki.publication
 
 import akka.persistence._
 
-import org.querki.funcakka._
+import funcakka._
 import org.querki.requester._
 
 import querki.globals._

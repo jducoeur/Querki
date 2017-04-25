@@ -1,4 +1,4 @@
-package org.querki.funcakka
+package funcakka
 
 import cats._
 import cats.implicits._
