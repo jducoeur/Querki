@@ -22,7 +22,9 @@ import PublicationEvents._
 
 trait PublicationCore extends PublicationPure with PersistentActorCore with EcologyMember with querki.types.ModelTypeDefiner with ModelPersistence {
   
+  private lazy val AccessControl = interface[querki.security.AccessControl]
   private lazy val Person = interface[querki.identity.Person]
+  private lazy val Publication = interface[Publication]
   private lazy val System = interface[querki.system.System]
   
   //////////////////////////////////////////////////
@@ -95,17 +97,26 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
       }
     }
   }
+  
+  def publish(who:User, thingIds:Seq[OID], meta:PropMap, spaceState:SpaceState):ME[PublicationState] = {
+    if (thingIds.forall(thingId => AccessControl.hasPermission(Publication.CanPublishPermission, spaceState, who, thingId))) {
+      doPublish(who, thingIds, meta, spaceState)
+    } else {
+      // TODO: in theory, this shouldn't happen, but it should still become a proper PublicException:
+      monadError.raiseError(new Exception(s"You don't have permission to Publish!"))
+    }
+  }
 
   def receiveCommand:Receive = handleRequestResponse orElse {
     case _ if (initializing) => stash()
     
     case Publish(who, things, meta, spaceState) => {
-      doPublish(who, things, meta, spaceState)
+      publish(who, things, meta, spaceState)
       // TODO: need to send a message to the Space itself, to change the permissions of the Things.
     }
     
     case Update(who, things, meta, spaceState) => {
-      doPublish(who, things, meta, spaceState)
+      publish(who, things, meta, spaceState)
     }
     
     case GetEvents(who, since, until, changesTo, includeMinor, coalesce) => {
