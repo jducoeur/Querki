@@ -41,6 +41,11 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   def getIdentities(identityIds:Seq[IdentityId]):ME[Map[OID, PublicIdentity]]
   
   /**
+   * Change the permissions of the specified Things.
+   */
+  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[Unit]
+  
+  /**
    * The OID of this Space.
    */
   def id:OID
@@ -106,17 +111,41 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
       monadError.raiseError(new Exception(s"You don't have permission to Publish!"))
     }
   }
+  
+  def computePermissionChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
+    (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
+      state.anything(thingId) match {
+        case Some(thing) => {
+          val newReadProp = thing.getPropOpt(Publication.CanReadAfterPublication).map(_.rawList).getOrElse(List(AccessControl.PublicTag.id))
+          val newProps = toProps(AccessControl.CanReadProp(newReadProp:_*))
+          me.map(_ :+ (thingId, newProps))
+        }
+        case _ => monadError.raiseError(new Exception(s"Trying to Publish unknown Thing $thingId!"))
+      }      
+    }
+  }
+  def updatePermissions(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[Unit] = {
+    for {
+      updates <- computePermissionChanges(thingIds)
+      result <- sendPermissionUpdates(who, updates)
+    }
+      yield result
+  }
 
   def receiveCommand:Receive = handleRequestResponse orElse {
     case _ if (initializing) => stash()
     
     case Publish(who, things, meta, spaceState) => {
-      publish(who, things, meta, spaceState)
-      // TODO: need to send a message to the Space itself, to change the permissions of the Things.
+      for {
+        _ <- publish(who, things, meta, spaceState)
+        _ <- updatePermissions(who, things)(spaceState)
+      }
+        yield ()
     }
     
     case Update(who, things, meta, spaceState) => {
       publish(who, things, meta, spaceState)
+      // Update doesn't change the permissions the way that Publish does
     }
     
     case GetEvents(who, since, until, changesTo, includeMinor, coalesce) => {
