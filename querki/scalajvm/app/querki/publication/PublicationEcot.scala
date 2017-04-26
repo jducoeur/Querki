@@ -9,6 +9,7 @@ object MOIDs extends EcotIds(68) {
   val CanPublishOID = moid(1)
   val CanReadAfterPublicationOID = moid(2)
   val PublishableModelOID = moid(3)
+  val MinorUpdateOID = moid(4)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
@@ -65,10 +66,19 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
         |* Once Published, Instances can later be formally Updated, which adds another entry to Recent Changes.
         |* The Space gains an RSS feed, so that Published Instances can be monitored from outside Querki. This
         |allows you to treat any sort of Querki information as a sort of blog.""".stripMargin)))
+ 
+  lazy val MinorUpdateProp = new SystemProperty(MinorUpdateOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("_minorUpdate"),
+      setInternal,
+      Summary("Iff set, this Update should be considered Minor."),
+      Details("""This is the Property behind the "Minor Update" button in the Editor. It is an
+        |internal meta-Property on the Publication event itself, rather than on the Thing.""".stripMargin)))
 
   override lazy val props = Seq(
     CanPublishPermission,
     CanReadAfterPublication,
-    PublishableModel
+    PublishableModel,
+    MinorUpdateProp
   )
 }
