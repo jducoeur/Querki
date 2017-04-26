@@ -23,6 +23,7 @@ import PublicationEvents._
 trait PublicationCore extends PublicationPure with PersistentActorCore with EcologyMember with querki.types.ModelTypeDefiner with ModelPersistence {
   
   private lazy val AccessControl = interface[querki.security.AccessControl]
+  private lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   private lazy val Person = interface[querki.identity.Person]
   private lazy val Publication = interface[Publication]
   private lazy val System = interface[querki.system.System]
@@ -34,11 +35,6 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   // These are all implemented very differently in the asynchronous, Akka Persistence-based, real Actor
   // vs. the synchronous test implementation.
   //
-  
-  /**
-   * Fetch the Identities for the given IDs.
-   */
-  def getIdentities(identityIds:Seq[IdentityId]):ME[Map[OID, PublicIdentity]]
   
   /**
    * Change the permissions of the specified Things.
@@ -81,6 +77,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         // TODO: ah, damn -- rendering is explicitly Future-based, which defeats our attempt to completely
         // hide behind MonadError. Fixing this will require pushing the MonadErrors way down into the stack,
         // which is going to take a while.
+        // Note that MonadError does *not* appear to contain sequence(). Will need to think about that one.
         val thingsWithWikitextFuts = things.map { thing =>
           thing.render(publicRequestContext, state).map((thing.id, _))
         }
@@ -182,7 +179,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     
     case RecoveryCompleted => {
       val identityIds = loadingEvents.map(_.who)
-      getIdentities(identityIds).map { identities =>
+      fromFuture(IdentityAccess.getIdentities(identityIds.toSeq)).map { identities =>
         implicit val system = System.State
         val fullEvents = loadingEvents.map { evt =>
           RawPublishEvent(identities(evt.who), evt.things.map(info => (info.thingId, info)).toMap, evt.meta, evt.when)

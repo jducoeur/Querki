@@ -54,6 +54,8 @@ trait PersistentActorCore {
   /**
    * This is a sad abstraction break that is necessary for the moment: there are a lot of functions
    * that explicitly return Futures, and it's going to take quite some time before we can eliminate those.
+   * 
+   * TODO: every usage of fromFuture() is inherently a code smell. Work on steadily eliminating them.
    */
   def fromFuture[T : scala.reflect.ClassTag](fut:scala.concurrent.Future[T]):ME[T]
   
