@@ -44,7 +44,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
       false, true)
       
   // TODO: this should become an Internal Property, once we have a formal Publication page in the UI:
-  lazy val PublishableModel = new SystemProperty(PublishableModelOID, YesNoType, ExactlyOne,
+  lazy val PublishableModelProp = new SystemProperty(PublishableModelOID, YesNoType, ExactlyOne,
     toProps(
       setName("Is a Publishable Model"),
       Summary("Indicates that Instances of this Model will be formally Published when they are ready"),
@@ -78,7 +78,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
   override lazy val props = Seq(
     CanPublishPermission,
     CanReadAfterPublication,
-    PublishableModel,
+    PublishableModelProp,
     MinorUpdateProp
   )
 }

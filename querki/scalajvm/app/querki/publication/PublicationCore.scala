@@ -161,8 +161,16 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
           else {
             changesTo.exists(evt.things.contains(_))
           }
+        ) &&
+        (
+          if (includeMinor)
+            // We're including it even if it's a minor update
+            true
+          else {
+            // Check whether it's a Minor Update
+            evt.meta.getFirstOpt(Publication.MinorUpdateProp).map(!_).getOrElse(true)
+          }
         )
-        // TODO: deal with includeMinor
       }
       
       val filtered = curState.events.filter(includeEvent)
