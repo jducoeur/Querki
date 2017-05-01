@@ -13,6 +13,7 @@ import querki.ecology._
 import querki.globals._
 import querki.history.SpaceHistory
 import querki.photos.PhotoUploadActor
+import querki.publication._
 import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
@@ -68,6 +69,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
   }
   lazy val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
+  lazy val publication = context.actorOf(PublicationActor.actorProps(ecology, spaceId, self), "Publication")
   
   // This function just references the SpaceActor, so that it will boot and send CurrentState.
   // TODO: this is a dreadfully brittle approach. How can we restructure it to be more sensible
@@ -110,6 +112,7 @@ private[spaces] class SpaceRouter(e:Ecology)
         case p:querki.uservalues.PersistMessages.ExternallyExposed => sessions.forward(msg)
         case p:SpaceMembersBase => members.forward(msg)
         case p:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
+        case p:PublicationCommands.PublicationCommand => publication.forward(p)
       }
     }
     
@@ -129,6 +132,8 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Messages for the SpaceTimingActor, if one is running for this Space:
     case msg:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
+    
+    case msg:PublicationCommands.PublicationCommand => publication.forward(msg)
     
     case msg:ShutdownSpace => {
       sender ! ShutdownAck

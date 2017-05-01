@@ -13,6 +13,12 @@ object PublicationCommands {
   
   case class Publish(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
   case class Update(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
+  
+  /**
+   * Returned in response to Publish and Update -- this is the State that results after Publication.
+   */
+  case class PublishResponse(updatedState:SpaceState)
+  
   case class GetEvents(
     who:User, 
     since:Option[DateTime], 

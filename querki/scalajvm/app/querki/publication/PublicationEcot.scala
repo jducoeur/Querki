@@ -1,5 +1,6 @@
 package querki.publication
 
+import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 
@@ -10,6 +11,7 @@ object MOIDs extends EcotIds(68) {
   val CanReadAfterPublicationOID = moid(2)
   val PublishableModelOID = moid(3)
   val MinorUpdateOID = moid(4)
+  val PublishedOID = moid(5)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
@@ -29,7 +31,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
   
   lazy val CanPublishPermission = AccessControl.definePermission(
       CanPublishOID, 
-      "Who Can Publish", 
+      commonName(_.publication.canPublishPerm), 
       "Who is allowed to Publish Instances in this Space",
       Seq(AccessControl.OwnerTag),
       Seq(AccessControl.AppliesToInstances),
@@ -46,7 +48,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
   // TODO: this should become an Internal Property, once we have a formal Publication page in the UI:
   lazy val PublishableModelProp = new SystemProperty(PublishableModelOID, YesNoType, ExactlyOne,
     toProps(
-      setName("Is a Publishable Model"),
+      setName(commonName(_.publication.publishableProp)),
       Summary("Indicates that Instances of this Model will be formally Published when they are ready"),
       Details("""In some Spaces, particularly public ones such as blogs, FAQs, and other information sources,
         |you want to impose some structure when creating new Things. Instead of just making everything publicly
@@ -74,11 +76,18 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
       Summary("Iff set, this Update should be considered Minor."),
       Details("""This is the Property behind the "Minor Update" button in the Editor. It is an
         |internal meta-Property on the Publication event itself, rather than on the Thing.""".stripMargin)))
+  
+  lazy val PublishedProp = new SystemProperty(PublishedOID, YesNoType, ExactlyOne,
+    toProps(
+      setName(commonName(_.publication.publishedProp)),
+      setInternal,
+      Summary("Set to true when this Instance gets Published.")))
 
   override lazy val props = Seq(
     CanPublishPermission,
     CanReadAfterPublication,
     PublishableModelProp,
-    MinorUpdateProp
+    MinorUpdateProp,
+    PublishedProp
   )
 }

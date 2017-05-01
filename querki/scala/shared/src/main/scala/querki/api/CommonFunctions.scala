@@ -117,6 +117,12 @@ class StandardThings(h:PassthroughHandlerBase) {
     val linkModelProp = h.pass("Restrict to Model")
   }
   
+  object publication {
+    val publishableProp = h.pass("Is a Publishable Model")
+    val publishedProp = h.pass("_publishedInstance")
+    val canPublishPerm = h.pass("Who Can Publish")
+  }
+  
   object roles {
     val canExplorePerm = h.pass("Who Can Explore")
   }
@@ -157,6 +163,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(apps, core, css, basic, conventions, editing, links, roles, security, skillLevel, tags, types)
+    Seq(apps, core, css, basic, conventions, editing, links, publication, roles, security, skillLevel, tags, types)
   }
 }

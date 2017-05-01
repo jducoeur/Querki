@@ -30,6 +30,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
+  lazy val Publication = interface[querki.publication.Publication]
   lazy val Roles = interface[querki.security.Roles]
   lazy val Session = interface[querki.session.Session]
   
@@ -46,6 +47,25 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
 
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
   implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
+  implicit def OID2TOID(oid:OID) = TOID(oid.id.toThingId.toString)
+  
+  def setFlags(t:Thing, props:Property[Boolean,_]*)(implicit state:SpaceState):Set[TOID] = {
+    (Set.empty[TOID] /: props) { (set, prop) =>
+      if (t.ifSet(prop))
+        set + prop.id
+      else
+        set
+    }
+  }
+  
+  def setPerms(t:Thing, who:User, perms:Property[OID,_]*)(implicit state:SpaceState):Set[TOID] = {
+    (Set.empty[TOID] /: perms) { (set, perm) =>
+      if (AccessControl.hasPermission(perm, state, who, t))
+        set + perm.id
+      else
+        set
+    }
+  }
   
   def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[ThingInfo] = {
       val user = rc.requesterOrAnon
@@ -56,6 +76,15 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
           None
         else
           spaceInfo(state.getApp(t.spaceId), rc)
+      // TBD: should this be auto-generated in some fashion? A meta-Property that says "This is a Client/Server flag",
+      // or something like that?
+      val flags = setFlags(t,
+        Publication.PublishableModelProp,
+        Publication.PublishedProp
+      )
+      val perms = setPerms(t, user,
+        Publication.CanPublishPermission
+      )
       t.nameOrComputedWiki(rc, state) map { name =>
         ThingInfo(
           t, 
@@ -68,13 +97,16 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
           name,
           t.model,
           t.kind,
+          // TODO: this should go into flags:
           isModel,
           editable,
           // We allow deleting Properties at this level:
           editable && DataModelAccess.isDeletable(t, allowIfProp = true),
           isModel && AccessControl.canCreate(state, user, t),
           t.isInstanceOf[IsTag],
-          importedFrom)
+          importedFrom,
+          flags,
+          perms)
       }
   }
   

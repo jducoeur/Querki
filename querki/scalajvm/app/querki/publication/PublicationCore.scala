@@ -39,7 +39,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   /**
    * Change the permissions of the specified Things.
    */
-  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[Unit]
+  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[SpaceState]
   
   /**
    * The OID of this Space.
@@ -109,21 +109,24 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
   }
   
-  def computePermissionChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
+  def computePublishChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
     (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
       state.anything(thingId) match {
         case Some(thing) => {
           val newReadProp = thing.getPropOpt(Publication.CanReadAfterPublication).map(_.rawList).getOrElse(List(AccessControl.PublicTag.id))
-          val newProps = toProps(AccessControl.CanReadProp(newReadProp:_*))
+          val newProps = 
+            toProps(
+              AccessControl.CanReadProp(newReadProp:_*),
+              Publication.PublishedProp(true))
           me.map(_ :+ (thingId, newProps))
         }
         case _ => monadError.raiseError(new Exception(s"Trying to Publish unknown Thing $thingId!"))
       }      
     }
   }
-  def updatePermissions(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[Unit] = {
+  def updatePublishedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
     for {
-      updates <- computePermissionChanges(thingIds)
+      updates <- computePublishChanges(thingIds)
       result <- sendPermissionUpdates(who, updates)
     }
       yield result
@@ -135,14 +138,16 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     case Publish(who, things, meta, spaceState) => {
       for {
         _ <- publish(who, things, meta, spaceState)
-        _ <- updatePermissions(who, things)(spaceState)
+        finalState <- updatePublishedThings(who, things)(spaceState)
       }
-        yield ()
+        yield { sender ! PublishResponse(finalState) }
     }
     
     case Update(who, things, meta, spaceState) => {
       publish(who, things, meta, spaceState)
-      // Update doesn't change the permissions the way that Publish does
+      // Update doesn't change the permissions the way that Publish does, so we
+      // just send back the original state:
+      sender ! PublishResponse(spaceState)
     }
     
     case GetEvents(who, since, until, changesTo, includeMinor, coalesce) => {

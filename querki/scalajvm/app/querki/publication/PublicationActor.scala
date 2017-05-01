@@ -1,6 +1,6 @@
 package querki.publication
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, Props}
 import akka.persistence._
 
 import funcakka._
@@ -18,9 +18,17 @@ class PublicationActor(val ecology:Ecology, val id:OID, val router:ActorRef)
    * TODO: enhance PersistentActorCore to include a version of request(), so this can run completely in
    * PublicationCore.
    */
-  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[Unit] = {
-    (RequestM.successful(()) /: pairs) { case (rm, (thingId, propMap)) =>
-      rm.flatMap(_ => router.request(ChangeProps(who, state.id, thingId, propMap)).map(_ => ()))
+  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[SpaceState] = {
+    (RequestM.successful(state) /: pairs) { case (rm, (thingId, propMap)) =>
+      for {
+        _ <- rm
+        ThingFound(_, nextState) <- router.request(ChangeProps(who, state.id, thingId, propMap))
+      }
+        yield nextState
     }
   }
+}
+
+object PublicationActor {
+  def actorProps(ecology:Ecology, spaceId:OID, router:ActorRef) = Props(classOf[PublicationActor], ecology, spaceId, router)
 }

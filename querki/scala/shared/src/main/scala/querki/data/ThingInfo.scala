@@ -20,6 +20,9 @@ case class TID(val underlying:String) extends AnyVal {
 case class TOID(val underlying:String) extends AnyVal {
   def isEmpty:Boolean = underlying.length() == 0  
 }
+object TOID {
+  def apply(thing:BasicThingInfo):TOID = TOID(thing.oid.underlying)
+}
 
 trait BasicThingInfo {
   def oid:TID
@@ -55,10 +58,19 @@ case class ThingInfo(
   isDeleteable:Boolean,
   isInstantiatable:Boolean,
   isTag:Boolean,
-  importedFrom:Option[SpaceInfo]) extends BasicThingInfo
+  importedFrom:Option[SpaceInfo],
+  // This is a collection of Boolean Property IDs; if present, that means it is set
+  // to true on this Thing
+  // TODO: several of the above should be rewritten to use this more-efficient approach!
+  flags:Set[TOID],
+  // This is a collection of Permissions that the requesting User has on this Thing.
+  // TODO: same comments as for flags.
+  perms:Set[TOID]) extends BasicThingInfo
 {
   lazy val displayName = wikiName.strip.toString
   lazy val unsafeName = wikiName.plaintext
+  def hasFlag(prop:ThingInfo) = flags.contains(TOID(prop))
+  def hasPerm(perm:ThingInfo) = perms.contains(TOID(perm))
 }
 
 case class SpaceInfo(

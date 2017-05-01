@@ -9,5 +9,6 @@ package object publication {
     def CanReadAfterPublication:Property[OID, OID]
     def PublishableModelProp:Property[Boolean, Boolean]
     def MinorUpdateProp:Property[Boolean, Boolean]
+    def PublishedProp:Property[Boolean, Boolean]
   }
 }

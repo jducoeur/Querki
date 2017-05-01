@@ -58,7 +58,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
     TID(""),
     models.Kind.Thing,
     false, false, false, false, false,
-    None
+    None, Set.empty, Set.empty
   )
   
   case class RoleInfo(map:Map[TID, ThingInfo], roles:Seq[ThingInfo]) {

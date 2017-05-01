@@ -14,15 +14,15 @@ import querki.globals._
 import EditFunctions._
 import querki.api.{ModelLoopException, ThingFunctions}
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
-import querki.display.{RawDiv, WithTooltip}
+import querki.display.{ButtonGadget, RawDiv, WithTooltip}
 import querki.display.input.{InputGadget}
 import querki.display.rx.{RxThingSelector}
 import querki.pages._
+import querki.publication.PublicationFunctions
 
 class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology) 
   extends Page("modelDesigner") with querki.display.QuerkiUIUtils
 {
-  
   lazy val rawModelIdOpt = params.get("modelId").orElse(params.get("thingId"))
   var _modelId:Option[TID] = None
   def modelId = _modelId.get
@@ -178,6 +178,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
         model <- DataAccess.getThing(modelId)
         _ = DataSetting.setThing(Some(model))
         modelModel <- DataAccess.getThing(model.modelOid)
+        
         fullEditInfo <- 
           Client[EditFunctions].getPropertyEditors(modelId).call()
             .recover {
@@ -186,6 +187,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                 FullEditInfo(Seq.empty, "", true, Seq.empty)
               }
             }
+        
         allProps = fullEditInfo.propInfos
         (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
         sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
@@ -194,6 +196,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
             case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
           }
         }
+        
         pageTitle = {
           val prefix = 
             if (model.isModel)
@@ -202,6 +205,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
               msg("thingPrefix")
           msg("pageTitle", ("modelName" -> model.unsafeName), ("prefix" -> prefix))
         }
+        
   	    guts = 
           div(cls:="_advancedEditor",
             h1(pageTitle),
@@ -215,6 +219,17 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                     { newThingInfo => PageManager.reload() }) 
               })
             ),
+            
+            if (!model.isModel && model.hasFlag(std.publication.publishableProp)) { 
+              if (model.hasFlag(std.publication.publishedProp)) {
+                // It's been Published, so mention that.
+                p(i("This has already been Published"))
+              } else {
+                // A Publishable but not yet Published Instance:
+                p(i("This is not yet published"))
+              }
+            },
+              
             if (model.isModel) {
               MSeq(
                 h3(cls:="_defaultTitle", "Instance Properties"),
@@ -234,10 +249,66 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                 new AddPropertyGadget(this, model)
               )
             },
-            a(cls:="btn btn-primary",
-              id:="_doneDesigning",
-              "Done",
-              href:=thingUrl(model.oid))
+            
+            if (!model.isModel 
+                && model.hasFlag(std.publication.publishableProp)) 
+            {
+              // Instances of publishable models are a *very* different situation. There are a lot of sub-cases:
+              if (model.hasFlag(std.publication.publishedProp)) {
+                // This has already been Published, so it's an Update situation:
+                MSeq(
+                  new WithTooltip(
+                    new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
+                      Pages.thingPageFactory.showPage(model)
+                    }),
+                    "Pressing this will not list these changes in Recent Changes at all. These changes may become part of a later Update."
+                  ),
+                  new WithTooltip(
+                    new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      Client[PublicationFunctions].update(model.oid, false).call().map { newInfo =>
+                        DataSetting.setThing(Some(newInfo))
+                        Pages.thingPageFactory.showPage(newInfo)                        
+                      }
+                    }),
+                    "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
+                  ),
+                  new WithTooltip(
+                    new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      Client[PublicationFunctions].update(model.oid, true).call().map { newInfo =>
+                        DataSetting.setThing(Some(newInfo))
+                        Pages.thingPageFactory.showPage(newInfo)                        
+                      }
+                    }),
+                    "Pressing this will publish a Minor Update -- the changes will not go in the RSS Feed, but will be visible in Recent Changes if requested."
+                  )
+                )
+              } else {
+                // Not yet Published:
+                MSeq(
+                  new WithTooltip(
+                    new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
+                      Pages.thingPageFactory.showPage(model)
+                    }),
+                    "Press this button if you want to do further work on this Instance before Publishing it."
+                  ),
+                  new WithTooltip(
+                    new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      Client[PublicationFunctions].publish(model.oid).call().map { newInfo =>
+                        DataSetting.setThing(Some(newInfo))
+                        Pages.thingPageFactory.showPage(newInfo)
+                      }
+                    }),
+                    "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
+                  )
+                )
+              }
+            } else {
+              // Normal case:
+              a(cls:="btn btn-primary",
+                id:="_doneDesigning",
+                "Done",
+                href:=thingUrl(model.oid))
+            }
           )
       }
         yield PageContents(pageTitle, guts)

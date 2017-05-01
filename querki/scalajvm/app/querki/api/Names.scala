@@ -44,6 +44,8 @@ private [api] object NamePassthroughHandler extends PassthroughHandlerBase {
       false,
       false,
       false,
-      None)
+      None,
+      Set.empty,
+      Set.empty)
   }
 }
