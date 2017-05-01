@@ -205,6 +205,12 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         			    iconButton("edit")(
         			      title:=s"Edit $thingName",
         			      href:=Editing.advancedEditorFactory.pageUrl(thing))
+                } else if (thing.hasFlag(std.publication.publishableProp)) {
+                  // TODO: for now, Publishables have to use the Advanced Editor. This should change, and
+                  // at that point this can go back to using the topEditButton:
+        			    iconButton("edit")(
+        			      title:=s"Edit $thingName",
+        			      href:=Editing.advancedEditorFactory.pageUrl(thing))                  
                 } else {
                   topEditButton
                 }
