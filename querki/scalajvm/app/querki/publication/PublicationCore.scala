@@ -37,9 +37,9 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   //
   
   /**
-   * Change the permissions of the specified Things.
+   * Change the properties of the specified Things.
    */
-  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[SpaceState]
+  def sendChangeProps(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[SpaceState]
   
   /**
    * The OID of this Space.
@@ -109,6 +109,8 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
   }
   
+  // TODO: these Publish and Update paths could be factored together -- they're identical aside from the
+  // actual Properties being set:
   def computePublishChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
     (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
       state.anything(thingId) match {
@@ -127,7 +129,28 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   def updatePublishedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
     for {
       updates <- computePublishChanges(thingIds)
-      result <- sendPermissionUpdates(who, updates)
+      result <- sendChangeProps(who, updates)
+    }
+      yield result
+  }
+  
+  def computeUpdateChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
+    (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
+      state.anything(thingId) match {
+        case Some(thing) => {
+          val newProps = 
+            toProps(
+              Publication.HasUnpublishedChanges(false))
+          me.map(_ :+ (thingId, newProps))
+        }
+        case _ => monadError.raiseError(new Exception(s"Trying to Update unknown Thing $thingId!"))
+      }      
+    }
+  }
+  def updateUpdatedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
+    for {
+      updates <- computeUpdateChanges(thingIds)
+      result <- sendChangeProps(who, updates)
     }
       yield result
   }
@@ -144,10 +167,11 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
     
     case Update(who, things, meta, spaceState) => {
-      publish(who, things, meta, spaceState)
-      // Update doesn't change the permissions the way that Publish does, so we
-      // just send back the original state:
-      sender ! PublishResponse(spaceState)
+      for {
+        _ <- publish(who, things, meta, spaceState)
+        finalState <- updateUpdatedThings(who, things)(spaceState)
+      }
+        yield { sender ! PublishResponse(spaceState) }
     }
     
     case GetEvents(who, since, until, changesTo, includeMinor, coalesce) => {

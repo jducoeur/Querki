@@ -18,7 +18,7 @@ class PublicationActor(val ecology:Ecology, val id:OID, val router:ActorRef)
    * TODO: enhance PersistentActorCore to include a version of request(), so this can run completely in
    * PublicationCore.
    */
-  def sendPermissionUpdates(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[SpaceState] = {
+  def sendChangeProps(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[SpaceState] = {
     (RequestM.successful(state) /: pairs) { case (rm, (thingId, propMap)) =>
       for {
         _ <- rm

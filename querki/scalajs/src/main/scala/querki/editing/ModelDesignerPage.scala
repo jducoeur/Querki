@@ -23,6 +23,8 @@ import querki.publication.PublicationFunctions
 class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology) 
   extends Page("modelDesigner") with querki.display.QuerkiUIUtils
 {
+  lazy val Publication = interface[querki.publication.Publication]
+  
   lazy val rawModelIdOpt = params.get("modelId").orElse(params.get("thingId"))
   var _modelId:Option[TID] = None
   def modelId = _modelId.get
@@ -171,8 +173,10 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
     } else
       None
   }
-
+  
   def pageContent = {
+    import Publication._
+    
     checkParams getOrElse {
       for {
         model <- DataAccess.getThing(modelId)
@@ -220,8 +224,8 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
               })
             ),
             
-            if (!model.isModel && model.hasFlag(std.publication.publishableProp)) { 
-              if (model.hasFlag(std.publication.publishedProp)) {
+            if (isPublishable(model)) { 
+              if (isPublished(model)) {
                 // It's been Published, so mention that.
                 p(i("This has already been Published"))
               } else {
@@ -250,11 +254,10 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
               )
             },
             
-            if (!model.isModel 
-                && model.hasFlag(std.publication.publishableProp)) 
+            if (isPublishable(model)) 
             {
               // Instances of publishable models are a *very* different situation. There are a lot of sub-cases:
-              if (model.hasFlag(std.publication.publishedProp)) {
+              if (isPublished(model)) {
                 // This has already been Published, so it's an Update situation:
                 MSeq(
                   new WithTooltip(
@@ -265,19 +268,13 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                   ),
                   new WithTooltip(
                     new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Client[PublicationFunctions].update(model.oid, false).call().map { newInfo =>
-                        DataSetting.setThing(Some(newInfo))
-                        Pages.thingPageFactory.showPage(newInfo)                        
-                      }
+                      Publication.update(model, false)
                     }),
                     "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
                   ),
                   new WithTooltip(
                     new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Client[PublicationFunctions].update(model.oid, true).call().map { newInfo =>
-                        DataSetting.setThing(Some(newInfo))
-                        Pages.thingPageFactory.showPage(newInfo)                        
-                      }
+                      Publication.update(model, true)
                     }),
                     "Pressing this will publish a Minor Update -- the changes will not go in the RSS Feed, but will be visible in Recent Changes if requested."
                   )
@@ -293,10 +290,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                   ),
                   new WithTooltip(
                     new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Client[PublicationFunctions].publish(model.oid).call().map { newInfo =>
-                        DataSetting.setThing(Some(newInfo))
-                        Pages.thingPageFactory.showPage(newInfo)
-                      }
+                      Publication.publish(model)
                     }),
                     "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
                   )

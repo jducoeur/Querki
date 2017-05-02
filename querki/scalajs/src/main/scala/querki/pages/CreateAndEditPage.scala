@@ -61,6 +61,14 @@ class CreateAndEditPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()
     initVals <- initialValues
     thingInfo <- Client[EditFunctions].create(modelId, initVals).call()
+    
+    // TBD: this is grotesquely side-effecting -- if this is Publishable, we need
+    // (for the moment) to redirect over to the Advanced Editor. Surely we can
+    // come up with a better way to do this?
+    isPublishable = thingInfo.hasFlag(std.publication.publishableProp)
+    _ = if (isPublishable) Editing.advancedEditorFactory.showPage(thingInfo)
+    if (!isPublishable)
+    
     dummy = {
       DataSetting.setThing(Some(thingInfo))
       DataSetting.setModel(Some(modelInfo))

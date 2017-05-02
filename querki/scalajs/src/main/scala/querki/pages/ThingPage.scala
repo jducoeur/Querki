@@ -93,6 +93,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   lazy val History = interface[querki.history.History]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val Publication = interface[querki.publication.Publication]
   
   val thingName = thing.displayName
   val std = page.std
@@ -126,10 +127,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   // Note that this is a Bootstrap button with a drop-down menu.
   // TODO: this probably wants to become a standard utility type.
   lazy val shareButton =
-    div(cls:="btn-group",
+    div(cls:="btn-group querki-icon-button",
       button(
         tpe:="button", 
-        cls:="btn btn-default btn-xs btn-primary _noPrint querki-icon-button",
+        cls:="btn btn-default btn-xs btn-primary _noPrint",
         dta.toggle:="dropdown",
         aria.haspopup:="true", aria.expanded:="false",
         i(cls:="fa fa-share-alt", aria.hidden:="true"), " ",
@@ -150,6 +151,58 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         }
       )
     )
+    
+  lazy val publishButton = {
+    val isPublished = Publication.isPublished(thing)
+    val hasUnpublishedChanges = Publication.hasUnpublishedChanges(thing)
+    val needsPublish = (!isPublished) || hasUnpublishedChanges
+    val btnColor = if (!needsPublish) "btn-default" else "btn-warning"
+    val btnTitle = 
+      if (isPublished) {
+        if (hasUnpublishedChanges)
+          "This has not-yet-published changes"
+        else
+          "This has been published" 
+      } else
+        "This has not yet been published"
+    
+    div(cls:="btn-group querki-icon-button",
+      button(
+        tpe:="button",
+        cls:=s"btn btn-xs $btnColor _noPrint",
+        dta.toggle:="dropdown",
+        aria.haspopup:="true", aria.expanded:="false",
+        i(cls:="fa fa-rss", aria.hidden:="true"), " ",
+        if (needsPublish) {
+          span(cls:="caret")
+        },
+        title:=btnTitle
+      ),
+      if (needsPublish) {
+        if (hasUnpublishedChanges) {
+          ul(cls:="dropdown-menu",
+          MSeq(
+            li(a(
+              href:="#",
+              onclick:={ () => Publication.update(thing, false) },
+              "Publish an Update")),
+            li(a(
+              href:="#",
+              onclick:={ () => Publication.update(thing, true) },
+              "Publish a Minor Update"))
+            )          
+          )
+        } else {
+          ul(cls:="dropdown-menu",
+            li(a(
+              href:="#",
+              onclick:={ () => Publication.publish(thing) },
+              "Publish"))
+          )
+        }
+      }
+    )
+  }
   
   def doRender =
     div(cls:="page-header",
@@ -164,6 +217,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             title:=s"Info about $thingName",
             id:="_infoButton",
             href:=Pages.infoFactory.pageUrl()),
+            
         if (!viewingHistory) {
           // The "editing" buttons:
           if (thing.isModel) {
@@ -226,8 +280,12 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             )
           }
         },
-        " ",
         shareButton,
+        // Editors see the Publish button on Publishable Instances:
+        // TODO: this button should also show for Models, but has a very different menu.
+        if (Publication.isPublishable(thing) && thing.isEditable) {
+          publishButton
+        },
         Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
           $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
         })

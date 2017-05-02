@@ -77,10 +77,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         else
           spaceInfo(state.getApp(t.spaceId), rc)
       // TBD: should this be auto-generated in some fashion? A meta-Property that says "This is a Client/Server flag",
-      // or something like that?
+      // or something like that? At the moment, this list is scarily ad-hoc.
       val flags = setFlags(t,
         Publication.PublishableModelProp,
-        Publication.PublishedProp
+        Publication.PublishedProp,
+        Publication.HasUnpublishedChanges
       )
       val perms = setPerms(t, user,
         Publication.CanPublishPermission

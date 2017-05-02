@@ -10,5 +10,6 @@ package object publication {
     def PublishableModelProp:Property[Boolean, Boolean]
     def MinorUpdateProp:Property[Boolean, Boolean]
     def PublishedProp:Property[Boolean, Boolean]
+    def HasUnpublishedChanges:Property[Boolean, Boolean]
   }
 }

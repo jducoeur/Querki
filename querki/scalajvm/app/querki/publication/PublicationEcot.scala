@@ -12,6 +12,7 @@ object MOIDs extends EcotIds(68) {
   val PublishableModelOID = moid(3)
   val MinorUpdateOID = moid(4)
   val PublishedOID = moid(5)
+  val UnpublishedChangesOID = moid(6)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
@@ -19,6 +20,12 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  
+  override def postInit() = {
+    ApiRegistry.registerApiImplFor[PublicationFunctions, PublicationFunctionsImpl](SpaceOps.spaceRegion)
+  }
   
   override def persistentMessages = persist(68,
     (classOf[PublishEvent] -> 100),
@@ -82,12 +89,19 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with Publication {
       setName(commonName(_.publication.publishedProp)),
       setInternal,
       Summary("Set to true when this Instance gets Published.")))
+  
+  lazy val HasUnpublishedChanges = new SystemProperty(UnpublishedChangesOID, YesNoType, ExactlyOne,
+    toProps(
+      setName(commonName(_.publication.hasUnpublishedChangesProp)),
+      setInternal,
+      Summary("Set to true iff this Thing has been Published, then edited but not yet Updated.")))
 
   override lazy val props = Seq(
     CanPublishPermission,
     CanReadAfterPublication,
     PublishableModelProp,
     MinorUpdateProp,
-    PublishedProp
+    PublishedProp,
+    HasUnpublishedChanges
   )
 }

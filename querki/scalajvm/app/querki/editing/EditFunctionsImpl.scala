@@ -27,6 +27,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
+  lazy val Publication = interface[querki.publication.Publication]
   lazy val QL = interface[querki.ql.QL]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val Types = interface[querki.types.Types]
@@ -94,7 +95,19 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   }
   
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
-    self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) map {
+    // TBD: this is an unfortunate intrusion from Publication to here. Is there a better way to keep track of the
+    // fact that this Published Thing has been edited but not yet republished?
+    // In theory, we could do this with timestamps -- if PublishedProp was a timestamp instead, we could compare
+    // that with the Thing's modTime, to see if the Thing has been modified since Publication. But there is no
+    // obvious and easy way to define a Timestamp Type that gets set to exactly the value of the modTime, without
+    // some *very* nasty and expensive operations in SpacePure. So for now, we're doing this ugly but easy approach.
+    val allProps =
+      if (thing.ifSet(Publication.PublishedProp)(state) && !(thing.ifSet(Publication.HasUnpublishedChanges)(state))) {
+        props + Publication.HasUnpublishedChanges(true)
+      } else
+        props
+        
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, allProps))) map {
       case ThingFound(_, _) => PropertyChanged
       case ThingError(ex, _) => throw new querki.api.GeneralChangeFailure("Error during save")
     }
