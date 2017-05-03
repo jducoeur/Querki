@@ -2,14 +2,14 @@ package querki.publication
 
 import models._
 import querki.globals._
-import querki.identity.User
+import querki.identity.{PublicIdentity, User}
 import querki.time.DateTime
 
 /**
  * The Commands that can legitimately be sent to the PublicationCore.
  */
 object PublicationCommands {
-  sealed trait PublicationCommand
+  sealed trait PublicationCommand extends querki.spaces.messages.SpaceMessagePayload
   
   case class Publish(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
   case class Update(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
@@ -26,9 +26,23 @@ object PublicationCommands {
     changesTo:Set[OID], 
     includeMinor:Boolean, 
     coalesce:Boolean) extends PublicationCommand
+    
+  case class OnePublishedThing(
+    thingId:OID,
+    isUpdate:Boolean,
+    displayName:String,
+    display:String
+  )
+  
+  case class OnePublishEvent(
+    who:PublicIdentity,
+    when:DateTime,
+    isMinor:Boolean,
+    things:Seq[OnePublishedThing]
+  )
   
   /**
-   * The events that correspond to a GetEvents request. Note that this may be empty!
+   * The events that correspond to a GetEvents request: this is a series of events, in chrono order. Note that this may be empty!
    */
-  case class RequestedEvents(events:Seq[RawPublishEvent])
+  case class RequestedEvents(events:Seq[OnePublishEvent])
 }

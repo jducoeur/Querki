@@ -14,7 +14,8 @@ object PublicationEvents {
   case class PublishedThingInfo(
     @KryoTag(1) thingId:OID, 
     @KryoTag(2) display:String, 
-    @KryoTag(3) strip:String) extends UseKryo
+    @KryoTag(3) strip:String,
+    @KryoTag(4) title:AddedField[String]) extends UseKryo
   
   sealed trait PublicationEvent
   

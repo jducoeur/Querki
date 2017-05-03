@@ -79,12 +79,14 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         // which is going to take a while.
         // Note that MonadError does *not* appear to contain sequence(). Will need to think about that one.
         val thingsWithWikitextFuts = things.map { thing =>
-          thing.render(publicRequestContext, state).map((thing.id, _))
+          thing.render(publicRequestContext, state).map((thing.id, _, thing.displayName))
         }
         val oneFut = fromFuture(Future.sequence(thingsWithWikitextFuts))
         for {
           wikitextPairs <- oneFut
-          infos = wikitextPairs.map { case (oid, wikitext) => PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString) }
+          infos = wikitextPairs.map { case (oid, wikitext, displayName) => 
+            PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString, displayName)
+          }
           publishEvent = PublishEvent(identity.id, infos, meta, DateTime.now)
           persisted <- persistAnd(publishEvent)
           rawEvent = RawPublishEvent(identity, infos.map(info => (info.thingId, info)).toMap, meta, persisted.when)
@@ -179,7 +181,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
       val dateOrder = implicitly[Ordering[DateTime]]
       import dateOrder._
       
-      def includeEvent(evt:RawPublishEvent):Boolean = {
+      def includeEvent(evt:OnePublishEvent):Boolean = {
         // Is it in the date range?
         (since.map(evt.when >= _)).getOrElse(true) &&
         (until.map(evt.when <= _)).getOrElse(true) &&
@@ -188,7 +190,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
           if (changesTo.isEmpty)
             true
           else {
-            changesTo.exists(evt.things.contains(_))
+            changesTo.exists(target => evt.things.exists(_.thingId == target))
           }
         ) &&
         (
@@ -196,13 +198,13 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
             // We're including it even if it's a minor update
             true
           else {
-            // Check whether it's a Minor Update
-            evt.meta.getFirstOpt(Publication.MinorUpdateProp).map(!_).getOrElse(true)
+            // If it's a minor update, don't include it:
+            !evt.isMinor
           }
         )
       }
       
-      val filtered = curState.events.filter(includeEvent)
+      val filtered = curState.publicEvents.filter(includeEvent)
       // TODO: deal with coalesce
       sender ! RequestedEvents(filtered)
     }
