@@ -11,6 +11,7 @@ import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.spaces.messages._
+import querki.time.DateTime
 import querki.values.QLContext
 
 import PublicationCommands._
@@ -32,6 +33,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  val QDuration = initRequires[querki.time.QDuration]
   val Time = initRequires[querki.time.Time]
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
@@ -91,6 +93,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
         opts = Seq(
           ("since", Time.QDate, Core.QNone, "When the changes should start"),
           ("until", Time.QDate, Core.QNone, "When the changes should end"),
+          ("duration", QDuration.DurationType, Core.QNone, "(Instead of `since`) What period before `until` to cover"),
           ("changesTo", LinkType, Core.QNone, "The Model(s) to include in the list"),
           ("includeMinor", YesNoType, ExactlyOne(YesNoType(false)), "If true, include Minor changes in the list"),
           ("reverse", YesNoType, ExactlyOne(YesNoType(false)), "If true, list the results in reverse-chronological order, with the most recent first")
@@ -106,11 +109,26 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       for {
         since <- inv.processAsOpt("since", Time.QDate)
         until <- inv.processAsOpt("until", Time.QDate)
+        duration <- inv.processAsOpt("duration", QDuration.DurationType)
+        start = {
+          since.orElse {
+            duration match {
+              case Some(d) => {
+                // There's a duration. When do we end?
+                val end = until.getOrElse(DateTime.now)
+                val period = QDuration.toPeriod(d, inv.state)
+                Some(end.minus(period))
+              }
+              // No since and no duration, so there's no start time
+              case None => None
+            }
+          }
+        }
         changesTo <- inv.processAsList("changesTo", LinkType)
         includeMinor <- inv.processAs("includeMinor", YesNoType)
         reverse <- inv.processAs("reverse", YesNoType)
         who = inv.context.request.requesterOrAnon
-        cmd = SpaceSubsystemRequest(who, inv.state.id, GetEvents(who, since, until, includeMinor, false))
+        cmd = SpaceSubsystemRequest(who, inv.state.id, GetEvents(who, start, until, includeMinor, false))
         RequestedEvents(events) <- inv.fut(SpaceOps.spaceRegion ? cmd)
         orderedEvents = if (reverse) events.reverse else events
         filteredEvents = filterOnModels(changesTo, orderedEvents)(inv.state)
