@@ -23,7 +23,6 @@ object PublicationCommands {
     who:User, 
     since:Option[DateTime], 
     until:Option[DateTime], 
-    changesTo:Set[OID], 
     includeMinor:Boolean, 
     coalesce:Boolean) extends PublicationCommand
     

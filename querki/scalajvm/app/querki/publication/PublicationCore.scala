@@ -176,7 +176,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         yield { sender ! PublishResponse(spaceState) }
     }
     
-    case GetEvents(who, since, until, changesTo, includeMinor, coalesce) => {
+    case GetEvents(who, since, until, includeMinor, coalesce) => {
       // These give us nice infix comparators for DateTime:
       val dateOrder = implicitly[Ordering[DateTime]]
       import dateOrder._
@@ -185,14 +185,6 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         // Is it in the date range?
         (since.map(evt.when >= _)).getOrElse(true) &&
         (until.map(evt.when <= _)).getOrElse(true) &&
-        // Does it have one of the desired Things?
-        (
-          if (changesTo.isEmpty)
-            true
-          else {
-            changesTo.exists(target => evt.things.exists(_.thingId == target))
-          }
-        ) &&
         (
           if (includeMinor)
             // We're including it even if it's a minor update

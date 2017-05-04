@@ -110,11 +110,26 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
         includeMinor <- inv.processAs("includeMinor", YesNoType)
         reverse <- inv.processAs("reverse", YesNoType)
         who = inv.context.request.requesterOrAnon
-        cmd = SpaceSubsystemRequest(who, inv.state.id, GetEvents(who, since, until, changesTo.toSet, includeMinor, false))
+        cmd = SpaceSubsystemRequest(who, inv.state.id, GetEvents(who, since, until, includeMinor, false))
         RequestedEvents(events) <- inv.fut(SpaceOps.spaceRegion ? cmd)
         orderedEvents = if (reverse) events.reverse else events
+        filteredEvents = filterOnModels(changesTo, orderedEvents)(inv.state)
       }
-        yield QList.makePropValue(orderedEvents.map(PublishEventType(_)), PublishEventType)
+        yield QList.makePropValue(filteredEvents.map(PublishEventType(_)), PublishEventType)
+    }
+    
+    def filterOnModels(changesTo:List[OID], events:Seq[OnePublishEvent])(implicit state:SpaceState):Seq[OnePublishEvent] = {
+      if (changesTo.isEmpty)
+        events
+      else {
+        events.filter { event =>
+          event.things.exists { thingInfo =>
+            state.anything(thingInfo.thingId).map { thing =>
+              changesTo.contains(thing.model)
+            }.getOrElse(false)
+          }
+        }
+      }
     }
   }
   
