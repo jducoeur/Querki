@@ -215,6 +215,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
    */
   final def computeMemSize(elem:ElemValue):Int = doComputeMemSize(get(elem))
   def doComputeMemSize(v:VT):Int  
+  
+  /**
+   * Concrete PTypes should override this in order to provide a Type Constructor.
+   */
+  def constructTypeValue(inv:Invocation):Option[QFut] = None
+  
+  override def thingOps(ecology:Ecology):ThingOps = new PTypeThingOps(this)(ecology)
 }
 
 object PType {
@@ -288,4 +295,20 @@ trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] { this:PType[VT] =>
  */
 trait FullInputRendering {
   def renderInputFull(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal):NodeSeq
+}
+
+class PTypeThingOps[VT](pt:PType[VT])(implicit e:Ecology) extends ThingOps(pt) {
+  /**
+   * A PType may be used as a type constructor. For now, you can only pass Text in; that will be parsed
+   * as appropriate, and a QValue returned. If you don't pass a Text in, qlApply acts like an ordinary
+   * Thing, and returns a Link.
+   */
+  override def qlApply(inv:Invocation):QFut = {
+    if (inv.numParams >= 1) {
+      // This appears to be a type constructor.
+      pt.constructTypeValue(inv).getOrElse(super.qlApply(inv))
+    } else {
+      super.qlApply(inv)
+    }
+  }  
 }

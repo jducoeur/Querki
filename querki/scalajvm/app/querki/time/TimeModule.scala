@@ -3,6 +3,7 @@ package querki.time
 import scala.xml.NodeSeq
 
 import com.github.nscala_time.time.Imports._
+import com.github.nscala_time.time.StaticDateTime
 
 import models._
 
@@ -30,6 +31,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
   val Logic = initRequires[querki.logic.Logic]
   
   lazy val QDuration = interface[QDuration]
+  lazy val QL = interface[querki.ql.QL]
     
   /******************************************
    * TYPES
@@ -41,6 +43,14 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       Categories(TimeTag),
       Summary("Represents a particular date"),
       Details("""A value of this Type indicates a specific date.
+          |
+          |You can create date literals in QL code, which is occasionally helpful; you do this by treating
+          |`Date Type` as a function, and passing in a Text value to be parsed as a date, in the format
+          |mm/dd/yyyy. So to create a constant for the first day of the 21st century, you would say:
+          |```
+          |Date Type(\""01/01/2000\"")
+          |```
+          |
           |ADVANCED: under the hood, DateTimes are based on the [Joda-Time](http://www.joda.org/joda-time/)
           |library, and you can use Joda-Time format strings when displaying a Date. For example,
           |if you say:
@@ -93,6 +103,23 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     def doDefault(implicit state:SpaceState) = epoch
     
     def doComputeMemSize(v:DateTime):Int = 8
+    
+    def parseDate(str:String):QValue = {
+      try {
+        ExactlyOne(this(defaultRenderFormat.parseDateTime(str)))
+      } catch {
+        case ex:Exception => QL.ErrorValue(s"`str` is not a legal date -- please use the format mm/dd/yyyy")
+      }
+    }
+    
+    override def constructTypeValue(inv:Invocation):Option[QFut] = {
+      val result:QFut = for {
+        text <- inv.processParamFirstAs(0, Core.TextType)
+      }
+        yield parseDate(text.text)
+        
+      Some(result)
+    }
   }
     
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
