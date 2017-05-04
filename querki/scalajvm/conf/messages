@@ -13,6 +13,8 @@ Collections.concat.mismatchedTypes=The parameters of _concat() must all be the s
 DataModel.propsOfType.notAType=The _propsOfType function expects a Type; {0} is not one
 DataModel.usingSpace.notAnApp=The parameter of _usingSpace must be this Space or one of its Apps
 
+Duration.illegalUnit=A Duration must be made with "days", "months", "weeks" or "years".
+
 Edit.checklist.propMissing={0} doesn't have the Property {1}
 
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.

@@ -37,5 +37,13 @@ class DurationTests extends QuerkiTests {
       pqlt(s.dateThing, """[[DateTime Prop -> _plus(Duration)]]""") should
         equal ("08/15/2013")
     }
+    
+    // QI.7w4g8l4 -- this does double-duty to test the constructors for Date and Duration:
+    "be constructable" in {
+      implicit val s = commonSpace
+      
+      pql("""[[Date Type(""2/1/2010"") -> _plus(Duration Type(2, months))]]""") should
+        equal ("04/01/2010")
+    }
   }
 }

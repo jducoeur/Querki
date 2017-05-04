@@ -4,7 +4,7 @@ import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
 import querki.util.PublicException
 
 object DurationMOIDs extends EcotIds(57) {
@@ -32,7 +32,7 @@ object DurationMOIDs extends EcotIds(57) {
  * 
  * @author jducoeur
  */
-class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with QDuration {
+class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with querki.core.MethodDefs with QDuration {
   
   import DurationMOIDs._
   
@@ -100,7 +100,33 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
       Summary("Represents a length of time"),
       Details("""This type is available in case you want to build your own Duration properties. In
         |most cases, though, you should just use the built-in Duration Property, which is good enough
-        |for most purposes.""".stripMargin)))
+        |for most purposes.
+        |
+        |Occasionally, you may want to specify a literal Duration in a QL expression. You do this by
+        |calling `Duration Type` as a function with two parameters: the number of units, and the unit.
+        |So for example, to add two months to today's date, you would say:
+        |```
+        |_today -> _plus(Duration Type(2, months))
+        |```
+        |Note that those are two distinct parameters -- there must be a comma between them. Also, only
+        |the plural forms of the units are allowed, so one month is still `Duration Type(1, months)`.
+        |
+        |The available units are "years", "months", "weeks" and "days". (Eventually we will also allow
+        |hours, minutes and seconds, but those are not implemented yet.) """.stripMargin)))
+  {
+    override def constructTypeValue(inv:Invocation):Option[QFut] = {
+      val result:QFut = for {
+        n <- inv.processParamFirstAs(0, IntType)
+        unitId <- inv.processParamFirstAs(1, LinkType)
+        unit <- inv.opt(inv.state.anything(unitId), Some(PublicException("Duration.illegalUnit")))
+        if (unit.isAncestor(durationKindModel)(inv.state))
+        v = this(SimplePropertyBundle(DurationKindProp(unit), DurationQuantityProp(n)))
+      }
+        yield ExactlyOne(v)
+      
+      Some(result)
+    }
+  }
   
   lazy val DurationProp = new SystemProperty(DurationPropOID, DurationType, ExactlyOne,
     toProps(
