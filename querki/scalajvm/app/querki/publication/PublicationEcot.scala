@@ -26,6 +26,9 @@ object MOIDs extends EcotIds(68) {
   val UnpublishedChangesOID = moid(6)
   val GetChangesOID = moid(7)
   val PublishEventTypeOID = moid(8)
+  
+  val PublishWhoOID = moid(9)
+  val PublishWhenOID = moid(10)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -35,8 +38,10 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   val AccessControl = initRequires[querki.security.AccessControl]
   val QDuration = initRequires[querki.time.QDuration]
   val Time = initRequires[querki.time.Time]
+  val Typeclasses = initRequires[querki.typeclass.Typeclasses]
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
@@ -151,6 +156,18 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     }
   }
   
+  lazy val PublishWhoImpl = new FunctionImpl(PublishWhoOID, Typeclasses.WhoMethod, Seq(PublishEventType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        evt <- inv.contextAllAs(PublishEventType)
+        identity = evt.who
+        person <- inv.opt(Person.localPerson(identity.id)(inv.state))
+      }
+        yield ExactlyOne(LinkType(person))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -217,6 +234,8 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
 
   override lazy val props = Seq(
     GetChangesFunction,
+    
+    PublishWhoImpl,
     
     CanPublishPermission,
     CanReadAfterPublication,
