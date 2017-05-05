@@ -33,6 +33,9 @@ object MOIDs extends EcotIds(68) {
   val PublishedThingTypeOID = moid(12)
   val PublishedThingsOID = moid(13)
   val PublishedThingOID = moid(14)
+  val PublishedUpdateOID = moid(15)
+  val PublishedDisplayNameOID = moid(16)
+  val PublishedViewOID = moid(17)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -46,6 +49,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Person = interface[querki.identity.Person]
+  lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
@@ -253,6 +257,49 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     }
   }
   
+  lazy val PublishedUpdateFunction = new InternalMethod(PublishedUpdateOID,
+    toProps(
+      setName("_isAnUpdate"),
+      Categories(PublicationTag),
+      Summary("This says whether a [[_publishedThingType]] is an Update (if true) or the first Publish for this Thing (if false)")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thingInfo <- inv.contextAllAs(PublishedThingType)
+      }
+        yield ExactlyOne(YesNoType(thingInfo.isUpdate))
+    }
+  }
+  
+  lazy val PublishedDisplayNameFunction = new InternalMethod(PublishedDisplayNameOID,
+    toProps(
+      setName("_publishedName"),
+      Categories(PublicationTag),
+      Summary("Given a [[_publishedThingType]], this produces its Name at the time it was Published or Updated.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thingInfo <- inv.contextAllAs(PublishedThingType)
+      }
+        yield ExactlyOne(TextType(thingInfo.displayName))
+    }
+  }
+  
+  lazy val PublishedViewFunction = new InternalMethod(PublishedViewOID,
+    toProps(
+      setName("_publishedView"),
+      Categories(PublicationTag),
+      Summary("Given a [[_publishedThingType]], this produces what it looked like when it was Published or Updated.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thingInfo <- inv.contextAllAs(PublishedThingType)
+      }
+        // This is pre-rendered, so wrap it accordingly:
+        yield ExactlyOne(QL.ParsedTextType(HtmlWikitext(thingInfo.display)))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -326,6 +373,9 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     PublishMinorUpdateFunction,
     PublishedThingsFunction,
     PublishedThingImpl,
+    PublishedUpdateFunction,
+    PublishedDisplayNameFunction,
+    PublishedViewFunction,
     
     CanPublishPermission,
     CanReadAfterPublication,
