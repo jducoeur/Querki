@@ -29,6 +29,10 @@ object MOIDs extends EcotIds(68) {
   
   val PublishWhoOID = moid(9)
   val PublishDateOID = moid(10)
+  val PublishMinorUpdateOID = moid(11)
+  val PublishedThingTypeOID = moid(12)
+  val PublishedThingsOID = moid(13)
+  val PublishedThingOID = moid(14)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -81,6 +85,30 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     def doDefault(implicit state:SpaceState) = ???
     
     def doComputeMemSize(v:OnePublishEvent):Int = 0
+  }
+  
+  lazy val PublishedThingType = new SystemType[OnePublishedThing](PublishedThingTypeOID,
+    toProps(
+      setName("_publishedThingType"),
+      Categories(PublicationTag),
+      Core.InternalProp(true),
+      Summary("Represents a single Thing in a Publish or Update event"),
+      Details("""While you usually Publish or Update a single Thing at a time, Querki is designed to
+        |allow multi-Thing Publish events in the future. So from a Publish or Update event you call
+        |`_publishedThings` to get the list of Things involved, and that produces one of these.""".stripMargin))) with SimplePTypeBuilder[OnePublishedThing]
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = ???
+    def doSerialize(v:OnePublishedThing)(implicit state:SpaceState) = ???
+    val defaultRenderFormat = DateTimeFormat.forPattern("MM/dd/yyyy")
+    
+    def doWikify(context:QLContext)(thingInfo:OnePublishedThing, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      val eventKind = if (thingInfo.isUpdate) "updated" else "published"
+      Future.successful(Wikitext(s"* [${thingInfo.displayName}](${thingInfo.thingId.toThingId.toString}) $eventKind"))
+    }
+    
+    def doDefault(implicit state:SpaceState) = ???
+    
+    def doComputeMemSize(v:OnePublishedThing):Int = 0
   }
 
   /******************************************
@@ -155,6 +183,12 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       }
     }
   }
+    
+  /***********************************************
+   * ACCESSORS
+   * 
+   * These are access functions for OnePublishEvent and OnePublishedThing.
+   ***********************************************/
   
   lazy val PublishWhoImpl = new FunctionImpl(PublishWhoOID, Typeclasses.WhoMethod, Seq(PublishEventType))
   {
@@ -176,6 +210,46 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
         dateTime = evt.when
       }
         yield ExactlyOne(Time.QDate(dateTime))
+    }
+  }
+  
+  lazy val PublishMinorUpdateFunction = new InternalMethod(PublishMinorUpdateOID, 
+    toProps(
+      setName("_isMinorUpdate"),
+      Categories(PublicationTag),
+      Summary("This will be true iff this was marked as a Minor Update")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        evt <- inv.contextAllAs(PublishEventType)
+      }
+        yield ExactlyOne(YesNoType(evt.isMinor))
+    }
+  }
+  
+  lazy val PublishedThingsFunction = new InternalMethod(PublishedThingsOID,
+    toProps(
+      setName("_publishedThings"),
+      Categories(PublicationTag),
+      Summary("This produces the Things involved in a Publish or Update event."),
+      Details("""These are of [[_publishedThingType]], and have their own functions to get information from them.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        evt <- inv.contextAllAs(PublishEventType)
+        thingInfo <- inv.iter(evt.things)
+      }
+        yield ExactlyOne(PublishedThingType(thingInfo))
+    }
+  }
+  
+  lazy val PublishedThingImpl = new FunctionImpl(PublishedThingOID, Typeclasses.ThingMethod, Seq(PublishedThingType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thingInfo <- inv.contextAllAs(PublishedThingType)
+      }
+        yield ExactlyOne(LinkType(thingInfo.thingId))
     }
   }
   
@@ -225,11 +299,12 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
  
   lazy val MinorUpdateProp = new SystemProperty(MinorUpdateOID, YesNoType, ExactlyOne,
     toProps(
-      setName("_minorUpdate"),
+      setName("_minorUpdateInternal"),
       setInternal,
       Summary("Iff set, this Update should be considered Minor."),
       Details("""This is the Property behind the "Minor Update" button in the Editor. It is an
-        |internal meta-Property on the Publication event itself, rather than on the Thing.""".stripMargin)))
+        |internal meta-Property on the Publication event itself, rather than on the Thing. You should
+        |never use this directly""".stripMargin)))
   
   lazy val PublishedProp = new SystemProperty(PublishedOID, YesNoType, ExactlyOne,
     toProps(
@@ -248,6 +323,9 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     
     PublishWhoImpl,
     PublishDateImpl,
+    PublishMinorUpdateFunction,
+    PublishedThingsFunction,
+    PublishedThingImpl,
     
     CanPublishPermission,
     CanReadAfterPublication,
