@@ -5,6 +5,7 @@ import querki.globals._
 
 object MOIDs extends EcotIds(69) {
   val WhoMethodOID = moid(1)
+  val DateMethodOID = moid(2)
 }
 
 /**
@@ -24,13 +25,26 @@ class TypeclassEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
       Categories(GeneralTag),
       Summary("Fetch who did something"),
       Details("""    VALUE -> _who -> Person
-        |Given some sort of event, this returns the Person who did it.
+        |Given some sort of event, this produces the Person who did it.
+        |
+        |Note that this is only defined for
+        |certain sorts of Things; if you find a place where you think it should work but it doesn't, please
+        |bring it to our attention -- thanks!""".stripMargin)))
+  
+  lazy val DateMethod = new AbstractFunction(DateMethodOID, Received,
+    toProps(
+      setName("_date"),
+      Categories(GeneralTag),
+      Summary("Says what date something happened"),
+      Details("""    VALUE -> _date -> Date
+        |Given some sort of event, this produces when it happened.
         |
         |Note that this is only defined for
         |certain sorts of Things; if you find a place where you think it should work but it doesn't, please
         |bring it to our attention -- thanks!""".stripMargin)))
   
   override lazy val props = Seq(
-    WhoMethod
+    WhoMethod,
+    DateMethod
   )
 }

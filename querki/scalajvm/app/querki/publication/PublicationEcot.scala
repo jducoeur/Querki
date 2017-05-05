@@ -28,7 +28,7 @@ object MOIDs extends EcotIds(68) {
   val PublishEventTypeOID = moid(8)
   
   val PublishWhoOID = moid(9)
-  val PublishWhenOID = moid(10)
+  val PublishDateOID = moid(10)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -168,6 +168,17 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     }
   }
   
+  lazy val PublishDateImpl = new FunctionImpl(PublishDateOID, Typeclasses.DateMethod, Seq(PublishEventType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        evt <- inv.contextAllAs(PublishEventType)
+        dateTime = evt.when
+      }
+        yield ExactlyOne(Time.QDate(dateTime))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -236,6 +247,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     GetChangesFunction,
     
     PublishWhoImpl,
+    PublishDateImpl,
     
     CanPublishPermission,
     CanReadAfterPublication,
