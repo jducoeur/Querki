@@ -1,6 +1,7 @@
 package querki
 
 import models._
+import querki.core.QLText
 import querki.globals._
 
 package object publication {
@@ -11,5 +12,6 @@ package object publication {
     def MinorUpdateProp:Property[Boolean, Boolean]
     def PublishedProp:Property[Boolean, Boolean]
     def HasUnpublishedChanges:Property[Boolean, Boolean]
+    def PublishNotesProp:Property[QLText, String]
   }
 }

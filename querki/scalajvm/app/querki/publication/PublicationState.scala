@@ -15,7 +15,10 @@ case class RawPublishEvent(identity:PublicIdentity, things:Map[OID, PublishedThi
 /**
  * This represents the Publication history of a given Space.
  */
-case class PublicationState(events:Vector[RawPublishEvent]) {
+case class PublicationState(events:Vector[RawPublishEvent])(implicit val ecology:Ecology) extends EcologyMember {
+  
+  lazy val Publication = interface[Publication]
+  
   lazy val currentRSS:String = ???
   
   import PublicationCommands.{OnePublishEvent, OnePublishedThing}
@@ -46,7 +49,8 @@ case class PublicationState(events:Vector[RawPublishEvent]) {
         when,
         // TBD: this is a horrible hack, but doing it properly requires the Ecology. Is it worth it?
         meta.contains(MOIDs.MinorUpdateOID),
-        pubThings
+        pubThings,
+        meta.getFirstOpt(Publication.PublishNotesProp)
       )
       (evts :+ pubEvt, newStates)
     }

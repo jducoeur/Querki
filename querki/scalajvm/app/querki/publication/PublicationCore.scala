@@ -12,6 +12,7 @@ import funcakka._
 import funcakka.Implicits._
 
 import models._
+import querki.core.QLText
 import querki.globals._
 import querki.identity.{IdentityId, PublicIdentity, User}
 import querki.time.{DateTime, DateTimeOrdering}
@@ -23,6 +24,7 @@ import PublicationEvents._
 trait PublicationCore extends PublicationPure with PersistentActorCore with EcologyMember with querki.types.ModelTypeDefiner with ModelPersistence {
   
   private lazy val AccessControl = interface[querki.security.AccessControl]
+  private lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   private lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   private lazy val Person = interface[querki.identity.Person]
   private lazy val Publication = interface[Publication]
@@ -67,6 +69,8 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   
   var curState = PublicationState(Vector.empty)
   
+  case class ThingInfo(thingId:OID, wikitext:Wikitext, displayName:String, notes:Option[QLText])
+  
   def doPublish(who:User, thingIds:Seq[OID], meta:PropMap, spaceState:SpaceState):ME[PublicationState] = {
     implicit val state = spaceState
     Person.localIdentities(who).headOption match {
@@ -79,15 +83,27 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         // which is going to take a while.
         // Note that MonadError does *not* appear to contain sequence(). Will need to think about that one.
         val thingsWithWikitextFuts = things.map { thing =>
-          thing.render(publicRequestContext, state).map((thing.id, _, thing.displayName))
+          val notes = thing.getFirstOpt(Publication.PublishNotesProp)
+          thing.render(publicRequestContext, state).map(ThingInfo(thing.id, _, thing.displayName, notes))
         }
         val oneFut = fromFuture(Future.sequence(thingsWithWikitextFuts))
         for {
           wikitextPairs <- oneFut
-          infos = wikitextPairs.map { case (oid, wikitext, displayName) => 
+          infos = wikitextPairs.map { case ThingInfo(oid, wikitext, displayName, notes) => 
             PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString, displayName)
           }
-          publishEvent = PublishEvent(identity.id, infos, meta, DateTime.now)
+          notes = ("" /: wikitextPairs) { (text, thingInfo) =>
+            thingInfo.notes match {
+              case Some(n) => text + n.text
+              case None => text
+            }
+          }
+          fullMeta =
+            if (notes.isEmpty)
+              meta
+            else
+              meta + Publication.PublishNotesProp(notes)
+          publishEvent = PublishEvent(identity.id, infos, fullMeta, DateTime.now)
           persisted <- persistAnd(publishEvent)
           rawEvent = RawPublishEvent(identity, infos.map(info => (info.thingId, info)).toMap, meta, persisted.when)
           _ = curState = addPublication(rawEvent, curState)
@@ -121,7 +137,9 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
           val newProps = 
             toProps(
               AccessControl.CanReadProp(newReadProp:_*),
-              Publication.PublishedProp(true))
+              Publication.PublishedProp(true),
+              // Clear the Notes:
+              Publication.PublishNotesProp(DataModel.getDeletedValue(Publication.PublishNotesProp)))
           me.map(_ :+ (thingId, newProps))
         }
         case _ => monadError.raiseError(new Exception(s"Trying to Publish unknown Thing $thingId!"))
@@ -142,7 +160,9 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         case Some(thing) => {
           val newProps = 
             toProps(
-              Publication.HasUnpublishedChanges(false))
+              Publication.HasUnpublishedChanges(false),
+              // Clear the Notes:
+              Publication.PublishNotesProp(DataModel.getDeletedValue(Publication.PublishNotesProp)))
           me.map(_ :+ (thingId, newProps))
         }
         case _ => monadError.raiseError(new Exception(s"Trying to Update unknown Thing $thingId!"))

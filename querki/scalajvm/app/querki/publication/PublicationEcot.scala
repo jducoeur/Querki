@@ -36,6 +36,8 @@ object MOIDs extends EcotIds(68) {
   val PublishedUpdateOID = moid(15)
   val PublishedDisplayNameOID = moid(16)
   val PublishedViewOID = moid(17)
+  val PublishNotesPropOID = moid(18)
+  val PublishedNotesFunctionOID = moid(19)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -300,6 +302,21 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     }
   }
   
+  lazy val PublishedNotesFunction = new InternalMethod(PublishedNotesFunctionOID,
+    toProps(
+      setName("_publishedNotes"),
+      Categories(PublicationTag),
+      Summary("Any Change Notes that were included with this Publish or Update.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        evt <- inv.contextAllAs(PublishEventType)
+        notes <- inv.opt(evt.notes)
+      }
+        yield ExactlyOne(LargeTextType(notes.text))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -364,6 +381,12 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       setName(commonName(_.publication.hasUnpublishedChangesProp)),
       setInternal,
       Summary("Set to true iff this Thing has been Published, then edited but not yet Updated.")))
+  
+  lazy val PublishNotesProp = new SystemProperty(PublishNotesPropOID, LargeTextType, Optional,
+    toProps(
+      setName(commonName(_.publication.publishNotesProp)),
+      setInternal,
+      Summary("The notes to include with the next Publish or Update of this Thing.")))
 
   override lazy val props = Seq(
     GetChangesFunction,
@@ -376,12 +399,14 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     PublishedUpdateFunction,
     PublishedDisplayNameFunction,
     PublishedViewFunction,
+    PublishedNotesFunction,
     
     CanPublishPermission,
     CanReadAfterPublication,
     PublishableModelProp,
     MinorUpdateProp,
     PublishedProp,
-    HasUnpublishedChanges
+    HasUnpublishedChanges,
+    PublishNotesProp
   )
 }

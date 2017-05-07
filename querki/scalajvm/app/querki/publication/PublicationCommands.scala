@@ -1,6 +1,7 @@
 package querki.publication
 
 import models._
+import querki.core.QLText
 import querki.globals._
 import querki.identity.{PublicIdentity, User}
 import querki.time.DateTime
@@ -37,7 +38,8 @@ object PublicationCommands {
     who:PublicIdentity,
     when:DateTime,
     isMinor:Boolean,
-    things:Seq[OnePublishedThing]
+    things:Seq[OnePublishedThing],
+    notes:Option[QLText]
   )
   
   /**

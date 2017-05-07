@@ -10,6 +10,6 @@ import PublicationEvents._
  */
 trait PublicationPure {
   def addPublication(evt:RawPublishEvent, state:PublicationState):PublicationState = {
-    state.copy(events = state.events :+ evt)
+    state.copy(events = state.events :+ evt)(state.ecology)
   }
 }

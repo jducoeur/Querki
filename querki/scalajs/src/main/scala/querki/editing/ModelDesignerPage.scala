@@ -210,6 +210,12 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
           msg("pageTitle", ("modelName" -> model.unsafeName), ("prefix" -> prefix))
         }
         
+        publishNotesInfo <-
+          if (isPublishable(model))
+            Client[EditFunctions].getOnePropertyEditor(model.oid, std.publication.publishNotesProp).call().map(Some(_))
+          else
+            Future(None)
+        
   	    guts = 
           div(cls:="_advancedEditor",
             h1(pageTitle),
@@ -256,46 +262,55 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
             
             if (isPublishable(model)) 
             {
-              // Instances of publishable models are a *very* different situation. There are a lot of sub-cases:
-              if (isPublished(model)) {
-                // This has already been Published, so it's an Update situation:
-                MSeq(
-                  new WithTooltip(
-                    new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
-                      Pages.thingPageFactory.showPage(model)
-                    }),
-                    "Pressing this will not list these changes in Recent Changes at all. These changes may become part of a later Update."
-                  ),
-                  new WithTooltip(
-                    new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Publication.update(model, false)
-                    }),
-                    "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
-                  ),
-                  new WithTooltip(
-                    new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Publication.update(model, true)
-                    }),
-                    "Pressing this will publish a Minor Update -- the changes will not go in the RSS Feed, but will be visible in Recent Changes if requested."
+              MSeq(
+                publishNotesInfo.map { info =>
+                  MSeq(
+                    p("Change Notes (optional - these will be included when you Publish or Update):"),
+                    new RawDiv(info.editor)
                   )
-                )
-              } else {
-                // Not yet Published:
-                MSeq(
-                  new WithTooltip(
-                    new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
-                      Pages.thingPageFactory.showPage(model)
-                    }),
-                    "Press this button if you want to do further work on this Instance before Publishing it."
-                  ),
-                  new WithTooltip(
-                    new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                      Publication.publish(model)
-                    }),
-                    "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
+                },
+                
+                // Instances of publishable models are a *very* different situation. There are a lot of sub-cases:
+                if (isPublished(model)) {
+                  // This has already been Published, so it's an Update situation:
+                  MSeq(
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
+                        Pages.thingPageFactory.showPage(model)
+                      }),
+                      "Pressing this will not list these changes in Recent Changes at all. These changes may become part of a later Update."
+                    ),
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                        Publication.update(model, false)
+                      }),
+                      "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
+                    ),
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                        Publication.update(model, true)
+                      }),
+                      "Pressing this will publish a Minor Update -- the changes will not go in the RSS Feed, but will be visible in Recent Changes if requested."
+                    )
                   )
-                )
-              }
+                } else {
+                  // Not yet Published:
+                  MSeq(
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Normal, "Done for now, but don't Publish")({() =>
+                        Pages.thingPageFactory.showPage(model)
+                      }),
+                      "Press this button if you want to do further work on this Instance before Publishing it."
+                    ),
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                        Publication.publish(model)
+                      }),
+                      "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
+                    )
+                  )
+                }
+              )
             } else {
               // Normal case:
               a(cls:="btn btn-primary",
