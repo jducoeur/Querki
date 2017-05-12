@@ -46,6 +46,11 @@ trait SecurityFunctions {
   def permsFor(thing:TID):Future[ThingPermissions]
   
   /**
+   * Fetches the info about a single specified permission.
+   */
+  def getOnePerm(id:TID):Future[PermInfo]
+  
+  /**
    * Fetch the details on all of the permissions that are defined in this Space. (Which are
    * mostly the System ones.)
    */

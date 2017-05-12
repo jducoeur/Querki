@@ -136,16 +136,50 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
    * @param msg The change event to send to the server.
    */
   def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
+    val fut = InputGadget.doSaveChange(thingId, msg)
+    fut.onComplete {
+      case Success(response) => {
+        InputGadgetsInternal.saveComplete(this)
+	      response match {
+          case PropertyChanged => {
+            $(elem).trigger("savecomplete")
+          }
+        }
+      }
+      
+      case Failure(ex) => {
+        ex match {
+          case querki.api.ValidationException(msg) => {
+            showValidationError(msg)
+            $(elem).trigger("saveerror")
+          }
+          case querki.api.GeneralChangeFailure(msg) => {
+            $(elem).trigger("saveerror")
+          }
+        }
+      }
+    }
+    fut
+  }
+}
+
+object InputGadget {
+  /**
+   * The guts of saving changes, pulled out of InputGadget so that other sorts of controls can
+   * make use of it.
+   */
+  def doSaveChange(thingId:TID, msg:PropertyChange)(implicit ecology:Ecology):Future[PropertyChangeResponse] = {
+    val Client = ecology.api[querki.client.Client]
+    val InputGadgetsInternal = ecology.api[InputGadgetsInternal]
+    val StatusLine = ecology.api[querki.display.StatusLine]
+    
     StatusLine.showUntilChange("Saving...")
-    clearValidationError()
     val promise = Promise[PropertyChangeResponse]
     Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
       case Success(response) => {
-        InputGadgetsInternal.saveComplete(this)
-	    response match {
+	      response match {
           case PropertyChanged => {
             StatusLine.showBriefly("Saved")
-            $(elem).trigger("savecomplete")
           }
         }
         promise.success(response)
@@ -154,12 +188,9 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
         ex match {
           case querki.api.ValidationException(msg) => {
             StatusLine.clear()
-            showValidationError(msg)
-            $(elem).trigger("saveerror")
           }
           case querki.api.GeneralChangeFailure(msg) => {
             StatusLine.showUntilChange(msg)
-            $(elem).trigger("saveerror")
           }
         }
       }

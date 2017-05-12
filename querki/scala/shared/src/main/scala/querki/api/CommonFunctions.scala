@@ -123,6 +123,8 @@ class StandardThings(h:PassthroughHandlerBase) {
     val canPublishPerm = h.pass("Who Can Publish")
     val hasUnpublishedChangesProp = h.pass("_hasUnpublishedChanges")
     val publishNotesProp = h.pass("_publishNotes")
+    val spaceHasPublicationsProp = h.pass("_spaceHasPublications")
+    val canReadAfterPublishPerm = h.pass("Who Can Read After Publication")
   }
   
   object roles {

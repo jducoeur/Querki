@@ -14,6 +14,10 @@ pages : {
 	importButton : "Import a Space from a file"
   }
   
+  editPublish : {
+    pageTitle : "Edit Publication"
+  }
+  
   editSpaceInfo : {
     pageTitle : "Edit Space Info"
   }

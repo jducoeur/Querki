@@ -45,7 +45,6 @@ trait LevelMap { page:Page =>
   def currentPermOID(permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean):String = {
     levelMap(currentPermLevel(permInfo, thingPerm, isSpace)).underlying    
   }
-  
 }
 
 /**
@@ -53,112 +52,19 @@ trait LevelMap { page:Page =>
  */
 class SecurityPage(params:ParamMap)(implicit val ecology:Ecology) 
   extends Page("security") with LevelMap 
-{
-  
+{ self =>
   lazy val thingId = TID(params("thingId"))
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
-  
-  class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean) extends InputGadget[html.Div](ecology) {
-    
-    lazy val customDisplay = $(elem).find("._permCustom")
-    
-    def updateCustom() = {
-      if (isCustom()) {
-        Client[EditFunctions].getOnePropertyEditor(t.oid, permInfo.id).call().foreach { propEditInfo =>
-          customDisplay.empty()
-          customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
-          Gadgets.hookPendingGadgets()
-          Pages.updatePage(this)
-        }
-        customDisplay.show()
-      } else {
-        customDisplay.hide()
-      }
-    }
-    
-    val saving = Var(false)
-    
-    def hook() = {
-      $(elem).find("._permRadio").click { radio:dom.Element =>
-        currently() = $(radio).valueString
-        if (!isCustom()) {
-          // Note that, instead of using the usual "Saving/Saved" affordance, we actually disable/re-enable
-          // the permissions while saving, via the reactive "saving" flag. This is specifically to have a
-          // reliable way to *test* this, and to prevent weird races.
-          saving() = true
-          val changeFut = if (isInherit()) {
-            // The meaning of "inherited" is that we don't have the Property at all
-            // TODO: in principle, this belongs in InputGadget. But that implies that we need
-            // to create a new value of PropertyChange for removing a Property, with back-end
-            // support for that.
-            Client[EditFunctions].removeProperty(t.oid, permInfo.id).call()
-          } else {
-            // It's a standard value -- the OID of Public, Members or Owner -- so save that:
-            save()
-          }
-          changeFut.foreach { response =>
-            saving() = false
-          }
-        }
-        // Show or hide the customDisplay as appropriate:
-        updateCustom()
-      }
 
-      updateCustom()
-    }
-    
-    override lazy val thingId = t.oid
-    override val path = Editing.propPath(permInfo.id, Some(t))
-    // HACK: this name is what the Functional Tests expect. When we get paths to be
-    // more consistent, replace this with plain old path:
-    val namePath = Editing.propPathOldStyleHack(permInfo.id, Some(t))
-    
-    val currently = Var(currentPermOID(permInfo, thingPerm, isSpace))
-    val isCustom = Rx { currently() == "custom" }
-    val isInherit = Rx { currently() == "inherit" }
-      
-    // Note that we don't save(), and thus don't use this, if it is custom or inherit:
-    def values = List(currently())
-    
-    def makeBox(lbl:String, level:SecurityLevel) = {
-      div(
-        cls:="_permcheckbox col-md-2", 
-        label(cls:="radio-inline", 
-          input(cls:="_permRadio", tpe:="radio", name:=namePath, 
-            if (currently() == levelMap(level).underlying)
-              checked:="checked", 
-            value:=levelMap(level).underlying,
-            disabled := saving),
-          s" $lbl"))
-    }
-    
-    implicit def rxAttr = new RxAttr[String]
-    
-    def doRender() =
-      div(cls:="form-inline",
-        if (permInfo.publicAllowed)
-          makeBox("Public", SecurityPublic)
-        else
-          div(cls:="col-md-2", label(" ")),
-        makeBox("Members", SecurityMembers),
-        makeBox("Owner", SecurityOwner),
-        makeBox("Custom", SecurityCustom),
-        if (!isSpace)
-          makeBox("Inherit", SecurityInherited),
-        
-        div(cls:="_permCustom col-md-offset-2 col-md-8", display:="none", "Loading...")
-      )
-  }
-  
   class ShowPerms(t:ThingInfo, kindPerms:Seq[PermInfo], thingPerms:Seq[ThingPerm], isSpace:Boolean)(implicit val ecology:Ecology) extends Gadget[html.Div] {
     def doRender() =
       div(
         for (perm <- kindPerms) 
           yield div(cls:="row _permrow",
             div(cls:="col-md-2 _permname", b(perm.name)),
-            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id), isSpace)
+            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id), isSpace, self)
           )
       )
   }

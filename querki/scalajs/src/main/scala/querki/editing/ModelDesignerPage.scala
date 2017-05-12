@@ -218,7 +218,15 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
         
   	    guts = 
           div(cls:="_advancedEditor",
-            h1(pageTitle),
+            h1(
+              pageTitle,
+              if (model.isModel) {
+                querkiButton(faIcon("rss"))(
+                  title:=s"Edit Publication",
+                  id:="_editPublish",
+                  href:=Publication.editPublicationFactory.pageUrl(model))                
+              }
+            ),
             p(cls:="_smallSubtitle", 
               s"Model: ${modelModel.displayName} -- ",
               a("Change Model", 

@@ -13,5 +13,6 @@ package object publication {
     def PublishedProp:Property[Boolean, Boolean]
     def HasUnpublishedChanges:Property[Boolean, Boolean]
     def PublishNotesProp:Property[QLText, String]
+    def SpaceHasPublications:Property[Boolean, Boolean]
   }
 }

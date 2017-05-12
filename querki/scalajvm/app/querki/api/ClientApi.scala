@@ -81,7 +81,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       val flags = setFlags(t,
         Publication.PublishableModelProp,
         Publication.PublishedProp,
-        Publication.HasUnpublishedChanges
+        Publication.HasUnpublishedChanges,
+        Publication.SpaceHasPublications
       )
       val perms = setPerms(t, user,
         Publication.CanPublishPermission

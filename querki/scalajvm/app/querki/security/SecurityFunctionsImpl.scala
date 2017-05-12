@@ -150,7 +150,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       yield ThingPermissions(permsFor(thing, s), thingInfoOpt, permThingOpt.map(permsFor(_, newState)).getOrElse(Seq.empty))
   }
   
-  private def perm2Api(perm:Property[OID,OID]):PermInfo = {
+  private def perm2Api(perm:Property[OID,_]):PermInfo = {
     PermInfo(
       perm.id,
       perm.getPropAll(Core.NameProp).head,
@@ -161,6 +161,15 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       translatePerm(perm.id, perm.getPropAll(AccessControl.DefaultPermissionProp)).currently,
       perm.getPropAll(AccessControl.PermAppliesTo).map(oid2tid(_))
     )
+  }
+  
+  def getOnePerm(id:TID):Future[PermInfo] = withThing(id) { thing =>
+    thing match {
+      case prop:Property[_,_] => {
+        val linkProp = prop.confirmType(Core.LinkType).get
+        fut(perm2Api(linkProp))
+      }
+    }
   }
   
   def getAllPerms():Future[Seq[PermInfo]] = {

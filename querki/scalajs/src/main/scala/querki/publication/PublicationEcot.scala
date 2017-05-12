@@ -17,9 +17,17 @@ class PublicationEcot(e:Ecology) extends ClientEcot(e) with Publication  {
   
   lazy val std = DataAccess.std
   
+  lazy val editPublicationFactory = Pages.registerThingPageFactory("_editPublish", { (params) => new EditPublicationPage(params) }, "modelId")
+  
+  override def postInit() = {
+    editPublicationFactory
+  }
+  
   def isPublishable(thing:ThingInfo):Boolean = !thing.isModel && thing.hasFlag(std.publication.publishableProp)
   def isPublished(thing:ThingInfo):Boolean = thing.hasFlag(std.publication.publishedProp)
   def hasUnpublishedChanges(thing:ThingInfo):Boolean = thing.hasFlag(std.publication.hasUnpublishedChangesProp)
+  
+  def spaceHasPublications(thing:ThingInfo):Boolean = thing.hasFlag(std.publication.spaceHasPublicationsProp)
 
   def publish(thing:ThingInfo):Future[Page] = {
     Client[PublicationFunctions].publish(thing.oid).call().flatMap { newInfo =>

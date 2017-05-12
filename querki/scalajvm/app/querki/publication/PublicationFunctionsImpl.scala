@@ -4,6 +4,7 @@ import models._
 import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.data._
 import querki.globals._
+import querki.session.messages.ChangeProps2
 
 import PublicationCommands._
 
@@ -39,5 +40,14 @@ class PublicationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
       else
         emptyProps
     doPublish(thing, Update(user, List(thing.id), props, state))
+  }
+  
+  def changePublishedModels():Future[Unit] = {
+    val hasPublishables = state.allModels.exists { model =>
+      model.ifSet(Publication.PublishableModelProp)(state)
+    }
+    val props = toProps(Publication.SpaceHasPublications(hasPublishables))
+    val msg = createSelfRequest(ChangeProps2(state.id, props))
+    spaceRouter.request(msg).map { _ => ()}
   }
 }

@@ -152,6 +152,26 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       )
     )
     
+  lazy val spacePublicationsButton = {
+    div(cls:="btn-group querki-icon-button",
+      button(
+        tpe:="button",
+        cls:=s"btn btn-xs btn-primary _noPrint",
+        dta.toggle:="dropdown",
+        aria.haspopup:="true", aria.expanded:="false",
+        i(cls:="fa fa-rss", aria.hidden:="true"), " ",
+        span(cls:="caret"),
+        title:="This Space has Publications"
+      ),
+      ul(cls:="dropdown-menu",
+        li(a(
+          href:="#",
+          onclick:={ () => Publication.update(thing, false) },
+          "Publish an Update"))
+      )
+    )
+  }
+    
   lazy val publishButton = {
     val isPublished = Publication.isPublished(thing)
     val hasUnpublishedChanges = Publication.hasUnpublishedChanges(thing)
@@ -252,9 +272,14 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                         (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                         "reifyTag" -> "true"))
                 } else if (isSpace) {
-                  iconButton("edit")(
-                    title:=s"Edit Space Info",
-                    href:=Editing.editSpaceInfoFactory.pageUrl())
+                  MSeq(
+                    iconButton("edit")(
+                      title:=s"Edit Space Info",
+                      href:=Editing.editSpaceInfoFactory.pageUrl()),
+                    if (Publication.spaceHasPublications(thing)) {
+                      spacePublicationsButton
+                    }
+                  )
                 } else if (thing.kind == Kind.Property) {
         			    iconButton("edit")(
         			      title:=s"Edit $thingName",

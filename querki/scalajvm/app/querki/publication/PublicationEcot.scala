@@ -38,6 +38,9 @@ object MOIDs extends EcotIds(68) {
   val PublishedViewOID = moid(17)
   val PublishNotesPropOID = moid(18)
   val PublishedNotesFunctionOID = moid(19)
+  
+  val RecentChangesPageOID = moid(20)
+  val SpaceHasPublicationsOID = moid(21)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -45,6 +48,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Basic = initRequires[querki.basic.Basic]
   val QDuration = initRequires[querki.time.QDuration]
   val Time = initRequires[querki.time.Time]
   val Typeclasses = initRequires[querki.typeclass.Typeclasses]
@@ -331,7 +335,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   
   lazy val CanReadAfterPublication = AccessControl.definePermission(
       CanReadAfterPublicationOID, 
-      "Who Can Read After Publication", 
+      commonName(_.publication.canReadAfterPublishPerm), 
       "After an Instance has been Published, who can read it?",
       Seq(AccessControl.PublicTag),
       Seq(AccessControl.AppliesToInstances),
@@ -341,6 +345,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   lazy val PublishableModelProp = new SystemProperty(PublishableModelOID, YesNoType, ExactlyOne,
     toProps(
       setName(commonName(_.publication.publishableProp)),
+      setInternal,
       Summary("Indicates that Instances of this Model will be formally Published when they are ready"),
       Details("""In some Spaces, particularly public ones such as blogs, FAQs, and other information sources,
         |you want to impose some structure when creating new Things. Instead of just making everything publicly
@@ -387,6 +392,12 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       setName(commonName(_.publication.publishNotesProp)),
       setInternal,
       Summary("The notes to include with the next Publish or Update of this Thing.")))
+  
+  lazy val SpaceHasPublications = new SystemProperty(SpaceHasPublicationsOID, YesNoType, Optional,
+    toProps(
+      setName(commonName(_.publication.spaceHasPublicationsProp)),
+      setInternal,
+      Summary("This is set to true iff the Space contains Publishable Models")))
 
   override lazy val props = Seq(
     GetChangesFunction,
@@ -407,6 +418,32 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     MinorUpdateProp,
     PublishedProp,
     HasUnpublishedChanges,
-    PublishNotesProp
+    PublishNotesProp,
+    SpaceHasPublications
+  )
+  
+  /******************************************
+   * THINGS
+   ******************************************/
+  
+  lazy val RecentChangesPage = ThingState(RecentChangesPageOID, systemOID, RootOID,
+    toProps(
+      setName("_recentChanges"),
+      setInternal,
+      Categories(PublicationTag),
+      Summary("Displays the most recently published changes in this Space."),
+      Basic.DisplayNameProp("Recent Changes"),
+      Basic.DisplayTextProp("""[[_getChanges(reverse=true, includeMinor=true) ->
+        |""{{well well-sm:
+        |[[_date]]: [[_who]] [[_if(_publishedThings -> _isAnUpdate, ""updated"", ""published"")]] 
+        |[[_publishedThings -> _thing]]
+        |[[_if(_not(_equals(_publishedThings -> _thing -> Name, _publishedThings -> _publishedName)), "" (then named [[_publishedThings -> _publishedName]]) "")]] 
+        |[[_if(_isMinorUpdate, ""(minor update)"")]] [[_if(_isNonEmpty(_publishedNotes), ""
+        |
+        |[[_publishedNotes]]"")]]
+        |}}""]]""".stripMargin)))
+  
+  override lazy val things = Seq(
+    RecentChangesPage
   )
 }
