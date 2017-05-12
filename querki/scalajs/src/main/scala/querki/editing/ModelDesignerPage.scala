@@ -221,8 +221,14 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
             h1(
               pageTitle,
               if (model.isModel) {
+                val tit =
+                  if (model.hasFlag(std.publication.publishableProp))
+                    "Publishable -- click to edit Publish properties"
+                  else
+                    "Not currently Publishable -- click to edit Publish properties"
+                
                 querkiButton(faIcon("rss"))(
-                  title:=s"Edit Publication",
+                  title:=tit,
                   id:="_editPublish",
                   href:=Publication.editPublicationFactory.pageUrl(model))                
               }

@@ -24,6 +24,8 @@ class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology)
   def pageContent = {
     for {
       model <- DataAccess.getThing(modelId)
+      // TODO: provide some more-useful feedback if this sanity-check ever fails:
+      if (model.isModel)
       allPerms <- Client[SecurityFunctions].getAllPerms().call()
       afterPerm <- Client[SecurityFunctions].getOnePerm(std.publication.canReadAfterPublishPerm).call()
       thingPerms <- Client[SecurityFunctions].permsFor(model).call()
