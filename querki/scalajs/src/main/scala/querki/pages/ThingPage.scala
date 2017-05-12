@@ -165,9 +165,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       ),
       ul(cls:="dropdown-menu",
         li(a(
-          href:="#",
-          onclick:={ () => Publication.update(thing, false) },
-          "Publish an Update"))
+          href:="#!_recentChanges",
+          "Recent Changes"))
       )
     )
   }
