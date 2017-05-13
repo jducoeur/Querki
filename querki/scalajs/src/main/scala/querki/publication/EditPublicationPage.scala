@@ -50,20 +50,22 @@ class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology)
             )
           ),
           p(new RxCheckbox(publishable, s" Instances of ${model.displayName} should be Publishable")),
-          h3(cls:="col-md-12", "Who Can Read Instances Before Publication"),
-          new OnePerm(
-            instanceThing, 
-            allPerms.find(_.id == std.security.canReadPerm.oid).get, 
-            thingPerms.instancePerms.find(_.permId == std.security.canReadPerm.oid),
-            false,
-            this),
-          h3(cls:="col-md-12", "Who Can Read Instances After Publication"),
-          new OnePerm(
-            model, 
-            afterPerm, 
-            thingPerms.perms.find(_.permId == std.publication.canReadAfterPublishPerm.oid),
-            false,
-            this)
+          div(cls:="col-md-12", display:=Rx { if (publishable()) "block" else "none" },
+            h3(cls:="col-md-12", "Who Can Read Instances Before Publication"),
+            new OnePerm(
+              instanceThing, 
+              allPerms.find(_.id == std.security.canReadPerm.oid).get, 
+              thingPerms.instancePerms.find(_.permId == std.security.canReadPerm.oid),
+              false,
+              this),
+            h3(cls:="col-md-12", "Who Can Read Instances After Publication"),
+            new OnePerm(
+              model, 
+              afterPerm, 
+              thingPerms.perms.find(_.permId == std.publication.canReadAfterPublishPerm.oid),
+              false,
+              this)
+          )
         )
     }
       yield PageContents(guts)
