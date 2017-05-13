@@ -64,7 +64,7 @@ class SecurityPage(params:ParamMap)(implicit val ecology:Ecology)
         for (perm <- kindPerms) 
           yield div(cls:="row _permrow",
             div(cls:="col-md-2 _permname", b(perm.name)),
-            new OnePerm(t, perm, thingPerms.find(_.permId == perm.id), isSpace, self)
+            new OnePerm(t, perm, Var(thingPerms.find(_.permId == perm.id)), isSpace, self)
           )
       )
   }

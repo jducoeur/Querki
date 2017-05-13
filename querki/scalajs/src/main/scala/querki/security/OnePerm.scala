@@ -19,7 +19,7 @@ import querki.pages.Page
 
 import SecurityFunctions._
 
-class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean, page:Page with LevelMap)
+class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm]], isSpace:Boolean, page:Page with LevelMap)
   (implicit e:Ecology) extends InputGadget[html.Div](e)
 {
   lazy val Editing = interface[querki.editing.Editing]
@@ -79,23 +79,41 @@ class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpa
   // more consistent, replace this with plain old path:
   val namePath = Editing.propPathOldStyleHack(permInfo.id, Some(t))
   
-  val currently = Var(page.currentPermOID(permInfo, thingPerm, isSpace))
+  // TODO: the relationship of thingPerm and currently is clumsy. We really should be pushing the
+  // changes going through currently() back into thingPerm, and that should be feeding directly
+  // back to the server.
+  def calcCurrently() = page.currentPermOID(permInfo, thingPerm(), isSpace)
+  val currently = Var(calcCurrently())
   val isCustom = Rx { currently() == "custom" }
   val isInherit = Rx { currently() == "inherit" }
+  val thingWatcher = Obs(thingPerm, skipInitial=true) {
+    currently() = page.currentPermOID(permInfo, thingPerm(), isSpace)
+  }
     
   // Note that we don't save(), and thus don't use this, if it is custom or inherit:
   def values = List(currently())
   
-  def makeBox(lbl:String, level:SecurityLevel) = {
-    div(
-      cls:="_permcheckbox col-md-2", 
-      label(cls:="radio-inline", 
-        input(cls:="_permRadio", tpe:="radio", name:=namePath, 
-          if (currently() == page.levelMap(level).underlying)
-            checked:="checked", 
-          value:=page.levelMap(level).underlying,
-          disabled := saving),
-        s" $lbl"))
+  // TODO: why is this necessary? The implicit rxAttr in rx.package ought to be good enough:
+  implicit val strAttr = new RxAttr[String]
+  
+  class OneBoxGadget(lbl:String, level:SecurityLevel) extends Gadget[html.Div] {
+    val box = GadgetRef.of[html.Input]
+    
+    val watcher = Obs(currently) {
+      box.mapElem { e =>
+        $(e).prop("checked", (currently() == page.levelMap(level).underlying))
+      }
+    }
+    
+    def doRender() = 
+      div(
+        cls:="_permcheckbox col-md-2", 
+        label(cls:="radio-inline", 
+          box <= input(cls:="_permRadio", tpe:="radio", name:=namePath, 
+            if (currently() == page.levelMap(level).underlying) checked:="checked",
+            value:=page.levelMap(level).underlying,
+            disabled := saving),
+          s" $lbl"))
   }
   
   implicit def rxAttr = new RxAttr[String]
@@ -103,14 +121,14 @@ class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpa
   def doRender() =
     div(cls:="form-inline",
       if (permInfo.publicAllowed)
-        makeBox("Public", SecurityPublic)
+        new OneBoxGadget("Public", SecurityPublic)
       else
         div(cls:="col-md-2", label(" ")),
-      makeBox("Members", SecurityMembers),
-      makeBox("Owner", SecurityOwner),
-      makeBox("Custom", SecurityCustom),
+      new OneBoxGadget("Members", SecurityMembers),
+      new OneBoxGadget("Owner", SecurityOwner),
+      new OneBoxGadget("Custom", SecurityCustom),
       if (!isSpace)
-        makeBox("Inherit", SecurityInherited),
+        new OneBoxGadget("Inherit", SecurityInherited),
       
       div(cls:="_permCustom col-md-offset-2 col-md-8", display:="none", "Loading...")
       )
