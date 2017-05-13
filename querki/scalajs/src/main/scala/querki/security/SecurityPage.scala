@@ -43,7 +43,7 @@ trait LevelMap { page:Page =>
     .getOrElse(if (isSpace) permInfo.default else SecurityInherited)
   }
   def currentPermOID(permInfo:PermInfo, thingPerm:Option[ThingPerm], isSpace:Boolean):String = {
-    levelMap(currentPermLevel(permInfo, thingPerm, isSpace)).underlying    
+    levelMap(currentPermLevel(permInfo, thingPerm, isSpace)).underlying
   }
 }
 
