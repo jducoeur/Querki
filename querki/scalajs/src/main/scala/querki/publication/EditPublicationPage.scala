@@ -79,7 +79,7 @@ class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology)
               false,
               this),
             h3(cls:="col-md-12", "Who Can Read Instances After Publication"),
-            p("""If this is set to "inherit", it will be readable by the Public after Publication."""),
+            p(cls:="col-md-12", """If this is set to "inherit", it will be readable by the Public after Publication."""),
             new OnePerm(
               model, 
               afterPerm, 

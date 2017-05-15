@@ -271,14 +271,9 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                         (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                         "reifyTag" -> "true"))
                 } else if (isSpace) {
-                  MSeq(
-                    iconButton("edit")(
-                      title:=s"Edit Space Info",
-                      href:=Editing.editSpaceInfoFactory.pageUrl()),
-                    if (Publication.spaceHasPublications(thing)) {
-                      spacePublicationsButton
-                    }
-                  )
+                  iconButton("edit")(
+                    title:=s"Edit Space Info",
+                    href:=Editing.editSpaceInfoFactory.pageUrl())
                 } else if (thing.kind == Kind.Property) {
         			    iconButton("edit")(
         			      title:=s"Edit $thingName",
@@ -292,6 +287,9 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                 } else {
                   topEditButton
                 }
+              },
+              if (isSpace && Publication.spaceHasPublications(thing)) {
+                spacePublicationsButton
               },
               modelOpt match {
                 case Some(model) if (model.isInstantiatable) => {
