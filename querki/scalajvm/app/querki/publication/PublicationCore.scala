@@ -105,7 +105,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
               meta + Publication.PublishNotesProp(notes)
           publishEvent = PublishEvent(identity.id, infos, fullMeta, DateTime.now)
           persisted <- persistAnd(publishEvent)
-          rawEvent = RawPublishEvent(identity, infos.map(info => (info.thingId, info)).toMap, meta, persisted.when)
+          rawEvent = RawPublishEvent(identity, infos.map(info => (info.thingId, info)).toMap, fullMeta, persisted.when)
           _ = curState = addPublication(rawEvent, curState)
         }
           yield curState
