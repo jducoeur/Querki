@@ -433,7 +433,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       Categories(PublicationTag),
       Summary("Displays the most recently published changes in this Space."),
       Basic.DisplayNameProp("Recent Changes"),
-      Basic.DisplayTextProp("""[[_getChanges(reverse=true, includeMinor=true) ->
+      Basic.DisplayTextProp("""[[_getChanges(reverse=true) ->
         |""{{well well-sm:
         |[[_date]]: [[_who]] [[_if(_publishedThings -> _isAnUpdate, ""updated"", ""published"")]] 
         |[[_publishedThings -> _thing]]
