@@ -428,7 +428,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   
   lazy val RecentChangesPage = ThingState(RecentChangesPageOID, systemOID, RootOID,
     toProps(
-      setName("_recentChanges"),
+      setName("recent-space-changes"),
       setInternal,
       Categories(PublicationTag),
       Summary("Displays the most recently published changes in this Space."),

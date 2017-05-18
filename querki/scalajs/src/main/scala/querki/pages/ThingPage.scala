@@ -165,7 +165,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       ),
       ul(cls:="dropdown-menu",
         li(a(
-          href:="#!_recentChanges",
+          href:="#!recent-space-changes",
           "Recent Changes"))
       )
     )
