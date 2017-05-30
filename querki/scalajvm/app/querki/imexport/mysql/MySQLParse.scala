@@ -1,7 +1,6 @@
 package querki.imexport.mysql
 
 import fastparse.all._
-import fastparse.core.Result._
 
 import querki.globals._
 
@@ -87,8 +86,8 @@ object MySQLParse {
   val setNullP = P("SET NULL") map { dummy => SQLSetNull }
   val cascadeP = P("CASCADE") map { dummy => SQLCascade }
   val updateOptP:Parser[SQLUpdateOpt] = P(curTimestampP | setNullP | cascadeP)
-  val onUpdateP = P("ON UPDATE" ~! wP ~ updateOptP) map { SQLOnUpdate(_) }
-  val onDeleteP = P("ON DELETE" ~! wP ~ updateOptP) map { SQLOnDelete(_) }
+  val onUpdateP = P("ON UPDATE" ~/ wP ~ updateOptP) map { SQLOnUpdate(_) }
+  val onDeleteP = P("ON DELETE" ~/ wP ~ updateOptP) map { SQLOnDelete(_) }
   val columnOptP:Parser[SQLColumnOpt] = P(autoIncrementP | nullP | notNullP | defaultP | onUpdateP | onDeleteP)
   
   val primaryP = P("PRIMARY KEY (" ~ quotedIdentP ~ ")") map { ident => SQLPrimaryKey(ColumnName(ident)) }
@@ -107,13 +106,13 @@ object MySQLParse {
   val currentIncrementP = P("AUTO_INCREMENT=" ~ CharsWhile(_.isDigit))
   val tableOptsP = P((engineP | charsetP | currentIncrementP).rep(sep=wP))
   
-  val columnDefP = P(quotedIdentP ~ wP ~! typeDefP ~ wOptP ~ columnOptP.rep(sep = wP)) map
+  val columnDefP = P(quotedIdentP ~ wP ~/ typeDefP ~ wOptP ~ columnOptP.rep(sep = wP)) map
     { info =>
       val (name, tpe, opts) = info
       ColumnInfo(ColumnName(name), tpe, opts)
     }
-  val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~! wP ~ "(" ~! wP ~ columnDefP.rep(sep = "," ~ wP) 
-      ~ ("," ~ wP ~ xrefP.rep(sep="," ~! wP)).? ~ wOptP ~ ")" ~ wOptP ~ tableOptsP) map
+  val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~/ wP ~ "(" ~/ wP ~ columnDefP.rep(sep = "," ~ wP) 
+      ~ ("," ~ wP ~ xrefP.rep(sep="," ~/ wP)).? ~ wOptP ~ ")" ~ wOptP ~ tableOptsP) map
       { info =>
         val (name, cols, xrefs) = info
         StmtCreate(TableName(name), cols, xrefs.getOrElse(Seq.empty))
@@ -123,9 +122,9 @@ object MySQLParse {
   
   val columnsClauseP = P("(" ~ quotedIdentP.rep(1, sep=", ") ~ ")") map { _.map(ColumnName(_)) }
   val quotedContentP = P(("\\'" | (!"'" ~ AnyChar)).rep.!) map { content => content.replace("\\'", "'") }
-  val quotedValueP = P("'" ~! quotedContentP ~ "'")
+  val quotedValueP = P("'" ~/ quotedContentP ~ "'")
   val oneValueP = P(quotedValueP | "NULL".! | (!("," | ")") ~ AnyChar).rep.!)
-  val rowValuesP = P("(" ~ oneValueP.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
+  val rowValuesP = P("(" ~ oneValueP.rep(sep="," ~/ Pass) ~/ ")").map(RawRow(_))
   val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP.? ~ wOptP ~ 
       "VALUES" ~ wP ~ rowValuesP.rep(sep="," ~ wOptP)) map { content =>
         val (tblName, colNames, rows) = content
@@ -137,21 +136,20 @@ object MySQLParse {
   val unlockStatementP = P("UNLOCK TABLES").map { dummy => StmtUnlock }
   
   val statementContentP:Parser[Stmt] = P(createStatementP | dropStatementP | insertStatementP | lockStatementP | unlockStatementP)
-  val statementP = P(statementContentP ~ ";" ~! nlP.?)
+  val statementP = P(statementContentP ~ ";" ~/ nlP.?)
   
-  val dumpfileP = P(Start ~ commentsP ~! statementP.rep(sep=commentsP) ~ commentsP ~ End)
+  val dumpfileP = P(Start ~ commentsP ~/ statementP.rep(sep=commentsP) ~ commentsP ~ End)
   
   def apply(mySQL:String):Seq[Stmt] = {
-    dumpfileP.parse(mySQL) match {
-      case Success(stmts, _) => stmts
-      case Failure(parser, index) => {
-        val start = 
-          if (index < 10)
-            index
-          else
-            index - 10
-        throw new Exception(s"Attempt to parse MySQL failed in $parser at $index:\n...${mySQL.slice(start, index)}[${mySQL.slice(index, index + 20)}]...")
-      }
-    }
+    dumpfileP.parse(mySQL).fold({ (parser, index, extra) =>
+      val start = 
+        if (index < 10)
+          index
+        else
+          index - 10
+      throw new Exception(s"Attempt to parse MySQL failed in $parser at $index:\n...${mySQL.slice(start, index)}[${mySQL.slice(index, index + 20)}]...")
+    }, { (stmts, index) =>
+      stmts
+    })
   }
 }

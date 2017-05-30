@@ -91,7 +91,7 @@ object XMLParser {
    */
   val xmlEntityNameP = P(StringIn(xmlEntities.keys.toSeq:_*).!).map(xmlEntities(_))
   val xmlEntityNumP = P("#" ~ (CharIn('0' to '9')).rep(1).!).map(Integer.parseInt(_)).map(_.toChar)
-  val xmlEntityP = P("&" ~! (xmlEntityNameP | xmlEntityNumP) ~ ";")
+  val xmlEntityP = P("&" ~/ (xmlEntityNameP | xmlEntityNumP) ~ ";")
   val char:Parser[Char] = P(AnyChar.!).map(_.head)
   val xmlTextChar:Parser[Char] = P((xmlEntityP | char))
   val xmlTextP = P((!"<" ~ xmlTextChar).rep(1)).map(chars => XmlText(chars.mkString))
@@ -107,7 +107,7 @@ object XMLParser {
   val emptyXmlP = P(xmlHeadP ~ "/>")
   // NOTE: this clumsily throws an exception if there is a name mismatch, mainly because I'm concerned
   // about the performance implications of flatMap. This needs more examination:
-  val xmlWithChildrenP = P(xmlHeadP ~ ">" ~! (xmlTextP | xmlElementP).rep ~ "</" ~ xmlNameP ~ ">").map { elems =>
+  val xmlWithChildrenP = P(xmlHeadP ~ ">" ~/ (xmlTextP | xmlElementP).rep ~ "</" ~ xmlNameP ~ ">").map { elems =>
     val (head, children, tail) = elems
     if (head.tagName != tail)
       throw new Exception(s"Mismatched tags in XML: expecting ${head.tagName}, got $tail")

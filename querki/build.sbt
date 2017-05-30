@@ -161,8 +161,8 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "scalarx" % "0.2.8",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.5.5",
-  "com.lihaoyi" %%% "fastparse" % "0.2.1",
-  "org.querki" %%% "shocon" % "0.3",
+  "com.lihaoyi" %%% "fastparse" % "0.4.3",
+  "org.querki" %%% "shocon" % "0.4",
   "com.beachape" %%% "enumeratum" % enumeratumV,
   "com.beachape" %%% "enumeratum-upickle" % enumeratumV
 ))
