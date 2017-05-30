@@ -11,7 +11,16 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
+    <!-- Preload the interesting bits, to speed things up a little. -->    
+    @if(isProd) {
+      <link rel="preload" href="@routes.Assets.versioned("querkiclient-jsdeps.min.js")" as="script">
+      <link rel="preload" href="@routes.Assets.versioned("querkiclient-opt.js")" as="script">
+    } else {
+      <link rel="preload" href="@routes.Assets.versioned("querkiclient-jsdeps.js")" as="script">
+      <link rel="preload" href="@routes.Assets.versioned("querkiclient-fastopt.js")" as="script">
+    }
+
     <title>Querki: @loadMsg</title>
 
     <!-- TODO: aggregate all these CSS files together, to reduce queries. -->    
