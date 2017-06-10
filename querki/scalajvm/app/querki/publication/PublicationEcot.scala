@@ -180,10 +180,17 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
         yield QList.makePropValue(filteredEvents.map(PublishEventType(_)), PublishEventType)
     }
     
+    /**
+     * This filters out Events that don't involve the desired Models. It also filters out deleted Instances.
+     */
     def filterOnModels(changesTo:List[OID], events:Seq[OnePublishEvent])(implicit state:SpaceState):Seq[OnePublishEvent] = {
-      if (changesTo.isEmpty)
-        events
-      else {
+      if (changesTo.isEmpty) {
+        events.filter { event =>
+          event.things.exists { thingInfo =>
+            state.anything(thingInfo.thingId).isDefined
+          }
+        }
+      } else {
         events.filter { event =>
           event.things.exists { thingInfo =>
             state.anything(thingInfo.thingId).map { thing =>
