@@ -64,6 +64,8 @@ object OID {
   }
   def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)
   
+  def isOID(name:String) = name(0) == '.'
+  
   def fromTOID(toid:TOID) = OID(toid.underlying)
 
   // TBD: at this point, this is only being used for generating Users and Identities;

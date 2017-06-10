@@ -17,7 +17,7 @@ import models.{Kind, Wikitext}
 
 import querki.globals._
 
-import querki.api.{ModelLoopException, ThingFunctions}
+import querki.api.{ModelLoopException, ThingFunctions, UnknownThingException}
 import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
@@ -53,6 +53,12 @@ class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends
     val pageFut = Client[ThingFunctions].getThingPage(name, propOpt).call()
     pageFut.onFailure {
       case ModelLoopException() => StatusLine.showUntilChange("It appears you have a Model loop. Please go into the Advanced Editor and change models there.")
+      case UnknownThingException(thingId) => 
+        PageManager.showRoot().map { page =>
+          page.flash(true,
+            s"There is no Thing with the ID $thingId"
+          )
+        }
       case ex:Exception => StatusLine.showUntilChange(ex.getMessage)
       case _ => StatusLine.showUntilChange("Unexpected error")
     }
@@ -114,7 +120,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   
   lazy val topEditButton =
     new QLButtonGadget(
-    	iconButton("edit", Seq("_qlInvoke"))(
+      iconButton("edit", Seq("_qlInvoke"))(
                   title:=s"Edit $thingName",
                   id:="_thingEdit",
                   data("thingid"):=thing,
@@ -275,15 +281,15 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                     title:=s"Edit Space Info",
                     href:=Editing.editSpaceInfoFactory.pageUrl())
                 } else if (thing.kind == Kind.Property) {
-        			    iconButton("edit")(
-        			      title:=s"Edit $thingName",
-        			      href:=Editing.advancedEditorFactory.pageUrl(thing))
+                  iconButton("edit")(
+                    title:=s"Edit $thingName",
+                    href:=Editing.advancedEditorFactory.pageUrl(thing))
                 } else if (thing.hasFlag(std.publication.publishableProp)) {
                   // TODO: for now, Publishables have to use the Advanced Editor. This should change, and
                   // at that point this can go back to using the topEditButton:
-        			    iconButton("edit")(
-        			      title:=s"Edit $thingName",
-        			      href:=Editing.advancedEditorFactory.pageUrl(thing))                  
+                  iconButton("edit")(
+                    title:=s"Edit $thingName",
+                    href:=Editing.advancedEditorFactory.pageUrl(thing))                  
                 } else {
                   topEditButton
                 }

@@ -22,6 +22,11 @@ sealed trait ApiException extends Exception
  */
 case class MiscException(msg:String) extends ApiException
 
+/**
+ * An unknown Thing was requested, and it doesn't make sense to interpret as a Tag.
+ */
+case class UnknownThingException(thingId:String) extends ApiException
+
 
 /**
  * Expected exceptions that can be returned from EditFunctions.

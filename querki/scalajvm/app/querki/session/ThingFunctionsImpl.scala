@@ -4,15 +4,16 @@ import scala.concurrent.Promise
 
 import akka.actor._
 
-import models.{Collection, DisplayText, Kind, PType, Thing, ThingId, Wikitext}
+import models.{Collection, DisplayText, Kind, OID, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
-import querki.api.{SpaceApiImpl, AutowireParams, ThingFunctions}
+import querki.api.{SpaceApiImpl, AutowireParams, ThingFunctions, UnknownThingException}
 import querki.core.QLText
 import querki.data._
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
+import querki.tags.IsTag
 
 class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ThingFunctions {
   
@@ -39,6 +40,14 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   
   def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):Future[ThingPageDetails] = getThingPageProfiler.profileFut { withThing(thingId) { thing =>
     implicit val s = state
+    
+    thing match {
+      case tag:IsTag if (OID.isOID(thingId.underlying)) => {
+        // A Tag can't be an OID, so this indicates an unknown OID:
+        throw new UnknownThingException(thingId.underlying)
+      }
+      case _ =>
+    }
     
     // Note that both the root Thing and (more importantly) TagThings won't have a Model:
     val modelInfoOptFut = for {
