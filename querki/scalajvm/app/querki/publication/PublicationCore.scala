@@ -24,6 +24,7 @@ import PublicationEvents._
 trait PublicationCore extends PublicationPure with PersistentActorCore with EcologyMember with querki.types.ModelTypeDefiner with ModelPersistence {
   
   private lazy val AccessControl = interface[querki.security.AccessControl]
+  private lazy val AWS = interface[querki.aws.AWS]
   private lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   private lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   private lazy val Person = interface[querki.identity.Person]
@@ -59,6 +60,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
    * TODO: eventually, we should get smarter about this, starting from a Snapshot. For now, we're loading everything.
    */
   var loadingEvents = Vector.empty[PublishEvent]
+  var loadingPublishRSS:Boolean = false
   
   /**
    * True until Recovery is *fully* complete, including post-Recovery, pre-Start activities.
@@ -67,7 +69,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
    */
   var initializing = true
   
-  var curState = PublicationState(Vector.empty)
+  var curState = PublicationState(Vector.empty, false)
   
   case class ThingInfo(thingId:OID, wikitext:Wikitext, displayName:String, notes:Option[QLText])
   
@@ -220,12 +222,20 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
       // TODO: deal with coalesce
       sender ! RequestedEvents(filtered)
     }
+    
+    case GetRSSUrl(who) => {
+      
+    }
   }
   
   def receiveRecover:Receive = {
     case evt @ PublishEvent(who, things, meta, when) => {
       // For now, we just build up the list:
       loadingEvents = loadingEvents :+ evt
+    }
+    
+    case StartPublishingRSS(who, url, when) => {
+      loadingPublishRSS = true
     }
     
     case RecoveryCompleted => {
@@ -235,7 +245,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         val fullEvents = loadingEvents.map { evt =>
           RawPublishEvent(identities(evt.who), evt.things.map(info => (info.thingId, info)).toMap, evt.meta, evt.when)
         }
-        curState = PublicationState(fullEvents)
+        curState = PublicationState(fullEvents, loadingPublishRSS)
         initializing = false
         unstashAll()
       }

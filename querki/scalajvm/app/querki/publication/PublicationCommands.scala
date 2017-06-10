@@ -46,4 +46,16 @@ object PublicationCommands {
    * The events that correspond to a GetEvents request: this is a series of events, in chrono order. Note that this may be empty!
    */
   case class RequestedEvents(events:Seq[OnePublishEvent])
+  
+  /**
+   * Sent when the user wants to subscribe to this Space's RSS feed.
+   * 
+   * This has the side-effect of turning RSS on, and can take a bit of extra time when it is first hit.
+   */
+  case class GetRSSUrl(who:User) extends PublicationCommand
+
+  /**
+   * The response to GetRSSUrl.
+   */
+  case class RSSUrl(url:String)
 }

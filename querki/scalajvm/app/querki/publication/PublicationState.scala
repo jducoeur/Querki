@@ -15,7 +15,7 @@ case class RawPublishEvent(identity:PublicIdentity, things:Map[OID, PublishedThi
 /**
  * This represents the Publication history of a given Space.
  */
-case class PublicationState(events:Vector[RawPublishEvent])(implicit val ecology:Ecology) extends EcologyMember {
+case class PublicationState(events:Vector[RawPublishEvent], publishingRSS:Boolean)(implicit val ecology:Ecology) extends EcologyMember {
   
   lazy val Publication = interface[Publication]
   

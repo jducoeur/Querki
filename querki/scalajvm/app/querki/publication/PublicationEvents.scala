@@ -28,4 +28,13 @@ object PublicationEvents {
     @KryoTag(2) things:Seq[PublishedThingInfo], 
     @KryoTag(3) meta:DHPropMap,
     @KryoTag(4) when:DateTime) extends UseKryo with PublicationEvent
+    
+  /**
+   * Edge-trigger saying that this Space is going to begin publishing an RSS feed.
+   */
+  case class StartPublishingRSS(
+    @KryoTag(1) who:IdentityId,
+    @KryoTag(2) url:String,
+    @KryoTag(3) when:DateTime
+  ) extends UseKryo with PublicationEvent
 }

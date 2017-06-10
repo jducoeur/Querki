@@ -109,6 +109,7 @@ object SystemCreator {
     new querki.email.UnsubscribeEcot(ecology)                      // 67
     new querki.publication.PublicationEcot(ecology)                // 68
     new querki.typeclass.TypeclassEcot(ecology)                    // 69
+    new querki.aws.AWSEcot(ecology)                                // 70
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {

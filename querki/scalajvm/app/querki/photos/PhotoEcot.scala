@@ -69,9 +69,11 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   val Time = initRequires[querki.time.Time]
   val Types = initRequires[querki.types.Types]
   
+  lazy val AWS = interface[querki.aws.AWS]
+  
   lazy val SystemOnly = Basic.SystemOnlyProp(true)
 
-  lazy val bucketUrl = Config.getString("querki.aws.bucketUrl")
+  lazy val bucketUrl = AWS.S3BucketUrl
   
   val PhotosTag = "Photos and Images"
   
