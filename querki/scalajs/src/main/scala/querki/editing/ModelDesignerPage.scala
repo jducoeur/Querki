@@ -216,7 +216,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
           else
             Future(None)
         
-  	    guts = 
+        guts = 
           div(cls:="_advancedEditor",
             h1(
               pageTitle,
@@ -304,7 +304,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                       new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
                         Publication.update(model, true)
                       }),
-                      "Pressing this will publish a Minor Update -- the changes will not go in the RSS Feed, but will be visible in Recent Changes if requested."
+                      "Pressing this will publish a Minor Update -- the changes will not appear in Recent Changes (unless Minor Changes are specifically requested) or the RSS Feed."
                     )
                   )
                 } else {
