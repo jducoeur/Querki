@@ -185,6 +185,7 @@ trait RoutingParent[K] extends RoutingParentBase[K] { pipe:ReceivePipeline =>
   def findChild(ref:ActorRef):Option[ManagedChild] = _children.find(_._2.ref.path.name == ref.path.name).map(_._2)
   
   def children = _children.values.map(_.ref)
+  def childPairs = _children.toSeq
   def child(id:K) = _children.get(id).map(_.ref)
   def nChildren = _children.size
   def removeChild(key:K) = _children = _children - key

@@ -20,6 +20,7 @@ import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.api._
 import querki.identity.{Identity, User}
 import querki.history.SpaceHistory._
+import querki.publication.CurrentPublicationState
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SpaceSubsystemRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
@@ -66,6 +67,11 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def setRawState(s:SpaceState) = {
     clearEnhancedState()
     _rawState = Some(s)
+  }
+  var _publicationState:Option[SpaceState] = None
+  def setPublicationState(s:SpaceState) = {
+    clearEnhancedState()
+    _publicationState = Some(s)
   }
   
   /**
@@ -134,7 +140,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
             }
           }
         
-        (safeState /: userValues) { (curState, uv) =>
+        val stateWithUV = (safeState /: userValues) { (curState, uv) =>
           if (uv.thingId == curState.id) {
             // We're enhancing the Space itself:
             curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
@@ -149,6 +155,15 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
             case _ => curState
           }
         }
+        
+        // If there is a PublicationState, overlay that on top of the rest:
+        // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
+        // Publishers currently won't see their User Values if there are changes to the Instance.
+        _publicationState.map { ps =>
+          (stateWithUV /: ps.localThings) { (curState, t) =>
+            curState.copy(things = curState.things + (t.id -> t))
+          }
+        }.getOrElse(stateWithUV)
       }
       case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
     }
@@ -258,14 +273,14 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def checkDisplayName(req:User, space:OID) = {
     localPerson match {
       case Some(person) => {
-	    val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)
-	    val curDisplayName = curIdentity.name
-	    if (person.displayName != curDisplayName) {
-	      // Tell the Space to alter the name of the Person record to fit our new expectations:
-	      spaceRouter ! ChangeProps(req, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
-	      // Update the local identity:
-	      _identity = Some(curIdentity)
-	    }
+      val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)
+      val curDisplayName = curIdentity.name
+      if (person.displayName != curDisplayName) {
+        // Tell the Space to alter the name of the Person record to fit our new expectations:
+        spaceRouter ! ChangeProps(req, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
+        // Update the local identity:
+        _identity = Some(curIdentity)
+      }
       }
       case None => {}
     }
@@ -287,6 +302,10 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       // the current behaviour hits first-load latency slightly. OTOH, in the interest of not hammering
       // the DB too hard, we might leave it as it is...
       persister ! LoadValuesForUser(identity, s)
+    }
+    
+    case CurrentPublicationState(s) => {
+      setPublicationState(s)
     }
     
     case ValuesForUser(uvs) => {
@@ -314,15 +333,15 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
               // Persist the change...
               val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
               val previous = addUserValue(uv)
-   	          persister ! SaveUserValue(uv, state, previous.isDefined)
-   	          
+               persister ! SaveUserValue(uv, state, previous.isDefined)
+               
               // ... then tell the Space to summarize it, if there is a Summary Property...
-   	          val msg = for {
-   	            prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
-   	            summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
-   	            summaryPropId <- summaryLinkPV.firstOpt
-   	            newV = if (v.isDeleted) None else Some(v)
-   	          }
+               val msg = for {
+                 prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
+                 summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
+                 summaryPropId <- summaryLinkPV.firstOpt
+                 newV = if (v.isDeleted) None else Some(v)
+               }
                 yield SpacePluginMsg(req, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
@@ -352,6 +371,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
+    
+    case CurrentPublicationState(s) => setPublicationState(s)
     
     case ClientRequest(req, rc) => {
       def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
@@ -404,17 +425,17 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       checkDisplayName(req, space)
       payload match {    
         case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")
-          	    
-  	    case ChangeProps2(thingId, props) => {
-  	      changeProps(req, thingId, props)
-  	    }
-  	    
-  	    case MarcoPoloRequest(propId, q, rc) => {
+                
+        case ChangeProps2(thingId, props) => {
+          changeProps(req, thingId, props)
+        }
+        
+        case MarcoPoloRequest(propId, q, rc) => {
           val savedSender = sender
-  	      new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q) map { response =>
-    	      savedSender ! response
+          new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q) map { response =>
+            savedSender ! response
           }
-  	    }
+        }
       }
     }
   }

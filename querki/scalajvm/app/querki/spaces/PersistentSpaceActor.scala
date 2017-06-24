@@ -16,6 +16,7 @@ import querki.conversations.ConversationTransitionActor
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
+import querki.publication.{AddPublicationEvents, CurrentPublicationState}
 import querki.spaces.messages._
 import querki.time.DateTime
 import querki.values.{QValue, SpaceVersion}
@@ -177,6 +178,12 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     if (timeSpaceOps) {
       stateRouter ! MonitorMsg(msg, DateTime.now)
     }
+  }
+  
+  def sendPublicationChanges(changes:List[ChangeResult]):RequestM[SpaceState] = {
+    val events = changes.map(_.events).flatten
+    val msg = AddPublicationEvents(events)
+    stateRouter.requestFor[CurrentPublicationState](msg).map(_.state)
   }
   
   ///////////////////////////////////////////

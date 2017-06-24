@@ -70,6 +70,9 @@ private[spaces] class SpaceRouter(e:Ecology)
   }
   lazy val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
   lazy val publication = context.actorOf(PublicationActor.actorProps(ecology, spaceId, self), "Publication")
+  // This needs to be non-lazy: this is what actually causes it to boot, since it just won't start
+  // on a Space otherwise:
+  val publicationState = context.actorOf(InPublicationStateActor.actorProps(ecology, spaceId, self), "InPubState")
   
   // This function just references the SpaceActor, so that it will boot and send CurrentState.
   // TODO: this is a dreadfully brittle approach. How can we restructure it to be more sensible
@@ -79,6 +82,7 @@ private[spaces] class SpaceRouter(e:Ecology)
   }
   
   var state:SpaceState = null
+  var pubState:Option[SpaceState] = None
   
   def receive = LoggingReceive {
     
@@ -90,6 +94,12 @@ private[spaces] class SpaceRouter(e:Ecology)
       conversations.forward(msg)
       sessions.forward(msg)
       members.forward(msg)
+    }
+    
+    case msg @ CurrentPublicationState(curPubState) => {
+      pubState = Some(curPubState)
+      sessions.forward(msg)
+      space.forward(msg)
     }
     
     /**
@@ -134,6 +144,8 @@ private[spaces] class SpaceRouter(e:Ecology)
     case msg:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
     
     case msg:PublicationCommands.PublicationCommand => publication.forward(msg)
+    
+    case msg:PublicationStateMessage => publicationState.forward(msg)
     
     case msg:ShutdownSpace => {
       sender ! ShutdownAck

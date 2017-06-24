@@ -15,6 +15,7 @@ import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
+import querki.publication.CurrentPublicationState
 import querki.time.DateTime
 import querki.util.UnexpectedPublicException
 import querki.values.{SpaceState, SpaceVersion}
@@ -60,6 +61,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
+  lazy val Publication = interface[querki.publication.Publication]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
   lazy val System = interface[querki.system.System]
   
@@ -164,6 +166,11 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Iff this Space is being monitored, emit a message about what is going on.
    */
   def monitor(msg: => String):Unit
+  
+  /**
+   * Sends these changes over to the InPublicationStateActor
+   */
+  def sendPublicationChanges(changes:List[ChangeResult]):RM[SpaceState]
   
   //////////////////////////////////////////////////
   
@@ -462,6 +469,17 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       }
   }
   
+  def run(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]] = {
+    // Run through all the functions, collect the results or the first error. Note
+    // that the resulting list is in reverse order, simply because it's easier that way.
+    (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
+      rm.flatMap { changes =>
+        val stateToPass = changes.headOption.map(_.resultingState).getOrElse(state)
+        func(stateToPass).map(_ +: changes)
+      }
+    }.map(_.reverse)    
+  }
+  
   /**
    * Actually execute the changes from a bunch of functions.
    * 
@@ -469,18 +487,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * for complex collections of operations.
    */
   def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[(List[ChangeResult], SpaceState)] = {
-    // Run through all the functions, collect the results or the first error. Note
-    // that the resulting list is in reverse order, simply because it's easier that way.
-    val resultsRM = (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
-      rm.flatMap { changes =>
-        val stateToPass = changes.headOption.map(_.resultingState).getOrElse(state)
-        func(stateToPass).map(_ +: changes)
-      }
-    }
-    
     for {
-      resultsReversed <- resultsRM
-      results = resultsReversed.reverse
+      results <- run(funcs)(state)
       persistedState <- persistAllThenFinalState(results)
       finalState = updateState(persistedState)
       _ = checkSnapshot()
@@ -491,8 +499,25 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * Simple wrapper around runChanges -- this runs them, and then sends the appropriate response.
    */
-  def runAndSendResponse(opName:String, localCall:Boolean, func:SpaceState => RM[ChangeResult])(state:SpaceState):RM[List[ChangeResult]] = {
-    val result = runChanges(Seq(func))(state)
+  def runAndSendResponse(opName:String, localCall:Boolean, func:SpaceState => RM[ChangeResult], publishEvent:Boolean)(state:SpaceState):RM[List[ChangeResult]] = {
+    val result =
+      if (publishEvent) {
+        // This event shouldn't get persisted in the Space itself, but instead in the InPublicationStateActor:
+        for {
+          // Compute the Events...
+          changes <- run(Seq(func))(state)
+          // ... send them to the InPublicationStateActor...
+          pubState <- sendPublicationChanges(changes)
+          // TODO: there's a small race condition here, between the SpaceActor and the InPublicationActor: if multiple
+          // Publishable changes come through in quick succession, things could possibly get out of order. I don't
+          // think this has dire consequences, but it's a serious concern. Should get fixed by QI.7w4g8nd.
+          _ = setPubState(pubState)
+        }
+          yield (changes, enhancedState)
+      } else {
+        // Normal case: just run the changes here.
+        runChanges(Seq(func))(state)
+      }
     
     // If there was an error, respond with that.
     // TBD: the asymmetry here is awfully ugly. Does this suggest changes to RM?
@@ -690,6 +715,47 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     } else
       handleRequestResponse orElse normalReceiveCommand orElse pluginReceive
   }
+      
+  var _pubState:Option[SpaceState] = None
+  var _enhancedState:Option[SpaceState] = None
+  def setPubState(s:SpaceState):Unit = {
+    _enhancedState = None
+    _pubState = Some(s)
+  }
+  /**
+   * The "enhancedState" is the main Core State *plus* the Publication State.
+   * 
+   * TODO: this is temporary and horrible, and doesn't belong in SpaceCore. See QI.7w4g8nd
+   * for the broad strokes of the rearchitecture plan, which will separate SpaceCore and
+   * InPublicationCore properly by moving a lot of responsibilities around.
+   */
+  def enhancedState:SpaceState = {
+    if (_enhancedState.isEmpty) {
+      if (_pubState.isEmpty) {
+        _enhancedState = Some(currentState)
+      } else {
+        // TODO: this clause is taken directly from OldUserSpaceSession.makeEnhancedState(). It should surely
+        // be refactored *somewhere*:
+        val s = (currentState /: _pubState.get.localThings) { (curState, t) =>
+          curState.copy(things = curState.things + (t.id -> t))
+        }       
+        _enhancedState = Some(s)
+      }
+    }
+    _enhancedState.get
+  }
+  def isPublishEvent(thingId:OID):Boolean = enhancedState.anything(thingId).map(_.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
+  def ifPublishable(thingId:OID):(Boolean, SpaceState) = {
+    if (isPublishEvent(thingId))
+      (true, enhancedState)
+    else
+      (false, currentState)
+  }
+  def ifPublishable(thingId:ThingId):(Boolean, SpaceState) = {
+    enhancedState.anythingLocal(thingId).map { t =>
+      ifPublishable(t.id)
+    }.getOrElse((false, currentState))    
+  }
   
   val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
@@ -725,7 +791,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
           newState.copy(ownerIdentity = prevState.ownerIdentity)
         else
           newState
-      runAndSendResponse("setState", true, setState(who, filledState, reason, details))(prevState)
+      runAndSendResponse("setState", true, setState(who, filledState, reason, details), false)(prevState)
     }
     
     // This message is simple, since it isn't persisted:
@@ -734,13 +800,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
-      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt))(currentState)
+      val (pub, fullState) = ifPublishable(modelId)
+      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     case ChangeProps(who, spaceId, thingId, changedProps, localCall) => {
       val initialState = currentState
-      runAndSendResponse("changeProps", localCall, modifyThing(who, thingId, None, changedProps, false))(currentState).map { changes =>
+      val (pub, fullState) = ifPublishable(thingId)
+      runAndSendResponse("changeProps", localCall, modifyThing(who, thingId, None, changedProps, false), pub)(fullState).map { changes =>
         // After we finish persisting everything, we need to deal with the possibility that
         // they've changed the name of the Space...
         changes.last.changedThing.map { lastThingId => 
@@ -763,21 +831,27 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps, localCall) => {
-      runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true))(currentState)
+      val (pub, fullState) = ifPublishable(thingId)
+      runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true), pub)(fullState)
     }
     
     case ChangeModel(who, spaceId, thingId, newModelId, localCall) => {
-      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false))(currentState)
+      val (pub, fullState) = ifPublishable(newModelId)
+      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false), pub)(fullState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      runAndSendResponse("deleteThing", true, deleteThing(who, thingId))(currentState)
+      runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
     case SaveSnapshotFailure(metadata, cause) => {
       // TODO: what should we do here? This explicitly isn't fatal, but it *is* scary as all heck:
       QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
+    }
+    
+    case CurrentPublicationState(pubState) => {
+      setPubState(pubState)
     }
   }
 }

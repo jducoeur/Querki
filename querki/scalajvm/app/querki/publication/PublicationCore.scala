@@ -224,7 +224,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
     
     case GetRSSUrl(who) => {
-      
+      // TODO: when we get back to RSS
     }
   }
   

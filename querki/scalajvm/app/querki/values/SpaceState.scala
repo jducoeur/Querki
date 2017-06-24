@@ -315,7 +315,7 @@ case class SpaceState(
   /**
    * Returns all of the conventional Things in this Space.
    */
-  def localThings:Iterable[Thing] = things.values 
+  def localThings:Iterable[ThingState] = things.values 
     
   /**
    * Returns all of the conventional Things in this Space *and* its Apps.
