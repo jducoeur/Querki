@@ -82,7 +82,7 @@ private[spaces] class SpaceRouter(e:Ecology)
   }
   
   var state:SpaceState = null
-  var pubState:Option[SpaceState] = None
+  var pubState:Option[CurrentPublicationState] = None
   
   def receive = LoggingReceive {
     
@@ -96,8 +96,8 @@ private[spaces] class SpaceRouter(e:Ecology)
       members.forward(msg)
     }
     
-    case msg @ CurrentPublicationState(curPubState) => {
-      pubState = Some(curPubState)
+    case msg:CurrentPublicationState => {
+      pubState = Some(msg)
       sessions.forward(msg)
       space.forward(msg)
     }

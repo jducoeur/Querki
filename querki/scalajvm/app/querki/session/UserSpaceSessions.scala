@@ -27,7 +27,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   val persister = SpacePersistenceFactory.getUserValuePersister(spaceId)
   
   var state:Option[SpaceState] = None
-  var pubState:Option[SpaceState] = None
+  var pubState:Option[CurrentPublicationState] = None
 
   // For the moment, UserSpaceSessions is responsible for keeping the AdminMonitor apprised of the state
   // of this Space:
@@ -49,10 +49,9 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
     // TODO: this is nasty and coupled -- we are checking whether this user has publication access:
     (state, pubState) match {
       case (Some(s), Some(ps)) => {
-        val msg = CurrentPublicationState(ps)
         childPairs
           .filter { case (user, _) => AccessControl.hasPermission(Publication.CanPublishPermission, s, user, s.id) }
-          .map { case (user, session) => session.forward(msg) }
+          .map { case (user, session) => session.forward(ps) }
       }
       case _ =>
     }
@@ -77,8 +76,8 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
     /**
      * There is a new Publication State, so tell the *right* people about it.
      */
-    case msg @ CurrentPublicationState(s) => {
-      pubState = Some(s)
+    case msg:CurrentPublicationState => {
+      pubState = Some(msg)
       sendPublishStateToChildren()
     }
     

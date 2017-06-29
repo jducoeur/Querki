@@ -44,7 +44,6 @@ object MOIDs extends EcotIds(68) {
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
-  
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -69,6 +68,23 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   )
   
   val PublicationTag = "Publication"
+  
+  /**
+   * This is essentially an adapter for the not-quite-as-pure-as-it-should-be StatePure.
+   */
+  private case class StateEvolver(state:SpaceState)(implicit val ecology:Ecology) extends querki.spaces.SpacePure with EcologyMember {
+    val id = state.id
+    
+    def enhance(pub:CurrentPublicationState):SpaceState = {
+      (state /: pub.changes.values.flatten) { (s, evt) =>
+        evolveState(Some(s))(evt)
+      }      
+    }
+  }
+  
+  def enhanceState(state:SpaceState, pub:CurrentPublicationState):SpaceState = {
+    StateEvolver(state).enhance(pub)
+  }
 
   /******************************************
    * TYPES

@@ -7,6 +7,8 @@ import funcakka._
 import org.querki.requester._
 
 import querki.globals._
+import querki.identity.User
+import querki.identity.IdentityPersistence.UserRef
 import querki.persistence.UseKryo
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 
@@ -14,7 +16,7 @@ import querki.spaces.SpaceMessagePersistence.SpaceEvent
  * Message published to the troupe when there is new information in the Publication State. It
  * is the responsibility of the UserSpaceSessions to incorporate this.
  */
-case class CurrentPublicationState(state:SpaceState)
+case class CurrentPublicationState(changes:Map[OID, Vector[SpaceEvent]])
 
 trait PublicationStateMessage
 
@@ -24,16 +26,25 @@ trait PublicationStateMessage
  */
 case class AddPublicationEvents(evts:List[SpaceEvent with UseKryo]) extends PublicationStateMessage
 
+/**
+ * Message from the SpaceCore to the InPublicationStateActor, saying that this Thing has been
+ * Published, so we should drop the In-Publication version.
+ */
+case class ThingPublished(who:UserRef, thingId:OID) extends PublicationStateMessage
+case class PublishedAck()
+
 class InPublicationStateActor(val ecology:Ecology, val id:OID, val router:ActorRef)
   extends InPublicationStateCore with RealActorCore with PersistentActor with Requester with EcologyMember 
 {
-  def notifyChanges(curState:SpaceState):Unit = {
-    router ! CurrentPublicationState(curState)
+  def notifyChanges(curState:CurrentPublicationState):Unit = {
+    router ! curState
   }
   
-  def respondWithState(curState:SpaceState):Unit = {
-    sender ! CurrentPublicationState(curState)
+  def respondWithState(curState:CurrentPublicationState):Unit = {
+    sender ! curState
   }
+  
+  def respondPublished():Unit = sender ! PublishedAck()
 }
 
 object InPublicationStateActor {

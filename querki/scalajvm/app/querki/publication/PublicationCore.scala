@@ -129,17 +129,14 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
   }
   
-  // TODO: these Publish and Update paths could be factored together -- they're identical aside from the
-  // actual Properties being set:
   def computePublishChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
     (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
       state.anything(thingId) match {
         case Some(thing) => {
-          val newReadProp = thing.getPropOpt(Publication.CanReadAfterPublication).map(_.rawList).getOrElse(List(AccessControl.PublicTag.id))
           val newProps = 
             toProps(
-              AccessControl.CanReadProp(newReadProp:_*),
               Publication.PublishedProp(true),
+              Publication.HasUnpublishedChanges(false),
               // Clear the Notes:
               Publication.PublishNotesProp(DataModel.getDeletedValue(Publication.PublishNotesProp)))
           me.map(_ :+ (thingId, newProps))
@@ -151,29 +148,6 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   def updatePublishedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
     for {
       updates <- computePublishChanges(thingIds)
-      result <- sendChangeProps(who, updates)
-    }
-      yield result
-  }
-  
-  def computeUpdateChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
-    (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
-      state.anything(thingId) match {
-        case Some(thing) => {
-          val newProps = 
-            toProps(
-              Publication.HasUnpublishedChanges(false),
-              // Clear the Notes:
-              Publication.PublishNotesProp(DataModel.getDeletedValue(Publication.PublishNotesProp)))
-          me.map(_ :+ (thingId, newProps))
-        }
-        case _ => monadError.raiseError(new Exception(s"Trying to Update unknown Thing $thingId!"))
-      }      
-    }
-  }
-  def updateUpdatedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
-    for {
-      updates <- computeUpdateChanges(thingIds)
       result <- sendChangeProps(who, updates)
     }
       yield result
@@ -193,7 +167,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     case Update(who, things, meta, spaceState) => {
       for {
         _ <- publish(who, things, meta, spaceState)
-        finalState <- updateUpdatedThings(who, things)(spaceState)
+        finalState <- updatePublishedThings(who, things)(spaceState)
       }
         yield { sender ! PublishResponse(spaceState) }
     }

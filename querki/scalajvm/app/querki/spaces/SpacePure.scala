@@ -23,10 +23,11 @@ import querki.values.{SpaceState, SpaceVersion}
  */
 trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPersistence with EcologyMember {
   
-  // Abstracts that the concrete type has to fill in:
-  def Basic:querki.basic.Basic
-  def Core:querki.core.Core
-  def SystemState:SpaceState
+  private lazy val Basic = interface[querki.basic.Basic]
+  private lazy val Core = interface[querki.core.Core]
+  private lazy val System = interface[querki.system.System]
+  
+  private lazy val SystemState = System.State
   def id:OID
   
   lazy val emptySpace =
@@ -89,7 +90,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
   def createPure(kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
     kind match {
       case Kind.Thing => {
-        val thing = ThingState(thingId, id, modelId, props, modTime, kind)
+        val thing = ThingState(thingId, state.id, modelId, props, modTime, kind)
         state.copy(things = state.things + (thingId -> thing))
       }
       case Kind.Property => {
@@ -97,7 +98,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
         val coll = state.coll(Core.CollectionProp.first(props))
         val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
         val boundColl = coll.asInstanceOf[Collection]
-        val thing = Property(thingId, id, modelId, boundTyp, boundColl, props, modTime)
+        val thing = Property(thingId, state.id, modelId, boundTyp, boundColl, props, modTime)
         state.copy(spaceProps = state.spaceProps + (thingId -> thing))          
       }
       case Kind.Type => {
@@ -105,7 +106,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
         // createSomething, so we *expect* it to always be defined. Let's not risk a crash
         // unnecessarily, though:
         basedOn(props).map { typBasedOn =>
-          val tpe = new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, typBasedOn, props)
+          val tpe = new ModelType(thingId, state.id, querki.core.MOIDs.UrTypeOID, typBasedOn, props)
           state.copy(types = state.types + (thingId -> tpe))
         } getOrElse (state)
       }
@@ -115,6 +116,20 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
         state
       }
     }
+  }
+  
+  /**
+   * Given an existing PropMap, and a set of changes, produce the resulting PropMap.
+   */
+  def enhanceProps(oldProps:PropMap, newProps:PropMap):PropMap = {
+    (oldProps /: newProps) { (current, pair) =>
+      val (propId, v) = pair
+      if (v.isDeleted)
+        // The caller has sent the special signal to delete this Property:
+        current - propId
+      else
+        current + pair
+    }    
   }
   
   /**
@@ -136,14 +151,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
       if (replaceAllProps)
         newProps
       else {
-        (thing.props /: newProps) { (current, pair) =>
-          val (propId, v) = pair
-          if (v.isDeleted)
-            // The caller has sent the special signal to delete this Property:
-            current - propId
-          else
-            current + pair
-        }
+        enhanceProps(thing.props, newProps)
       }
     
     val modelId = modelIdOpt match {

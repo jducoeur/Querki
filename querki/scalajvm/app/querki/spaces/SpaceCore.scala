@@ -15,7 +15,7 @@ import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
-import querki.publication.CurrentPublicationState
+import querki.publication.{CurrentPublicationState, PublishedAck}
 import querki.time.DateTime
 import querki.util.UnexpectedPublicException
 import querki.values.{SpaceState, SpaceVersion}
@@ -63,9 +63,6 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   lazy val Person = interface[querki.identity.Person]
   lazy val Publication = interface[querki.publication.Publication]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
-  lazy val System = interface[querki.system.System]
-  
-  lazy val SystemState = System.State
   
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
@@ -170,7 +167,12 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * Sends these changes over to the InPublicationStateActor
    */
-  def sendPublicationChanges(changes:List[ChangeResult]):RM[SpaceState]
+  def sendPublicationChanges(changes:List[ChangeResult]):RM[CurrentPublicationState]
+  
+  /**
+   * Tells the InPublicationActor that this Thing has been Published.
+   */
+  def notifyPublished(who:User, thingId:OID)(implicit state:SpaceState):RM[PublishedAck]
   
   //////////////////////////////////////////////////
   
@@ -216,6 +218,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       current.
       copy(version = SpaceVersion(lastSequenceNr))
     _currentState = Some(filledState)
+    _enhancedState = None
     filledState
   }
   
@@ -716,9 +719,9 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       handleRequestResponse orElse normalReceiveCommand orElse pluginReceive
   }
       
-  var _pubState:Option[SpaceState] = None
+  var _pubState:Option[CurrentPublicationState] = None
   var _enhancedState:Option[SpaceState] = None
-  def setPubState(s:SpaceState):Unit = {
+  def setPubState(s:CurrentPublicationState):Unit = {
     _enhancedState = None
     _pubState = Some(s)
   }
@@ -731,31 +734,17 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    */
   def enhancedState:SpaceState = {
     if (_enhancedState.isEmpty) {
-      if (_pubState.isEmpty) {
-        _enhancedState = Some(currentState)
-      } else {
-        // TODO: this clause is taken directly from OldUserSpaceSession.makeEnhancedState(). It should surely
-        // be refactored *somewhere*:
-        val s = (currentState /: _pubState.get.localThings) { (curState, t) =>
-          curState.copy(things = curState.things + (t.id -> t))
-        }       
-        _enhancedState = Some(s)
-      }
+      _enhancedState = Some(
+        _pubState.map(ps => 
+          Publication.enhanceState(currentState, ps)
+        ).getOrElse(currentState))
     }
     _enhancedState.get
   }
-  def isPublishEvent(thingId:OID):Boolean = enhancedState.anything(thingId).map(_.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
-  def ifPublishable(thingId:OID):(Boolean, SpaceState) = {
-    if (isPublishEvent(thingId))
-      (true, enhancedState)
-    else
-      (false, currentState)
-  }
-  def ifPublishable(thingId:ThingId):(Boolean, SpaceState) = {
-    enhancedState.anythingLocal(thingId).map { t =>
-      ifPublishable(t.id)
-    }.getOrElse((false, currentState))    
-  }
+  def isPublishable(thingId:OID):Boolean = 
+    enhancedState.anything(thingId).map(_.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
+  def isPublishable(thingId:ThingId):Boolean =
+    enhancedState.anythingLocal(thingId).map(t => isPublishable(t.id)).getOrElse(false)
   
   val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
@@ -800,15 +789,70 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
-      val (pub, fullState) = ifPublishable(modelId)
+      val (pub, fullState) = 
+        if (isPublishable(modelId)) {
+          // When you create a Publishable, it is by definition a Publication event:
+          (true, enhancedState)
+        } else {
+          (false, currentState)
+        }
       runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
     case ChangeProps(who, spaceId, thingId, changedProps, localCall) => {
       val initialState = currentState
-      val (pub, fullState) = ifPublishable(thingId)
-      runAndSendResponse("changeProps", localCall, modifyThing(who, thingId, None, changedProps, false), pub)(fullState).map { changes =>
+      // TODO: wow, this code is horrible, and goes a long ways to saying that we desperately need to rethink the
+      // InPublication architecture:
+      val (pub, fullState, publishing) = 
+        if (isPublishable(thingId)) {
+          val unpubChangesFlag = changedProps.getFirstOpt(Publication.HasUnpublishedChanges)
+          if (unpubChangesFlag.isDefined && unpubChangesFlag.get == false) {
+            // TODO: This is the signal to Publish this Thing -- tell the InPublicationActor
+            (false, currentState, true)
+          } else {
+            // We're continuing to make changes to it on the Publication fork:
+            (true, enhancedState, false)
+          }
+        } else {
+          (false, currentState, false)
+        }
+      
+      // Publication is the really complicated bit, since the one thing we *aren't* doing is handling
+      // the ChangeProps that started this:
+      def doPublish():RM[ChangeResult] = {
+        val thingToPublish = enhancedState.anythingLocal(thingId).get
+        val allProps = enhanceProps(thingToPublish.props, changedProps)
+        val oid = thingToPublish.id
+        val changesRM = 
+          if (currentState.anything(oid).isDefined) {
+            // Okay -- this Thing exists in the mainline. This means that it has already been
+            // Published, so we need to *modify* it. Note that we do this by slamming the value.
+            // In principle, we should figure out the diff and do this as a ChangeProps instead,
+            // but one problem at a time.
+            modifyThing(who, thingId, None, allProps, true)(currentState)
+          } else {
+            // This doesn't exist in the mainline yet, so we need to actually *create* it there.
+            createSomething(who, thingToPublish.model, allProps, thingToPublish.kind, Some(oid))(currentState)
+          }
+        for {
+          cr <- changesRM
+          // And now that we've calculated that, tell the InPublicationActor that it can get
+          // rid of this Thing:
+          _ <- notifyPublished(who, oid)(enhancedState)
+        }
+          yield cr
+      }
+      def modifyAndPublishIfNeeded(state:SpaceState):RM[ChangeResult] = {
+        if (publishing) {
+          doPublish()
+        } else {
+          modifyThing(who, thingId, None, changedProps, false)(state)
+        }
+      }
+      
+      runAndSendResponse("changeProps", localCall, modifyAndPublishIfNeeded, pub)(fullState).map 
+      { changes =>
         // After we finish persisting everything, we need to deal with the possibility that
         // they've changed the name of the Space...
         changes.last.changedThing.map { lastThingId => 
@@ -831,13 +875,19 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case ModifyThing(who, spaceId, thingId, modelId, newProps, localCall) => {
-      val (pub, fullState) = ifPublishable(thingId)
+      val (pub, fullState) =
+        if (isPublishable(thingId))
+          // Modify on a Publishable is always using the Publication fork:
+          (true, enhancedState)
+        else
+          (false, currentState)
       runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true), pub)(fullState)
     }
     
+    // TODO: think through what we really ought to do if you change to/from a Publishable Model. But it's
+    // an extreme edge case, so not worrying about it now. Might put it off until we fix Publication.
     case ChangeModel(who, spaceId, thingId, newModelId, localCall) => {
-      val (pub, fullState) = ifPublishable(newModelId)
-      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false), pub)(fullState)
+      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false), false)(currentState)
     }
     
     case DeleteThing(who, spaceId, thingId) => {
@@ -850,8 +900,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
     }
     
-    case CurrentPublicationState(pubState) => {
-      setPubState(pubState)
+    case ps:CurrentPublicationState => {
+      setPubState(ps)
     }
   }
 }

@@ -43,16 +43,16 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     implicit val s = state
     DisplayPropVal.propPathFromName(path, thing).flatMap { fieldIds =>
       // Compute the *actual* fields to change. Note that this isn't trivial, since the actual change might be in 
-  	  // a Bundle:
-  	  val context = QLRequestContext(rc)
-  	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
-  	  if (!actualFormFieldInfo.isValid){
-  	    val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
-  	    throw new querki.api.ValidationException(msg)
-  	  }
-  	  val result = fieldIds.container match {
-  	    // If this value is contained inside (potentially nested) Bundles, dive down into them
-  	    // and adjust the results:
+      // a Bundle:
+      val context = QLRequestContext(rc)
+      val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
+      if (!actualFormFieldInfo.isValid){
+        val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
+        throw new querki.api.ValidationException(msg)
+      }
+      val result = fieldIds.container match {
+        // If this value is contained inside (potentially nested) Bundles, dive down into them
+        // and adjust the results:
           case Some(higherFieldIds) => {
             // TEMP: restructure rebuildBundle to take higherFieldIds directly:
             def toHigherIds(oneFieldId:FieldIds):List[IndexedOID] = {
@@ -66,11 +66,11 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
               getOrElse(FormFieldInfo(fieldIds.p, None, true, false, None, Some(new PublicException("Didn't get bundle"))))         
           }
           case None => actualFormFieldInfo
-  	  }
-  	    
-  	  val FormFieldInfo(prop, value, _, _, _, _) = result
-  	  // Note that value can be empty if it fails validation!!!
-  	  value.map(v => Core.toProps((prop, v)))
+      }
+        
+      val FormFieldInfo(prop, value, _, _, _, _) = result
+      // Note that value can be empty if it fails validation!!!
+      value.map(v => Core.toProps((prop, v)))
     }
   }
   
@@ -95,16 +95,15 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   }
   
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
-    // TBD: this is an unfortunate intrusion from Publication to here. Is there a better way to keep track of the
-    // fact that this Published Thing has been edited but not yet republished?
-    // In theory, we could do this with timestamps -- if PublishedProp was a timestamp instead, we could compare
-    // that with the Thing's modTime, to see if the Thing has been modified since Publication. But there is no
-    // obvious and easy way to define a Timestamp Type that gets set to exactly the value of the modTime, without
-    // some *very* nasty and expensive operations in SpacePure. So for now, we're doing this ugly but easy approach.
+    // TBD: this is an unfortunate intrusion from Publication to here. We use it as the signal to SpaceCore,
+    // saying that these changes go into the Publication fork of the Space. (The actual Publish/Update event
+    // then clears this flag, telling SpaceCore to promote it.)
+    // Surely there must be a cleaner workflow?
     val allProps =
-      if (thing.ifSet(Publication.PublishedProp)(state) && !(thing.ifSet(Publication.HasUnpublishedChanges)(state))) {
+      if (thing.ifSet(Publication.PublishableModelProp)(state))
+        // If we are editing a Publishable, by definition we are making UnpublishedChanges.
         props + Publication.HasUnpublishedChanges(true)
-      } else
+      else
         props
         
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, allProps))) map {
@@ -126,14 +125,14 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       // in multiple dimensions:
       case AddListItem(path) => {
         for {
-	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
-	      prop = fieldIds.p
-	      if ((prop.cType == Core.QList) || (prop.cType == Core.QSet))
-	      pt = prop.pType
-	      pv <- thing.getPropOpt(prop)
-	      v = pv.v
-	      list = v.cv.toSeq
-	      newI = list.size
+        fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+        prop = fieldIds.p
+        if ((prop.cType == Core.QList) || (prop.cType == Core.QSet))
+        pt = prop.pType
+        pv <- thing.getPropOpt(prop)
+        v = pv.v
+        list = v.cv.toSeq
+        newI = list.size
           newElem = pt.default
           newList = list :+ newElem
           newV = v.cType.makePropValue(newList, pt)
@@ -142,17 +141,17 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       }
       
       case DeleteListItem(path, index) => {
-	    for {
-	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
-	      prop = fieldIds.p
-	      pv <- thing.getPropOpt(prop)
-	      v = pv.v
-	      list = v.cv.toSeq
-	      if (list.isDefinedAt(index))
-	      newList = list.patch(index, List(), 1)
-	      newV = v.cType.makePropValue(newList, v.pType)
-	    }
-	      yield Core.toProps((prop, newV))
+      for {
+        fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+        prop = fieldIds.p
+        pv <- thing.getPropOpt(prop)
+        v = pv.v
+        list = v.cv.toSeq
+        if (list.isDefinedAt(index))
+        newList = list.patch(index, List(), 1)
+        newV = v.cType.makePropValue(newList, v.pType)
+      }
+        yield Core.toProps((prop, newV))
       }
       
       case AddToSet(path, value) => {
@@ -162,7 +161,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
           pt = prop.pType
           pv <- thing.getPropOpt(prop)
           v = pv.v
-	      list = v.cv.toSeq
+        list = v.cv.toSeq
           newElem = pt.fromUser(value)
           newList = list :+ newElem
           newV = v.cType.makePropValue(newList, pt)
@@ -177,7 +176,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
           pt = prop.pType
           pv <- thing.getPropOpt(prop)
           v = pv.v
-	      list = v.cv.toSeq
+        list = v.cv.toSeq
           deadElem = pt.fromUser(value)
           newList = list.filterNot(pt.matches(_, deadElem))
           newV = v.cType.makePropValue(newList, pt)

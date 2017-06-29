@@ -14,5 +14,7 @@ package object publication {
     def HasUnpublishedChanges:Property[Boolean, Boolean]
     def PublishNotesProp:Property[QLText, String]
     def SpaceHasPublications:Property[Boolean, Boolean]
+    
+    def enhanceState(state:SpaceState, pub:CurrentPublicationState):SpaceState
   }
 }

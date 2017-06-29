@@ -50,6 +50,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   lazy val History = interface[querki.history.History]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
+  lazy val Publication = interface[querki.publication.Publication]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -68,8 +69,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     clearEnhancedState()
     _rawState = Some(s)
   }
-  var _publicationState:Option[SpaceState] = None
-  def setPublicationState(s:SpaceState) = {
+  var _publicationState:Option[CurrentPublicationState] = None
+  def setPublicationState(s:CurrentPublicationState) = {
     clearEnhancedState()
     _publicationState = Some(s)
   }
@@ -159,10 +160,10 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
         // If there is a PublicationState, overlay that on top of the rest:
         // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
         // Publishers currently won't see their User Values if there are changes to the Instance.
+        // TODO (QI.7w4g8nd): this will need rationalization, especially once we get to Experiments. But by and
+        // large, I expect to be bringing more stuff into here.
         _publicationState.map { ps =>
-          (stateWithUV /: ps.localThings) { (curState, t) =>
-            curState.copy(things = curState.things + (t.id -> t))
-          }
+          Publication.enhanceState(stateWithUV, ps)
         }.getOrElse(stateWithUV)
       }
       case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
@@ -304,8 +305,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       persister ! LoadValuesForUser(identity, s)
     }
     
-    case CurrentPublicationState(s) => {
-      setPublicationState(s)
+    case ps:CurrentPublicationState => {
+      setPublicationState(ps)
     }
     
     case ValuesForUser(uvs) => {
@@ -372,7 +373,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
-    case CurrentPublicationState(s) => setPublicationState(s)
+    case ps:CurrentPublicationState => setPublicationState(ps)
     
     case ClientRequest(req, rc) => {
       def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {

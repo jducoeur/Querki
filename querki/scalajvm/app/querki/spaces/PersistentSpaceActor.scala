@@ -14,9 +14,9 @@ import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
 import querki.persistence._
-import querki.publication.{AddPublicationEvents, CurrentPublicationState}
+import querki.publication.{AddPublicationEvents, CurrentPublicationState, PublishedAck, ThingPublished}
 import querki.spaces.messages._
 import querki.time.DateTime
 import querki.values.{QValue, SpaceVersion}
@@ -42,7 +42,7 @@ import SpaceMessagePersistence.SpaceEvent
  * Where should that go?
  */
 class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persistenceFactory:SpacePersistenceFactory, timeSpaceOps:Boolean) 
-  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor
+  extends SpaceCore[RequestM](RealRTCAble)(e) with Requester with PersistentQuerkiActor with IdentityPersistence
 {  
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   
@@ -180,10 +180,14 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     }
   }
   
-  def sendPublicationChanges(changes:List[ChangeResult]):RequestM[SpaceState] = {
+  def sendPublicationChanges(changes:List[ChangeResult]):RequestM[CurrentPublicationState] = {
     val events = changes.map(_.events).flatten
     val msg = AddPublicationEvents(events)
-    stateRouter.requestFor[CurrentPublicationState](msg).map(_.state)
+    stateRouter.requestFor[CurrentPublicationState](msg)
+  }
+  
+  def notifyPublished(req:User, thingId:OID)(implicit state:SpaceState):RequestM[PublishedAck] = {
+    stateRouter.requestFor[PublishedAck](ThingPublished(req, thingId))
   }
   
   ///////////////////////////////////////////

@@ -183,13 +183,13 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     val needsPublish = (!isPublished) || hasUnpublishedChanges
     val btnColor = if (!needsPublish) "btn-default" else "btn-warning"
     val btnTitle = 
-      if (isPublished) {
-        if (hasUnpublishedChanges)
+      if (needsPublish) {
+        if (isPublished)
           "This has not-yet-published changes"
         else
-          "This has been published" 
+          "This has not yet been published"
       } else
-        "This has not yet been published"
+        "This has been published" 
     
     div(cls:="btn-group querki-icon-button",
       button(
@@ -204,7 +204,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         title:=btnTitle
       ),
       if (needsPublish) {
-        if (hasUnpublishedChanges) {
+        if (isPublished) {
           ul(cls:="dropdown-menu",
           MSeq(
             li(a(

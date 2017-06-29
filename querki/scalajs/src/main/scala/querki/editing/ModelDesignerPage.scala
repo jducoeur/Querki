@@ -247,13 +247,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
             if (isPublishable(model)) { 
               if (isPublished(model)) {
                 // It's been Published, so mention that.
-                p(i("This has already been Published.",
-                  // TEMP: QI.7w4g8nd -- as requested by Eric, putting a Big Red Warning here until
-                  // In-Publication Mode is ready:
-                  span(style := "color: red;",
-                    b(" Further changes will be made live IMMEDIATELY, even if you don't Publish -- please edit carefully!")
-                  )
-                ))
+                p(i("This has already been Published."))
               } else {
                 // A Publishable but not yet Published Instance:
                 p(i("This is not yet published"))
