@@ -13,4 +13,10 @@ trait PublicationFunctions {
    * Call this when you start or stop publishing a Model. It updates the Space accordingly.
    */
   def changePublishedModels():Future[Unit]
+  
+  /**
+   * Drops all unpublished changes to the specified Instance. You should probably get confirmation
+   * before this, because it is irreversible!
+   */
+  def discardChanges(thingId:TID):Future[Unit]
 }

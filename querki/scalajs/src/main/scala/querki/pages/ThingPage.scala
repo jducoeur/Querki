@@ -204,27 +204,25 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         title:=btnTitle
       ),
       if (needsPublish) {
-        if (isPublished) {
-          ul(cls:="dropdown-menu",
-          MSeq(
-            li(a(
-              href:="#",
-              onclick:={ () => Publication.update(thing, false) },
-              "Publish an Update")),
-            li(a(
-              href:="#",
-              onclick:={ () => Publication.update(thing, true) },
-              "Publish a Minor Update"))
-            )          
-          )
-        } else {
-          ul(cls:="dropdown-menu",
-            li(a(
-              href:="#",
-              onclick:={ () => Publication.publish(thing) },
-              "Publish"))
-          )
-        }
+        ul(cls:="dropdown-menu",
+          if (isPublished) {
+            MSeq(
+              li(a(
+                onclick:={ () => Publication.update(thing, false) },
+                "Publish an Update")),
+              li(a(
+                onclick:={ () => Publication.update(thing, true) },
+                "Publish a Minor Update"))    
+            )
+          } else {
+              li(a(
+                onclick:={ () => Publication.publish(thing) },
+                "Publish"))
+          },
+          li(a(
+            onclick:={ () => Publication.discardChanges(thing) },
+            "Discard Unpublished Changes"))
+        )
       }
     )
   }

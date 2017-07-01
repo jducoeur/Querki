@@ -15,5 +15,6 @@ package object publication {
     
     def publish(thing:ThingInfo):Future[Page]
     def update(thing:ThingInfo, minor:Boolean):Future[Page]
+    def discardChanges(thing:ThingInfo):Unit
   }
 }
