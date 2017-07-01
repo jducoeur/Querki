@@ -354,7 +354,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       commonName(_.publication.canPublishPerm), 
       "Who is allowed to Publish Instances in this Space",
       Seq(AccessControl.OwnerTag),
-      Seq(AccessControl.AppliesToInstances),
+      Seq(AccessControl.AppliesToSpace),
       false, false)
   
   lazy val CanReadAfterPublication = AccessControl.definePermission(

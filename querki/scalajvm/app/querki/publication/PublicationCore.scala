@@ -121,7 +121,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   }
   
   def publish(who:User, thingIds:Seq[OID], meta:PropMap, spaceState:SpaceState):ME[PublicationState] = {
-    if (thingIds.forall(thingId => AccessControl.hasPermission(Publication.CanPublishPermission, spaceState, who, thingId))) {
+    if (AccessControl.hasPermission(Publication.CanPublishPermission, spaceState, who, spaceState)) {
       doPublish(who, thingIds, meta, spaceState)
     } else {
       // TODO: in theory, this shouldn't happen, but it should still become a proper PublicException:

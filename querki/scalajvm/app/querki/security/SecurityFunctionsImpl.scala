@@ -26,6 +26,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   lazy val Email = interface[querki.email.Email]
   lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Person = interface[querki.identity.Person]
+  lazy val Publication = interface[querki.publication.Publication]
   lazy val Roles = interface[Roles]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserValues = interface[querki.uservalues.UserValues]
@@ -70,14 +71,14 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
   def invite(emailStrs:Seq[String], collabTids:Seq[TID]):Future[InviteResponse] = {
-	  val nCurrentMembers = Person.people(state).size
+    val nCurrentMembers = Person.people(state).size
     val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
     val collabs = for {
       tid <- collabTids
       thingId = ThingId(tid.underlying)
       AsOID(oid) = thingId
     }
-	  yield oid
+    yield oid
     
     if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers)
       throw new MaxMembersPerSpaceException(maxMembers)
@@ -189,7 +190,9 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
         UserValues.UserValuePermission,
         
         Apps.CanManipulateAppsPerm,
-        Apps.CanUseAsAppPerm
+        Apps.CanUseAsAppPerm,
+        
+        Publication.CanPublishPermission
       )
     val infos = perms.map(perm2Api(_))
     fut(infos)

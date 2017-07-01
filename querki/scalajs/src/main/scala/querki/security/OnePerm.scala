@@ -9,7 +9,7 @@ import autowire._
 
 import org.querki.jquery._
 
-import querki.data.ThingInfo
+import querki.data.BasicThingInfo
 import querki.display.{ButtonGadget, RawDiv}
 import querki.display.input.InputGadget
 import querki.display.rx._
@@ -19,7 +19,7 @@ import querki.pages.Page
 
 import SecurityFunctions._
 
-class OnePerm(t:ThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm]], isSpace:Boolean, page:Page with LevelMap)
+class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm]], isSpace:Boolean, page:Page with LevelMap)
   (implicit e:Ecology) extends InputGadget[html.Div](e)
 {
   lazy val Editing = interface[querki.editing.Editing]

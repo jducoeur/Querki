@@ -741,8 +741,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     _enhancedState.get
   }
-  def isPublishable(thingId:OID):Boolean = 
-    enhancedState.anything(thingId).map(_.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
+  def isPublishable(thingId:OID):Boolean = {
+    enhancedState.anything(thingId).map { t =>
+      if (t.isModel(enhancedState))
+        // The Model itself always lives in the main fork:
+        false
+      else
+        t.ifSet(Publication.PublishableModelProp)(enhancedState) 
+    }.getOrElse(false)
+  }
   def isPublishable(thingId:ThingId):Boolean =
     enhancedState.anythingLocal(thingId).map(t => isPublishable(t.id)).getOrElse(false)
   
