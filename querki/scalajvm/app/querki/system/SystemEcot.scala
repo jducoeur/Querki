@@ -65,6 +65,8 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncIni
   lazy val Apps = interface[querki.apps.Apps]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Conventions = interface[querki.conventions.Conventions]
+  lazy val Publication = interface[querki.publication.Publication]
+  lazy val Roles = interface[querki.security.Roles]
   lazy val Tags = interface[querki.tags.Tags]
             
   val defaultSpaceRootView = """[[Summary -> ""**____**""]] [[_if(_isNonEmpty(Details), _QLButton(label=""Details"", ql=Details))]]
@@ -128,7 +130,8 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncIni
         Basic.DisplayTextProp(defaultSpaceRootView),
         Tags.ShowUnknownProp(querki.tags.defaultDisplayText),
         Apps.GallerySummary(),
-        Apps.GalleryDetails()))
+        Apps.GalleryDetails(),
+        Publication.CanPublishPermission(Roles.EditorRole)))
     _state = Some(state)
   }
   

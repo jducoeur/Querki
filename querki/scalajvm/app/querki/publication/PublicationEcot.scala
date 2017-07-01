@@ -49,6 +49,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   val AccessControl = initRequires[querki.security.AccessControl]
   val Basic = initRequires[querki.basic.Basic]
   val QDuration = initRequires[querki.time.QDuration]
+  val Roles = initRequires[querki.security.Roles]
   val Time = initRequires[querki.time.Time]
   val Typeclasses = initRequires[querki.typeclass.Typeclasses]
   
@@ -353,7 +354,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       CanPublishOID, 
       commonName(_.publication.canPublishPerm), 
       "Who is allowed to Publish Instances in this Space",
-      Seq(AccessControl.OwnerTag),
+      Seq(Roles.EditorRole),
       Seq(AccessControl.AppliesToSpace),
       false, false)
   
