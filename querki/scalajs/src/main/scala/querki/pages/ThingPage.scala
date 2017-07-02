@@ -208,15 +208,15 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           if (isPublished) {
             MSeq(
               li(a(
-                onclick:={ () => Publication.update(thing, false) },
+                onclick:={ () => Publication.update(thing, false, true) },
                 "Publish an Update")),
               li(a(
-                onclick:={ () => Publication.update(thing, true) },
+                onclick:={ () => Publication.update(thing, true, true) },
                 "Publish a Minor Update"))    
             )
           } else {
               li(a(
-                onclick:={ () => Publication.publish(thing) },
+                onclick:={ () => Publication.publish(thing, true) },
                 "Publish"))
           },
           li(a(

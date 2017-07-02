@@ -13,8 +13,8 @@ package object publication {
     def hasUnpublishedChanges(thing:ThingInfo):Boolean
     def spaceHasPublications(thing:ThingInfo):Boolean
     
-    def publish(thing:ThingInfo):Future[Page]
-    def update(thing:ThingInfo, minor:Boolean):Future[Page]
+    def publish(thing:ThingInfo, forceReload:Boolean):Future[Page]
+    def update(thing:ThingInfo, minor:Boolean, forceReload:Boolean):Future[Page]
     def discardChanges(thing:ThingInfo):Unit
   }
 }

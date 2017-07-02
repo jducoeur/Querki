@@ -32,17 +32,23 @@ class PublicationEcot(e:Ecology) extends ClientEcot(e) with Publication  {
   
   def spaceHasPublications(thing:ThingInfo):Boolean = thing.hasFlag(std.publication.spaceHasPublicationsProp)
 
-  def publish(thing:ThingInfo):Future[Page] = {
+  def publish(thing:ThingInfo, forceReload:Boolean):Future[Page] = {
     Client[PublicationFunctions].publish(thing.oid).call().flatMap { newInfo =>
       DataSetting.setThing(Some(newInfo))
-      Pages.thingPageFactory.showPage(newInfo)
-    }    
+      if (forceReload)
+        PageManager.reload()
+      else
+        Pages.thingPageFactory.showPage(newInfo)
+    }
   }
   
-  def update(thing:ThingInfo, minor:Boolean):Future[Page] = {
+  def update(thing:ThingInfo, minor:Boolean, forceReload:Boolean):Future[Page] = {
     Client[PublicationFunctions].update(thing.oid, minor).call().flatMap { newInfo =>
       DataSetting.setThing(Some(newInfo))
-      Pages.thingPageFactory.showPage(newInfo)
+      if (forceReload)
+        PageManager.reload()
+      else
+        Pages.thingPageFactory.showPage(newInfo)
     }    
   }
   

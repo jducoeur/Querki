@@ -296,13 +296,13 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                     ),
                     new WithTooltip(
                       new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                        Publication.update(model, false)
+                        Publication.update(model, false, false)
                       }),
                       "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
                     ),
                     new WithTooltip(
                       new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                        Publication.update(model, true)
+                        Publication.update(model, true, false)
                       }),
                       "Pressing this will publish a Minor Update -- the changes will not appear in Recent Changes (unless Minor Changes are specifically requested) or the RSS Feed."
                     )
@@ -318,7 +318,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                     ),
                     new WithTooltip(
                       new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
-                        Publication.publish(model)
+                        Publication.publish(model, false)
                       }),
                       "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
                     )
