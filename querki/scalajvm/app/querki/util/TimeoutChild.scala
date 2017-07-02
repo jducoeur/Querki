@@ -81,14 +81,14 @@ trait RoutingParentBase[K] extends Actor { pipe:ReceivePipeline =>
    * Instances of RoutingParent *may* override this. It is called immediately after creating a
    * new Child.
    */
-  def initChild(child:ActorRef) = {}
+  def initChild(key:K, child:ActorRef) = {}
   
   def updateCache(key:K, newChild:ManagedChild):Unit
   
   protected def createManagedChild(key:K):ManagedChild = {
     val c = new ManagedChild(key, createChild(key))
     context.watch(c.ref)
-    initChild(c.ref)
+    initChild(key, c.ref)
     childrenUpdated()
     updateCache(key, c)
     c    

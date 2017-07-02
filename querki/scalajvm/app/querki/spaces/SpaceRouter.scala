@@ -70,19 +70,18 @@ private[spaces] class SpaceRouter(e:Ecology)
   }
   lazy val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
   lazy val publication = context.actorOf(PublicationActor.actorProps(ecology, spaceId, self), "Publication")
-  // This needs to be non-lazy: this is what actually causes it to boot, since it just won't start
-  // on a Space otherwise:
-  val publicationState = context.actorOf(InPublicationStateActor.actorProps(ecology, spaceId, self), "InPubState")
+  lazy val publicationStateActor = context.actorOf(InPublicationStateActor.actorProps(ecology, spaceId, self), "InPubState")
   
   // This function just references the SpaceActor, so that it will boot and send CurrentState.
   // TODO: this is a dreadfully brittle approach. How can we restructure it to be more sensible
   // and robust?
   def bootSpaceActor() = {
     val dummy = space
+    val dummy2 = publicationStateActor
   }
   
-  var state:SpaceState = null
-  var pubState:Option[CurrentPublicationState] = None
+  var _state:Option[SpaceState] = None
+  var _pubState:Option[CurrentPublicationState] = None
   
   def receive = LoggingReceive {
     
@@ -90,14 +89,14 @@ private[spaces] class SpaceRouter(e:Ecology)
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(curState) => {
-      state = curState
+      _state = Some(curState)
       conversations.forward(msg)
       sessions.forward(msg)
       members.forward(msg)
     }
     
     case msg:CurrentPublicationState => {
-      pubState = Some(msg)
+      _pubState = Some(msg)
       sessions.forward(msg)
       space.forward(msg)
     }
@@ -106,11 +105,13 @@ private[spaces] class SpaceRouter(e:Ecology)
      * Admin has asked all of the Spaces to give a quick status report.
      */
     case GetSpacesStatus(requester) => {
-      for {
-        ActiveThings(nConvs) <- conversations.request(GetActiveThings)
-        ActiveSessions(nSessions) <- sessions.request(GetActiveSessions)
+      _state.map { state =>
+        for {
+          ActiveThings(nConvs) <- conversations.request(GetActiveThings)
+          ActiveSessions(nSessions) <- sessions.request(GetActiveSessions)
+        }
+          sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
       }
-        sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
     }
 
     // Messages for the various subsystems get routed based on the payload type:
@@ -132,9 +133,12 @@ private[spaces] class SpaceRouter(e:Ecology)
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
     case msg:BeginProcessingPhoto => {
-      val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
-      worker.forward(msg)
-      sender ! worker
+      _state.map { state =>
+        val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
+        worker.forward(msg)
+        sender ! worker
+      }
+      // TODO: this should return some sort of serious error if _state is empty: that shouldn't be possible.
     }
     
     // Messages for the SpaceHistory:
@@ -145,7 +149,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     case msg:PublicationCommands.PublicationCommand => publication.forward(msg)
     
-    case msg:PublicationStateMessage => publicationState.forward(msg)
+    case msg:PublicationStateMessage => publicationStateActor.forward(msg)
     
     case msg:ShutdownSpace => {
       sender ! ShutdownAck

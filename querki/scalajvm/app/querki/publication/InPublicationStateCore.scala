@@ -101,14 +101,15 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   
   def receiveRecover:Receive = {
     case evt:SpaceEvent => {
-      setState(addEvent(pState, evt))
+      // IMPORTANT: we don't call setState(), because we don't want to send out the notifies yet:
+      _pState = Some(addEvent(pState, evt))
     }
     
     case RecoveryCompleted => {
-      // Only send the message if there have been some events. In most Spaces, this won't do anything:
-      _pState.foreach { state =>
-        notifyChanges(pState)
-      }
+      // We always fire this, even if it's empty, because UserSpaceSessions relies on it:
+      // TODO: yes, this is all horribly incestuous. That's why Publication (and the way we handle SpaceState
+      // and requests for it) needs a deep rearchitecting.
+      notifyChanges(pState)
     }
   }
 }

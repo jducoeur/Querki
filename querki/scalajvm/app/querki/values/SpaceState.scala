@@ -475,12 +475,10 @@ case class SpaceState(
     }.toMap
   }
   
-  def spaceStateOps(implicit e:Ecology) = new SpaceStateOps()(this, e)
+  def spaceStateOps(implicit e:Ecology):SpaceStateOps = new SpaceStateOps()(this, e)
 }
 
-class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends EcologyMember {
-  def Core = interface[querki.core.Core]
-  
+class SpaceStateOps(implicit state:SpaceState, e:Ecology) extends ThingOps(state) {
   def things = state.things
 
   def models:Iterable[ThingState] = {

@@ -4,20 +4,21 @@ import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
 
-import models.OID
+import models._
 
 import querki.admin.{MonitorActor, SpaceMonitorEvent}
 import querki.api.ClientRequest
 import querki.ecology._
+import querki.globals._
 import querki.identity.User
 import querki.publication.CurrentPublicationState
 import querki.session.messages._
 import querki.spaces.messages.{SpaceSubsystemRequest, CurrentState}
-import querki.util._
-import querki.values.SpaceState
+import querki.util.{QuerkiBootableActor, RoutingParent}
+import querki.values._
 
-private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, val spaceRouter:ActorRef, timeSpaceOps:Boolean)
-  extends Actor with EcologyMember with ReceivePipeline with RoutingParent[User]
+private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceRouter:ActorRef, timeSpaceOps:Boolean)
+  extends QuerkiBootableActor(e) with EcologyMember with ReceivePipeline with RoutingParent[User]
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Publication = interface[querki.publication.Publication]
@@ -41,35 +42,76 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
     context.actorOf(OldUserSpaceSession.actorProps(ecology, spaceId, key, spaceRouter, persister, timeSpaceOps).withDispatcher("session-dispatcher"), key.id.toString)
   }
   
-  /**
-   * Send the CurrentPublicationState to children who have access to it. This will only do anything if
-   * we have *both* the the normal and publication states.
-   */
-  def sendPublishStateToChildren():Unit = {
+  def sendPublishStateToChild(user:User, session:ActorRef):Unit = {
     // TODO: this is nasty and coupled -- we are checking whether this user has publication access:
     (state, pubState) match {
       case (Some(s), Some(ps)) => {
-        childPairs
-          .filter { case (user, _) => AccessControl.hasPermission(Publication.CanPublishPermission, s, user, s.id) }
-          .map { case (user, session) => session.forward(ps) }
+        if (AccessControl.hasPermission(Publication.CanPublishPermission, s, user, s.id))
+          session ! ps
       }
       case _ =>
     }
   }
   
-  override def initChild(child:ActorRef) = state.map(child ! CurrentState(_))
+  /**
+   * Send the CurrentPublicationState to children who have access to it. This will only do anything if
+   * we have *both* the the normal and publication states; otherwise it is a no-op.
+   */
+  def sendPublishStateToChildren():Unit = {
+    childPairs.map { case (user, child) => sendPublishStateToChild(user, child.ref) }
+  }
   
-  def receive = LoggingReceive {
+  def isPublishableSpace(state:SpaceState):Boolean = {
+    implicit val s = state
+    state.ifSet(Publication.SpaceHasPublications)
+  }
+  
+  override def initChild(user:User, child:ActorRef) = {
+    sendPublishStateToChild(user, child)
+    state.map(child ! CurrentState(_))
+  }
+  
+  def bootIfReady() = {
+    // We always need the SpaceState in order to boot; if the Space is Publishable, then we
+    // also need the CurrentPublicationState. If the Space is not Publishable, we'll eventually
+    // get a probably-empty CurrentPublicationState, but we don't have to wait for it.
+    if (state.isDefined && (!isPublishableSpace(state.get) || pubState.isDefined)) {
+      childrenUpdated()
+      // Note that we intentionally send the PublicationState *first*, so that we don't get
+      // a UserSpaceSession that is missing it due to race conditions.
+      sendPublishStateToChildren()
+      children.foreach { session => 
+        session ! CurrentState(state.get)
+      }
+      
+      doneBooting()
+    }
+  }
+  
+  /**
+   * We stay in Boot mode until we receive *both* the SpaceState and the CurrentPublicationState.
+   */
+  def bootReceive = {
+    case msg @ CurrentState(s) => {
+      state = Some(s)
+      bootIfReady()
+    }
+    
+    case msg:CurrentPublicationState => {
+      pubState = Some(msg)
+      bootIfReady()
+    }
+  }
+  
+  /**
+   * Normal steady-state receive, after we have both the SpaceState and CurrentPublicationState.
+   */
+  def doReceive = {
     /**
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(s) => {
-      val firstTime = state.isEmpty
       state = Some(s)
-      if (firstTime) {
-        childrenUpdated()
-        sendPublishStateToChildren()
-      }
       children.foreach(session => session.forward(msg))
     }
     
