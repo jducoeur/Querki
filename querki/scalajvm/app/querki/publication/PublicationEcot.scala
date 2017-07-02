@@ -65,7 +65,8 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   override def persistentMessages = persist(68,
     (classOf[PublishEvent] -> 100),
     (classOf[PublishedThingInfo] -> 101),
-    (classOf[StartPublishingRSS] -> 102)
+    (classOf[StartPublishingRSS] -> 102),
+    (classOf[CurrentPublicationState] -> 103)
   )
   
   val PublicationTag = "Publication"

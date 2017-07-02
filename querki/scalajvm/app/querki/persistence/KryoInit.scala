@@ -129,6 +129,8 @@ object KryoInit {
       kryo.register(classOf[scala.collection.immutable.Stream[_]], new ScalaStreamSerializer, 114)
       
       kryo.register(classOf[AddedField[_]], new AddedFieldSerializer, 115)
+      
+      kryo.register(classOf[scala.collection.immutable.Vector[_]], new ScalaVectorSerializer, 116)
     }
   }
   

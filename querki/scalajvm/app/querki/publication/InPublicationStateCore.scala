@@ -4,14 +4,26 @@ import cats._
 import cats.implicits._
 
 import akka.actor.Actor.Receive
-import akka.persistence.RecoveryCompleted
+import akka.persistence._
 
 import funcakka.PersistentActorCore
 
 import querki.globals._
+import querki.persistence._
 import querki.spaces.{SpaceMessagePersistenceBase, SpacePure}
 import querki.spaces.SpaceMessagePersistence._
 import querki.time.DateTime
+
+/**
+ * Message published to the troupe when there is new information in the Publication State. It
+ * is the responsibility of the UserSpaceSessions to incorporate this.
+ * 
+ * Note that this is persistable, since it is effectively the snapshot state for the
+ * InPublicationStateActor.
+ */
+case class CurrentPublicationState(
+  @KryoTag(1) changes:Map[OID, Vector[SpaceEvent]]
+) extends UseKryo
 
 /**
  * This represents the main logic of the InPublicationStateActor. This is a PersistentActor that just stores
@@ -26,6 +38,12 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   lazy val System = interface[querki.system.System]
   
   lazy val SystemState = System.State
+  
+  /**
+   * We're just going to reuse the interval from SpaceState.
+   */
+  def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
+  lazy val snapshotInterval = getSnapshotInterval
   
   //////////////////////////////////////////////////
   //
@@ -48,6 +66,23 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   
   def toPersistenceId(id:OID) = "inpubstate-" + id.toThingId.toString
   def persistenceId = toPersistenceId(id)
+  
+  // TODO: this snapshot code is roughly copied from SpaceCore. It should, perhaps, be lifted
+  // to PersistentActorCore.
+  var snapshotCounter = 0
+  def doSaveSnapshot() = {
+    saveSnapshot(pState)
+    snapshotCounter = 0
+  }
+  def checkSnapshot() = {
+    if (snapshotCounter > snapshotInterval)
+      doSaveSnapshot()
+    else
+      incrementSnapshot()
+  }
+  def incrementSnapshot() = {
+    snapshotCounter += 1
+  }
   
   var _pState:Option[CurrentPublicationState] = None
   def pState = _pState.getOrElse(CurrentPublicationState(Map.empty))
@@ -75,6 +110,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
     case evt:SpaceEvent => {
       persistAnd(evt).map { _ =>
         setState(addEvent(pState, evt))
+        checkSnapshot()
       }
     }
     
@@ -84,6 +120,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
           addEvent(curState, evt)
         }
         setState(s)
+        checkSnapshot()
         respondWithState(pState)
       }
     }
@@ -94,15 +131,21 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
       val evt = DHDeleteThing(who, oid, DateTime.now)
       persistAnd(evt).map { _ =>
         setState(addEvent(pState, evt))
+        checkSnapshot()
         respondPublished()
       }
     }
   }
   
   def receiveRecover:Receive = {
+    case SnapshotOffer(metadata, state:CurrentPublicationState) => {
+      _pState = Some(state)
+    }
+    
     case evt:SpaceEvent => {
       // IMPORTANT: we don't call setState(), because we don't want to send out the notifies yet:
       _pState = Some(addEvent(pState, evt))
+      incrementSnapshot()
     }
     
     case RecoveryCompleted => {

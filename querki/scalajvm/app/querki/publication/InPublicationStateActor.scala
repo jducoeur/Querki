@@ -12,12 +12,6 @@ import querki.identity.IdentityPersistence.UserRef
 import querki.persistence.UseKryo
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 
-/**
- * Message published to the troupe when there is new information in the Publication State. It
- * is the responsibility of the UserSpaceSessions to incorporate this.
- */
-case class CurrentPublicationState(changes:Map[OID, Vector[SpaceEvent]])
-
 trait PublicationStateMessage
 
 /**
