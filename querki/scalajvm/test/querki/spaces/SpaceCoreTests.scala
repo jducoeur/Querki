@@ -11,6 +11,7 @@ import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
+import querki.publication._
 import querki.spaces.messages._
 import querki.test._
 import querki.time._
@@ -78,6 +79,15 @@ class TestSpaceCore(
   def loadAppVersion(appId:OID, version:SpaceVersion, appsSoFar:Map[OID, SpaceState]):TCIdentity[SpaceState] = {
     val appSpace = testSpace.world.getSpace(appId)
     TestRTCAble.successful(appSpace.state)
+  }
+  
+  def sendPublicationChanges(changes:List[ChangeResult]):TCIdentity[CurrentPublicationState] = {
+    // TODO: make this real
+    TestRTCAble.successful(CurrentPublicationState(Map.empty))
+  }
+  
+  def notifyPublished(who:User, thingId:OID)(implicit state:SpaceState):TCIdentity[PublishedAck] = {
+    TestRTCAble.successful(PublishedAck())
   }
 }
 
