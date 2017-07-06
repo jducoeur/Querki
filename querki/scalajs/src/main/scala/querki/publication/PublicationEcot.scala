@@ -52,13 +52,16 @@ class PublicationEcot(e:Ecology) extends ClientEcot(e) with Publication  {
     }    
   }
   
-  def discardChanges(thing:ThingInfo):Unit = {
+  def discardChanges(thing:ThingInfo, forceReload:Boolean):Unit = {
     val confirmDialog = new Dialog("Confirm Discard",
       p(b(s"""Are you sure you want to discard changes to ${thing.displayName}? They can not be recovered afterwards.""".stripMargin)),
       (ButtonGadget.Warning, Seq(s"Discard changes to ${thing.displayName}", id := "_discardConfirm"), { dialog => 
         Client[PublicationFunctions].discardChanges(thing.oid).call().foreach { _ =>
           dialog.done()
-          PageManager.reload()
+          if (forceReload)
+            PageManager.reload()
+          else
+            Pages.thingPageFactory.showPage(thing)
         }
       }),
       (ButtonGadget.Normal, Seq("Cancel", id := "_cancelDiscard"), { dialog => dialog.done() })

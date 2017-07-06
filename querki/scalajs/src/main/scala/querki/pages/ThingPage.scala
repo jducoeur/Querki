@@ -220,7 +220,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                 "Publish"))
           },
           li(a(
-            onclick:={ () => Publication.discardChanges(thing) },
+            onclick:={ () => Publication.discardChanges(thing, true) },
             "Discard Unpublished Changes"))
         )
       }

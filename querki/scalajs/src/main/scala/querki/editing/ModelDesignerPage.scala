@@ -306,6 +306,12 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                         Publication.update(model, true, false)
                       }),
                       "Pressing this will publish a Minor Update -- the changes will not appear in Recent Changes (unless Minor Changes are specifically requested) or the RSS Feed."
+                    ),
+                    new WithTooltip(
+                      new ButtonGadget(ButtonGadget.Danger, "Discard all Unpublished Changes", if (!spaceThing.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                        Publication.discardChanges(model, false)
+                      }),
+                      "Pressing this will revert this back to the Published version, throwing away all changes that have not been Published yet."
                     )
                   )
                 } else {
