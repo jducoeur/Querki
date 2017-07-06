@@ -182,6 +182,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
         model <- DataAccess.getThing(modelId)
         _ = DataSetting.setThing(Some(model))
         modelModel <- DataAccess.getThing(model.modelOid)
+        spaceThing <- DataAccess.getThing(DataAccess.spaceId)
         
         fullEditInfo <- 
           Client[EditFunctions].getPropertyEditors(modelId).call()
@@ -295,13 +296,13 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                       "Pressing this will not list these changes in Recent Changes at all. These changes may become part of a later Update."
                     ),
                     new WithTooltip(
-                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish Update", if (!spaceThing.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
                         Publication.update(model, false, false)
                       }),
                       "Pressing this will publish a full Update -- the changes will be shown in Recent Changes, and published in this Space's RSS Feed."
                     ),
                     new WithTooltip(
-                      new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      new ButtonGadget(ButtonGadget.Normal, "Finish as Minor Changes", if (!spaceThing.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
                         Publication.update(model, true, false)
                       }),
                       "Pressing this will publish a Minor Update -- the changes will not appear in Recent Changes (unless Minor Changes are specifically requested) or the RSS Feed."
@@ -317,7 +318,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                       "Press this button if you want to do further work on this Instance before Publishing it."
                     ),
                     new WithTooltip(
-                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!model.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
+                      new ButtonGadget(ButtonGadget.Primary, "Finish and Publish", if (!spaceThing.hasPerm(std.publication.canPublishPerm)) disabled := "disabled")({() =>
                         Publication.publish(model, false)
                       }),
                       "Pressing this will Publish this Instance -- it will become publicly visible, be listed in Recent Changes, and be published in this Space's RSS Feed."
