@@ -796,13 +796,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
-      val (pub, fullState) = 
-        if (isPublishable(modelId)) {
-          // When you create a Publishable, it is by definition a Publication event:
-          (true, enhancedState)
-        } else {
-          (false, currentState)
-        }
+      // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
+      // we are asking whether this Thing's *model* is publishable.
+      val pub = (for {
+        t <- enhancedState.anything(modelId)
+      }
+        yield t.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
+        
+      val fullState = if (pub) enhancedState else currentState
+      
       runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
     }
     
