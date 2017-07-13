@@ -1,6 +1,10 @@
 package querki.apps
 
 import akka.actor.ActorRef
+import akka.persistence._
+import akka.persistence.cassandra.query.scaladsl._
+import akka.persistence.query._
+import akka.stream.ActorMaterializer
 
 import org.querki.requester._
 
@@ -8,12 +12,14 @@ import models._
 
 import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
-import querki.data.{SpaceInfo, TID}
+import querki.data.{SpaceInfo, TID, TOID}
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
 import querki.spaces.{PersistentSpaceActor, RealRTCAble, SpaceCreator, StatusNormal}
+import querki.spaces.SpaceMessagePersistence._
 import querki.spaces.messages._
+import querki.time.DateTime
 import querki.values.SpaceVersion
 
 /**
@@ -42,19 +48,61 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   
   def doRoute(req:Request):Future[String] = route[AppsFunctions](this)(req)
   
+  /**
+   * Figures out what the current version of this App *really* is. That might be later than what
+   * the Space shows.
+   * 
+   * TODO: this is *incredibly* primitive at this point -- it just skims the event log and counts the events.
+   * We actually only care about the *last* event; can we get that?
+   */
+  private def getCurrentAppVersion(appId:OID):Future[(SpaceVersion, DateTime)] = {
+    lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
+    val source = readJournal.currentEventsByPersistenceId(appId.toThingId.toString, 0, Int.MaxValue)
+    implicit val mat = ActorMaterializer()
+
+    source.runFold((0L, querki.time.epoch)) { 
+      case ((n, t), EventEnvelope(offset, persistenceId, sequenceNr, evt)) => 
+        evt match {
+          case se:SpaceEvent => {
+            (sequenceNr, se.modTime)
+          }
+          case _ => (sequenceNr, t) 
+        }
+    }
+      .map { case (n, t) =>
+        mat.shutdown()
+        (SpaceVersion(n), t)
+      }
+  }
+  
+  def checkAppVersions():Future[Map[TID, AppInfo]] = {
+    (Future.successful(Map.empty[TID, AppInfo]) /: state.apps) { (fut, app) =>
+      for {
+        m <- fut
+        (currentVersionNum, currentTime) <- getCurrentAppVersion(app.id)
+      }
+        yield {
+          if (currentVersionNum.v > app.version.v) {
+            val tid:TID = app.id
+            m + (tid -> AppInfo(tid, AppState(app.version.v, app.modTime.getMillis), AppState(currentVersionNum.v, currentTime.getMillis)))
+          } else
+            m
+        }
+    }
+  }
+  
   def addApp(appIdStr:String):Future[Unit] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
     ThingId(appIdStr) match {
       case AsOID(appId) => {
-        // For the time being, we simply assume that you want the current version of the App:
-        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId, SpaceVersion(Int.MaxValue), false, false))) map {
-          case AddAppResult(exOpt, _) => {
-            exOpt.map(ex => throw ex)
-            ()
-          }
+        for {
+          appVersion <- getCurrentAppVersion(appId)
+          AddAppResult(exOpt, _) <- spaceRouter.requestFor[AddAppResult](SpacePluginMsg(user, state.id, AddApp(appId, appVersion._1, false, false)))
+          _ = exOpt.map(ex => throw ex)
         }
+          yield ()
       }
       case _ => throw new PublicException("Apps.notASpace")
     }

@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import querki.api.OperationHandle
 import querki.data._
+import querki.time.Common.Timestamp
 
 /**
  * API for functions specifically relating to App management.
@@ -12,6 +13,12 @@ import querki.data._
  */
 trait AppsFunctions {
   import AppsFunctions._
+  
+  /**
+   * Checks whether this Space's Apps have newer versions. Only returns AppInfo records for Apps that
+   * are currently out-of-date.
+   */
+  def checkAppVersions():Future[Map[TID, AppInfo]]
   
   /**
    * Add the specified App to this Space, as a mix-in.
@@ -42,4 +49,7 @@ object AppsFunctions {
     canExtract:Boolean,
     extractInstancesByDefault:Boolean
   ) extends BasicThingInfo
+  
+  case class AppState(version:Long, when:Timestamp)
+  case class AppInfo(appId:TID, inUse:AppState, nowAt:AppState)
 }
