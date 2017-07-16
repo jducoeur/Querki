@@ -5,6 +5,8 @@ import language.existentials
 import scala.collection.immutable.{SortedSet, TreeSet}
 import scala.math.Ordering
 
+import cats.Eq, cats.instances._, cats.syntax.eq._
+
 import models._
 
 import com.github.nscala_time.time.Imports._
@@ -29,6 +31,7 @@ case class StateCacheKey(ecotId:Short, id:String)
 case class SpaceVersion(v:Long) extends AnyVal
 object SpaceVersion {
   val Unknown = SpaceVersion(-1)
+  implicit val versionEqual = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }  
 }
 
 /**
