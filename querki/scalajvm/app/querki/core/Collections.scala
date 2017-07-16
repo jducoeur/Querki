@@ -35,6 +35,12 @@ object Collections {
   val collSerialOpenStr = s"$collSerialOpen"
   val collSerialCloseStr = s"$collSerialClose"
   val collSerialDelimitStr = s"$collSerialDelimit"
+  
+  /*
+   * Marker for an empty Text field. Placed here simply to keep these special characters in one place.
+   */
+  val emptyTextMarker = '\u001f'  
+  val emptyTextMarkerStr = s"$emptyTextMarker"
 }
 
 trait CollectionBase { self:CoreEcot =>
