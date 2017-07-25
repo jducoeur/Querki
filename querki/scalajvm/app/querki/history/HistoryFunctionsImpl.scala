@@ -21,7 +21,7 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
       throw new Exception(s"Only the owner of the Space is allowed to view its history!")
     
     for {
-      summary <- spaceRouter.requestFor[HistorySummary](GetHistorySummary())
+      summary <- spaceRouter.requestFor[HistorySummary](GetHistorySummary(rc))
     }
       yield summary
   }

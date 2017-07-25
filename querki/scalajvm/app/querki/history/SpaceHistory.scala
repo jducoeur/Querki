@@ -19,12 +19,12 @@ import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
+import querki.spaces.SpacePure
+import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
 import querki.util.{QuerkiActor, SingleRoutingParent, TimeoutChild}
-import querki.values.{SpaceState, SpaceVersion}
-import querki.spaces.SpacePure
-import querki.spaces.messages._
+import querki.values.{RequestContext, SpaceState, SpaceVersion}
 
 import HistoryFunctions._
 
@@ -73,11 +73,13 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
   // akka-persistence-cassandra Gitter, 9/13/16), so using a Vector makes sense here.
   var history = StateHistory.empty[HistoryRecord]
   
+  def latestState = history.lastOption.map(_.state).getOrElse(emptySpace)
+  
   implicit def OID2TID(oid:OID):TID = ClientApi.OID2TID(oid)
   
-  def toSummary(evt:SpaceEvent, sequenceNr:Long, identities:Set[OID], thingNames:ThingNames)(implicit state:SpaceState):(EvtSummary, Set[OID], ThingNames) = 
+  def toSummary(evt:SpaceEvent, sequenceNr:Long, identities:Set[OID], allThingIds:Set[OID])(implicit state:SpaceState):(EvtSummary, Set[OID], Set[OID]) = 
   {
-    def fill(userRef:UserRef, thingIds:Seq[OID], f:String => EvtSummary):(EvtSummary, Set[OID], ThingNames) = {
+    def fill(userRef:UserRef, thingIds:Seq[OID], f:String => EvtSummary):(EvtSummary, Set[OID], Set[OID]) = {
       val summary = f(userRef.identityIdOpt.map(_.toThingId.toString).getOrElse(""))
       
       val newIdentities = userRef.identityIdOpt match {
@@ -91,13 +93,13 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
       }
         yield (thingId, thing.displayName)
         
-      val newThingNames = 
-        (thingNames /: namePairs) { (tn, pair) =>
+      val newThingIds = 
+        (allThingIds /: namePairs) { (tn, pair) =>
           val (id, name) = pair
-          tn + (OID2TID(id) -> name)
+          tn + id
         }
 
-      (summary, newIdentities, newThingNames)
+      (summary, newIdentities, newThingIds)
     }
     
     evt match {
@@ -109,7 +111,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
           SetStateReason.withValue(reason.getOrElse(0)),
           details.getOrElse("")), 
         identities, 
-        thingNames)
+        allThingIds)
       
       case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
       
@@ -158,6 +160,21 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     }    
   }
   
+  /**
+   * Run through the OIDs needed for the History, and get their Names. We have to do this in a
+   * second pass because, in order to cope with Computed Names, this needs to be done with Future.
+   */
+  def mapNames(ids:Set[OID])(implicit rc:RequestContext, state:SpaceState):Future[ThingNames] = {
+    (Future.successful(Map.empty[TID, String]) /: ids) { (fut, id) =>
+      fut.flatMap { m =>
+        state.anything(id) match {
+          case Some(t) => t.nameOrComputed.map(name => m + (OID2TID(id) -> name))
+          case _ => Future.successful(m)
+        }
+      }
+    }
+  }
+  
   def getHistoryRecord(v:HistoryVersion):RequestM[HistoryRecord] = {
     readCurrentHistory() map { _ =>
       if (history.size < v)
@@ -173,21 +190,25 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
   }
   
   def doReceive = {
-    case GetHistorySummary() => {
-      readCurrentHistory() map { _ =>
-        val (evtsBuilder, identityIds, thingNames) = ((new VectorBuilder[EvtSummary], Set.empty[OID], Map.empty[TID, String]) /: history) { (current, historyRec) =>
-          val (builder, identities, thingNames) = current
-          val (summary, newIdentities, newThingNames) = toSummary(historyRec.evt, historyRec.sequenceNr, identities, thingNames)(historyRec.state)
-          (builder += summary, newIdentities, newThingNames)
+    case GetHistorySummary(rc) => {
+      readCurrentHistory().map { _ =>
+        val (evtsBuilder, identityIds, thingIds) = ((new VectorBuilder[EvtSummary], Set.empty[OID], Set.empty[OID]) /: history) { (current, historyRec) =>
+          val (builder, identities, thingIds) = current
+          val (summary, newIdentities, newThingIds) = toSummary(historyRec.evt, historyRec.sequenceNr, identities, thingIds)(historyRec.state)
+          (builder += summary, newIdentities, newThingIds)
         }
         
-        loopback(IdentityAccess.getIdentities(identityIds.toSeq)) foreach { identities =>
-          val identityMap = identities.map { case (id, publicIdentity) =>
+        val namesFut:Future[ThingNames] = mapNames(thingIds)(rc, latestState)
+        val identityFut = IdentityAccess.getIdentities(identityIds.toSeq)
+        
+        for {
+          thingNames <- loopback(namesFut)
+          identities <- loopback(identityFut)
+          identityMap = identities.map { case (id, publicIdentity) =>
             (id.toThingId.toString -> ClientApi.identityInfo(publicIdentity))
           }
-          
-          sender ! HistorySummary(evtsBuilder.result, EvtContext(identityMap, thingNames))
         }
+          sender ! HistorySummary(evtsBuilder.result, EvtContext(identityMap, thingNames))
       }
     }
     
@@ -209,7 +230,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     }
     
     case RestoreDeletedThing(user, thingId) => {
-      readCurrentHistory() map { _ =>
+      readCurrentHistory().map { _ =>
         // Sanity-check: don't try to recreate the Thing if it currently exists!
         history.last.state.anything(thingId) match {
           case Some(thing) => {
@@ -256,7 +277,7 @@ object SpaceHistory {
   /**
    * Fetches the HistorySummary (as described in the public API).
    */
-  case class GetHistorySummary() extends HistoryMessage
+  case class GetHistorySummary(rc:RequestContext) extends HistoryMessage
   
   /**
    * Fetch a specific version of the history of this Space. Returns a CurrentState().

@@ -52,6 +52,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "org.scalatest" %% "scalatest" % "2.2.6" % "test",
       // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
       "com.lihaoyi" %% "pprint" % "0.4.1",
+      "com.lihaoyi" %% "sourcecode" % "0.1.4",
       // Powerful structural-diffing library: https://github.com/xdotai/diff
       "ai.x" %% "diff" % "1.2.0" % "test",
       // Only used for debugging at this point:
@@ -98,6 +99,9 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
+  
+  // Turn off client-side unit testing for now:
+  test := {},
   
   jsDependencies += "org.webjars" % "jquery" % "2.2.1" / "jquery.js" minified "jquery.min.js",
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" minified "jquery-ui-1.10.0.custom.min.js" dependsOn "jquery.js",
@@ -151,6 +155,7 @@ lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")
     libraryDependencies ++= sharedDependencies.value ++ Seq(
       "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
     ),
+    test := {},
     EclipseKeys.useProjectId := true
   )
 lazy val querkiSharedJvm = querkiShared.jvm
