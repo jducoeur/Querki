@@ -8,7 +8,7 @@ import _root_.rx._
 import querki.globals._
 
 class RxCheckbox(val chk:Var[Boolean], lbl:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.html.Span] {
-  val box = GadgetRef.of[dom.html.Input]
+  val box = QGadgetRef.of[dom.html.Input]
     .whenRendered { g =>
       g.elemOpt.map { e =>
         $(e).change { evt:JQueryEventObject =>

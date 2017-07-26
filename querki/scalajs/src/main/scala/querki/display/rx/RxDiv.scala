@@ -39,5 +39,5 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*)(implicit val ecology
 }
 
 object RxDiv {
-  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*)(implicit ecology:Ecology):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
+  def apply[G <: Gadget[_]](rx:QGadgetRef[G], base:Modifier*)(implicit ecology:Ecology):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
 }

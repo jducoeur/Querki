@@ -27,7 +27,7 @@ class SpacesTimingPage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
   lazy val Admin = interface[Admin]
   lazy val Client = interface[querki.client.Client]
   
-  val timeSpaceInput = GadgetRef[RxText]
+  val timeSpaceInput = QGadgetRef[RxText]
 
   def pageContent = for {
     timedSpaces <- Client[AdminFunctions].getTimedSpaces().call()
@@ -62,7 +62,7 @@ class SpaceTimingPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
   val spaceIdStr = params("spaceId")
   val spaceId = TOID(spaceIdStr)
   
-  val messageOutput = GadgetRef.of[html.Div]
+  val messageOutput = QGadgetRef.of[html.Div]
   
   val currentlyError:Var[Boolean] = Var(false)
   

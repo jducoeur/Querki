@@ -10,7 +10,7 @@ import autowire._
 import querki.api._
 import querki.data.SpaceInfo
 import querki.display.{ButtonGadget, Dialog, QText}
-import querki.display.rx.GadgetRef
+import querki.display.rx.QGadgetRef
 import querki.globals._
 import querki.security.SecurityFunctions
 
@@ -67,7 +67,7 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
         |("Maybe" means the default: Yes if you are the owner of this space, No otherwise.)
         |**Note:** this may not take effect for a few hours."")]]""""".stripMargin
         
-  val exportedXML = GadgetRef.of[dom.html.Div]
+  val exportedXML = QGadgetRef.of[dom.html.Div]
 
   def pageContent = for {
     gutsRaw <- Client[ThingFunctions].evaluateQL(thingId, ql).call()

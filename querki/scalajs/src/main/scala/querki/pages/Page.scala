@@ -16,7 +16,7 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
-import querki.display.rx.{GadgetRef, RxDiv}
+import querki.display.rx.{QGadgetRef, RxDiv}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
   def titleOr(f: => String):String =
@@ -122,7 +122,7 @@ abstract class Page(pageName:String = "")
   lazy val flashContents = Var[Seq[Gadget[_]]](Seq.empty)
   lazy val flashDiv = new RxDiv(flashContents)
   
-  lazy val renderSignal = GadgetRef.of[dom.HTMLSpanElement]
+  lazy val renderSignal = QGadgetRef.of[dom.HTMLSpanElement]
   
   def doRender() = {
     val renderedContent = new WrapperDiv

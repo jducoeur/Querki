@@ -17,10 +17,10 @@ class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) exten
   
   lazy val Client = interface[querki.client.Client]
   
-  val nameInput = GadgetRef[RxText]
-  val permChoiceInput = GadgetRef[RxRadio]
-  val showLinkSection = GadgetRef.of[html.Div]
-  val showLinkText = GadgetRef[RxText]
+  val nameInput = QGadgetRef[RxText]
+  val permChoiceInput = QGadgetRef[RxRadio]
+  val showLinkSection = QGadgetRef.of[html.Div]
+  val showLinkText = QGadgetRef[RxText]
   
   val sharedLink:Var[Option[String]] = Var(None)
   val sharedLinkAsText = Rx { sharedLink().getOrElse("") }

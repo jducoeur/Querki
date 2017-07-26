@@ -26,7 +26,7 @@ class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology)
       List(stdThings.types.deriveNever.oid.underlying)
   }
   
-  lazy val deriveNameCheckbox = GadgetRef.of[dom.HTMLInputElement]
+  lazy val deriveNameCheckbox = QGadgetRef.of[dom.HTMLInputElement]
 
   def doRender() = 
     div(cls:="row",

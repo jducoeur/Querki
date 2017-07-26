@@ -7,7 +7,7 @@ import autowire._
 import org.querki.jquery._
 
 import querki.display.{ButtonGadget, Dialog, HookedGadget}
-import querki.display.rx.{GadgetRef, RxInput}
+import querki.display.rx.{QGadgetRef, RxInput}
 import querki.ecology._
 import querki.globals._
 import querki.pages.CreateSpacePage
@@ -56,7 +56,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
    * The guts of useApp(), which expect that we have a logged-in user.
    */
   private def doUseApp() = {
-    val spaceName = GadgetRef[RxInput]
+    val spaceName = QGadgetRef[RxInput]
     spaceName.whenSet { g => 
       g.onEnter { text =>
         if (text.length() > 0) {

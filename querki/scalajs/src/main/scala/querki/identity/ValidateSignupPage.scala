@@ -24,7 +24,7 @@ class ValidateSignupPage(params:ParamMap)(implicit val ecology:Ecology) extends 
   
   lazy val validationString = params.requiredParam("validate")
   
-  lazy val feedback = GadgetRef.of[dom.html.Paragraph]
+  lazy val feedback = QGadgetRef.of[dom.html.Paragraph]
   
   def pageContent = {
     if (UserAccess.user.isDefined) {

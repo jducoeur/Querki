@@ -33,10 +33,10 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
   lazy val ProgressDialog = interface[querki.display.ProgressDialog]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
-  val extractTree = GadgetRef[ExtractTree]
-  val appNameInput = GadgetRef[RxInput]
-  val summaryInput = GadgetRef[RxText]
-  val detailsInput = GadgetRef[RxTextArea]
+  val extractTree = QGadgetRef[ExtractTree]
+  val appNameInput = QGadgetRef[RxInput]
+  val summaryInput = QGadgetRef[RxText]
+  val detailsInput = QGadgetRef[RxTextArea]
   
   val notReady = Rx { 
     appNameInput.rxEmpty() ||

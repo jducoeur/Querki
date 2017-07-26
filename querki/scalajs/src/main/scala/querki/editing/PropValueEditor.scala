@@ -36,7 +36,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
       case _ => false
     }
     
-    val propDetailsArea = GadgetRef.of[dom.HTMLDivElement]
+    val propDetailsArea = QGadgetRef.of[dom.HTMLDivElement]
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
     lazy val detailsViewer = new PropertyDetails(this)

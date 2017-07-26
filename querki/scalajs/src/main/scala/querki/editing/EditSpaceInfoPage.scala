@@ -49,10 +49,10 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
     def hook() = {}
   }
   
-  val spaceSaver = GadgetRef[ReadSaver]
-  val spacePermsSaver = GadgetRef[ReadSaver]
+  val spaceSaver = QGadgetRef[ReadSaver]
+  val spacePermsSaver = QGadgetRef[ReadSaver]
 
-  val securityRadio = GadgetRef[RxRadio]
+  val securityRadio = QGadgetRef[RxRadio]
     .whenRendered { g =>
       Obs(g.selectedValOpt, skipInitial=true) {
         // Whenever the selection changes, save both objects:

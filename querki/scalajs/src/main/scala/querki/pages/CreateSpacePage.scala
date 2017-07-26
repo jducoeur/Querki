@@ -22,7 +22,7 @@ import querki.util.InputUtils
 class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Page("createSpace") {
   lazy val Client = interface[querki.client.Client]
   
-  val spaceName = GadgetRef[RxInput]
+  val spaceName = QGadgetRef[RxInput]
     .whenSet { g => 
       g.onEnter { text =>
         if (text.length() > 0) {

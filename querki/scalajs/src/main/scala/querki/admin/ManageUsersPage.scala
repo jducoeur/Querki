@@ -48,7 +48,7 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
           levelName(level).capitalize)
       })
       
-    val levelSelector = GadgetRef[RxSelect].whenSet { g => 
+    val levelSelector = QGadgetRef[RxSelect].whenSet { g => 
       Obs(g.selectedOption, skipInitial=true) {
         g.selectedOption().map { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
@@ -101,15 +101,15 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
                 td(b("Handle")), td(b("Email")), td(b())
               ),
               tbody(
-	            for (user <- userList)
-  	              yield new UserView(user)
+              for (user <- userList)
+                  yield new UserView(user)
               )
             )
           )
         btn.done()
       }
     })
-  val allUsersSection = GadgetRef.of[dom.html.Div]
+  val allUsersSection = QGadgetRef.of[dom.html.Div]
   
   def pageContent =
     for {
@@ -123,14 +123,14 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
               td(b("Handle")), td(b("Email")), td(b())
             ),
             tbody(
-	          for (user <- pendingUsers)
-	            yield 
-	              tr(cls:="warning", td(user.mainHandle), td(user.email), 
-	                td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
-	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
-	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
-	                  }
-	                })))
+            for (user <- pendingUsers)
+              yield 
+                tr(cls:="warning", td(user.mainHandle), td(user.email), 
+                  td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
+                    Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
+                      PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
+                    }
+                  })))
             )
           ),
           hr,

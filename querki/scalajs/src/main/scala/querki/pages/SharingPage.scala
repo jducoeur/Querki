@@ -102,7 +102,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         $(elem).detachReplaceWith(selector)
       })
     }
-	        
+          
     def doRender() =
       span(cls:="_chooseRole label label-info",
         data("personid"):=tid.underlying,
@@ -127,7 +127,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
     def values = List(roleDisplay.curValue, customDisplayRef.opt().flatMap(_.curValue)).flatten
     
     val roleDisplay = new RoleDisplay(this, initialRoles, tid, roleInfo)
-    val customDisplayRef = GadgetRef[RoleDisplay](ecology)
+    val customDisplayRef = QGadgetRef[RoleDisplay](ecology)
     
     def doRender() =
       span(
@@ -145,14 +145,14 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     def doRender() =
       tr(cls:=showCls,
-	    td({
-	      MSeq(
-	        person.person.displayName, 
-	        " -- ",
-	        new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo)
-	      )
-	    })
-	  )
+      td({
+        MSeq(
+          person.person.displayName, 
+          " -- ",
+          new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo)
+        )
+      })
+    )
   }
   
   class InviteeInput extends InputGadget[dom.HTMLInputElement](ecology) {
@@ -203,7 +203,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   lazy val collaboratorInput = new CollaboratorInput
   
   class CustomRoleManager(customRoles:RoleInfo) extends Gadget[dom.HTMLDivElement] {
-    val roleAdder = GadgetRef[RxText]
+    val roleAdder = QGadgetRef[RxText]
     
     def createRole(name:String) = {
       val change = Seq(EditFunctions.ChangePropertyValue(Editing.propPath(std.basic.displayNameProp), List(name)))

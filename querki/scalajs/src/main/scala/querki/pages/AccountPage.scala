@@ -26,10 +26,10 @@ class AccountPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[querki.identity.UserAccess]
 
-  val oldPassword = GadgetRef[RxInput]
-  val newPassword = GadgetRef[RxInput]
-  val newPasswordRepeat = GadgetRef[RxInput]
-  def passText[T <: RxInput](ref:GadgetRef[T]) = Rx { ref.opt().map(input => input.text()).getOrElse("") }
+  val oldPassword = QGadgetRef[RxInput]
+  val newPassword = QGadgetRef[RxInput]
+  val newPasswordRepeat = QGadgetRef[RxInput]
+  def passText[T <: RxInput](ref:QGadgetRef[T]) = Rx { ref.opt().map(input => input.text()).getOrElse("") }
   val passwordsFilled = 
     Rx { 
       passText(oldPassword)().length() > 0 &&
@@ -37,9 +37,9 @@ class AccountPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
       passText(newPassword)() == passText(newPasswordRepeat)()
     }
   
-  val newDisplayName = GadgetRef[RxText]
+  val newDisplayName = QGadgetRef[RxText]
   
-  def passwordLine(labl:String, gadget:GadgetRef[RxInput], tabidx:Int) = 
+  def passwordLine(labl:String, gadget:QGadgetRef[RxInput], tabidx:Int) = 
     div(cls:="form-group",
       label(cls:="control-label col-md-2", labl), 
       div(cls:="col-md-4", gadget <= new RxInput("password", cls:="form-control", tabindex:=tabidx)))
