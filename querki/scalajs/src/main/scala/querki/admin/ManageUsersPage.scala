@@ -49,7 +49,7 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
           levelName(level).capitalize)
       })
       
-    val levelSelector = QGadgetRef[RxSelect].whenSet { g => 
+    val levelSelector = GadgetRef[RxSelect].whenSet { g => 
       Obs(g.selectedOption, skipInitial=true) {
         g.selectedOption().map { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
@@ -110,7 +110,7 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
         btn.done()
       }
     })
-  val allUsersSection = QGadgetRef.of[dom.html.Div]
+  val allUsersSection = GadgetRef.of[dom.html.Div]
   
   def pageContent =
     for {

@@ -68,8 +68,8 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
       }
     }
     
-    lazy val handleInput = QGadgetRef[RxText]
-    lazy val passwordInput = QGadgetRef[RxInput]
+    lazy val handleInput = GadgetRef[RxText]
+    lazy val passwordInput = GadgetRef[RxInput]
       .whenSet { g => 
         g.onEnter { text =>
           if (text.length() > 0) {

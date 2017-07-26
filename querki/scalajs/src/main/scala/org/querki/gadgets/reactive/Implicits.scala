@@ -7,6 +7,9 @@ import org.querki.jquery._
 
 /**
  * These are implicit constructors for RxAttr and RxStyle.
+ * 
+ * TODO: can we rewrite these to use context bounds instead of view bounds? I think it
+ * should be possible...
  */
 trait Implicits {
   /**

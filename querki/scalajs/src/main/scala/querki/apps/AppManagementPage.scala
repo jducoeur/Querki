@@ -18,7 +18,7 @@ class AppManagementPage(params:ParamMap)(implicit val ecology:Ecology) extends P
   lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]
   
-  val appInput = QGadgetRef[RxText]
+  val appInput = GadgetRef[RxText]
   
   def pageContent = {
     val content = DataAccess.space match {

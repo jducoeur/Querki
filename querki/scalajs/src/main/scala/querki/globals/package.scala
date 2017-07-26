@@ -43,8 +43,12 @@ package object globals {
   val TID = querki.data.TID
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
-//  val Gadget = org.querki.gadgets.core.Gadget
-//  type Gadget[E <: dom.html.Element] = org.querki.gadgets.core.Gadget[E]
+  implicit def ecologyGadgetNotifier(implicit e:Ecology) = new org.querki.gadgets.core.GadgetNotifier[Ecology] {
+    def layoutChanged[Output <: org.scalajs.dom.html.Element](g:Gadget[Output]):Unit = {
+      lazy val Pages = e.api[querki.pages.Pages]
+      Pages.updatePage(g)
+    }
+  }
   
   // TODO: this is now duplicated in the Gadgets library. Can I get rid of it here?
   implicit def tag2Gadget[Output <: dom.html.Element](

@@ -35,11 +35,11 @@ class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
-  val spaceName = QGadgetRef[RxInput]
-  val buttonSection = QGadgetRef.of[dom.html.Div]
-  val spinnerSection = QGadgetRef.of[dom.html.Div]
-  val progressBar = QGadgetRef.of[dom.html.Div]
-  val progressMsg = QGadgetRef.of[dom.html.Paragraph]
+  val spaceName = GadgetRef[RxInput]
+  val buttonSection = GadgetRef.of[dom.html.Div]
+  val spinnerSection = GadgetRef.of[dom.html.Div]
+  val progressBar = GadgetRef.of[dom.html.Div]
+  val progressMsg = GadgetRef.of[dom.html.Paragraph]
   
   var progressTimer:Option[SetIntervalHandle] = None
   
@@ -88,7 +88,7 @@ class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
     })    
   }
     
-  def createInputElem(testFile:File => Boolean, fBeginUpload:File => Future[String]) = QGadgetRef.of[dom.html.Input].
+  def createInputElem(testFile:File => Boolean, fBeginUpload:File => Future[String]) = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
       $(inpGadget.elem).fileupload(FileUploadOptions
         .add({ (e:JQueryEventObject, data:FileUploadData) =>

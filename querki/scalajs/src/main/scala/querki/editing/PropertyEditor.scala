@@ -20,7 +20,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
   lazy val prop = valEditor.propInfo
   lazy val propId = prop.oid
   
-  val guts = QGadgetRef.of[dom.HTMLUListElement].whenSet { x => Gadgets.hookPendingGadgets() }
+  val guts = GadgetRef.of[dom.HTMLUListElement].whenSet { x => Gadgets.hookPendingGadgets() }
 
   def doRender() = {
     val result = div(

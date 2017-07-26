@@ -105,42 +105,39 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * 
    * This is usually called via the <= or <~ operators.
    * 
-   * This is pulled out specifically as overrideable -- if your application needs to hook when the layout
-   * changes (say, to recompute tab order), then subclass GadgetRef and override this.
+   * Note that this requires a 
    * 
    * TODO: there is a grungy asInstanceOf in here. Is there any way to pick up the actual type of the
    * underlying Gadget without polluting the type signature of this call in such a way that you have to
    * redundantly state it every time?
    */
-  def doReassign(g:G, retainPrevious:Boolean) = {
-    val prevElemOpt = elemOpt
-    
-    // If we've been through rendering, render and insert the new one:
-    parentOpt.foreach { parent =>
-      val r = g.rendered.asInstanceOf[Element]
-      $(r).insertBefore(elem)
-      elemOptRx() = Some(r)
-      g.onInserted()
-    }
-    
-    // Detach/remove the previous element from the DOM, if it is there:
-    prevElemOpt.foreach { e =>
-      if (retainPrevious)
-        $(e).detach()
-      else
-        $(e).remove()
-    }
-    
-    opt() = Some(g)
-  }
-  
-  def reassign(g:G, retainPrevious:Boolean):this.type = {
+  def reassign[N : GadgetNotifier](g:G, retainPrevious:Boolean):this.type = {
     if (elemOpt.isDefined && g.elemOpt.isDefined && elemOpt.get == g.elemOpt.get) {
       // Reassigning the same value is a no-op
     } else {
-      doReassign(g, retainPrevious)
+      val prevElemOpt = elemOpt
+      
+      // If we've been through rendering, render and insert the new one:
+      parentOpt.foreach { parent =>
+        val r = g.rendered.asInstanceOf[Element]
+        $(r).insertBefore(elem)
+        elemOptRx() = Some(r)
+        g.onInserted()
+      }
+      
+      // Detach/remove the previous element from the DOM, if it is there:
+      prevElemOpt.foreach { e =>
+        if (retainPrevious)
+          $(e).detach()
+        else
+          $(e).remove()
+      }
+      
+      opt() = Some(g)
+      
+      implicitly[GadgetNotifier[N]].layoutChanged(this)
     }
-    this    
+    this
   }
   
   /**
@@ -149,14 +146,14 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * If this reference was already rendered, this will render the new gadget and reparent it where the
    * reference lives.
    */
-  def <=(g:G) = reassign(g, false)
+  def <=[N : GadgetNotifier](g:G) = reassign(g, false)
   
   /**
    * The same as <=, but doesn't remove the old value from the DOM. Use this if you expect to reuse the
    * Gadgets that you are assigning. (Typically when this reference is somehow modal, and you don't want
    * to regenerate the Gadgets every time because they are expensive.)
    */
-  def <~(g:G) = reassign(g, true)
+  def <~[N : GadgetNotifier](g:G) = reassign(g, true)
   
   /**
    * This defines a callback for when the Gadget actually gets defined. Note that this does *not*
@@ -207,8 +204,8 @@ class GadgetElementRef[T <: Element] extends GadgetRef[Gadget[T]] {
    * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
    * Gadget. This is used when you declared it with GadgetRef.of[].
    */
-  def <=(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), false)
-  def <~(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), true)
+  def <=[N : GadgetNotifier](tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), false)
+  def <~[N : GadgetNotifier](tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag), true)
 }
 
 object GadgetRef {

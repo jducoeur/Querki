@@ -7,6 +7,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.data.BasicThingInfo
 import querki.display._
@@ -49,10 +50,10 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
     def hook() = {}
   }
   
-  val spaceSaver = QGadgetRef[ReadSaver]
-  val spacePermsSaver = QGadgetRef[ReadSaver]
+  val spaceSaver = GadgetRef[ReadSaver]
+  val spacePermsSaver = GadgetRef[ReadSaver]
 
-  val securityRadio = QGadgetRef[RxRadio]
+  val securityRadio = GadgetRef[RxRadio]
     .whenRendered { g =>
       Obs(g.selectedValOpt, skipInitial=true) {
         // Whenever the selection changes, save both objects:

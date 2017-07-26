@@ -6,10 +6,10 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.api._
-import querki.display.rx.QGadgetRef
 import querki.globals._
 
 /**
@@ -22,8 +22,8 @@ class ProgressDialogEcot(e:Ecology) extends ClientEcot(e) with ProgressDialog {
   lazy val Client = interface[querki.client.Client]
   
   def showDialog(processName:String, operation:OperationHandle, onSuccess: => Unit, onFailure: => Unit) = {
-    val progressBar = QGadgetRef.of[dom.html.Div]
-    val progressMsg = QGadgetRef.of[dom.html.Paragraph]
+    val progressBar = GadgetRef.of[dom.html.Div]
+    val progressMsg = GadgetRef.of[dom.html.Paragraph]
     
     val dialog:Dialog = 
       new Dialog(s"Progress on $processName",

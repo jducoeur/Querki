@@ -37,7 +37,7 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   // This is a *very* primitive email-checker, but enough to start with:
   lazy val emailRegex = ".+@.+\\..+"
     
-  lazy val emailInput = QGadgetRef[RxInput]
+  lazy val emailInput = GadgetRef[RxInput]
     .whenRendered { g =>
       for {
         // If we are currently showing a Guest (there's a User, and we've already established above
@@ -48,11 +48,11 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
       }
         g.setValue(guestEmail)
     }
-  lazy val passwordInput = QGadgetRef[RxInput]
-  lazy val handleInput = QGadgetRef[RxInput]
-  lazy val displayInput = QGadgetRef[RxInput]
-  lazy val signupButton = QGadgetRef[RunButton]
-  lazy val errorDisplay = QGadgetRef.of[dom.html.Div]
+  lazy val passwordInput = GadgetRef[RxInput]
+  lazy val handleInput = GadgetRef[RxInput]
+  lazy val displayInput = GadgetRef[RxInput]
+  lazy val signupButton = GadgetRef[RunButton]
+  lazy val errorDisplay = GadgetRef.of[dom.html.Div]
   
   lazy val emailOkay = Rx { emailInput.map(_.text().matches(emailRegex)).getOrElse(false) }
   lazy val passwordOkay = Rx { passwordInput.mapOrElse(_.length >= 8, false) }
@@ -67,7 +67,7 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
     displayOkay()
   }
   
-  def showInput(ref:QGadgetRef[RxInput], filter:Option[(JQueryEventObject, String) => Boolean], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = 
+  def showInput(ref:GadgetRef[RxInput], filter:Option[(JQueryEventObject, String) => Boolean], lbl:String, iid:String, inputType:String, place:String, help:String, inputOkay:Rx[Boolean]) = 
   {
     val goodCls = Rx { if (inputOkay()) "_signupGood" else "" }
     val checkCls = Rx { if (inputOkay()) "fa fa-check-square-o" else "fa fa-square-o" }

@@ -6,6 +6,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.display.rx._
 import querki.ecology._
@@ -24,7 +25,7 @@ class ValidateSignupPage(params:ParamMap)(implicit val ecology:Ecology) extends 
   
   lazy val validationString = params.requiredParam("validate")
   
-  lazy val feedback = QGadgetRef.of[dom.html.Paragraph]
+  lazy val feedback = GadgetRef.of[dom.html.Paragraph]
   
   def pageContent = {
     if (UserAccess.user.isDefined) {

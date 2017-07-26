@@ -11,7 +11,6 @@ import querki.globals._
 import querki.data.{TID => _TID, _}
 import querki.display.{AfterLoading, ButtonGadget, QuerkiUIUtils, WrapperDiv}
 import ButtonGadget._
-import querki.display.rx.QGadgetRef
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology)
   extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils with EcologyMember 
@@ -19,8 +18,8 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  val mainDiv = QGadgetRef[WrapperDiv]
-  val initButton = QGadgetRef[ButtonGadget]
+  val mainDiv = GadgetRef[WrapperDiv]
+  val initButton = GadgetRef[ButtonGadget]
   
   lazy val cancelButton = new ButtonGadget(Normal, page.msg("addPropertyCancel"))({ () => reset() })
   
@@ -35,12 +34,12 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   lazy val addExisting = AfterLoading(page.allPropsFut) { spaceProps => 
     addExistingGadget <= new AddExistingPropertyGadget(page, thing, spaceProps, this)
   }
-  val addExistingGadget = QGadgetRef[AddExistingPropertyGadget]
+  val addExistingGadget = GadgetRef[AddExistingPropertyGadget]
   
   lazy val createNew = AfterLoading(page.allTypesFut) { allTypes =>
     createNewGadget <= new CreateNewPropertyGadget(page, allTypes, this)
   }
-  val createNewGadget = QGadgetRef[CreateNewPropertyGadget]
+  val createNewGadget = GadgetRef[CreateNewPropertyGadget]
   
   def doRender() = {
     div(

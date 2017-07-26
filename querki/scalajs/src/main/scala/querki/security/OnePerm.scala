@@ -96,7 +96,7 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
   def values = List(currently())
   
   class OneBoxGadget(lbl:String, level:SecurityLevel) extends Gadget[html.Div] {
-    val box = QGadgetRef.of[html.Input]
+    val box = GadgetRef.of[html.Input]
     
     val watcher = Obs(currently) {
       box.mapElem { e =>

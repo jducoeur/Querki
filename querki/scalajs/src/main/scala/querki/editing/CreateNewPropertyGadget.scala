@@ -45,7 +45,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   
   override def onInserted() = { nameInput.mapElem($(_).focus()) }
   
-  val nameInput = QGadgetRef[RxInput].
+  val nameInput = GadgetRef[RxInput].
     whenSet { g =>
       Obs(g.elemOptRx) {
         g.elemOpt.map { e => $(e).blur { evt:JQueryEventObject => fixNameInput(g.text()) } }
@@ -78,14 +78,14 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   lazy val collButtons =
     typeInfo.collections.headOption.map { collBtn(_, true) } ++
     typeInfo.collections.tail.map { collBtn(_, false) }
-  lazy val collSelector = QGadgetRef[RxButtonGroup]
+  lazy val collSelector = GadgetRef[RxButtonGroup]
   
   def collButton(collection:TID):ButtonInfo = {
     collButtons.find(_.value == collection.underlying).get
   }
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
-  val typeSelector:QGadgetRef[RxSelect] = QGadgetRef[RxSelect].
+  val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
         g.selectedValOpt().map{ selectedType =>
@@ -104,7 +104,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         }
       } 
     }
-  val modelSelector = QGadgetRef[RxSelect].
+  val modelSelector = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
         g.selectedValOpt().map { _ =>
@@ -138,9 +138,9 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   final val PointsToExisting = "Existing"
   final val PointsToNew = "New"
   
-  val pointerModelChoice = QGadgetRef[RxRadio]
-  val pointerModelSelector = QGadgetRef[RxSelect]
-  val pointerModelName = QGadgetRef[RxInput]
+  val pointerModelChoice = GadgetRef[RxRadio]
+  val pointerModelSelector = GadgetRef[RxSelect]
+  val pointerModelName = GadgetRef[RxInput]
   
   lazy val pointerIsLegal:Rx[Boolean] = Rx {
     !isPointerType() ||

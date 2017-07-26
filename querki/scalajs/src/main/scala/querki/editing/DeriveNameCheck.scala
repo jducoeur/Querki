@@ -1,6 +1,7 @@
 package querki.editing
 
 import org.scalajs.dom.{raw => dom}
+import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -26,7 +27,7 @@ class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology)
       List(stdThings.types.deriveNever.oid.underlying)
   }
   
-  lazy val deriveNameCheckbox = QGadgetRef.of[dom.HTMLInputElement]
+  lazy val deriveNameCheckbox = GadgetRef.of[dom.HTMLInputElement]
 
   def doRender() = 
     div(cls:="row",

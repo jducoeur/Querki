@@ -2,7 +2,7 @@ package querki.display.rx
 
 import rx._
 
-import org.querki.gadgets.core.Gadget
+import org.querki.gadgets._
 
 /**
  * A handy typeclass for asking whether a reactive Gadget is "empty" or not. The
@@ -26,11 +26,11 @@ object RxEmptyable {
   }
   
   /**
-   * High-level version of .rxEmpty for QGadgetRef -- basically, if the contained Gadget is itself
+   * High-level version of .rxEmpty for GadgetRef -- basically, if the contained Gadget is itself
    * RxEmptyable, then the GadgetRef is as well.
    */
-  implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable] = new RxEmptyable[QGadgetRef[G]] {
-    def rxEmpty(ref:QGadgetRef[G]):Rx[Boolean] = {
+  implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable] = new RxEmptyable[GadgetRef[G]] {
+    def rxEmpty(ref:GadgetRef[G]):Rx[Boolean] = {
       ref.map { g =>
         implicitly[RxEmptyable[G]].rxEmpty(g)
       }.getOrElse(Rx{true})
