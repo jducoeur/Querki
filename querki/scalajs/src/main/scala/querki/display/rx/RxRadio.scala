@@ -1,6 +1,7 @@
 package querki.display.rx
 
 import org.scalajs.dom
+import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._

@@ -5,6 +5,7 @@ import org.scalajs.dom.html
 import scalatags.JsDom.all._
 import rx._
 import autowire._
+import org.querki.gadgets._
 
 import querki.api.ThingFunctions
 import querki.display._

@@ -4,6 +4,7 @@ import scala.scalajs.js
 import js.JSConverters._
 import scala.util.{Failure, Success}
 import org.scalajs.dom.{raw => dom}
+import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section

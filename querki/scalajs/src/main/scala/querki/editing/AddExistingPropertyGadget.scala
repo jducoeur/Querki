@@ -4,6 +4,7 @@ import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
+import org.querki.gadgets._
 
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, QuerkiUIUtils}

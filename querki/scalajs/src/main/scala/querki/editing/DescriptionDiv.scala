@@ -4,6 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import autowire._
+import org.querki.gadgets._
 
 import querki.globals._
 

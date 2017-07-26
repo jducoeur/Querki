@@ -8,6 +8,7 @@ import scalatags.JsDom.tags2.section
 import autowire._
 import rx._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import models.Kind

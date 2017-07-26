@@ -9,6 +9,8 @@ import js.UndefOr
 
 import org.querki.jquery._
 
+import org.querki.gadgets.AnyFrag
+
 /**
  * These functions deal with mapping from Elements back to their Gadgets.
  */

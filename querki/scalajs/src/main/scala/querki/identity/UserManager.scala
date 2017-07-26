@@ -8,6 +8,7 @@ import scalatags.JsDom.all.{name => nm, _}
 import autowire._
 
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import querki.comm._
 import querki.globals._

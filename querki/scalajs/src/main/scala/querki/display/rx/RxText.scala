@@ -6,6 +6,7 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import rx.ops._
+import org.querki.gadgets._
 
 import querki.globals._
 

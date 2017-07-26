@@ -2,6 +2,7 @@ package querki.display
 
 import org.scalajs.dom
 import org.querki.jquery._
+import org.querki.gadgets._
 import org.querki.gadgets.core.GadgetLookup
 
 import querki.globals._

@@ -4,6 +4,7 @@ import org.scalajs.dom.{raw => dom}
 import rx._
 import rx.ops._
 import scalatags.JsDom.all._
+import org.querki.gadgets._
 
 import querki.globals._
 

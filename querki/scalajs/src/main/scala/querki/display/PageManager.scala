@@ -8,6 +8,7 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import autowire._
 import _root_.rx._
+import org.querki.gadgets._
 
 import querki.globals._
 
@@ -150,47 +151,47 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       // Before we "navigate", give any outstanding InputGadgets a chance to save their values:
       InputGadgets.afterAllSaved.flatMap { dummy =>
         _currentHash = fullHash
-	    // Slice off the hash itself:
+      // Slice off the hash itself:
       // We now prefer the Google-favored style, where the AJAX hash begins with "!", but we
       // still cope with the original format without that.
-	    val hash = 
+      val hash = 
         if (fullHash.startsWith("#!"))
           fullHash.substring(2)
         else
           fullHash.substring(1)
-	    val hashParts = hash.split("\\?")
-	    if (hashParts.length == 0)
-	      // There is a hash, but nothing else, so it's presumptively root:
-	      showRoot()
-	    else {
-    	  val pageName = decode(hashParts(0))
-	      val pageParams =
-	        if (hashParts.length == 1)
-	          None
-	        else
-	          Some(hashParts(1).split("&"))
-	      val paramMap = pageParams match {
-	        case Some(params) => {
-	          val pairs = params.map { param =>
-	            val pairArray = param.split("=")
-	            val key = decode(pairArray(0))
-	            val v =
-	              if (pairArray.length == 1)
-	                ""
-	              else
-	                decode(pairArray(1))
-	            (key, v)
-	          }
-	          Map(pairs:_*)
-	        }
-	        case None => Map.empty[String, String]
-	      }
-	    
-    	  if (pageName.length == 0)
-    	    showRoot(paramMap)
-    	  else
-  	      renderPage(pageName, paramMap)
-	    }
+      val hashParts = hash.split("\\?")
+      if (hashParts.length == 0)
+        // There is a hash, but nothing else, so it's presumptively root:
+        showRoot()
+      else {
+        val pageName = decode(hashParts(0))
+        val pageParams =
+          if (hashParts.length == 1)
+            None
+          else
+            Some(hashParts(1).split("&"))
+        val paramMap = pageParams match {
+          case Some(params) => {
+            val pairs = params.map { param =>
+              val pairArray = param.split("=")
+              val key = decode(pairArray(0))
+              val v =
+                if (pairArray.length == 1)
+                  ""
+                else
+                  decode(pairArray(1))
+              (key, v)
+            }
+            Map(pairs:_*)
+          }
+          case None => Map.empty[String, String]
+        }
+      
+        if (pageName.length == 0)
+          showRoot(paramMap)
+        else
+          renderPage(pageName, paramMap)
+      }
     }
   }
   

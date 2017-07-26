@@ -5,13 +5,14 @@ import scala.concurrent.Future
 import org.scalajs.dom
 import dom.html.Element
 
+import org.querki.gadgets._
+
 import querki.globals._
 
 import querki.api.OperationHandle
 import querki.comm.URL
 import querki.pages.{Page, ParamMap}
 import querki.util.Notifier
-import org.querki.gadgets.core.ManagedFrag
 
 package object display {
   

@@ -3,6 +3,7 @@ package querki.display.rx
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.display.{ButtonGadget}

@@ -5,6 +5,7 @@ import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import autowire._
+import org.querki.gadgets._
 
 import querki.globals._
 

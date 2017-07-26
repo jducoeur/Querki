@@ -1,11 +1,12 @@
 package querki.display
 
 import org.scalajs.dom
+import org.querki.gadgets._
+import org.querki.gadgets.core.GadgetLookup
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
-import org.querki.gadgets.core.GadgetLookup
 
 /**
  * A higher-level view of WrapperDiv, to encapsulate the common pattern "show a spinner until the given Future

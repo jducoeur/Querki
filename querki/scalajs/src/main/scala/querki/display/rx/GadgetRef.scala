@@ -3,7 +3,7 @@ package querki.display.rx
 import org.scalajs.dom.html.Element
 import scalatags.JsDom.all._
 import rx._
-import org.querki.gadgets.core.{GadgetRef, TypedGadget}
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.globals._

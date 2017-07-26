@@ -3,6 +3,7 @@ package querki.publication
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.ecology._
 import querki.editing.EditFunctions

@@ -3,6 +3,7 @@ package querki.apps
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.display.ButtonGadget
 import querki.display.rx._

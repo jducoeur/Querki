@@ -5,6 +5,7 @@ import org.scalajs.dom
 import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
+import org.querki.gadgets._
 
 import querki.globals._
 

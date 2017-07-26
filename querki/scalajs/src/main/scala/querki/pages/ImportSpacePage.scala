@@ -14,6 +14,7 @@ import rx._
 
 import org.querki.facades.fileupload._
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import querki.api.SpaceExistsException
 import querki.comm._

@@ -6,6 +6,7 @@ import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._
+import org.querki.gadgets._
 import org.querki.jsext._
 import org.querki.jquery._
 import org.querki.squery.Focusable._

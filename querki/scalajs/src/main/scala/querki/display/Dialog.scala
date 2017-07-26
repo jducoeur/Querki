@@ -5,6 +5,7 @@ import js.JSConverters._
 import org.querki.jquery._
 import org.scalajs.dom.{raw => dom}
 import org.querki.facades.bootstrap._
+import org.querki.gadgets._
 
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag

@@ -9,6 +9,7 @@ import upickle.default._
 
 import org.querki.squery._
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import querki.api._
 import querki.comm._

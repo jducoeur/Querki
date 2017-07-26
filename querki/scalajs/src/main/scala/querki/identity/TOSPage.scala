@@ -6,6 +6,7 @@ import scala.util.Success
 import scalatags.JsDom.all._
 import rx._
 import autowire._
+import org.querki.gadgets._
 
 import querki.api.CommonFunctions
 import querki.display.{ButtonGadget, QText}

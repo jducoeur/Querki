@@ -9,6 +9,8 @@ import autowire._
 
 import org.querki.jquery._
 
+import org.querki.gadgets._
+
 import querki.data.BasicThingInfo
 import querki.display.{ButtonGadget, RawDiv}
 import querki.display.input.InputGadget
@@ -93,9 +95,6 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
   // Note that we don't save(), and thus don't use this, if it is custom or inherit:
   def values = List(currently())
   
-  // TODO: why is this necessary? The implicit rxAttr in rx.package ought to be good enough:
-  implicit val strAttr = new RxAttr[String]
-  
   class OneBoxGadget(lbl:String, level:SecurityLevel) extends Gadget[html.Div] {
     val box = QGadgetRef.of[html.Input]
     
@@ -115,8 +114,6 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
             disabled := saving),
           s" $lbl"))
   }
-  
-  implicit def rxAttr = new RxAttr[String]
   
   def doRender() =
     div(cls:="form-inline",

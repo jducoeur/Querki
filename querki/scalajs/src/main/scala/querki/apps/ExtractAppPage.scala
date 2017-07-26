@@ -8,6 +8,7 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 import org.querki.facades.jstree._
 

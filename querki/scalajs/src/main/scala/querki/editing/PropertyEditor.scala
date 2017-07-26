@@ -6,6 +6,7 @@ import autowire._
 import rx._
 
 import org.querki.squery.Focusable._
+import org.querki.gadgets._
 
 import querki.globals._
 

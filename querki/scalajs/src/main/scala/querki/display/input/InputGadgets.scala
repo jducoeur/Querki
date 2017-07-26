@@ -5,6 +5,8 @@ import js.ThisFunction._
 import org.scalajs.dom
 import dom.html.Element
 import org.querki.jquery._
+import org.querki.gadgets._
+
 import querki.globals._
 import querki.display.HookedGadget
 

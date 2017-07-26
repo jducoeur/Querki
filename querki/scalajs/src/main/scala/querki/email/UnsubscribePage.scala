@@ -4,6 +4,7 @@ import org.scalajs.dom.html
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import models.Wikitext
 import querki.data.TOID
