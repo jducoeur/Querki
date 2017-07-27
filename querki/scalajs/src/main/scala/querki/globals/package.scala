@@ -43,6 +43,14 @@ package object globals {
   val TID = querki.data.TID
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
+  /**
+   * This implicit is needed for GadgetRef's reassign functions.
+   * 
+   * TODO: at the moment, this is creating an instance each time, which is a pointless amount of
+   * work. Can we create a single stable instance? The problem is that it depends on the Ecology.
+   * Worse came to worst we could memoize that, but it's pretty evil to stuff the ecology into the
+   * global world.
+   */
   implicit def ecologyGadgetNotifier(implicit e:Ecology) = new org.querki.gadgets.core.GadgetNotifier[Ecology] {
     def layoutChanged[Output <: org.scalajs.dom.html.Element](g:Gadget[Output]):Unit = {
       lazy val Pages = e.api[querki.pages.Pages]

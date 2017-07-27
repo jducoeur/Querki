@@ -3,6 +3,7 @@ package querki.imexport
 import scalatags.Text.short._
 import scalatags.generic
 import scalatags.text._
+import scalatags.text.Builder.{GenericAttrValueSource => vsrc}
 
 import models.{AsName, AsOID, OID, ThingId}
 
@@ -19,8 +20,8 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   // We introduce our own indirection here, mainly so that we can enhance this with a parser
   // a bit down the road:
   implicit class QUtil(str:String) {
-    def t = str.tag[String]
-    def a = str.attr
+    def t = tag(str)
+    def a = attr(str)
   }
   
   type Tag = scalatags.Text.TypedTag[String]
@@ -57,16 +58,16 @@ class ThingAttr extends scalatags.Text.AttrValue[ThingId] {
       case AsOID(oid) => QuerkiML.exportOID(oid)
       case AsName(name) => NameUtils.canonicalize(name)
     }
-    t.setAttr(a.name, str)
+    t.setAttr(a.name, vsrc(str))
   }  
 }
 class AsOIDAttr extends scalatags.Text.AttrValue[AsOID] {
   def apply(t:Builder, a:Attr, v:AsOID) {
-    t.setAttr(a.name, QuerkiML.exportOID(v.oid))
+    t.setAttr(a.name, vsrc(QuerkiML.exportOID(v.oid)))
   }
 }
 class OIDAttr extends scalatags.Text.AttrValue[OID] {
   def apply(t:Builder, a:Attr, v:OID) {
-    t.setAttr(a.name, QuerkiML.exportOID(v))
+    t.setAttr(a.name, vsrc(QuerkiML.exportOID(v)))
   }  
 }

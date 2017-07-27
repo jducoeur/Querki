@@ -15,7 +15,7 @@ import querki.util.ScalatagUtils.FSeq
 class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
   extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils
 {
-  val optLabel = "label".attr
+  val optLabel = attr("label")
   
   def reset() = {
     propSelector.get.setValue("")

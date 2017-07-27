@@ -250,10 +250,10 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
         ul(cls:="nav nav-tabs", role:="tablist",
-          li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
-          li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
+          li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", attr("data-toggle"):="tab", "Invites")),
+          li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", attr("data-toggle"):="tab", "Members")),
           if (isAdvanced)
-            li(role:="presentation", if (initTab == Tab.CustomRoles) cls:="active", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
+            li(role:="presentation", if (initTab == Tab.CustomRoles) cls:="active", a(href:="#custom", role:="tab", attr("data-toggle"):="tab", "Roles"))
         ),
           
         div(cls:="tab-content",

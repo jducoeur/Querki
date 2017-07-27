@@ -94,9 +94,9 @@ class SecurityPage(params:ParamMap)(implicit val ecology:Ecology)
         h2(s"Security ", new ButtonGadget(ButtonGadget.Normal, id:="_doneButton", "Done")({ () => Pages.thingPageFactory.showPage(thing) })),
         
         ul(cls:="nav nav-tabs", role:="tablist",
-          li(role:="presentation", cls:="active", a(href:="#secThis", role:="tab", "data-toggle".attr:="tab", thing.displayName)),
+          li(role:="presentation", cls:="active", a(href:="#secThis", role:="tab", attr("data-toggle"):="tab", thing.displayName)),
           if (hasInstancePerms)
-            li(role:="presentation", a(href:="#secInst", role:="tab", "data-toggle".attr:="tab", "Instances"))
+            li(role:="presentation", a(href:="#secInst", role:="tab", attr("data-toggle"):="tab", "Instances"))
         ),
           
         div(cls:="tab-content",
