@@ -5,6 +5,8 @@ import scala.concurrent.Future
 import org.scalajs.dom
 import dom.html.Element
 
+import rx._
+
 import org.querki.gadgets._
 
 import querki.globals._
@@ -182,6 +184,11 @@ package object display {
      * can build and use Pages directly.
      */
     def renderPage(page:Page):Future[Page]
+    
+    /**
+     * The Scala.Rx "Owner" to use at the moment. This is the Owner defined by the current Page.
+     */
+    def currentOwner:Ctx.Owner
   }
   
   trait StatusLine extends EcologyInterface {

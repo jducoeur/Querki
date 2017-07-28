@@ -14,12 +14,12 @@ import org.querki.gadgets.core.ManagedFrag
  * Note that this requires an Rx[String] specifically, to keep things simple. Use rx.ops.map to
  * turn other types into Strings.
  */
-class RxTextFrag(rx:Rx[String]) extends ManagedFrag[dom.Text] {
+class RxTextFrag(rx:Rx[String])(implicit ctx:Ctx.Owner) extends ManagedFrag[dom.Text] {
   def createFrag = dom.document.createTextNode("")
   
-  lazy val obs = Obs(rx) {
+  lazy val obs = rx.trigger {
     parentOpt.foreach { parent =>
-      $(parent).text(rx())
+      $(parent).text(rx.now)
     }
   }
   

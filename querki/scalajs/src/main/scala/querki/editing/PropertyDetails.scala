@@ -10,7 +10,7 @@ import querki.globals._
 import querki.display.{ButtonGadget}
 import querki.display.rx.RxThingSelector
   
-class PropertyDetails(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.html.Div] {
+class PropertyDetails(val valEditor:PropValueEditor)(implicit val ecology:Ecology, ctx:Ctx.Owner) extends Gadget[dom.html.Div] {
   def editInfo = valEditor.info
   def propInfo = editInfo.propInfo
   def page = valEditor.section.page

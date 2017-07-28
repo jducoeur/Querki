@@ -35,7 +35,7 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
     override val path = Editing.propPath(std.security.canReadPerm, Some(info))
     
     def values = securityRadio.flatMap { radio =>
-      radio.selectedValOpt().map(Seq(_))
+      radio.selectedValOpt.now.map(Seq(_))
     }.getOrElse(Seq.empty)
     
     override def save() = {
@@ -55,7 +55,7 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
 
   val securityRadio = GadgetRef[RxRadio]
     .whenRendered { g =>
-      Obs(g.selectedValOpt, skipInitial=true) {
+      g.selectedValOpt.triggerLater {
         // Whenever the selection changes, save both objects:
         spaceSaver.foreach(_.save())
         spacePermsSaver.foreach(_.save())

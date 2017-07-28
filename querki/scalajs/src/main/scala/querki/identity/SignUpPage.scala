@@ -57,7 +57,10 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   lazy val emailOkay = Rx { emailInput.map(_.text().matches(emailRegex)).getOrElse(false) }
   lazy val passwordOkay = Rx { passwordInput.mapOrElse(_.length >= 8, false) }
   lazy val handleOkay = Rx { handleInput.mapOrElse(_.length >= 4, false) }
-  lazy val displayOkay = Rx { !displayInput.rxEmpty() }
+  lazy val displayOkay = Rx {
+    val displayEmpty = displayInput.rxEmpty
+    !displayEmpty() 
+  }
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   lazy val signupEnabled = Rx { 
@@ -83,10 +86,10 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
     // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
     val fut:Future[String] = 
       controllers.LoginController.signupStart().callAjax(
-        "email" -> emailInput.get.text().trim, 
-        "password" -> passwordInput.get.text(),
-        "handle" -> handleInput.get.text(),
-        "display" -> displayInput.get.text())
+        "email" -> emailInput.get.text.now.trim, 
+        "password" -> passwordInput.get.text.now,
+        "handle" -> handleInput.get.text.now,
+        "display" -> displayInput.get.text.now)
         
     fut.map { str =>
       read[UserInfo](str)

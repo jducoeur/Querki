@@ -46,8 +46,8 @@ class SpacesTimingPage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
       timeSpaceInput <= new RxText(id:="_timeSpaceInput"),
       new ButtonGadget(ButtonGadget.Primary, "Begin Timing", disabled := timeSpaceInput.rxEmpty)({ () =>
         timeSpaceInput.map { rxText =>
-          Client[AdminFunctions].beginSpaceTiming(TOID(rxText.text())).call() map { _ =>
-            Admin.spaceTimingFactory.showPage("spaceId" -> rxText.text())
+          Client[AdminFunctions].beginSpaceTiming(TOID(rxText.text.now)).call() map { _ =>
+            Admin.spaceTimingFactory.showPage("spaceId" -> rxText.text.now)
           }
         }
       })

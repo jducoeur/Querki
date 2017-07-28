@@ -33,7 +33,7 @@ class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
     }
   
   def createSpace():Unit = {
-    val newName = spaceName.get.text().trim
+    val newName = spaceName.get.text.now.trim
     Client[UserFunctions].createSpace(newName, None).call() foreach { space =>
       CreateSpacePage.navigateToSpace(space)
     }    

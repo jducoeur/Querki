@@ -72,7 +72,6 @@ class ExplorePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
   }
   
   def evaluate() = {
-    println(s"Evaluating $thingId on ${qlInput.value}")
     Client[ThingFunctions].evaluateQL(thingId, qlInput.value).call().foreach { result =>
       rawResults() = result
       val qtext = new QText(result)
@@ -97,7 +96,7 @@ class ExplorePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
   lazy val SaveButton = new ButtonGadget(Normal, "Save Results")({ () =>
     val saveFut = for {
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
-      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"${rawResults().plaintext}")
+      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"${rawResults.now.plaintext}")
     }
       yield createPage
   })
@@ -132,6 +131,6 @@ class ExplorePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
         }))
       )
     }
-  	  yield PageContents(s"QL Explorer for ${thingInfo.displayName}", guts)
+      yield PageContents(s"QL Explorer for ${thingInfo.displayName}", guts)
 
 }

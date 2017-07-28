@@ -1,5 +1,7 @@
 package querki
 
+import rx._
+
 import querki.globals._
 import querki.data.UserInfo
 import querki.display.ButtonGadget
@@ -21,8 +23,8 @@ package object identity {
     
     def name:String
     
-    def login():Future[Page]
-    def loginCore():Future[Unit]
+    def login()(implicit ctx:Ctx.Owner):Future[Page]
+    def loginCore()(implicit ctx:Ctx.Owner):Future[Unit]
     
     def resendActivationButton:ButtonGadget
   }

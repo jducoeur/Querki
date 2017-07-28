@@ -40,9 +40,12 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
   val detailsInput = GadgetRef[RxTextArea]
   
   val notReady = Rx { 
-    appNameInput.rxEmpty() ||
-    summaryInput.rxEmpty() ||
-    detailsInput.rxEmpty()
+    val appNameEmpty = appNameInput.rxEmpty
+    val summaryEmpty = summaryInput.rxEmpty
+    val detailsEmpty = detailsInput.rxEmpty
+    appNameEmpty() ||
+    summaryEmpty() ||
+    detailsEmpty()
   }
   
   def getPropVal(propId:TID, spaceProps:Seq[PropValInfo]):String = {
@@ -86,7 +89,7 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
           ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), summaryInput.get.text(), detailsInput.get.text()).call() foreach { spaceInfo =>
+            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text.now, summaryInput.get.text.now, detailsInput.get.text.now).call() foreach { spaceInfo =>
               DataSetting.setSpace(Some(spaceInfo))
               Pages.infoFactory.showPage()
             }

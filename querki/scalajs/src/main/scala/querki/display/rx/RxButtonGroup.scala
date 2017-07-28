@@ -4,7 +4,6 @@ import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-import rx.ops._
 import org.querki.gadgets._
 
 import querki.globals._
@@ -13,15 +12,14 @@ case class ButtonInfo(value:String, display:String, initiallyActive:Boolean, lab
 
 // TODO: this might get refactored together with RxSelect -- they share a lot of code. They may be an
 // underlying RxSelector to be pulled out of here.
-class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ecology:Ecology) 
+class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ecology:Ecology, ctx:Ctx.Owner) 
   extends Gadget[dom.HTMLDivElement] with querki.display.QuerkiUIUtils
 {
-  
   lazy val selectedValOpt = Var[Option[String]](None)
   lazy val selectedTIDOpt = selectedValOpt.map(_.map(TID(_)))
   
   private def renderButtons() = {
-    buttons().map { buttonInfo =>
+    buttons.now.map { buttonInfo =>
       val clses = Seq("btn", "btn-primary") ++ (if (buttonInfo.initiallyActive) Seq("active") else Seq.empty)
       label(classes(clses),
         input(
@@ -38,7 +36,7 @@ class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ec
     div(cls:="btn-group", data("toggle"):="buttons", mods, renderButtons)
     
   def updateSelected() = {
-    buttons().find(_.initiallyActive).map(select(_))
+    buttons.now.find(_.initiallyActive).map(select(_))
   }
   
   // This is private because it doesn't actually change *to* this button, which is what outside
@@ -56,7 +54,7 @@ class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*)(implicit val ec
       .parent().click()
   }
   
-  val obs = Obs(buttons, skipInitial=true) {
+  val obs = buttons.triggerLater {
     $(elem).empty()
     renderButtons().map(_.render).map(opt => $(elem).append(opt))
     updateSelected()

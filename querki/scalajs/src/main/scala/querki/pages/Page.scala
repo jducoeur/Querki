@@ -44,6 +44,17 @@ abstract class Page(pageName:String = "")
   lazy val Pages = interface[Pages]
   
   /**
+   * Provide an Owner for ad-hoc Rx's inside Pages.
+   */
+  implicit val ctx:Ctx.Owner = Ctx.Owner.safe()
+  
+  // TODO: what we *want* this to do is kill this Owner, and all of its recursive dependencies,
+  // when the page unloads. But Scala.Rx doesn't yet support that, so I *suspect* we are leaking.
+  def unload() = {
+//    ctx.kill()
+  }
+  
+  /**
    * The contents of this page. Concrete subclasses must fill this in.
    */
   def pageContent:Future[PageContents]
@@ -118,7 +129,7 @@ abstract class Page(pageName:String = "")
               },
               msg
             )
-    flashContents() = flashContents() :+ newAlert
+    flashContents() = flashContents.now :+ newAlert
   }
   lazy val flashContents = Var[Seq[Gadget[_]]](Seq.empty)
   lazy val flashDiv = new RxDiv(flashContents)

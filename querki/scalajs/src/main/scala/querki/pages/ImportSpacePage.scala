@@ -46,12 +46,12 @@ class ImportSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
   val xmlInputElem = 
     createInputElem(
       { file => Pattern.matches("text/xml", file.`type`)},
-      { file => Client[ImportSpaceFunctions].importFromXML(spaceName.get.text().trim, file.size.toInt).call() })
+      { file => Client[ImportSpaceFunctions].importFromXML(spaceName.get.text.now.trim, file.size.toInt).call() })
       
   val sqlInputElem =
     createInputElem(
       { file => true },
-      { file => Client[ImportSpaceFunctions].importFromMySQL(spaceName.get.text().trim, file.size.toInt).call() })
+      { file => Client[ImportSpaceFunctions].importFromMySQL(spaceName.get.text.now.trim, file.size.toInt).call() })
       
   def startProgressTimer(path:String) = {
     def finished() = {

@@ -7,7 +7,6 @@ import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
 import rx._
-import rx.ops._
 
 import querki.globals._
 
@@ -165,7 +164,6 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
   val modelPropSection = new PropSectionHolder
   
   def checkParams:Option[Future[PageContents]] = {
-    println(s"The modelId is '${modelId.underlying}' -- isEmpty is ${modelId.isEmpty}")
     if (modelId.isEmpty) {
       val guts =
         div(p("The URL of this page is missing its modelId. This may indicate a Querki bug; please report it. Sorry about that."))

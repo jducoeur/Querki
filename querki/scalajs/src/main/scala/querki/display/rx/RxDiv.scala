@@ -7,7 +7,6 @@ import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-import rx.ops._
 
 import querki.globals._
 
@@ -18,14 +17,14 @@ import querki.globals._
  * ManagedFrag. Indeed, I really should re-examine the way things work in this light, noting
  * the relationship between doRender() and obs below.
  */
-case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] {
-  def doRender() = divTag()
+case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*)(implicit val ecology:Ecology, ctx:Ctx.Owner) extends Gadget[dom.HTMLDivElement] {
+  def doRender() = divTag.now
   
-  lazy val divTag = Rx(name="divTag") { div(base, rxGuts()) }
+  lazy val divTag = Rx { div(base, rxGuts()) }
   lazy val divRx = divTag.map(_.render)
   
-  lazy val obs = Obs(divRx) {
-    val newContent = divRx()
+  lazy val obs = divRx.trigger {
+    val newContent = divRx.now
     $(elem).replaceWith(newContent)
     setElem(newContent)
     elemRx() = Some(newContent)
@@ -40,5 +39,5 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*)(implicit val ecology
 }
 
 object RxDiv {
-  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*)(implicit ecology:Ecology):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
+  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*)(implicit ecology:Ecology, ctx:Ctx.Owner):RxDiv = RxDiv(Rx { rx.opt().toSeq }, base)  
 }

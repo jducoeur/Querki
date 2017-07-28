@@ -70,10 +70,10 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       
   // TODO: this should probably become an RxSelect instead?
   class RoleSelector(parent:RoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
-    val roleName = Rx(role().displayName)
+    val roleName = Rx { role().displayName }
     
     override def onCreate(e:dom.HTMLSelectElement) = {
-      $(elem).value(role().oid.underlying)
+      $(elem).value(role.now.oid.underlying)
         
       $(elem).change({ evt:JQueryEventObject =>
         val chosen = $(elem).find(":selected").valueString
@@ -114,7 +114,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
     lazy val selector = (roleSelector).render
     
     def curValue:Option[String] = {
-      val raw = roleSelector.role().oid.underlying
+      val raw = roleSelector.role.now.oid.underlying
       if (raw.length == 0)
         None
       else
@@ -125,7 +125,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
     override lazy val thingId = tid
     override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-    def values = List(roleDisplay.curValue, customDisplayRef.opt().flatMap(_.curValue)).flatten
+    def values = List(roleDisplay.curValue, customDisplayRef.opt.now.flatMap(_.curValue)).flatten
     
     val roleDisplay = new RoleDisplay(this, initialRoles, tid, roleInfo)
     val customDisplayRef = GadgetRef[RoleDisplay]
@@ -228,7 +228,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         roleAdder <= new RxText(cls:="form-control col-md-3"),
         " ", 
         new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := Rx { roleAdder.map(_.length == 0).getOrElse(true) }) ({ () =>
-          createRole(roleAdder.get.text())
+          createRole(roleAdder.get.text.now)
         })
       )
   }

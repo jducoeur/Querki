@@ -49,6 +49,7 @@ import org.querki.jquery._
  * @author jducoeur
  */
 class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
+  
   def doRender = ???
   
   /**
@@ -59,7 +60,7 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * TODO: this is type-anonymous -- it simply expects to return an Element. Can we do better?
    */
   override def createFrag = {
-    opt().map(g => g.asInstanceOf[Gadget[Element]].render).getOrElse(span().render).asInstanceOf[Element]
+    opt.now.map(g => g.asInstanceOf[Gadget[Element]].render).getOrElse(span().render).asInstanceOf[Element]
   }
   
   /**
@@ -71,9 +72,9 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
   /**
    * The safe way to run some code iff this Gadget actually exists.
    */
-  def map[T](f:G => T):Option[T] = opt().map(f)
-  def flatMap[T](f:G => Option[T]) = opt().flatMap(f)
-  def foreach(f:G => Unit):Unit = opt().foreach(f)
+  def map[T](f:G => T):Option[T] = opt.now.map(f)
+  def flatMap[T](f:G => Option[T]) = opt.now.flatMap(f)
+  def foreach(f:G => Unit):Unit = opt.now.foreach(f)
   
   /**
    * Shorthand for this extremely common case.
@@ -94,10 +95,10 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * Returns the underlying Gadget. Use with care: this will throw if the Gadget hasn't been
    * created yet!
    */
-  def get = opt().get
+  def get = opt.now.get
   
-  def isDefined = opt().isDefined
-  def isEmpty = opt().isEmpty
+  def isDefined = opt.now.isDefined
+  def isEmpty = opt.now.isEmpty
   
   /**
    * Reassigns the contents of this reference, rendering the new Gadget and putting it into place if needed.
@@ -165,8 +166,8 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * TBD: is this *ever* the right answer? We might consider deprecating this as a public entry point,
    * since you usually want whenRendered() instead.
    */
-  def whenSet(f:G => Unit):this.type = {
-    Obs(opt) {
+  def whenSet(f:G => Unit)(implicit ctx:Ctx.Owner):this.type = {
+    opt.trigger {
       map(f)
     }
     this
@@ -176,12 +177,12 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * Invoke the given function when this Gadget is actually rendered. At that point, the Gadget's elem
    * has been set, so you can operate on it. This is sometimes the right place to add, eg, event hooks.
    */
-  def whenRendered(f:G => Unit):this.type = {
+  def whenRendered(f:G => Unit)(implicit ctx:Ctx.Owner):this.type = {
     whenSet { g =>
       if (g.elemOpt.isDefined)
         f(g)
       else {
-        Obs(g.elemOptRx) {
+        g.elemOptRx.trigger {
           if (g.elemOpt.isDefined)
             f(g)
         }

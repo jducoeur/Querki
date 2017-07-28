@@ -39,7 +39,7 @@ class AppManagementPage(params:ParamMap)(implicit val ecology:Ecology) extends P
           appInput <= new RxText(cls:="form-control col-md-3"),
           " ", 
           new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := Rx { appInput.map(_.length == 0).getOrElse(true) }) ({ () =>
-            Client[AppsFunctions].addApp(appInput.get.text()).call() foreach { success =>
+            Client[AppsFunctions].addApp(appInput.get.text.now).call() foreach { success =>
               // Things may have changed a *lot*, so do a complete reload:
               PageManager.fullReload()
             }

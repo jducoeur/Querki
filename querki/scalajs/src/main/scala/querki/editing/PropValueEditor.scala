@@ -19,7 +19,8 @@ import EditFunctions.PropEditInfo
  * TODO: this was originally a horizontal form, with the labels on the left and the controls on the right.
  * Something broke in the transition to Bootstrap 3. We should probably investigate getting that working again.
  */
-class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEditorInitially:Boolean = false)(implicit val ecology:Ecology) 
+class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEditorInitially:Boolean = false)
+    (implicit val ecology:Ecology, ctx:Ctx.Owner) 
   extends Gadget[dom.HTMLLIElement] with QuerkiUIUtils
 {
     val propInfo = info.propInfo
@@ -46,7 +47,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
       detailsShown() = false
     }
     def toggleDetails() = {
-      if (detailsShown()) {
+      if (detailsShown.now) {
         hideDetails({ _ => })
       } else {
         propDetailsArea <~ detailsViewer

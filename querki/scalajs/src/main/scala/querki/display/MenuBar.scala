@@ -5,6 +5,7 @@ import org.scalajs.{dom => fulldom}
 import org.scalajs.dom.{raw => dom}
 
 import scalatags.JsDom.all._
+import _root_.rx._
 
 import org.querki.jquery._
 
@@ -23,7 +24,7 @@ import querki.search.SearchGadget
  * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
  * overall ordering of the list?
  */
-class MenuBar(std:StandardThings)(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) 
+class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends HookedGadget[dom.HTMLDivElement](e) 
   with QuerkiUIUtils with SkillLevelsNeeded 
 {
   

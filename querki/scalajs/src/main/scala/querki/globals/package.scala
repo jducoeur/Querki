@@ -6,6 +6,8 @@ import js.annotation.JSName
 import org.scalajs.dom
 import dom.Element
 
+import rx._
+
 import org.querki.jquery
 import jquery._
 import org.querki.gadgets.core._

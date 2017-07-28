@@ -103,7 +103,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     }
   }
   
-  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit, onCancel: => Unit) = 
+  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit, onCancel: => Unit)(implicit ctx:Ctx.Owner) = 
   {
     for {
       typeInfo <- DataAccess.getAllTypes()
@@ -128,7 +128,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
             selector
           ),
           (ButtonGadget.Primary, Seq(selectButton, id := "_modelSelected"), { dialog =>
-            onSelect(selector.selectedTID())
+            onSelect(selector.selectedTID.now)
             dialog.done()
           }),
           (ButtonGadget.Normal, Seq("Cancel", id := "_modelCancel"), { dialog => 
@@ -141,7 +141,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     }
   }
   
-  def chooseAModel(title:String, msg:String, buttonText:String):Future[Option[TID]] = {
+  def chooseAModel(title:String, msg:String, buttonText:String)(implicit ctx:Ctx.Owner):Future[Option[TID]] = {
     val promise = Promise[Option[TID]]
     modelSelectionForm(
       title, 
@@ -156,7 +156,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
     promise.future
   }
   
-  def changeModel(thing:ThingInfo, cb:ThingInfo => Unit) = {
+  def changeModel(thing:ThingInfo, cb:ThingInfo => Unit)(implicit ctx:Ctx.Owner) = {
     modelSelectionForm(
       s"Change Model for ${thing.displayName}",
       s"Choose the Model that ${thing.displayName} should now be based on:",

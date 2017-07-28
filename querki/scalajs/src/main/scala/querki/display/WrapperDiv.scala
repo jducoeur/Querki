@@ -9,29 +9,6 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 /**
- * A higher-level view of WrapperDiv, to encapsulate the common pattern "show a spinner until the given Future
- * pans out, then process the results and replace the display".
- * 
- * DEPRECATED: this should be replaced with RxDiv and/or GadgetRef more or less everywhere.
- */
-class AfterLoading[T, Output <: dom.html.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit val ecology:Ecology) 
-  extends Gadget[dom.html.Div] with EcologyMember 
-{
-  // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
-  lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
-  
-  def doRender() = wrapper
-  
-  fut.map { result =>
-    val finalTag = guts(result)
-    wrapper.replaceContents(finalTag.render)
-  }
-}
-object AfterLoading {
-  def apply[T, Output <: dom.html.Element](fut:Future[T])(guts:T => Gadget[Output])(implicit ecology:Ecology) = new AfterLoading(fut)(guts)
-}
-
-/**
  * This is a trivial placeholder div element, for use when you want to be able to replace the
  * content of the div easily.
  * 

@@ -5,13 +5,12 @@ import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-import rx.ops._
 
 import querki.globals._
 
 case class RadioButton(v:String, label:String, checked:Boolean, mods:Modifier*)
 
-class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology) extends Gadget[dom.html.Form] {
+class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology, ctx:Ctx.Owner) extends Gadget[dom.html.Form] {
   val ecology = e
   
   private def curSelected = {

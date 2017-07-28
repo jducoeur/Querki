@@ -5,11 +5,10 @@ import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-import rx.ops._
 import querki.globals._
 import querki.display.rx.RxTextFrag
 
-class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] with EcologyMember {
+class NotifierGadget(implicit val ecology:Ecology, ctx:Ctx.Owner) extends Gadget[dom.HTMLAnchorElement] with EcologyMember {
   
   lazy val Notifications = interface[Notifications]
   
@@ -29,11 +28,11 @@ class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchor
   // TODO: can we abstract out this general notion of contents that are reactively chosen? This is a lot
   // of boilerplate. The tricky bit is that we probably don't want to call render over and over again, just
   // *choose* reactively among components, rendering them once.
-  lazy val obs = Obs(n) {
+  lazy val obs = n.trigger {
     elemOpt.foreach { e =>
       $(e).empty()
       val content = 
-        if (n() == 0) {
+        if (n.now == 0) {
           emptyRendered
         } else {
           fullRendered

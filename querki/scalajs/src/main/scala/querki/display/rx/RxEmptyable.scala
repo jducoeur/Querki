@@ -13,16 +13,19 @@ import org.querki.gadgets._
  * the disabled attribute.
  */
 trait RxEmptyable[T] {
-  def rxEmpty(elem:T):Rx[Boolean]
+  def rxEmpty(elem:T)(implicit ctx:Ctx.Owner):Rx[Boolean]
 }
 
 object RxEmptyable {
   implicit def RxEmptyableText[T <: RxTextBase[_]] = new RxEmptyable[T] {
-    def rxEmpty(elem:T) = Rx { elem.textOpt().isEmpty }
+    def rxEmpty(elem:T)(implicit ctx:Ctx.Owner) = Rx { elem.textOpt().isEmpty }
   }
   
   implicit val RxEmptyableRadio = new RxEmptyable[RxRadio] {
-    def rxEmpty(elem:RxRadio) = Rx { elem.selectedOption().isEmpty }
+    def rxEmpty(elem:RxRadio)(implicit ctx:Ctx.Owner) = Rx { 
+      val opt = elem.selectedOption()
+      opt.isEmpty 
+    }
   }
   
   /**
@@ -30,7 +33,7 @@ object RxEmptyable {
    * RxEmptyable, then the GadgetRef is as well.
    */
   implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable] = new RxEmptyable[GadgetRef[G]] {
-    def rxEmpty(ref:GadgetRef[G]):Rx[Boolean] = {
+    def rxEmpty(ref:GadgetRef[G])(implicit ctx:Ctx.Owner):Rx[Boolean] = {
       ref.map { g =>
         implicitly[RxEmptyable[G]].rxEmpty(g)
       }.getOrElse(Rx{true})
@@ -41,6 +44,6 @@ object RxEmptyable {
    * This adds a simple .rxEmpty method to any Gadget that has RxEmptyable defined.
    */
   implicit class RxEmptyableConv[T : RxEmptyable](elem:T) {
-    def rxEmpty:Rx[Boolean] = implicitly[RxEmptyable[T]].rxEmpty(elem)
+    def rxEmpty(implicit ctx:Ctx.Owner):Rx[Boolean] = implicitly[RxEmptyable[T]].rxEmpty(elem)
   }
 }

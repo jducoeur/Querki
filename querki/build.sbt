@@ -159,7 +159,7 @@ lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.4.3",
-  "com.lihaoyi" %%% "scalarx" % "0.2.8",
+  "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.6.5",
   "com.lihaoyi" %%% "fastparse" % "0.4.3",

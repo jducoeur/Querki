@@ -17,7 +17,8 @@ import querki.globals._
 import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils
   
-class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) 
+class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)
+  (implicit val ecology:Ecology, ctx:Ctx.Owner) 
   extends Gadget[dom.HTMLDivElement] with querki.display.QuerkiUIUtils with SkillLevelsNeeded with EcologyMember 
 {
   lazy val Client = interface[querki.client.Client]
@@ -47,8 +48,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   
   val nameInput = GadgetRef[RxInput].
     whenSet { g =>
-      Obs(g.elemOptRx) {
-        g.elemOpt.map { e => $(e).blur { evt:JQueryEventObject => fixNameInput(g.text()) } }
+      g.elemOptRx.trigger {
+        g.elemOpt.map { e => $(e).blur { evt:JQueryEventObject => fixNameInput(g.text.now) } }
       }
     }
   // When we blur out of the Name field, fix it up if necessary:
@@ -87,8 +88,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
   val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
     whenSet { g => 
-      Obs(g.selectedValOpt) {
-        g.selectedValOpt().map{ selectedType =>
+      g.selectedValOpt.trigger {
+        g.selectedValOpt.now.map{ selectedType =>
           // They've selected a Type, so reset the Model...
           modelSelector.map(_.setValue("")) 
           // ... and set the Collection to best suit this Type:
@@ -106,8 +107,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     }
   val modelSelector = GadgetRef[RxSelect].
     whenSet { g => 
-      Obs(g.selectedValOpt) {
-        g.selectedValOpt().map { _ =>
+      g.selectedValOpt.trigger {
+        g.selectedValOpt.now.map { _ =>
           // They've selected a Model, so reset the Type...
           typeSelector.map(_.setValue("")) 
           // ... and set the Collection to List. Yes, this is hardcoded. So far,
@@ -146,8 +147,14 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     !isPointerType() ||
     (pointerModelChoice.map { _.selectedValOpt() match {
       case Some(PointsToAny) => true
-      case Some(PointsToExisting) => pointerModelSelector.map(_.selectedValOpt().isDefined).getOrElse(false)
-      case Some(PointsToNew) => pointerModelName.map(name => !(name.rxEmpty())).getOrElse(false)
+      case Some(PointsToExisting) => pointerModelSelector.map { sel =>
+        val opt = sel.selectedValOpt()
+        opt.isDefined
+      }.getOrElse(false)
+      case Some(PointsToNew) => pointerModelName.map { name =>
+        val nameEmpty = name.rxEmpty
+        !nameEmpty()
+      }.getOrElse(false)
       case _ => false
     }}.getOrElse(false))
   }
@@ -156,7 +163,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // page to add the Property:
   lazy val addButton = 
     new ButtonGadget(Info, 
-        disabled := Rx{ 
+        disabled := Rx { 
           nameInput.get.textOpt().isEmpty || 
           collSelector.get.selectedTIDOpt().isEmpty || 
           selectedBasis().isEmpty ||
@@ -164,9 +171,9 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         }, 
         "Create",
         id:="_doCreatePropertyButton")({ () =>
-      val name = nameInput.get.textOpt().get
-      val coll = collSelector.get.selectedTIDOpt().get
-      val (selector, oid) = selectedBasis().get
+      val name = nameInput.get.textOpt.now.get
+      val coll = collSelector.get.selectedTIDOpt.now.get
+      val (selector, oid) = selectedBasis.now.get
       if (selector == modelSelector.get) {
         // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
         Client[EditFunctions].getModelType(oid).call().foreach { typeInfo => createProperty(name, coll, typeInfo.oid) }
@@ -189,13 +196,13 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     )
     // The complex problem comes iff it's a pointer Type:
     val fullPropsFut:Future[Seq[ChangePropertyValue]] =
-      if (isPointerType()) {
-        pointerModelChoice.get.selectedVal() match {
+      if (isPointerType.now) {
+        pointerModelChoice.get.selectedVal.now match {
           // Don't need to do anything
           case PointsToAny => Future.successful(initProps)
           // Add the existing Model to the meta-Props:
           case PointsToExisting => {
-            val modelId = pointerModelSelector.get.selectedVal()
+            val modelId = pointerModelSelector.get.selectedVal.now
             val pv = mkPV(std.links.linkModelProp, modelId)
             Future.successful(initProps :+ pv)
           }
@@ -203,12 +210,11 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
           // Future-oriented):
           case PointsToNew => {
             val modelPVs = Seq(
-              mkPV(std.core.nameProp, pointerModelName.get.text()),
+              mkPV(std.core.nameProp, pointerModelName.get.text.now),
               mkPV(std.core.isModelProp, "true")
             )
             Client[EditFunctions].create(std.basic.simpleThing, modelPVs).call().map 
             { modelInfo =>
-              println(s"Created new Model $modelInfo")
               initProps :+ mkPV(std.links.linkModelProp, modelInfo.oid.underlying)
             }
           }
@@ -305,6 +311,8 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         )
       ),
       hr,
-      p(new ButtonGadget(Info, id:="_addExistingInstead", "Add an Existing Property")({ () => apg.mainDiv.get.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
+      p(new ButtonGadget(Info, id:="_addExistingInstead", "Add an Existing Property")({ () =>
+        apg.showAddExisting()
+      }), apg.cancelButton)
     )
 }

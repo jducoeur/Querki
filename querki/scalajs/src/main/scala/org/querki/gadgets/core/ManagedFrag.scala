@@ -28,7 +28,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    * An Rx member containing the actual Node iff it has been rendered.
    */
   val elemOptRx = Var[Option[Output]](None)
-  def elemOpt = elemOptRx()
+  def elemOpt = elemOptRx.now
   /**
    * Fetches the actual rendered DOM Node for this Frag.
    * 
@@ -96,7 +96,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    * The parent of the resulting Node, once it has been created.
    */
   val parentOptRx = Var[Option[dom.Element]](None)
-  def parentOpt = parentOptRx()
+  def parentOpt = parentOptRx.now
 
   /**
    * We intercept applyTo() (which is part of Scalatags), to record the parent of this Node.

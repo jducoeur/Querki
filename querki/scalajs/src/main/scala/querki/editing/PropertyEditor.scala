@@ -13,7 +13,7 @@ import querki.globals._
 import querki.display.{ButtonGadget}
 import querki.display.rx._
   
-class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology, ctx:Ctx.Owner) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
   

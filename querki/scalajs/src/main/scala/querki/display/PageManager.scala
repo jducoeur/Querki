@@ -261,6 +261,14 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
+  lazy val defaultCtx:Ctx.Owner = Ctx.Owner.safe()
+  val currentPageRx:Var[Option[Page]] = Var(None)
+  def changeToPage(page:Page):Unit = {
+    currentPageRx.now.foreach { _.unload }
+    currentPageRx() = Some(page)
+  }
+  implicit def currentOwner:Ctx.Owner = currentPageRx.now.map(_.ctx).getOrElse(defaultCtx)
+  
   /**
    * Actually display the full page.
    */
@@ -268,8 +276,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     val fut = nextChangeFuture
     
     // Yes, this is icky and mutable-ish. Note sure how better to handle this requirement, though.
-    waitingFlash() map { f => page.flash(f.isError, f.mods) }
+    waitingFlash.now map { f => page.flash(f.isError, f.mods) }
     waitingFlash() = None
+    
+    changeToPage(page)
     
     for {
       std <- DataAccess.standardThings

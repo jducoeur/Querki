@@ -20,7 +20,7 @@ import querki.util.ScalatagUtils
  * @param selector Typically the selected() reactive of an RxSelect. We pass in this instead of the RxSelect itself
  *   so that you can orElse multiple RxSelects and feed the union into here.
  */
-class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, TID)]])(implicit val ecology:Ecology) 
+class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, TID)]])(implicit val ecology:Ecology, ctx:Ctx.Owner) 
   extends EcologyMember with ScalatagUtils 
 {
   lazy val Client = interface[querki.client.Client]
@@ -29,13 +29,18 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
   def thingLink = page.thingLink _
   def std = page.std
   
-  val immediate = selector().isDefined
-  
   val emptyDescription = span(raw("&nbsp;"))
-  val selectedDescriptionObs = Obs(selector, skipInitial=(!immediate)) {
-    selector() match {
+  val selectedDescriptionObs =
+    if (selector.now.isDefined) {
+      selector.trigger { showDescription() }
+    } else {
+      selector.triggerLater { showDescription() }
+    }
+  
+  def showDescription() = {
+    selector.now match {
       case Some((sel, oid)) => {
-        val name = sel.selectedText()
+        val name = sel.selectedText.now
         val fut = for {
           propMap <- page.propMapFut
           typeMap <- page.typeMapFut
@@ -62,7 +67,7 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
       }
         
       case None => selectionDescription() = emptyDescription
-    }
+    }    
   }
   
   val selectionDescription = Var[Gadget[dom.html.Element]](emptyDescription)

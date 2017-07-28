@@ -46,9 +46,13 @@ class MakeShareableLinkPage(params:ParamMap)(implicit val ecology:Ecology) exten
       p("What should the users of this link be able to do?"),
       permChoiceInput <= new RxRadio("_choiceButtons", choiceButtons:_*),
       p(new ButtonGadget(ButtonGadget.Primary, "Get Shareable Link", 
-          disabled := Rx { nameInput.rxEmpty() || permChoiceInput.rxEmpty() })(
+          disabled := Rx {
+            val nameEmpty = nameInput.rxEmpty
+            val permChoiceEmpty = permChoiceInput.rxEmpty
+            nameEmpty() || permChoiceEmpty() 
+          })(
        {() =>
-         Client[SecurityFunctions].makeShareableLink(nameInput.get.text(), choiceMap(permChoiceInput.get.selectedVal())).call().map { link =>
+         Client[SecurityFunctions].makeShareableLink(nameInput.get.text.now, choiceMap(permChoiceInput.get.selectedVal.now)).call().map { link =>
            sharedLink() = Some(link)
          }
        })),
