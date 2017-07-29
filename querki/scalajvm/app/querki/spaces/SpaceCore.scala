@@ -395,7 +395,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       // belt-and-suspenders check here, to fail loudly if this happens. This isn't
       // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
       // better than nothing:
-      if (state.anything(thingId).isDefined) {
+      if (thingIdOpt.isEmpty && enhancedState.anything(thingId).isDefined) {
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
       }
       val msg = {
