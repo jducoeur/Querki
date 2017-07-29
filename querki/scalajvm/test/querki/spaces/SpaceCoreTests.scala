@@ -208,6 +208,42 @@ class SpaceCoreTests extends QuerkiTests {
 
       s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
     }
+    
+    // Test for the belt-and-suspenders check on QI.7w4g8ne:
+    "throw an exception if it hits a duplicate OID" in {
+      // This will begin duplicating OIDs after it hits nOIDs of them:
+      class DuplicateOIDSpace(nOIDs:Int) extends SpaceCoreSpaceBase {
+        import java.util.concurrent.atomic.AtomicInteger
+        
+        def configOpt:Option[TestSpaceConfig] = None
+        lazy val world = new TestWorld
+        
+        lazy val nBase = 1000
+        
+        private def testOID(local:Int):OID = OID(2, local)
+        private lazy val _currentLocal = new AtomicInteger(nBase + 1)
+        
+        override def toid():OID = {
+          val next = _currentLocal.incrementAndGet()
+          if (next > (nOIDs + nBase))
+            _currentLocal.set(nBase + 1)
+          testOID(next)
+        }
+        
+        val sc = new TestSpaceCore(spaceId, this, configOpt)
+      }
+      // The 7 below assumes that building the Space + InitialState consumes 4 OIDs:
+      implicit val s = new DuplicateOIDSpace(7)
+      
+      s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
+      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      val caught = intercept[PublicException] {
+        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      }
+      assert(caught.msgName == "Space.createThing.OIDExists")
+    }
   }
   
   "Reloading a Space" should {

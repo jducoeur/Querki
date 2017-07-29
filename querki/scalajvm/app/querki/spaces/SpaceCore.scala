@@ -391,6 +391,13 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     val modTime = DateTime.now
     val thingIdRM = thingIdOpt.map(rtc.successful(_)).getOrElse(allocThingId())
     thingIdRM.flatMap { thingId =>
+      // QI.7w4g8ne: we've been hitting duplicate OIDs, and stomping old data. So let's put a
+      // belt-and-suspenders check here, to fail loudly if this happens. This isn't
+      // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
+      // better than nothing:
+      if (state.anything(thingId).isDefined) {
+        throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
+      }
       val msg = {
         implicit val s = state
         DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
