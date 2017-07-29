@@ -396,6 +396,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
       // better than nothing:
       if (thingIdOpt.isEmpty && enhancedState.anything(thingId).isDefined) {
+        QLog.error(s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}")
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
       }
       val msg = {

@@ -96,7 +96,10 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
 
       def giveOID() = {        
         val oid = OID(shardId, current)
-        sender ! NewOID(oid)        
+        // TODO: this is a noisy spew, intentionally. But until we figure out QI.7w4g8ne, we need
+        // this in order to get a handle on what's going on...
+        QLog.spew(s"Shard $shardId allocating OID ${oid.toThingId.toString()}")
+        sender ! NewOID(oid)
         current += 1
         
         if (current == shardFullMark) {
@@ -130,6 +133,8 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
         val wasFull = current >= shardFullMark
         
         val oids = for (n <- 0 to nAlloc) yield { OID(shardId, current + n) }
+        // TODO: Related to the noisy spew in NextOID:
+        QLog.spew(s"Shard $shardId giving OID Block of $nAlloc Ids from ${oids.head} to ${oids.last}")
         sender ! NewOIDs(oids)
         current += nAlloc
         
