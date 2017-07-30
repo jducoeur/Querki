@@ -50,6 +50,7 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     val reqM = ClusterPrivate.nodeCoordinator.request(msg) onComplete
     {
       case Success(ShardAssignment(id)) => {
+        QLog.spew(s"QuerkiNodeManager received ShardAssignment($id)")
         _shardId = Some(id)
         _allocator = Some(context.actorOf(OIDAllocator.actorProps(ecology, shardId), "OIDAllocator"))
         initted()
@@ -187,8 +188,10 @@ class QuerkiNodeManager(implicit val ecology:Ecology) extends Actor with Stash w
     // of the world:
     case CheckShardAssignment(id) => {
       if (_shardId.map(_ == id).getOrElse(false)) {
+        QLog.spew(s"QuerkiNodeManager.CheckShardAssignment($id) Confirmed")
         sender ! ConfirmShardAssignment(self)
       } else {
+        QLog.spew(s"QuerkiNodeManager.CheckShardAssignment($id) Refuted -- actually ${_shardId}")
         sender ! RefuteShardAssignment(self)
       }
     }
