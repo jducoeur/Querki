@@ -47,10 +47,15 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
     (classOf[OIDAllocator.Alloc] -> 100),
     (classOf[OIDAllocator.AllocState] -> 101),
     
-    (classOf[QuerkiNodeCoordinator.ShardAssigned] -> 201),
-    (classOf[QuerkiNodeCoordinator.ShardUnassigned] -> 202),
+    (classOf[QuerkiNodeCoordinator.OldShardAssigned] -> 201),
+    (classOf[QuerkiNodeCoordinator.OldShardUnassigned] -> 202),
     (classOf[QuerkiNodeCoordinator.ShardUnavailable] -> 203),
-    (classOf[QuerkiNodeCoordinator.ShardSnapshot] -> 204)
+    (classOf[QuerkiNodeCoordinator.OldShardSnapshot] -> 204),
+    
+    (classOf[QuerkiNodeCoordinator.NodePath] -> 205),
+    (classOf[QuerkiNodeCoordinator.ShardAssigned] -> 206),
+    (classOf[QuerkiNodeCoordinator.ShardUnassigned] -> 207),
+    (classOf[QuerkiNodeCoordinator.ShardSnapshot] -> 208)
   )
   
   override def createActors(createActorCb:CreateActorFunc) = {

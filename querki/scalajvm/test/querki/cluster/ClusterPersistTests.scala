@@ -16,15 +16,18 @@ class TestActor extends Actor {
 }
 
 class QuerkiNodeCoordinatorPersistTests(env:PersistEnv) extends PersistTest(env) {
-  val testActor = env.testActorSystem.actorOf(Props(classOf[TestActor]))
+  val system = env.testActorSystem
+  val testActor = system.actorOf(Props(classOf[TestActor]))
+  val defaultAddress = system.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress
+  val testPath = QuerkiNodeCoordinator.NodePath(testActor.path.toStringWithAddress(defaultAddress))
   
   checkSerialization(QuerkiNodeCoordinator.ShardUnavailable(12))
-  checkSerialization(QuerkiNodeCoordinator.ShardAssigned(testActor, 42))
-  checkSerialization(QuerkiNodeCoordinator.ShardUnassigned(testActor, 42))
+  checkSerialization(QuerkiNodeCoordinator.ShardAssigned(testPath, 42))
+  checkSerialization(QuerkiNodeCoordinator.ShardUnassigned(testPath, 42))
   checkSerialization(
     QuerkiNodeCoordinator.ShardSnapshot(
       HashSet(1, 2), 
-      HashMap((ActorPath.fromString("akka.tcp://application@127.0.0.1:2551/system/sharding/UserCache") -> 5))))
+      HashMap((testPath -> 5))))
 }
 
 class OIDAllocationPersistTests(env:PersistEnv) extends PersistTest(env) {
