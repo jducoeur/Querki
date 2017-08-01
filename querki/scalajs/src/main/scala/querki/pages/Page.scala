@@ -17,7 +17,6 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
-import querki.display.rx.RxDiv
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
   def titleOr(f: => String):String =

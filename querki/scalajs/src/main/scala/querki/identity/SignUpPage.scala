@@ -16,7 +16,7 @@ import querki.comm._
 import querki.data.UserInfo
 import querki.display.ButtonGadget
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.ecology._
 import querki.globals._
 import querki.pages._

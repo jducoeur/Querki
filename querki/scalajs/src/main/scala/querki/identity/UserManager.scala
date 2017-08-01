@@ -15,7 +15,7 @@ import querki.globals._
 import querki.data.UserInfo
 import querki.display._
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.pages.Page
 import querki.session.UserFunctions
 

@@ -16,7 +16,7 @@ import querki.api.ThingFunctions
 import querki.data.{PropValInfo, ThingInfo}
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 import querki.util.InputUtils

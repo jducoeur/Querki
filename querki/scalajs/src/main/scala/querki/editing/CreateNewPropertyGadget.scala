@@ -12,7 +12,7 @@ import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget}
 import ButtonGadget._
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.globals._
 import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils

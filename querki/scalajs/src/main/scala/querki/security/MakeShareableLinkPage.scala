@@ -10,7 +10,7 @@ import org.querki.gadgets._
 import querki.api.ThingFunctions
 import querki.display._
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.globals._
 import querki.pages._
 

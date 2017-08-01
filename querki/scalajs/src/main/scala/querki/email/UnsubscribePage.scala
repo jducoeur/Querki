@@ -9,7 +9,6 @@ import org.querki.gadgets._
 import models.Wikitext
 import querki.data.TOID
 import querki.display._
-import querki.display.rx.RxDiv
 import querki.globals._
 import querki.pages._
 

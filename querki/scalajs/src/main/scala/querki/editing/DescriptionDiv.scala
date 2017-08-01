@@ -11,7 +11,7 @@ import querki.globals._
 import querki.api.ThingFunctions
 import querki.data.BasicThingInfo
 import querki.display.{QText}
-import querki.display.rx.{RxDiv, RxThingSelector}
+import querki.display.rx.RxThingSelector
 import querki.util.ScalatagUtils
 
 /**
