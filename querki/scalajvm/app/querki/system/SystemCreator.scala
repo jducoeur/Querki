@@ -92,7 +92,7 @@ object SystemCreator {
     new querki.conversations.CommentNotifierEcot(ecology)          // 50
     new querki.security.RolesEcot(ecology)                         // 51
     new querki.photos.PhotoEcot(ecology)                           // 52
-    															   // 53
+                                     // 53
     new querki.api.ClientApiEcot(ecology)                          // 54
     new querki.tools.ProfilerEcot(ecology)                         // 55
     new querki.api.ApiManagement(ecology)                          // 56
@@ -110,6 +110,7 @@ object SystemCreator {
     new querki.publication.PublicationEcot(ecology)                // 68
     new querki.typeclass.TypeclassEcot(ecology)                    // 69
     new querki.aws.AWSEcot(ecology)                                // 70
+    new querki.console.ConsoleEcot(ecology)                        // 71
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {
