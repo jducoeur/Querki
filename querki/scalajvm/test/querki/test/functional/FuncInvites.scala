@@ -13,19 +13,19 @@ trait FuncInvites { self:FuncMixin =>
     state -> page
   }
   
-  def shareByEmail(user:TestUser)(state:State):State = {
+  def shareByEmail(users:TestUser*)(state:State):State = {
     run(state,
       openSharing(),
       { state =>
         
         click on textField("invitees")
-        pressKeys(user.email + "\t")
-        
-        eventually { 
-          // TODO: this currently only works if there is only one mf_item -- which means only one
-          // email or collaborator listed:
-          find(className("mf_item")).get.text should include (user.email) 
+        users.foreach { user =>
+          pressKeys(user.email + "\n")
+          eventually { 
+            assert(findAll(className("mf_item")).exists(_.text.contains(user.email)))
+          }
         }
+        
         click on "_inviteButton"
         waitFor("_alertMsg")
         find(id("_alertMsg")).get.text should include ("Sent invites to")
@@ -49,6 +49,8 @@ trait FuncInvites { self:FuncMixin =>
   
   def fetchLatestEmailBodyTo(emailAddr:String):String = {
     val sessions = IEmailInspector.sessions.filter(_.messages.exists(_.recipientEmail.addr.equalsIgnoreCase(emailAddr)))
+    if (sessions.isEmpty)
+      throw new Exception(s"Didn't find any emails targeted at $emailAddr")
     val email = sessions.head.messages.head
     email.bodyMain.plaintext
   }

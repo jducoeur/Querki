@@ -53,8 +53,7 @@ trait Security { this:FuncMixin =>
             state
           },
           
-          shareByEmail(TestUser1),
-          shareByEmail(TestUser3)
+          shareByEmail(TestUser1, TestUser3)
         )
       },
       
