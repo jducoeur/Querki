@@ -28,7 +28,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User] = ???
   def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Future[Option[User]] = ???
   def checkQuerkiLogin(login:String, passwordEntered:String):Option[User] = ???
-  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None, identityExists:Boolean = true):Try[User] = ???
+  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID], identityExists:Boolean):Future[User] = ???
   def get(request:RequestHeader):Option[User] = ???
   def getAllForAdmin(requester:User):Seq[User] = ???
   def getAllIdsForAdmin(requester:User):Seq[UserId] = ???
@@ -42,7 +42,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def setTOSVersion(userId:OID, version:Int):Future[Option[User]] = ???
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = ???
   def getUserVersion(userId:UserId):Option[Int] = ???
-  def findOrCreateIdentityByEmail(email:String):FullIdentity = ???
+  def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity] = ???
   
   // Implemented stubs
   def getIdentity(id:OID):Option[Identity] = identitiesById.get(id)
