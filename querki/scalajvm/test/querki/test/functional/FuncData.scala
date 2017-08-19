@@ -14,6 +14,7 @@ trait FuncData { this:FuncMixin =>
   object Admin1 extends TestUser("testadmin1", "Test Admin 1", "testing", "admin@querki.net")
   object TestUser1 extends TestUser("testuser1", "Test User 1", "testing2", "functest1@querki.net")
   object TestUser2 extends TestUser("testuser2", "Test User 2", "testing2", "functest2@querki.net")
+  object TestUser3 extends TestUser("testuser3", "Test User 3", "testing2", "functest3@querki.net")
   
   /**
    * The root abstraction that corresponds to a Thing on the Server. This is f-bounded so that

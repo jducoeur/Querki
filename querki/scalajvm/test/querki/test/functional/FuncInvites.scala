@@ -47,11 +47,17 @@ trait FuncInvites { self:FuncMixin =>
     email.bodyMain.plaintext
   }
   
+  def fetchLatestEmailBodyTo(emailAddr:String):String = {
+    val sessions = IEmailInspector.sessions.filter(_.messages.exists(_.recipientEmail.addr.equalsIgnoreCase(emailAddr)))
+    val email = sessions.head.messages.head
+    email.bodyMain.plaintext
+  }
+  
   /**
    * Go into the most recent email message sent, and get the invitation link from it.
    */
-  def extractInviteLink():String = {
-    val body = fetchLatestEmailBody()
+  def extractInviteLink(emailAddr:String):String = {
+    val body = fetchLatestEmailBodyTo(emailAddr)
     body match {
       case inviteLinkRegex(url) => url
       case _ => throw new Exception(s"Didn't find invitation link in $body")
@@ -80,7 +86,7 @@ trait FuncInvites { self:FuncMixin =>
     run(state,
       { state =>
         
-        val inviteLink = extractInviteLink()
+        val inviteLink = extractInviteLink(user.email)
         go to inviteLink
         
         // This takes us to the Space in question, and then we need to go to the Login dialog.
