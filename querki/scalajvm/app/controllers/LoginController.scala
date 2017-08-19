@@ -306,40 +306,38 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         passwordValidationError(info.password) match {
           case Some(err) => withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info)) }
           case None => {
-  	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
-    	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
-    	    	// This is the email address they were *originally* invited through.
+            // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
+            val personOpt = rc.sessionCookie(querki.identity.personParam)
+            // This is the email address they were *originally* invited through.
             val emailOpt = rc.sessionCookie(querki.identity.identityEmail)
             // This is the identity that was created for this invitation:
             val identityIdOpt = rc.sessionCookie(querki.identity.identityParam).map(OID(_))
-    	    	personOpt match {
-    	    	  case Some(personId) => {
+            personOpt match {
+              case Some(personId) => {
                 // This pathway is considered "confirmed" if it came from an invitation to the same email
-    	    	    // address as the one being signed up for:
-    	    	    val emailConfirmed = emailOpt.map(_.toLowerCase() == info.email.toLowerCase()).getOrElse(false)
-    		    	  val result = UserAccess.createUser(info, emailConfirmed, identityIdOpt)
-    		        result match {
-    		          case Success(user) => {
-    		            // Edge case: if they signed up using a different email address than the one the invitation went
-    		            // to, we need to send their activation email:
-    		            if (emailOpt.isDefined && !emailConfirmed) {
-      		            Person.sendValidationEmail(rc, EmailAddress(info.email), user)
-    		            }
-    		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-    		            // Note that we auto-join the Space through this route:
-    		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
-    		          }
-    		          case Failure(error) => {
-    		            val msg = error match {
-    		              case err:PublicException => err.display(request, ecology)
-    		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
-    		            }
-    		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)) }
-    		          }
-    		        }    	    
-    	    	  }
-    	    	  case _ => doError(indexRoute, "Error -- you seem to have somehow gotten here without a valid invitation! Please drop us a note; this shouldn't be possible.")
-    	    	}
+                // address as the one being signed up for:
+                val emailConfirmed = emailOpt.map(_.toLowerCase() == info.email.toLowerCase()).getOrElse(false)
+                UserAccess.createUser(info, emailConfirmed, identityIdOpt, true).map { user =>
+                  // Edge case: if they signed up using a different email address than the one the invitation went
+                  // to, we need to send their activation email:
+                  if (emailOpt.isDefined && !emailConfirmed) {
+                    Person.sendValidationEmail(rc, EmailAddress(info.email), user)
+                  }
+                  // We're now logged in, so start a new session. But preserve the personParam for the next step:
+                  // Note that we auto-join the Space through this route:
+                  Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
+                }.recoverWith {
+                  case error => {
+                    val msg = error match {
+                      case err:PublicException => err.display(request, ecology)
+                      case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+                    }
+                    withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)) }
+                  }
+                }
+              }
+              case _ => doError(indexRoute, "Error -- you seem to have somehow gotten here without a valid invitation! Please drop us a note; this shouldn't be possible.")
+            }
           }
         }
       }
@@ -380,23 +378,21 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         // If what we have is currently a Trivial Identity, then it doesn't really exist in MySQL yet:
         val identityExists = identityOpt.map(_.kind != IdentityKind.Trivial).getOrElse(false)
         
-        val result = UserAccess.createUser(info, isValidatedEmail, identityOpt.map(_.id), identityExists)
-        result match {
-          case Success(user) => {
-            // Okay -- user is created, so send out the validation email if needed:
-            val validateFut =
-              if (isValidatedEmail)
-                fut(())
-              else
-                Person.sendValidationEmail(rc, EmailAddress(info.email), user) 
-            validateFut flatMap { _ =>
-              // Email sent, so we're ready to move on:
-              ClientApi.userInfo(Some(user)) map { userInfoOpt =>
-                Ok(write(userInfoOpt.get)).withSession(user.toSession:_*)
-              }
+        UserAccess.createUser(info, isValidatedEmail, identityOpt.map(_.id), identityExists).flatMap { user =>
+          // Okay -- user is created, so send out the validation email if needed:
+          val validateFut =
+            if (isValidatedEmail)
+              fut(())
+            else
+              Person.sendValidationEmail(rc, EmailAddress(info.email), user) 
+          validateFut flatMap { _ =>
+            // Email sent, so we're ready to move on:
+            ClientApi.userInfo(Some(user)) map { userInfoOpt =>
+              Ok(write(userInfoOpt.get)).withSession(user.toSession:_*)
             }
           }
-          case Failure(error) => {
+        }.recover {
+          case error => {
             val msg = error match {
               case err:PublicException => err.display(request, ecology)
               case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
@@ -509,10 +505,10 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         userOpt match {
           case Some(user) => {
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
-    		    redirectOpt match {
-    		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
-    		      case None => Redirect(indexRoute).withSession(user.toSession:_*)
-    		    }
+            redirectOpt match {
+              case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
+              case None => Redirect(indexRoute).withSession(user.toSession:_*)
+            }
           }
           case None => doError(indexRoute, "Login failed. Please try again.")
         }

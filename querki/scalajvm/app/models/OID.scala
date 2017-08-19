@@ -2,13 +2,6 @@ package models
 
 import language.implicitConversions
 
-// TODO: this is all a very bad smell! OID needs to have an associated Ecot, which hides the
-// details of creating the next OID, so that it can be properly stubbed out.
-import anorm._
-import anorm.SqlParser.int
-import play.api.db._
-import play.api.Play.current
-
 import querki.core.NameUtils
 import querki.data.{TID, TOID}
 import querki.db.QDB
@@ -67,31 +60,6 @@ object OID {
   def isOID(name:String) = name(0) == '.'
   
   def fromTOID(toid:TOID) = OID(toid.underlying)
-
-  // TBD: at this point, this is only being used for generating Users and Identities;
-  // everything else is going through OIDAllocator. We might leave things like this,
-  // with System objects working in the older style, but consider cleaning it up.
-  def next(kind:ShardKind)(implicit ecology:Ecology):OID = {
-    QDB(kind) { implicit conn =>
-      val parseOID = for {
-        shardId <- int("shard")
-        localId <- int("nextId")
-      }
-        yield 
-      {
-        // We update the nexter as essentially a side-effect, after successfully parsing.
-        // This is kind of horrible -- is there a better approach?
-        SQL("""
-          UPDATE OIDNexter SET nextId = {next} WHERE nextId = {old}
-          """).on("next" -> (localId + 1).toString, "old" -> localId).executeUpdate()
-        OID(shardId, localId)
-      }
-      
-      SQL("""
-          select * from OIDNexter
-          """).as(parseOID.single)
-    }
-  }
   
   implicit def thing2OID(t:Thing):OID = t.id
   implicit def OID2ThingId(oid:OID):ThingId = oid.toThingId

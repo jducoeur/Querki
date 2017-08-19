@@ -2,6 +2,7 @@ package querki.cluster
 
 import akka.actor._
 import akka.cluster.singleton._
+import akka.pattern._
 
 import querki.ecology._
 import querki.globals._
@@ -72,5 +73,12 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
       
       regAsyncInit[QuerkiNodeManager]
     }
+  }
+  
+  def allocThingId()(implicit ecology:Ecology):Future[OID] = {
+    import OIDAllocator._
+    import querki.util.ActorHelpers._
+    // Since we are not directly inside an Actor, we use ask instead of request:
+    oidAllocator.ask(NextOID)(timeout).map { case NewOID(thingId) => thingId }
   }
 }
