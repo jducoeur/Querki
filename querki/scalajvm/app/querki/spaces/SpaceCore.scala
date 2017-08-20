@@ -399,12 +399,10 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
         QLog.error(s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}")
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
       }
-      val msg = {
-        implicit val s = state
-        DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
-      }
-      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(kind, thingId, modelId, props, modTime)(state)))    
-    }    
+      implicit val s = state
+      val msg = DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
+      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(who, kind, thingId, modelId, props, modTime)(state)))    
+    }
   }
   
   def modifyThing(

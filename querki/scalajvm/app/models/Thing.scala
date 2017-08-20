@@ -6,6 +6,7 @@ import querki.api.ModelLoopException
 import querki.basic.PlainText
 import querki.ecology._
 import querki.globals._
+import querki.identity.IdentityPersistence.UserRef
 import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.util.QLog
@@ -34,6 +35,11 @@ abstract class Thing(
    * Yes, this is a redundant definition for the base Thing. But it is overridden in some subclasses.
    */
   lazy val props = propMap
+  
+  /**
+   * Who created this Thing, if applicable.
+   */
+  def creatorOpt:Option[UserRef] = None
   
   /**
    * USE WITH EXTREME CAUTION: this function is for use *only* in the core classes. Its purpose is to allow
@@ -333,5 +339,8 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropMap, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)
-  extends Thing(i, s, m, k, pf, mt) {}
+case class ThingState(i:OID, s:OID, m:OID, pf: PropMap, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing, cr:Option[UserRef] = None)
+  extends Thing(i, s, m, k, pf, mt) 
+{
+  override def creatorOpt = cr
+}

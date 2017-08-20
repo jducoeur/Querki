@@ -7,6 +7,7 @@ import querki.apps.AppsPure
 import querki.core.NameUtils
 import querki.globals._
 import querki.identity.Identity
+import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.SpaceMessagePersistence._
 import querki.time.DateTime
 import querki.types.ModelTypeBase
@@ -87,10 +88,10 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
    * This is the pure-functional heart of creation: it takes a SpaceState and the key info, and returns the
    * modified SpaceState.
    */
-  def createPure(kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
+  def createPure(creator:UserRef, kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
     kind match {
       case Kind.Thing => {
-        val thing = ThingState(thingId, state.id, modelId, props, modTime, kind)
+        val thing = ThingState(thingId, state.id, modelId, props, modTime, kind, Some(creator))
         state.copy(things = state.things + (thingId -> thing))
       }
       case Kind.Property => {
@@ -211,7 +212,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
     
     case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) => {
       implicit val s = stateOpt.get
-      createPure(kind, thingId, modelId, dhProps, modTime)(s)
+      createPure(req, kind, thingId, modelId, dhProps, modTime)(s)
     }
     
     case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) => {

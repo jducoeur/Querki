@@ -10,6 +10,7 @@ object IdentityPersistence {
    */
   case class UserRef(@KryoTag(1) userId:UserId, @KryoTag(2) identityIdOpt:Option[IdentityId]) extends UseKryo
 
+  val SystemUserRef = UserRef(MOIDs.SystemUserOID, None)
 }
 
 trait IdentityPersistence extends EcologyMember {

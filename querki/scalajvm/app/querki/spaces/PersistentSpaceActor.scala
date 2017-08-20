@@ -15,6 +15,7 @@ import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
 import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
+import querki.identity.IdentityPersistence.SystemUserRef
 import querki.persistence._
 import querki.publication.{AddPublicationEvents, CurrentPublicationState, PublishedAck, ThingPublished}
 import querki.spaces.messages._
@@ -247,7 +248,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
       // Okay, we actually need to create the Instance Permissions Thing:
       for {
         permThingId <- allocThingId()
-        stateWithPermThing = createPure(Kind.Thing, permThingId, AccessControl.InstancePermissionsModel.id, props, DateTime.now)(state)
+        stateWithPermThing = createPure(SystemUserRef, Kind.Thing, permThingId, AccessControl.InstancePermissionsModel.id, props, DateTime.now)(state)
         propsWithPerms = t.props + AccessControl.InstancePermissionsProp(permThingId)
         spaceWithAdjustedThing = modifyPure(t.id, t, Some(t.model), propsWithPerms, true, DateTime.now)(stateWithPermThing)
       }

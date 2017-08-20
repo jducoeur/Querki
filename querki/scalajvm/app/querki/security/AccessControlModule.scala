@@ -103,14 +103,23 @@ class AccessControlModule(e:Ecology)
           implicit val s = state
           val thingOpt = state.anything(thingId)
           
-          val isLocalUser = isMember(identityId, state)
+          val isCreator = 
+            (for {
+              thing <- thingOpt
+              creator <- thing.creatorOpt
+              creatorIdentityId <- creator.identityIdOpt
+            }
+              yield (creatorIdentityId == identityId)
+            ).getOrElse(false)
+          
+          lazy val isLocalUser = isMember(identityId, state)
           
           /**
            * Note that we check the Roles in two different ways: if a Role is explicitly named
            * in the ACL for this permission somewhere (fine-grained), or if this Role grants this
            * Permission space-wide (coarse-grained).
            */
-          val personRoles:Seq[OID] = {
+          lazy val personRoles:Seq[OID] = {
             val raw = for {
               person <- Person.localPerson(identityId)
               rolesPV <- person.getPropOpt(PersonRolesProp)
@@ -120,7 +129,7 @@ class AccessControlModule(e:Ecology)
             raw.getOrElse(Seq.empty)
           }
           
-          val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
+          lazy val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
           
           /**
            * We've found the permission defined somewhere along the chain, so we're going to use this
@@ -179,8 +188,14 @@ class AccessControlModule(e:Ecology)
               None
           }
           
-          // Try the permissions directly on this Thing...
-          thingOpt.flatMap(_.localProp(aclProp)).map(checkPerms(_)).getOrElse(
+          if (isCreator) {
+            // At least for the time being, we allow the person who created a Thing to continue to do anything
+            // to it.  We'll likely tighten that up over time, but for now it's a good starting point for allowing
+            // Spaces to open up CanCreate without tying themselves in knots over CanEdit.
+            true
+          } else
+            // Try the permissions directly on this Thing...
+            thingOpt.flatMap(_.localProp(aclProp)).map(checkPerms(_)).getOrElse(
               // ... or try the Instance Permissions on its Model...
               thingOpt.flatMap(thing => thing.getModelOpt.flatMap(checkInstancePermsFrom(_))).getOrElse(
               // ... or the Person has a Role that gives them the permission...
