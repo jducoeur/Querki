@@ -22,17 +22,19 @@ trait QuerkiUIUtils extends ScalatagUtils {
   /**
    * Show a standard Querki button, displaying whatever contents are given.
    */
-  def querkiButton(show:Modifier, addlCls:Seq[String] = Seq.empty) =
-    a(classes(Seq("btn", "btn-default", "btn-xs", "btn-primary", "_noPrint", "querki-icon-button") ++ addlCls),
+  def querkiButton(show:Modifier, addlCls:Seq[String] = Seq.empty) = plainQuerkiButton(show, "btn-primary" +: addlCls)
+  def plainQuerkiButton(show:Modifier, addlCls:Seq[String] = Seq.empty) =
+    a(classes(Seq("btn", "btn-default", "btn-sm", "_noPrint", "querki-icon-button") ++ addlCls),
       show)
   
   def icon(iconName:String) = i(classes(Seq("glyphicon", s"glyphicon-$iconName")))
-  def faIcon(iconName:String) = i(classes(Seq("fa", s"fa-$iconName")))
+  def faIcon(iconName:String) = i(classes(Seq("fa", s"fa-$iconName fa-lg")))
   
   /**
    * Show a standard Querki icon button.
    */
-  def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
+  def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = plainQuerkiButton(icon(iconName), addlCls)
+  def faIconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = plainQuerkiButton(faIcon(iconName), addlCls)
   
   def thingUrl(thing:BasicThingInfo) = s"#!${thing.urlName.underlying}"
   

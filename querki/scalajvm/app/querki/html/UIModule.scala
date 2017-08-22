@@ -274,47 +274,47 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
 
-	abstract class ButtonBase(tid:OID, pf:PropMap) extends InternalMethod(tid, pf)
-	{
-	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem
-	  
-	  def numParams:Int
-	  
-	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    paramsOpt match {
-	      case Some(params) if (params.length == numParams) => {
-	        val urlOpt = context.value.pType match {
-	          case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
-	          case _ => None
-	        }
-	        
-	        urlOpt match {
-	          case Some(url) => {
+  abstract class ButtonBase(tid:OID, pf:PropMap) extends InternalMethod(tid, pf)
+  {
+    def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem
+    
+    def numParams:Int
+    
+    override def qlApply(inv:Invocation):QFut = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
+      paramsOpt match {
+        case Some(params) if (params.length == numParams) => {
+          val urlOpt = context.value.pType match {
+            case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
+            case _ => None
+          }
+          
+          urlOpt match {
+            case Some(url) => {
               Future.sequence(
                 params.map(param => 
                   context.parser.get.processExp(param.exp, context).flatMap(_.value.wikify(context))))
               .map { paramTexts =>
-	              HtmlValue(QHtml(generateButton(url, paramTexts).toString))
+                HtmlValue(QHtml(generateButton(url, paramTexts).toString))
               }
-	          }
-	          // Nothing incoming, so cut.
-	          // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
-	          case None => Future.successful(EmptyValue(RawHtmlType))
-	        }
-	      }
-	      case None => QL.WarningFut(displayName + " requires " + numParams + " parameters.")
-	    }
-	  }
-	}
+            }
+            // Nothing incoming, so cut.
+            // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
+            case None => Future.successful(EmptyValue(RawHtmlType))
+          }
+        }
+        case None => QL.WarningFut(displayName + " requires " + numParams + " parameters.")
+      }
+    }
+  }
 
   /**
    * TODO: add parameters to specify the common style decisions: size (btn-sm, btn-xs, etc) and color (btn-default,
    * btn-warning, btn-danger, etc). These should each take a well-defined enumeration.
    */
-	class LinkButtonMethod extends InternalMethod(LinkButtonOID,
+  class LinkButtonMethod extends InternalMethod(LinkButtonOID,
     toProps(
       setName("_linkButton"),
       Categories(UITag),
@@ -332,7 +332,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       ),
       Details("""_linkButton receives a Link or External Link, and displays that
           |link as a button. You should always provide at least a label or an icon.""".stripMargin)))
-	{
+  {
     override def qlApply(inv:Invocation):QFut = {
       for {
         pt <- inv.contextTypeAs[URLableType]
@@ -365,9 +365,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           )
         }
     }
-	}
-	
-	class IconButtonMethod extends ButtonBase(IconButtonOID,
+  }
+  
+  class IconButtonMethod extends ButtonBase(IconButtonOID,
     toProps(
       setName("_iconButton"),
       Basic.DeprecatedProp(true),
@@ -382,14 +382,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
           |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
   {
-	  val numParams = 2
-	  
-	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-	    <a class="btn btn-default btn-xs btn-primary" href={url} title={params(1).raw}><i class={"glyphicon glyphicon-" + params(0).raw}></i></a>
-	  }
-	}
-	
-	class MixedButtonMethod extends ButtonBase(MixedButtonOID,
+    val numParams = 2
+    
+    def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
+      <a class="btn btn-default btn-xs btn-default" href={url} title={params(1).raw}><i class={"glyphicon glyphicon-" + params(0).raw}></i></a>
+    }
+  }
+  
+  class MixedButtonMethod extends ButtonBase(MixedButtonOID,
     toProps(
       setName("_mixedButton"),
       Basic.DeprecatedProp(true),
@@ -405,15 +405,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
           |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
   {
-	  val numParams = 2
-	  
-	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-	    <a class="btn btn-default btn-sm btn-primary" href={url}><i class={"glyphicon glyphicon-" + params(0).raw}></i> {params(1).raw}</a>
-	  }
-	}
-	
-	// TODO: this is very similar to _linkButton, and should be refactored.
-	class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
+    val numParams = 2
+    
+    def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
+      <a class="btn btn-default btn-sm btn-primary" href={url}><i class={"glyphicon glyphicon-" + params(0).raw}></i> {params(1).raw}</a>
+    }
+  }
+  
+  // TODO: this is very similar to _linkButton, and should be refactored.
+  class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     toProps(
       setName("_showLink"),
       Categories(UITag),
@@ -424,22 +424,22 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |
           |The default behaviour of a Link, if you don't do anything with it, is effectively
           |"_showLink(Default View)".""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    for {
-	      pt <- inv.contextTypeAs[URLableType]
-	      elemContext <- inv.contextElements
-	      elemV <- inv.opt(elemContext.value.firstOpt)
-	      url <- inv.opt(pt.getURL(elemContext)(elemV))
-	      paramVal <- inv.processParam(0, elemContext)
-	      label <- inv.fut(paramVal.wikify(elemContext))
-	      wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        pt <- inv.contextTypeAs[URLableType]
+        elemContext <- inv.contextElements
+        elemV <- inv.opt(elemContext.value.firstOpt)
+        url <- inv.opt(pt.getURL(elemContext)(elemV))
+        paramVal <- inv.processParam(0, elemContext)
+        label <- inv.fut(paramVal.wikify(elemContext))
+        wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
       }
-	      yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
-	  }
-	}
-		
-	class PropLinkMethod extends InternalMethod(PropLinkMethodOID, 
+        yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
+    }
+  }
+    
+  class PropLinkMethod extends InternalMethod(PropLinkMethodOID, 
     toProps(
       setName("_propLink"),
       Categories(UITag),
@@ -456,16 +456,16 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |
           |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
           |of care!""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    for (
-	      thing <- inv.contextAllThings;
-	      prop <- inv.definingContextAsProperty
-	    )
-	      yield ExactlyOne(ExternalLinkType(thing.toThingId + "?prop=" + prop.toThingId))
-	  }
-	}
-	
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for (
+        thing <- inv.contextAllThings;
+        prop <- inv.definingContextAsProperty
+      )
+        yield ExactlyOne(ExternalLinkType(thing.toThingId + "?prop=" + prop.toThingId))
+    }
+  }
+  
   def getCreateInstanceUrl(inv:Invocation):InvocationValue[String] = {
     implicit val state = inv.state
       // First, figure out the linkback if there is one:
@@ -495,7 +495,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       }
         yield url
   }
-	
+  
   lazy val CreateInstanceLinkMethod = new InternalMethod(CreateInstanceLinkOID,
     toProps(
       setName("_createInstanceLink"),
@@ -504,9 +504,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details("""```
         |MODEL -> _createInstanceLink -> _linkButton(LABEL)
         |```
-	      |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
-	      |
-	      |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
+        |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
+        |
+        |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
         |```
         |MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
         |```
@@ -522,7 +522,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         yield ExactlyOne(ExternalLinkType(url))
     }
   }
-	
+  
   lazy val CreateButtonFunction = new InternalMethod(CreateButtonOID,
     toProps(
       setName("_createButton"),
@@ -637,11 +637,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |editable on the Thing's page, but you only want to show it when needed. You can say:
           |
           |    \[[_QLButton(\""Edit My Model Property\"", My Model Property._edit)\]]""".stripMargin)))
-	{
+  {
     def buildHtml(label:String, core:String):String = {
       s"""<a class="btn btn-primary _qlInvoke" $core>$label</a>"""
     }
-	}
+  }
 
   lazy val QLLink = new ClickableQLBase(QLLinkOID,
     toProps(
