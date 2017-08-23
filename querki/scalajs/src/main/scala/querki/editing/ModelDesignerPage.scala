@@ -228,7 +228,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
                   else
                     "Not currently Publishable -- click to edit Publish properties"
                 
-                querkiButton(faIcon("rss"))(
+                plainQuerkiButton(faIcon("rss"))(
                   title:=tit,
                   id:="_editPublish",
                   href:=Publication.editPublicationFactory.pageUrl(model))                
