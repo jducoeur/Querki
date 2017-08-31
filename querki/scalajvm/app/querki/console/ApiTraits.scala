@@ -3,42 +3,29 @@ package querki.console
 import querki.globals._
 import querki.util.PublicException
 
+import ConsoleFunctions._
+
 /**
- * This typeclass represents a Type that can be parsed from the Console.
+ * This is the return value from a Command. It is how Commands can have
+ * side-effects: the returned CommandEffect is checked (to make sure that
+ * the user has the correct permissions), and then the effect is executed.
  */
-trait ParamParseable[T] {
+case class CommandEffect(
   /**
-   * Given a string parameter from a console command, parse it or return an error.
+   * The InternalMethod that resulted in this CommandEffect. Ideally we would just extract that
+   * from the parse tree, but that isn't easily available through processMethod(), so we just
+   * require that each Command add it in manually.
+   * 
+   * This will be used to check the permissions on the Command, and confirm that this user is
+   * allowed to invoke it. We can't check the permissions before executing the Command, but
+   * that's okay -- since functions are pure, we don't *actually* care until we need to
+   * execute the effect.
    */
-  def parse(str:String):Either[PublicException, T]
-}
-
-case class ConsoleParam[T : ParamParseable](name:String, desc:String) {
-  def parse(str:String):Either[PublicException, T] = {
-    implicitly[ParamParseable[T]].parse(str)
-  }
-}
-
-/**
- * The full signature of a Command that can be issued in the Console, that
- * somebody is going to handle.
- */
-abstract class ConsoleCommand(
-  val name:String, 
-  val desc:String,
-  val requiresSpace:Boolean,
-  val params:ConsoleParam[_]*
-) {
-  // TODO: this handler should probably return something more interesting:
-  def handle(inv:CommandInvocation):Future[Unit]
-}
-
-// TODO: properly speaking, these args should probably be a proper data
-// structure that we are destructuring and restructuring using Shapeless,
-// so that we don't get so squishy about the types here.
-//
-// When we have a minute to pause and think, see about redoing the Console
-// API like that.
-
-case class FilledArg[T : ParamParseable](name:String, v:T)
-case class CommandInvocation(name:String, context:ConsoleContextProvider[_], args:Map[String, FilledArg[_]])
+  command:AnyProp,
+  
+  /**
+   * The actual effect. Note that CommandEffect is not serializable because of this! This is
+   * allowed and expected to cause some sort of side-effect.
+   */
+  effect:() => Future[CommandResult]
+)
