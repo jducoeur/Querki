@@ -100,6 +100,11 @@ abstract class Page(pageName:String = "")
   }
   
   /**
+   * Pages can override this to do something at the very end.
+   */
+  def afterRendered():Unit = {}
+  
+  /**
    * Display the specified alert at the top of the page.
    * 
    * TBD: instead of isError, we should probably take an enumeration of the four standard Alert types from
@@ -171,6 +176,7 @@ abstract class Page(pageName:String = "")
       reindex()
       renderedContentPromise.success(fullyRendered)
       PageManager.onPageRendered(this)
+      afterRendered()
       // This is really just a signal to the test harness that we're done rendering:
       renderSignal <= span(id:="_pageRendered")
     }

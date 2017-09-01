@@ -67,6 +67,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.identity.skilllevel.SkillLevelEcot(ecology)
     new querki.history.HistoryEcot(ecology)
     new querki.publication.PublicationEcot(ecology)
+    new querki.console.ConsoleEcot(ecology)
   }
 
   /**

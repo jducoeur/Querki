@@ -697,3 +697,42 @@ dd {
 ._unsubItem {
   vertical-align: middle;
 }
+
+
+/**************************
+ * The Console page
+ *
+ * The heights here are pretty questionable and arbitrary, but they're a starting point.
+ *
+ * TODO: get a serious CSS hacker to opine on how to do this right.
+ */
+
+._console {
+}
+
+._consoleOutput {
+  height: 50vh;
+  border: 1px solid;
+  font: monospace;
+  font-size: 16px;
+  font-family: Courier New;
+  background-color: black;
+  color: white;
+  border-radius: 10px;
+}
+
+._consoleInput {
+  margin-top: 5px;
+  height: 15vh;
+  border: 1px solid;
+  font: monospace;
+  font-size: 16px;
+  font-family: Courier New;
+  background-color: black;
+  color: white;
+  border-radius: 10px;
+}
+
+._consoleInput:focus {
+  outline: none;
+}

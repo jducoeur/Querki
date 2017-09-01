@@ -92,3 +92,13 @@ class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
     $(e).autosize()
   }
 }
+
+class RxTextAreaFixedSize(mods:Modifier*)(implicit val ecology:Ecology)
+  extends RxTextBase[dom.html.TextArea]
+{
+  def doRender() = textarea(mods)
+  
+  override def onCreate(e:dom.html.TextArea) = {
+    $(e).on("input", { e:dom.Element => update() })
+  }
+}
