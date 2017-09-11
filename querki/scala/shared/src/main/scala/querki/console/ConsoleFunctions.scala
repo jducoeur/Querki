@@ -13,4 +13,5 @@ trait ConsoleFunctions {
 object ConsoleFunctions {
   sealed trait CommandResult
   case class DisplayTextResult(str:String) extends CommandResult
+  case class ErrorResult(str:String) extends CommandResult
 }

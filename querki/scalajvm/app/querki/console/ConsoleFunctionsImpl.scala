@@ -15,5 +15,8 @@ class ConsoleFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
     // TODO: Why isn't the second parameter here working implicitly? I'm missing something about
     // the typeclass invocation. Maybe it's ambiguous? Yeah, probably.
     Console.invoke(cmd)(ConsoleContextProvider.stateContextProvider(this))
+      .recover {
+        case ConsoleException(msg) => ErrorResult(msg)
+      }
   }
 }

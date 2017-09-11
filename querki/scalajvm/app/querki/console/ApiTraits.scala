@@ -29,3 +29,5 @@ case class CommandEffect(
    */
   effect:() => Future[CommandResult]
 )
+
+case class ConsoleException(msg:String) extends Exception(msg)

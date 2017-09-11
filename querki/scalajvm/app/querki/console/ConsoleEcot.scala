@@ -20,7 +20,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
   
   import MOIDs._
   
-  lazy val AccessControl = interface[querki.security.AccessControl]
+  val AccessControl = initRequires[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -42,7 +42,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
       // The result *should* be a single CommandEffect. If it isn't, something's very wrong.
       // TODO: this needs to become more sophisticated, and cope with errors and such more
       // gracefully:
-      val effect = qv.firstAs(CommandType).getOrElse(throw new Exception("That command didn't result in a CommandEffect!"))
+      val effect = qv.firstAs(CommandType).getOrElse(throw new ConsoleException("That isn't a legal Command!"))
       
       // Now the important stuff. Fetch the Command's required Permission...
       val permOpt = for {
@@ -121,6 +121,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
   }
   
   override lazy val props = Seq(
-    SpaceCommandProp
+    SpaceCommandProp,
+    TestCommand
   )
 }

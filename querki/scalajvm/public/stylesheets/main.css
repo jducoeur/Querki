@@ -719,6 +719,7 @@ dd {
   background-color: black;
   color: white;
   border-radius: 10px;
+  overflow: auto;
 }
 
 ._consoleInput {
@@ -735,4 +736,16 @@ dd {
 
 ._consoleInput:focus {
   outline: none;
+}
+
+._consoleOutCmd {
+  color: #dddddd;
+}
+
+._consoleOutErr {
+  color: #ffaaaa;
+}
+
+._consoleOutMsg {
+  color: #ffffff;
 }
