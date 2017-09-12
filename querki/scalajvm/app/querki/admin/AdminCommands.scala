@@ -6,8 +6,9 @@ import akka.util.Timeout
 
 import querki.console.ConsoleFunctions._
 import querki.globals._
+import querki.identity.GuestUser
 import querki.spaces.messages._
-
+import querki.util.PublicException
 
 /**
  * This mini-Ecot only exists to hold the Commands. It lives under AdminEcot, and does *not* have its own
@@ -25,7 +26,7 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
   implicit val timeout = Timeout(30 seconds)
   
   lazy val InspectByEmailCmd = Console.defineAdminCommand(
-    InspectByEmailOID, 
+    InspectByEmailCmdOID, 
     "Inspect by Email",
     "This doesn't actually *do* anything -- it just demonstrates that the Console is working.")
   { inv =>
@@ -34,10 +35,18 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
     
     val result = for {
       emailAddr <- inv.processParamFirstAs(0, TextType)
-      targetUser <- inv.opt(UserAccess.getUserByHandleOrEmail(emailAddr.text))
+      targetUser <- 
+        inv.opt(
+            UserAccess.getUserByHandleOrEmail(emailAddr.text)
+            .orElse(UserAccess.getIdentityByEmail(emailAddr.text).map(GuestUser(_))), 
+          Some(PublicException.raw("No User found with that Email Address")))
       identityStrs = targetUser.identities.map(ident => s"Identity ${ident.id}: ${ident.handle} -- ${ident.name} (${ident.email})").mkString("\n")
       localIdents = Person.localIdentities(targetUser)
-      personOpt = localIdents.headOption.flatMap(Person.localPerson(_))
+      personOpt =
+        if (localIdents.isEmpty)
+          Person.localPersonIncludingInvitees(targetUser.mainIdentity.id)
+        else
+          localIdents.headOption.flatMap(Person.localPerson(_))
       MySpaces(ownedByMe, memberOf) <- inv.fut(SpaceOps.spaceManager ? ListMySpaces(targetUser.id))
       ownsMsg = if (ownedByMe.isEmpty) "Owns no Spaces" else s"Owns Spaces ${ownedByMe.map(det => s"${det.display} (${det.id})").mkString(", ")}"
       memberMsg = if (memberOf.isEmpty) "In no Spaces" else s"In Spaces ${memberOf.map(det => s"${det.display} (${det.id})").mkString(", ")}"
@@ -54,8 +63,26 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
       
     result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
   }
+  
+  lazy val DeleteEmailAddressCmd = Console.defineAdminCommand(
+    DeleteEmailAddressCmdOID, 
+    "Delete Email Address", 
+    "Removes the specified email address from Querki. Does *not* delete the Identity. USE ONLY TO FIX BROKEN INVITATIONS.")
+  { inv =>
+    
+    implicit val state = inv.state
+    
+    val result = for {
+      emailAddr <- inv.processParamFirstAs(0, TextType)
+      resultingUserOpt <- inv.fut(UserAccess.deleteEmailAddress(emailAddr.text))
+    }
+      yield DisplayTextResult(s"Email address $emailAddr has been removed from User ${resultingUserOpt.map(_.id)}")
+      
+    result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
+  }
 
   override lazy val props = Seq(
+    DeleteEmailAddressCmd,
     InspectByEmailCmd
   )
 }

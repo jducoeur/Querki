@@ -622,6 +622,10 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     }
   }
   
+  def localPersonIncludingInvitees(identity:IdentityId)(implicit state:SpaceState):Option[Thing] = {
+    withCache(_.allPeopleByIdentityId.get(identity))
+  }
+  
   def user2Ref(user:User)(implicit state:SpaceState):UserRef = {
     UserRef(user.id, localIdentities(user).headOption.map(_.id))
   }

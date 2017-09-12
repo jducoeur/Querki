@@ -40,6 +40,9 @@ case class PublicException(msgName:String, params:Any*) extends Exception {
   }
   override def getMessage = s"$msgName(${params.mkString(", ")})"
 }
+object PublicException {
+  def raw(msg:String) = PublicException("General.public", msg)
+}
 object UnexpectedPublicException extends PublicException("General")
 
 /**

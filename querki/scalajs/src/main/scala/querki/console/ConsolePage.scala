@@ -63,7 +63,7 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
                 Client[ConsoleFunctions].consoleCommand(cmd).call().map { result =>
                   val rendered = result match {
                     case DisplayTextResult(res) => p(fixup(res), cls:="_consoleOutMsg").render
-                    case ErrorResult(msg) => p(s"Error: ${fixup(msg)}", cls:="_consoleOutErr").render
+                    case ErrorResult(msg) => p("Error: ", fixup(msg), cls:="_consoleOutErr").render
                   }
                   outputArea.mapElem { o =>
                     $(o).append(p(rawCmd, cls:="_consoleOutCmd").render)

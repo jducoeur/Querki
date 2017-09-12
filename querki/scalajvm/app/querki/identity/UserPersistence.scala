@@ -341,6 +341,28 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     }
   }
   
+  private val plainIdentityParser:RowParser[Identity] =
+    for {
+      email <- str("email")
+      identityOID <- oid("id")
+      name <- str("name")
+      handle <- SqlParser.get[Option[String]]("handle").map(_.getOrElse(""))
+      kind <- int("kind")
+    }
+      yield 
+        Identity(identityOID, EmailAddress(email), "", handle, name, kind)
+      
+  def getIdentityByEmail(email:String):Option[Identity] = {
+    val query = SQL("""
+            SELECT id, name, userId, authentication, email, handle, kind
+              FROM Identity
+            WHERE email = {email}""")
+          .on("email" -> email)
+    QDB(ShardKind.System) { implicit conn =>
+      query.as(plainIdentityParser.singleOpt)
+    }
+  }
+  
   def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity] = {
     // Make sure that email gets normalized:
     val email = emailIn.toLowerCase()
@@ -500,5 +522,29 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         .on("id" -> userId.raw)
         .as(int("userVersion").singleOpt)
     }    
+  }
+  
+  def deleteEmailAddress(email:String):Future[Option[User]] = {
+    val oldUserOpt = loadByEmail(EmailAddress(email), None)
+    
+    QDB(ShardKind.System) { implicit conn =>
+      val update = SQL("""
+          UPDATE Identity
+             SET email=NULL
+           WHERE email={email}
+          """)
+        .on("email" -> email)
+        
+      update.executeUpdate
+    }
+    
+    oldUserOpt.map { oldUser =>
+      oldUser.identities.foreach { identity =>
+        IdentityAccess.invalidateCache(identity.id)
+      }
+
+      val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(oldUser.id) }
+      updateUserCacheFor(userOpt)
+    }.getOrElse(fut(None))
   }
 }

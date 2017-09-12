@@ -120,7 +120,8 @@ package object identity {
     def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity]
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
     def localPerson(identity:IdentityId)(implicit state:SpaceState):Option[Thing]
-      
+    def localPersonIncludingInvitees(identity:IdentityId)(implicit state:SpaceState):Option[Thing]
+    
     /**
      * All the people who have been invited into this Space.
      */
@@ -287,6 +288,7 @@ package object identity {
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
     def getFullIdentity(id:IdentityId):Option[FullIdentity]
+    def getIdentityByEmail(email:String):Option[Identity]
     def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)]
     // WARNING: this should *not* often be used! It is dangerous from an Identity-security POV!
     def getUserByHandleOrEmail(raw:String):Option[User]
@@ -299,5 +301,6 @@ package object identity {
     // Intended for use when inviting somebody by email address. If this email address is already known,
     // that Identity is returned; otherwise, it creates a new, empty SimpleEmail Identity.
     def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity]
+    def deleteEmailAddress(email:String):Future[Option[User]]
   }
 }

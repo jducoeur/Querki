@@ -27,7 +27,8 @@ private[admin] object MOIDs extends EcotIds(43) {
   val HeaderOID = moid(1)
   val BodyOID = moid(2)
   val ClusterAddressOID = moid(3)
-  val InspectByEmailOID = moid(4)
+  val InspectByEmailCmdOID = moid(4)
+  val DeleteEmailAddressCmdOID = moid(5)
 }
 
 private[admin] trait AdminInternal extends EcologyInterface {
