@@ -13,9 +13,7 @@ class ConsoleFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
   def doRoute(req:Request):Future[String] = route[ConsoleFunctions](this)(req)
   
   def consoleCommand(cmd:String):Future[CommandResult] = {
-    // TODO: Why isn't the second parameter here working implicitly? I'm missing something about
-    // the typeclass invocation. Maybe it's ambiguous? Yeah, probably.
-    Console.invoke(cmd)(ConsoleContextProvider.stateContextProvider(this))
+    Console.invoke(this, cmd)
       .recover {
         case ConsoleException(msg) => ErrorResult(msg)
         case ex:PublicException => ErrorResult(ex.display(Some(rc)))

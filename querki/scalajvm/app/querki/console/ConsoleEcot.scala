@@ -3,6 +3,7 @@ package querki.console
 import scala.xml.NodeSeq
 
 import models._
+import querki.api._
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
@@ -32,9 +33,11 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
     ApiRegistry.registerApiImplFor[ConsoleFunctions, ConsoleFunctionsImpl](SpaceOps.spaceRegion, true, true)
   }
   
-  def invoke[T : ConsoleContextProvider](cmdStr:String):Future[CommandResult] = {
-    val context = implicitly[ConsoleContextProvider[T]]
-    implicit val state = context.stateOpt.getOrElse(System.State)
+  def invoke(context:AutowireApiImpl, cmdStr:String):Future[CommandResult] = {
+    implicit val state = context match {
+      case stateImpl:SpaceApiImpl => stateImpl.state
+      case _ => System.State
+    }
     val qlContext = QLContext(ExactlyOne(LinkType(state)), Some(context.rc))
     val cmdText = QLText(cmdStr)
     
@@ -75,11 +78,11 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
       }
 
       // Finally, we seem to have passed the gauntlet, so it's time to actually do it:
-      effect.effect()
+      effect.effect(context)
     }
   }
   
-  def defineAdminCommand(oid:OID, name:String, summary:String, otherProps:(OID, QValue)*)(handler:Invocation => Future[CommandResult]) = {
+  def defineAdminCommand(oid:OID, name:String, summary:String, otherProps:(OID, QValue)*)(handler:CommandEffectArgs => Future[CommandResult]) = {
     new InternalMethod(oid, 
       toProps(
         setName(name),
@@ -89,7 +92,23 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
     {
       override def qlApply(invIn:Invocation):QFut = {
         fut(ExactlyOne(CommandType(CommandEffect(this,
-          () => handler(invIn)
+          api => handler(CommandEffectArgs(invIn, api))
+        ))))
+      }
+    }
+  }
+  
+  def defineSpaceCommand(oid:OID, name:String, summary:String, perms:Seq[OID], otherProps:(OID, QValue)*)(handler:CommandEffectArgs => Future[CommandResult]) = {
+    new InternalMethod(oid, 
+      toProps(
+        setName(name),
+        setInternal,
+        SpaceCommandProp(perms:_*),
+        Summary(summary)))
+    {
+      override def qlApply(invIn:Invocation):QFut = {
+        fut(ExactlyOne(CommandType(CommandEffect(this,
+          api => handler(CommandEffectArgs(invIn, api))
         ))))
       }
     }
@@ -155,7 +174,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
   {
     override def qlApply(invIn:Invocation):QFut = {
       fut(ExactlyOne(CommandType(CommandEffect(this,
-        () => fut(DisplayTextResult("Console commands are working."))
+        api => fut(DisplayTextResult("Console commands are working."))
       ))))
     }
   }

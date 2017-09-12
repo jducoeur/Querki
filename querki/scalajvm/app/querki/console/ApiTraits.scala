@@ -1,9 +1,13 @@
 package querki.console
 
+import querki.api.AutowireApiImpl
 import querki.globals._
+import querki.ql.Invocation
 import querki.util.PublicException
 
 import ConsoleFunctions._
+
+case class CommandEffectArgs(inv:Invocation, api:AutowireApiImpl)
 
 /**
  * This is the return value from a Command. It is how Commands can have
@@ -27,7 +31,7 @@ case class CommandEffect(
    * The actual effect. Note that CommandEffect is not serializable because of this! This is
    * allowed and expected to cause some sort of side-effect.
    */
-  effect:() => Future[CommandResult]
+  effect:AutowireApiImpl => Future[CommandResult]
 )
 
 case class ConsoleException(msg:String) extends Exception(msg)

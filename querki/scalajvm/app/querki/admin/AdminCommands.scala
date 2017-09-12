@@ -29,8 +29,9 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
     InspectByEmailCmdOID, 
     "Inspect by Email",
     "This doesn't actually *do* anything -- it just demonstrates that the Console is working.")
-  { inv =>
+  { args =>
     
+    val inv = args.inv
     implicit val state = inv.state
     
     val result = for {
@@ -68,8 +69,9 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
     DeleteEmailAddressCmdOID, 
     "Delete Email Address", 
     "Removes the specified email address from Querki. Does *not* delete the Identity. USE ONLY TO FIX BROKEN INVITATIONS.")
-  { inv =>
+  { args =>
     
+    val inv = args.inv
     implicit val state = inv.state
     
     val result = for {
