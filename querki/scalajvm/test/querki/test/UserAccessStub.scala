@@ -36,6 +36,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def getByUserId(requester:User, userId:OID):Option[User] = ???
   def getIdentity(rawHandle:String):Option[OID] = ???
   def getFullIdentity(id:IdentityId):Option[FullIdentity] = ???
+  def getIdentityByEmail(email:String):Option[Identity] = ???
   def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)] = ???
   def getUserByHandleOrEmail(raw:String):Option[User] = ???
   def getUserByHandle(handle:String):Option[User] = ???
@@ -43,6 +44,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = ???
   def getUserVersion(userId:UserId):Option[Int] = ???
   def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity] = ???
+  def deleteEmailAddress(email:String):Future[Option[User]] = ???
   
   // Implemented stubs
   def getIdentity(id:OID):Option[Identity] = identitiesById.get(id)
