@@ -36,6 +36,12 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
     }
   }
   
+  def fixup(str:String) = { 
+    val segments = str.split("\n").toSeq
+    val withBreaks:Seq[Modifier] = segments.headOption.map(str => str:Modifier).toSeq ++: segments.drop(1).flatMap(seg => Seq(br(), seg:Modifier))
+    MSeq(withBreaks)
+  }
+  
   def pageContent =
     for {
       // For now, this page just starts -- it doesn't need any roundtrip:
@@ -56,8 +62,8 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
                     rawCmd
                 Client[ConsoleFunctions].consoleCommand(cmd).call().map { result =>
                   val rendered = result match {
-                    case DisplayTextResult(res) => p(res, cls:="_consoleOutMsg").render
-                    case ErrorResult(msg) => p(s"Error: $msg", cls:="_consoleOutErr").render
+                    case DisplayTextResult(res) => p(fixup(res), cls:="_consoleOutMsg").render
+                    case ErrorResult(msg) => p(s"Error: ${fixup(msg)}", cls:="_consoleOutErr").render
                   }
                   outputArea.mapElem { o =>
                     $(o).append(p(rawCmd, cls:="_consoleOutCmd").render)
