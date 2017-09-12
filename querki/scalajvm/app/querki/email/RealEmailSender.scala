@@ -116,9 +116,9 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     val SessionWrapper(session) = createSession()
     val EmailMsg(from, to, toName, senderName, subjectWiki, bodyWiki, footerWiki) = msgInfo
     val msg = new MimeMessage(session)
-    msg.setFrom(new InternetAddress(from.addr))
+    msg.setFrom(new InternetAddress(from.addr, s"Querki for $senderName"))
   
-    val replyAddrs = Array(new InternetAddress(from.addr, senderName).asInstanceOf[Address])
+    val replyAddrs = Array(new InternetAddress(from.addr, "Do not reply to this email").asInstanceOf[Address])
     msg.setReplyTo(replyAddrs)
   
     // TBD: there must be a better way to do this. It's a nasty workaround for the fact
