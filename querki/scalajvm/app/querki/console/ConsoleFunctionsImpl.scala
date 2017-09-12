@@ -2,6 +2,7 @@ package querki.console
 
 import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.globals._
+import querki.util.PublicException
 
 import ConsoleFunctions._
 
@@ -17,6 +18,7 @@ class ConsoleFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
     Console.invoke(cmd)(ConsoleContextProvider.stateContextProvider(this))
       .recover {
         case ConsoleException(msg) => ErrorResult(msg)
+        case ex:PublicException => ErrorResult(ex.display(Some(rc)))
       }
   }
 }

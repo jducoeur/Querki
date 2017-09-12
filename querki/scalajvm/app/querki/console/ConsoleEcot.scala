@@ -14,6 +14,8 @@ object MOIDs extends EcotIds(71) {
   val SpaceCommandOID = moid(1)
   val CommandTypeOID = moid(2)
   val TestCommandOID = moid(3)
+  val AdminCommandOID = moid(4)
+  val TestAdminCommandOID = moid(5)
 }
 
 class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Console {
@@ -33,7 +35,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
   def invoke[T : ConsoleContextProvider](cmdStr:String):Future[CommandResult] = {
     val context = implicitly[ConsoleContextProvider[T]]
     implicit val state = context.stateOpt.getOrElse(System.State)
-    val qlContext = QLRequestContext(context.rc)
+    val qlContext = QLContext(ExactlyOne(LinkType(state)), Some(context.rc))
     val cmdText = QLText(cmdStr)
     
     // First, we process the command as QL. Note that we do this completely ignoring permissions
@@ -44,24 +46,52 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
       // gracefully:
       val effect = qv.firstAs(CommandType).getOrElse(throw new ConsoleException("That isn't a legal Command!"))
       
-      // Now the important stuff. Fetch the Command's required Permission...
-      val permOpt = for {
-        permId <- effect.command.firstOpt(SpaceCommandProp)
-        rawProp <- state.prop(permId)
-        perm <- rawProp.confirmType(LinkType)
-      }
-        yield perm
-      val perm = permOpt.getOrElse(throw new Exception(s"Command ${effect.command} didn't have a proper SpaceCommandProp!"))
+      // Now the important stuff -- checking whether the user is allowed to do this.
+      // TODO: make this more composable and FP, instead of throwing Exceptions!
       
-      // ... and check whether the user *has* that Permission:
-      // TODO: this should allow us to check on some object other than state. Indeed, invoke() should really take a
-      // ThingId, use that for the QLContext, and use it here.
-      if (!AccessControl.hasPermission(perm, state, context.user, state.id))
-        // TODO: this should give a more useful error.
-        throw new Exception(s"You don't have permission to invoke the command ${effect.command.displayName}!")
+      // Is this an Admin-only command?
+      val adminPermOpt = effect.command.firstOpt(AdminCommandProp)
+      if (adminPermOpt.isDefined) {
+        // Yes -- check whether they're an admin
+        if (!context.user.isAdmin) {
+          throw new ConsoleException(s"Command ${effect.command} is only legal for Querki administrators.")
+        }
+      } else {
+        // No -- fetch the Command's required Permission
+        val permOpt = for {
+          permId <- effect.command.firstOpt(SpaceCommandProp)
+          rawProp <- state.prop(permId)
+          perm <- rawProp.confirmType(LinkType)
+        }
+          yield perm
+        val perm = permOpt.getOrElse(throw new ConsoleException(s"Command ${effect.command} didn't have a proper SpaceCommandProp!"))
         
+        // ... and check whether the user *has* that Permission:
+        // TODO: this should allow us to check on some object other than state. Indeed, invoke() should really take a
+        // ThingId, use that for the QLContext, and use it here.
+        if (!AccessControl.hasPermission(perm, state, context.user, state.id))
+          // TODO: this should give a more useful error.
+          throw new ConsoleException(s"You don't have permission to invoke the command ${effect.command.displayName}!")
+      }
+
       // Finally, we seem to have passed the gauntlet, so it's time to actually do it:
       effect.effect()
+    }
+  }
+  
+  def defineAdminCommand(oid:OID, name:String, summary:String, otherProps:(OID, QValue)*)(handler:Invocation => Future[CommandResult]) = {
+    new InternalMethod(oid, 
+      toProps(
+        setName(name),
+        setInternal,
+        AdminCommandProp(true),
+        Summary(summary)))
+    {
+      override def qlApply(invIn:Invocation):QFut = {
+        fut(ExactlyOne(CommandType(CommandEffect(this,
+          () => handler(invIn)
+        ))))
+      }
     }
   }
     
@@ -106,6 +136,16 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
       setInternal,
       Summary("Commands that can be executed from the Console must set this, and specify the required permissions.")))
   
+  /**
+   * TBD: ideally, this should have Unit value -- the presence of the flag is the signal, and
+   * we don't care about its value.
+   */
+  lazy val AdminCommandProp = new SystemProperty(AdminCommandOID, Core.YesNoType, Optional,
+    toProps(
+      setName("_adminCommand"),
+      setInternal,
+      Summary("Signifies a command that can *only* be executed by a Querki Administrator.")))
+  
   lazy val TestCommand = new InternalMethod(TestCommandOID, 
     toProps(
       setName("_testCommand"),
@@ -120,8 +160,16 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
     }
   }
   
+  lazy val TestAdminCommand = defineAdminCommand(TestAdminCommandOID, "_testAdminCommand", 
+    "Doesn't do anything, just checks that AdminCommands are working") 
+  { invIn =>
+    fut(DisplayTextResult("Admin console commands are working."))
+  }
+  
   override lazy val props = Seq(
     SpaceCommandProp,
-    TestCommand
+    AdminCommandProp,
+    TestCommand,
+    TestAdminCommand
   )
 }

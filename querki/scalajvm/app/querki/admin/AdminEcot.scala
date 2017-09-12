@@ -27,6 +27,7 @@ private[admin] object MOIDs extends EcotIds(43) {
   val HeaderOID = moid(1)
   val BodyOID = moid(2)
   val ClusterAddressOID = moid(3)
+  val InspectByEmailOID = moid(4)
 }
 
 private[admin] trait AdminInternal extends EcologyInterface {
@@ -39,6 +40,9 @@ private[admin] trait AdminInternal extends EcologyInterface {
 class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOps with AdminInternal with querki.core.MethodDefs {
   import AdminActor._
   import MOIDs._
+  
+  val Console = initRequires[querki.console.Console]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Basic = interface[querki.basic.Basic]
@@ -186,6 +190,28 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     }
   }
   
+  
+  /***********************************************
+   * COMMANDS
+   ***********************************************/
+  
+  import querki.console.ConsoleFunctions._
+  
+  lazy val InspectByEmailCmd = Console.defineAdminCommand(
+    InspectByEmailOID, 
+    "Inspect by Email",
+    "This doesn't actually *do* anything -- it just demonstrates that the Console is working.")
+  { inv =>
+    
+    val result = for {
+      emailAddr <- inv.processParamFirstAs(0, TextType)
+      targetUser <- inv.opt(UserAccess.getUserByHandleOrEmail(emailAddr.text))
+    }
+      yield DisplayTextResult(s"That is user $targetUser")
+      
+    result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -202,6 +228,8 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   override lazy val props = Seq(
     ClusterAddressFunction,
+    
+    InspectByEmailCmd,
       
     SystemMsgHeader,
     SystemMsgBody
