@@ -105,7 +105,7 @@ object QLog {
       }    
   }
 
-  def spewThing(t:Thing)(implicit state:SpaceState) = {
+  def renderThing(t:Thing)(implicit state:SpaceState) = {
     def displayName = {
       try {
         t.displayName
@@ -116,13 +116,17 @@ object QLog {
     
     def renderProps = renderBundle(t)
     
-    val rendered = s"""Thing #${t.id} ($displayName)
+    s"""Thing #${t.id} ($displayName)
   In Space #${t.spaceId}
   Model #${t.model}
   Kind: ${t.kind}
   Properties:
 $renderProps
 """
+  }
+  
+  def spewThing(t:Thing)(implicit state:SpaceState) = {
+    val rendered = renderThing(t)
     spew(rendered)
   }
   

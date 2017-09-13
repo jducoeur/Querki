@@ -6,7 +6,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import akka.stream.Materializer
 
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter

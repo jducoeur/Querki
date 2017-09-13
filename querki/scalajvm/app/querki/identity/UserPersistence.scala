@@ -24,6 +24,7 @@ object UserMOIDs extends EcotIds(30)
 
 class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
+  lazy val Cluster = interface[querki.cluster.QuerkiCluster]
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val IdentityAccess = interface[IdentityAccess]
   lazy val UserCacheAccess = interface[UserCacheAccess]
@@ -206,95 +207,115 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * Creates a user based on the given information. Gets created as Pending or Free depending on
    * whether the email address is confirmed. (Different pathways get here in different ways.)
    */
-  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID] = None, identityExists:Boolean = true):Try[User] = Try {
-    // Note that both of these will either return None or throw an exception.
-    // We intentionally check email first, to catch the case where you've already created an
-    // account and have forgotten about it.
-    val emailOpt = loadByEmail(EmailAddress(info.email), 
-        Some({_ => throw new PublicException("User.emailExists", info.email)}))
-    val existingOpt = loadByHandle(info.handle, 
-        Some({_ => throw new PublicException("User.handleExists", info.handle)}))
+  def createUser(info:SignupInfo, confirmedEmail:Boolean, identityIdOpt:Option[OID], identityExists:Boolean):Future[User] = {
     // Belt and suspenders checks if this claims to be a SimpleEmail Identity that we are upgrading:
-    identityIdOpt.map { identityId =>
-      if (identityExists)
-        getFullIdentity(identityId) match {
-          case Some(identity) =>
-            if (identity.kind != IdentityKind.SimpleEmail) {
-              QLog.logAndThrowException(new Exception(s"Somehow attempting to upgrade an Identity that already has a User!"))
+    lazy val identityException:Option[Exception] = {
+      identityIdOpt.flatMap { identityId =>
+        if (identityExists) {
+          getFullIdentity(identityId) match {
+            case Some(identity) =>
+              if (identity.kind != IdentityKind.SimpleEmail) {
+                val ex = new Exception(s"Somehow attempting to upgrade an Identity that already has a User!")
+                QLog.error("Error in createUser", ex)
+                Some(ex)
+              } else 
+                None
+            case None => {
+              val ex = new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!") 
+              QLog.error("Error in createUser", ex)
+              Some(ex)
             }
-          case None => {
-            QLog.logAndThrowException(new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!"))
           }
-        }
-    }
-        
-    val level =
-      if (confirmedEmail)
-        UserLevel.FreeUser
-      else
-        UserLevel.PendingUser
-    val userId = OID.next(ShardKind.System)
-    val timestamp = org.joda.time.DateTime.now()
-    val authentication = Encryption.calcHash(info.password)
-      
-    QDB(ShardKind.System) { implicit conn =>
-      // Okay, seems to be legit
-      val userInsert = SQL("""
-          INSERT User
-            (id, level, join_date)
-            VALUES
-            ({userId}, {level}, {now})
-          """).on("userId" -> userId.raw, "level" -> level, "now" -> timestamp.toDate())
-      // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
-      userInsert.execute
-      
-      identityIdOpt match {
-        case Some(identityId) if (identityExists) => {
-          // We're upgrading an existing Identity.
-          val identityUpdate = SQL("""
-              UPDATE Identity
-                 SET  name = {display},
-                    userId = {userId},
-                      kind = {kind},
-                    handle = {handle},
-                     email = {email},
-            authentication = {authentication}
-               WHERE    id = {id}
-            """).on(
-              "id" -> identityId.raw,
-              "display" -> info.display,
-              "userId" -> userId.raw,
-              "kind" -> IdentityKind.QuerkiLogin,
-              "handle" -> info.handle,
-              "email" -> info.email,
-              "authentication" -> authentication
-            )
-          identityUpdate.executeUpdate()
-        }
-        case _ => {
-          // There is no pre-existing Identity, so create it from scratch:
-          val identityId = identityIdOpt.getOrElse(OID.next(ShardKind.System))
-          val identityInsert = SQL("""
-              INSERT Identity
-                (id, name, userId, kind, handle, email, authentication)
-                VALUES
-                ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
-              """).on(
-                "identityId" -> identityId.raw,
-                "display" -> info.display,
-                "userId" -> userId.raw,
-                "kind" -> IdentityKind.QuerkiLogin,
-                "handle" -> info.handle,
-                "email" -> info.email,
-                "authentication" -> authentication)
-          identityInsert.execute
-        }
+        } else 
+          None
       }
     }
     
-    // Finally, make sure that things load correctly
-    // TBD: this fails if I try to do it in the same transaction. Why?
-    checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+    // First, some synchronous checks to see if the request is okay.
+    // We intentionally check email first, to catch the case where you've already created an
+    // account and have forgotten about it.
+    if (loadByEmail(EmailAddress(info.email), None).isDefined)
+      Future.failed(new PublicException("User.emailExists", info.email))
+    else if (loadByHandle(info.handle, None).isDefined)
+      Future.failed(new PublicException("User.handleExists", info.handle))
+    else if (identityException.isDefined)
+      Future.failed(identityException.get)
+    else {
+      val level =
+        if (confirmedEmail)
+          UserLevel.FreeUser
+        else
+          UserLevel.PendingUser
+      val timestamp = org.joda.time.DateTime.now()
+      val authentication = Encryption.calcHash(info.password)
+  
+      Cluster.allocThingId().flatMap { userId =>
+        val identityIdFut:Future[OID] =
+          identityIdOpt match {
+            case Some(id) => fut(id)
+            case _ => Cluster.allocThingId()
+          }
+        
+        identityIdFut.map { identityId =>
+          QDB(ShardKind.System) { implicit conn =>
+            // Okay, seems to be legit
+            val userInsert = SQL("""
+                INSERT User
+                  (id, level, join_date)
+                  VALUES
+                  ({userId}, {level}, {now})
+                """).on("userId" -> userId.raw, "level" -> level, "now" -> timestamp.toDate())
+            // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
+            userInsert.execute
+            
+            if (identityExists) {
+              // We're upgrading an existing Identity.
+              val identityUpdate = SQL("""
+                  UPDATE Identity
+                     SET  name = {display},
+                        userId = {userId},
+                          kind = {kind},
+                        handle = {handle},
+                         email = {email},
+                authentication = {authentication}
+                   WHERE    id = {id}
+                """).on(
+                  "id" -> identityId.raw,
+                  "display" -> info.display,
+                  "userId" -> userId.raw,
+                  "kind" -> IdentityKind.QuerkiLogin,
+                  "handle" -> info.handle,
+                  "email" -> info.email,
+                  "authentication" -> authentication
+                )
+              identityUpdate.executeUpdate()
+            } else {
+              // There is no pre-existing Identity, so create it from scratch:
+              val identityInsert = SQL("""
+                  INSERT Identity
+                    (id, name, userId, kind, handle, email, authentication)
+                    VALUES
+                    ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
+                  """).on(
+                    "identityId" -> identityId.raw,
+                    "display" -> info.display,
+                    "userId" -> userId.raw,
+                    "kind" -> IdentityKind.QuerkiLogin,
+                    "handle" -> info.handle,
+                    "email" -> info.email,
+                    "authentication" -> authentication)
+              identityInsert.execute
+            }
+          }
+        
+          // Finally, make sure that things load correctly
+          // TODO: this should really happen in the same transaction as the above, but MySQL doesn't
+          // allow nested transactions. Restructure the code so that the key bit takes an implicit Connection
+          // instead.
+          checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+        }
+      }
+    }
   }
   
   private val identityParser:RowParser[FullIdentity] =
@@ -320,7 +341,29 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     }
   }
   
-  def findOrCreateIdentityByEmail(emailIn:String):FullIdentity = {
+  private val plainIdentityParser:RowParser[Identity] =
+    for {
+      email <- str("email")
+      identityOID <- oid("id")
+      name <- str("name")
+      handle <- SqlParser.get[Option[String]]("handle").map(_.getOrElse(""))
+      kind <- int("kind")
+    }
+      yield 
+        Identity(identityOID, EmailAddress(email), "", handle, name, kind)
+      
+  def getIdentityByEmail(email:String):Option[Identity] = {
+    val query = SQL("""
+            SELECT id, name, userId, authentication, email, handle, kind
+              FROM Identity
+            WHERE email = {email}""")
+          .on("email" -> email)
+    QDB(ShardKind.System) { implicit conn =>
+      query.as(plainIdentityParser.singleOpt)
+    }
+  }
+  
+  def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity] = {
     // Make sure that email gets normalized:
     val email = emailIn.toLowerCase()
     val query = SQL("""
@@ -328,31 +371,37 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
               FROM Identity
             WHERE email = {email}""")
           .on("email" -> email)
-    QDB(ShardKind.System) { implicit conn =>
-      query.as(identityParser.singleOpt) match {
-        // We found an Identity with that email address:
-        case Some(identity) => identity
-        // There isn't one, so create a trivial Identity so we can send and track emails to it:
-        case None => {
-          val identityId = OID.next(ShardKind.System)
+    // It's a bit unfortunate that we have to do this in two separate transactions, but
+    // the None case below involves a Future, so we must:
+    val identityOpt = QDB(ShardKind.System) { implicit conn =>
+      query.as(identityParser.singleOpt)
+    }
+    identityOpt match {
+      // We found an Identity with that email address:
+      case Some(identity) => fut(identity)
+      // There isn't one, so create a trivial Identity so we can send and track emails to it:
+      case None => {
+        Cluster.allocThingId().map { identityId =>
           // For the preliminary display name, we just use whatever comes before the @
           val displayName = email.takeWhile(_ != '@')
-          val identityInsert = SQL("""
-              INSERT Identity
-                (id, name, userId, kind, handle, email, authentication)
-                VALUES
-                ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
-              """).on(
-                "identityId" -> identityId.raw,
-                "display" -> displayName,
-                "userId" -> UnknownOID.raw,
-                "kind" -> IdentityKind.SimpleEmail,
-                // There is no handle for the time being:
-                "handle" -> "",
-                "email" -> email,
-                "authentication" -> "")
-          identityInsert.execute
-          FullIdentity(identityId, EmailAddress(email), "", displayName, UnknownOID, IdentityKind.SimpleEmail)
+          QDB(ShardKind.System) { implicit conn =>
+            val identityInsert = SQL("""
+                INSERT Identity
+                  (id, name, userId, kind, handle, email, authentication)
+                  VALUES
+                  ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
+                """).on(
+                  "identityId" -> identityId.raw,
+                  "display" -> displayName,
+                  "userId" -> UnknownOID.raw,
+                  "kind" -> IdentityKind.SimpleEmail,
+                  // There is no handle for the time being:
+                  "handle" -> "",
+                  "email" -> email,
+                  "authentication" -> "")
+            identityInsert.execute
+            FullIdentity(identityId, EmailAddress(email), "", displayName, UnknownOID, IdentityKind.SimpleEmail)
+          }
         }
       }
     }
@@ -473,5 +522,29 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         .on("id" -> userId.raw)
         .as(int("userVersion").singleOpt)
     }    
+  }
+  
+  def deleteEmailAddress(email:String):Future[Option[User]] = {
+    val oldUserOpt = loadByEmail(EmailAddress(email), None)
+    
+    QDB(ShardKind.System) { implicit conn =>
+      val update = SQL("""
+          UPDATE Identity
+             SET email=NULL
+           WHERE email={email}
+          """)
+        .on("email" -> email)
+        
+      update.executeUpdate
+    }
+    
+    oldUserOpt.map { oldUser =>
+      oldUser.identities.foreach { identity =>
+        IdentityAccess.invalidateCache(identity.id)
+      }
+
+      val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(oldUser.id) }
+      updateUserCacheFor(userOpt)
+    }.getOrElse(fut(None))
   }
 }

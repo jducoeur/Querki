@@ -53,7 +53,7 @@ trait Security { this:FuncMixin =>
             state
           },
           
-          shareByEmail(TestUser1)
+          shareByEmail(TestUser1, TestUser3)
         )
       },
       
@@ -77,8 +77,11 @@ trait Security { this:FuncMixin =>
       
       // Now, accept the invitation, and set up Test User 1:
       TestDef(None, RootPage(ExploreRestrictedSpace), "Accept the invitation for Test User 1") { state =>
+        // Make sure that TestUser3 also got invited:
+        extractInviteLink(TestUser3.email)
+       
         run(state,
-          acceptInvitationToJoinQuerki(TestUser1, ExploreRestrictedSpace)
+           acceptInvitationToJoinQuerki(TestUser1, ExploreRestrictedSpace)
         )
       },
       

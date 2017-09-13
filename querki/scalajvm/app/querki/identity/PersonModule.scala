@@ -377,7 +377,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     def getEmailIdentities():Future[Map[OID, FullIdentity]] = {
       val futs = inviteeEmails
         .map { email =>
-          Future { UserAccess.findOrCreateIdentityByEmail(email.addr) }
+          UserAccess.findOrCreateIdentityByEmail(email.addr)
         }
       Future.sequence(futs).map(_.map(identity => (identity.id -> identity))).map(_.toMap)
     }
@@ -387,18 +387,18 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     def createPersons(identities:Iterable[FullIdentity]):Future[SpaceState] = {
       (Future.successful(originalState) /: identities) { (stateFut, identity) =>
         stateFut.flatMap { state =>
-	        val propMap = 
-	          toProps(
+          val propMap = 
+            toProps(
               IdentityLink(identity.id),
               InvitationStatusProp(StatusInvitedOID),
-	            DisplayNameProp(identity.name),
-	            AccessControl.PersonRolesProp(inviteeRoles:_*),
-	            AccessControl.CanReadProp(AccessControl.OwnerTag))
-	        // Note the explicit and important assumption here, that this is being run local to the
-	        // Space!
-	        val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap)
-	        val nextFuture = SpaceOps.spaceRegion ? msg
-	        nextFuture.mapTo[ThingFound].map { case ThingFound(personId, newState) => newState }
+              DisplayNameProp(identity.name),
+              AccessControl.PersonRolesProp(inviteeRoles:_*),
+              AccessControl.CanReadProp(AccessControl.OwnerTag))
+          // Note the explicit and important assumption here, that this is being run local to the
+          // Space!
+          val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap)
+          val nextFuture = SpaceOps.spaceRegion ? msg
+          nextFuture.mapTo[ThingFound].map { case ThingFound(personId, newState) => newState }
         }
       }
     }  
@@ -527,31 +527,31 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
               // There's an existing Person, so modify it to add this invitation's role:
               val existingRoles = person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType)
               val msg = ChangeProps(rc.requester.get, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
-    	        (SpaceOps.spaceRegion ? msg) map {
-    	          case ThingFound(_, _) => None
-    	          case ThingError(ex, _) => Some(ex)
-    	        }
+              (SpaceOps.spaceRegion ? msg) map {
+                case ThingFound(_, _) => None
+                case ThingError(ex, _) => Some(ex)
+              }
             }
             case None => {
               // There is no Person for this Identity, so create it from scratch:
-    	        val propMap = 
-    	          toProps(
+              val propMap = 
+                toProps(
                   IdentityLink(identity.id),
                   InvitationStatusProp(StatusMemberOID),
-    	            DisplayNameProp(identity.name),
-    	            AccessControl.PersonRolesProp(roleId),
-    	            AccessControl.CanReadProp(AccessControl.OwnerTag)) ++
-    	          (if (identity.kind == IdentityKind.Trivial)
-    	             toProps(IsSimpleGuestProp(true))
-    	           else
-    	             emptyProps)
-    	        // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
-    	        // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
-    	        val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)
-    	        (SpaceOps.spaceRegion ? msg) map {
-    	          case ThingFound(_, _) => None
-    	          case ThingError(ex, _) => Some(ex)
-    	        }
+                  DisplayNameProp(identity.name),
+                  AccessControl.PersonRolesProp(roleId),
+                  AccessControl.CanReadProp(AccessControl.OwnerTag)) ++
+                (if (identity.kind == IdentityKind.Trivial)
+                   toProps(IsSimpleGuestProp(true))
+                 else
+                   emptyProps)
+              // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
+              // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
+              val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)
+              (SpaceOps.spaceRegion ? msg) map {
+                case ThingFound(_, _) => None
+                case ThingError(ex, _) => Some(ex)
+              }
             }
           }
         }
@@ -620,6 +620,10 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     withCache { cache =>
       user.identities.map(localPerson(_)).flatten.headOption
     }
+  }
+  
+  def localPersonIncludingInvitees(identity:IdentityId)(implicit state:SpaceState):Option[Thing] = {
+    withCache(_.allPeopleByIdentityId.get(identity))
   }
   
   def user2Ref(user:User)(implicit state:SpaceState):UserRef = {

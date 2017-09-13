@@ -10,6 +10,8 @@ Apps.alreadyThere=This space is already based on that App.
 
 Collections.concat.mismatchedTypes=The parameters of _concat() must all be the same type; this contains both {0} and {1}
 
+Console.error={0}
+
 DataModel.propsOfType.notAType=The _propsOfType function expects a Type; {0} is not one
 DataModel.usingSpace.notAnApp=The parameter of _usingSpace must be this Space or one of its Apps
 
@@ -55,6 +57,7 @@ Space.create.pendingUser=You are not allowed to create Spaces until you are upgr
 
 Space.createThing.nameExists=This Space already has a Thing with the name {0}
 Space.createThing.notAllowed=You are not allowed to create that
+Space.createThing.OIDExists=INTERNAL ERROR: Trying to create Thing, but got duplicate OID {0}! Please report this error, so we can figure out what happened. 
 
 Space.get.notFound=Space {0} was not found!
 

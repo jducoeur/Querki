@@ -102,10 +102,28 @@ trait TextTypeBasis { self:CoreEcot with WithQL =>
   abstract class TextTypeBase(oid:OID, pf:PropMap) extends SystemType[QLText](oid, pf
       ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
   {
-    private lazy val Core = interface[querki.core.Core]
+    import Collections.emptyTextMarkerStr
     
-    def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
-    def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
+    private lazy val Core = interface[querki.core.Core]
+  
+    // NOTE: serialization and deserialization deal with a special "marker" character.
+    // This is important, because otherwise a List/Set of Text, of length 1, where that single
+    // element is empty, serializes to empty String -- the same as length 0. This turns out to
+    // confuse Publication horribly, and is generally Wrong.
+    def doDeserialize(v:String)(implicit state:SpaceState) = {
+      if (v.equals(emptyTextMarkerStr))
+        QLText("")
+      else
+        QLText(v)
+    }
+    def doSerialize(v:QLText)(implicit state:SpaceState) = {
+      if (v.text.isEmpty)
+        emptyTextMarkerStr
+      else
+        v.text
+    }
+    // We do *not* want toUser() to be doing the empty-text marker thing.
+    override def doToUser(v:QLText)(implicit state:SpaceState):String = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       QL.process(v, context, lexicalThing = lexicalThing)
     }

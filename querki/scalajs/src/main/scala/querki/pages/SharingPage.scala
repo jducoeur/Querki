@@ -265,7 +265,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
             
           p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
           |twice, doing so excessively is frowned upon, as is sending unwelcome invitations.""".stripMargin, br(), 
-            b("Either of these is considered spam, and is grounds for removal from Querki.")),
+            em("Either of these is considered spam, and is grounds for removal from Querki.")),
             
             p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
             |to add that address to their Contacts.""".stripMargin),
@@ -273,10 +273,12 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
             p("""Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
             |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
             
+            p(b("""Invitation Text to include in the email:""")),
+            
             new RawDiv(inviteEditInfo.editor),
             
             div(cls:="control-group",
-              label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
+              label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated):"),
               div(id := "_inviteeControls", cls:="controls",
                 inviteeInput
               )

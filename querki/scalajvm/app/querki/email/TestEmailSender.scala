@@ -58,6 +58,7 @@ private [email] class TestEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
         messages = messages :+ details
       }
     }
+    override def toString = s"TestSession(${messages.mkString(", ")})"
   }
   type TSession = TestSession
 

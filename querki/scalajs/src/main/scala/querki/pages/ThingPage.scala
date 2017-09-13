@@ -118,10 +118,12 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       DataAccess.space.map(_.isApp).getOrElse(false)
     } else
       false
+    
+  def editButton(addlCls:Seq[String] = Seq.empty) = faIconButton("pencil", addlCls)
   
   lazy val topEditButton =
     new QLButtonGadget(
-      iconButton("edit", Seq("_qlInvoke"))(
+      editButton(Seq("_qlInvoke"))(
                   title:=s"Edit $thingName",
                   id:="_thingEdit",
                   data("thingid"):=thing,
@@ -137,10 +139,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     div(cls:="btn-group querki-icon-button",
       button(
         tpe:="button", 
-        cls:="btn btn-default btn-xs btn-primary _noPrint",
+        cls:="btn btn-default btn-sm _noPrint",
         dta.toggle:="dropdown",
         aria.haspopup:="true", aria.expanded:="false",
-        i(cls:="fa fa-share-alt", aria.hidden:="true"), " ",
+        faIcon("share-alt"), " ",
         span(cls:="caret"),
         title:="Share..."
       ),
@@ -163,7 +165,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     div(cls:="btn-group querki-icon-button",
       button(
         tpe:="button",
-        cls:=s"btn btn-xs btn-primary _noPrint",
+        cls:=s"btn btn-sm _noPrint",
         dta.toggle:="dropdown",
         aria.haspopup:="true", aria.expanded:="false",
         i(cls:="fa fa-rss", aria.hidden:="true"), " ",
@@ -195,10 +197,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     div(cls:="btn-group querki-icon-button",
       button(
         tpe:="button",
-        cls:=s"btn btn-xs $btnColor _noPrint",
+        cls:=s"btn btn-sm $btnColor _noPrint",
         dta.toggle:="dropdown",
         aria.haspopup:="true", aria.expanded:="false",
-        i(cls:="fa fa-rss", aria.hidden:="true"), " ",
+        faIcon("rss"), " ",
         if (needsPublish) {
           span(cls:="caret")
         },
@@ -237,7 +239,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         raw(appPrefix),
         raw(thingName), " ",
         if (isSpace)
-          querkiButton(faIcon("info"))(
+          plainQuerkiButton(faIcon("cog"))(
             title:=s"Info about $thingName",
             id:="_infoButton",
             href:=Pages.infoFactory.pageUrl()),
@@ -247,18 +249,18 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           if (thing.isModel) {
             MSeq(
               if (thing.isEditable) {
-                iconButton("edit")(
+                editButton()(
                   title:=s"Design $thingName",
                   id:="_thingEdit",
                   href:=Editing.modelDesignerFactory.pageUrl(thing))
               },
               if (thing.isInstantiatable) {
-                iconButton("plus")(
+                faIconButton("plus")(
                   title:=s"Create a $thingName",
                   href:=Pages.createAndEditFactory.pageUrl(thing))
               },
               if (thing.isEditable || thing.isInstantiatable) {
-                querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
+                plainQuerkiButton(MSeq(faIcon("pencil"), " ", faIcon("pencil"), " ", faIcon("pencil"), "..."))(
                   title:=s"Edit all instances of $thingName",
                   href:=Editing.editInstancesFactory.pageUrl(thing))
               }
@@ -268,7 +270,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             MSeq(
               if (thing.isEditable) {
                 if (thing.isTag) {
-                  iconButton("edit")(
+                  editButton()(
                     title:=s"Make $thingName into a real Thing",
                     href:=
                       Pages.createAndEditFactory.pageUrl(
@@ -276,17 +278,17 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                         (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                         "reifyTag" -> "true"))
                 } else if (isSpace) {
-                  iconButton("edit")(
+                  editButton()(
                     title:=s"Edit Space Info",
                     href:=Editing.editSpaceInfoFactory.pageUrl())
                 } else if (thing.kind == Kind.Property) {
-                  iconButton("edit")(
+                  editButton()(
                     title:=s"Edit $thingName",
                     href:=Editing.advancedEditorFactory.pageUrl(thing))
                 } else if (thing.hasFlag(std.publication.publishableProp)) {
                   // TODO: for now, Publishables have to use the Advanced Editor. This should change, and
                   // at that point this can go back to using the topEditButton:
-                  iconButton("edit")(
+                  editButton()(
                     title:=s"Edit $thingName",
                     href:=Editing.advancedEditorFactory.pageUrl(thing))                  
                 } else {
@@ -298,7 +300,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               },
               modelOpt match {
                 case Some(model) if (model.isInstantiatable) => {
-                  querkiButton(MSeq(icon("plus-sign"), "..."))(
+                  plainQuerkiButton(MSeq(faIcon("plus"), faIcon("ellipsis-h")))(
                     title:=s"Create another ${model.displayName}",
                     href:=Pages.createAndEditFactory.pageUrl(model))
                 }
@@ -313,7 +315,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         if (Publication.isPublishable(thing) && thing.isEditable) {
           publishButton
         },
-        Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
+        Gadget(faIconButton("refresh")(title:="Refresh this page"), { e => 
           $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
         })
       ),

@@ -9,8 +9,6 @@ import akka.cluster.singleton._
 import akka.pattern._
 import akka.util.Timeout
 
-import play.api.libs.concurrent.Execution.Implicits._
-
 import models.Wikitext
 
 import querki.core.QLText
@@ -29,6 +27,8 @@ private[admin] object MOIDs extends EcotIds(43) {
   val HeaderOID = moid(1)
   val BodyOID = moid(2)
   val ClusterAddressOID = moid(3)
+  val InspectByEmailCmdOID = moid(4)
+  val DeleteEmailAddressCmdOID = moid(5)
 }
 
 private[admin] trait AdminInternal extends EcologyInterface {
@@ -41,6 +41,9 @@ private[admin] trait AdminInternal extends EcologyInterface {
 class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOps with AdminInternal with querki.core.MethodDefs {
   import AdminActor._
   import MOIDs._
+  
+  // Sub-Ecot, which deals with all the Commands.
+  val cmds = new AdminCommands(e)
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Basic = interface[querki.basic.Basic]
@@ -187,6 +190,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       fut(ExactlyOne(Basic.PlainTextType(SystemManagement.clusterAddress)))
     }
   }
+  
   
   /***********************************************
    * PROPERTIES

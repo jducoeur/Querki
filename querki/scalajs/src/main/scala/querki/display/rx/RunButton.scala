@@ -36,3 +36,12 @@ class RunButton(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:
   
   def done() = { active() = false }
 }
+
+object RunButton {
+  /**
+   * This factory method is mainly here to save us from having to put annoying parens around the onClick parameter. Without
+   * them, the compiler interprets that param as the body of a subclass instead of the parameter, and gets confused.
+   */
+  def apply(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:String, mods:Modifier*)(onClick:RunButton => Unit)(implicit ecology:Ecology) =
+    new RunButton(kind, inactiveLabel, activeLabel, mods:_*)(onClick)
+}

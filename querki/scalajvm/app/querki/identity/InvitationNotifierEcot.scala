@@ -128,7 +128,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
           true,
           false)
           
-        Notifications.send(req, ExplicitRecipients(invitees.map(_.id)), note)
+        Notifications.send(req, ExplicitRecipients(Seq(invitee.id)), note)
       }
     }
   }

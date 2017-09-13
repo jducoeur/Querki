@@ -44,9 +44,10 @@ class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
     val guts =
       div(
         h1(pageTitle),
-        form(
-          div(cls:="form-group col-md-12",
-            div(cls:="input-group",
+        div(cls:="col-md-12",
+          form(
+            p("""To create a Space, type its name (letters, numbers and spaces only) below, and press the button."""),
+            div(cls:="form-group col-md-6",
               spaceName <= new RxInput(
                   Some(InputUtils.spaceNameFilter _), "text", 
                   id:="_newSpaceName", cls:="form-control", maxlength:=254, placeholder:=msg("namePlaceholder"), tabindex:=200),
@@ -60,6 +61,9 @@ class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
         ),
         hr(),
         h3("Or..."),
+        p(b("Advanced: "), 
+          """If you have a Space that was exported from Querki in XML format, or you have a MySQL database to import
+            |as a Querki Space, then press this button instead.""".stripMargin),
         p(
           new ButtonGadget(ButtonGadget.Normal, msg("importButton"), id:="_importButton", tabindex:=300)({ () =>
             Pages.importSpaceFactory.showPage()

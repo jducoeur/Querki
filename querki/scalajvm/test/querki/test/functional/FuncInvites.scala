@@ -13,19 +13,19 @@ trait FuncInvites { self:FuncMixin =>
     state -> page
   }
   
-  def shareByEmail(user:TestUser)(state:State):State = {
+  def shareByEmail(users:TestUser*)(state:State):State = {
     run(state,
       openSharing(),
       { state =>
         
         click on textField("invitees")
-        pressKeys(user.email + "\t")
-        
-        eventually { 
-          // TODO: this currently only works if there is only one mf_item -- which means only one
-          // email or collaborator listed:
-          find(className("mf_item")).get.text should include (user.email) 
+        users.foreach { user =>
+          pressKeys(user.email + "\n")
+          eventually { 
+            assert(findAll(className("mf_item")).exists(_.text.contains(user.email)))
+          }
         }
+        
         click on "_inviteButton"
         waitFor("_alertMsg")
         find(id("_alertMsg")).get.text should include ("Sent invites to")
@@ -47,11 +47,19 @@ trait FuncInvites { self:FuncMixin =>
     email.bodyMain.plaintext
   }
   
+  def fetchLatestEmailBodyTo(emailAddr:String):String = {
+    val sessions = IEmailInspector.sessions.filter(_.messages.exists(_.recipientEmail.addr.equalsIgnoreCase(emailAddr)))
+    if (sessions.isEmpty)
+      throw new Exception(s"Didn't find any emails targeted at $emailAddr")
+    val email = sessions.head.messages.head
+    email.bodyMain.plaintext
+  }
+  
   /**
    * Go into the most recent email message sent, and get the invitation link from it.
    */
-  def extractInviteLink():String = {
-    val body = fetchLatestEmailBody()
+  def extractInviteLink(emailAddr:String):String = {
+    val body = fetchLatestEmailBodyTo(emailAddr)
     body match {
       case inviteLinkRegex(url) => url
       case _ => throw new Exception(s"Didn't find invitation link in $body")
@@ -80,7 +88,7 @@ trait FuncInvites { self:FuncMixin =>
     run(state,
       { state =>
         
-        val inviteLink = extractInviteLink()
+        val inviteLink = extractInviteLink(user.email)
         go to inviteLink
         
         // This takes us to the Space in question, and then we need to go to the Login dialog.

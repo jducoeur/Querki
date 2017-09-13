@@ -1,12 +1,15 @@
 package querki.text
 
+import models.PropMap
+import models.ModelPersistence
+import ModelPersistence._
 import querki.globals._
 import querki.test._
 
 /**
  * @author jducoeur
  */
-class TextTests extends QuerkiTests {
+class TextTests extends QuerkiTests with ModelPersistence with querki.types.ModelTypeDefiner {
   "_matchCase" should {
     "work in simple cases" in {
       class TSpace extends CommonSpace {
@@ -132,6 +135,30 @@ class TextTests extends QuerkiTests {
       implicit val s = commonSpace
       
       pql("""[[My Instance -> _textLength(Link Name)]]""") should equal ("11")
+    }
+  }
+  
+  "Sets of Text" should {
+    // Regression test for QI.bu6oc4a
+    "serialize properly with a length-1 Set of empty Text" in {
+      class TextTestSpace extends CommonSpace {
+        val textSet = new TestProperty(Core.TextType, QSet, "Further Discussion")
+        
+        val testThing = new SimpleTestThing("Test Thing", textSet(""))
+      }
+      val s = new TextTestSpace
+      implicit val state = s.state
+      
+      // TODO: most of this is kind of lifted from ModelPersistenceTests. Should probably be
+      // refactored.
+      val original = s.testThing.props
+      val dh:DHPropMap = original
+      val copy:PropMap = dh
+      
+      def checkProp(prop:AnyProp) = {
+        assert(prop.from(copy).matches(prop.from(original)))
+      }
+      checkProp(s.textSet)
     }
   }
 }

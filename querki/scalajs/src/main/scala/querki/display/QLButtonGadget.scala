@@ -47,7 +47,7 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
         (true, "glyphicon glyphicon-chevron-down", "glyphicon glyphicon-chevron-up", "fa fa-spinner fa-pulse")
     
     if ($(elem).hasClass("btn"))
-      $(elem).addClass("btn-xs")
+      $(elem).addClass("btn-sm")
       
     if (useIcons) {
       $(elem).text($(elem).text() + " ")

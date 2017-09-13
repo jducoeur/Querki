@@ -391,12 +391,18 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     val modTime = DateTime.now
     val thingIdRM = thingIdOpt.map(rtc.successful(_)).getOrElse(allocThingId())
     thingIdRM.flatMap { thingId =>
-      val msg = {
-        implicit val s = state
-        DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
+      // QI.7w4g8ne: we've been hitting duplicate OIDs, and stomping old data. So let's put a
+      // belt-and-suspenders check here, to fail loudly if this happens. This isn't
+      // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
+      // better than nothing:
+      if (thingIdOpt.isEmpty && enhancedState.anything(thingId).isDefined) {
+        QLog.error(s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}")
+        throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
       }
-      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(kind, thingId, modelId, props, modTime)(state)))    
-    }    
+      implicit val s = state
+      val msg = DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
+      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(who, kind, thingId, modelId, props, modTime)(state)))    
+    }
   }
   
   def modifyThing(

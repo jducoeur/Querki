@@ -3,6 +3,7 @@ package models
 import querki.ecology._
 import querki.globals._
 import querki.identity.IdentityId
+import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.spaces.UnresolvedPropValue
 import querki.time.DateTime
@@ -56,7 +57,7 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
     }
   }
   
-  def dh(ts:ThingState)(implicit state:SpaceState):DHThingState = DHThingState(ts.id, ts.model, ts.props, ts.modTime)
+  def dh(ts:ThingState)(implicit state:SpaceState):DHThingState = DHThingState(ts.id, ts.model, ts.props, ts.modTime, ts.creatorOpt)
   def dh(prop:AnyProp)(implicit state:SpaceState):DHProperty = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
   def dh(tpe:PType[_])(implicit state:SpaceState):DHModelType = {
     tpe match {
@@ -135,7 +136,7 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
     // Now add the Things.
     val ts = (Map.empty[OID, ThingState] /: dh.things) { (map, thingdh) =>
       implicit val s = withProps
-      val thing = ThingState(thingdh.id, dh.id, thingdh.model, thingdh.props, thingdh.modTime)
+      val thing = ThingState(thingdh.id, dh.id, thingdh.model, thingdh.props, thingdh.modTime, Kind.Thing, thingdh.creatorOpt.toOption.flatten)
       map + (thingdh.id -> thing)
     }
     val withThings = withProps.copy(things = ts)
@@ -178,7 +179,12 @@ object ModelPersistence {
   /**
    * A dehydrated ThingState.
    */
-  case class DHThingState(@KryoTag(1) id:OID, @KryoTag(2) model:OID, @KryoTag(3) props:DHPropMap, @KryoTag(4) modTime:DateTime) extends UseKryo
+  case class DHThingState(
+    @KryoTag(1) id:OID, 
+    @KryoTag(2) model:OID, 
+    @KryoTag(3) props:DHPropMap, 
+    @KryoTag(4) modTime:DateTime,
+    @KryoTag(5) creatorOpt:AddedField[Option[UserRef]]) extends UseKryo
   
   /**
    * A dehydrated Property. Strictly speaking we don't need to pType and cType -- they should be in the
