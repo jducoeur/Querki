@@ -96,7 +96,7 @@ class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology, val ctx:Ctx.Owner
   }
 }
 
-class RxTextAreaFixedSize(mods:Modifier*)(implicit val ecology:Ecology)
+class RxTextAreaFixedSize(mods:Modifier*)(implicit val ecology:Ecology, val ctx:Ctx.Owner)
   extends RxTextBase[dom.html.TextArea]
 {
   def doRender() = textarea(mods)

@@ -9,7 +9,7 @@ import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.display.ButtonGadget
-import querki.display.rx.{GadgetRef, RunButton, RxTextAreaFixedSize}
+import querki.display.rx.{RunButton, RxTextAreaFixedSize}
 import querki.globals._
 import querki.pages._
 
