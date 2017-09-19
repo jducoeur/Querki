@@ -47,6 +47,7 @@ case class OID(val raw:Long) {
 }
 
 object OID {
+  // TODO: we should deprecate public use of this, in favor of parseOpt():
   def apply(name:String) = {
     // Cope with either ThingID style or raw OID:
     val n = name(0) match {
@@ -54,6 +55,14 @@ object OID {
       case _ => name
     }
     new OID(java.lang.Long.parseLong(n, 36))
+  }
+  // This is the safe version of OID.apply():
+  def parseOpt(name:String):Option[OID] = {
+    try {
+      Some(apply(name))
+    } catch {
+      case ex:java.lang.NumberFormatException => None
+    }
   }
   def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)
   
@@ -102,11 +111,19 @@ class AsDisplayName(name:String) extends AsName(name) {
 }
 object UnknownThingId extends AsOID(UnknownOID)
 object ThingId {
+  // TODO: we should deprecate this in favor of parseOpt():
   def apply(str:String):ThingId = {
     str(0) match {
       case '.' => AsOID(OID(str.substring(1)))
       case _ => AsName(str)
     }
+  }
+  // This is the safe version of ThingId.apply():
+  def parseOpt(str:String):Option[ThingId] = {
+    str(0) match {
+      case '.' => OID.parseOpt(str.substring(1)).map(AsOID(_))
+      case _ => Some(AsName(str))
+    }    
   }
   
   implicit def thingId2Str(id:ThingId) = id.toString()
