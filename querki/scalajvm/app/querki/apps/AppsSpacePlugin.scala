@@ -48,6 +48,7 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
     // Check that this App isn't already present for this Space:
     state.appInfo.find(_._1 == appId) match {
       case Some(appInfo) if (appInfo._2 === appVersion) => throw new PublicException("Apps.alreadyThere")
+      case None =>
     }
 
     // Okay -- load the app:
