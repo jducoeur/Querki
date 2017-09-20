@@ -29,9 +29,9 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   /***********************************************
    * FUNCTIONS
    ***********************************************/
-	
+  
   // TODO: this should be rewritten in QL
-	lazy val PluralizeMethod = new InternalMethod(PluralizeOID,
+  lazy val PluralizeMethod = new InternalMethod(PluralizeOID,
     toProps(
       setName("_pluralize"),
       Categories(TextTag),
@@ -42,35 +42,35 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           |This is a convenient method for choosing different text depending on a Property. The RECEIVED
           |Context should usually be a List. If it contains a single element, _pluralize produces
           |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
-    	    |
+          |
           |Note that this behaviour is pretty English-specific. We expect that other variations will
           |be needed for other languages in the long run.""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    def chooseParam(params:Seq[QLParam]):QLExp = {
-	      val received = context.value
-	      if (received.isEmpty || received.size > 1)
-	        params(1).exp
-	      else
-	        params(0).exp
-	    }
-	    
-	    val result = for
-	    (
-	      params <- paramsOpt if params.length == 2;
-	      exp = chooseParam(params);
-	      parser <- context.parser
-	    )
-	      yield parser.processExp(exp, context.asCollection).map(_.value)
-	      
-	    result.getOrElse(QL.WarningFut("_pluralize requires exactly two parameters"))
-	  }
-	}
-	
-	lazy val JoinMethod = new InternalMethod(JoinMethodOID,
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
+      def chooseParam(params:Seq[QLParam]):QLExp = {
+        val received = context.value
+        if (received.isEmpty || received.size > 1)
+          params(1).exp
+        else
+          params(0).exp
+      }
+      
+      val result = for
+      (
+        params <- paramsOpt if params.length == 2;
+        exp = chooseParam(params);
+        parser <- context.parser
+      )
+        yield parser.processExp(exp, context.asCollection).map(_.value)
+        
+      result.getOrElse(QL.WarningFut("_pluralize requires exactly two parameters"))
+    }
+  }
+  
+  lazy val JoinMethod = new InternalMethod(JoinMethodOID,
     toProps(
       setName("_join"),
       Categories(TextTag),
@@ -89,51 +89,51 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           |middle and end. Those are the parameters; how many parameters you give define how they are used. If there is
           |only one, then it is SEP, the separator in between elements. So
           |```
-          |My List -> _join(", ")
+          |My List -> _join(\"", \"")
           |```
           |would come out as "Cat, Dog, Horse" -- more reasonable.
           |
           |If there are two parameters, then they are OPEN and SEP. So for example, if I wanted to include dashes at the
           |beginning, that would be:
           |```
-          |My List -> _join("-- ", ", ")
+          |My List -> _join(\""-- \"", \"", \"")
           |```
           |which would come out as "-- Cat, Dog, Horse". And if I wanted parentheses around the entire list, I'd use all
           |three parameters -- OPEN, SEP and CLOSE -- as:
           |```
-          |My List -> _join("(", ", ", ")")
+          |My List -> _join(\""(\"", \"", \"", \"")\"")
           |```
           |to get "(Cat, Dog, Horse)".
           |
           |Note that you can use _join with anything, not just Text -- if the received values aren't Text, then they will
           |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
           |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
-	      case Some(params) if (params.length == 1) => (None, Some(params(0)), None)
-	      case Some(params) if (params.length == 2) => (Some(params(0)), Some(params(1)), None)
-	      case Some(params) if (params.length > 2) => (Some(params(0)), Some(params(1)), Some(params(2)))
-	      case _ => (None, None, None)
-	    }
-	    def renderParam(paramOpt:Option[QLParam]):Future[Wikitext] = {
-	      paramOpt match {
-	        case Some(param) => {
-	          val collContext = context.asCollection
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
+      val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
+        case Some(params) if (params.length == 1) => (None, Some(params(0)), None)
+        case Some(params) if (params.length == 2) => (Some(params(0)), Some(params(1)), None)
+        case Some(params) if (params.length > 2) => (Some(params(0)), Some(params(1)), Some(params(2)))
+        case _ => (None, None, None)
+      }
+      def renderParam(paramOpt:Option[QLParam]):Future[Wikitext] = {
+        paramOpt match {
+          case Some(param) => {
+            val collContext = context.asCollection
             for {
-	            paramVal <- context.parser.get.processExp(param.exp, collContext).map(_.value)
-	            renderedParam <- paramVal.firstOpt.map(elem => paramVal.pType.wikify(context)(elem)).getOrElse(Future.successful(Wikitext.empty))
+              paramVal <- context.parser.get.processExp(param.exp, collContext).map(_.value)
+              renderedParam <- paramVal.firstOpt.map(elem => paramVal.pType.wikify(context)(elem)).getOrElse(Future.successful(Wikitext.empty))
             }
-	            yield renderedParam
-	        }
-	        case _ => Future.successful(Wikitext.empty)
-	      }
-	    }
-	
-	    val elemT = context.value.pType
+              yield renderedParam
+          }
+          case _ => Future.successful(Wikitext.empty)
+        }
+      }
+  
+      val elemT = context.value.pType
       for {
         renderedList <- Future.sequence(context.value.cv.map{elem => elemT.wikify(context)(elem)})   
         sep <- renderParam(sepPhrase)
@@ -146,9 +146,9 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
             open + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + close
           }
       }
-	      yield QL.WikitextValue(result)
-	  }
-	}
+        yield QL.WikitextValue(result)
+    }
+  }
   
   lazy val SubstringMethod = new InternalMethod(SubstringOID,
     toProps(
@@ -195,7 +195,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
         yield ExactlyOne(TextType(substr))
     }
   }
-	
+  
   // TODO: _matchCase() is really kind of deeply evil. It's *very* specialized, and we wouldn't have bothered with it
   // if it wasn't necessary to support the gender-matching in the LARP App.
   //
@@ -233,22 +233,22 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           |
           |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
-  	override def qlApply(inv:Invocation):QFut = {
-  	  for {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
         levels <- inv.processAs("levels", IntType)
-  	    call <- inv.opt(findCall(inv, levels))
-  	    text <- inv.contextAllAs(QL.ParsedTextType)
-  	    adjusted = adjustCase(text, call)
-  	  }
-  	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
-  	}
-  	
+        call <- inv.opt(findCall(inv, levels))
+        text <- inv.contextAllAs(QL.ParsedTextType)
+        adjusted = adjustCase(text, call)
+      }
+        yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
+    }
+    
     // This is a slightly scary recursive algorithm. Basically, we are looking up the stack for
     // the call to the lexicalProp -- the Function that we're hunting. Making this more complex,
     // we may have to do this multiple times, if levels > 1 -- that's why we have two levels of
     // recursion. The outer recursion is the levels; the inner is hunting for the current level's
     // Function name.
-  	private def findCall(inv:Invocation, levels:Int):Option[QLCall] = {
+    private def findCall(inv:Invocation, levels:Int):Option[QLCall] = {
       def findPropRec(outerContext:QLContext, remaining:Int):Option[QLCall] = {
         outerContext.parser.flatMap(_.lexicalProp) flatMap { thing =>
           def findRec(context:QLContext):Option[QLCall] = {
@@ -272,60 +272,60 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           findRec(outerContext)
         }
       }
-  	  
-  	  findPropRec(inv.context, levels)
-  	}
-  	
-  	private def adjustCase(text:Wikitext, call:QLCall):String = {
-  	  val charToMatch = call.name.name(0)
-  	  val actualText = text.plaintext
-  	  val charToAdjust = actualText(0)
-  	  val adjusted = 
-  	    if (charToMatch.isUpper)
-  	      charToAdjust.toUpper
-  	    else if (charToMatch.isLower)
-  	      charToAdjust.toLower
-  	    else
-  	      // Odd...
-  	      charToAdjust
-  	  
-  	  adjusted + actualText.substring(1)
-  	}
+      
+      findPropRec(inv.context, levels)
+    }
+    
+    private def adjustCase(text:Wikitext, call:QLCall):String = {
+      val charToMatch = call.name.name(0)
+      val actualText = text.plaintext
+      val charToAdjust = actualText(0)
+      val adjusted = 
+        if (charToMatch.isUpper)
+          charToAdjust.toUpper
+        else if (charToMatch.isLower)
+          charToAdjust.toLower
+        else
+          // Odd...
+          charToAdjust
+      
+      adjusted + actualText.substring(1)
+    }
   }
-	
-	lazy val TextLengthMethod = new InternalMethod(TextLengthOID,
-	  toProps(
-	    setName("_textLength"),
-	    SkillLevel(SkillLevelAdvanced),
-	    Signature(
-	      expected = Some((Seq(AnyType), "A text value, or something that can be displayed as text")),
-	      reqs = Seq.empty,
-	      opts = Seq(
-	        ("text", AnyType, Core.QNone, "A text value, or something that can be displayed as text")
-	      ),
-	      returns = (IntType, "The length of the parameter, or of the received value if there is no parameter")
-	    ),
-	    Categories(TextTag),
-	    Summary("Produce the length of some received text.")))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    for {
+  
+  lazy val TextLengthMethod = new InternalMethod(TextLengthOID,
+    toProps(
+      setName("_textLength"),
+      SkillLevel(SkillLevelAdvanced),
+      Signature(
+        expected = Some((Seq(AnyType), "A text value, or something that can be displayed as text")),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("text", AnyType, Core.QNone, "A text value, or something that can be displayed as text")
+        ),
+        returns = (IntType, "The length of the parameter, or of the received value if there is no parameter")
+      ),
+      Categories(TextTag),
+      Summary("Produce the length of some received text.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
         elemContext <- inv.contextElements
         v = elemContext.value
         // TODO: Can we refactor out a common processParamOrContext function? Keep an eye on uses
         // of processAsOpt(), and see if it's worth lifting this out.
         textOpt <- inv.processAsOpt("text", QL.ParsedTextType, elemContext)
-	      wikitext <- inv.fut {
-	        textOpt match {
-	          case Some(wiki) => fut(wiki)
-	          case _ => v.wikify(elemContext)
-	        }
-	      }
-	      str = wikitext.strip.toString
-	    }
-	      yield ExactlyOne(IntType(str.length))
-	  }
-	}
+        wikitext <- inv.fut {
+          textOpt match {
+            case Some(wiki) => fut(wiki)
+            case _ => v.wikify(elemContext)
+          }
+        }
+        str = wikitext.strip.toString
+      }
+        yield ExactlyOne(IntType(str.length))
+    }
+  }
   
   override lazy val props = Seq(
     PluralizeMethod,
