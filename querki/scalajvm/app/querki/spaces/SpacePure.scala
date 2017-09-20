@@ -91,7 +91,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
   def createPure(creator:UserRef, kind:Kind, thingId:OID, modelId:OID, props:PropMap, modTime:DateTime)(state:SpaceState):SpaceState = {
     kind match {
       case Kind.Thing => {
-        val thing = ThingState(thingId, state.id, modelId, props, modTime, kind, Some(creator))
+        val thing = ThingState(thingId, state.id, modelId, props, modTime, kind, Some(creator), Some(modTime))
         state.copy(things = state.things + (thingId -> thing))
       }
       case Kind.Property => {
