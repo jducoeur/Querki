@@ -286,6 +286,29 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         yield ExactlyOne(IdentityAccess.IdentityType(SimpleIdentity(identityId, name, name)))
     }
   }
+  
+  lazy val CreatorFunction = new InternalMethod(CreatorFunctionOID,
+    toProps(
+      setName("_creator"),
+      Summary("Given a Thing, this produces the Person who created that Thing, if known"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Thing"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (LinkType, "The Person who created the Thing, if known. This may be empty.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val s = inv.state
+      for {
+        t <- inv.contextAllThings
+        creatorRef <- inv.opt(t.creatorOpt)
+        identityId <- inv.opt(creatorRef.identityIdOpt)
+        person <- inv.opt(localPerson(identityId))
+      }
+        yield ExactlyOne(LinkType(person))
+    }
+  }
 
   override lazy val props = Seq(
     IdentityLink,
@@ -294,7 +317,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     IsSimpleGuestProp,
     
     meMethod,
-    PersonIdentityFunction
+    PersonIdentityFunction,
+    CreatorFunction
   )
 
   /*************************************************************
