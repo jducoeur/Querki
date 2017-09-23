@@ -302,7 +302,6 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     toProps(
       setName("Model View"),
       SkillLevel(SkillLevelAdvanced),
-      NotInherited,
       Core.ModelOnlyProp(true),
       Categories(BasicTag),
       Summary("How this Model will be displayed"),
