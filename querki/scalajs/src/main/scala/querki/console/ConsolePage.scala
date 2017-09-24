@@ -9,7 +9,7 @@ import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.display.ButtonGadget
-import querki.display.rx.{GadgetRef, RunButton, RxTextAreaFixedSize}
+import querki.display.rx.{RunButton, RxTextAreaFixedSize}
 import querki.globals._
 import querki.pages._
 
@@ -26,7 +26,7 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
   override def afterRendered() = reset()
   
   def reset():Unit = {
-    inputArea.mapElem { e =>
+    inputArea.mapElemNow { e =>
       // Ick: a fine illustration of where we need to improve GadgetRef. mapElem()
       // probably ought to be in a typeclass instead:
       val textArea = e.asInstanceOf[html.TextArea]
@@ -53,7 +53,7 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
           inputArea <= new RxTextAreaFixedSize(cls:="_consoleInput col-md-8 col-md-offset-2"),
           div(cls:="col-md-8 col-md-offset-2",
             submitButton <= RunButton(ButtonGadget.Primary, "Send", "Running...") { btn => 
-              inputArea.mapElem { i =>
+              inputArea.mapElemNow { i =>
                 val rawCmd = $(i).valueString
                 val cmd =
                   if (rawCmd.startsWith("> "))
@@ -65,7 +65,7 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
                     case DisplayTextResult(res) => p(fixup(res), cls:="_consoleOutMsg").render
                     case ErrorResult(msg) => p("Error: ", fixup(msg), cls:="_consoleOutErr").render
                   }
-                  outputArea.mapElem { o =>
+                  outputArea.mapElemNow { o =>
                     $(o).append(p(rawCmd, cls:="_consoleOutCmd").render)
                     $(o).append(rendered)
                     $(o).scrollTop(o.scrollHeight)

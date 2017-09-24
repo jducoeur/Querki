@@ -6,6 +6,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import org.querki.jquery._
 
@@ -32,7 +33,7 @@ class CreateSpacePage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
     }
   
   def createSpace():Unit = {
-    val newName = spaceName.get.text().trim
+    val newName = spaceName.get.text.now.trim
     Client[UserFunctions].createSpace(newName, None).call() foreach { space =>
       CreateSpacePage.navigateToSpace(space)
     }    

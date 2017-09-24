@@ -4,6 +4,7 @@ import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
+import org.querki.gadgets._
 
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, QuerkiUIUtils}
@@ -11,16 +12,17 @@ import querki.display.rx._
 import querki.globals._
 import querki.util.ScalatagUtils.FSeq
 
-class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
+class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)
+  (implicit val ecology:Ecology, ctx:Ctx.Owner)
   extends Gadget[dom.HTMLDivElement] with QuerkiUIUtils
 {
-  val optLabel = "label".attr
+  val optLabel = attr("label")
   
   def reset() = {
     propSelector.get.setValue("")
   }
   
-  override def onInserted() = { propSelector.mapElem($(_).focus()) }
+  override def onInserted() = { propSelector.mapElemNow($(_).focus()) }
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
   // page to add the Property:
@@ -87,13 +89,15 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
           ),
           p(
             addButton <= 
-              new ButtonGadget(ButtonGadget.Info, disabled := Rx{ selectedProperty().isEmpty }, id:="_addExistingProperty", "Add")({ () =>
-                page.addProperty(selectedProperty().get)
+              new ButtonGadget(ButtonGadget.Info, disabled := Rx { selectedProperty().isEmpty }, id:="_addExistingProperty", "Add")({ () =>
+                page.addProperty(selectedProperty.now.get)
                 reset()
               })
           ),
           hr,
-          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead", id:="_createInstead")({ () => apg.mainDiv.get.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
+          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead", id:="_createInstead")({ () =>
+            apg.showCreateNew()
+          }), apg.cancelButton)
         ),
         div(cls:="col-md-7", 
           new DescriptionDiv(page, propSelector.get.selectedWithTID)

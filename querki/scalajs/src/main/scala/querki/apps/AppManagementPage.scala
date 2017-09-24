@@ -3,6 +3,7 @@ package querki.apps
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.display.ButtonGadget
 import querki.display.rx._
@@ -37,8 +38,8 @@ class AppManagementPage(params:ParamMap)(implicit val ecology:Ecology) extends P
           p("Specify the OID of the App here, and press the button"),
           appInput <= new RxText(cls:="form-control col-md-3"),
           " ", 
-          new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := Rx { appInput.map(_.length == 0).getOrElse(true) }) ({ () =>
-            Client[AppsFunctions].addApp(appInput.get.text()).call() foreach { success =>
+          new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := appInput.mapRxOrElse(_.length == 0, true)) ({ () =>
+            Client[AppsFunctions].addApp(appInput.get.text.now).call() foreach { success =>
               // Things may have changed a *lot*, so do a complete reload:
               PageManager.fullReload()
             }

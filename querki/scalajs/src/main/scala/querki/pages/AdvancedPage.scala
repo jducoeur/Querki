@@ -6,11 +6,11 @@ import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import autowire._
+import org.querki.gadgets._
 
 import querki.api._
 import querki.data.SpaceInfo
 import querki.display.{ButtonGadget, Dialog, QText}
-import querki.display.rx.GadgetRef
 import querki.globals._
 import querki.security.SecurityFunctions
 

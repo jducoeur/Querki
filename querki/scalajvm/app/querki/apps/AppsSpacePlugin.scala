@@ -2,6 +2,8 @@ package querki.apps
 
 import scala.util.{Failure, Success}
 
+import cats._, cats.syntax.eq._
+
 import akka.actor._
 
 import models._
@@ -44,9 +46,11 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
       throw new PublicException("Apps.notAllowed")
     
     // Check that this App isn't already present for this Space:
-    if (state.appInfo.find(_._1 == appId).isDefined)
-      throw new PublicException("Apps.alreadyThere")
-    
+    state.appInfo.find(_._1 == appId) match {
+      case Some(appInfo) if (appInfo._2 === appVersion) => throw new PublicException("Apps.alreadyThere")
+      case None =>
+    }
+
     // Okay -- load the app:
     for {
       app <- api.loadAppVersion(appId, appVersion, state.allApps)

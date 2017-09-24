@@ -8,13 +8,14 @@ import scalatags.JsDom.all.{name => nm, _}
 import autowire._
 
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import querki.comm._
 import querki.globals._
 import querki.data.UserInfo
 import querki.display._
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.pages.Page
 import querki.session.UserFunctions
 
@@ -36,11 +37,11 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def isActualUser = user.map(_.actualUser).getOrElse(false)
   
-  def login():Future[Page] = {
+  def login()(implicit ctx:Ctx.Owner):Future[Page] = {
     loginCore().flatMap(_ => PageManager.reload())
   }
   
-  def loginCore():Future[Unit] = {
+  def loginCore()(implicit ctx:Ctx.Owner):Future[Unit] = {
     val loginPromise = Promise[Unit]
     
     def finishLogin() = {
@@ -53,7 +54,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     def doLogin():Unit = {
       // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
       val fut:Future[String] = 
-        controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text(), "password" -> passwordInput.get.text())
+        controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text.now, "password" -> passwordInput.get.text.now)
       fut.foreach { result =>
         if (result == "failed") {
           StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
@@ -101,7 +102,11 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
             new ButtonGadget(ButtonGadget.Normal, "Continue as a Guest")({ () => dismiss() })
           )
       ),
-      (ButtonGadget.Primary, Seq("Log in", disabled := Rx{ handleInput.rxEmpty() || passwordInput.rxEmpty() }, tabindex := 3), { dialog =>
+      (ButtonGadget.Primary, Seq("Log in", disabled := Rx { 
+          val handleEmpty = handleInput.rxEmpty
+          val passwordEmpty = passwordInput.rxEmpty
+          handleEmpty() || passwordEmpty() 
+        }, tabindex := 3), { dialog =>
         doLogin()
       })
     )

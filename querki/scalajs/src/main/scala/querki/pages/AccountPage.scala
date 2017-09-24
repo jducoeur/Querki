@@ -6,6 +6,7 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.api.BadPasswordException
@@ -74,7 +75,7 @@ class AccountPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
           div(cls:="form-group",
             div(cls:="col-md-offset-2",
               new ButtonGadget(ButtonGadget.Normal, "Change Password", tabindex:=130, disabled:= Rx { !passwordsFilled() } )({ () =>
-                Client[UserFunctions].changePassword(passText(oldPassword)(), passText(newPassword)()).call().onComplete {
+                Client[UserFunctions].changePassword(passText(oldPassword).now, passText(newPassword).now).call().onComplete {
                   case Success(dummy) => StatusLine.showBriefly("Password changed")
                   case Failure(ex) =>
                     ex match {
@@ -92,7 +93,7 @@ class AccountPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
             newDisplayName <= new RxText(cls:="form-control", placeholder:="New Display Name", tabindex:=200),
             span(cls:="input-group-btn",
               new ButtonGadget(ButtonGadget.Normal, "Change Display Name", tabindex:=210, disabled := Rx { passText(newDisplayName)().length() == 0 })({ () =>
-                val newName = passText(newDisplayName)()
+                val newName = passText(newDisplayName).now
                 Client[UserFunctions].changeDisplayName(newName).call() foreach { userInfo =>
                   UserAccess.setUser(Some(userInfo))
                   PageManager.reload().foreach { newPage => StatusLine.showBriefly(s"Name changed to $newName") }

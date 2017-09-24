@@ -4,6 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.api._
@@ -49,8 +50,8 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
       })
       
     val levelSelector = GadgetRef[RxSelect].whenSet { g => 
-      Obs(g.selectedOption, skipInitial=true) {
-        g.selectedOption().map { opt =>
+      g.selectedOption.triggerLater {
+        g.selectedOption.now.map { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
           if (newLevel != user.level) {
             Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>
@@ -101,8 +102,8 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
                 td(b("Handle")), td(b("Email")), td(b())
               ),
               tbody(
-	            for (user <- userList)
-  	              yield new UserView(user)
+              for (user <- userList)
+                  yield new UserView(user)
               )
             )
           )
@@ -123,14 +124,14 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
               td(b("Handle")), td(b("Email")), td(b())
             ),
             tbody(
-	          for (user <- pendingUsers)
-	            yield 
-	              tr(cls:="warning", td(user.mainHandle), td(user.email), 
-	                td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
-	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
-	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
-	                  }
-	                })))
+            for (user <- pendingUsers)
+              yield 
+                tr(cls:="warning", td(user.mainHandle), td(user.email), 
+                  td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
+                    Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
+                      PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
+                    }
+                  })))
             )
           ),
           hr,

@@ -3,6 +3,7 @@ package querki.editing
 import scala.concurrent.Future
 
 import autowire._
+import org.querki.gadgets._
 
 import querki.display.RawDiv
 import querki.globals._

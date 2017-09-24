@@ -249,6 +249,7 @@ trait BaseParsers extends RegexParsers {
       "colspan" | "rowspan" |
       "type" | "value" |
       "src" | "alt" |
+      "disabled" |
       dataAttrName
     
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.

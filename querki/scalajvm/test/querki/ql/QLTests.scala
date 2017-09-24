@@ -233,6 +233,15 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "OID Literals" should {
+    // QI.7w4g8tv: parser crashes on ._self:
+    "fail appropriately if the OID doesn't parse" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[._something]]""") should equal (expectedWarning("QL.unknownThingId"))      
+    }
+  }
+  
   "Errors" should {
     "be placed at the appropriate place in the containing text" in {
       implicit val s = commonSpace

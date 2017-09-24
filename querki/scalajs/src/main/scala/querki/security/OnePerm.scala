@@ -9,6 +9,8 @@ import autowire._
 
 import org.querki.jquery._
 
+import org.querki.gadgets._
+
 import querki.data.BasicThingInfo
 import querki.display.{ButtonGadget, RawDiv}
 import querki.display.input.InputGadget
@@ -20,7 +22,7 @@ import querki.pages.Page
 import SecurityFunctions._
 
 class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm]], isSpace:Boolean, page:Page with LevelMap)
-  (implicit e:Ecology) extends InputGadget[html.Div](e)
+  (implicit e:Ecology, ctx:Ctx.Owner) extends InputGadget[html.Div](e)
 {
   lazy val Editing = interface[querki.editing.Editing]
   lazy val Gadgets = interface[querki.display.Gadgets]
@@ -29,7 +31,7 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
   lazy val customDisplay = $(elem).find("._permCustom")
   
   def updateCustom() = {
-    if (isCustom()) {
+    if (isCustom.now) {
       Client[EditFunctions].getOnePropertyEditor(t.oid, permInfo.id).call().foreach { propEditInfo =>
         customDisplay.empty()
         customDisplay.append(new RawDiv(propEditInfo.editor)(ecology).render)
@@ -47,12 +49,12 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
   def hook() = {
     $(elem).find("._permRadio").click { radio:dom.Element =>
       currently() = $(radio).valueString
-      if (!isCustom()) {
+      if (!isCustom.now) {
         // Note that, instead of using the usual "Saving/Saved" affordance, we actually disable/re-enable
         // the permissions while saving, via the reactive "saving" flag. This is specifically to have a
         // reliable way to *test* this, and to prevent weird races.
         saving() = true
-        val changeFut = if (isInherit()) {
+        val changeFut = if (isInherit.now) {
           // The meaning of "inherited" is that we don't have the Property at all
           // TODO: in principle, this belongs in InputGadget. But that implies that we need
           // to create a new value of PropertyChange for removing a Property, with back-end
@@ -82,26 +84,23 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
   // TODO: the relationship of thingPerm and currently is clumsy. We really should be pushing the
   // changes going through currently() back into thingPerm, and that should be feeding directly
   // back to the server.
-  def calcCurrently() = page.currentPermOID(permInfo, thingPerm(), isSpace)
+  def calcCurrently() = page.currentPermOID(permInfo, thingPerm.now, isSpace)
   val currently = Var(calcCurrently())
   val isCustom = Rx { currently() == "custom" }
   val isInherit = Rx { currently() == "inherit" }
-  val thingWatcher = Obs(thingPerm, skipInitial=true) {
-    currently() = page.currentPermOID(permInfo, thingPerm(), isSpace)
+  val thingWatcher = thingPerm.triggerLater {
+    currently() = page.currentPermOID(permInfo, thingPerm.now, isSpace)
   }
     
   // Note that we don't save(), and thus don't use this, if it is custom or inherit:
-  def values = List(currently())
-  
-  // TODO: why is this necessary? The implicit rxAttr in rx.package ought to be good enough:
-  implicit val strAttr = new RxAttr[String]
+  def values = List(currently.now)
   
   class OneBoxGadget(lbl:String, level:SecurityLevel) extends Gadget[html.Div] {
     val box = GadgetRef.of[html.Input]
     
-    val watcher = Obs(currently) {
-      box.mapElem { e =>
-        $(e).prop("checked", (currently() == page.levelMap(level).underlying))
+    val watcher = currently.trigger {
+      box.mapElemNow { e =>
+        $(e).prop("checked", (currently.now == page.levelMap(level).underlying))
       }
     }
     
@@ -110,13 +109,11 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
         cls:="_permcheckbox col-md-2", 
         label(cls:="radio-inline", 
           box <= input(cls:="_permRadio", tpe:="radio", name:=namePath, 
-            if (currently() == page.levelMap(level).underlying) checked:="checked",
+            if (currently.now == page.levelMap(level).underlying) checked:="checked",
             value:=page.levelMap(level).underlying,
             disabled := saving),
           s" $lbl"))
   }
-  
-  implicit def rxAttr = new RxAttr[String]
   
   def doRender() =
     div(cls:="form-inline",

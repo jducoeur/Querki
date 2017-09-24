@@ -245,13 +245,35 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         yield ExactlyOne(QDate(result))
     }
   }
-
+  
+  lazy val CreateTimeFunction = new InternalMethod(CreateTimeFunctionOID,
+    toProps(
+      setName("_createTime"),
+      Summary("Given a Thing, this produces the time when that Thing was created, if known"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Thing"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (LinkType, "The time when that Thing was created, if known. This may be empty.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val s = inv.state
+      for {
+        t <- inv.contextAllThings
+        time <- inv.opt(t.createTimeOpt)
+      }
+        yield ExactlyOne(QDateTime(time))
+    }
+  }
+  
   override lazy val props = Seq(
     modTimeMethod,
     yearMethod,
     monthMethod,
     dayMethod,
     todayFunction,
-    plusDateImpl
+    plusDateImpl,
+    CreateTimeFunction
   )
 }

@@ -3,11 +3,13 @@ package querki.apps
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
+import rx._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.display.{ButtonGadget, Dialog, HookedGadget}
-import querki.display.rx.{GadgetRef, RxInput}
+import querki.display.rx.RxInput
 import querki.ecology._
 import querki.globals._
 import querki.pages.CreateSpacePage
@@ -23,6 +25,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -47,6 +50,8 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
     
     def hook() = {
       $(elem).click { evt:JQueryEventObject =>
+        // We need the Scala.Rx Owner Context in order to call useApp():
+        implicit val ctx = PageManager.currentOwner
         useApp()
       }
     }
@@ -55,7 +60,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
   /**
    * The guts of useApp(), which expect that we have a logged-in user.
    */
-  private def doUseApp() = {
+  private def doUseApp()(implicit ctx:Ctx.Owner) = {
     val spaceName = GadgetRef[RxInput]
     spaceName.whenSet { g => 
       g.onEnter { text =>
@@ -66,7 +71,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
     }
     
     def createSpace() = {
-      val newName = spaceName.get.text().trim
+      val newName = spaceName.get.text.now.trim
       if (newName.length > 0) {
         Client[UserFunctions].createSpace(newName, Some(spaceInfo.oid)).call().map { newSpaceInfo =>
           CreateSpacePage.navigateToSpace(newSpaceInfo)
@@ -94,7 +99,7 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
     confirmDialog.show()
   }
   
-  def useApp() = {
+  def useApp()(implicit ctx:Ctx.Owner) = {
     // Belt-and-suspenders check:
     if (isApp) {
       if (UserAccess.loggedIn)

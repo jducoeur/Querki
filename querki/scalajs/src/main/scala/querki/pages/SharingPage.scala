@@ -4,6 +4,7 @@ import scala.scalajs.js
 import js.JSConverters._
 import scala.util.{Failure, Success}
 import org.scalajs.dom.{raw => dom}
+import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
@@ -69,10 +70,10 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       
   // TODO: this should probably become an RxSelect instead?
   class RoleSelector(parent:RoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
-    val roleName = Rx(role().displayName)
+    val roleName = Rx { role().displayName }
     
     override def onCreate(e:dom.HTMLSelectElement) = {
-      $(elem).value(role().oid.underlying)
+      $(elem).value(role.now.oid.underlying)
         
       $(elem).change({ evt:JQueryEventObject =>
         val chosen = $(elem).find(":selected").valueString
@@ -113,7 +114,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
     lazy val selector = (roleSelector).render
     
     def curValue:Option[String] = {
-      val raw = roleSelector.role().oid.underlying
+      val raw = roleSelector.role.now.oid.underlying
       if (raw.length == 0)
         None
       else
@@ -124,10 +125,10 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
     override lazy val thingId = tid
     override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-    def values = List(roleDisplay.curValue, customDisplayRef.opt().flatMap(_.curValue)).flatten
+    def values = List(roleDisplay.curValue, customDisplayRef.opt.now.flatMap(_.curValue)).flatten
     
     val roleDisplay = new RoleDisplay(this, initialRoles, tid, roleInfo)
-    val customDisplayRef = GadgetRef[RoleDisplay](ecology)
+    val customDisplayRef = GadgetRef[RoleDisplay]
     
     def doRender() =
       span(
@@ -226,8 +227,8 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         h4("Create a new Custom Role"),
         roleAdder <= new RxText(cls:="form-control col-md-3"),
         " ", 
-        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := Rx { roleAdder.map(_.length == 0).getOrElse(true) }) ({ () =>
-          createRole(roleAdder.get.text())
+        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := roleAdder.flatMapRxOrElse(_.length)(_ == 0, true)) ({ () =>
+          createRole(roleAdder.get.text.now)
         })
       )
   }
@@ -249,10 +250,10 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
         ul(cls:="nav nav-tabs", role:="tablist",
-          li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", "data-toggle".attr:="tab", "Invites")),
-          li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", "data-toggle".attr:="tab", "Members")),
+          li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", attr("data-toggle"):="tab", "Invites")),
+          li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", attr("data-toggle"):="tab", "Members")),
           if (isAdvanced)
-            li(role:="presentation", if (initTab == Tab.CustomRoles) cls:="active", a(href:="#custom", role:="tab", "data-toggle".attr:="tab", "Roles"))
+            li(role:="presentation", if (initTab == Tab.CustomRoles) cls:="active", a(href:="#custom", role:="tab", attr("data-toggle"):="tab", "Roles"))
         ),
           
         div(cls:="tab-content",

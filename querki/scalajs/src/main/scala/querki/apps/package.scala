@@ -1,5 +1,7 @@
 package querki
 
+import rx._
+
 import querki.ecology._
 import querki.pages.PageFactory
 
@@ -11,6 +13,6 @@ package object apps {
     def appMgmtFactory:PageFactory
     def extractAppFactory:PageFactory
     
-    def useApp():Unit
+    def useApp()(implicit ctx:Ctx.Owner):Unit
   }
 }

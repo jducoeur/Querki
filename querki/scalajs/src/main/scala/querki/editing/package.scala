@@ -1,5 +1,7 @@
 package querki
 
+import org.querki.gadgets._
+
 import querki.globals._
 import querki.pages.{PageFactory, ThingPageFactory}
 

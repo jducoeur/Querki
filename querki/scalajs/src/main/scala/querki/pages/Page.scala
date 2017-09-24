@@ -6,6 +6,7 @@ import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._
+import org.querki.gadgets._
 import org.querki.jsext._
 import org.querki.jquery._
 import org.querki.squery.Focusable._
@@ -16,7 +17,6 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
-import querki.display.rx.{GadgetRef, RxDiv}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
   def titleOr(f: => String):String =
@@ -41,6 +41,17 @@ abstract class Page(pageName:String = "")
   lazy val Localization = interface[querki.local.Localization]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[Pages]
+  
+  /**
+   * Provide an Owner for ad-hoc Rx's inside Pages.
+   */
+  implicit val ctx:Ctx.Owner = Ctx.Owner.safe()
+  
+  // TODO: what we *want* this to do is kill this Owner, and all of its recursive dependencies,
+  // when the page unloads. But Scala.Rx doesn't yet support that, so I *suspect* we are leaking.
+  def unload() = {
+//    ctx.kill()
+  }
   
   /**
    * The contents of this page. Concrete subclasses must fill this in.
@@ -122,7 +133,7 @@ abstract class Page(pageName:String = "")
               },
               msg
             )
-    flashContents() = flashContents() :+ newAlert
+    flashContents() = flashContents.now :+ newAlert
   }
   lazy val flashContents = Var[Seq[Gadget[_]]](Seq.empty)
   lazy val flashDiv = new RxDiv(flashContents)

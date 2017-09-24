@@ -3,6 +3,7 @@ package querki.photos
 import scala.scalajs.js
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
+import org.querki.gadgets._
 import scalatags.JsDom.all._
 
 import querki.globals._

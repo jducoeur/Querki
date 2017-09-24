@@ -5,7 +5,7 @@ import dom.html.Element
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-import rx.ops._
+import org.querki.gadgets._
 
 import querki.globals._
 
@@ -15,6 +15,8 @@ import querki.display.input.AutosizeFacade._
  * Some common functionality between RxText and RxTextArea.
  */
 trait RxTextBase[E <: Element] extends Gadget[E] {
+  implicit def ctx:Ctx.Owner
+  
   protected def curValue =
     for {
       e <- elemOpt
@@ -24,7 +26,7 @@ trait RxTextBase[E <: Element] extends Gadget[E] {
       yield v
   
   lazy val textOpt = Var[Option[String]](curValue)
-  lazy val text = Rx { textOpt().getOrElse("") }
+  lazy val text:Rx[String] = Rx { textOpt().getOrElse("") }
   
   protected def update() = { textOpt() = curValue }
   
@@ -33,16 +35,17 @@ trait RxTextBase[E <: Element] extends Gadget[E] {
     update()
   }
       
-  def length = textOpt().map(_.length()).getOrElse(0)
+  def length:Rx[Int] = textOpt.map(_.map(_.length).getOrElse(0))
 }
 
 /**
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
-class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)(implicit val ecology:Ecology) 
+class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputType:String, mods:Modifier*)
+  (implicit val ecology:Ecology, val ctx:Ctx.Owner) 
   extends RxTextBase[dom.html.Input]
 {
-  def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology) = this(None, inputType, mods)
+  def this(inputType:String, mods:Modifier*)(implicit ecology:Ecology, ctx:Ctx.Owner) = this(None, inputType, mods)
   
   def doRender() = input(tpe:=inputType, mods)
   
@@ -50,18 +53,18 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
     // If a charFilter was specified, run each keystroke past it as a legality check:
     $(e).keydown { evt:JQueryEventObject =>
       val which = evt.which
-      val fOpt = enterFunc()
+      val fOpt = enterFunc.now
       
       if (which == 13 && fOpt.isDefined) {
         // They hit Enter, and we are doing something special with Enter:
-        fOpt.get(text())
+        fOpt.get(text.now)
         evt.preventDefault()
         false
       } else { 
         // Is this character allowed?
         charFilter match {
           case Some(filter) => {
-            val allowed = filter(evt, text())
+            val allowed = filter(evt, text.now)
             if (!allowed)
               evt.preventDefault()
             allowed
@@ -80,9 +83,9 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
   def onEnter(f:String => Unit) = enterFunc() = Some(f)
 }
 
-class RxText(mods:Modifier*)(implicit e:Ecology) extends RxInput("text", mods)
+class RxText(mods:Modifier*)(implicit e:Ecology, ctx:Ctx.Owner) extends RxInput("text", mods)
 
-class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
+class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology, val ctx:Ctx.Owner)
   extends RxTextBase[dom.html.TextArea]
 {
   def doRender() = textarea(mods)
@@ -93,7 +96,7 @@ class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology)
   }
 }
 
-class RxTextAreaFixedSize(mods:Modifier*)(implicit val ecology:Ecology)
+class RxTextAreaFixedSize(mods:Modifier*)(implicit val ecology:Ecology, val ctx:Ctx.Owner)
   extends RxTextBase[dom.html.TextArea]
 {
   def doRender() = textarea(mods)

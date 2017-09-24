@@ -8,12 +8,13 @@ import org.scalajs.dom.html
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import querki.data.TOID
 import querki.display._
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.globals._
 import querki.pages._
 
@@ -44,9 +45,9 @@ class SpacesTimingPage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
       p("Enter the OID (with the dot) of the Space here:"),
       timeSpaceInput <= new RxText(id:="_timeSpaceInput"),
       new ButtonGadget(ButtonGadget.Primary, "Begin Timing", disabled := timeSpaceInput.rxEmpty)({ () =>
-        timeSpaceInput.map { rxText =>
-          Client[AdminFunctions].beginSpaceTiming(TOID(rxText.text())).call() map { _ =>
-            Admin.spaceTimingFactory.showPage("spaceId" -> rxText.text())
+        timeSpaceInput.mapNow { rxText =>
+          Client[AdminFunctions].beginSpaceTiming(TOID(rxText.text.now)).call() map { _ =>
+            Admin.spaceTimingFactory.showPage("spaceId" -> rxText.text.now)
           }
         }
       })
@@ -80,7 +81,7 @@ class SpaceTimingPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
           currentlyError() = false
           newMsgs foreach { msg =>
             val para = p(msg).render
-            messageOutput.mapElem($(_).append(para))
+            messageOutput.mapElemNow($(_).append(para))
           }
         }
         updateMessages(nowAt)

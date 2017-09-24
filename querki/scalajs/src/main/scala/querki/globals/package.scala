@@ -6,6 +6,8 @@ import js.annotation.JSName
 import org.scalajs.dom
 import dom.Element
 
+import rx._
+
 import org.querki.jquery
 import jquery._
 import org.querki.gadgets.core._
@@ -43,8 +45,20 @@ package object globals {
   val TID = querki.data.TID
   implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
-  val Gadget = org.querki.gadgets.core.Gadget
-  type Gadget[E <: dom.html.Element] = org.querki.gadgets.core.Gadget[E]
+  /**
+   * This implicit is needed for GadgetRef's reassign functions.
+   * 
+   * TODO: at the moment, this is creating an instance each time, which is a pointless amount of
+   * work. Can we create a single stable instance? The problem is that it depends on the Ecology.
+   * Worse came to worst we could memoize that, but it's pretty evil to stuff the ecology into the
+   * global world.
+   */
+  implicit def ecologyGadgetNotifier(implicit e:Ecology) = new org.querki.gadgets.core.GadgetNotifier[Ecology] {
+    def layoutChanged[Output <: org.scalajs.dom.html.Element](g:Gadget[Output]):Unit = {
+      lazy val Pages = e.api[querki.pages.Pages]
+      Pages.updatePage(g)
+    }
+  }
   
   // TODO: this is now duplicated in the Gadgets library. Can I get rid of it here?
   implicit def tag2Gadget[Output <: dom.html.Element](

@@ -3,6 +3,7 @@ package querki.display
 import scala.scalajs.js
 import org.scalajs.dom
 import dom.html.Element
+import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -22,11 +23,11 @@ trait ServerHtmlHolder extends EcologyMember {
     val currentHash = PageManager.currentHash
     $(root).find("a").foreach({ child:dom.Element =>
       try {
-	    // Adjust the URLs of any links we find.
-	    // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
-	    // generates <a> tags with raw URLs that don't match current reality. Eventually, we should
-	    // fix that somehow -- likely by making the URL scheme consistent everywhere, once we are
-	    // more comfortable with the Client.
+      // Adjust the URLs of any links we find.
+      // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
+      // generates <a> tags with raw URLs that don't match current reality. Eventually, we should
+      // fix that somehow -- likely by making the URL scheme consistent everywhere, once we are
+      // more comfortable with the Client.
         val originalHrefOpt = $(child).attr("href")
         if (originalHrefOpt.isDefined) {
           val originalHref = originalHrefOpt.get

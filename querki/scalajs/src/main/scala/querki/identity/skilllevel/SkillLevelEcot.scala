@@ -5,6 +5,7 @@ import scalatags.JsDom.all._
 import autowire._
 
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import querki.data._
 import querki.display.{ButtonGadget, Dialog}

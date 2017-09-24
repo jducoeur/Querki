@@ -303,10 +303,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         processBindingDef(bindingDef, context)
       }
       case tid:QLThingId => {
-        context.state.anything(ThingId(tid.name)) match {
-          case Some(t) => processThing(t, context)
-          case None => Future.failed(new PublicException("QL.unknownThingId", tid.reconstructString))
-        }
+        // Note: this is structured to fix QI.7w4g8tv: cope if the tid *looks* like an OID, but
+        // doesn't parse right:
+        ThingId.parseOpt(tid.name).map { thingId =>
+          context.state.anything(thingId) match {
+            case Some(t) => processThing(t, context)
+            case None => Future.failed(new PublicException("QL.unknownThingId", tid.reconstructString))
+          }
+        }.getOrElse(Future.failed(new PublicException("QL.unknownThingId", tid.reconstructString)))
       }
       case _ => {
         // Looking up a Thing by name, which is the most common situation:

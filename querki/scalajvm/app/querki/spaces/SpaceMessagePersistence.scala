@@ -29,7 +29,9 @@ object SpaceMessagePersistence {
   /**
    * Marker trait, solely so matches can be checked for completeness.
    */
-  sealed trait SpaceEvent
+  sealed trait SpaceEvent {
+    def modTime:DateTime
+  }
   
   case class DHCreateThing(
     @KryoTag(1) req:UserRef, 
@@ -56,6 +58,9 @@ object SpaceMessagePersistence {
   case class DHInitState(
     @KryoTag(1) req:UserRef,
     @KryoTag(2) display:String) extends UseKryo with SpaceEvent
+  {
+    def modTime = querki.time.epoch 
+  }
     
   case class DHAddApp(
     @KryoTag(1) req:UserRef,
@@ -97,6 +102,9 @@ object SpaceMessagePersistence {
     // TODO: we're no longer using this. It exists in some older records, and it's essential for
     // these old snapshots. How do we get rid of it?
     @KryoTag(2) apps:Seq[DHSpaceState]) extends UseKryo
+  {
+    def modTime = state.modTime
+  }
 }
 
 trait SpaceMessagePersistenceBase extends EcologyMember with ModelPersistence with IdentityPersistence with querki.types.ModelTypeDefiner

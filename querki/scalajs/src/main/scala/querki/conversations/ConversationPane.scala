@@ -10,6 +10,7 @@ import autowire._
 import org.widok.moment._
 
 import org.querki.squery.Focusable._
+import org.querki.gadgets._
 
 import querki.globals._
 

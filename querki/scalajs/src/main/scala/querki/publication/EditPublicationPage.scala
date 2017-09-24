@@ -3,6 +3,7 @@ package querki.publication
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.ecology._
 import querki.editing.EditFunctions
@@ -36,9 +37,9 @@ class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology)
       thingPerms <- Client[SecurityFunctions].permsFor(DataAccess.space.get).call().map(Var(_))
       instancePublishVar = Rx { thingPerms().perms.find(_.permId == publishPermId) }
       publishable = Var[Boolean](model.hasFlag(std.publication.publishableProp))
-      watcher = Obs(publishable, skipInitial=true) {
+      watcher = publishable.triggerLater {
         val path = Editing.propPath(std.publication.publishableProp, Some(model.oid))
-        val msg = ChangePropertyValue(path, List(publishable().toString))
+        val msg = ChangePropertyValue(path, List(publishable.now.toString))
         InputGadget.doSaveChange(model.oid, msg).flatMap { response =>
           Client[PublicationFunctions].changePublishedModels().call()
         }

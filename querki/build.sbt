@@ -125,14 +125,16 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   buildInfoPackage := "querki",
   
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.1",
+    "org.scala-js" %%% "scalajs-dom" % "0.9.3",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "org.querki" %%% "querki-jsext" % "0.8",
     "org.querki" %%% "jquery-facade" % "1.0",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.8",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
-    "org.querki" %%% "jstree-facade" % "0.5"
+    "org.querki" %%% "jstree-facade" % "0.5",
+    "org.querki" %%% "squery" % "0.1",
+    "org.querki" %%% "gadgets" % "0.3"
   )).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).
   dependsOn(querkiSharedJs)
@@ -163,9 +165,9 @@ lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.4.3",
-  "com.lihaoyi" %%% "scalarx" % "0.2.8",
+  "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
-  "com.lihaoyi" %%% "scalatags" % "0.5.5",
+  "com.lihaoyi" %%% "scalatags" % "0.6.5",
   "com.lihaoyi" %%% "fastparse" % "0.4.3",
   "org.querki" %%% "shocon" % "0.4",
   "com.beachape" %%% "enumeratum" % enumeratumV,

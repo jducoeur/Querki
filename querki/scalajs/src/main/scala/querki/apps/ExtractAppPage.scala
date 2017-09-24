@@ -8,6 +8,7 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
+import org.querki.gadgets._
 import org.querki.jquery._
 import org.querki.facades.jstree._
 
@@ -15,7 +16,7 @@ import querki.api.ThingFunctions
 import querki.data.{PropValInfo, ThingInfo}
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
-import RxEmptyable._
+import QuerkiEmptyable._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 import querki.util.InputUtils
@@ -39,9 +40,12 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
   val detailsInput = GadgetRef[RxTextArea]
   
   val notReady = Rx { 
-    appNameInput.rxEmpty() ||
-    summaryInput.rxEmpty() ||
-    detailsInput.rxEmpty()
+    val appNameEmpty = appNameInput.rxEmpty
+    val summaryEmpty = summaryInput.rxEmpty
+    val detailsEmpty = detailsInput.rxEmpty
+    appNameEmpty() ||
+    summaryEmpty() ||
+    detailsEmpty()
   }
   
   def getPropVal(propId:TID, spaceProps:Seq[PropValInfo]):String = {
@@ -85,7 +89,7 @@ class ExtractAppPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
           ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text(), summaryInput.get.text(), detailsInput.get.text()).call() foreach { spaceInfo =>
+            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text.now, summaryInput.get.text.now, detailsInput.get.text.now).call() foreach { spaceInfo =>
               DataSetting.setSpace(Some(spaceInfo))
               Pages.infoFactory.showPage()
             }

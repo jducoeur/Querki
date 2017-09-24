@@ -9,6 +9,7 @@ import autowire._
 import org.scalajs.{dom => fulldom}
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import scalatags.JsDom.all.{data => dta, _}
 import scalatags.JsDom.tags2

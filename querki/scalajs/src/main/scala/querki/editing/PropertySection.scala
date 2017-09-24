@@ -15,7 +15,8 @@ import querki.data.{BasicThingInfo}
 import querki.display.input.InputGadget
 
 class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEditInfo], val thing:BasicThingInfo, 
-  val editInfo:FullEditInfo, val sortable:Boolean = true)(implicit val e:Ecology) 
+  val editInfo:FullEditInfo, val sortable:Boolean = true)
+    (implicit val e:Ecology, ctx:Ctx.Owner) 
   extends InputGadget[dom.HTMLUListElement](e) 
 {
   lazy val Gadgets = interface[querki.display.Gadgets]
@@ -68,7 +69,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   def appendEditor(editInfo:PropEditInfo, openEditor:Boolean) = {
     val editor = new PropValueEditor(editInfo, this, openEditor)
     $(elem).append(editor.rendered)
-    propIds() += editInfo.propInfo.oid
+    propIds() = propIds.now + editInfo.propInfo.oid
     onMoved()
   }
   
@@ -76,7 +77,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
     val child = $(editor.elem)
     child.hide(400, { () => 
       child.remove() 
-      propIds() -= editor.info.propInfo.oid
+      propIds() = propIds.now - editor.info.propInfo.oid
       page.instancePropSection().onMoved()
     })
   }

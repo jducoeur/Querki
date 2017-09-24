@@ -42,6 +42,11 @@ abstract class Thing(
   def creatorOpt:Option[UserRef] = None
   
   /**
+   * When this Thing was created, if known.
+   */
+  def createTimeOpt:Option[DateTime] = None
+  
+  /**
    * USE WITH EXTREME CAUTION: this function is for use *only* in the core classes. Its purpose is to allow
    * a Thing to fetch the value of a Property on itself (without inheritance), without using the
    * Ecology. In other words, it does an end-run around ordinary Property fetching and all the
@@ -339,8 +344,17 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropMap, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing, cr:Option[UserRef] = None)
+case class ThingState(
+    i:OID, 
+    s:OID, 
+    m:OID, 
+    pf: PropMap, 
+    mt:DateTime = querki.time.epoch, 
+    k:Kind.Kind = Kind.Thing, 
+    cr:Option[UserRef] = None,
+    ct:Option[DateTime] = None)
   extends Thing(i, s, m, k, pf, mt) 
 {
   override def creatorOpt = cr
+  override def createTimeOpt = ct
 }

@@ -54,6 +54,7 @@ package object identity {
     val InvitationStatusPropOID = moid(16)
     val GuestUserOID = moid(17)
     val IsSimpleGuestOID = moid(18)
+    val CreatorFunctionOID = moid(19)
   }
   
   val IdentityTag = "Users, Identities and Invitations"

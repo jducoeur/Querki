@@ -6,6 +6,7 @@ import scala.scalajs.js
 import js.annotation.JSName
 import org.scalajs.dom
 import org.querki.jquery._
+import org.querki.gadgets._
 
 import scalatags.JsDom.all._
 import upickle.default._
@@ -132,9 +133,9 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
         $(rawGadget.elem).insertBefore(elem)
         Gadgets.hookPendingGadgets()
         
-	    // TODO: for the moment, we are using the real input button as a one-shot -- after each upload, we're removing
-	    // it and creating another. This is stupid, but it is working around the fact that things only seem to be
-	    // working once otherwise. Figure out why that's happening!
+      // TODO: for the moment, we are using the real input button as a one-shot -- after each upload, we're removing
+      // it and creating another. This is stupid, but it is working around the fact that things only seem to be
+      // working once otherwise. Figure out why that's happening!
         $(elem).off("click")
         $(photoInputElem.elem).remove()
         addRealInputButton()
@@ -168,8 +169,8 @@ class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](
         "Click to replace the photo"
       else
         "Click to add a photo"
-	$(elem).tooltip(TooltipOptions.title(text))
-	
+  $(elem).tooltip(TooltipOptions.title(text))
+  
     showReady()
   }
 } 

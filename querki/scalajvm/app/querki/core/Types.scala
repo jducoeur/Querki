@@ -466,16 +466,20 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
           <option value={UnknownOID.id.toString}>Nothing selected</option> +: realOptions
         else
           realOptions
-      fullContents = linkModel match {
-        case Some(propAndVal) if (!propAndVal.isEmpty) => {
-          val model = state.anything(propAndVal.first).get
-          if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
-            withOpt
-          else
-            withOpt :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
-        }
-        case _ => withOpt
-      }
+      fullContents = withOpt
+      // TBD (QI.7w4g8u4): the whole "Create a New Thingy" option has been broken for *years* now,
+      // and I've come to be suspicious of the concept. For now, we're going to just quietly remove
+      // it:
+//        linkModel match {
+//        case Some(propAndVal) if (!propAndVal.isEmpty) => {
+//          val model = state.anything(propAndVal.first).get
+//          if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
+//            withOpt
+//          else
+//            withOpt :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
+//        }
+//        case _ => withOpt
+//      }
     }
       yield
         <select class="_linkSelect">{fullContents}</select>
@@ -633,7 +637,7 @@ trait TypeCreation {
                 QLText("""[[_modelForType -> _if(_isNonEmpty, ""Based on Model ____"", ""The Ur-Type, from which all others descend."")]]"""), 
                 new DelegatingType(TextType)))),
         (querki.conventions.MOIDs.PropDetailsOID -> 
-        	ExactlyOne(ElemValue(QLText("""""".stripMargin),
+          ExactlyOne(ElemValue(QLText("""""".stripMargin),
             new DelegatingType(LargeTextType)))),
         (querki.editing.MOIDs.PreferredCollectionOID ->
           ExactlyOne(ElemValue(querki.core.MOIDs.OptionalOID,
@@ -723,7 +727,7 @@ trait TypeCreation {
                 QLText("A single line of text, which may contain QL expressions"), 
                 new DelegatingType(TextType)))),
         (querki.conventions.MOIDs.PropDetailsOID -> 
-        	ExactlyOne(ElemValue(QLText("""Text Type is almost the same as Large Text Type -- see Large Text Type for most of the details.
+          ExactlyOne(ElemValue(QLText("""Text Type is almost the same as Large Text Type -- see Large Text Type for most of the details.
             |
             |The only real difference is that the input field for a Text Type Property is only a single line, and
             |Text Properties are usually intended to be relatively short. As a rule of thumb, if you can imagine
@@ -745,7 +749,7 @@ trait TypeCreation {
                 QLText("A block of text, which may contain QL expressions"),
                 new DelegatingType(TextType)))),
         (querki.conventions.MOIDs.PropDetailsOID -> 
-        	ExactlyOne(ElemValue(QLText("""Large Text is one of the central Types in Querki: it is an arbitrarily long block of text,
+          ExactlyOne(ElemValue(QLText("""Large Text is one of the central Types in Querki: it is an arbitrarily long block of text,
             |which may contain QL expressions in it. Most Querki Spaces use Large Text Properties frequently.
             |
             |When you edit a Large Text, you will see a multi-line input box. This will grow automatically as
@@ -790,7 +794,7 @@ trait TypeCreation {
             |\[[Details\]]
             |```
             |That's it -- Querki is smart enough to know that, since you're naming a Property, it should just insert the
-        	|value of that Property here.""".stripMargin),
+          |value of that Property here.""".stripMargin),
             new DelegatingType(LargeTextType))))
         )) with PTypeBuilder[QLText,String] 
   {

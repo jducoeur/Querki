@@ -5,8 +5,11 @@ import autowire._
 
 import models.Wikitext
 import querki.api.ThingFunctions
+import querki.apps.AppsFunctions
+import AppsFunctions._
 import querki.display._
 import querki.globals._
+import querki.time._
 
 class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   
@@ -24,12 +27,18 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   def pageContent = {
     val summaryFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.summaryProp.oid).call()
     val detailsFut = Client[ThingFunctions].getPropertyDisplay(spaceInfo.oid, std.conventions.detailsProp.oid).call()
+    val appsFut:Future[Map[TID, AppInfo]] =
+      if (spaceInfo.apps.isEmpty)
+        Future.successful(Map.empty)
+      else
+        Client[AppsFunctions].checkAppVersions().call()
     
     for {
       summaryOpt <- summaryFut
       summaryText = summaryOpt.getOrElse(Wikitext.empty)
       detailsOpt <- detailsFut
       detailsText = detailsOpt.getOrElse(Wikitext.empty)
+      appsInfo <- appsFut
       // For the moment, we only allow you to extract an App if there isn't already an App. This will change.
       allowExtract = 
         DataAccess.request.isOwner && 
@@ -53,10 +62,21 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
           if (!isApp && (allowExtract || !spaceInfo.apps.isEmpty)) {
             MSeq(
               h2("Apps"),
-              for (app <- spaceInfo.apps)
+              for {
+                app <- spaceInfo.apps
+                appInfoOpt = appsInfo.get(app.oid)
+                updateInfo:String = ""
+                // TODO: displaying the updateInfo isn't very useful until the user can *do*
+                // something about it, so it's disabled for the moment:
+//                  appInfoOpt.map { appInfo =>
+//                    s"""
+//                       |
+//                       |**Newer Version:** updated ${displayTime(appInfo.nowAt.when)}; you are using a version from ${displayTime(appInfo.inUse.when)}""".stripMargin
+//                  }.getOrElse("")
+              }
                 // Link to the Info Page of the App:
                 yield QText(
-                  s"""**${IndexPage.spaceLink(app, app.displayName, Pages.infoFactory)}**"""),
+                  s"""**${IndexPage.spaceLink(app, app.displayName, Pages.infoFactory)}**$updateInfo""".stripMargin),
               
               if (allowExtract) {
                 div(

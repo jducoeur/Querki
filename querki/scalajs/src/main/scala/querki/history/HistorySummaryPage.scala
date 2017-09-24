@@ -7,7 +7,7 @@ import autowire._
 
 import org.widok.moment._
 
-import org.querki.gadgets.core.SimpleGadget
+import org.querki.gadgets._
 import org.querki.jquery._
 
 import models.Kind

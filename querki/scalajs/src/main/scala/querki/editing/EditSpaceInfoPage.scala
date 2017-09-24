@@ -7,6 +7,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.gadgets._
 
 import querki.data.BasicThingInfo
 import querki.display._
@@ -33,8 +34,8 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
     override lazy val thingId = info.oid
     override val path = Editing.propPath(std.security.canReadPerm, Some(info))
     
-    def values = securityRadio.flatMap { radio =>
-      radio.selectedValOpt().map(Seq(_))
+    def values = securityRadio.flatMapNow { radio =>
+      radio.selectedValOpt.now.map(Seq(_))
     }.getOrElse(Seq.empty)
     
     override def save() = {
@@ -54,10 +55,10 @@ class EditSpaceInfoPage(params:ParamMap)(implicit val ecology:Ecology)
 
   val securityRadio = GadgetRef[RxRadio]
     .whenRendered { g =>
-      Obs(g.selectedValOpt, skipInitial=true) {
+      g.selectedValOpt.triggerLater {
         // Whenever the selection changes, save both objects:
-        spaceSaver.foreach(_.save())
-        spacePermsSaver.foreach(_.save())
+        spaceSaver.foreachNow(_.save())
+        spacePermsSaver.foreachNow(_.save())
       }
     }
   
