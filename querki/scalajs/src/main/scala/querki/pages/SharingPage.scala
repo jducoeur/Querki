@@ -227,7 +227,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         h4("Create a new Custom Role"),
         roleAdder <= new RxText(cls:="form-control col-md-3"),
         " ", 
-        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := Rx { roleAdder.map(_.length == 0).getOrElse(true) }) ({ () =>
+        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := roleAdder.flatMapRxOrElse(_.length)(_ == 0, true)) ({ () =>
           createRole(roleAdder.get.text.now)
         })
       )

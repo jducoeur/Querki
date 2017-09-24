@@ -54,9 +54,9 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   lazy val signupButton = GadgetRef[RunButton]
   lazy val errorDisplay = GadgetRef.of[dom.html.Div]
   
-  lazy val emailOkay = Rx { emailInput.map(_.text().matches(emailRegex)).getOrElse(false) }
-  lazy val passwordOkay = Rx { passwordInput.mapOrElse(_.length >= 8, false) }
-  lazy val handleOkay = Rx { handleInput.mapOrElse(_.length >= 4, false) }
+  lazy val emailOkay = emailInput.flatMapRxOrElse(_.text)(_.matches(emailRegex), false)
+  lazy val passwordOkay = passwordInput.flatMapRxOrElse(_.length)(_ >= 8, false)
+  lazy val handleOkay = handleInput.flatMapRxOrElse(_.length)(_ >= 4, false)
   lazy val displayOkay = Rx {
     val displayEmpty = displayInput.rxEmpty
     !displayEmpty() 

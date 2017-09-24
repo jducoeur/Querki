@@ -65,11 +65,14 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
               for {
                 app <- spaceInfo.apps
                 appInfoOpt = appsInfo.get(app.oid)
-                updateInfo:String = appInfoOpt.map { appInfo =>
-                  s"""
-                     |
-                     |**Newer Version:** updated ${displayTime(appInfo.nowAt.when)}; you are using a version from ${displayTime(appInfo.inUse.when)}""".stripMargin
-                }.getOrElse("")
+                updateInfo:String = ""
+                // TODO: displaying the updateInfo isn't very useful until the user can *do*
+                // something about it, so it's disabled for the moment:
+//                  appInfoOpt.map { appInfo =>
+//                    s"""
+//                       |
+//                       |**Newer Version:** updated ${displayTime(appInfo.nowAt.when)}; you are using a version from ${displayTime(appInfo.inUse.when)}""".stripMargin
+//                  }.getOrElse("")
               }
                 // Link to the Info Page of the App:
                 yield QText(

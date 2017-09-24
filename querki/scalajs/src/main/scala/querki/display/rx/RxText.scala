@@ -26,7 +26,7 @@ trait RxTextBase[E <: Element] extends Gadget[E] {
       yield v
   
   lazy val textOpt = Var[Option[String]](curValue)
-  lazy val text = Rx { textOpt().getOrElse("") }
+  lazy val text:Rx[String] = Rx { textOpt().getOrElse("") }
   
   protected def update() = { textOpt() = curValue }
   
@@ -35,7 +35,7 @@ trait RxTextBase[E <: Element] extends Gadget[E] {
     update()
   }
       
-  def length = textOpt.now.map(_.length()).getOrElse(0)
+  def length:Rx[Int] = textOpt.map(_.map(_.length).getOrElse(0))
 }
 
 /**

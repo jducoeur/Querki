@@ -37,10 +37,10 @@ class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*)(
   /**
    * This variant of selectedVal filters out the empty string.
    */
-  lazy val selectedValOpt = Rx { selectedOption().map(_.valueString).filter(_.length > 0) }
-  lazy val selectedVal = selectedValOpt.map(_.getOrElse(""))
-  lazy val selectedTIDOpt = selectedValOpt.map(_.map(TID(_)))
-  lazy val selectedTID = selectedVal.map(TID(_))
+  lazy val selectedValOpt:Rx[Option[String]] = selectedOption.map(_.map(_.valueString).filter(_.length > 0))
+  lazy val selectedVal:Rx[String] = selectedValOpt.map(_.getOrElse(""))
+  lazy val selectedTIDOpt:Rx[Option[TID]] = selectedValOpt.map(_.map(TID(_)))
+  lazy val selectedTID:Rx[TID] = selectedVal.map(TID(_))
   
   /**
    * This is all of the options, including the "empty" option at the top iff one was specified.
@@ -56,7 +56,7 @@ class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*)(
    * Non-empty iff this RxSelect has a non-empty value. That way, you can build an Rx based on whether
    * this is set or not.
    */
-  lazy val selectedWithTID = Rx { selectedTIDOpt().map(v => (this, v)) }
+  lazy val selectedWithTID:Rx[Option[(RxSelect, TID)]] = selectedTIDOpt.map(_.map(v => (this, v)))
   
   def doRender() = select(mods, cls:="form-control", allOptions.now)
   

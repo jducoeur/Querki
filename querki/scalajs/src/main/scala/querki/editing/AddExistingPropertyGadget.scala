@@ -22,7 +22,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
     propSelector.get.setValue("")
   }
   
-  override def onInserted() = { propSelector.mapElem($(_).focus()) }
+  override def onInserted() = { propSelector.mapElemNow($(_).focus()) }
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
   // page to add the Property:

@@ -99,7 +99,7 @@ class OnePerm(t:BasicThingInfo, permInfo:PermInfo, thingPerm:Rx[Option[ThingPerm
     val box = GadgetRef.of[html.Input]
     
     val watcher = currently.trigger {
-      box.mapElem { e =>
+      box.mapElemNow { e =>
         $(e).prop("checked", (currently.now == page.levelMap(level).underlying))
       }
     }
