@@ -19,8 +19,9 @@ object MOIDs extends EcotIds(35) {
   val CommentTextOID = moid(1)
   val CanCommentPermOID = moid(2)
   val CanReadCommentsPermOID = moid(3)
-  val ConversationTypeOID = moid(4)
   val ThingConversationsFunctionOID = moid(5)
+  val CommentTypeOID = moid(6)
+  val ConversationTypeOID = moid(7)
 }
 import MOIDs._
 
@@ -77,24 +78,41 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
    * TYPES
    ***********************************************/
   
-  lazy val ConversationsType = new SystemType[ThingConversations](ConversationTypeOID, 
+  lazy val CommentType = new SystemType[Comment](CommentTypeOID, 
     toProps(
-      setName("_thingConversationsType"),
+      setName("_commentType"),
       setInternal,
-      Summary("Represents the Conversations existing on a given Thing. You cannot create this directly, but it is returned from _thingConversations().")
-    )) with SimplePTypeBuilder[ThingConversations]
+      Summary("Represents a single Comment in a Conversation.")
+    )) with SimplePTypeBuilder[Comment]
   {
-    def doDeserialize(ser:String)(implicit state:SpaceState):ThingConversations = ???
-    def doSerialize(v:ThingConversations)(implicit state:SpaceState):String = ???
-    def doWikify(context:QLContext)(v:ThingConversations, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      fut(Wikitext("TODO: this is a set of Conversations, and should be rendered out"))
+    def doDeserialize(ser:String)(implicit state:SpaceState):Comment = ???
+    def doSerialize(v:Comment)(implicit state:SpaceState):String = ???
+    def doWikify(context:QLContext)(v:Comment, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+      fut(Wikitext(s"Comment: $props"))
     }
-    def doDefault(implicit state:SpaceState):ThingConversations = ???
-    def doComputeMemSize(v:ThingConversations):Int = 0
+    def doDefault(implicit state:SpaceState):Comment = ???
+    def doComputeMemSize(v:Comment):Int = 0
+  }
+  
+  lazy val ConversationType = new SystemType[ConversationNode](ConversationTypeOID, 
+    toProps(
+      setName("_conversationType"),
+      setInternal,
+      Summary("Represents a particular Conversation or Thread.")
+    )) with SimplePTypeBuilder[ConversationNode]
+  {
+    def doDeserialize(ser:String)(implicit state:SpaceState):ConversationNode = ???
+    def doSerialize(v:ConversationNode)(implicit state:SpaceState):String = ???
+    def doWikify(context:QLContext)(v:ConversationNode, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+      fut(Wikitext(s"This is a single Conversation"))
+    }
+    def doDefault(implicit state:SpaceState):ConversationNode = ???
+    def doComputeMemSize(v:ConversationNode):Int = 0
   }
   
   override lazy val types = Seq(
-    ConversationsType
+    CommentType,
+    ConversationType
   )
     
   /***********************************************
@@ -110,7 +128,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
           expected = Some(Seq(LinkType), "A Thing"),
           reqs = Seq.empty,
           opts = Seq.empty,
-          returns = (ConversationsType, "The Conversations existing on that Thing, if there are any.")
+          returns = (ConversationType, "A List of the Conversations existing on that Thing, if there are any.")
         ),
         Details("""Conversations show up on a Thing's page, normally. But sometimes you want to be able
           |to show them elsewhere, including on other pages. This is how you get at them, after which
@@ -121,8 +139,9 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
         t <- inv.contextAllThings
         convs <- inv.fut((SpaceOps.spaceRegion ? 
           SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, GetConversations(t.id))).mapTo[ThingConversations])
+        node <- inv.iter(convs.comments)
       }
-        yield ExactlyOne(ConversationsType(convs))
+        yield ExactlyOne(ConversationType(node))
     }
   }
   
