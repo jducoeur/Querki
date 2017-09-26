@@ -89,8 +89,13 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     def doDeserialize(ser:String)(implicit state:SpaceState):Comment = ???
     def doSerialize(v:Comment)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:Comment, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      val wikitext = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
-      fut(Wikitext(s"Comment: $wikitext"))
+      val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
+      // We need to pre-render the wikitext, since we're going to be including it in-page:
+      val commentWikitext = Wikitext(commentText).raw.toString
+      val wikitext = s"""<div data-commentid="${v.id}" data-authorid="${v.authorId}">
+                      |$commentWikitext
+                      |</div>""".stripMargin
+      fut(HtmlWikitext(wikitext))
     }
     def doDefault(implicit state:SpaceState):Comment = ???
     def doComputeMemSize(v:Comment):Int = 0
