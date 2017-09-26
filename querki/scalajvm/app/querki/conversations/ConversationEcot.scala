@@ -1,27 +1,36 @@
 package querki.conversations
 
 import akka.actor.{ActorRef, Props}
+import akka.pattern._
 
+import models._
 import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
-import querki.values.SpaceState
+import querki.spaces.messages.SpaceSubsystemRequest
+import querki.util.ActorHelpers
+import querki.values.{QLContext, SpaceState}
 
 import PersistentEvents._
+import messages._
 
 object MOIDs extends EcotIds(35) {
   val CommentTextOID = moid(1)
   val CanCommentPermOID = moid(2)
   val CanReadCommentsPermOID = moid(3)
+  val ConversationTypeOID = moid(4)
+  val ThingConversationsFunctionOID = moid(5)
 }
 import MOIDs._
 
-class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
+class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with querki.core.MethodDefs {
     
   val AccessControl = initRequires[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  
+  implicit val timeout = ActorHelpers.timeout
   
   override def postInit() = {
     // Some entry points are legal without login:
@@ -63,6 +72,59 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   def canWriteComments(identity:OID, thingId:OID, state:SpaceState) = {
     AccessControl.hasPermission(CanComment, state, identity, thingId)
   }
+    
+  /***********************************************
+   * TYPES
+   ***********************************************/
+  
+  lazy val ConversationsType = new SystemType[ThingConversations](ConversationTypeOID, 
+    toProps(
+      setName("_thingConversationsType"),
+      setInternal,
+      Summary("Represents the Conversations existing on a given Thing. You cannot create this directly, but it is returned from _thingConversations().")
+    )) with SimplePTypeBuilder[ThingConversations]
+  {
+    def doDeserialize(ser:String)(implicit state:SpaceState):ThingConversations = ???
+    def doSerialize(v:ThingConversations)(implicit state:SpaceState):String = ???
+    def doWikify(context:QLContext)(v:ThingConversations, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+      fut(Wikitext("TODO: this is a set of Conversations, and should be rendered out"))
+    }
+    def doDefault(implicit state:SpaceState):ThingConversations = ???
+    def doComputeMemSize(v:ThingConversations):Int = 0
+  }
+  
+  override lazy val types = Seq(
+    ConversationsType
+  )
+    
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  lazy val ThingConversationsFunction = new InternalMethod(ThingConversationsFunctionOID,
+      toProps(
+        setName("_thingConversations"),
+        Summary("""Produces the Conversations on this Thing, if any."""),
+        Categories(ConvTag),
+        Signature(
+          expected = Some(Seq(LinkType), "A Thing"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (ConversationsType, "The Conversations existing on that Thing, if there are any.")
+        ),
+        Details("""Conversations show up on a Thing's page, normally. But sometimes you want to be able
+          |to show them elsewhere, including on other pages. This is how you get at them, after which
+          |you can display them as you please.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        t <- inv.contextAllThings
+        convs <- inv.fut((SpaceOps.spaceRegion ? 
+          SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, GetConversations(t.id))).mapTo[ThingConversations])
+      }
+        yield ExactlyOne(ConversationsType(convs))
+    }
+  }
   
   /***********************************************
    * PROPERTIES
@@ -88,6 +150,8 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
       true, true)
   
   override lazy val props = Seq(
+    ThingConversationsFunction,
+    
     CommentText,
     CanComment,
     CanReadComments

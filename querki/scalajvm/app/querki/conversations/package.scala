@@ -13,6 +13,9 @@ import querki.uservalues.PersistMessages.OneUserValue
 import querki.values.SpaceState
 
 package object conversations {
+  
+  val ConvTag = "Conversations"
+  
   /**
    * The main public interface for Conversations.
    * 
