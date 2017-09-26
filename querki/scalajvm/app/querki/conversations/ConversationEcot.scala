@@ -22,6 +22,7 @@ object MOIDs extends EcotIds(35) {
   val ThingConversationsFunctionOID = moid(5)
   val CommentTypeOID = moid(6)
   val ConversationTypeOID = moid(7)
+  val CommentsFunctionOID = moid(8)
 }
 import MOIDs._
 
@@ -88,7 +89,8 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     def doDeserialize(ser:String)(implicit state:SpaceState):Comment = ???
     def doSerialize(v:Comment)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:Comment, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      fut(Wikitext(s"Comment: $props"))
+      val wikitext = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
+      fut(Wikitext(s"Comment: $wikitext"))
     }
     def doDefault(implicit state:SpaceState):Comment = ???
     def doComputeMemSize(v:Comment):Int = 0
@@ -145,6 +147,43 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     }
   }
   
+  /**
+   * Since a Thread is essentially a tree, and the top-level Comments are basically the
+   * left-hand branch, we need to recurse down to collect them.
+   */
+  @annotation.tailrec
+  final def collectComments(conv:ConversationNode, soFar:List[Comment]):List[Comment] = {
+    val result = conv.comment :: soFar
+    conv.responses.headOption match {
+      case None => result.reverse
+      case Some(resp) => collectComments(resp, result)
+    }
+  }
+  
+  lazy val CommentsFunction = new InternalMethod(CommentsFunctionOID,
+      toProps(
+        setName("_comments"),
+        Summary("""Produces the Comments in this Conversation or Thread"""),
+        Categories(ConvTag),
+        Signature(
+          expected = Some(Seq(ConversationType), "A Conversation or Thread"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (CommentType, "A List of the *primary* Comments in this Thread.")
+        ),
+        Details("""Given a single Conversation, this lets you get the individual Comments. However, note that this is
+                  |just the flat top-level thread; if there are sub-Threads (once Querki has sub-Threads), you will
+                  |have to get those from the Comments they hang off of.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        conv <- inv.contextAllAs(ConversationType)
+        comment <- inv.iter(collectComments(conv, List.empty))
+      }
+        yield ExactlyOne(CommentType(comment))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -170,6 +209,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
   
   override lazy val props = Seq(
     ThingConversationsFunction,
+    CommentsFunction,
     
     CommentText,
     CanComment,
