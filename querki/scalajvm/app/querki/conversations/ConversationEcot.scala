@@ -30,6 +30,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     
   val AccessControl = initRequires[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   implicit val timeout = ActorHelpers.timeout
@@ -89,13 +90,18 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     def doDeserialize(ser:String)(implicit state:SpaceState):Comment = ???
     def doSerialize(v:Comment)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:Comment, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
-      // We need to pre-render the wikitext, since we're going to be including it in-page:
-      val commentWikitext = Wikitext(commentText).raw.toString
-      val wikitext = s"""<div data-commentid="${v.id}" data-authorid="${v.authorId}">
-                      |$commentWikitext
-                      |</div>""".stripMargin
-      fut(HtmlWikitext(wikitext))
+      if (v.isDeleted || v.isArchived) {
+        fut(Wikitext(""))
+      } else {
+        val authorName = Person.localPerson(v.authorId)(context.state).map(_.displayName).getOrElse("Anonymous")
+        val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
+        // We need to pre-render the wikitext, since we're going to be including it in-page:
+        val commentWikitext = Wikitext(commentText).raw.toString
+        val wikitext = s"""<div class="_commentData" data-commentid="${v.id}" data-thingid="${v.thingId.toThingId}" data-authorid="${v.authorId.toThingId}" data-authorname="$authorName" data-time="${v.createTime.getMillis}">
+                        |$commentWikitext
+                        |</div>""".stripMargin
+        fut(HtmlWikitext(wikitext))
+      }
     }
     def doDefault(implicit state:SpaceState):Comment = ???
     def doComputeMemSize(v:Comment):Int = 0

@@ -23,7 +23,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
    * CommentGadget, and that recursively renders its replies.
    */
   def flattenNodes(node:ConvNode):Seq[CommentGadget] = {
-    new CommentGadget(node.comment) +: node.responses.flatMap(flattenNodes(_))
+    new CommentGadget(node.comment, thingInfo.oid) +: node.responses.flatMap(flattenNodes(_))
   }
   lazy val flattenedNodes = flattenNodes(conv)
   

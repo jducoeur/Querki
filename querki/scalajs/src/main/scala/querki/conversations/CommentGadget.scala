@@ -1,19 +1,21 @@
 package querki.conversations
 
 import org.scalajs.dom.{raw => dom}
+import dom.Element
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 
 import org.querki.gadgets._
 import org.querki.jquery._
 
-import querki.data.ThingInfo
-import querki.display.QText
+import models.HtmlWikitext
+import querki.data.{IdentityInfo, TID}
+import querki.display.{HookedGadget, QText}
 import querki.display.input.DeleteButton
 import querki.globals._
 import querki.time._
 
-private [conversations] class CommentGadget(val comment:CommentInfo)(implicit val ecology:Ecology, thingInfo:ThingInfo)
+private [conversations] class CommentGadget(val comment:CommentInfo, val thingId:TID)(implicit val ecology:Ecology)
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {  
   lazy val Client = interface[querki.client.Client]
@@ -21,7 +23,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
   val cid = comment.id
   val created = displayTime(comment.createTime)
   
-  def doRender() =
+  def doRender() = {
     div(
       cls:="_comment",
       id:=s"_comment$cid",
@@ -36,10 +38,34 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
       ),
       new QText(comment.content, cls:="_commentText")
     )
+  }
     
   def doDelete() = {
-    Client[ConversationFunctions].deleteComment(thingInfo.oid, cid).call().foreach { dummy =>
+    Client[ConversationFunctions].deleteComment(thingId, cid).call().foreach { dummy =>
       $(elem).hide(400, { () => $(elem).remove() })
     }
+  }
+}
+
+object CommentGadget {
+  def fromElem(e:Element)(implicit ecology:Ecology):CommentGadget = {
+    val info = CommentInfo(
+      $(e).data("commentid").get.asInstanceOf[Integer],
+      IdentityInfo(
+        $(e).dataString("authorid"),
+        $(e).dataString("authorname"),
+        // TODO: this isn't right; can we fetch the actual handle without pain server-side?
+        $(e).dataString("authorid")),
+      HtmlWikitext($(e).text()),
+      // TODO: we will eventually need machinery to cope with sub-threads:
+      true,
+      $(e).data("time").get.asInstanceOf[Double].toLong,
+      // TODO: we should eventually understand how deletion works in this world:
+      false,
+      false
+    )
+    val gadget = new CommentGadget(info, TID($(e).dataString("thingid")))
+    $(e).replaceWith(gadget.rendered)
+    gadget
   }
 }
