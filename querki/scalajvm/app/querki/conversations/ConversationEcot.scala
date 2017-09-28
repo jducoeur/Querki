@@ -80,6 +80,22 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
    * TYPES
    ***********************************************/
   
+  def renderComment(context:QLContext, v:Comment, isStandalone:Boolean):Future[Wikitext] = {
+    if (v.isDeleted || v.isArchived) {
+      fut(Wikitext(""))
+    } else {
+      val authorName = Person.localPerson(v.authorId)(context.state).map(_.displayName).getOrElse("Anonymous")
+      val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
+      // We need to pre-render the wikitext, since we're going to be including it in-page:
+      val commentWikitext = Wikitext(commentText).raw.toString
+      val commentCls = if (isStandalone) "_commentData" else "_convCommentData"
+      val wikitext = s"""<div class="$commentCls" data-commentid="${v.id}" data-thingid="${v.thingId.toThingId}" data-authorid="${v.authorId.toThingId}" data-authorname="$authorName" data-time="${v.createTime.getMillis}">
+                      |$commentWikitext
+                      |</div>""".stripMargin
+      fut(HtmlWikitext(wikitext))
+    }    
+  }
+  
   lazy val CommentType = new SystemType[Comment](CommentTypeOID, 
     toProps(
       setName("_commentType"),
@@ -90,18 +106,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     def doDeserialize(ser:String)(implicit state:SpaceState):Comment = ???
     def doSerialize(v:Comment)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:Comment, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      if (v.isDeleted || v.isArchived) {
-        fut(Wikitext(""))
-      } else {
-        val authorName = Person.localPerson(v.authorId)(context.state).map(_.displayName).getOrElse("Anonymous")
-        val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
-        // We need to pre-render the wikitext, since we're going to be including it in-page:
-        val commentWikitext = Wikitext(commentText).raw.toString
-        val wikitext = s"""<div class="_commentData" data-commentid="${v.id}" data-thingid="${v.thingId.toThingId}" data-authorid="${v.authorId.toThingId}" data-authorname="$authorName" data-time="${v.createTime.getMillis}">
-                        |$commentWikitext
-                        |</div>""".stripMargin
-        fut(HtmlWikitext(wikitext))
-      }
+      renderComment(context, v, true)
     }
     def doDefault(implicit state:SpaceState):Comment = ???
     def doComputeMemSize(v:Comment):Int = 0
@@ -117,7 +122,23 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     def doDeserialize(ser:String)(implicit state:SpaceState):ConversationNode = ???
     def doSerialize(v:ConversationNode)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:ConversationNode, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      fut(Wikitext(s"This is a single Conversation"))
+      val canComment = 
+        (for {
+          request <- context.requestOpt
+          user <- request.requester
+        }
+          yield AccessControl.hasPermission(CanComment, context.state, user, v.comment.thingId)
+        ).getOrElse(false)
+      val comments = collectComments(v, List.empty)
+      val commentsFut:Future[List[Wikitext]] = Future.sequence(comments.map(renderComment(context, _, false)))
+      for {
+        commentWikitexts <- commentsFut
+        commentsWikitext = commentWikitexts.reduce(_ + _)
+      }
+        yield 
+          HtmlWikitext(s"""<div class="_conversationData" data-thingid="${v.comment.thingId.toThingId}" data-cancomment="$canComment">""") + 
+          commentsWikitext + 
+          HtmlWikitext("</div>")
     }
     def doDefault(implicit state:SpaceState):ConversationNode = ???
     def doComputeMemSize(v:ConversationNode):Int = 0

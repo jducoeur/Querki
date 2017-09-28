@@ -48,8 +48,11 @@ private [conversations] class CommentGadget(val comment:CommentInfo, val thingId
 }
 
 object CommentGadget {
-  def fromElem(e:Element)(implicit ecology:Ecology):CommentGadget = {
-    val info = CommentInfo(
+  /**
+   * Given an Element that describes a Comment, this extracts the info from that.
+   */
+  def infoFromElem(e:Element)(implicit ecology:Ecology):CommentInfo = {
+    CommentInfo(
       $(e).data("commentid").get.asInstanceOf[Integer],
       IdentityInfo(
         $(e).dataString("authorid"),
@@ -64,6 +67,16 @@ object CommentGadget {
       false,
       false
     )
+  }
+  
+  /**
+   * Given an Element that describes a Comment, replace it with the UI version.
+   * 
+   * This is horrible and side-effecting! We should come up with a less fugly
+   * abstraction that works with Gadgets.
+   */
+  def fromElem(e:Element)(implicit ecology:Ecology):CommentGadget = {
+    val info = infoFromElem(e)
     val gadget = new CommentGadget(info, TID($(e).dataString("thingid")))
     $(e).replaceWith(gadget.rendered)
     gadget

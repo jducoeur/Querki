@@ -36,7 +36,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
         val convs =
           div(
             for (conv <- convInfo.convs)
-              yield new ConversationGadget(conv, canComment)
+              yield new ConversationGadget(conv, canComment, t.oid)
           )
         convWrapper.replaceContents(convs.render)
         
@@ -46,7 +46,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
             h4(cls:="_commentsHeader", "Comments"),
             convWrapper,
             if (canComment)
-              new ReplyGadget(None, "Start a new conversation...", { node => onNewConversation(node, convInfo.canComment) })
+              new ReplyGadget(None, "Start a new conversation...", t.oid, { node => onNewConversation(node, convInfo.canComment) })
           )
           
         allWrapper.replaceContents(guts.render)
@@ -64,7 +64,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
   }
   
   def onNewConversation(newNode:ConvNode, canComment:Boolean) = {
-    val convGadget = new ConversationGadget(newNode, canComment)
+    val convGadget = new ConversationGadget(newNode, canComment, t.oid)
     $(convWrapper.elem).append(convGadget.render)
   }
   
@@ -74,7 +74,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
   def doRender() = div(allWrapper)
 }
 
-class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Unit)(implicit val ecology:Ecology, thingInfo:ThingInfo) 
+class ReplyGadget(replyTo:Option[CommentId], ph:String, thingId:TID, onPosted:ConvNode => Unit)(implicit val ecology:Ecology) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
   lazy val Client = interface[querki.client.Client]
@@ -84,7 +84,7 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
   }
   
   def postComment():Unit = {
-    Client[ConversationFunctions].addComment(thingInfo.oid, $(commentInput.elem).value().asInstanceOf[String], replyTo).call().foreach { node =>
+    Client[ConversationFunctions].addComment(thingId, $(commentInput.elem).value().asInstanceOf[String], replyTo).call().foreach { node =>
       $(commentInput.elem).value("")
       onPosted(node)
     }
