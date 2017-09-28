@@ -66,7 +66,12 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
 object ConversationGadget {
   def fromElem(e:Element)(implicit ecology:Ecology):ConversationGadget = {
     val thingId = TID($(e).dataString("thingid"))
-    val canComment = $(e).data("cancomment").get.asInstanceOf[Boolean]
+    val suppressReplies = $(e).parent("._suppressreplies").length > 0
+    val canComment =
+      if (suppressReplies)
+        false
+      else
+        $(e).data("cancomment").get.asInstanceOf[Boolean]
     val commentInfos = $(e).find("._convCommentData").mapElems(CommentGadget.infoFromElem(_))
     // TODO: this will currently crash if the conversation is completely empty. This is a rare
     // edge case, but could happen if *all* of the comments are deleted. But fixing it isn't
