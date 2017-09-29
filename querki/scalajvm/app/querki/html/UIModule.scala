@@ -130,7 +130,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             }
               yield wikitext.span
           case _ => {
-            val wikitext = context.value.wikify(context, None).map(_.raw)
+            val wikitext = context.value.wikify(context).map(_.raw)
             inv.fut(wikitext)
           }
         }
@@ -140,12 +140,18 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         parsedParam <- inv.processParamFirstAs(0, ParsedTextType)
         paramText = parsedParam.raw.toString
         content <- contentToUse
-        nodes = XmlHelpers.toNodes(content)
+        // HACK: working around scala-xml issue #72. This should eventually become unnecessary, someday:
+        // TODO: this hack should somehow be incorporated into XmlHelpers proper, because the problem
+        // probably appears elsewhere:
+        contentEscaped = DisplayText(content.str.replaceAll("&apos;", "--apos escape--"))
+        nodes = XmlHelpers.toNodes(contentEscaped)
         newXmlFuts = nodes.map(node => doTransform(node, paramText, context, params))
         newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
         newHtml = QHtml(Xhtml.toXhtml(newXml))
+        // HACK part 2:
+        newHtmlEscaped = newHtml.body.replaceAll("--apos escape--", "&apos;")
       }
-        yield QL.WikitextValue(HtmlWikitext(newHtml))
+        yield QL.WikitextValue(HtmlWikitext(newHtmlEscaped))
     }
   }
   
