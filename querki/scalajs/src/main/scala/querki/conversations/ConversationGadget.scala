@@ -16,7 +16,8 @@ private [conversations] class ConversationGadget(
     conv:ConvNode, 
     canComment:Boolean, 
     thingId:TID,
-    replyPromptTextOpt:Option[String] = None
+    replyPromptTextOpt:Option[String] = None,
+    replyLinkClassOpt:Option[String] = None
   )(implicit val ecology:Ecology) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
@@ -48,12 +49,24 @@ private [conversations] class ConversationGadget(
       
   lazy val replyContainer = (new WrapperDiv()(ecology))(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
-  lazy val replyPlaceholder = Gadget(
-    inp(cls:="_replyPlaceholder form-control", 
-      tpe:="text", 
-      placeholder:=replyPromptText,
-      onclick:={ () => showRealReplyInput() },
-      onkeydown:={ () => showRealReplyInput() }))
+  def replyPlaceholder:SimpleGadget =
+    replyLinkClassOpt match {
+      case Some(styles) => {
+        Gadget(
+          a(cls:=styles,
+            replyPromptText,
+            onclick:={ () => showRealReplyInput() }))
+      }
+      case None => {
+        Gadget(
+          inp(cls:="_replyPlaceholder form-control", 
+            tpe:="text", 
+            placeholder:=replyPromptText,
+            onclick:={ () => showRealReplyInput() },
+            onkeydown:={ () => showRealReplyInput() }))        
+      }
+    }
+
   
   def showRealReplyInput():Unit = {
     replyContainer.replaceContents(realReply.rendered)
@@ -80,6 +93,7 @@ object ConversationGadget {
       else
         $(e).data("cancomment").get.asInstanceOf[Boolean]
     val replyPromptTextOpt = $(e).data("replyprompt").toOption.map(_.asInstanceOf[String])
+    val replyLinkClassOpt = $(e).data("replylinkclass").toOption.map(_.asInstanceOf[String])
     val commentInfos = $(e).find("._convCommentData").mapElems(CommentGadget.infoFromElem(_))
     // TODO: this will currently crash if the conversation is completely empty. This is a rare
     // edge case, but could happen if *all* of the comments are deleted. But fixing it isn't
@@ -88,7 +102,7 @@ object ConversationGadget {
     val rootNode = (commentInfos.foldRight(Seq.empty[ConvNode]) { (info, prevNode) =>
       Seq(ConvNode(info, prevNode))
     }).head
-    val gadget = new ConversationGadget(rootNode, canComment, thingId, replyPromptTextOpt)
+    val gadget = new ConversationGadget(rootNode, canComment, thingId, replyPromptTextOpt, replyLinkClassOpt)
     $(e).replaceWith(gadget.rendered)
     gadget
   }
