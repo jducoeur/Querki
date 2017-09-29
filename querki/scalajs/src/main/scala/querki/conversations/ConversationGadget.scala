@@ -12,10 +12,17 @@ import querki.data.ThingInfo
 import querki.display.WrapperDiv
 import querki.globals._
 
-private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boolean, thingId:TID)(implicit val ecology:Ecology) 
+private [conversations] class ConversationGadget(
+    conv:ConvNode, 
+    canComment:Boolean, 
+    thingId:TID,
+    replyPromptTextOpt:Option[String] = None
+  )(implicit val ecology:Ecology) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
   lazy val Gadgets = interface[querki.display.Gadgets]
+  
+  lazy val replyPromptText = replyPromptTextOpt.getOrElse("Click here to reply...")
   
   /**
    * TODO: this is all wrong! It just does a straight flattening, but what we really want is much more
@@ -44,7 +51,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   lazy val replyPlaceholder = Gadget(
     inp(cls:="_replyPlaceholder form-control", 
       tpe:="text", 
-      placeholder:="Click here to reply...",
+      placeholder:=replyPromptText,
       onclick:={ () => showRealReplyInput() },
       onkeydown:={ () => showRealReplyInput() }))
   
@@ -66,12 +73,13 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
 object ConversationGadget {
   def fromElem(e:Element)(implicit ecology:Ecology):ConversationGadget = {
     val thingId = TID($(e).dataString("thingid"))
-    val suppressReplies = $(e).hasClass("_suppressreplies")
+    val suppressReplies = $(e).hasClass("suppressreplies")
     val canComment =
       if (suppressReplies)
         false
       else
         $(e).data("cancomment").get.asInstanceOf[Boolean]
+    val replyPromptTextOpt = $(e).data("replyprompt").toOption.map(_.asInstanceOf[String])
     val commentInfos = $(e).find("._convCommentData").mapElems(CommentGadget.infoFromElem(_))
     // TODO: this will currently crash if the conversation is completely empty. This is a rare
     // edge case, but could happen if *all* of the comments are deleted. But fixing it isn't
@@ -80,7 +88,7 @@ object ConversationGadget {
     val rootNode = (commentInfos.foldRight(Seq.empty[ConvNode]) { (info, prevNode) =>
       Seq(ConvNode(info, prevNode))
     }).head
-    val gadget = new ConversationGadget(rootNode, canComment, thingId)
+    val gadget = new ConversationGadget(rootNode, canComment, thingId, replyPromptTextOpt)
     $(e).replaceWith(gadget.rendered)
     gadget
   }
