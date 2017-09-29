@@ -4,7 +4,7 @@ import ByteConversions._
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.8"
+lazy val scalaV = "2.11.11"
 lazy val akkaV = "2.4.10"
 lazy val enumeratumV = "1.5.3"
 lazy val appV = "2.4.4"
@@ -57,7 +57,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "ai.x" %% "diff" % "1.2.0" % "test",
       // Only used for debugging at this point:
       "com.github.pathikrit" %% "better-files" % "2.17.1",
-      "org.typelevel" %% "cats" % "0.9.0"
+      "org.typelevel" %% "cats" % "0.9.0",
+      // Updated version of the XML library:
+      "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
     ),
     
     // ConductR params
