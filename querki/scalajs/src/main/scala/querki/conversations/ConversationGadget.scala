@@ -66,7 +66,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
 object ConversationGadget {
   def fromElem(e:Element)(implicit ecology:Ecology):ConversationGadget = {
     val thingId = TID($(e).dataString("thingid"))
-    val suppressReplies = $(e).parent("._suppressreplies").length > 0
+    val suppressReplies = $(e).hasClass("_suppressreplies")
     val canComment =
       if (suppressReplies)
         false

@@ -113,8 +113,6 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val paramsOpt = inv.paramsOpt
       
       val v = context.value
-      if (v.pType != RawHtmlType && v.pType != ParsedTextType)
-        throw new PublicException("UI.transform.htmlRequired", name)
       if (paramsOpt.isEmpty)
         throw new PublicException("UI.transform.classRequired", name)
       val params = paramsOpt.get
@@ -131,6 +129,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
               wikitext <- inv.contextAllAs(ParsedTextType)
             }
               yield wikitext.span
+          case _ => {
+            val wikitext = context.value.wikify(context, None).map(_.raw)
+            inv.fut(wikitext)
+          }
         }
       }
       
@@ -162,7 +164,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |This can also be used to add a class to a given text block:
             |[[_code(""[[""Hello world"" -> _class(""myClass"")]]"")]]
             |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
-            |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
+            |paragraph. (This is less often necessary, but occasionally helpful.)
+            |
+            |If _class receives a value other than text or HTML, it will render that value, and then apply the
+            |class to it. Therefore, this should usually be at the *end* of your phrase.""".stripMargin)
   {
     def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = 
       Future.successful(HtmlRenderer.addClasses(nodes, paramText))
