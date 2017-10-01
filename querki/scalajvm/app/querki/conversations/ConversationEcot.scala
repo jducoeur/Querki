@@ -3,12 +3,16 @@ package querki.conversations
 import akka.actor.{ActorRef, Props}
 import akka.pattern._
 
+import com.github.nscala_time.time.Imports._
+import com.github.nscala_time.time.StaticDateTime
+
 import models._
 import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages.SpaceSubsystemRequest
+import querki.time.DateTime
 import querki.util.ActorHelpers
 import querki.values.{QLContext, SpaceState}
 
@@ -23,12 +27,15 @@ object MOIDs extends EcotIds(35) {
   val CommentTypeOID = moid(6)
   val ConversationTypeOID = moid(7)
   val CommentsFunctionOID = moid(8)
+  val LatestCommentTimeFunctionOID = moid(9)
 }
 import MOIDs._
 
 class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with querki.core.MethodDefs {
     
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Time = initRequires[querki.time.Time]
+  
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -216,6 +223,40 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     }
   }
   
+  // TBD: not tail-recursive, because tail-recursive on trees is a pain. Might want to put in the
+  // work to make it so, though.
+  private def latestCommentTime(conv:ConversationNode):DateTime = {
+    (conv.comment.createTime /: conv.responses) { (curBest, resp) =>
+      val respTime = latestCommentTime(resp)
+      if (respTime > curBest) {
+        respTime
+      } else {
+        curBest
+      }
+    }
+  }
+  
+  lazy val LatestCommentTimeFunction = new InternalMethod(LatestCommentTimeFunctionOID,
+    toProps(
+      setName("_latestCommentTime"),
+      Summary("""Given a Conversation, this returns the Time of the most recent comment. Mainly used for sorting Conversations."""),
+      Categories(ConvTag),
+      Signature(
+        expected = Some(Seq(ConversationType), "A Conversation or Thread"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (Time.QDateTime, "The time of the most recent comment in that Conversation.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        conv <- inv.contextAllAs(ConversationType)
+        time = latestCommentTime(conv)
+      }
+        yield ExactlyOne(Time.QDateTime(time))
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -242,6 +283,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
   override lazy val props = Seq(
     ThingConversationsFunction,
     CommentsFunction,
+    LatestCommentTimeFunction,
     
     CommentText,
     CanComment,
