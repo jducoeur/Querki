@@ -10,5 +10,6 @@ class ConversationsEcot(e:Ecology) extends ClientEcot(e) {
   override def postInit() = {
     Gadgets.registerGadget("._commentData", { CommentGadget.fromElem(_) })
     Gadgets.registerGadget("._conversationData", { ConversationGadget.fromElem(_) })
+    Gadgets.registerGadget("._newConversationsData", { NewConversationGadget.fromElem(_) })
   }
 }

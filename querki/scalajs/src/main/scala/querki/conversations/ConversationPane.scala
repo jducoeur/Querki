@@ -45,7 +45,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
             h4(cls:="_commentsHeader", "Comments"),
             convWrapper,
             if (canComment)
-              new ReplyGadget(None, "Start a new conversation...", t.oid, { node => onNewConversation(node, convInfo.canComment) })
+              new NewConversationGadget(t.oid, convWrapper.elem)
           )
           
         allWrapper.replaceContents(guts.render)
@@ -60,11 +60,6 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
         }
       }
     }
-  }
-  
-  def onNewConversation(newNode:ConvNode, canComment:Boolean) = {
-    val convGadget = new ConversationGadget(newNode, canComment, t.oid)
-    $(convWrapper.elem).append(convGadget.render)
   }
   
   lazy val convWrapper = (new WrapperDiv()(ecology))(cls:="container")
