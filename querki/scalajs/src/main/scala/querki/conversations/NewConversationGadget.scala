@@ -10,7 +10,11 @@ import org.querki.jquery._
 import querki.data.TID
 import querki.globals._
 
-private [conversations] class NewConversationGadget(val thingId:TID, target: => html.Div)(implicit val ecology:Ecology)
+private [conversations] class NewConversationGadget(
+    val thingId:TID, 
+    target: => html.Div,
+    replyPromptTextOpt:Option[String] = None,
+    replyLinkClassOpt:Option[String] = None)(implicit val ecology:Ecology)
   extends Gadget[html.Div] with EcologyMember
 {
   def doRender() = {
@@ -20,7 +24,7 @@ private [conversations] class NewConversationGadget(val thingId:TID, target: => 
   }
   
   def onNewConversation(newNode:ConvNode) = {
-    val convGadget = new ConversationGadget(newNode, true, thingId)
+    val convGadget = new ConversationGadget(newNode, true, thingId, replyPromptTextOpt, replyLinkClassOpt)
     $(target).append(convGadget.render)
   }
 }
@@ -29,14 +33,21 @@ object NewConversationGadget {
   def fromElem(e:Element)(implicit ecology:Ecology):NewConversationGadget = {
     val thingId = TID($(e).dataString("thingid"))
     val isAbove:Boolean = $(e).dataString("convwhere") == "above"
-    lazy val gadget:NewConversationGadget = new NewConversationGadget(thingId, {
-      val newConv = div().render
-      if (isAbove)
-        $(gadget.elem).before(newConv)
-      else
-        $(gadget.elem).after(newConv)
-      newConv
-    })
+    val replyPromptTextOpt = $(e).data("replyprompt").toOption.map(_.asInstanceOf[String])
+    val replyLinkClassOpt = $(e).data("replylinkclass").toOption.map(_.asInstanceOf[String])
+    lazy val gadget:NewConversationGadget = 
+      new NewConversationGadget(
+        thingId, 
+        {
+          val newConv = div().render
+          if (isAbove)
+            $(gadget.elem).before(newConv)
+          else
+            $(gadget.elem).after(newConv)
+          newConv
+        },
+        replyPromptTextOpt,
+        replyLinkClassOpt)
     $(e).replaceWith(gadget.rendered)
     gadget
   }
