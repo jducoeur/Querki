@@ -10,7 +10,7 @@ import querki.util.SafeUrl
 class UITests extends QuerkiTests {
   // === _class ===
   "_class method" should {
-    "throw an Exception if handed a Number" in {
+    "render and apply if handed a Number" in {
       class TSpace extends CommonSpace {
         val intProp = new TestProperty(Core.IntType, ExactlyOne, "Int Prop")
         
@@ -20,8 +20,9 @@ class UITests extends QuerkiTests {
       
       implicit val requester = commonSpace.owner
       
+      // Since 42 comes out as plain text, it gets wrapped in a span:
       processQText(thingAsContext[TSpace](space, _.withInt), """[[Int Prop -> _class(""myClass"")]]""") should 
-        equal (expectedWarning("UI.transform.htmlRequired"))
+        equal ("""<span class="myClass">42</span>""")
     }
     
     "throw an Exception if no param is given" in {
@@ -212,13 +213,13 @@ class UITests extends QuerkiTests {
       
       pql("""[[Test Thing -> Numbers -> _section(""Nums: "", ""____"")]]""") should
         equal ("""
-			Nums: 
-			
-			1
-			2
-			3
-			4
-			5""".strip)
+      Nums: 
+      
+      1
+      2
+      3
+      4
+      5""".strip)
     }
     
     "work with an empty list" in {
