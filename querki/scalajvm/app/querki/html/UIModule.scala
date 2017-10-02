@@ -145,7 +145,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         // probably appears elsewhere:
         contentEscaped = DisplayText(content.str.replaceAll("&apos;", "--apos escape--"))
         nodes = XmlHelpers.toNodes(contentEscaped)
-        newXmlFuts = nodes.map(node => doTransform(node, paramText, context, params))
+        nodesOrWrapped =
+          if (nodes.isEmpty)
+            // If there are no nodes, we failed to parse, which implies this is just text.
+            // Wrap it in a span.
+            <span>{contentEscaped}</span>
+          else
+            nodes
+        newXmlFuts = nodesOrWrapped.map(node => doTransform(node, paramText, context, params))
         newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
         newHtml = QHtml(Xhtml.toXhtml(newXml))
         // HACK part 2:
