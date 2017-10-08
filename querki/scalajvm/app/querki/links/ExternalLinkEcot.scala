@@ -54,7 +54,11 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       setName("External Link Type"),
       Basic.ExplicitProp(true),
       Categories(LinksTag),
-      Summary("A proper link to an external website, including both the URL and display text.")))
+      Summary("A proper link to an external website, including both the URL and display text."),
+      Details("""External Link is a Model Type, based on [[_externalLinkModel]].
+        |
+        |If you need to get at the individual parts of the External Link, `-> Name` will give you the
+        |displayed text, and `-> _url` will give you the URL that it points to.""".stripMargin)))
     with URLableType
   {
     def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
@@ -143,7 +147,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
         displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
         paramNameElem <- inv.processParam(0, elemContext)
-	      paramName <- inv.fut(paramNameElem.wikify(elemContext).map(_.raw.str))
+        paramName <- inv.fut(paramNameElem.wikify(elemContext).map(_.raw.str))
         valElem <- inv.processParam(1, elemContext)
         raw <- inv.processParamFirstOr(2, YesNoType, false, elemContext)
         value = vToParam(valElem, elemContext, raw)(inv.state)
