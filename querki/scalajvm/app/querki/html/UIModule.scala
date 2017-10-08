@@ -112,53 +112,57 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
-      val v = context.value
       if (paramsOpt.isEmpty)
         throw new PublicException("UI.transform.classRequired", name)
       val params = paramsOpt.get
-      
-      def contentToUse:InvocationValue[DisplayText] = {
-        v.pType match {
-          case RawHtmlType => 
-            for {
-              wikitext <- inv.contextAllAs(RawHtmlType)
+      val v = context.value
+      if (v.isEmpty) {
+        // We allow empty values to pass quietly through:
+        fut(EmptyValue(QL.ParsedTextType))
+      } else {
+        def contentToUse:InvocationValue[DisplayText] = {
+          v.pType match {
+            case RawHtmlType => 
+              for {
+                wikitext <- inv.contextAllAs(RawHtmlType)
+              }
+                yield wikitext.display
+            case ParsedTextType =>
+              for {
+                wikitext <- inv.contextAllAs(ParsedTextType)
+              }
+                yield wikitext.span
+            case _ => {
+              val wikitext = context.value.wikify(context).map(_.raw)
+              inv.fut(wikitext)
             }
-              yield wikitext.display
-          case ParsedTextType =>
-            for {
-              wikitext <- inv.contextAllAs(ParsedTextType)
-            }
-              yield wikitext.span
-          case _ => {
-            val wikitext = context.value.wikify(context).map(_.raw)
-            inv.fut(wikitext)
           }
         }
+        
+        for {
+          parsedParam <- inv.processParamFirstAs(0, ParsedTextType)
+          paramText = parsedParam.raw.toString
+          content <- contentToUse
+          // HACK: working around scala-xml issue #72. This should eventually become unnecessary, someday:
+          // TODO: this hack should somehow be incorporated into XmlHelpers proper, because the problem
+          // probably appears elsewhere:
+          contentEscaped = DisplayText(content.str.replaceAll("&apos;", "--apos escape--"))
+          nodes = XmlHelpers.toNodes(contentEscaped)
+          nodesOrWrapped =
+            if (nodes.isEmpty)
+              // If there are no nodes, we failed to parse, which implies this is just text.
+              // Wrap it in a span.
+              <span>{contentEscaped}</span>
+            else
+              nodes
+          newXmlFuts = nodesOrWrapped.map(node => doTransform(node, paramText, context, params))
+          newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
+          newHtml = QHtml(Xhtml.toXhtml(newXml))
+          // HACK part 2:
+          newHtmlEscaped = newHtml.body.replaceAll("--apos escape--", "&apos;")
+        }
+          yield QL.WikitextValue(HtmlWikitext(newHtmlEscaped))
       }
-      
-      for {
-        parsedParam <- inv.processParamFirstAs(0, ParsedTextType)
-        paramText = parsedParam.raw.toString
-        content <- contentToUse
-        // HACK: working around scala-xml issue #72. This should eventually become unnecessary, someday:
-        // TODO: this hack should somehow be incorporated into XmlHelpers proper, because the problem
-        // probably appears elsewhere:
-        contentEscaped = DisplayText(content.str.replaceAll("&apos;", "--apos escape--"))
-        nodes = XmlHelpers.toNodes(contentEscaped)
-        nodesOrWrapped =
-          if (nodes.isEmpty)
-            // If there are no nodes, we failed to parse, which implies this is just text.
-            // Wrap it in a span.
-            <span>{contentEscaped}</span>
-          else
-            nodes
-        newXmlFuts = nodesOrWrapped.map(node => doTransform(node, paramText, context, params))
-        newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
-        newHtml = QHtml(Xhtml.toXhtml(newXml))
-        // HACK part 2:
-        newHtmlEscaped = newHtml.body.replaceAll("--apos escape--", "&apos;")
-      }
-        yield QL.WikitextValue(HtmlWikitext(newHtmlEscaped))
     }
   }
   
