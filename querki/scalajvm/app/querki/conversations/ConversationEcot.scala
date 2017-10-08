@@ -94,7 +94,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
       val authorName = Person.localPerson(v.authorId)(context.state).map(_.displayName).getOrElse("Anonymous")
       val commentText = CommentText.firstOpt(v.props).map(_.text).getOrElse("")
       // We need to pre-render the wikitext, since we're going to be including it in-page:
-      val commentWikitext = Wikitext(commentText).raw.toString
+      val commentWikitext = Wikitext(commentText).display.toString
       val commentCls = if (isStandalone) "_commentData" else "_convCommentData"
       val wikitext = s"""<div class="$commentCls" data-commentid="${v.id}" data-thingid="${v.thingId.toThingId}" data-authorid="${v.authorId.toThingId}" data-authorname="$authorName" data-time="${v.createTime.getMillis}">
                       |$commentWikitext

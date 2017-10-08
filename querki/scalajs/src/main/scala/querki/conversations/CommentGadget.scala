@@ -59,7 +59,7 @@ object CommentGadget {
         $(e).dataString("authorname"),
         // TODO: this isn't right; can we fetch the actual handle without pain server-side?
         $(e).dataString("authorid")),
-      HtmlWikitext($(e).text()),
+      HtmlWikitext($(e).html()),
       // TODO: we will eventually need machinery to cope with sub-threads:
       true,
       $(e).data("time").get.asInstanceOf[Double].toLong,
