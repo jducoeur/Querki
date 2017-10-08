@@ -23,6 +23,8 @@ object MOIDs extends EcotIds(9) {
   
   val AddMethodOID = moid(7)
   val AddNumericMethodOID = moid(8)
+  val SubtractMethodOID = moid(9)
+  val SubtractNumericMethodOID = moid(10)
 }
 
 /**
@@ -42,8 +44,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   /******************************************
    * FUNCTIONS
    ******************************************/
-	
-	class FirstNonEmptyMethod extends InternalMethod(FirstNonEmptyMethodOID,
+  
+  class FirstNonEmptyMethod extends InternalMethod(FirstNonEmptyMethodOID,
     toProps(
       setName("_firstNonEmpty"),
       Categories(LogicTag),
@@ -51,28 +53,28 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       Details("""    RECEIVED -> _or(CLAUSE1, CLAUSE2, ...) -> RESULT
           |_or takes any number of parameters. It runs through each of them, applying the incoming context.
           |It produces the first one that returns a non-empty result, or None iff all of them come out empty.""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    paramsOpt match {
-	      case Some(params) => {
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
+      paramsOpt match {
+        case Some(params) => {
           val resultFut = Future.sequence(params.map(param => context.parser.get.processExp(param.exp, context)))
-	        val result = resultFut.map(_.find(oneResult => !(oneResult.value.isEmpty)).map(_.value))
+          val result = resultFut.map(_.find(oneResult => !(oneResult.value.isEmpty)).map(_.value))
 
-	        // If we got nothing out, then produce an empty list of the incoming type
-	        // TBD: this really isn't the correct type to produce -- ideally, the type should
-	        // be the one that would be output by the various parameter phrases. How can we
-	        // suss that?
-	        result.map(_.getOrElse(EmptyValue(context.value.pType)))
-	      }
-	      case None => QL.WarningFut("_firstNonEmpty() is meaningless if you don't give it any parameters")
-	    }
-	  }
-	}
-	
-	class NotMethod extends InternalMethod(NotOID,
+          // If we got nothing out, then produce an empty list of the incoming type
+          // TBD: this really isn't the correct type to produce -- ideally, the type should
+          // be the one that would be output by the various parameter phrases. How can we
+          // suss that?
+          result.map(_.getOrElse(EmptyValue(context.value.pType)))
+        }
+        case None => QL.WarningFut("_firstNonEmpty() is meaningless if you don't give it any parameters")
+      }
+    }
+  }
+  
+  class NotMethod extends InternalMethod(NotOID,
     toProps(
       setName("_not"),
       Categories(LogicTag),
@@ -82,24 +84,24 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |    RECEIVED -> _not(TRUE/FALSE) -> FALSE/TRUE
           |
           |_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    val inVal = paramsOpt match {
-	      case Some(params) if (params.length == 1) => {
-	        context.parser.get.processExp(params(0).exp, context).map(_.value)
-	      }
-	      case _ => Future.successful(context.value)
-	    }
-	    inVal.map(v => !toBoolean(v))
-	  }
-	}
-	
-	
-	// TODO: this will become clearer and easier to use once we introduce block-syntax parameters.
-	class IfMethod extends InternalMethod(IfMethodOID,
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
+      val inVal = paramsOpt match {
+        case Some(params) if (params.length == 1) => {
+          context.parser.get.processExp(params(0).exp, context).map(_.value)
+        }
+        case _ => Future.successful(context.value)
+      }
+      inVal.map(v => !toBoolean(v))
+    }
+  }
+  
+  
+  // TODO: this will become clearer and easier to use once we introduce block-syntax parameters.
+  class IfMethod extends InternalMethod(IfMethodOID,
     toProps(
       setName("_if"),
       Categories(LogicTag),
@@ -140,8 +142,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |The syntax of _if is likely to evolve in the future, to something more like most programming languages. For now,
           |though, note that `iftrue` and `iffalse` are *inside* the parentheses, rather than after them as most languages
           |have it.""".stripMargin)))
-	{
-	  override def qlApply(inv:Invocation):QFut = {
+  {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         predicateOpt <- inv.processAsOpt("predicate", YesNoType)
         predicate = predicateOpt.getOrElse(false)
@@ -152,12 +154,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
             inv.process("iffalse")
       }
         yield result
-	  }
-	}
-	
+    }
+  }
+  
   def compareValues(firstIn:QValue, secondIn:QValue, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
-  	var first = firstIn
-	  var second = secondIn
+    var first = firstIn
+    var second = secondIn
     
     // TODO: conceptually, this is probably common code for any time where we care about multiple
     // values being the same Type. Not sure where it belongs, though.
@@ -177,88 +179,88 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       pairs.forall(pair => comparer(pt, pair._1, pair._2))
     } else {
       false
-    }	  
+    }    
   }
 
   /**
    * The general pattern for binary operators.
    */
   def binaryComparer(inv:Invocation, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QFut = {
-  	for {
-  	  first <- inv.processParamNofM(0, 2)
-  	  second <- inv.processParamNofM(1, 2)
-  	}
-  	  yield boolean2YesNoQValue(compareValues(first, second, method)(comparer))
+    for {
+      first <- inv.processParamNofM(0, 2)
+      second <- inv.processParamNofM(1, 2)
+    }
+      yield boolean2YesNoQValue(compareValues(first, second, method)(comparer))
   }
-	
+  
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
-	  toProps(
-	    setName("_equals"),
+    toProps(
+      setName("_equals"),
       Categories(LogicTag),
-	    Summary("Do these parameters match?"),
-	    Details("""```
+      Summary("Do these parameters match?"),
+      Details("""```
           |_equals(EXP1, EXP2) -> YES OR NO
           |```
-	        |_equals produces Yes iff the expressions in the two parameters match each other. The definition
-	        |of "match" is type-dependent, but by and large is similar to == in most programming languages.
-	        |
-	        |Alternate version:
+          |_equals produces Yes iff the expressions in the two parameters match each other. The definition
+          |of "match" is type-dependent, but by and large is similar to == in most programming languages.
+          |
+          |Alternate version:
           |```
-	        |VALUE -> _equals(EXP) -> YES OR NO
+          |VALUE -> _equals(EXP) -> YES OR NO
           |```
-	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
   {  
-  	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv, "_equals")( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
-  	}
+    override def qlApply(inv:Invocation):QFut = {
+      binaryComparer(inv, "_equals")( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
+    }
   }
-	
+  
   lazy val LessThanMethod = new InternalMethod(LessThanMethodOID,
-	  toProps(
-	    setName("_lessThan"),
+    toProps(
+      setName("_lessThan"),
       Categories(LogicTag),
-	    Summary("Is the first parameter less than the second?"),
-	    Details("""```
+      Summary("Is the first parameter less than the second?"),
+      Details("""```
           |_lessThan(EXP1, EXP2) -> YES OR NO
           |```
-	        |_lessThan produces Yes iff the value in the first expression is less than the second. The definition
-	        |of "less than" is type-dependent, but by and large is similar to < in most programming languages.
-	        |
-	        |Alternate version:
+          |_lessThan produces Yes iff the value in the first expression is less than the second. The definition
+          |of "less than" is type-dependent, but by and large is similar to < in most programming languages.
+          |
+          |Alternate version:
           |```
-	        |VALUE -> _lessThan(EXP) -> YES OR NO
+          |VALUE -> _lessThan(EXP) -> YES OR NO
           |```
-	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
   {  
-  	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv, "_lessThan")( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
-  	}
+    override def qlApply(inv:Invocation):QFut = {
+      binaryComparer(inv, "_lessThan")( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
+    }
   }
-	
+  
   lazy val GreaterThanMethod = new InternalMethod(GreaterThanMethodOID,
-	  toProps(
-	    setName("_greaterThan"),
+    toProps(
+      setName("_greaterThan"),
       Categories(LogicTag),
-	    Summary("Is the first parameter greater than the second?"),
-	    Details("""```
+      Summary("Is the first parameter greater than the second?"),
+      Details("""```
           |_greaterThan(EXP1, EXP2) -> YES OR NO
           |```
-	        |_greaterThan produces Yes iff the value in the first expression is greater than the second. The definition
-	        |of "greater than" is type-dependent, but by and large is similar to > in most programming languages.
-	        |
-	        |Alternate version:
+          |_greaterThan produces Yes iff the value in the first expression is greater than the second. The definition
+          |of "greater than" is type-dependent, but by and large is similar to > in most programming languages.
+          |
+          |Alternate version:
           |```
-	        |VALUE -> _greaterThan(EXP) -> YES OR NO
+          |VALUE -> _greaterThan(EXP) -> YES OR NO
           |```
-	        |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
   {  
-  	override def qlApply(inv:Invocation):QFut = {
-  	  binaryComparer(inv, "_greaterThan") { (pt, elem1, elem2) =>
-  	    // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
-  	    // the first. So we need to also do an equality comparison.
-  	    !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
-  	  }
-  	}
+    override def qlApply(inv:Invocation):QFut = {
+      binaryComparer(inv, "_greaterThan") { (pt, elem1, elem2) =>
+        // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
+        // the first. So we need to also do an equality comparison.
+        !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
+      }
+    }
   }
   
   /**
@@ -278,7 +280,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       }
         yield paramResult
   }
-	
+  
   lazy val OrMethod = new InternalMethod(OrMethodOID,
     toProps(
       setName("_or"),
@@ -296,7 +298,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       results.get.map(_.exists(v => v))
     }
   }
-	
+  
   lazy val AndMethod = new InternalMethod(AndMethodOID,
     toProps(
       setName("_and"),
@@ -333,7 +335,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       Summary("Add two values together"),
       Details("""    VALUE -> _plus(OTHER) -> RESULT
         |This pretty much does what you would expect. However, note that it is only implemented for one
-        |or two Types yet. If you have a case where you expect and need _add to work, please drop us a note!""".stripMargin)))
+        |or two Types yet. If you have a case where you expect and need _plus to work, please drop us a note!""".stripMargin)))
   
   lazy val plusNumericImpl = new FunctionImpl(AddNumericMethodOID, PlusMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
@@ -349,7 +351,32 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         yield ExactlyOne(typ(result))
     }
   }
-	
+  
+  lazy val MinusMethod = new AbstractFunction(SubtractMethodOID, Received,
+    toProps(
+      setName("_minus"),
+      Categories(LogicTag),
+      Summary("Subtract one value from another"),
+      Details("""    VALUE -> _minus(OTHER) -> RESULT
+        |This pretty much does what you would expect. However, note that it is only implemented for one
+        |or two Types yet. If you have a case where you expect and need _minus to work, please drop us a note!""".stripMargin)))
+  
+  lazy val minusNumericImpl = new FunctionImpl(SubtractNumericMethodOID, MinusMethod, Seq(IntType, Core.FloatType, Core.LongType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
+      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
+      for {
+        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
+        n <- inv.contextAllAs(typ)
+        m <- inv.processParamFirstAs(0, typ)
+        result = typ.numeric.minus(n, m)
+      }
+        yield ExactlyOne(typ(result))
+    }
+  }
+
+  
   override lazy val props = Seq(
     new FirstNonEmptyMethod,
     new NotMethod,
@@ -359,8 +386,11 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     GreaterThanMethod,
     OrMethod,
     AndMethod,
+    
     PlusMethod,
-    plusNumericImpl
+    plusNumericImpl,
+    MinusMethod,
+    minusNumericImpl
   )
 
   /******************************************

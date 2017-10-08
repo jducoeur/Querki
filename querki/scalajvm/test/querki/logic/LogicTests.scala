@@ -243,6 +243,17 @@ class LogicTests extends QuerkiTests {
     }
   }
   
+  // === _minus ===
+  "_minus" should {
+    "work as expected" in {
+      implicit val s = commonSpace
+      
+      pql("""[[8 -> _minus(3)]]""") should equal ("5")
+      pql("""[[8 -> _minus(-3)]]""") should equal ("11")
+      pql("""[[3 -> +$three; 8 -> _minus($three)]]""") should equal ("5")      
+    }
+  }
+  
   // === _or ===
   "_or" should {
     "work correctly with True and False" in {
@@ -293,6 +304,17 @@ class LogicTests extends QuerkiTests {
       pql("""[[(F Thing -> Boolean Prop) & (T Thing -> Boolean Prop)]]""") should equal ("false")      
       pql("""[[((F Thing -> Boolean Prop) & (T Thing -> Boolean Prop))
              | (T Thing -> Boolean Prop)]]""") should equal ("true")      
+    }
+  }
+    
+  // === _plus ===
+  "_plus" should {
+    "work as expected" in {
+      implicit val s = commonSpace
+      
+      pql("""[[8 -> _plus(3)]]""") should equal ("11")
+      pql("""[[8 -> _plus(-3)]]""") should equal ("5")
+      pql("""[[3 -> +$three; 8 -> _plus($three)]]""") should equal ("11")      
     }
   }
 }
