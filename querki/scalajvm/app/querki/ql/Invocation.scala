@@ -486,7 +486,6 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     }
   }
   
-  // TODO: The next several functions are deprecated, and should be phased out in favor of the above version:
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {

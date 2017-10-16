@@ -254,6 +254,25 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "Property setters" should {
+    "work for a built-in Text Property" in {
+      implicit val s = commonSpace
+      
+      pql("""[[Summary(""hello"")]]""") should equal ("hello")
+    }
+    
+    "work for a user-defined Property" in {
+      class TSpace extends CommonSpace {
+        val textProp = new TestProperty(TextType, ExactlyOne, "My Text Prop")
+        val intProp = new TestProperty(Core.IntType, ExactlyOne, "My Int Prop")
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Text Prop(""hello"")]]""") should equal ("hello")
+      pql("""[[My Int Prop(42)]]""") should equal ("42")
+    }
+  }
+  
   "Comments" should {
     "work as the whole body" in {
       processQText(commonThingAsContext(_.sandbox), "[[// This is a comment, which does nothing]]") should
