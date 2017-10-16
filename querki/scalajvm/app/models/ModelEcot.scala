@@ -9,6 +9,10 @@ private [models] trait ModelInternal extends EcologyInterface {
   def buildPropVal[VT, RT](prop:Property[VT,RT], inv:Invocation):QFut
 }
 
+trait Models extends EcologyInterface {
+  def PropValType:PType[PropMap] with SimplePTypeBuilder[PropMap]
+}
+
 object ModelMOIDs extends EcotIds(64) {
   val PropValTypeOID = moid(1)
 }
@@ -16,7 +20,7 @@ object ModelMOIDs extends EcotIds(64) {
 /**
  * The Ecot for the Models. This is mainly responsible for dealing with serialization.
  */
-class ModelEcot(e:Ecology) extends QuerkiEcot(e) with ModelInternal {
+class ModelEcot(e:Ecology) extends QuerkiEcot(e) with ModelInternal with Models {
   import ModelPersistence._
   import ModelMOIDs._
   

@@ -1,6 +1,8 @@
 package querki.spaces
 
+import scala.concurrent.Promise
 import scala.concurrent.duration._
+import scala.util.Success
 
 import akka.actor.{ActorRef, Props}
 import akka.cluster.sharding.{ClusterSharding, ShardRegion}
@@ -20,6 +22,7 @@ import querki.values.QLContext
 
 object SpaceEcotMOIDs extends EcotIds(37) {
   val CreateHereOID = moid(1)
+  val ChangePropertiesOID = moid(2)
 }
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
@@ -28,6 +31,8 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   import SpaceMessagePersistence._
   
   val SystemManagement = initRequires[querki.system.SystemManagement]
+  
+  lazy val Models = interface[models.Models]
   
   /**
    * The one true handle to the Space Management system.
@@ -109,6 +114,44 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
    * FUNCTIONS
    ***********************************************/
   
+  lazy val ChangeProperties = new InternalMethod(ChangePropertiesOID,
+    toProps(
+      setName("_changeProperties"),
+      Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Change one or more Properties of the received Thing"),
+      Details("""WRITE THIS""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val vFut = for {
+        thing <- inv.contextFirstThing
+        initialProps <- inv.fut(getInitialProps(inv))
+        msg = ChangeProps(inv.context.request.requesterOrAnon, inv.context.state, thing.id, initialProps)
+        newState <- inv.fut(spaceRegion ? msg map { 
+          case ThingFound(id, s) => { s }
+        })
+        newThing <- inv.opt(newState.anything(thing.id))
+      }
+        yield inv.context.nextFrom(ExactlyOne(LinkType(thing.id)), transformThing).withState(newState)
+        
+      vFut.get.map(_.head)
+    }
+    
+    def getInitialProps(inv:Invocation):Future[PropMap] = {
+      val futInvs = for {
+        n <- inv.iter((0 until inv.numParams).toList)
+        propV <- inv.processParamFirstAs(n, Models.PropValType)
+      }
+        yield propV
+        
+      futInvs.get.map { propMaps =>
+        (emptyProps /: propMaps) { (current, oneMap) =>
+          current ++ oneMap
+        }
+      }
+    }
+  }
+  
   lazy val CreateHere = new InternalMethod(CreateHereOID,
     toProps(
       setName("_createHere"),
@@ -165,6 +208,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   }
   
   override lazy val props = Seq(
+    ChangeProperties,
     CreateHere
   )
 }
