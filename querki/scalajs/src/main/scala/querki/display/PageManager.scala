@@ -322,6 +322,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   def navigateTo(url:String) = {
-    window.location.href = url
+    if (url.startsWith("#") && window.location.href.endsWith(url))
+      // It's the same Page, and our href-based system won't pick that up
+      // as a "navigate". This is relevant for reloading dynamic pages in
+      // _QLButton and the like.
+      reload()
+    else
+      window.location.href = url
   }
 }
