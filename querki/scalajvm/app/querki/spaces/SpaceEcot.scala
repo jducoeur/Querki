@@ -121,7 +121,26 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       Categories(querki.datamodel.DataModelTag),
       SkillLevel(SkillLevelAdvanced),
       Summary("Change one or more Properties of the received Thing"),
-      Details("""WRITE THIS""".stripMargin)))
+      Details("""Most of the time in Querki, you edit Things using the UI directly, in 
+        |the Editor. But
+        |some Spaces want a bit of automation: they want to be able to make specific
+        |changes when a button is pressed or a link is clicked.
+        |
+        |`_changeProperties()` provides this ability. You may specify as many 
+        |parameters as you like, each of which should be a
+        |Property Setter of the form `Property Name(value)`. So for example, if you had
+        |a Whole Number Property named My Number, you would say `My Number(42)` to
+        |initially set that Property to 42. Any Type of Property except for Functions can be
+        |set this way, and you may set any or all of the Model's Properties.
+        |
+        |`_changeProperties()` produces the modified Thing; it is common to pass this to
+        |`_edit` or `_navigateTo`.
+        |
+        |**Note:** the exact semantics of `_changeProperties()` will change down the line.
+        |While it is fine to pass the resulting Thing to another *stage* (using `->`), you
+        |should not count on being able to use it in later *phrases* (that is, lines not
+        |connected by `->`). This is important so that we can later support multiple
+        |changes that happen "atomically" in a light transactional system.""".stripMargin)))
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       val vFut = for {
@@ -167,7 +186,29 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         opts = Seq.empty,
         returns = (LinkType, "The newly-created Thing.")
       ),
-      Details("""WRITE THIS""".stripMargin)))
+      Details("""Most of the time in Querki, you create new Things using the UI directly --
+        |pressing a button or menu pick that creates the Thing and opens the Editor. But
+        |some Spaces want a bit of automation: they want to be able to create a new Thing
+        |as part of a `_QLButton()` press, often with specific Properties set in specific
+        |ways.
+        |
+        |`_createThing()` immediately creates a new Thing. The first parameter *must* be
+        |`model = <model name>`, saying what to create an Instance of.
+        |
+        |You may then specify as many parameters as you like, each of which should be a
+        |Property Setter of the form `Property Name(value)`. So for example, if you had
+        |a Whole Number Property named My Number, you would say `My Number(42)` to
+        |initially set that Property to 42. Any Type of Property except for Functions can be
+        |set this way, and you may set any or all of the Model's Properties.
+        |
+        |`_createThing()` produces the newly-created Thing; it is common to pass this to
+        |`_edit` or `_navigateTo`.
+        |
+        |**Note:** the exact semantics of `_createThing()` will change down the line.
+        |While it is fine to pass the resulting Thing to another *stage* (using `->`), you
+        |should not count on being able to use it in later *phrases* (that is, lines not
+        |connected by `->`). This is important so that we can later support multiple
+        |changes that happen "atomically" in a light transactional system.""".stripMargin)))
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       val vFut = for {
