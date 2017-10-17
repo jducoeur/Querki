@@ -23,6 +23,7 @@ import querki.values.QLContext
 object SpaceEcotMOIDs extends EcotIds(37) {
   val CreateHereOID = moid(1)
   val ChangePropertiesOID = moid(2)
+  val CreateThingFunctionOID = moid(3)
 }
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
@@ -152,6 +153,51 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     }
   }
   
+  lazy val CreateThingFunction = new InternalMethod(CreateThingFunctionOID,
+    toProps(
+      setName("_createThing"),
+      Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Create a new Thing"),
+      Signature(
+        expected = Some(Seq.empty, "Anything"),
+        reqs = Seq(
+          ("model", LinkType, "The Model to create the new Thing from")
+        ),
+        opts = Seq.empty,
+        returns = (LinkType, "The newly-created Thing.")
+      ),
+      Details("""WRITE THIS""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val vFut = for {
+        model <- inv.processAs("model", LinkType)
+        initialProps <- inv.fut(getInitialProps(inv))
+        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
+        (thingId, newState) <- inv.fut(spaceRegion ? msg map { 
+          case ThingFound(id, s) => { (id, s) }
+        })
+      }
+        yield inv.context.nextFrom(ExactlyOne(LinkType(thingId)), transformThing).withState(newState)
+        
+      vFut.get.map(_.head)
+    }
+    
+    def getInitialProps(inv:Invocation):Future[PropMap] = {
+      val futInvs = for {
+        n <- inv.iter((1 until inv.numParams).toList)
+        propV <- inv.processParamFirstAs(n, Models.PropValType)
+      }
+        yield propV
+        
+      futInvs.get.map { propMaps =>
+        (emptyProps /: propMaps) { (current, oneMap) =>
+          current ++ oneMap
+        }
+      }
+    }
+  }
+  
   lazy val CreateHere = new InternalMethod(CreateHereOID,
     toProps(
       setName("_createHere"),
@@ -168,6 +214,9 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         |
         |**Warning:** this function is a little suspicious in how it works. It might get
         |replaced by some other approach in the future, so don't get too attached to it.
+        |At this point, it is gently deprecated in favor of _createThing(); please start
+        |to use that instead.
+        |
         |(Technically speaking, the problem is that this function is *impure* -- it has
         |major side-effects. It is just about the only impure function in Querki, and we
         |may want to find a purer way to get the same result.)""".stripMargin)))
@@ -209,6 +258,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   
   override lazy val props = Seq(
     ChangeProperties,
+    CreateThingFunction,
     CreateHere
   )
 }
