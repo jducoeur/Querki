@@ -1,5 +1,10 @@
 package querki.ql
 
+// These are both needed for embedding context for _QLButton. They
+// might get pulled out into their own Ecot at some point:
+import com.github.marklister.base64.Base64
+import boopickle.Default._
+
 import querki.globals._
 
 import querki.ecology._
@@ -116,9 +121,10 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   }
   
   def processMethodToWikitext(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext] = 
+      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None,
+      initialBindings:Option[Map[String, QValue]] = None):Future[Wikitext] = 
   {
-    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp, initialBindings) }
     parserProcessMethodProfiler.profile { parser.processMethodToWikitext }
   }
   
@@ -160,6 +166,132 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   val QLTag = "QL -- Parsing and Running Expressions"
   
   /***********************************************
+   * Serialization / Deserialization
+   * 
+   * These functions are used by systems such as _QLButton(), to embed the current state
+   * of processing into HTML. They render an Invocation into an opaque String, and back again.
+   */
+  
+  // findBindingsIn() is a collection of functions to traverse a QLExp and find all of the
+  // bindings referred to in it, so we know what we need to serialize. Conceptually it's a
+  // typeclass, but since we only need it here, I'm not bothering with the TC boilerplate.
+  private def findBindingsInSeq[T](ts:Seq[T])(getter:T => Set[String]):Set[String] = {
+    (Set.empty[String] /: ts) { (set, t) =>
+      set ++ getter(t)
+    }
+  }
+  
+  private def findBindingsIn(exp:QLExp):Set[String] = {
+    findBindingsInSeq(exp.phrases)(findBindingsIn(_))
+  }
+  private def findBindingsIn(phrase:QLPhrase):Set[String] = {
+    findBindingsInSeq(phrase.ops)(findBindingsIn(_))
+  }
+  private def findBindingsIn(stage:QLStage):Set[String] = {
+    stage match {
+      case QLCall(name, methodNameOpt, paramsOpt, _) => {
+        findBindingsIn(name) ++ 
+          methodNameOpt.map(findBindingsIn(_)).getOrElse(Set.empty) ++
+          paramsOpt.map { params =>
+            findBindingsInSeq(params)(param => findBindingsIn(param.exp))
+          }.getOrElse(Set.empty)
+      }
+      case QLTextStage(contents, _) => findBindingsIn(contents)
+      case QLExpStage(exp) => findBindingsIn(exp)
+      case QLListLiteral(exps) => findBindingsInSeq(exps)(findBindingsIn(_))
+      case QLNumber(_) => Set.empty
+    }
+  }
+  private def findBindingsIn(contents:ParsedQLText):Set[String] = {
+    findBindingsInSeq(contents.parts) { part =>
+      part match {
+        case UnQLText(_) => Set.empty
+        case QLLink(contents) => findBindingsIn(contents)
+        case QLExp(exp) => findBindingsIn(QLExp(exp))
+      }          
+    }    
+  }
+  private def findBindingsIn(name:QLName):Set[String] = {
+    // This is where we actually *find* the bindings
+    name match {
+      case QLSafeName(_) | QLDisplayName(_) | QLBindingDef(_, _, _) | QLThingId(_) => Set.empty
+      case QLBinding(binding) => Set(binding)
+    }
+  }
+  
+  case class EmbeddedBinding(pTypeId:OID, cTypeId:OID, serialized:String)
+  case class EmbeddableContext(qvpType:OID, qvcType:OID, serializedQV:String, bindingsSerialized:Map[String, EmbeddedBinding])
+  
+  def serializeContext(inv:Invocation, qlParamNameOpt:Option[String]):InvocationValue[String] = {
+    try {
+      implicit val state = inv.state
+      // Note: we are explicitly assuming that there is only one implementation of Invocation! 
+      val invImpl = inv.asInstanceOf[InvocationImpl]
+      
+      // First, serialize the received context. That's the easy bit:
+      val context = inv.context
+      val qv = context.value
+      val serializedQV = qv.serialize(qv.pType)
+  
+      // Next, figure out which bindings are actually being *used* by the QL expression we're
+      // embedding:
+      def findBindingValue(inv:Invocation, name:String):Option[QValue] = {
+        for {
+          parser <- inv.context.parser
+          scopes = inv.context.scopes(parser)
+          bound <- scopes.lookup(name)
+        }
+          yield bound
+      }
+      def bindingValues(inv:Invocation, boundNames:Set[String]):Map[String, QValue] = {
+        (Map.empty[String, QValue] /: boundNames) { (m, name) =>
+          findBindingValue(inv, name).map(v => m + (name -> v)).getOrElse(m)
+        }
+      }
+      
+      val bindingsOpt = for {
+        qlParamName <- qlParamNameOpt
+        exp <- invImpl.sig.getParam(qlParamName).exp
+        boundNames = findBindingsIn(exp)
+      }
+        yield bindingValues(inv, boundNames)
+      val bindings = bindingsOpt.getOrElse(Map.empty)
+      
+      // We need to store each binding with its PType and serialized Value:
+      val bindingsSerialized:Map[String, EmbeddedBinding] = bindings.map { case (k, v) =>
+        (k -> EmbeddedBinding(v.pType.id, v.cType.id, v.serialize(v.pType)))
+      }
+        
+      // Now build the structure we're actually going to serialize...
+      val embeddable = EmbeddableContext(qv.pType.id, qv.cType.id, serializedQV, bindingsSerialized)
+      // ... pickle that...
+      val buf = Pickle.intoBytes(embeddable)
+      val arr = Array.ofDim[Byte](buf.remaining())
+      buf.get(arr)
+      // and turn it into an opaque embeddable String:
+      inv.wrap(Base64.Encoder(arr).toBase64)
+    } catch {
+      case SerializationException(tpe) => {
+        inv.error("DataModel.serializationError", tpe.displayName)
+      }
+    }
+  }
+  
+  def deserializeContext(str:String)(implicit state:SpaceState):(QValue, Map[String, QValue]) = {
+    val byteArray = Base64.Decoder(str).toByteArray
+    val embedded = Unpickle[EmbeddableContext].fromBytes(java.nio.ByteBuffer.wrap(byteArray))
+    val pType = state.typ(embedded.qvpType)
+    val cType = state.coll(embedded.qvcType)
+    val qv = cType.deserialize(embedded.serializedQV, pType)
+    val bindings = embedded.bindingsSerialized.map { case (name, EmbeddedBinding(ptid, ctid, serialized)) =>
+      val pt = state.typ(ptid)
+      val ct = state.coll(ctid)
+      (name -> ct.deserialize(serialized, pt))
+    }
+    (qv, bindings)
+  }
+  
+  /***********************************************
    * TYPES
    ***********************************************/
 
@@ -186,8 +318,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
       Categories(QLTag),
       Summary("This is an internal Text Type that results from the system parsing some Text"))) with SimplePTypeBuilder[Wikitext]
   {
-    def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
-    def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
+    def doDeserialize(v:String)(implicit state:SpaceState) = throw new SerializationException(this)
+    def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new SerializationException(this)
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
       Future.successful(v)
     override def doToUrlParam(v:Wikitext, raw:Boolean)(implicit state:SpaceState):String = {

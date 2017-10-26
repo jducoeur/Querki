@@ -58,14 +58,21 @@ case class QLScopes(scopes:List[QLScope] = List.empty) {
   def pop = copy(scopes = scopes.tail)
 }
 
-class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-  val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None)(implicit val ecology:Ecology) 
+class QLParser(
+    val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+    val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None,
+    val initialBindings:Option[Map[String, QValue]] = None)
+  (implicit val ecology:Ecology) 
   extends RegexParsers with EcologyMember 
 {
   
+  lazy val initialScopes = initialBindings match {
+    case Some(bindings) => QLScopes(List(QLScope(bindings)))
+    case None => QLScopes()
+  }
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth. We also provide an initial scope for this parser:
-  val initialContext = ci.copy(parser = Some(this), scopes = ci.scopes + (this -> QLScopes().push))(ci.state, ecology)
+  val initialContext = ci.copy(parser = Some(this), scopes = ci.scopes + (this -> initialScopes.push))(ci.state, ecology)
   
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
   

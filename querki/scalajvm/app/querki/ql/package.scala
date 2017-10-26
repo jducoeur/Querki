@@ -389,7 +389,8 @@ package object ql {
      * Note that this version copes with the entire Expression, not just the last phrase.
      */
     def processMethodToWikitext(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext] 
+        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None,
+        initialBindings:Option[Map[String, QValue]] = None):Future[Wikitext] 
         
     /**
      * Just parses the given text, with no further processing.
@@ -398,6 +399,20 @@ package object ql {
      * and QLContext.
      */
     def parseMethod(input:String):Option[QLPhrase]
+    
+    /**
+     * Serializes the environment of the given Invocation. Intended for uses like
+     * _QLButton(), where we need to be push the environment over to the Client,
+     * and have it returned again.
+     * 
+     * The result is an opaque String, not intended for introspection.
+     */
+    def serializeContext(inv:Invocation, qlParamNameOpt:Option[String]):InvocationValue[String]
+    /**
+     * Deserializes the block from serializeContext, into the fields needed to pass into
+     * processMethodToWikitext().
+     */
+    def deserializeContext(str:String)(implicit state:SpaceState):(QValue, Map[String, QValue])
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]

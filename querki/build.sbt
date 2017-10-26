@@ -59,7 +59,11 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.github.pathikrit" %% "better-files" % "2.17.1",
       "org.typelevel" %% "cats" % "0.9.0",
       // Updated version of the XML library:
-      "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
+      "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+      // A simple Base64 library, for embedding stuff into HTML:
+      "com.github.marklister" %% "base64" % "0.2.3",
+      // We are also using BooPickle for embedding: 
+      "io.suzaku" %% "boopickle" % "1.2.6"
     ),
     
     // ConductR params

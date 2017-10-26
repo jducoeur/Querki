@@ -596,9 +596,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     override def qlApply(inv:Invocation):QFut = {
       for {
         qv <- inv.contextValue
-        v <- inv.opt(qv.cv.headOption)
         pt = qv.pType
-        serialized = HtmlEscape.escapeAll(pt.serialize(v)(inv.state))
         labelWiki <- inv.processAs("label", ParsedTextType)
         label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
         qlRaw <- inv.rawRequiredParam("ql")
@@ -617,12 +615,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         noIcon <- inv.processAs("noIcon", YesNoType)
         lexicalBundleOpt = inv.context.parser.flatMap(_.lexicalThing)
         lexicalThingOpt = lexicalBundleOpt.flatMap(_ match { case t:Thing => Some(t); case _ => None }) 
+        serialized <- QL.serializeContext(inv, Some("ql"))
       }
         yield 
           HtmlValue(
-            buildHtml(label, 
+            buildHtml(
+              label, 
               s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" """ +
-              s"""data-replace="$replace" data-noicon="$noIcon" ${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) + targetDiv)
+              s"""data-replace="$replace" data-noicon="$noIcon" ${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) 
+            + targetDiv)
     }
   }
 

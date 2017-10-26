@@ -8,6 +8,8 @@ import querki.ql.Invocation
 import querki.util.QLog
 import querki.values._
 
+case class SerializationException[VT](tpe:PType[VT]) extends Exception(s"Type ${tpe.displayName} can't be serialized / deserialized")
+
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
  * things like Text, Number and so on. But note that Types are themselves Things;

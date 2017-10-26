@@ -88,13 +88,13 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   def evaluateQLWithContext(typeId:TID, serializedContext:String, lexicalOpt:Option[TID], ql:String):Future[Wikitext] = withThing(typeId) { case pt:PType[_] =>
     implicit val r = rc
     implicit val s = state
-    val qv = Core.ExactlyOne(pt.deserialize(serializedContext))
+    val (qv, bindings) = QL.deserializeContext(serializedContext)
     val context = querki.values.QLContext(qv, Some(rc))
     val lexicalContext = lexicalOpt.flatMap { lex =>
       val oid = ThingId(lex.underlying)
       state.anything(oid)
     }
-    QL.processMethodToWikitext(QLText(ql), context, None, lexicalContext)
+    QL.processMethodToWikitext(QLText(ql), context, None, lexicalContext, None, Some(bindings))
   }
   
   def getProperties(thingId:TID):Future[Seq[PropValInfo]] = withThing(thingId) { thing =>
