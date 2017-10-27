@@ -16,7 +16,7 @@ import querki.core.{IsTextType, QLText}
 import querki.html.QHtml
 import querki.tools.ProfileHandle
 import querki.util.{QLog, UnexpectedPublicException}
-import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, SpaceState}
+import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, QValue, SpaceState}
 
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
@@ -29,7 +29,11 @@ private [ql] trait QLInternals extends EcologyInterface {
   def qlProfilers:QLProfilers
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
+trait QLTestTools extends EcologyInterface {
+  def serializeContextCore(qv:QValue, bindings:Map[String, QValue])(implicit state:SpaceState):String
+}
+
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTestTools with querki.core.WithQL
   with querki.core.CollectionBase
   with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
   with querki.basic.PlainTextBaseType
@@ -222,6 +226,24 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
   case class EmbeddedBinding(pTypeId:OID, cTypeId:OID, serialized:String)
   case class EmbeddableContext(qvpType:OID, qvcType:OID, serializedQV:String, bindingsSerialized:Map[String, EmbeddedBinding])
   
+  // These guts are broken out for testing:
+  def serializeContextCore(qv:QValue, bindings:Map[String, QValue])(implicit state:SpaceState):String = {
+    val serializedQV = qv.serialize(qv.pType)
+    // We need to store each binding with its PType and serialized Value:
+    val bindingsSerialized:Map[String, EmbeddedBinding] = bindings.map { case (k, v) =>
+      (k -> EmbeddedBinding(v.pType.id, v.cType.id, v.serialize(v.pType)))
+    }
+      
+    // Now build the structure we're actually going to serialize...
+    val embeddable = EmbeddableContext(qv.pType.id, qv.cType.id, serializedQV, bindingsSerialized)
+    // ... pickle that...
+    val buf = Pickle.intoBytes(embeddable)
+    val arr = Array.ofDim[Byte](buf.remaining())
+    buf.get(arr)
+    // and turn it into an opaque embeddable String:
+    Base64.Encoder(arr).toBase64    
+  }
+  
   def serializeContext(inv:Invocation, qlParamNameOpt:Option[String]):InvocationValue[String] = {
     try {
       implicit val state = inv.state
@@ -231,7 +253,6 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
       // First, serialize the received context. That's the easy bit:
       val context = inv.context
       val qv = context.value
-      val serializedQV = qv.serialize(qv.pType)
   
       // Next, figure out which bindings are actually being *used* by the QL expression we're
       // embedding:
@@ -257,19 +278,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with quer
         yield bindingValues(inv, boundNames)
       val bindings = bindingsOpt.getOrElse(Map.empty)
       
-      // We need to store each binding with its PType and serialized Value:
-      val bindingsSerialized:Map[String, EmbeddedBinding] = bindings.map { case (k, v) =>
-        (k -> EmbeddedBinding(v.pType.id, v.cType.id, v.serialize(v.pType)))
-      }
-        
-      // Now build the structure we're actually going to serialize...
-      val embeddable = EmbeddableContext(qv.pType.id, qv.cType.id, serializedQV, bindingsSerialized)
-      // ... pickle that...
-      val buf = Pickle.intoBytes(embeddable)
-      val arr = Array.ofDim[Byte](buf.remaining())
-      buf.get(arr)
-      // and turn it into an opaque embeddable String:
-      inv.wrap(Base64.Encoder(arr).toBase64)
+      inv.wrap(serializeContextCore(qv, bindings))
     } catch {
       case SerializationException(tpe) => {
         inv.error("DataModel.serializationError", tpe.displayName)

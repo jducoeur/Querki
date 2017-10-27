@@ -8,6 +8,9 @@ import querki.test._
 import querki.util.SafeUrl
 
 class UITests extends QuerkiTests {
+  
+  lazy val QLTestTools = interface[querki.ql.QLTestTools]
+  
   // === _class ===
   "_class method" should {
     "render and apply if handed a Number" in {
@@ -178,16 +181,37 @@ class UITests extends QuerkiTests {
   "_QLButton" should {
     "produce the right button" in {
       implicit val s = commonSpace
+      implicit val state = s.state
+      
+      val context = ExactlyOne(Core.LinkType(s.instance))
+      val serialized = QLTestTools.serializeContextCore(context, Map.empty)
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
     }
     
     "use append properly" in {
       implicit val s = commonSpace
+      implicit val state = s.state
+      
+      val context = ExactlyOne(Core.LinkType(s.instance))
+      val serialized = QLTestTools.serializeContextCore(context, Map.empty)
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"", append=True)]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".${s.instance.id.toString}" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+    }
+    
+    "work with a bound name" in {
+      implicit val s = commonSpace
+      implicit val state = s.state
+      
+      val context = ExactlyOne(Core.LinkType(state))
+      val binding = ExactlyOne(Core.LinkType(s.instance))
+      val serialized = QLTestTools.serializeContextCore(context, Map("bound" -> binding))
+      
+      pql("""[[My Instance -> +$bound 
+        _QLButton(label=""Label"", ql=$bound, target=""myTarget"")]]""") should
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="$$bound" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")      
     }
   }
   
