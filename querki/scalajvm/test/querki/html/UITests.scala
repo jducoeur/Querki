@@ -190,6 +190,17 @@ class UITests extends QuerkiTests {
         equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
     }
     
+    "works with multiple items in context" in {
+      implicit val s = commonSpace
+      implicit val state = s.state
+      
+      val context = QList.makePropValue(List(Core.LinkType(s.instance), Core.LinkType(state)), Core.LinkType)
+      val serialized = QLTestTools.serializeContextCore(context, Map.empty)
+      
+      pql("""[[<My Instance, _space> -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+    }
+    
     "use append properly" in {
       implicit val s = commonSpace
       implicit val state = s.state

@@ -594,13 +594,12 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     def buildHtml(label:String, core:String):String
     
     override def qlApply(inv:Invocation):QFut = {
+      val qv = inv.context.value
+      val singleContext = inv.context.next(ExactlyOne(qv.elems.head))
       for {
-        qv <- inv.contextValue
-        pt = qv.pType
-        labelWiki <- inv.processAs("label", ParsedTextType)
-        label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
         qlRaw <- inv.rawRequiredParam("ql")
         ql = HtmlEscape.escapeQuotes(qlRaw.reconstructStandalone)
+        pt = qv.pType
         targetOpt <- inv.processAsOpt("target", ParsedTextType)
         (targetName, targetDiv) =
           targetOpt match {
@@ -613,6 +612,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         append <- inv.processAs("append", YesNoType)
         replace <- inv.processAs("replace", YesNoType)
         noIcon <- inv.processAs("noIcon", YesNoType)
+        // QI.9v5kage: the singleContext here fixes the bug, resulting in only a single button.
+        // TODO: why does this require singleContext? If this *specific* parameter uses the full
+        // context, we can wind up with multiple buttons if the context contains multiple elements.
+        // What is it about ParsedTextType that is causing this, the auto-deconstruction of ""...""? We'd
+        // actually like this to *process* with the full context, but only *result* in a single
+        // value afterwards.
+        labelWiki <- inv.processAs("label", ParsedTextType, singleContext)
+        label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
         lexicalBundleOpt = inv.context.parser.flatMap(_.lexicalThing)
         lexicalThingOpt = lexicalBundleOpt.flatMap(_ match { case t:Thing => Some(t); case _ => None }) 
         serialized <- QL.serializeContext(inv, Some("ql"))
