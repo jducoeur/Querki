@@ -144,8 +144,9 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       val vFut = for {
-        thing <- inv.contextFirstThing
-        initialProps <- inv.fut(getInitialProps(inv))
+        context <- inv.contextElements
+        thing <- inv.contextAllThings(context)
+        initialProps <- inv.fut(getInitialProps(inv, context))
         msg = ChangeProps(inv.context.request.requesterOrAnon, inv.context.state, thing.id, initialProps)
         newState <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { s }
@@ -157,10 +158,10 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       vFut.get.map(_.head)
     }
     
-    def getInitialProps(inv:Invocation):Future[PropMap] = {
+    def getInitialProps(inv:Invocation, context: QLContext):Future[PropMap] = {
       val futInvs = for {
         n <- inv.iter((0 until inv.numParams).toList)
-        propV <- inv.processParamFirstAs(n, Models.PropValType)
+        propV <- inv.processParamFirstAs(n, Models.PropValType, context)
       }
         yield propV
         

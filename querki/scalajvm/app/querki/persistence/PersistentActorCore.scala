@@ -86,13 +86,16 @@ trait PersistentRMCore[RM[_]] { self:PersistentActorCore =>
       // Work around a bug in persistAll + deferAsync:
       rm.resolve(Success(events))
     } else {
+      // This is sucktastic, but I don't see an obvious better way, given the semantics of persistAll().
+      // Note that deferAsync() looks good, but appears not to work as intended.
+      var countdown = events.length
       doPersistAll(events) { event =>
-        // Note that this callback occurs element-by-element, which isn't what we want. So we need to
-        // instead resolve the RM in deferAsync().
-      }
-      // Once *all* of the events are persisted, resolve the chain:
-      deferAsync(events) { evts =>
-        rm.resolve(Success(evts))      
+        // Note that this gets called for *each* event. So we need to wait until the *last* one persists,
+        // and then resolve the RM.
+        countdown -= 1
+        if (countdown == 0) {
+          rm.resolve(Success(events))
+        }
       }
     }
     rm
