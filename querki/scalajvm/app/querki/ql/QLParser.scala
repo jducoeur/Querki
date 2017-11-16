@@ -154,7 +154,7 @@ class QLParser(
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
   def qlName:Parser[QLName] = qlDef | qlBindingDef | qlBinding | qlThingId | qlSafeName | qlDisplayName
   def qlOp:Parser[String] = ("&" | "|")
-  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt(qlParamList) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
@@ -166,7 +166,7 @@ class QLParser(
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { 
     case name => QLBinding(name) 
   }
-  def qlBindingDef:Parser[QLBindingDef] = "\\s*\\+\\$".r ~> name ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+  def qlBindingDef:Parser[QLBindingDef] = "\\s*\\+\\$".r ~> name ~ opt("\\(\\s*".r ~> (repsep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case name ~ params => QLBindingDef(name, None, None) 
   }
   def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
@@ -188,6 +188,9 @@ class QLParser(
       }
     }
   }
+  def qlParamList:Parser[Seq[QLParam]] = qlEmptyParamList | qlRealParamList
+  def qlEmptyParamList:Parser[Seq[QLParam]] = "\\(\\s*\\)".r ^^ { case _ => Seq.empty }
+  def qlRealParamList:Parser[Seq[QLParam]] = "\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)
   def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlExp ^^ { 
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
