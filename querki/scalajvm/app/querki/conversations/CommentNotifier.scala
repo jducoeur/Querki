@@ -1,6 +1,6 @@
 package querki.conversations
 
-import models.{HtmlWikitext, PType, Wikitext}
+import models.{HtmlWikitext, PType, UnknownOID, Wikitext}
 
 import querki.ecology._
 import querki.email.EmailNotifier
@@ -10,7 +10,7 @@ import querki.identity.User
 import querki.notifications._
 import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
-import querki.values.{QLContext, SpaceState}
+import querki.values.{QLContext, RequestContext, SpaceState}
 
 import messages.Comment
 
@@ -66,67 +66,72 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   }
     
   def notifyComment(req:User, comment:Comment, commentNotifyPrefs:Seq[OneUserValue])(implicit state:SpaceState) = {
-    val thingNameOpt = for {
+    implicit val rc = RequestContext(Some(req), state.ownerIdentity.map(_.id).getOrElse(UnknownOID), Some(state.id.toThingId.toString), None)
+    
+    val thingOpt = for {
       thing <- state.anything(comment.thingId)
     }
-      yield thing.displayName
+      yield thing
       
-    val bodyOpt = for {
-      qv <- comment.props.get(CommentText.id)
-      body <- qv.firstAs(TextType)
-    }
-      yield body
-    
-    val payload = toProps(
-        CommentThingName(thingNameOpt.get),
-        // NOTE: yes, CommentBody seems redundant with CommentText. But in the medium term, we plan to allow QL in
-        // CommentText, and that is absolutely *not* allowed in the contents of a Notification. So we will need to
-        // run the QL here, and put the results into CommentBody.
-        CommentBody(bodyOpt.map(_.text).getOrElse("")),
-        CommentId(comment.id),
-        CommentSpaceOwner(state.owner)
-      )
-    // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
-    // user to mark them as Read yet. Once we have the needed UI, change the parameter below.
-    val note = Notification(
-      EmptyNotificationId,
-      comment.authorId, 
-      None,
-      id,
-      comment.createTime,
-      Some(comment.spaceId), 
-      Some(comment.thingId), 
-      SpacePersistence.serProps(payload, state),
-      true,
-      false)
+    // If we have a Thing, compute its name; otherwise, it'll be None:
+    futOpt(thingOpt.map(_.nameOrComputed.map(_.toString))).map { thingNameOpt =>
+      val bodyOpt = for {
+        qv <- comment.props.get(CommentText.id)
+        body <- qv.firstAs(TextType)
+      }
+        yield body
       
-    val recipients = (Set(state.owner) /: commentNotifyPrefs) { (recip, onePref) => 
-      if (onePref.thingId == state.id || onePref.thingId == comment.thingId) {
-        onePref.v.firstAs(YesNoType) match {
-          case Some(bool) => {
-            if (bool) {
-              recip + onePref.identity.id
-            } else {
-              recip - onePref.identity.id
+      val payload = toProps(
+          CommentThingName(thingNameOpt.get),
+          // NOTE: yes, CommentBody seems redundant with CommentText. But in the medium term, we plan to allow QL in
+          // CommentText, and that is absolutely *not* allowed in the contents of a Notification. So we will need to
+          // run the QL here, and put the results into CommentBody.
+          CommentBody(bodyOpt.map(_.text).getOrElse("")),
+          CommentId(comment.id),
+          CommentSpaceOwner(state.owner)
+        )
+      // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
+      // user to mark them as Read yet. Once we have the needed UI, change the parameter below.
+      val note = Notification(
+        EmptyNotificationId,
+        comment.authorId, 
+        None,
+        id,
+        comment.createTime,
+        Some(comment.spaceId), 
+        Some(comment.thingId), 
+        SpacePersistence.serProps(payload, state),
+        true,
+        false)
+        
+      val recipients = (Set(state.owner) /: commentNotifyPrefs) { (recip, onePref) => 
+        if (onePref.thingId == state.id || onePref.thingId == comment.thingId) {
+          onePref.v.firstAs(YesNoType) match {
+            case Some(bool) => {
+              if (bool) {
+                recip + onePref.identity.id
+              } else {
+                recip - onePref.identity.id
+              }
+            }
+            case None => {
+              QLog.error("CommentNotifier got a commentNotifyPref that isn't a YesNo: " + onePref)
+              recip
             }
           }
-          case None => {
-            QLog.error("CommentNotifier got a commentNotifyPref that isn't a YesNo: " + onePref)
-            recip
-          }
+        } else {
+          // It's not relevant to this comment
+          recip
         }
-      } else {
-        // It's not relevant to this comment
-        recip
       }
-    }
+        
+      // Don't send the notification to the person who wrote the comment:
+      // TODO: all members of the Space should be able to opt into receiving comments, and the owner should
+      // be able to opt out:
+      val recipientsNotAuthor = recipients.filterNot(_ == comment.authorId).toSeq
       
-    // Don't send the notification to the person who wrote the comment:
-    // TODO: all members of the Space should be able to opt into receiving comments, and the owner should
-    // be able to opt out:
-    val recipientsNotAuthor = recipients.filterNot(_ == comment.authorId).toSeq
-    
-    Notifications.send(req, ExplicitRecipients(recipientsNotAuthor), note)
+      Notifications.send(req, ExplicitRecipients(recipientsNotAuthor), note)
+    }
   }
   
   // TODO: this should become a standard utility:
