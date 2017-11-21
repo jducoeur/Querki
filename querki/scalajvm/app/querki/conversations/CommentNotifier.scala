@@ -146,10 +146,10 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   }
   implicit def payload2Rich(payload:PropMap):RichPropMap = new RichPropMap(payload)
   
-  def commentLink(note:Notification):Option[String] = {
+  def commentLink(text:String, note:Notification):String = {
     val rawPayload = note.payload
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
-    for {
+    val resultOpt = for {
       ownerId <- payload.getProp(CommentSpaceOwner, LinkType)
       spaceId <- note.spaceId
       thingId <- note.thingId
@@ -159,8 +159,10 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       // TODO: more importantly, this should be producing true ThingIds, not OIDs; this currently causes bad
       // URLs. Fixing that is probably going to require getting the pipeline to work async, though, so we can
       // fetch the names.
-      yield s""" <a href="/u/${ownerId.toThingId}/${spaceId.toThingId}/${thingId.toThingId}#comment$commentId" title="Click to go to this comment">""" +
-             """<i class="glyphicon glyphicon-share-alt"></i></a>"""
+      yield s"""<a href="/u/${ownerId.toThingId}/${spaceId.toThingId}/${thingId.toThingId}#comment$commentId" title="Click to go to this comment">""" +
+            s"""$text <i class="glyphicon glyphicon-share-alt"></i></a>"""
+            
+    resultOpt.getOrElse(text)
   }
     
   def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
@@ -168,8 +170,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
     val resultOpt = for {
       thingName <- payload.getProp(CommentThingName, PlainTextType)
-      link = commentLink(note)
-      header = s"""Comment on "${thingName.text}"""" + commentLink(note).getOrElse("")
+      header = commentLink(s"""Comment on "${thingName.text}"""", note)
       bodyQV <- payload.get(CommentBodyOID)
       body = bodyQV.wikify(context)
     }
