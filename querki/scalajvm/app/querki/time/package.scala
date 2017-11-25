@@ -23,6 +23,7 @@ package object time extends Imports with Implicits {
     val TodayFunctionOID = moid(7)
     val PlusDateImplOID = moid(8)
     val CreateTimeFunctionOID = moid(9)
+    val InitOnCreateFlagOID = moid(10)
   }
   
   val TimeTag = "Times and Dates"

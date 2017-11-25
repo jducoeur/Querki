@@ -5,11 +5,15 @@ import scala.xml.NodeSeq
 import com.github.nscala_time.time.Imports._
 import com.github.nscala_time.time.StaticDateTime
 
+import org.querki.requester.RequestM
+
 import models._
 
 import querki.ecology._
 import querki.globals._
+import querki.spaces.{ThingChangeRequest, TCRReq}
 import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.util.{Contributor, Publisher}
 
 /**
  * The TimeModule is responsible for all things Time-related in the Querki API.
@@ -29,9 +33,57 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
   import MOIDs._
   
   val Logic = initRequires[querki.logic.Logic]
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
+  val Types = initRequires[querki.types.Types]
   
   lazy val QDuration = interface[QDuration]
   lazy val QL = interface[querki.ql.QL]
+  
+  override def init = {
+    SpaceChangeManager.thingChanges += DateInitializer
+  }
+  
+  override def term = {
+    SpaceChangeManager.thingChanges += DateInitializer
+  }
+  
+  // TODO: this is *ferociously* inefficient in principle -- we're examining every Property from the Model on every Create. That's
+  // probably necessary, but if we wind up doing any more of these, we should come up with a *single* entry point
+  // for initializing Properties, instead of having lots of little Contributors that are each iterating over
+  // every Prop.
+  private object DateInitializer extends Contributor[TCRReq, TCRReq] {
+    // This is called whenever we get a Create or Modify request; we only care about a few
+    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
+      evtReq.flatMap {
+        // Iff there is no Thing (so this is a Create):
+        case tcr @ ThingChangeRequest(who, req, state, router, Some(modelId), None, kind, props, changedProps) =>
+        {
+          val initedProps = state.anything(modelId).map { model =>
+            // Go through all the Properties on the *model*, looking for Dates with InitOnCreate:
+            (emptyProps /: model.props) { case (pm, (propId, pv)) =>
+              val resultOpt = for {
+                prop <- state.prop(propId)
+                ptid = prop.pType.id
+                if (ptid == DateTypeOID || ptid == DateTimeTypeOID)
+                if (prop.ifSet(InitOnCreateFlag)(state))
+                typedProp = prop.asInstanceOf[Property[DateTime, DateTime]]
+              }
+                // This is a Date property with InitOnCreate, so initialize it:
+                yield pm + typedProp(DateTime.now)
+                
+              resultOpt.getOrElse(pm)
+            }
+          }.getOrElse(emptyProps)
+          
+          // Finally, add those initialized Properties to anything that was previously planned:
+          RequestM.successful(tcr.copy(newProps = (initedProps ++ props)))
+        }
+        
+        // Otherwise, just pass the same value along:
+        case tcr => RequestM.successful(tcr)
+      }
+    }
+  }
     
   /******************************************
    * TYPES
@@ -267,6 +319,12 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     }
   }
   
+  lazy val InitOnCreateFlag = new SystemProperty(InitOnCreateFlagOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Initialize When Thing Created"),
+      Types.AppliesToTypesProp(QDate, QDateTime),
+      Summary("If you check this box on a Date Property, when an Instance is created, this will be set to today's date.")))
+  
   override lazy val props = Seq(
     modTimeMethod,
     yearMethod,
@@ -274,6 +332,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     dayMethod,
     todayFunction,
     plusDateImpl,
-    CreateTimeFunction
+    CreateTimeFunction,
+    InitOnCreateFlag
   )
 }
