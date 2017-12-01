@@ -39,7 +39,7 @@ trait ClusterTimeoutChild extends Actor {
    * IMPORTANT: instances must call super.preStart()!!!
    */
   override def preStart() = {
-    QLog.spew(s"Starting ClusterTimeoutChild ${self.path}")
+//    QLog.spew(s"Starting ClusterTimeoutChild ${self.path}")
     val timeout = context.system.settings.config.getDuration(timeoutConfig, java.util.concurrent.TimeUnit.MILLISECONDS)
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()
@@ -48,19 +48,19 @@ trait ClusterTimeoutChild extends Actor {
   abstract override def unhandled(message: Any): Unit = {
     message match {
       case resp:ReceiveTimeout => {
-        QLog.spew(s"Passivating (timeout) ClusterTimeoutChild ${self.path}")
+//        QLog.spew(s"Passivating (timeout) ClusterTimeoutChild ${self.path}")
         context.parent ! Passivate(KillMe)
       }
       case KillMe => {
-        QLog.spew(s"Killing ClusterTimeoutChild ${self.path}")
+//        QLog.spew(s"Killing ClusterTimeoutChild ${self.path}")
         context.stop(self)
       }
       case Shutdown => {
-        QLog.spew(s"Passivating (Shutdown) ClusterTimeoutChild ${self.path}")
+//        QLog.spew(s"Passivating (Shutdown) ClusterTimeoutChild ${self.path}")
         context.parent ! Passivate(KillMe)
       }
       case Reload => {
-        QLog.spew(s"Passivating (Reload) ClusterTimeoutChild ${self.path}")
+//        QLog.spew(s"Passivating (Reload) ClusterTimeoutChild ${self.path}")
         context.parent ! Passivate(KillMe)
       }
       case other => super.unhandled(other)
