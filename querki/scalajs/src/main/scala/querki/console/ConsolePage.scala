@@ -36,9 +36,25 @@ class ConsolePage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
     }
   }
   
+  def leadSpaces(line:String):Int = {
+    val i = line.indexWhere(_ != ' ')
+    if (i == -1)
+      0
+    else
+      i
+  }
+  
   def fixup(str:String) = { 
-    val segments = str.split("\n").toSeq
-    val withBreaks:Seq[Modifier] = segments.headOption.map(str => str:Modifier).toSeq ++: segments.drop(1).flatMap(seg => Seq(br(), seg:Modifier))
+    val lines = str.split("\n").toSeq
+    val withBreaks = (Vector.empty[Modifier] /: lines) { (v, line) =>
+      val leading = leadSpaces(line)
+      val break = 
+        if (v.isEmpty)
+          Vector.empty[Modifier]
+        else
+          Vector(br())
+      v ++ break :+ raw("&nbsp;" * leading) :+ (line:Modifier)
+    }
     MSeq(withBreaks)
   }
   
