@@ -51,6 +51,30 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   
   //////////////////////////////////////////////////
   
+  /**
+   * Logging wrapper.
+   * 
+   * This is designed to wrap around something that returns an ME, and make sure that both synchronous and
+   * asynchronous exceptions get logged.
+   * 
+   * TODO: in principle, this should get lifted to the same level as ME itself.
+   */
+  def loggingErrors[R](f: => ME[R]):ME[R] = {
+    val resultME = try {
+      f
+    } catch {
+      case th:Throwable => QLog.logAndThrowException(th)
+    }
+    resultME.handleError(th => QLog.logAndThrowException(th))
+  }
+  
+  val shouldLog = Config.getBoolean("querki.publication.log", false)
+  def log(msg: => String):Unit = {
+    if (shouldLog) {
+      QLog.spew(msg)
+    }
+  }
+  
   def toPersistenceId(id:OID) = "publish-" + id.toThingId.toString
   def persistenceId = toPersistenceId(id)
   
@@ -75,9 +99,12 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   
   def doPublish(who:User, thingIds:Seq[OID], meta:PropMap, spaceState:SpaceState):ME[PublicationState] = {
     implicit val state = spaceState
+    log("In doPublish")
     Person.localIdentities(who).headOption match {
       case Some(identity) => {
+        log("We have an identity")
         val things = thingIds.map(state.anything(_)).flatten
+        log(s"Operating on Things: ${things.map(_.displayName)}")
         // Note that we use the *public* context to render the Things, to avoid information leakage:
         val publicRequestContext = RequestContext(None, state.owner)
         // TODO: ah, damn -- rendering is explicitly Future-based, which defeats our attempt to completely
@@ -91,6 +118,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
         val oneFut = fromFuture(Future.sequence(thingsWithWikitextFuts))
         for {
           wikitextPairs <- oneFut
+          _ = log(s"wikitextPairs: $wikitextPairs")
           infos = wikitextPairs.map { case ThingInfo(oid, wikitext, displayName, notes) => 
             PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString, displayName)
           }
@@ -106,9 +134,11 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
             else
               meta + Publication.PublishNotesProp(notes)
           publishEvent = PublishEvent(identity.id, infos, fullMeta, DateTime.now)
+          _ = log(s"About to persist $publishEvent")
           persisted <- persistAnd(publishEvent)
           rawEvent = RawPublishEvent(identity, infos.map(info => (info.thingId, info)).toMap, fullMeta, persisted.when)
           _ = curState = addPublication(rawEvent, curState)
+          _ = log(s"Added to Publication")
         }
           yield curState
       }
@@ -146,8 +176,10 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     }
   }
   def updatePublishedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
+    log(s"About to computePublishChanges for $thingIds")
     for {
       updates <- computePublishChanges(thingIds)
+      _ = log(s"About to sendChangeProps($updates)")
       result <- sendChangeProps(who, updates)
     }
       yield result
@@ -157,19 +189,23 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     case _ if (initializing) => stash()
     
     case Publish(who, things, meta, spaceState) => {
-      for {
-        _ <- publish(who, things, meta, spaceState)
-        finalState <- updatePublishedThings(who, things)(spaceState)
+      loggingErrors {
+        for {
+          _ <- publish(who, things, meta, spaceState)
+          finalState <- updatePublishedThings(who, things)(spaceState)
+        }
+          yield { sender ! PublishResponse(finalState) }
       }
-        yield { sender ! PublishResponse(finalState) }
     }
     
     case Update(who, things, meta, spaceState) => {
-      for {
-        _ <- publish(who, things, meta, spaceState)
-        finalState <- updatePublishedThings(who, things)(spaceState)
+      loggingErrors {
+        for {
+          _ <- publish(who, things, meta, spaceState)
+          finalState <- updatePublishedThings(who, things)(spaceState)
+        }
+          yield { sender ! PublishResponse(spaceState) }
       }
-        yield { sender ! PublishResponse(spaceState) }
     }
     
     case GetEvents(who, since, until, includeMinor, coalesce) => {
