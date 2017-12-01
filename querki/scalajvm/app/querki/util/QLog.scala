@@ -18,7 +18,7 @@ object QLog {
   
   def inPlay:Boolean = !runningUnitTests
   
-  def stackTrace(message: => String) = {
+  def stackTrace(message: => String):Unit = {
     try {
       throw new Exception("Debugging Stack Trace requested")
     } catch {
@@ -39,10 +39,12 @@ object QLog {
     }
   }
   def error(message: => String) = {
-    if (inPlay)
-      Logger.error(message)
-    else
-      println(message)
+    // TBD: I think errors are serious at this point that they should always include a stack:
+//    if (inPlay)
+//      Logger.error(message)
+//    else
+//      println(message)
+    stackTrace("Non-Exception Error: " + message)
   }
   // Convenience function:
   def logAndThrowException(ex: => Throwable):Nothing = {
