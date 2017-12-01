@@ -36,20 +36,27 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel with Con
    */
   def notify(evt:CacheUpdate, sender:Publisher[CacheUpdate, CacheUpdate]):CacheUpdate = {
     implicit val state = evt.current
-    val calculated:Map[OID, Seq[Property[_,_]]] =
+    val calculated:Map[OID, Seq[Property[_,_]]] = calculatePropsBySkill(state)
+    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.propsBySkill, calculated)
+  }
+  
+  private def calculatePropsBySkill(implicit state:SpaceState):Map[OID, Seq[Property[_,_]]] = {
       state.propList.toSeq.
         filterNot(_.ifSet(Basic.DeprecatedProp)).
         filterNot(_.ifSet(Core.InternalProp)).
         filterNot(_.ifSet(DataModel.IsFunctionProp)).
-        groupBy(apply(_))
-        
-    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.propsBySkill, calculated)
+        groupBy(apply(_))    
   }
   
   private def publicPropsBySkill(implicit state:SpaceState):Map[OID, Seq[Property[_,_]]] = {
     state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.propsBySkill)) match {
       case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Seq[Property[_,_]]]] }
-      case None => { QLog.error("SkillLevel couldn't find its state cache in Space " + state.id); Map.empty }
+      case None => { 
+        QLog.warn(s"""SkillLevel couldn't find its state cache in Space ${state.id}; 
+          |we must be copying SpaceState without copying the cache! 
+          |Recalculating now...""".stripMargin)
+        calculatePropsBySkill(state)
+      }
     }
   }
    
