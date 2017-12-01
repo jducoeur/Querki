@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import akka.pattern._
 import akka.util.Timeout
 
+import querki.console.CommandEffectArgs
 import querki.console.ConsoleFunctions._
 import querki.globals._
 import querki.identity.GuestUser
@@ -82,9 +83,26 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
       
     result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
   }
+  
+  lazy val ShowThingCmd = Console.defineAdminCommand(
+    ShowThingCmdOID, 
+    "Show Thing", 
+    "Shows a full dump of the specified Thing")
+  { case CommandEffectArgs(inv, api) =>
+    implicit val state = inv.state
+    
+    val result = for {
+      tid <- inv.processParamFirstAs(0, LinkType)
+      t <- inv.opt(state.anything(tid))
+    }
+      yield DisplayTextResult(QLog.renderThing(t))
+      
+    result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find a Thing with that ID")))
+  }
 
   override lazy val props = Seq(
     DeleteEmailAddressCmd,
-    InspectByEmailCmd
+    InspectByEmailCmd,
+    ShowThingCmd
   )
 }
