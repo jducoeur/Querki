@@ -741,9 +741,14 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   def enhancedState:SpaceState = {
     if (_enhancedState.isEmpty) {
       _enhancedState = Some(
-        _pubState.map(ps => 
-          Publication.enhanceState(currentState, ps)
-        ).getOrElse(currentState))
+        _pubState.map { ps => 
+          val enhanced = Publication.enhanceState(currentState, ps)
+          val filled = 
+            SpaceChangeManager.updateStateCache(CacheUpdate(None, Some(currentState), enhanced)).
+            current.
+            copy(version = currentState.version)
+          filled
+        }.getOrElse(currentState))
     }
     _enhancedState.get
   }
