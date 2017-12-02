@@ -235,14 +235,18 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     case SpaceSubsystemRequest(req, _, msg) => {
       msg match {
         case GetConversations(_) => {
-  	      if (!ConvEcot.canReadComments(req, thingId, state)) {
-  	        // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
-  	        respond(ThingError(new PublicException(SpaceError.UnknownID)))
-  	      } else {
-  	        // TODO: if the requester is not a Moderator, strip out needsModeration comments.
-  	        // TODO: strip out isDeleted comments. Does this include child comments? Probably not.
-  	        respond(conversations)
-  	      }          
+          if (!ConvEcot.canReadComments(req, thingId, state)) {
+            // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing
+            // We respond with an empty ThingConversations, deliberately, because the receiving sites don't know
+            // how to deal with an explicit error.
+            // TBD: in principle, what we really should be returning is an Either covering the error case. Do we
+            // care?
+            respond(ThingConversations(Seq.empty))
+          } else {
+            // TODO: if the requester is not a Moderator, strip out needsModeration comments.
+            // TODO: strip out isDeleted comments. Does this include child comments? Probably not.
+            respond(conversations)
+          }          
         }
         
         /**
@@ -250,11 +254,11 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
          */
         case NewComment(commentIn) => {
           convTrace(s"    Conv Actor got a NewComment for $commentIn")
-  	      if (!ConvEcot.canWriteComments(commentIn.authorId, thingId, state)) {
-  	        // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
-  	        // send a Notification to the moderator(s), instead of rejecting it outright like this:
-  	        respond(ThingError(new PublicException(SpaceError.ModifyNotAllowed)))
-  	      } else {
+          if (!ConvEcot.canWriteComments(commentIn.authorId, thingId, state)) {
+            // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
+            // send a Notification to the moderator(s), instead of rejecting it outright like this:
+            respond(ThingError(new PublicException(SpaceError.ModifyNotAllowed)))
+          } else {
             val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
             nextId += 1
             val evt = DHAddComment(dh(comment))
@@ -268,7 +272,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
               val threadAuthors = parents.map(_.comment.authorId)
               notifyNewComment(req, node.comment, threadAuthors)
             }
-  	      }
+          }
         }
         
         // TODO: this needs unit-testing, before we get around to actually implementing the UI:
