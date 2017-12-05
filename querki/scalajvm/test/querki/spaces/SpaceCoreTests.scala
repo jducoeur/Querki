@@ -12,6 +12,7 @@ import querki.globals._
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.persistence._
 import querki.publication._
+import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.messages._
 import querki.test._
 import querki.time._
@@ -81,7 +82,7 @@ class TestSpaceCore(
     TestRTCAble.successful(appSpace.state)
   }
   
-  def sendPublicationChanges(changes:List[ChangeResult]):TCIdentity[CurrentPublicationState] = {
+  def sendPublicationChanges(changes:List[SpaceEvent with UseKryo]):TCIdentity[CurrentPublicationState] = {
     // TODO: make this real
     TestRTCAble.successful(CurrentPublicationState(Map.empty))
   }

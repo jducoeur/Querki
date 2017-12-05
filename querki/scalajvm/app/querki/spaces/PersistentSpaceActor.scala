@@ -181,8 +181,7 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
     }
   }
   
-  def sendPublicationChanges(changes:List[ChangeResult]):RequestM[CurrentPublicationState] = {
-    val events = changes.map(_.events).flatten
+  def sendPublicationChanges(events:List[SpaceEvent with UseKryo]):RequestM[CurrentPublicationState] = {
     val msg = AddPublicationEvents(events)
     stateRouter.requestFor[CurrentPublicationState](msg)
   }

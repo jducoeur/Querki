@@ -167,7 +167,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * Sends these changes over to the InPublicationStateActor
    */
-  def sendPublicationChanges(changes:List[ChangeResult]):RM[CurrentPublicationState]
+  def sendPublicationChanges(events:List[SpaceEvent with UseKryo]):RM[CurrentPublicationState]
   
   /**
    * Tells the InPublicationActor that this Thing has been Published.
@@ -516,7 +516,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
           // Compute the Events...
           changes <- run(Seq(func))(state)
           // ... send them to the InPublicationStateActor...
-          pubState <- sendPublicationChanges(changes)
+          events = changes.map(_.events).flatten
+          pubState <- sendPublicationChanges(events)
           // TODO: there's a small race condition here, between the SpaceActor and the InPublicationActor: if multiple
           // Publishable changes come through in quick succession, things could possibly get out of order. I don't
           // think this has dire consequences, but it's a serious concern. Should get fixed by QI.7w4g8nd.
@@ -546,15 +547,19 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     // If it was successful, send the response for that.
     result.map { case (changes, finalState) =>
       changes.lastOption.foreach(change => change.changedThing.foreach { oid =>
-        val msg = 
-          if (localCall)
-            ThingFound(oid, finalState)
-          else
-            ThingAck(oid)
-        respond(msg)
+        sendResponse(localCall, oid, finalState)
       })
       changes
     }
+  }
+  
+  def sendResponse(localCall:Boolean, oid:OID, finalState:SpaceState):Unit = {
+    val msg = 
+      if (localCall)
+        ThingFound(oid, finalState)
+      else
+        ThingAck(oid)
+    respond(msg)    
   }
   
   monitor("Booting Space...")
@@ -911,7 +916,35 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case DeleteThing(who, spaceId, thingId) => {
-      runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
+      def doMainDelete() = runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
+      
+      val publishable = isPublishable(thingId)
+      
+      // Note that we have to deal with deletion from the Publication and main forks *separately*.
+      // TODO: this is horrible. How can we unify it?
+      if (publishable) {
+        // Check that it's legal, and tell the Publication fork to delete it. Keep in mind that even
+        // if it doesn't exist locally, it might exist in Publication.
+        // TODO: the duplication here is horrible. We need a better way to do this!
+        implicit val s = enhancedState
+        enhancedState.anything(thingId).map { thing =>
+          if (!canEdit(who, thing.id)(enhancedState))
+            throw new PublicException(UnknownPath)
+          
+          val msg = DHDeleteThing(who, thing.id, DateTime.now)
+          sendPublicationChanges(List(msg)).map { pubState =>
+            setPubState(pubState)
+            if (currentState.anything(thingId).isEmpty) {
+              // Looks like this was never actually published, so we're done:
+              sendResponse(true, thing.id, currentState)
+            } else {
+              doMainDelete()
+            }
+          }
+        }
+      } else {
+        doMainDelete()
+      }
     }
     
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
