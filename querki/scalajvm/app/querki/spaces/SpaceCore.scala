@@ -757,17 +757,19 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     _enhancedState.get
   }
-  def isPublishable(thingId:OID):Boolean = {
+  // TODO: "permissive" is a temporary hack.  See comment in DeleteThing.
+  def isPublishable(thingId:OID, permissive:Boolean):Boolean = {
     enhancedState.anything(thingId).map { t =>
-      if (t.isModel(enhancedState))
+      // TODO: for the moment, "permissive" treats Models like Instances here. We only care for deletion:
+      if (t.isModel(enhancedState) && !permissive)
         // The Model itself always lives in the main fork:
         false
       else
         t.ifSet(Publication.PublishableModelProp)(enhancedState) 
     }.getOrElse(false)
   }
-  def isPublishable(thingId:ThingId):Boolean =
-    enhancedState.anythingLocal(thingId).map(t => isPublishable(t.id)).getOrElse(false)
+  def isPublishable(thingId:ThingId, permissive:Boolean = false):Boolean =
+    enhancedState.anythingLocal(thingId).map(t => isPublishable(t.id, permissive)).getOrElse(false)
   
   val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
@@ -813,11 +815,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     
     case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
       // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
-      // we are asking whether this Thing's *model* is publishable.
-      val pub = (for {
-        t <- enhancedState.anything(modelId)
+      // we are asking whether this Thing's *model* is publishable. Also, we need to exclude
+      // sub-Models -- those belong here, in the main fork.
+      val pubOpt = for {
+        creatingModel <- Some(props.contains(Core.IsModelProp))
+        model <- enhancedState.anything(modelId)
+        modelIsPublishable = model.ifSet(Publication.PublishableModelProp)(enhancedState)
       }
-        yield t.ifSet(Publication.PublishableModelProp)(enhancedState)).getOrElse(false)
+        yield ((!creatingModel) && modelIsPublishable)
+      val pub = pubOpt.getOrElse(false)
         
       val fullState = if (pub) enhancedState else currentState
       
@@ -918,7 +924,9 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     case DeleteThing(who, spaceId, thingId) => {
       def doMainDelete() = runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
       
-      val publishable = isPublishable(thingId)
+      // TODO: "permissive" is a temporary hack to work around some consequences of QI.9v5kal6. We were
+      // accidentally creating some sub-Models on the publication fork. We need to allow those to be deleted.
+      val publishable = isPublishable(thingId, permissive = true)
       
       // Note that we have to deal with deletion from the Publication and main forks *separately*.
       // TODO: this is horrible. How can we unify it?
