@@ -52,7 +52,9 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
         |
         |Currently running on *[[_clusterAddress]]*
         |
-        |**[Export all Instances of [[Link Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
+        |[[_if(_isModel,
+        |""**[Export all Instances of [[Link Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**""
+        |)]]
         |
         |[[_orphanedInstances -> _section(""### Orphaned Instances"", 
         |""These Instances belong to missing Models; we recommend going into each one, opening Advanced Edit from the
