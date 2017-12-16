@@ -19,6 +19,7 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
   
   lazy val Apps = interface[querki.apps.Apps]
   lazy val Client = interface[querki.client.Client]
+  lazy val Console = interface[querki.console.Console]
   lazy val History = interface[querki.history.History]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -76,6 +77,13 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
     guts = 
       div(
         new QText(gutsRaw),
+        div(
+          p("""Press this button to open the Querki Console. This is a "command line" interface, that provides a
+              |few power-user features that are rarely needed."""),
+          new ButtonGadget(ButtonGadget.Info, "Open Console", id := "_consoleButton") ({ () =>
+            Console.consoleFactory.showPage()
+          })
+        ),
         if (DataAccess.request.isOwner) {
           div(
             p("""Press this button to reload this Space. (This is mainly for testing; you can usually ignore it.)"""),
