@@ -22,9 +22,9 @@ class CollectionsTests extends QuerkiTests {
       class TSpace extends CDSpace {
         val favoriteGenresProp = new TestProperty(TagType, QSet, "Favorite Genres", Links.LinkModelProp(genreModel))
         
-  	    new SimpleTestThing("More Favorites", 
-  	      favoriteArtistsProp(tmbg, blackmores),
-  	      favoriteGenresProp("Rock", "Weird"))
+        new SimpleTestThing("More Favorites", 
+          favoriteArtistsProp(tmbg, blackmores),
+          favoriteGenresProp("Rock", "Weird"))
       }
       implicit val s = new TSpace
       
@@ -58,6 +58,34 @@ class CollectionsTests extends QuerkiTests {
       
       pql("""[[My Thing -> My Prop -> _contains(Thing 3)]]""") should equal ("true")
       pql("""[[My Thing -> My Prop -> _contains(Thing 2)]]""") should equal ("false")
+    }
+  }
+  
+  // === _contains ===
+  "_isContainedIn" should {
+    "work with simple numbers" in {
+      class TSpace extends CommonSpace {
+        val listProp = new TestProperty(Core.IntType, QList, "My Prop")
+        val myThing = new SimpleTestThing("My Thing", listProp(5, 9, 92))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[9 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("true")
+      pql("""[[42 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("false")
+    }
+    
+    "work with links" in {
+      class TSpace extends CommonSpace {
+        val listProp = new TestProperty(Core.LinkType, QList, "My Prop")
+        val thing1 = new SimpleTestThing("Thing 1")
+        val thing2 = new SimpleTestThing("Thing 2")
+        val thing3 = new SimpleTestThing("Thing 3")
+        val myThing = new SimpleTestThing("My Thing", listProp(thing1, thing3))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Thing 3 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("true")
+      pql("""[[Thing 2 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("false")
     }
   }
   

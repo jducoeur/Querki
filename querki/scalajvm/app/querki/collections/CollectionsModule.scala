@@ -27,6 +27,7 @@ object MOIDs extends EcotIds(6) {
   val DropOID = moid(6)
   val ConcatOID = moid(7)
   val RandomOID = moid(8)
+  val IsContainedInMethodOID = moid(9)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -710,7 +711,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         reqs = Seq(("v", AnyType, "A single value that might be in the List. This should be Required; if not, the first element will be used.")),
         opts = Seq.empty,
         returns = (YesNoType, "True if *v* is found in the List; False otherwise")
-      )))
+      ),
+      Details("See [[_isContainedIn]] for the inverse of this function.")))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
@@ -720,6 +722,28 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           case Some(elem) => inv.context.value.contains(elem)
           case _ => false
         }
+      }
+        yield boolean2YesNoQValue(result)
+    }
+  }
+  
+  lazy val isContainedInMethod = new InternalMethod(IsContainedInMethodOID,
+    toProps(
+      setName("_isContainedIn"),
+      Categories(CollTag),
+      Summary("Produces true if the received value is found in the specified List"),
+      Signature(
+        expected = Some(Seq.empty, "A Value; if this a List or Set, the first element will be used. If Empty, this will always return False."),
+        reqs = Seq(("l", AnyType, "A List that might contain that Value.")),
+        opts = Seq.empty,
+        returns = (YesNoType, "True if that Value is found in the List; False otherwise")
+      ),
+      Details("See [[_contains]] for the inverse of this function.")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        listv <- inv.process("l")
+        result = inv.context.value.firstOpt.map(listv.contains(_)).getOrElse(false)
       }
         yield boolean2YesNoQValue(result)
     }
@@ -805,7 +829,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     prevInListMethod,
     nextInListMethod,
     foreachMethod,
-    containsMethod
+    containsMethod,
+    isContainedInMethod
   )
   
 }
