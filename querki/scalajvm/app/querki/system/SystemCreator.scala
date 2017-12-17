@@ -111,6 +111,7 @@ object SystemCreator {
     new querki.typeclass.TypeclassEcot(ecology)                    // 69
     new querki.aws.AWSEcot(ecology)                                // 70
     new querki.console.ConsoleEcot(ecology)                        // 71
+    new querki.identity.IdentityCommands(ecology)                  // 72
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {

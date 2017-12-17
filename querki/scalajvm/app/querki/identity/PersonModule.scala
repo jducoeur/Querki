@@ -77,8 +77,8 @@ private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState
  */
 class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core.MethodDefs with Contributor[CacheUpdate, CacheUpdate] {
   
-  val Email = initRequires[querki.email.Email]
   val Basic = initRequires[querki.basic.Basic]
+  val Email = initRequires[querki.email.Email]
   val PageEventManager = initRequires[controllers.PageEventManager]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
@@ -309,7 +309,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         yield ExactlyOne(LinkType(person))
     }
   }
-
+  
   override lazy val props = Seq(
     IdentityLink,
     InviteText,
@@ -416,8 +416,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
               IdentityLink(identity.id),
               InvitationStatusProp(StatusInvitedOID),
               DisplayNameProp(identity.name),
-              AccessControl.PersonRolesProp(inviteeRoles:_*),
-              AccessControl.CanReadProp(AccessControl.OwnerTag))
+              AccessControl.PersonRolesProp(inviteeRoles:_*))
           // Note the explicit and important assumption here, that this is being run local to the
           // Space!
           val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap)
@@ -563,8 +562,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
                   IdentityLink(identity.id),
                   InvitationStatusProp(StatusMemberOID),
                   DisplayNameProp(identity.name),
-                  AccessControl.PersonRolesProp(roleId),
-                  AccessControl.CanReadProp(AccessControl.OwnerTag)) ++
+                  AccessControl.PersonRolesProp(roleId)) ++
                 (if (identity.kind == IdentityKind.Trivial)
                    toProps(IsSimpleGuestProp(true))
                  else
