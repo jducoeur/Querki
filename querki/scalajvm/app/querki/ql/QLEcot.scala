@@ -60,6 +60,11 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     val qvs = data.vs
     val returnType = data.metadata.returnType
     val preferredColl = data.metadata.preferredColl
+    
+    collectQVs(qvs, returnType, preferredColl)
+  }
+  
+  def collectQVs(qvs:Iterable[QValue], returnType:Option[PType[_]], preferredColl:Option[Collection]):QValue = {
     // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
     // conceptually Iterable[QValue].flatten:
     val pt = {

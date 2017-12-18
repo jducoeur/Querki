@@ -34,6 +34,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   val SystemManagement = initRequires[querki.system.SystemManagement]
   
   lazy val Models = interface[models.Models]
+  lazy val QL = interface[querki.ql.QL]
   
   /**
    * The one true handle to the Space Management system.
@@ -155,7 +156,11 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       }
         yield inv.context.nextFrom(ExactlyOne(LinkType(thing.id)), transformThing).withState(newState)
         
-      vFut.get.map(_.head)
+      vFut.get.map { contexts =>
+        val qvs = contexts.map(_.value)
+        val resultQV = QL.collectQVs(qvs, None, None)
+        inv.receivedContext.next(resultQV)
+      }
     }
     
     def getInitialProps(inv:Invocation, context: QLContext):Future[PropMap] = {

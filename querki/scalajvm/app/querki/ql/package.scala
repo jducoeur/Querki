@@ -363,6 +363,11 @@ package object ql {
     def inv2QValueImpl(inv:InvocationValue[QValue]):QFut
     
     /**
+     * The guts of inv2QValueImpl, which is occasionally useful for relatively low-level power functions. 
+     */
+    def collectQVs(qvs:Iterable[QValue], returnType:Option[PType[_]], preferredColl:Option[Collection]):QValue
+    
+    /**
      * The primary entry point for processing a body of QLText into Wikitext.
      * 
      * The input text should be a block of QLText (with the text on the "outside"). This parses
