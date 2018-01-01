@@ -43,7 +43,7 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
           identities += (id -> identity)
           cb(resp)
         }
-        case IdentityNotFound => cb(IdentityNotFound)
+        case IdentityNotFound(id) => cb(IdentityNotFound(id))
       }
     }
   }
@@ -66,7 +66,7 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
             router.forward(msg.toUser(identity.userId))
           }
         }
-        case IdentityNotFound => {}
+        case IdentityNotFound(_) => {}
       }
     }
   }
@@ -89,7 +89,7 @@ private [identity] class IdentityCacheFetcher(val ecology:Ecology) extends Actor
     case GetIdentityRequest(id) => {
       UserAccess.getFullIdentity(id) match {
         case Some(identity) => sender ! IdentityFound(identity)
-        case None => sender ! IdentityNotFound
+        case None => sender ! IdentityNotFound(id)
       }      
     }
   }
@@ -103,7 +103,7 @@ object IdentityCacheMessages {
   case class GetIdentityRequest(id:OID) extends IdentityRequest
   sealed trait IdentityResponse
   case class IdentityFound(identity:FullIdentity) extends IdentityResponse
-  case object IdentityNotFound extends IdentityResponse
+  case class IdentityNotFound(id:OID) extends IdentityResponse
   
   case class InvalidateCacheForIdentity(id:OID) extends IdentityRequest
   

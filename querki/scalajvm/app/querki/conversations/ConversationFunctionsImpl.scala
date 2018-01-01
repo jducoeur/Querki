@@ -100,24 +100,24 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
     implicit val s = state
     val canComment = localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
-	  val canReadComments = Conversations.canReadComments(user, thing, state)
-		    
-  	if (canReadComments) {
-	    // We need to store away the RC for this request, to have it available when the requests come back:
-	    // TODO: *Sigh*. We'd really like to have something like Spores in Request, to catch bugs like this in
-	    // the compiler...
-	    implicit val theRc = rc
-	    
-	    for {
+    val canReadComments = Conversations.canReadComments(user, thing, state)
+        
+    if (canReadComments) {
+      // We need to store away the RC for this request, to have it available when the requests come back:
+      // TODO: *Sigh*. We'd really like to have something like Spores in Request, to catch bugs like this in
+      // the compiler...
+      implicit val theRc = rc
+      
+      for {
         ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](SpaceSubsystemRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
         identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
         apiConvs <- Future.sequence(filterDeadThreads(convs).map(toApi(thing, _)(identities, theRc)))
       }
         yield ConversationInfo(canComment, canReadComments, apiConvs)
-	  } else {
-	    // The requester can't read the comments, so don't bother collecting them:
-	    Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
-	  }
+    } else {
+      // The requester can't read the comments, so don't bother collecting them:
+      Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
+    }
   }
 
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
@@ -144,7 +144,11 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     for {
       AddedNode(parentId, node) <- spaceRouter.request(SpaceSubsystemRequest(user, state.id, NewComment(comment)))
       dummy1 = convTrace(s"    Have added the node for the new comment")
-      IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
+      identityResult <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
+      identity = identityResult match { 
+        case IdentityFound(identity) => identity
+        case IdentityNotFound(oid) => IdentityAccess.makeTrivial(oid).mainIdentity
+      }
       dummy2 = convTrace(s"    Have found the Identity of the comment's author")
       result <- toApi(thing, node)(Map(authorId -> identity), theRc)
     }
@@ -152,9 +156,9 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-	  spaceRouter.request(SpaceSubsystemRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
-	    case CommentDeleted => ()
-	    case CommentNotDeleted => throw new Exception("Unable to delete comment")      
-	  }
+    spaceRouter.request(SpaceSubsystemRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
+      case CommentDeleted => ()
+      case CommentNotDeleted => throw new Exception("Unable to delete comment")      
+    }
   }
 }

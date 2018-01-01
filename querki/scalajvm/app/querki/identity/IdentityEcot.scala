@@ -110,7 +110,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     val fut = identityCache ? GetIdentityRequest(id)
     fut map {
       case IdentityFound(identity) => Some(identity)
-      case IdentityNotFound => None
+      case IdentityNotFound(_) => None
       case _ => None
     }
   }
@@ -136,25 +136,29 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   // can cope with the cache sometimes containing stale data. My *guess* is that that's okay for any use case
   // that is getting many Identities. It may well be that we need two caches: a distributed high-reliability one
   // and a CRDT one that can be a bit stale.
-  def getIdentitiesInternal[T >: FullIdentity](ids:Seq[OID]):Future[Map[OID, T]] = {
+  def getIdentitiesInternal[T >: FullIdentity](ids:Seq[OID], notFound:(Map[OID, T], OID) => Map[OID, T]):Future[Map[OID, T]] = {
     val requests:Set[Future[Any]] = ids.toSet.map { id:OID => identityCache ? GetIdentityRequest(id) }
     val resultSetFut = Future.sequence(requests)
     resultSetFut.map { resultSet =>
       (Map.empty[OID, T] /: resultSet) { (m, response) =>
         response match {
           case IdentityFound(identity) => m + (identity.id -> identity)
-          case IdentityNotFound => m
+          case IdentityNotFound(identityId) => notFound(m, identityId)
         }
       }
     } 
   }
   
+  /**
+   * Note that, when fetching *Public* Identities, this will synthesize Guest IDs for any that aren't found,
+   * since that is generally what we want. If the caller cares, they should screen for Trivial Identities.
+   */
   def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]] = {
-    getIdentitiesInternal[PublicIdentity](ids)
+    getIdentitiesInternal[PublicIdentity](ids, (m, id) => m + (id -> makeTrivial(id).mainIdentity))
   }
   
   def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]] = {
-    getIdentitiesInternal[FullIdentity](ids)
+    getIdentitiesInternal[FullIdentity](ids, (m, _) => m)
   }  
   
   def invalidateCache(id:OID):Unit = {
