@@ -209,9 +209,10 @@ class QLParser(
   private def processTextStage(text:QLTextStage, context:QLContext):Future[QLContext] = {
     val ct = context.value.cType
     // For each element of the incoming context, recurse in and process the embedded Text
-    // in that context. Iff the context is empty, though, just produce an empty result.
+    // in that context. Iff the context is empty, though, just produce an empty result *unless*
+    // they have asked for the full collection.
     val transformedFuts =
-      if (context.isEmpty)
+      if (context.isEmpty && text.collFlag.isEmpty)
         Iterable.empty
       else
         context.map { elemContext =>
