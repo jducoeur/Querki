@@ -248,20 +248,46 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       setName("_me"),
       Categories(IdentityTag),
       Summary("If the current user is a Person in the current Space, return that Person"),
+      Signature(
+        expected = None,
+        reqs = Seq.empty,
+        opts = Seq(
+          ("warnIfNotLocal", YesNoType, ExactlyOne(YesNoType(true)), "Iff true, give a warning if this isn't a local Person. Iff false, produce Empty")
+        ),
+        returns = (LinkType, "The Person who created the Thing, if known. This may be empty.")
+      ),
       Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
-          |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
-          |logged in, or isn't a Member, this will produce a Warning.
+          |a logged-in User, *and* they are a Member of this Space, it produces their Person record. 
+          |
+          |If the viewer isn't logged in, or isn't a Member, this will produce a Warning. If you don't want a Warning (for
+          |example, if you want to be able to do something else if this isn't a local Person), say it as:
+          |
+          |```
+          |_me(warnIfNotLocal = false)
+          |```
           |
           |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
           |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
-      
-      val userOpt = context.request.requester
       implicit val state = context.state
-      val personOpt = userOpt.flatMap(localPerson(_))
-      Future.successful(personOpt.map(person => Links.LinkValue(person)).getOrElse(QL.WarningValue("You are not a member of this Space")))
+      
+      for {
+        warnIfNotLocal <- inv.processAs("warnIfNotLocal", YesNoType)
+        userOpt = context.request.requester
+        personOpt = userOpt.flatMap(localPerson(_))
+        personLinkOpt = personOpt.map(person => Links.LinkValue(person))
+        result = personLinkOpt match {
+          case Some(l) => l
+          case None =>
+            if (warnIfNotLocal)
+              QL.WarningValue("You are not a member of this Space")
+            else
+              EmptyValue(LinkType)
+        }
+      }
+        yield result
     }
   }
   
