@@ -202,7 +202,7 @@ trait BaseParsers extends RegexParsers {
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
     def xmlName:Parser[String] = "big" | "blockquote" | "br" | "button" |
-      "cite" | "code" | "div" | "em" |
+      "cite" | "code" | "div" | "em" | "label" |
       "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "hr" | "img" | "input" |
       "p" | "pre" | "q" | "span" | "strike" | "strong" | "sub" | "sup" |
       "dl" | "dd" | "dt" | "ul" | "ol" | "li" |
