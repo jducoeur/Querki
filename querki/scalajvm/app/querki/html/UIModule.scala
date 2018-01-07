@@ -615,6 +615,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         append <- inv.processAs("append", YesNoType)
         replace <- inv.processAs("replace", YesNoType)
         noIcon <- inv.processAs("noIcon", YesNoType)
+        noDiv <- inv.processAs("noDiv", YesNoType)
         // QI.9v5kage: the singleContext here fixes the bug, resulting in only a single button.
         // TODO: why does this require singleContext? If this *specific* parameter uses the full
         // context, we can wind up with multiple buttons if the context contains multiple elements.
@@ -632,7 +633,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             buildHtml(
               label, 
               s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" """ +
-              s"""data-replace="$replace" data-noicon="$noIcon" ${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) 
+              s"""data-replace="$replace" data-noicon="$noIcon" """ +
+              (if (noDiv) """data-nodiv="true" """ else "") +
+              s"""${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) 
             + targetDiv)
     }
   }
@@ -656,7 +659,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing the button again re-runs
                 |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin),
           ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the button,
-                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin)
+                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin),
+          ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
         ),
         returns = (RawHtmlType, "The button")
       ),
@@ -694,7 +699,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, clicking the link again re-runs
                 |the QL, and replaces the value in the target div. (This is rarely useful.)""".stripMargin),
           ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the link,
-                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin)
+                |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin),
+          ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
         ),
         returns = (RawHtmlType, "The link, ready for the page")
       ),
@@ -732,7 +739,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |closes the div.""".stripMargin),
           ("replace", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing Enter again re-runs
                 |the QL with the new value of the input field, and replaces the previous result in the target div.""".stripMargin),
-          ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Not currently used in _QLInput.""".stripMargin)
+          ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Not currently used in _QLInput.""".stripMargin),
+          ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
         ),
         returns = (RawHtmlType, "The input field, ready for the page")
       ),

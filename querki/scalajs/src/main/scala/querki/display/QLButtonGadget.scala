@@ -39,6 +39,7 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val noIcon = jq.data("noicon").map(_.asInstanceOf[Boolean]).getOrElse(false)
+    val noDiv = jq.data("nodiv").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val lexicalOpt = tidOpt("lexical")
     val (useIcons, openicon, closeicon, thinkingicon) =
       if (noIcon || isTextInput || append || replace)
@@ -76,11 +77,17 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
         $(elem).attr("disabled", true)
         
         def handleResult(result:models.Wikitext) = {
-          val qtext = new QText(result)
+          val qtext:dom.html.Element =
+            if (noDiv) {
+              // Render this raw, with no ScalaTags wrapper. Do we have a better way to do this?
+              $(result.raw.html.toString).get(0).asInstanceOf[dom.html.Element]
+            } else {
+              (new QText(result)).render
+            }
           if (!append) {
             targetJQ.empty()
           }
-          targetJQ.append(qtext.render)
+          targetJQ.append(qtext)
           targetJQ.show()
           $(elem).attr("disabled", false)
           $(elem).removeClass("running")
