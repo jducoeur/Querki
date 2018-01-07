@@ -595,7 +595,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     
     override def qlApply(inv:Invocation):QFut = {
       val qv = inv.context.value
-      val singleContext = inv.context.next(ExactlyOne(qv.elems.head))
+      // TODO: for the moment, we're using a single context for the label (see below). If that's
+      // empty, we synthesize one. This fixed QI.9v5kari, but kind of sucks. Can we do better?
+      val elem = qv.elems.headOption.getOrElse(Logic.True)
+      val singleContext = inv.context.next(ExactlyOne(elem))
       for {
         qlRaw <- inv.rawRequiredParam("ql")
         ql = HtmlEscape.escapeQuotes(qlRaw.reconstructStandalone)
