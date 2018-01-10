@@ -24,6 +24,7 @@ object SpaceEcotMOIDs extends EcotIds(37) {
   val CreateHereOID = moid(1)
   val ChangePropertiesOID = moid(2)
   val CreateThingFunctionOID = moid(3)
+  val DeleteThingFunctionOID = moid(4)
 }
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
@@ -245,6 +246,36 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     }
   }
   
+  lazy val DeleteThingFunction = new InternalMethod(DeleteThingFunctionOID,
+    toProps(
+      setName("_deleteThing"),
+      Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Delete a Thing"),
+      Signature(
+        expected = Some(Seq(LinkType), "A Thing"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (AnyType, "Not a useful value. It is usually recommended to call `navigateTo` on a specific Thing after this.")
+      ),
+      Details("""This is the counterpart to `_createThing()`. It **immediately** and
+                |**unconditionally** deletes the specified Thing. So use this function
+                |with great care!""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val vFut = for {
+        thingId <- inv.contextAllAs(LinkType)
+        msg = DeleteThing(inv.context.request.requesterOrAnon, inv.context.state, thingId)
+        (thingId, newState) <- inv.fut(spaceRegion ? msg map { 
+          case ThingFound(id, s) => { (id, s) }
+        })
+      }
+        yield inv.context.nextFrom(ExactlyOne(IntType(0)), transformThing).withState(newState)
+        
+      vFut.get.map(_.head)
+    }
+  }
+  
   lazy val CreateHere = new InternalMethod(CreateHereOID,
     toProps(
       setName("_createHere"),
@@ -306,6 +337,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   override lazy val props = Seq(
     ChangeProperties,
     CreateThingFunction,
+    DeleteThingFunction,
     CreateHere
   )
 }
