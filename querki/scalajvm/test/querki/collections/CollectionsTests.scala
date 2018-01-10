@@ -157,6 +157,27 @@ class CollectionsTests extends QuerkiTests {
     }
   }
   
+  // === _fold ===
+  "_fold" should {
+    "work with an explicit accumulator" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<1, 2, 3, 4> -> _fold(0, $acc -> _plus($next))]]""") should equal ("10")
+    }
+    
+    "work with the context as the accumulator" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<1, 2, 3, 4> -> _fold(0, _plus($next))]]""") should equal ("10")
+    }
+    
+    "work with a different initial value" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<1, 2, 3, 4> -> _fold(10, $acc -> _plus($next))]]""") should equal ("20")
+    }
+  }
+  
   // === _foreach ===
   "_foreach" should {
     "work normally" in {

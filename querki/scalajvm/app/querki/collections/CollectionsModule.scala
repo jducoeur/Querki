@@ -28,6 +28,7 @@ object MOIDs extends EcotIds(6) {
   val ConcatOID = moid(7)
   val RandomOID = moid(8)
   val IsContainedInMethodOID = moid(9)
+  val FoldFunctionOID = moid(10)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -811,6 +812,79 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     }
   }
   
+  lazy val FoldFunction = new InternalMethod(FoldFunctionOID,
+      toProps(
+        setName("_fold"),
+        Categories(CollTag),
+        Summary("Applies a QL expression iteratively to the elements of a List"),
+        SkillLevel(SkillLevelAdvanced),
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq(
+            ("init", AnyType, "The start value"),
+            ("exp", AnyType, "An expression to run on each element of the collection")
+          ),
+          opts = Seq.empty,
+          returns = (AnyType, "The result of running `exp` over each element of the List")
+        ),        
+        Details("""This function is advanced, but sometimes enormously useful. It is Querki's version
+                  |of the common functional-programming function fold().
+                  |
+                  |Basically, this receives a List, and takes two parameters: an initial value and
+                  |an expression. It runs through the List, one element at a time, building up an
+                  |"accumulator". Each time through, you get the current accumulator and the next
+                  |element; the expression should result in a new value, which will become the
+                  |new accumulator.
+                  |
+                  |The accumulator is passed into the expression as the bound name `$acc`; the next
+                  |element as `$next`.
+                  |
+                  |It is best understood through an example. This is how you would implement "sum"
+                  |using `_fold`:
+                  |
+                  |```
+                  |<1, 2, 3, 4> -> _fold(0, $acc -> _plus($next))
+                  |```
+                  |
+                  |That is, you can think of a sum as simply adding all of the elements together
+                  |one at a time. So you start with 0 (the first parameter). The first time it
+                  |calls the expression, `$acc` is 0 and `$next` is 1 (the first element of the List),
+                  |so it results in 1. Next time around, `$acc` is 1 and `$next` is 2 (the next element),
+                  |so it results in 3. Then it adds 3 and 3 to get 6; then it adds 6 and 4, to get 10.
+                  |
+                  |For convenience, the value of `$acc` is also given at the context of the expression.
+                  |So you could actually express the above even more concisely as:
+                  |
+                  |```
+                  |<1, 2, 3, 4> -> _fold(0, _plus($next))
+                  |```
+                  |""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        init <- inv.process("init")
+        exp <- inv.rawRequiredParam("exp")
+        result <- inv.fut(doFold(init, inv.context, exp))
+      }
+        yield result
+    }
+    
+    def doFold(init: QValue, context: QLContext, exp: querki.ql.QLExp): Future[QValue] = {
+      (Future.successful(init) /: context.value.elems) { (accFut, elem) =>
+        accFut.flatMap { acc =>
+          val parser = context.parser.get.
+            withBindings(Map(
+              ("acc" -> acc),
+              ("next" -> ExactlyOne(elem))
+            ))
+          val elemContext = parser.initialContext.next(acc)
+          
+          parser.processExp(exp, elemContext).map(_.value)
+        }
+      }
+    }
+  }  
+  
   override lazy val props = Seq(
     FirstMethod,
     RestMethod,
@@ -825,6 +899,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     ReverseMethod,
     ConcatMethod,
     RandomMethod,
+    FoldFunction,
       
     prevInListMethod,
     nextInListMethod,

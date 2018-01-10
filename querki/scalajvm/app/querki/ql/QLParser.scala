@@ -74,6 +74,14 @@ class QLParser(
   // a modification, rather than another level of depth. We also provide an initial scope for this parser:
   val initialContext = ci.copy(parser = Some(this), scopes = ci.scopes + (this -> initialScopes.push))(ci.state, ecology)
   
+  /**
+   * Create a new parser, that includes the given bindings. This is intended mainly for "meta" functions,
+   * which want to fix some bindings and then call processExp().
+   */
+  def withBindings(bindings: Map[String, QValue]):QLParser = {
+    new QLParser(input, ci, invOpt, lexicalThing, lexicalProp, Some(initialBindings.getOrElse(Map.empty) ++ bindings))
+  }
+  
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
   
   lazy val Basic = interface[querki.basic.Basic]
