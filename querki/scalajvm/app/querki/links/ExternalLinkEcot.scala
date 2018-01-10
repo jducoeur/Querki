@@ -70,14 +70,16 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       }
         yield url.url
     }
-    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
+    def getDisplay(context:QLContext)(elem:ElemValue):Future[Option[String]] = {
       implicit val s = context.state
       val bundle = elem.get(this)
-      for {
+      val result = for {
         pv <- bundle.getPropOpt(Basic.DisplayNameProp)
         text <- pv.firstOpt
       }
-        yield text.text      
+        yield text.text
+        
+      fut(result)
     }
     
     override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayRawOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
@@ -145,7 +147,8 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         elemContext <- inv.contextElements
         elemV <- inv.opt(elemContext.value.firstOpt)
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
-        displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
+        displayStrOpt <- inv.fut(pt.getDisplay(elemContext)(elemV))
+        displayStr <- inv.opt(displayStrOpt)
         paramNameElem <- inv.processParam(0, elemContext)
         paramName <- inv.fut(paramNameElem.wikify(elemContext).map(_.raw.str))
         valElem <- inv.processParam(1, elemContext)

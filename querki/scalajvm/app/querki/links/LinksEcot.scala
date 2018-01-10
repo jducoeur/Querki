@@ -9,6 +9,7 @@ import models.{DisplayPropVal, Kind, PropertyBundle, PType, PTypeBuilder, Wikite
 import querki.api.commonName
 import querki.core.{LinkCandidateProvider, URLableType}
 import querki.ecology._
+import querki.globals._
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.spaces.messages.{CreateThing, ThingFound}
 import querki.values.{ElemValue, QLContext, SpaceState}
@@ -126,8 +127,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
     }
   
     // For the simple URL Type, the display is the same as the URL:
-    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
-      elem.getOpt(this).map(_.url)
+    def getDisplay(context:QLContext)(elem:ElemValue):Future[Option[String]] = {
+      fut(elem.getOpt(this).map(_.url))
     }
   
     def doDefault(implicit state:SpaceState) = new QURL("")
@@ -185,10 +186,10 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
    * PROPERTIES
    ***********************************************/
   
-	/**
-	 * Meta-property, set on Properties of LinkType, to filter what to Link to.
-	 */
-	lazy val LinkKindProp = new SystemProperty(LinkKindOID, IntType, QList,
+  /**
+   * Meta-property, set on Properties of LinkType, to filter what to Link to.
+   */
+  lazy val LinkKindProp = new SystemProperty(LinkKindOID, IntType, QList,
     toProps(
       setName("Link Kind"),
       SkillLevel(SkillLevelAdvanced),
@@ -211,8 +212,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
           |This is an extremely advanced property, and not intended for casual use.""".stripMargin),
       AppliesToKindProp(Kind.Property)
       ))
-	
-	lazy val LinkAllowAppsProp = new SystemProperty(LinkAllowAppsOID, YesNoType, Optional,
+  
+  lazy val LinkAllowAppsProp = new SystemProperty(LinkAllowAppsOID, YesNoType, Optional,
     toProps(
       setName("Allow Links to Apps"),
       Categories(LinksTag),
@@ -224,8 +225,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
       AppliesToKindProp(Kind.Property),
       SkillLevel(SkillLevelAdvanced)
       ))
-	
-	lazy val LinkModelProp = new SystemProperty(LinkModelOID, LinkType, Optional,
+  
+  lazy val LinkModelProp = new SystemProperty(LinkModelOID, LinkType, Optional,
     toProps(
       setName(commonName(_.links.linkModelProp)),
       Categories(LinksTag),
@@ -245,11 +246,11 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
       Types.AppliesToTypesProp(LinkType, querki.tags.MOIDs.NewTagSetOID),
       LinkToModelsOnlyProp(true)
       ))
-	
-	// TODO: As it says, replace this with a more general Link Filter property. That will need bigger
-	// refactorings, though: I started to build that, only to discover that SpaceState.linkCandidates
-	// doesn't have all the request-context information needed to resolve a QL Expression.
-	lazy val LinkToModelsOnlyProp = new SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
+  
+  // TODO: As it says, replace this with a more general Link Filter property. That will need bigger
+  // refactorings, though: I started to build that, only to discover that SpaceState.linkCandidates
+  // doesn't have all the request-context information needed to resolve a QL Expression.
+  lazy val LinkToModelsOnlyProp = new SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
     toProps(
       setName("Link to Models Only"),
       AppliesToKindProp(Kind.Property),
@@ -261,8 +262,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
           |This is an advanced property, and something of a hack -- don't get too comfortable with it. In the
           |medium term, it should get replaced by a more general LinkFilter property that lets you specify which
           |Things to link to.""".stripMargin)))
-	
-	lazy val NoCreateThroughLinkProp = new SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
+  
+  lazy val NoCreateThroughLinkProp = new SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
     toProps(
       setName("Is a Choice"),
       NotInherited,

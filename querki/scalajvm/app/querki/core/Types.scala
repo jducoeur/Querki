@@ -44,7 +44,7 @@ trait WithQL {
  */
 trait URLableType {
   def getURL(context:QLContext)(v:ElemValue):Option[String]
-  def getDisplay(context:QLContext)(v:ElemValue):Option[String]
+  def getDisplay(context:QLContext)(v:ElemValue):Future[Option[String]]
 }
   
 /**
@@ -565,12 +565,14 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
         yield thing.toThingId.toString()
     }
     
-    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
-      for (
-        v <- elem.getOpt(this);
+    def getDisplay(context:QLContext)(elem:ElemValue):Future[Option[String]] = {
+      val optFut = for {
+        v <- elem.getOpt(this)
         thing <- follow(context)(v)
-          )
-        yield thing.displayName
+      }
+        yield thing.nameOrComputed(context.request, context.state).map(_.toString)
+        
+      futOpt(optFut)
     }
     
     // Links are sorted by their *display names*:
