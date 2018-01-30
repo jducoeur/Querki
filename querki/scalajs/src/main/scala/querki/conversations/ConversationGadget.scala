@@ -13,7 +13,7 @@ import querki.display.WrapperDiv
 import querki.globals._
 
 private [conversations] class ConversationGadget(
-    conv:ConvNode, 
+    convOpt:Option[ConvNode], 
     canComment:Boolean, 
     thingId:TID,
     replyPromptTextOpt:Option[String] = None,
@@ -34,18 +34,22 @@ private [conversations] class ConversationGadget(
   def flattenNodes(node:ConvNode):Seq[CommentGadget] = {
     new CommentGadget(node.comment, thingId) +: node.responses.flatMap(flattenNodes(_))
   }
-  lazy val flattenedNodes = flattenNodes(conv)
+  lazy val flattenedNodes = convOpt.map(flattenNodes(_)).getOrElse(Seq.empty)
   
   lazy val commentContainer = Gadget(div(cls:="_commentContainer col-md-offset1 col-md-9", flattenedNodes))
   
   def doRender() =
-    div(
-      cls:="_convThread row",
-      commentContainer,
-      if (canComment) {
-        replyContainer
-      }
-    )
+    if (convOpt.isEmpty) {
+      div()
+    } else {
+      div(
+        cls:="_convThread row",
+        commentContainer,
+        if (canComment) {
+          replyContainer
+        }
+      )
+    }
       
   lazy val replyContainer = (new WrapperDiv()(ecology))(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
@@ -95,13 +99,9 @@ object ConversationGadget {
     val replyPromptTextOpt = $(e).data("replyprompt").toOption.map(_.asInstanceOf[String])
     val replyLinkClassOpt = $(e).data("replylinkclass").toOption.map(_.asInstanceOf[String])
     val commentInfos = $(e).find("._convCommentData").mapElems(CommentGadget.infoFromElem(_))
-    // TODO: this will currently crash if the conversation is completely empty. This is a rare
-    // edge case, but could happen if *all* of the comments are deleted. But fixing it isn't
-    // easy -- the Gadgets powertrain assumes success in the signature of GadgetConstr! Maybe
-    // return a trivial Div Gadget that either contains a ConversationGadget or not?
     val rootNode = (commentInfos.foldRight(Seq.empty[ConvNode]) { (info, prevNode) =>
       Seq(ConvNode(info, prevNode))
-    }).head
+    }).headOption
     val gadget = new ConversationGadget(rootNode, canComment, thingId, replyPromptTextOpt, replyLinkClassOpt)
     $(e).replaceWith(gadget.rendered)
     gadget

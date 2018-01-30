@@ -51,7 +51,7 @@ private [conversations] class NewConversationGadget(
   }
   
   def onNewConversation(newNode:ConvNode) = {
-    val convGadget = new ConversationGadget(newNode, true, thingId, replyPromptTextOpt, replyLinkClassOpt)
+    val convGadget = new ConversationGadget(Some(newNode), true, thingId, replyPromptTextOpt, replyLinkClassOpt)
     $(target).append(convGadget.render)
     if (shouldShowStartLink)
       showStartLink()

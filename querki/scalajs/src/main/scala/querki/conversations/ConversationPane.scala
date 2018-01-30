@@ -35,7 +35,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
         val convs =
           div(
             for (conv <- convInfo.convs)
-              yield new ConversationGadget(conv, canComment, t.oid)
+              yield new ConversationGadget(Some(conv), canComment, t.oid)
           )
         convWrapper.replaceContents(convs.render)
         
