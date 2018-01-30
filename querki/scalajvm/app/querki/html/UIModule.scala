@@ -336,24 +336,24 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    * TODO: add parameters to specify the common style decisions: size (btn-sm, btn-xs, etc) and color (btn-default,
    * btn-warning, btn-danger, etc). These should each take a well-defined enumeration.
    */
-  class LinkButtonMethod extends InternalMethod(LinkButtonOID,
+  class LinkButtonBase(oid: OID, name: String, kind: String, isButton: Boolean) extends InternalMethod(oid,
     toProps(
-      setName("_linkButton"),
+      setName(name),
       Categories(UITag),
-      Summary("Displays a button that goes to a linked page when you press it."),
+      Summary(s"Displays a $kind that goes to a linked page when you press it."),
       Signature(
-        expected = Some((Seq(LinkType, ExternalLinkType), "The Thing or page to go to when this button is pressed")),
+        expected = Some((Seq(LinkType, ExternalLinkType), s"The Thing or page to go to when this $kind is pressed")),
         reqs = Seq.empty,
         opts = Seq(
-          ("label", ParsedTextType, Core.QNone, "The text to display on this button, if any"),
-          ("icon", ParsedTextType, Core.QNone, "The icon to display on this button, if any"),
-          ("tooltip", ParsedTextType, Core.QNone, "The tooltip to show when the user hovers over this button"),
-          ("id", ParsedTextType, Core.QNone, "The HTML id to give to this button")
+          ("label", ParsedTextType, Core.QNone, s"The text to display on this $kind, if any"),
+          ("icon", ParsedTextType, Core.QNone, s"The icon to display on this $kind, if any"),
+          ("tooltip", ParsedTextType, Core.QNone, s"The tooltip to show when the user hovers over this $kind"),
+          ("id", ParsedTextType, Core.QNone, s"The HTML id to give to this $kind")
         ),
-        returns = (RawHtmlType, "The button as requested")
+        returns = (RawHtmlType, s"The $kind as requested")
       ),
-      Details("""_linkButton receives a Link or External Link, and displays that
-          |link as a button. You should always provide at least a label or an icon.""".stripMargin)))
+      Details(s"""$name receives a Link or External Link, and displays that
+          |link as a $kind. You should always provide at least a label or an icon.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
@@ -372,7 +372,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         yield {
           HtmlValue(
             a(
-              cls:="btn btn-primary",
+              if (isButton)
+                cls:="btn btn-primary",
               href:=url,
               idOpt.map { idStr => idAttr:=idStr.raw.toString },
               tooltipOpt.map { tooltip => title:=tooltip.raw.toString },
@@ -388,6 +389,13 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         }
     }
   }
+
+  /**
+   * TODO: add parameters to specify the common style decisions: size (btn-sm, btn-xs, etc) and color (btn-default,
+   * btn-warning, btn-danger, etc). These should each take a well-defined enumeration.
+   */
+  class LinkButtonMethod extends LinkButtonBase(LinkButtonOID, "_linkButton", "button", true)
+  class ShowLinkMethod extends LinkButtonBase(ShowLinkMethodOID, "_showLink", "link", false)
   
   class IconButtonMethod extends ButtonBase(IconButtonOID,
     toProps(
@@ -434,32 +442,32 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
-  // TODO: this is very similar to _linkButton, and should be refactored.
-  class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
-    toProps(
-      setName("_showLink"),
-      Categories(UITag),
-      Summary("Displays a Link or External Link as a normal HTML link."),
-      Details("""    LINK -> _showLink(LABEL)
-          |This is the most normal way to display a Link or External Link with a chosen label. The
-          |label may be any expression you choose.
-          |
-          |The default behaviour of a Link, if you don't do anything with it, is effectively
-          |"_showLink(Default View)".""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
-      for {
-        pt <- inv.contextTypeAs[URLableType]
-        elemContext <- inv.contextElements
-        elemV <- inv.opt(elemContext.value.firstOpt)
-        url <- inv.opt(pt.getURL(elemContext)(elemV))
-        paramVal <- inv.processParam(0, elemContext)
-        label <- inv.fut(paramVal.wikify(elemContext))
-        wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
-      }
-        yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
-    }
-  }
+//  // TODO: this is very similar to _linkButton, and should be refactored.
+//  class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
+//    toProps(
+//      setName("_showLink"),
+//      Categories(UITag),
+//      Summary("Displays a Link or External Link as a normal HTML link."),
+//      Details("""    LINK -> _showLink(LABEL)
+//          |This is the most normal way to display a Link or External Link with a chosen label. The
+//          |label may be any expression you choose.
+//          |
+//          |The default behaviour of a Link, if you don't do anything with it, is effectively
+//          |"_showLink(Default View)".""".stripMargin)))
+//  {
+//    override def qlApply(inv:Invocation):QFut = {
+//      for {
+//        pt <- inv.contextTypeAs[URLableType]
+//        elemContext <- inv.contextElements
+//        elemV <- inv.opt(elemContext.value.firstOpt)
+//        url <- inv.opt(pt.getURL(elemContext)(elemV))
+//        paramVal <- inv.processParam(0, elemContext)
+//        label <- inv.fut(paramVal.wikify(elemContext))
+//        wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
+//      }
+//        yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
+//    }
+//  }
     
   class PropLinkMethod extends InternalMethod(PropLinkMethodOID, 
     toProps(

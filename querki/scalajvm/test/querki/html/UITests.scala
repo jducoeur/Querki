@@ -268,11 +268,11 @@ class UITests extends QuerkiTests {
   "_showLink" should {
     "work with a Link to Thing" in {
       processQText(commonThingAsContext(_.sandbox), """[[_showLink(""hello"")]]""") should 
-        equal ("""[hello](Sandbox)""")
+        equal ("""<a href="Sandbox">hello</a>""")
     }
     "work with an external URL" in {
       processQText(commonThingAsContext(_.withUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
-        equal ("""[hello](http://www.google.com/)""")
+        equal ("""<a href="http://www.google.com/" target="_blank">hello</a>""")
     }
     "quietly ignore an empty context" in {
       processQText(commonThingAsContext(_.withoutUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
@@ -281,7 +281,9 @@ class UITests extends QuerkiTests {
     "work with a list of external URLs" in {
       // Note that a List result will have newlines in the QText, intentionally:
       processQText(commonThingAsContext(_.withUrl), """[[My List of URLs -> _showLink(""hello"")]]""") should
-        equal ("\n[hello](http://www.google.com/)\n[hello](http://www.querki.net/)")      
+        equal ("""
+          |<a href="http://www.google.com/" target="_blank">hello</a>
+          |<a href="http://www.querki.net/" target="_blank">hello</a>""".stripReturns)      
     }
     "work with a list of Links" in {
       class testSpace extends CommonSpace {
@@ -289,7 +291,9 @@ class UITests extends QuerkiTests {
       }
       
       processQText(thingAsContext[testSpace](new testSpace, _.withLinks), """[[My List of Links -> _showLink(Link Name)]]""") should
-        equal ("\n[Sandbox](Sandbox)\n[With URL](With-URL)")
+        equal ("""
+          |<a href="Sandbox">Sandbox</a>
+          |<a href="With-URL">With URL</a>""".stripReturns)
     }
   }
   
