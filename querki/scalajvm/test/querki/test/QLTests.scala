@@ -229,10 +229,10 @@ class QLTests extends QuerkiTests {
     }
   }
   
-  "~ params" should {
+  "~! params" should {
     // Note that this test is intentionally similar to "work in the method position" above. But it deals
     // with the weirder and more complex case where we really, really want to evaluate the param immediately.
-    // It is loosely modeled on the _search() problem that led to the creation of the "~" syntax in the first place.
+    // It is loosely modeled on the _search() problem that led to the creation of the "~!" syntax in the first place.
     "work properly" in {
       class TSpace extends CommonSpace {
         val myFunc = new TestProperty(QLType, ExactlyOne, "My Method")
@@ -244,7 +244,7 @@ class QLTests extends QuerkiTests {
         val methodTestThing = 
           new SimpleTestThing(
             "Method Test", 
-            singleTextProp("[[Holder Thing -> My Method(Examined Thing, ~Prop Holder)]]"),
+            singleTextProp("[[Holder Thing -> My Method(Examined Thing, ~!Prop Holder)]]"),
             myFunc("$_1 -> $_1.$_2"))
       }
       implicit val s = new TSpace

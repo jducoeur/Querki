@@ -216,7 +216,7 @@ class QLParser(
   def qlParamList:Parser[Seq[QLParam]] = qlEmptyParamList | qlRealParamList
   def qlEmptyParamList:Parser[Seq[QLParam]] = "\\(\\s*\\)".r ^^ { case _ => Seq.empty }
   def qlRealParamList:Parser[Seq[QLParam]] = "\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)
-  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("~") ~ qlExp ^^ { 
+  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("~!") ~ qlExp ^^ { 
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
