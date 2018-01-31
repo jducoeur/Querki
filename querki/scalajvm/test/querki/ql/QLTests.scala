@@ -263,6 +263,7 @@ class QLTests extends QuerkiTests {
       pql("""[[!False]]""") should equal ("true")
       pql("""[[_if(!(True | False), ""yes"", ""no"")]]""") should equal ("no")
       pql("""[[_if(!(True & False), ""yes"", ""no"")]]""") should equal ("yes")
+      pql("""[[_if(!True & False, ""yes"", ""no"")]]""") should equal ("no")
     }
     
     "work with context" in {

@@ -179,7 +179,23 @@ class QLParser(
     case name ~ params => QLBindingDef(name, None, None) 
   }
   def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
-  def qlBinOpStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
+  def qlUnOpStage:Parser[QLStage] = opt(qlUnOp <~ "\\s*".r) ~ qlBasicStage ^^ {
+    case unop ~ guts => {
+      unop match {
+        case Some(op) => {
+          val funcName = op match {
+            case "!" => "_not"
+            case _ => throw new Exception(s"qlUnaryOperation got unknown operator $op")
+          }
+          QLCall(QLSafeName(funcName), None,
+              Some(Seq(QLParam(None, QLExp(Seq(QLPhrase(Seq(guts))))))),
+              None)
+        }
+        case None => guts
+      }
+    }
+  }
+  def qlStage:Parser[QLStage] = qlUnOpStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlUnOpStage)) ^^ {
     case left ~ operation => {
       operation match {
         case Some(op ~ right) => {
@@ -194,22 +210,6 @@ class QLParser(
               None)
         }
         case None => left
-      }
-    }
-  }
-  def qlStage:Parser[QLStage] = opt(qlUnOp <~ "\\s*".r) ~ qlBinOpStage ^^ {
-    case unop ~ guts => {
-      unop match {
-        case Some(op) => {
-          val funcName = op match {
-            case "!" => "_not"
-            case _ => throw new Exception(s"qlUnaryOperation got unknown operator $op")
-          }
-          QLCall(QLSafeName(funcName), None,
-              Some(Seq(QLParam(None, QLExp(Seq(QLPhrase(Seq(guts))))))),
-              None)
-        }
-        case None => guts
       }
     }
   }
