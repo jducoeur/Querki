@@ -19,6 +19,7 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  // === $_defining ===
   "$_defining" should {
     // This test is cognate to the way $_defining is used for Pronouns in the LARP App:
     "work from another local Function" in {
@@ -37,6 +38,7 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  // === named parameters ===
   "named parameters" should {
     "work without spaces" in {
       implicit val s = commonSpace
@@ -248,6 +250,37 @@ class QLTests extends QuerkiTests {
       
       pql("""Before the error [[Some Other Genre]] After the error""") should
         equal (s"""Before the error ${expectedWarning("QL.unknownName")} After the error""")
+    }
+  }
+  
+  "Operators" should {
+    "work with simple truth values" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_if(True | False, ""yes"", ""no"")]]""") should equal ("yes")
+      pql("""[[_if(True & False, ""yes"", ""no"")]]""") should equal ("no")
+    }
+    
+    "work with context" in {
+      class TSpace extends CommonSpace {
+        val singleBoolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Single Boolean")
+        
+        val truthy = new SimpleTestThing("Truthy", singleBoolProp(true))
+        val falsy = new SimpleTestThing("Falsey", singleBoolProp(false))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Truthy -> _if(Single Boolean | False, ""yes"", ""no"")]]""") should equal ("yes")
+      pql("""[[Truthy -> _if(Single Boolean & False, ""yes"", ""no"")]]""") should equal ("no")
+      pql("""[[Falsey -> _if(Single Boolean | False, ""yes"", ""no"")]]""") should equal ("no")
+      pql("""[[Falsey -> _if(Single Boolean & False, ""yes"", ""no"")]]""") should equal ("no")
+    }
+    
+    "work with parens" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_if(True & (True & True), ""yes"", ""no"")]]""") should equal ("yes")
+      pql("""[[_if((True & True) & True, ""yes"", ""no"")]]""") should equal ("yes")
     }
   }
 }
