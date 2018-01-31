@@ -162,6 +162,7 @@ class QLParser(
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
   def qlName:Parser[QLName] = qlDef | qlBindingDef | qlBinding | qlThingId | qlSafeName | qlDisplayName
   def qlOp:Parser[String] = ("&" | "|")
+  def qlUnOp:Parser[String] = ("!")
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> qlName) ~ opt(qlParamList) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
@@ -178,7 +179,7 @@ class QLParser(
     case name ~ params => QLBindingDef(name, None, None) 
   }
   def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
-  def qlStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
+  def qlBinOpStage:Parser[QLStage] = qlBasicStage ~ opt("\\s+".r ~> qlOp ~ ("\\s+".r ~> qlBasicStage)) ^^ {
     case left ~ operation => {
       operation match {
         case Some(op ~ right) => {
@@ -196,10 +197,26 @@ class QLParser(
       }
     }
   }
+  def qlStage:Parser[QLStage] = opt(qlUnOp <~ "\\s*".r) ~ qlBinOpStage ^^ {
+    case unop ~ guts => {
+      unop match {
+        case Some(op) => {
+          val funcName = op match {
+            case "!" => "_not"
+            case _ => throw new Exception(s"qlUnaryOperation got unknown operator $op")
+          }
+          QLCall(QLSafeName(funcName), None,
+              Some(Seq(QLParam(None, QLExp(Seq(QLPhrase(Seq(guts))))))),
+              None)
+        }
+        case None => guts
+      }
+    }
+  }
   def qlParamList:Parser[Seq[QLParam]] = qlEmptyParamList | qlRealParamList
   def qlEmptyParamList:Parser[Seq[QLParam]] = "\\(\\s*\\)".r ^^ { case _ => Seq.empty }
   def qlRealParamList:Parser[Seq[QLParam]] = "\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)
-  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("!") ~ qlExp ^^ { 
+  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*".r) ~ opt("~") ~ qlExp ^^ { 
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }

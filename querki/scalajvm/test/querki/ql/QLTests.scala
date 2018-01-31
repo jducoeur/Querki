@@ -259,6 +259,10 @@ class QLTests extends QuerkiTests {
       
       pql("""[[_if(True | False, ""yes"", ""no"")]]""") should equal ("yes")
       pql("""[[_if(True & False, ""yes"", ""no"")]]""") should equal ("no")
+      pql("""[[!True]]""") should equal ("false")
+      pql("""[[!False]]""") should equal ("true")
+      pql("""[[_if(!(True | False), ""yes"", ""no"")]]""") should equal ("no")
+      pql("""[[_if(!(True & False), ""yes"", ""no"")]]""") should equal ("yes")
     }
     
     "work with context" in {
@@ -274,6 +278,7 @@ class QLTests extends QuerkiTests {
       pql("""[[Truthy -> _if(Single Boolean & False, ""yes"", ""no"")]]""") should equal ("no")
       pql("""[[Falsey -> _if(Single Boolean | False, ""yes"", ""no"")]]""") should equal ("no")
       pql("""[[Falsey -> _if(Single Boolean & False, ""yes"", ""no"")]]""") should equal ("no")
+      pql("""[[Falsey -> _if(!Single Boolean & True, ""yes"", ""no"")]]""") should equal ("yes")
     }
     
     "work with parens" in {
@@ -281,6 +286,7 @@ class QLTests extends QuerkiTests {
       
       pql("""[[_if(True & (True & True), ""yes"", ""no"")]]""") should equal ("yes")
       pql("""[[_if((True & True) & True, ""yes"", ""no"")]]""") should equal ("yes")
+      pql("""[[_if(!(True & True) & True, ""yes"", ""no"")]]""") should equal ("no")
     }
   }
 }
