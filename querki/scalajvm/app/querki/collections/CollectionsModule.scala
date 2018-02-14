@@ -397,9 +397,17 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
                       // could wind up producing different types from the same test expression.
                       // TBD: in the long run, we might wind up with "subtype" relationships, in which case this test
                       // will need to become more sophisticated:
-                      if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem)) {
-                        // They're the same type, and don't match, so let's compare:
-                        Some(compType.comp(context)(leftElem, rightElem))
+                      if (leftElem.pType.realType == rightElem.pType.realType) {
+                        if (compType.matches(leftElem, rightElem)) {
+                          None
+                        } else {
+                          // They're the same type, and don't match, so let's compare:
+                          Some(compType.comp(context)(leftElem, rightElem))
+                        }
+                      } else if (ElemValue.matchesType(leftElem.pType, rightElem.pType)) {
+                        // They aren't the same type, but they are coerceable:
+                        val (leftTweaked, rightTweaked) = PType.matchTypes(leftElem, rightElem)
+                        Some(leftTweaked.pType.comp(context)(leftTweaked, rightTweaked))
                       } else
                         // Either they're not matching types, or they're identical, so move along:
                         None

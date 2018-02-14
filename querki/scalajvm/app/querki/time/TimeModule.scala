@@ -172,6 +172,15 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         
       Some(result)
     }
+    
+    override def canCoerceTo(other:PType[_]):Boolean = other == QDateTime
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      if (other == QDateTime) {
+        val v = elem.get(this)
+        ElemValue(v, QDateTime)
+      } else
+        super.coerceTo(other, elem)
+    }
   }
     
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
@@ -218,6 +227,15 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
     def doDefault(implicit state:SpaceState) = epoch
     def doComputeMemSize(v:DateTime):Int = 8
+    
+    override def canCoerceTo(other:PType[_]):Boolean = other == QDate
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      if (other == QDate) {
+        val v = elem.get(this)
+        ElemValue(v, QDate)
+      } else
+        super.coerceTo(other, elem)
+    }
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)
   
