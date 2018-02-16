@@ -775,15 +775,32 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |\[[My Thing -> _concat(Primary Sources, Secondary Sources) -> _bulleted\]]
           |```
           |Note that the received context will be passed to each of the expressions in *lists*, as usual, but
-          |otherwise isn't relevant. You can write expressions that completely ignore the received context.""".stripMargin)))
+          |otherwise isn't relevant. You can write expressions that completely ignore the received context.
+          |
+          |You can `_concat` lists that are of different but compatible Types. If you do this, the resulting
+          |list will all be coerced to the *first* Type found.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
+      // TODO: this is using local mutable state, which is fugly. What's a better pattern for us to
+      // find the first "real" PType in the list? Something involving the State monad?
+      var targetType: Option[PType[_]] = None
       for {
-        firstParam <- inv.processParam(0)
-        targetType = firstParam.pType
         n <- inv.iter(0 to (inv.numParams-1))
         paramVals <- inv.processParam(n)
-        typeCheck <- inv.test(paramVals.pType == targetType, "Collections.concat.mismatchedTypes", { Seq(targetType.displayName, paramVals.pType.displayName) })
+        typeCheck <-
+          if (targetType.isEmpty) {
+            // We haven't found a real PType yet. Is this one?
+            if (!paramVals.isEmpty) {
+              targetType = Some(paramVals.pType)
+            }
+            inv.wrap(true)
+          } else {
+            // We've found a real PType, so this one has to match or be empty:
+            inv.test(
+              paramVals.isEmpty || ElemValue.matchesType(paramVals.pType, targetType.get), 
+              "Collections.concat.mismatchedTypes", 
+              { Seq(targetType.get.displayName, paramVals.pType.displayName) })
+          }
       }
         yield paramVals
     }

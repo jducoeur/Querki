@@ -68,6 +68,6 @@ object ElemValue {
   }
   
   def matchesType(left:PType[_], right:PType[_]):Boolean = {
-    matchesTypeExact(left, right) || (left.canCoerceTo(right))
+    matchesTypeExact(left, right) || (left.canCoerceTo(right)) || (right.canCoerceTo(left))
   }
 }

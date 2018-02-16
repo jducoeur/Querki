@@ -31,6 +31,45 @@ class CollectionsTests extends QuerkiTests {
       pql("""[[More Favorites -> _concat(Favorite Artists, Favorite Genres)]]""") should
         equal (expectedWarning("Collections.concat.mismatchedTypes"))
     }
+    
+    // Test for QI.7w4g9hb:
+    "cope with empty Lists" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_concat(< >, <""a"", ""b"">)]]""") should equal ("\na\nb")
+      pql("""[[_concat(<""a"", ""b"">, < >)]]""") should equal ("\na\nb")
+      pql("""[[_concat(<""a"">, < >, <""b"">)]]""") should equal ("\na\nb")
+    }
+    
+    "reject mismatched types" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_concat(<""a"", ""b"">, <1, 2>)]]""") should equal (expectedWarning("Collections.concat.mismatchedTypes"))
+    }
+    
+    "cope with coercion" in {
+      // This is adapted from a test in DateTimeTests, which is already checking coercion:
+      import querki.time._
+      lazy val Time = interface[querki.time.Time]
+      
+      class TSpace extends CommonSpace {
+        val sortProp = new TestProperty(Basic.QLType, ExactlyOne, "Sort Function")
+        
+        val dateTimeProp = new TestProperty(Time.QDateTime, ExactlyOne, "DateTime Prop")
+        val dateTimeModel = new SimpleTestThing("DateTime Model", sortProp("DateTime Prop"))
+        val thing1 = new TestThing("Thing 1", dateTimeModel, dateTimeProp(new DateTime(2013, 3, 15, 10, 30)))
+        val thing2 = new TestThing("Thing 2", dateTimeModel, dateTimeProp(new DateTime(2013, 4, 15, 10, 30)))
+        
+        val dateProp = new TestProperty(Time.QDate, ExactlyOne, "Date Prop")
+        val dateModel = new SimpleTestThing("Date Model", sortProp("Date Prop"))
+        val thing1a = new TestThing("Thing 1a", dateModel, dateProp(new DateTime(2016, 3, 15, 10, 30)))
+        val thing2a = new TestThing("Thing 2a", dateModel, dateProp(new DateTime(2012, 4, 15, 10, 30)))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[_concat(Date Model._instances -> Date Prop, DateTime Model._instances -> DateTime Prop)]]""") should
+        equal("\n03/15/2016\n04/15/2012\n03/15/2013\n04/15/2013")
+    }
   }
   
   // === _contains ===
