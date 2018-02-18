@@ -61,6 +61,35 @@ class TypeTests extends QuerkiTests {
     }
   }
   
+  "Floating Point" should {
+    "allow flexible rendering" in {
+      class TSpace extends CommonSpace {
+        val floatProp = new TestProperty(Core.FloatType, ExactlyOne, "My Float")
+        
+        val thing = new SimpleTestThing("My Thing", floatProp(123.4567))
+        val thing2 = new SimpleTestThing("My Int Thing", floatProp(123))
+        val thing3 = new SimpleTestThing("My Other Thing", floatProp(123.567))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My Float -> ""____""]]""") should equal ("123.4567")
+      // The fractional part says the *maximum* digits after the dot, and will round:
+      pql("""[[My Thing -> My Float -> ""__1.2__""]]""") should equal ("123.46")
+      // The integer part says the *minimum* width of the whole thing, and will space-pad:
+      pql("""[[My Thing -> My Float -> ""__9.2__""]]""") should equal ("   123.46")
+      // If preceded by a zero, it will zero-pad instead:
+      pql("""[[My Thing -> My Float -> ""__09.2__""]]""") should equal ("000123.46")
+      
+      // We always show the float part if present:
+      pql("""[[My Int Thing -> My Float -> ""____""]]""") should equal ("123.0")
+      // We can cut off the floating part entirely:
+      pql("""[[My Int Thing -> My Float -> ""__1.0__""]]""") should equal ("123")
+      
+      // It will round if you cut the float off:
+      pql("""[[My Other Thing -> My Float -> ""__1.0__""]]""") should equal ("124")
+    }
+  }
+  
   "Models" should {
     "be able to define abstract function implementations" in {
       class TSpace extends CommonSpace {

@@ -883,6 +883,17 @@ trait TypeCreation {
     def doDefault(implicit state:SpaceState):Double = 0
     def toT(i:Int) = i.toDouble
     def doComputeMemSize(v:Double):Int = 8
+    
+    override def doWikify(context:QLContext)(v:Double, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      displayOpt match {
+        case Some(display) => {
+          val format = s"%${display.raw.str}f"
+          val stringified = format.format(v)
+          fut(Wikitext(stringified))
+        }
+        case None => fut(Wikitext(v.toString))
+      }
+    }
   }
   
   /**
