@@ -25,6 +25,10 @@ object MOIDs extends EcotIds(9) {
   val AddNumericMethodOID = moid(8)
   val SubtractMethodOID = moid(9)
   val SubtractNumericMethodOID = moid(10)
+  val TimesMethodOID = moid(11)
+  val TimesNumericMethodOID = moid(12)
+  val DivideMethodOID = moid(13)
+  val DivideNumericMethodOID = moid(14)
 }
 
 /**
@@ -375,6 +379,54 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         yield ExactlyOne(typ(result))
     }
   }
+  
+  lazy val TimesMethod = new AbstractFunction(TimesMethodOID, Received,
+    toProps(
+      setName("_times"),
+      Categories(LogicTag),
+      Summary("Multiple two values together"),
+      Details("""    VALUE -> _times(OTHER) -> RESULT
+        |This pretty much does what you would expect. However, note that it is only implemented for one
+        |or two Types yet. If you have a case where you expect and need _times to work, please drop us a note!""".stripMargin)))
+  
+  lazy val timesNumericImpl = new FunctionImpl(TimesNumericMethodOID, TimesMethod, Seq(IntType, Core.FloatType, Core.LongType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
+      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
+      for {
+        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
+        n <- inv.contextAllAs(typ)
+        m <- inv.processParamFirstAs(0, typ)
+        result = typ.numeric.times(n, m)
+      }
+        yield ExactlyOne(typ(result))
+    }
+  }
+  
+  lazy val DivideMethod = new AbstractFunction(DivideMethodOID, Received,
+    toProps(
+      setName("_divideBy"),
+      Categories(LogicTag),
+      Summary("Divide one value by another"),
+      Details("""    VALUE -> _divideBy(OTHER) -> RESULT
+        |This pretty much does what you would expect. However, note that it is only implemented for one
+        |or two Types yet. If you have a case where you expect and need _divideBy to work, please drop us a note!""".stripMargin)))
+  
+  lazy val divideNumericImpl = new FunctionImpl(DivideNumericMethodOID, DivideMethod, Seq(IntType, Core.FloatType, Core.LongType))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
+      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
+      for {
+        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
+        n <- inv.contextAllAs(typ)
+        m <- inv.processParamFirstAs(0, typ)
+        result = typ.numeric.toDouble(n) / typ.numeric.toDouble(m)
+      }
+        yield ExactlyOne(Core.FloatType(result))
+    }
+  }
 
   
   override lazy val props = Seq(
@@ -390,7 +442,11 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     PlusMethod,
     plusNumericImpl,
     MinusMethod,
-    minusNumericImpl
+    minusNumericImpl,
+    TimesMethod,
+    timesNumericImpl,
+    DivideMethod,
+    divideNumericImpl
   )
 
   /******************************************

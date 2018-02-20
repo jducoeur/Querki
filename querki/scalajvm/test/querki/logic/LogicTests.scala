@@ -39,6 +39,17 @@ class LogicTests extends QuerkiTests {
       pql("""[[Other Thing -> Boolean Prop & true]]""") should equal ("true")
     }
   }
+    
+  // === _divideBy ===
+  "_divideBy" should {
+    "work as expected" in {
+      implicit val s = commonSpace
+      
+      pql("""[[8 -> _divideBy(3) -> ""__1.2__""]]""") should equal ("2.67")
+      pql("""[[8 -> _divideBy(-3) -> ""__1.2__""]]""") should equal ("-2.67")
+      pql("""[[3 -> +$three; 8 -> _divideBy($three) -> ""__1.2__""]]""") should equal ("2.67")      
+    }
+  }
   
   // === _equals ===
   "_equals" should {
@@ -315,6 +326,17 @@ class LogicTests extends QuerkiTests {
       pql("""[[8 -> _plus(3)]]""") should equal ("11")
       pql("""[[8 -> _plus(-3)]]""") should equal ("5")
       pql("""[[3 -> +$three; 8 -> _plus($three)]]""") should equal ("11")      
+    }
+  }
+    
+  // === _times ===
+  "_times" should {
+    "work as expected" in {
+      implicit val s = commonSpace
+      
+      pql("""[[8 -> _times(3)]]""") should equal ("24")
+      pql("""[[8 -> _times(-3)]]""") should equal ("-24")
+      pql("""[[3 -> +$three; 8 -> _times($three)]]""") should equal ("24")      
     }
   }
 }
