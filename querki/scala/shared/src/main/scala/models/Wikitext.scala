@@ -121,7 +121,7 @@ case class QWikitext(wiki:String) extends Wikitext {
   
   def plusInternal(otherWiki:String, insertNewline:Boolean):Wikitext = 
     QWikitext(wiki + (if (insertNewline) "\n" else "") + otherWiki)
-	
+  
   def contents = Vector(this)
   def toComposite() = CompositeWikitext(Vector(this))
 }
@@ -181,18 +181,18 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   private def combine(left:Wikitext, right:Wikitext, insertNewline:Boolean):Vector[Wikitext] = {
     val maybeNewline = if (insertNewline) "\n" else ""
     left match {
-  	  case QWikitext(leftWiki) => right match {
-  	    case QWikitext(rightWiki) => Vector(QWikitext(leftWiki + maybeNewline + rightWiki))
-    		case HtmlWikitextImpl(str) => Vector(QWikitext(leftWiki + maybeNewline), right)
-    		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-  	  }
-  	  case HtmlWikitextImpl(leftStr) => right match {
-  	    case QWikitext(rightWiki) => Vector(HtmlWikitext(leftStr + maybeNewline), right)
-    		case HtmlWikitextImpl(rightStr) => Vector(HtmlWikitext(leftStr + maybeNewline + rightStr))
-    		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-  	  }
-  	  case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
-  	}
+      case QWikitext(leftWiki) => right match {
+        case QWikitext(rightWiki) => Vector(QWikitext(leftWiki + maybeNewline + rightWiki))
+        case HtmlWikitextImpl(str) => Vector(QWikitext(leftWiki + maybeNewline), right)
+        case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+      }
+      case HtmlWikitextImpl(leftStr) => right match {
+        case QWikitext(rightWiki) => Vector(HtmlWikitext(leftStr + maybeNewline), right)
+        case HtmlWikitextImpl(rightStr) => Vector(HtmlWikitext(leftStr + maybeNewline + rightStr))
+        case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+      }
+      case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+    }
   }
 
   def append(other:CompositeWikitext, insertNewline:Boolean):Wikitext = {
@@ -312,13 +312,13 @@ class StripTransformer extends Transformer with MainDecorator {
     override def decorateClassSpan(className:String, text:String):String = text     
 }
 
-class LiteralTransformer extends StripTransformer {
+class LiteralTransformer(showParas:Boolean) extends StripTransformer {
   override def decorateParagraphOpen():String = ""
-  override def decorateParagraphClose():String = "\n\n"
+  override def decorateParagraphClose():String = if (showParas) "\n\n" else ""
   override def escapeXmlEntities():Boolean = false
 }
 
-class LiteralTransformWrapper extends TransformWrapper {
-  val transformer = new LiteralTransformer
+class LiteralTransformWrapper(showParas:Boolean = true) extends TransformWrapper {
+  val transformer = new LiteralTransformer(showParas)
   override val ignoreRaw:Boolean = true
 }

@@ -270,6 +270,10 @@ class UITests extends QuerkiTests {
       processQText(commonThingAsContext(_.sandbox), """[[_showLink(""hello"")]]""") should 
         equal ("""<a href="Sandbox">hello</a>""")
     }
+    "not over-escape HTML entities in labels" in {
+      processQText(commonThingAsContext(_.sandbox), """[[_showLink(""I'm the label"")]]""") should 
+        equal ("""<a href="Sandbox">I'm the label</a>""")      
+    }
     "work with an external URL" in {
       processQText(commonThingAsContext(_.withUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
         equal ("""<a href="http://www.google.com/" target="_blank">hello</a>""")

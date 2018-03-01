@@ -383,7 +383,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
               if (iconOpt.isDefined && labelOpt.isDefined)
                 // Need a space between them:
                 " ",
-              labelOpt.map { label => label.raw.toString }
+              labelOpt.map { label => label.displayWith(new LiteralTransformWrapper(false)).toString }
             )
           )
         }
