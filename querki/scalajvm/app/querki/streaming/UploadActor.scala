@@ -98,11 +98,11 @@ trait UploadActor { self:Actor =>
     case UploadChunk(index, chunk) => {
       if (index > lastIndex) {
         chunkBuffer = chunkBuffer ++ chunk
-        QLog.spew(s"Actor got block $index, ${chunk.length} bytes: length ${chunk.size} ${chunk.take(4)} ... ${chunk.takeRight(4)}")
+//        QLog.spew(s"Actor got block $index, ${chunk.length} bytes: length ${chunk.size} ${chunk.take(4)} ... ${chunk.takeRight(4)}")
         lastIndex = index
         sender ! UploadChunkAck(index, chunkBuffer.size)
       } else {
-        QLog.spew(s"Received duplicate of chunk #$index")
+//        QLog.spew(s"Received duplicate of chunk #$index")
         // Although it's a duplicate, we still need to re-ack, in case our previous ack got
         // lost in transit:
         sender ! UploadChunkAck(index, chunkBuffer.size)
