@@ -275,12 +275,13 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         dummy <- inv.returnsType(YesNoType)
         paramNum <- inv.iter(0 until inv.numParams, None)
         paramVal <- inv.processParam(paramNum)
-        paramResult = {
+        paramVs = {
           if (paramVal.isEmpty)
-            false
+            List.empty[Boolean]
           else
-            paramVal.firstAs(YesNoType).getOrElse(false)
+            paramVal.rawList(YesNoType)
         }
+        paramResult <- inv.iter(paramVs)
       }
         yield paramResult
   }
@@ -293,8 +294,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       Details("""```
           |_if(_or(VAL1, VAL2, VAL3...), RESULTS)
           |```
-          |_or takes one or more parameters, and produces true if and only if at least one of those parameters
-          |is true.""".stripMargin)))
+          |_or takes one or more parameters, and produces true if and only if at least one of the
+          |elements in one of those parameters is true.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val results = computeBooleans(inv)
@@ -311,8 +312,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       Details("""```
           |_if(_and(VAL1, VAL2, VAL3...), RESULTS)
           |```
-          |_and takes one or more parameters, and produces true if and only if all of those parameters
-          |are true.""".stripMargin)))
+          |_and takes one or more parameters, and produces true if and only if all of the elements in
+          |all of those parameters are true.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       val results = computeBooleans(inv)

@@ -38,6 +38,14 @@ class LogicTests extends QuerkiTests {
       pql("""[[My Thing -> Boolean Prop & false]]""") should equal ("false")
       pql("""[[Other Thing -> Boolean Prop & true]]""") should equal ("true")
     }
+    
+    "work with Lists as parameters" in {
+      implicit val s = commonSpace
+      pql("""[[_and(<true, true, true, true>)]]""") should equal ("true")      
+      pql("""[[_and(<true, true, true, true>, <true, false>)]]""") should equal ("false")      
+      pql("""[[_and(<true, true, false, true>, <true, true>)]]""") should equal ("false")      
+      pql("""[[_and(<true, false, true, false>)]]""") should equal ("false")
+    }
   }
     
   // === _divideBy ===
@@ -316,6 +324,14 @@ class LogicTests extends QuerkiTests {
       pql("""[[((F Thing -> Boolean Prop) & (T Thing -> Boolean Prop))
              | (T Thing -> Boolean Prop)]]""") should equal ("true")      
     }
+    
+    "work with Lists as parameters" in {
+      implicit val s = commonSpace
+      pql("""[[_or(<true, true, true, true>)]]""") should equal ("true")      
+      pql("""[[_or(<false, false, false, false>, <false, true>)]]""") should equal ("true")      
+      pql("""[[_or(<false, false, true, false>, <false, false>)]]""") should equal ("true")      
+      pql("""[[_or(<false, false, false, false>)]]""") should equal ("false")
+    }    
   }
     
   // === _plus ===
