@@ -2,6 +2,8 @@ package querki.html
 
 import scala.xml.XML
 
+import org.jsoup
+
 import models.{Thing, AnyProp}
 
 import querki.test._
@@ -39,14 +41,11 @@ class UITests extends QuerkiTests {
       implicit val requester = commonSpace.owner
       
       val html = processQText(commonThingAsContext(_.instance), """[[My Optional Text._edit -> _class(""myClass otherClass"")]]""")
-      val xml = XML.loadString(html)
-      val classesOpt = xml.attribute("class")
-      assert(classesOpt.isDefined)
-      val classes = classesOpt.get
-      // Make sure it hasn't lost the original class from _edit:
-      assert(classes.toString.contains("propEditor"))
-      assert(classes.toString.contains("myClass"))
-      assert(classes.toString.contains("otherClass"))
+      val doc = jsoup.Jsoup.parse(html).body.children.first
+      val classes = doc.classNames()
+      assert(classes.contains("propEditor"))
+      assert(classes.contains("myClass"))
+      assert(classes.contains("otherClass"))
     }
     
     "add classes to a text" in {
@@ -57,14 +56,14 @@ class UITests extends QuerkiTests {
     "add classes to a bullet list" in {
       processQText(commonThingAsContext(_.instance), """[[""* hello
           |* world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
-        equal ("<ul class=\"myClass otherClass\">\n<li>hello</li>\n<li>world</li>\n</ul>")
+        equal ("<ul class=\"myClass otherClass\"> \n <li>hello</li> \n <li>world</li> \n</ul>")
     }
     
     "add classes correctly to a multiparagraph text" in {
       processQText(commonThingAsContext(_.instance), """[[""hello
           |
           |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
-        equal ("""<span class="myClass otherClass">hello</span><span class="myClass otherClass">world</span>""")
+        equal ("<span class=\"myClass otherClass\">hello</span>\n<span class=\"myClass otherClass\">world</span>")
     }
     
     "work with an ampersand in a Tag" in {
@@ -146,8 +145,16 @@ class UITests extends QuerkiTests {
       processQText(commonThingAsContext(_.instance), """[[""{{myClass:
           |hello world
           |}}"" -> _data(""foo"",""I am some data"")]]""".stripMargin) should
-        equal ("""<div data-foo="I am some data" class="myClass">
-            |<span>hello world</span></div>""".stripReturns)
+        equal ("""<div class="myClass" data-foo="I am some data"> 
+            | <span>hello world</span>
+            |</div>""".stripReturns)
+    }
+    
+    "cope with ampersands" in {
+      implicit val s = commonSpace
+      
+      pql("""[[""hello&apos;s & world &amp; stuff"" -> _data(""foo"",""I am some data"")]]""") should
+        equal ("""<span data-foo="I am some data">hello's &amp; world &amp; stuff</span>""")
     }
   }
   
@@ -320,7 +327,7 @@ class UITests extends QuerkiTests {
   "_tooltip method" should {
     "add a tooltip to a text block" in {
       processQText(commonThingAsContext(_.instance), """[[""hello world"" -> _tooltip(""I am a tooltip"")]]""") should
-        equal ("""<span title="I am a tooltip" class="_withTooltip">hello world</span>""")      
+        equal ("""<span class="_withTooltip" title="I am a tooltip">hello world</span>""")
     }
   }
 }

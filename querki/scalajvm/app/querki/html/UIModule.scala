@@ -5,6 +5,10 @@ import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 import scalatags.Text.all.{id => idAttr, i => iAttr, _}
 import scalatags.Text.TypedTag
 
+import org.jsoup
+import jsoup.nodes.{Document => JDoc}
+import jsoup.select.{Elements => JElems}
+
 import models._
 
 import querki.core.URLableType
@@ -106,7 +110,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq]
+    def doTransform(elems:JElems, paramText:String, context:QLContext, params:Seq[QLParam]):Future[JElems]
     
     override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
@@ -142,26 +146,21 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         for {
           parsedParam <- inv.processParamFirstAs(0, ParsedTextType)
           paramText = parsedParam.raw.toString
-          content <- contentToUse
-          // HACK: working around scala-xml issue #72. This should eventually become unnecessary, someday:
-          // TODO: this hack should somehow be incorporated into XmlHelpers proper, because the problem
-          // probably appears elsewhere:
-          contentEscaped = DisplayText(content.str.replaceAll("&apos;", "--apos escape--"))
-          nodes = XmlHelpers.toNodes(contentEscaped)
-          nodesOrWrapped =
-            if (nodes.isEmpty)
-              // If there are no nodes, we failed to parse, which implies this is just text.
-              // Wrap it in a span.
-              <span>{contentEscaped}</span>
+          content <- contentToUse          
+          doc = jsoup.Jsoup.parse(content.str)
+                  .outputSettings((new jsoup.nodes.Document.OutputSettings).escapeMode(jsoup.nodes.Entities.EscapeMode.xhtml))
+          realDoc =
+            if (doc.body.children.isEmpty)
+              // There are no child nodes, which implies that this is just top-level text. In that case, wrap
+              // it in a span, so we have something to manipulate:
+              jsoup.Jsoup.parse(s"<span>${content.str}</span>")
+                  .outputSettings((new jsoup.nodes.Document.OutputSettings).escapeMode(jsoup.nodes.Entities.EscapeMode.xhtml))
             else
-              nodes
-          newXmlFuts = nodesOrWrapped.map(node => doTransform(node, paramText, context, params))
-          newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
-          newHtml = QHtml(Xhtml.toXhtml(newXml))
-          // HACK part 2:
-          newHtmlEscaped = newHtml.body.replaceAll("--apos escape--", "&apos;")
+              doc
+          elems <- inv.fut(doTransform(realDoc.body.children, paramText, context, params))
+          newHtml = QHtml(elems.toString)
         }
-          yield QL.WikitextValue(HtmlWikitext(newHtmlEscaped))
+          yield QL.WikitextValue(HtmlWikitext(newHtml))
       }
     }
   }
@@ -186,8 +185,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |If _class receives a value other than text or HTML, it will render that value, and then apply the
             |class to it. Therefore, this should usually be at the *end* of your phrase.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = 
-      Future.successful(HtmlRenderer.addClasses(nodes, paramText))
+    def doTransform(elems:JElems, paramText:String, context:QLContext, params:Seq[QLParam]):Future[JElems] = 
+      fut(elems.addClass(paramText))
+//      Future.successful(HtmlRenderer.addClasses(nodes, paramText))
   }
   
   lazy val tooltipMethod = new HtmlModifier(TooltipMethodOID, "_tooltip",
@@ -200,9 +200,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |In the long run, you will be able to describe a tooltip without using a QL expression, but
       |for now, this is the way to do it.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = {
-      val withClass = HtmlRenderer.addClasses(nodes, "_withTooltip")      
-      Future.successful(XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null)))
+    def doTransform(elems:JElems, paramText:String, context:QLContext, params:Seq[QLParam]):Future[JElems] = {
+      val withClass = elems.addClass("_withTooltip")
+      fut(elems.attr("title", paramText))
+//      val withClass = HtmlRenderer.addClasses(nodes, "_withTooltip")      
+//      Future.successful(XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null)))
     }
   }
   
@@ -213,7 +215,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |[[_code(""[[""Hello world"" -> _data(""foo"", ""something"")]]"")]]
       |will add a "data-foo" attribute to the block containing Hello world.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = {
+    def doTransform(elems:JElems, paramText:String, context:QLContext, params:Seq[QLParam]):Future[JElems] = {
       if (params.length < 2)
         throw new PublicException("UI.transform.dataRequired")
       
@@ -221,7 +223,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         processed <- context.parser.get.processExp(params(1).exp, context)
         dataBlock = processed.value.firstTyped(ParsedTextType).getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
       }
-        yield XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
+        yield elems.attr(s"data-$paramText", dataBlock) 
+        //XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
     }
   }
   

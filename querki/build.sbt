@@ -63,7 +63,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // A simple Base64 library, for embedding stuff into HTML:
       "com.github.marklister" %% "base64" % "0.2.3",
       // We are also using BooPickle for embedding: 
-      "io.suzaku" %% "boopickle" % "1.2.6"
+      "io.suzaku" %% "boopickle" % "1.2.6",
+      // We use JSoup for HTML cleaning:
+      "org.jsoup" % "jsoup" % "1.11.2"
     ),
     
     // ConductR params
