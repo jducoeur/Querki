@@ -61,7 +61,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       specialization:Set[RenderSpecialization] = Set(Unspecialized)):Future[QHtml] = 
   {
     for {
-  	  xmlFixedQuotes <- renderPropertyInputStr(context, prop, currentValue, specialization)
+      xmlFixedQuotes <- renderPropertyInputStr(context, prop, currentValue, specialization)
     }
       yield QHtml(xmlFixedQuotes)
   }
@@ -190,11 +190,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       }
       val collId = prop.cType.id.toThingId.toString
       val xml2 = asEditor.asInstanceOf[scala.xml.Elem] %
-      	Attribute("name", Text(newName),
-    	Attribute("data-prop", Text(prop.id.toThingId),
-    	Attribute("data-propId", Text(currentValue.fullPropId),
-    	Attribute("data-collId", Text(collId),
-    	Attribute("id", Text(newId), Null)))))
+        Attribute("name", Text(newName),
+      Attribute("data-prop", Text(prop.id.toThingId),
+      Attribute("data-propId", Text(currentValue.fullPropId),
+      Attribute("data-collId", Text(collId),
+      Attribute("id", Text(newId), Null)))))
       val xml3 = currentValue.thingId match {
         case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
         case None => xml2
@@ -219,17 +219,17 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       // If the Type wants to own the rendering, on its head be it:
       case renderingType:FullInputRendering => Some(fut(renderingType.renderInputFull(prop, context, currentValue)))
       case _ => {
-	    if (cType == Optional && pType == YesNoType)
-	      Some(fut(renderOptYesNo(state, prop, currentValue)))
-	    else if (cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
-	      Some(renderOptLink(context, prop, currentValue))
-	    else if (Tags.isTaggableProperty(prop)) {
-	      if (specialization.contains(PickList))
-	        Some(renderPickList(state, context.request, prop, currentValue, specialization))
-	      else
-	        Some(renderTagSet(state, context.request, prop, currentValue))
-	    } else
-	      None
+      if (cType == Optional && pType == YesNoType)
+        Some(fut(renderOptYesNo(state, prop, currentValue)))
+      else if (cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
+        Some(renderOptLink(context, prop, currentValue))
+      else if (Tags.isTaggableProperty(prop)) {
+        if (specialization.contains(PickList))
+          Some(renderPickList(state, context.request, prop, currentValue, specialization))
+        else
+          Some(renderTagSet(state, context.request, prop, currentValue))
+      } else
+        None
       }
     }
   }
@@ -292,7 +292,10 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           val oid = LinkType.get(elem)
           // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
           state.anything(oid) match {
-            case Some(t) => t.nameOrComputed(rc, state) map ((oid.toString, _))
+            // This intentionally uses unsafe, due to where we are using it.
+            // TODO: in principle, safe and unsafe names should really be different types, so we
+            // can make heads or tails of this stuff:
+            case Some(t) => t.unsafeNameOrComputed(rc, state) map ((oid.toString, _))
             case None => Future.successful((oid.toString, "Unknown"))
           }
         }
