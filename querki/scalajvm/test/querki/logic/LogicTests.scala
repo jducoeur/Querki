@@ -57,6 +57,12 @@ class LogicTests extends QuerkiTests {
       pql("""[[8 -> _divideBy(-3) -> ""__1.2__""]]""") should equal ("-2.67")
       pql("""[[3 -> +$three; 8 -> _divideBy($three) -> ""__1.2__""]]""") should equal ("2.67")      
     }
+    
+    "cope with mixed types" in {
+      implicit val s = commonSpace
+      
+      pql("""[[3 -> _divideBy(2) -> +$onePointFive; 3 -> _divideBy($onePointFive)]]""") should equal ("2.0")
+    }
   }
   
   // === _equals ===
@@ -353,6 +359,13 @@ class LogicTests extends QuerkiTests {
       pql("""[[8 -> _times(3)]]""") should equal ("24")
       pql("""[[8 -> _times(-3)]]""") should equal ("-24")
       pql("""[[3 -> +$three; 8 -> _times($three)]]""") should equal ("24")      
+    }
+    
+    "cope with mixed types" in {
+      implicit val s = commonSpace
+      
+      // This is the common and problematic case:
+      pql("""[[3 -> _divideBy(2) -> _times(3)]]""") should equal ("4.5")
     }
   }
 }

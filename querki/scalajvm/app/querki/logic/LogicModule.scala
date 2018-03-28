@@ -381,6 +381,19 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     }
   }
   
+  // TODO: this is horrible. Surely we can come up with a better approach via Numeric,
+  // but I'm not finding it right now. For some reason, the way we're getting the Numeric
+  // for the context isn't working for the param:
+  def doublize(qv: QValue): Double = {
+    val LT = Core.LongType
+    val FT = Core.FloatType
+    qv.pType match {
+      case IntType => qv.firstAs(IntType).getOrElse(1).toDouble
+      case LT => qv.firstAs(Core.LongType).getOrElse(1L).toDouble
+      case FT => qv.firstAs(Core.FloatType).getOrElse(1.0)
+    }    
+  }
+  
   lazy val TimesMethod = new AbstractFunction(TimesMethodOID, Received,
     toProps(
       setName("_times"),
@@ -398,10 +411,17 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       for {
         typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
         n <- inv.contextAllAs(typ)
-        m <- inv.processParamFirstAs(0, typ)
-        result = typ.numeric.times(n, m)
+        qv <- inv.processParam(0)
+        result =
+          if (qv.pType == typ) {
+            typ(qv.firstAs(typ).map(m => typ.numeric.times(n, m)).getOrElse(n))
+          } else {
+            val nd = typ.numeric.toDouble(n)
+            val md = doublize(qv)
+            Core.FloatType(nd * md)
+          }
       }
-        yield ExactlyOne(typ(result))
+        yield ExactlyOne(result)
     }
   }
   
@@ -422,8 +442,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       for {
         typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
         n <- inv.contextAllAs(typ)
-        m <- inv.processParamFirstAs(0, typ)
-        result = typ.numeric.toDouble(n) / typ.numeric.toDouble(m)
+        qv <- inv.processParam(0)
+        result = typ.numeric.toDouble(n) / doublize(qv)
       }
         yield ExactlyOne(Core.FloatType(result))
     }
