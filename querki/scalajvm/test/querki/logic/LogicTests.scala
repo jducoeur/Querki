@@ -277,6 +277,12 @@ class LogicTests extends QuerkiTests {
       pql("""[[8 -> _minus(-3)]]""") should equal ("11")
       pql("""[[3 -> +$three; 8 -> _minus($three)]]""") should equal ("5")      
     }
+    
+    "cope with mixed types" in {
+      implicit val s = commonSpace
+      
+      pql("""[[3 -> _divideBy(2) -> +$onePointFive; 3 -> _minus($onePointFive)]]""") should equal ("1.5")
+    }
   }
   
   // === _or ===
@@ -348,6 +354,12 @@ class LogicTests extends QuerkiTests {
       pql("""[[8 -> _plus(3)]]""") should equal ("11")
       pql("""[[8 -> _plus(-3)]]""") should equal ("5")
       pql("""[[3 -> +$three; 8 -> _plus($three)]]""") should equal ("11")      
+    }
+    
+    "cope with mixed types" in {
+      implicit val s = commonSpace
+      
+      pql("""[[3 -> _divideBy(2) -> +$onePointFive; 3 -> _plus($onePointFive)]]""") should equal ("4.5")
     }
   }
     

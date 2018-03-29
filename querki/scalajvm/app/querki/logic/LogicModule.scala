@@ -322,6 +322,61 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     }
   }
   
+  case class CompPair[N: Numeric](ns: List[N], ms: List[N], num:Numeric[N], pt:PType[N] with models.PTypeBuilder[N, N]) {
+    private def cross(f: (N, N) => N):List[N] = {
+      for {
+        n <- ns
+        m <- ms
+      }
+        yield f(n, m)
+    }
+    private def combine(f: (N, N) => N): QValue = {
+      val l = cross(f)
+      if (l.size == 1)
+        ExactlyOne(pt(l.head))
+      else
+        QList.makePropValue(l.map(pt(_)), pt)
+    }
+    
+    def plus: QValue = combine(num.plus)
+    def minus: QValue = combine(num.minus)
+    def times: QValue = combine(num.times)
+    // Garh. I really want to make this consistent, but the type math doesn't work:
+    def divide: QValue = {
+      val l = for {
+        n <- ns
+        m <- ms
+      }
+        yield (num.toDouble(n) / num.toDouble(m))
+      
+      val ft = Core.FloatType
+      if (l.size == 1)
+        ExactlyOne(ft(l.head))
+      else
+        QList.makePropValue(l.map(ft(_)), ft)
+    }
+  }
+  def widenToMatch(qvn:QValue, qvm:QValue):Option[CompPair[_]] = {
+    val LongType = Core.LongType
+    val FloatType = Core.FloatType
+    if (qvn.isEmpty || qvm.isEmpty)
+      None
+    else {
+      val comp = (qvn.pType, qvm.pType) match {
+        case (IntType, IntType) => CompPair(qvn.rawList(IntType), qvm.rawList(IntType), implicitly[Numeric[Int]], IntType)
+        case (IntType, LongType) => CompPair(qvn.rawList(IntType).map(_.toLong), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType)
+        case (IntType, FloatType) => CompPair(qvn.rawList(IntType).map(_.toDouble), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType)
+        case (LongType, IntType) => CompPair(qvn.rawList(LongType), qvm.rawList(IntType).map(_.toLong), implicitly[Numeric[Long]], LongType)
+        case (LongType, LongType) => CompPair(qvn.rawList(LongType), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType)
+        case (LongType, FloatType) => CompPair(qvn.rawList(LongType).map(_.toDouble), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType)
+        case (FloatType, IntType) => CompPair(qvn.rawList(FloatType), qvm.rawList(IntType).map(_.toDouble), implicitly[Numeric[Double]], FloatType)
+        case (FloatType, LongType) => CompPair(qvn.rawList(FloatType), qvm.rawList(LongType).map(_.toDouble), implicitly[Numeric[Double]], FloatType)
+        case (FloatType, FloatType) => CompPair(qvn.rawList(FloatType), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType)
+      }
+      Some(comp)
+    }
+  }
+  
   /**
    * The abstraction of "plus".
    * 
@@ -345,15 +400,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   lazy val plusNumericImpl = new FunctionImpl(AddNumericMethodOID, PlusMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
     override def qlApply(inv:Invocation):QFut = {
-      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
-      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
       for {
-        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
-        n <- inv.contextAllAs(typ)
-        m <- inv.processParamFirstAs(0, typ)
-        result = typ.numeric.plus(n, m)
+        qvn <- inv.contextValue
+        qvm <- inv.processParam(0)
+        comp <- inv.opt(widenToMatch(qvn, qvm))
       }
-        yield ExactlyOne(typ(result))
+        yield comp.plus
     }
   }
   
@@ -369,29 +421,13 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   lazy val minusNumericImpl = new FunctionImpl(SubtractNumericMethodOID, MinusMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
     override def qlApply(inv:Invocation):QFut = {
-      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
-      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
       for {
-        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
-        n <- inv.contextAllAs(typ)
-        m <- inv.processParamFirstAs(0, typ)
-        result = typ.numeric.minus(n, m)
+        qvn <- inv.contextValue
+        qvm <- inv.processParam(0)
+        comp <- inv.opt(widenToMatch(qvn, qvm))
       }
-        yield ExactlyOne(typ(result))
+        yield comp.minus
     }
-  }
-  
-  // TODO: this is horrible. Surely we can come up with a better approach via Numeric,
-  // but I'm not finding it right now. For some reason, the way we're getting the Numeric
-  // for the context isn't working for the param:
-  def doublize(qv: QValue): Double = {
-    val LT = Core.LongType
-    val FT = Core.FloatType
-    qv.pType match {
-      case IntType => qv.firstAs(IntType).getOrElse(1).toDouble
-      case LT => qv.firstAs(Core.LongType).getOrElse(1L).toDouble
-      case FT => qv.firstAs(Core.FloatType).getOrElse(1.0)
-    }    
   }
   
   lazy val TimesMethod = new AbstractFunction(TimesMethodOID, Received,
@@ -406,22 +442,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   lazy val timesNumericImpl = new FunctionImpl(TimesNumericMethodOID, TimesMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
     override def qlApply(inv:Invocation):QFut = {
-      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
-      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
       for {
-        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
-        n <- inv.contextAllAs(typ)
-        qv <- inv.processParam(0)
-        result =
-          if (qv.pType == typ) {
-            typ(qv.firstAs(typ).map(m => typ.numeric.times(n, m)).getOrElse(n))
-          } else {
-            val nd = typ.numeric.toDouble(n)
-            val md = doublize(qv)
-            Core.FloatType(nd * md)
-          }
+        qvn <- inv.contextValue
+        qvm <- inv.processParam(0)
+        comp <- inv.opt(widenToMatch(qvn, qvm))
       }
-        yield ExactlyOne(result)
+        yield comp.times
     }
   }
   
@@ -437,15 +463,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   lazy val divideNumericImpl = new FunctionImpl(DivideNumericMethodOID, DivideMethod, Seq(IntType, Core.FloatType, Core.LongType))
   {
     override def qlApply(inv:Invocation):QFut = {
-      // This is a bit odd-looking, but we need to extract pt.nType for the rest to work:
-      val pt = inv.context.value.pType.asInstanceOf[querki.core.IntTypeBasis#NumericTypeBase[_]]
       for {
-        typ <- inv.contextTypeAs[querki.core.IntTypeBasis#NumericTypeBase[pt.nType]]
-        n <- inv.contextAllAs(typ)
-        qv <- inv.processParam(0)
-        result = typ.numeric.toDouble(n) / doublize(qv)
+        qvn <- inv.contextValue
+        qvm <- inv.processParam(0)
+        comp <- inv.opt(widenToMatch(qvn, qvm))
       }
-        yield ExactlyOne(Core.FloatType(result))
+        yield comp.divide
     }
   }
 
