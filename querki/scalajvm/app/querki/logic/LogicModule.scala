@@ -149,13 +149,14 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        predicateOpt <- inv.processAsOpt("predicate", YesNoType)
+        element <- inv.contextElements
+        predicateOpt <- inv.processAsOpt("predicate", YesNoType, element)
         predicate = predicateOpt.getOrElse(false)
         result <-
           if (predicate)
-            inv.process("iftrue")
+            inv.process("iftrue", element)
           else
-            inv.process("iffalse")
+            inv.process("iffalse", element)
       }
         yield result
     }

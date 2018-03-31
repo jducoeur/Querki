@@ -237,6 +237,13 @@ class LogicTests extends QuerkiTests {
       pql("""[[_if(true,""yes"",)]]""") should equal ("yes")
       pql("""[[_if(false,""yes"",)]]""") should equal ("")      
     }
+    
+    "work with multiple received values" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<My Instance, Trivial, Trivial, My Instance, Trivial> -> _if(_is(Trivial), ""yes"", ""no"") -> _commas]]""") should
+        equal ("no, yes, yes, no, yes")
+    }
   }
   
   // === _lessThan ===
