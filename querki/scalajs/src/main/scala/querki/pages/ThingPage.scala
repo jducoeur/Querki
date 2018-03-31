@@ -118,6 +118,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       DataAccess.space.map(_.isApp).getOrElse(false)
     } else
       false
+      
+  def spaceOpt = DataAccess.space
+  lazy val hasExplore = spaceOpt.map { space =>
+    space.permissions.contains(std.roles.canExplorePerm)
+  }.getOrElse(false)
     
   def editButton(addlCls:Seq[String] = Seq.empty) = faIconButton("pencil", addlCls)
   
@@ -320,21 +325,23 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         })
       ),
       
-      modelOpt match {
-        case Some(model) if (!thing.isTag) => {
-          p(cls:="_smallSubtitle _noPrint",
-            "(OID: ", a(href:=page.thingUrl(thing.oid), id:="_thingOID", thing.oid.underlying),
-            thing.linkName.map { linkName =>
-              MSeq(", Link Name: ", a(href:=page.thingUrl(thing.urlName), linkName))
-            },
-            ", Model: ", a(href:=page.thingUrl(model), model.displayName),
-            ")")
+      if (hasExplore) {
+        modelOpt match {
+          case Some(model) if (!thing.isTag) => {
+            p(cls:="_smallSubtitle _noPrint",
+              "(OID: ", a(href:=page.thingUrl(thing.oid), id:="_thingOID", thing.oid.underlying),
+              thing.linkName.map { linkName =>
+                MSeq(", Link Name: ", a(href:=page.thingUrl(thing.urlName), linkName))
+              },
+              ", Model: ", a(href:=page.thingUrl(model), model.displayName),
+              ")")
+          }
+          case Some(model) if (thing.isTag) => {
+            p(cls:="_smallSubtitle _noPrint", 
+              "(Tag based on ", thingLink(model), ")")
+          }
+          case None => {}
         }
-        case Some(model) if (thing.isTag) => {
-          p(cls:="_smallSubtitle _noPrint", 
-            "(Tag based on ", thingLink(model), ")")
-        }
-        case None => {}
       }
     )
 }
