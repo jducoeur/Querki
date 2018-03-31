@@ -17,6 +17,7 @@ object MOIDs extends EcotIds(23) {
   val MatchCaseOID = moid(1)
   val SubstringOID = moid(2)
   val TextLengthOID = moid(3)
+  val ToCaseOID = moid(4)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -327,11 +328,46 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
     }
   }
   
+  lazy val ToCaseMethod = new InternalMethod(ToCaseOID,
+    toProps(
+      setName("_toCase"),
+      SkillLevel(SkillLevelAdvanced),
+      Signature(
+        expected = Some(Seq(AnyType), "A text value, or something that can be displayed as text"),
+        reqs = Seq(("case", AnyType, """The case to convert to""")),
+        opts = Seq.empty,
+        returns = (TextType, "The received value as text, converted to the requested case")
+      ),
+      Summary("Converts some text to the requested case"),
+      Details("""This takes one parameter, which must be one of the following:
+        |
+        |* Upper -- turn the received text into all uppercase
+        |* Lower -- turn the received text into all lowercase
+        |* CapFirst -- turn the first character of the received text to uppercase""")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        qlText <- inv.contextAllAs(TextType)
+        text = qlText.text
+        caseExp <- inv.rawRequiredParam("case")
+        cse = caseExp.reconstructStandalone
+        result <- cse.toLowerCase match {
+          case "upper" => inv.wrap(text.toUpperCase)
+          case "lower" => inv.wrap(text.toLowerCase)
+          case "capfirst" => inv.wrap(text.capitalize)
+          case _ => inv.error("Text.toCase.badOption", cse)
+        }
+      }
+        yield ExactlyOne(TextType(result))
+    }
+  }
+  
   override lazy val props = Seq(
     PluralizeMethod,
     JoinMethod,
     MatchCaseMethod,
     SubstringMethod,
-    TextLengthMethod
+    TextLengthMethod,
+    ToCaseMethod
   )
 }

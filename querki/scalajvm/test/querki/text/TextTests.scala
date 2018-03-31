@@ -138,6 +138,18 @@ class TextTests extends QuerkiTests with ModelPersistence with querki.types.Mode
     }
   }
   
+  "_toCase" should {
+    "work as expected" in {
+      implicit val s = commonSpace
+      
+      pql("""[[""the Quick brown FOX"" -> _toCase(Upper)]]""") should equal ("THE QUICK BROWN FOX")
+      pql("""[[""the Quick brown FOX"" -> _toCase(UPPER)]]""") should equal ("THE QUICK BROWN FOX")
+      pql("""[[""the Quick brown FOX"" -> _toCase(Lower)]]""") should equal ("the quick brown fox")
+      pql("""[[""the Quick brown FOX"" -> _toCase(CapFirst)]]""") should equal ("The Quick brown FOX")
+      pql("""[[""the Quick brown FOX"" -> _toCase(Thingy)]]""") should equal (expectedWarning("Text.toCase.badOption"))
+    }
+  }
+  
   "Sets of Text" should {
     // Regression test for QI.bu6oc4a
     "serialize properly with a length-1 Set of empty Text" in {

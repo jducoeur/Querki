@@ -69,6 +69,8 @@ Space.modifyThing.propNotAllowed=You're not allowed to edit property {0}
 Space.modifyThing.illegalTypeChange=You are not currently allowed to change a Property from {0} to {1}
 Space.modifyThing.illegalCollectionChange=You are not current allowed to change the Collection of a Property
 
+Text.toCase.badOption={0} isn't a legal parameter for _toCase
+
 Thing.find.noSuch=That path does not point to a Thing that you are allowed to see.
 Thing.find.unknownId=No Thing found with that id
 Thing.find.unknownName=No Thing found with that name
