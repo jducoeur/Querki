@@ -77,8 +77,10 @@ case class Property[VT, RT](
   
   def validatingQValue[R](v:QValue)(f: => R):R = {
     // NameProp is a conspicuous exception to this usual sanity-check:
-    if ((v.cType != cType) && (id != querki.core.MOIDs.NameOID))
-      QLog.error(s"Property $displayName Validation Failed: expected collection ${cType.displayName}, but got ${v.cType.displayName}")
+    // TBD (4/1/18): this produces a lot of false positives, and I increasingly think it's questionable to
+    // worry about -- the Collections are pretty fungible:
+//    if ((v.cType != cType) && (id != querki.core.MOIDs.NameOID))
+//      QLog.error(s"Property $displayName Validation Failed: expected collection ${cType.displayName}, but got ${v.cType.displayName}")
     if (v.pType.realType != pType.realType)
       QLog.error(s"Property $displayName Validation Failed: expected type ${pType.displayName}, but got ${v.pType.displayName}")
       

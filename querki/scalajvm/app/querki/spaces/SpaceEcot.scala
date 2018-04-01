@@ -15,10 +15,11 @@ import querki.api.ClientRequest
 import querki.core.NameUtils
 import querki.ecology._
 import querki.globals._
+import querki.ql._
 import querki.spaces.messages._
 import querki.util.PublicException
 import querki.util.ActorHelpers._
-import querki.values.QLContext
+import querki.values.{ElemValue, EmptyValue, QLContext}
 
 object SpaceEcotMOIDs extends EcotIds(37) {
   val CreateHereOID = moid(1)
@@ -36,6 +37,8 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   
   lazy val Models = interface[models.Models]
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val PropValType = Models.PropValType
   
   /**
    * The one true handle to the Space Management system.
@@ -117,6 +120,62 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
    * FUNCTIONS
    ***********************************************/
   
+  /**
+   * This takes a single property-value parameter from _changeProperties or _createThing, and turns it
+   * into a useful PropValType.
+   */
+  def getOnePropVal(inv: Invocation, context: QLContext, paramNum: Integer): InvocationValue[ElemValue] = {
+    val parser = context.parser.get
+    for {
+      exp <- inv.rawParam(paramNum)
+      (propName, vExp) <- 
+        inv.opt(for {
+          phrase <- exp.phrases.headOption
+          stage <- phrase.ops.headOption
+          (name, paramsOpt) <- stage match {
+            case QLCall(name, _, params, _) => Some((name, params))
+            case _ => None
+          }
+          param <- paramsOpt.flatMap(_.headOption)
+        }
+          yield (name.name, param.exp))
+      thing <- inv.opt(inv.state.anythingByName(propName))
+      // TODO: this is horrible. Make this right, with property error checking:
+      prop = thing.asInstanceOf[AnyProp]
+      resultContext <- inv.fut(parser.processExp(vExp, context, false))
+      qv = resultContext.value
+      // Do type coercion, if necessary:
+      fixedType <-
+        if (ElemValue.matchesTypeExact(qv.pType, prop.pType))
+          inv.wrap(qv)
+        else if (qv.pType.canCoerceTo(prop.pType)) {
+          inv.wrap(qv.coerceTo(prop.pType).get)
+        } else {
+          inv.error("Func.paramWrongType", prop.displayName, "0", prop.pType.displayName, qv.pType.displayName)
+        }
+      }
+      yield PropValType(Map(prop.id -> fixedType))
+  }
+  
+  def getPropVals(inv:Invocation, context: QLContext, startingAt: Int): InvocationValue[PropMap] = {
+    val nParams = inv.numParams
+    val fullQV = (inv.wrap(EmptyValue(PropValType)) /: (startingAt until nParams)) { (invv, paramNum) =>
+      invv.flatMap { qv =>
+        getOnePropVal(inv, context, paramNum).map { elemVal =>
+          val (newQV, _) = qv.append(elemVal)
+          newQV
+        }
+      }
+    }
+    fullQV.map { qv =>
+      // TODO: I'm sure this would be easier with Cats: we're just reducing List[PropMap], which is
+      // a simple Monoidal reduce:
+      (emptyProps /: qv.rawList(PropValType)) { (result, propMap) =>
+        result ++ propMap
+      }
+    }
+  }
+  
   lazy val ChangeProperties = new InternalMethod(ChangePropertiesOID,
     toProps(
       setName("_changeProperties"),
@@ -148,7 +207,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       val vFut = for {
         context <- inv.contextElements
         thing <- inv.contextAllThings(context)
-        initialProps <- inv.fut(getInitialProps(inv, context))
+        initialProps <- getPropVals(inv, context, 0)
         msg = ChangeProps(inv.context.request.requesterOrAnon, inv.context.state, thing.id, initialProps)
         newState <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { s }
@@ -161,20 +220,6 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         val qvs = contexts.map(_.value)
         val resultQV = QL.collectQVs(qvs, None, None)
         inv.receivedContext.next(resultQV)
-      }
-    }
-    
-    def getInitialProps(inv:Invocation, context: QLContext):Future[PropMap] = {
-      val futInvs = for {
-        n <- inv.iter((0 until inv.numParams).toList)
-        propV <- inv.processParamFirstAs(n, Models.PropValType, context)
-      }
-        yield propV
-        
-      futInvs.get.map { propMaps =>
-        (emptyProps /: propMaps) { (current, oneMap) =>
-          current ++ oneMap
-        }
       }
     }
   }
@@ -220,7 +265,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       val vFut = for {
         model <- inv.processAs("model", LinkType)
-        initialProps <- inv.fut(getInitialProps(inv))
+        initialProps <- getPropVals(inv, inv.context, 1)
         msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
         (thingId, newState) <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { (id, s) }
@@ -229,20 +274,6 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         yield inv.context.nextFrom(ExactlyOne(LinkType(thingId)), transformThing).withState(newState)
         
       vFut.get.map(_.head)
-    }
-    
-    def getInitialProps(inv:Invocation):Future[PropMap] = {
-      val futInvs = for {
-        n <- inv.iter((1 until inv.numParams).toList)
-        propV <- inv.processParamFirstAs(n, Models.PropValType)
-      }
-        yield propV
-        
-      futInvs.get.map { propMaps =>
-        (emptyProps /: propMaps) { (current, oneMap) =>
-          current ++ oneMap
-        }
-      }
     }
   }
   

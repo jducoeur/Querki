@@ -173,4 +173,17 @@ class TextTests extends QuerkiTests with ModelPersistence with querki.types.Mode
       checkProp(s.textSet)
     }
   }
+  
+  "Text Properties" should {
+    // Regression test for QI.7w4g9o9:
+    "be callable with parameters" in {
+      class TSpace extends CommonSpace {
+        val textProp = new TestProperty(Core.TextType, ExactlyOne, "Text With Param")
+        val testThing = new SimpleTestThing("Test Thing", textProp("The parameter is [[$_1]] -- correct?"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Test Thing -> Text With Param(""hello"")]]""") should equal ("The parameter is hello -- correct?")
+    }
+  }
 }
