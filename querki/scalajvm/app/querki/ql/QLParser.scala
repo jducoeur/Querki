@@ -380,26 +380,30 @@ class QLParser(
   }
   
   private def processBindingDef(binding:QLBindingDef, context:QLContext):Future[QLContext] = {
-    val scopes = context.scopes(this)
-    val boundOpt = scopes.lookup(binding.name)
-    if (boundOpt.isDefined) {
-      warningFut(context, s"Attempting to reassign ${"$" + binding.name} -- you may only say ${"+$" + binding.name} once")
-    } else {
-      // Okay -- we are legally attempting to bind this name to the received value:
-      val newScopes:QLScopes =
-        binding.func match {
-          case Some(func) => {
-            // We're binding a local function, so we ignore the context and instead just use that:
-            val closure = QLClosure(QLExp(Seq(func)), binding.params)
-            val v = ExactlyOne(QL.ClosureType(closure))
-            scopes.bind((binding.name -> v))
-          } 
-          // Ordinary binding, so we just bind the current context to this name:
-          case _ => scopes.bind((binding.name -> context.value))
-        }
-      val newContext = context.withScopes(this, newScopes)
-      fut(newContext)
-    }    
+    context.scopes.get(this).map { scopes =>
+      val boundOpt = scopes.lookup(binding.name)
+      if (boundOpt.isDefined) {
+        warningFut(context, s"Attempting to reassign ${"$" + binding.name} -- you may only say ${"+$" + binding.name} once")
+      } else {
+        // Okay -- we are legally attempting to bind this name to the received value:
+        val newScopes:QLScopes =
+          binding.func match {
+            case Some(func) => {
+              // We're binding a local function, so we ignore the context and instead just use that:
+              val closure = QLClosure(QLExp(Seq(func)), binding.params)
+              val v = ExactlyOne(QL.ClosureType(closure))
+              scopes.bind((binding.name -> v))
+            } 
+            // Ordinary binding, so we just bind the current context to this name:
+            case _ => scopes.bind((binding.name -> context.value))
+          }
+        val newContext = context.withScopes(this, newScopes)
+        fut(newContext)
+      }
+    }.getOrElse {
+      QLog.error(s"Failed to find the scope for binding $binding!")
+      warningFut(context, s"Internal error while trying to parse!") 
+    }
   }
   
   private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser, call:QLCall):Future[QLContext] = {
