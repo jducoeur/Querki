@@ -219,9 +219,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends Hoo
         }
       }
       case None => {
-        NavSection("Not logged in", Seq(
-          NavLink("Log in", onClick = Some({ () => UserAccess.login() }))
-        ), 1900)
+        NavLink("Log in", onClick = Some({ () => UserAccess.login() }))
       }
     }
   }

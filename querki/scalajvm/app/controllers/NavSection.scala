@@ -24,13 +24,16 @@ object NavLink {
 case object NavDivider extends Navigable
 
 trait NavSectionMgr extends EcologyInterface {
-  def loginNav(rc:PlayRequestContext):NavSection
+  def loginNav(rc:PlayRequestContext):Navigable
 }
 
 /**
  * Note that this is a weird case, an Ecot in controllers. But it clearly *is* an Ecot -- it
  * is a bundle of static logic that needs to work with the Ecology -- and it needs controller
  * capabilities such as routes. So it lives here for the time being.
+ * 
+ * TODO: I *think* this whole Ecot is now dead (we're not displaying this menu in the vestigial
+ * top-level pages), so it can likely be deleted.
  */
 class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
   val maxNameDisplay = 25
@@ -44,15 +47,13 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
     }
   }
   
-  def loginNav(rc:PlayRequestContext) = {
+  def loginNav(rc:PlayRequestContext): Navigable = {
     rc.requester map { user =>
       NavSection("Logged in as " + truncateName(user.name), Seq(
         NavLink("Log out", routes.LoginController.logout)
       ))
     } getOrElse {
-      NavSection("Not logged in", Seq(
-        NavLink("Log in", routes.ClientController.index)
-      ))
+      NavLink("Log in", routes.ClientController.index)
     }    
   }
 }
