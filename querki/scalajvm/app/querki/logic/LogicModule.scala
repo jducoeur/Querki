@@ -152,7 +152,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |each element, and produces either the true or false path depending on the result of the predicate. But
           |if you set the `asList` parameter to true, then it will run the predicate against the *entire* context
           |at once, and do the true or false path on the *entire* context. This is appropriate if you are doing
-          |something with the whole list, like checking `_isEmpty`.""".stripMargin)))
+          |something with the whole list, like checking `_isEmpty`. 
+          |
+          |(*Note:* setting `asList` to true produces
+          |exactly the same result as putting an asterisk before the `_if`. An asterisk before a function
+          |means "do this to the entire List, not one at a time". The `asList` parameter is provided as an
+          |alternative in this common case, though, if you find it clearer.)""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
