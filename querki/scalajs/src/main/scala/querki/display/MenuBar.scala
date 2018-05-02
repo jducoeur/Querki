@@ -207,6 +207,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends Hoo
         if (user.actualUser) {
           NavSection(truncateName(user.mainIdentity.name), Seq(
             NavLink("Your Account", Pages.accountFactory.pageUrl()),
+            NavLink("Your Spaces", url = "/", allowedDuringHistory = true),
             NavLink(s"${SkillLevel.current.name} (change)", onClick = Some({ () => SkillLevel.changeSkillLevel() }), id="_skillLevelButton"),
             NavLink("Log out", controllers.LoginController.logout(), id="logout_button")
           ), 1900, id="_profile_menu")
