@@ -117,7 +117,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           ("iftrue", AnyType, "What to produce if the predicate is true")
         ),
         opts = Seq(
-          ("iffalse", AnyType, Core.QNone, "What to produce if the predicate isn't true")
+          ("iffalse", AnyType, Core.QNone, "What to produce if the predicate isn't true"),
+          ("asList", YesNoType, false, "Whether to treat the context as a whole, or as individual elements")
         ),
         returns = (AnyType, "The result from `iftrue` if the `predicate` was true, `iffalse` (or nothing) otherwise")
       ),
@@ -145,18 +146,29 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |
           |The syntax of _if is likely to evolve in the future, to something more like most programming languages. For now,
           |though, note that `iftrue` and `iffalse` are *inside* the parentheses, rather than after them as most languages
-          |have it.""".stripMargin)))
+          |have it.
+          |
+          |Normally, `_if` processes the received context one element at a time: it checks the predicate against
+          |each element, and produces either the true or false path depending on the result of the predicate. But
+          |if you set the `asList` parameter to true, then it will run the predicate against the *entire* context
+          |at once, and do the true or false path on the *entire* context. This is appropriate if you are doing
+          |something with the whole list, like checking `_isEmpty`.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        element <- inv.contextElements
-        predicateOpt <- inv.processAsOpt("predicate", YesNoType, element)
+        asList <- inv.processAs("asList", YesNoType)
+        ctx <-
+          if (asList)
+            inv.wrap(inv.context.asCollection)
+          else
+            inv.contextElements
+        predicateOpt <- inv.processAsOpt("predicate", YesNoType, ctx)
         predicate = predicateOpt.getOrElse(false)
         result <-
           if (predicate)
-            inv.process("iftrue", element)
+            inv.process("iftrue", ctx)
           else
-            inv.process("iffalse", element)
+            inv.process("iffalse", ctx)
       }
         yield result
     }

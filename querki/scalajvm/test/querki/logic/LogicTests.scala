@@ -244,6 +244,17 @@ class LogicTests extends QuerkiTests {
       pql("""[[<My Instance, Trivial, Trivial, My Instance, Trivial> -> _if(_is(Trivial), ""yes"", ""no"") -> _commas]]""") should
         equal ("no, yes, yes, no, yes")
     }
+    
+    "work with the asList parameter" in {
+      implicit val s = commonSpace
+      
+      // This version does *not* show any commas, because each element is being evaluated individually:
+      pql("""[[<My Instance, Trivial, Trivial, My Instance, Trivial> -> _if(_is(Trivial), Link Name -> _commas)]]""") should
+        equal ("\nTrivial\nTrivial\nTrivial")
+      // This version shows the commas, as well as all elements, because the List is being processed as a whole:
+      pql("""[[<My Instance, Trivial, Trivial, My Instance, Trivial> -> _if(_isNonEmpty, Link Name -> _commas, asList = true)]]""") should
+        equal ("My Instance, Trivial, Trivial, My Instance, Trivial")
+    }
   }
   
   // === _lessThan ===
