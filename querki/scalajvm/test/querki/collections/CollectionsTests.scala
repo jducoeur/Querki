@@ -98,6 +98,20 @@ class CollectionsTests extends QuerkiTests {
       pql("""[[My Thing -> My Prop -> _contains(Thing 3)]]""") should equal ("true")
       pql("""[[My Thing -> My Prop -> _contains(Thing 2)]]""") should equal ("false")
     }
+    
+    // Test for QI.7w4ga0g:
+    "work when checking against a collection" in {
+      implicit val s = commonSpace
+      
+      // No flag, so matches if *any* are present:
+      pql("""[[<1, 2, 3, 4, 5, 6> -> _contains(<12, 9, 4, 16>)]]""") should equal ("true")
+      // Fail if *none* are present:
+      pql("""[[<1, 2, 3, 4, 5, 6> -> _contains(<12, 9, 72, 16>)]]""") should equal ("false")
+      // Flag, so requires that *all* be present:
+      pql("""[[<1, 2, 3, 4, 5, 6> -> _contains(<3, 1, 5>, all=true)]]""") should equal ("true")
+      // Fail is any are missing:
+      pql("""[[<1, 2, 3, 4, 5, 6> -> _contains(<3, 11, 5>, all=true)]]""") should equal ("false")
+    }
   }
   
   // === _contains ===
@@ -125,6 +139,19 @@ class CollectionsTests extends QuerkiTests {
       
       pql("""[[Thing 3 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("true")
       pql("""[[Thing 2 -> _isContainedIn(My Thing -> My Prop)]]""") should equal ("false")
+    }
+    
+    "work when checking against a collection" in {
+      implicit val s = commonSpace
+      
+      // No flag, so matches if *any* are present:
+      pql("""[[<12, 9, 4, 16> -> _isContainedIn(<1, 2, 3, 4, 5, 6>)]]""") should equal ("true")
+      // Fail if *none* are present:
+      pql("""[[<12, 9, 72, 16> -> _isContainedIn(<1, 2, 3, 4, 5, 6>)]]""") should equal ("false")
+      // Flag, so requires that *all* be present:
+      pql("""[[<3, 1, 5> -> _isContainedIn(<1, 2, 3, 4, 5, 6>, all=true)]]""") should equal ("true")
+      // Fail is any are missing:
+      pql("""[[<3, 11, 5> -> _isContainedIn(<1, 2, 3, 4, 5, 6>, all=true)]]""") should equal ("false")
     }
   }
   

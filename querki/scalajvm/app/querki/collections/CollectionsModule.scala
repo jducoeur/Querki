@@ -710,6 +710,25 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     }
   }
   
+  /**
+   * Common core of _contains and _isContainedIn.
+   */
+  def checkContains(container: QValue, contained: QValue, requireAll: Boolean): Boolean = {
+    if (contained.size == 1) {
+      contained.firstOpt.map { elem =>
+        container.contains(elem)
+      }.getOrElse(false)      
+    } else if (requireAll) {
+      contained.elems.forall { elem =>
+        container.contains(elem)
+      }
+    } else {
+      contained.elems.exists { elem =>
+        container.contains(elem)
+      }
+    }
+  }
+  
   lazy val containsMethod = new InternalMethod(ContainsMethodOID,
     toProps(
       setName("_contains"),
@@ -718,19 +737,18 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       Signature(
         expected = Some(Seq.empty, "A List (or Set) of any sort"),
         reqs = Seq(("v", AnyType, "A single value that might be in the List. This should be Required; if not, the first element will be used.")),
-        opts = Seq.empty,
+        opts = Seq(
+          ("all", YesNoType, false, "If you set this to true, *all* of the values must be present; otherwise, it will return true if *any* are present.")
+        ),
         returns = (YesNoType, "True if *v* is found in the List; False otherwise")
       ),
-      Details("See [[_isContainedIn]] for the inverse of this function.")))
+      Details("See [[_isContainedIn._self]] for the inverse of this function.")))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         compareTo <- inv.process("v")
-        elemOpt = compareTo.firstOpt
-        result = elemOpt match {
-          case Some(elem) => inv.context.value.contains(elem)
-          case _ => false
-        }
+        all <- inv.processAs("all", YesNoType)
+        result = checkContains(inv.context.value, compareTo, all)
       }
         yield boolean2YesNoQValue(result)
     }
@@ -744,15 +762,18 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       Signature(
         expected = Some(Seq.empty, "A Value; if this a List or Set, the first element will be used. If Empty, this will always return False."),
         reqs = Seq(("l", AnyType, "A List that might contain that Value.")),
-        opts = Seq.empty,
+        opts = Seq(
+          ("all", YesNoType, false, "If you set this to true, *all* of the values must be present; otherwise, it will return true if *any* are present.")
+        ),
         returns = (YesNoType, "True if that Value is found in the List; False otherwise")
       ),
-      Details("See [[_contains]] for the inverse of this function.")))
+      Details("See [[_contains._self]] for the inverse of this function.")))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         listv <- inv.process("l")
-        result = inv.context.value.firstOpt.map(listv.contains(_)).getOrElse(false)
+        all <- inv.processAs("all", YesNoType)
+        result = checkContains(listv, inv.context.value, all)
       }
         yield boolean2YesNoQValue(result)
     }
