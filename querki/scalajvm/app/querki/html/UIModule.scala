@@ -48,7 +48,7 @@ object UIMOIDs extends EcotIds(11) {
 class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.MethodDefs {
   import UIMOIDs._
 
-  lazy val Basic = interface[querki.basic.Basic]
+  val Basic = initRequires[querki.basic.Basic]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
   val Logic = initRequires[querki.logic.Logic]
@@ -66,11 +66,20 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
   /**
    * This is a fake PType, so that code can inject HTML into the pipeline.
+   * 
+   * The odd name is because this is effectively an error in some cases: it shows up when, for instance,
+   * you have a Required Thing that points to -1.
    */
   lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, 
     toProps(
-      setName("Some HTML"),
-      setInternal)) with SimplePTypeBuilder[Wikitext]
+      setName("Required Property has not been set"),
+      setInternal,
+      Basic.DisplayTextProp("""This shows up when you have a Required Property (usually a Required Thing)
+        |that hasn't actually been set to a value. Set the Property to something real in order to make this
+        |message go away.
+        |
+        |(If you never want to see this message, set the Property to a default value in its Model.)
+        """.stripMargin))) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
