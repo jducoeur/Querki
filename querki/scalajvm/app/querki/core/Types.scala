@@ -462,7 +462,9 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     for {
       realOptions <- realOptionsFut
       withOpt =
-        if (allowEmpty)
+        // Note the second clause here: this is so that, even in a Required field, it will *initially* display
+        // as "Nothing selected" until you choose a value.
+        if (allowEmpty || (v.elem == UnknownOID))
           <option value={UnknownOID.id.toString}>Nothing selected</option> +: realOptions
         else
           realOptions
