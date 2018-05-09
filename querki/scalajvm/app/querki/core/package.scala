@@ -1,12 +1,14 @@
 package querki
 
+import scala.concurrent.Future
+
 import collection.immutable.TreeMap
 
 import models._
 
 import querki.basic.PlainText
 import querki.ecology._
-import querki.values.{ElemValue, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
 /**
  * Querki's "core" objects
@@ -120,6 +122,7 @@ package object core {
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
     def followLink(context:QLContext):Option[Thing]
+    def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], prop:Property[_,_]):Future[Seq[(String, Thing)]]
     
     // Ecots have these built-in, but non-Ecots can use this:
     def setName(str:String):(OID,QValue)

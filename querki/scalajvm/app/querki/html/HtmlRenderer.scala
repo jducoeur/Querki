@@ -335,16 +335,20 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    */
   def renderPickList(state:SpaceState, rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Future[NodeSeq] = {
     implicit val s = state
-    val instancesOpt = for (
-        propAndVal <- prop.getPropOpt(Links.LinkModelProp);
-        modelOID <- propAndVal.firstOpt
-        )
-      yield (modelOID, state.descendants(modelOID, false, true))
+    val modelOpt = for {
+      propAndVal <- prop.getPropOpt(Links.LinkModelProp)
+      modelOID <- propAndVal.firstOpt
+    }
+      yield modelOID
       
-    instancesOpt match {
-      case Some((modelOID, allInstances)) => {
-        val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
-        getTagSetNames(state, rc, prop, currentValue) map { rawList =>
+    modelOpt match {
+      case Some(modelOID) => {
+        for {
+          namesAndThings <- Core.linkCandidates(state, Some(rc), prop)
+          zipped = namesAndThings.zipWithIndex
+          rawList <- getTagSetNames(state, rc, prop, currentValue)
+        }
+        yield {        
           val currentMap = rawList.toMap
           val isNameType = prop.pType.isInstanceOf[querki.core.IsNameType]
           
@@ -374,17 +378,17 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
             else
               " _deleteable"
           <form class={s"_pickList$deleteableClass"}><ul class="_listContent"> {
-            sortedInstances.map { pair =>
-              val (instance, index) = pair
+            zipped.map { pair =>
+              val ((name, instance), index) = pair
               <li>{
               if (isListed(instance))
                 Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, 
                     Text(" "),
-                    <div class="_pickName">{instance.displayName}</div>)
+                    <div class="_pickName">{name}</div>)
               else
                 Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, 
                     Text(" "),
-                    <div class="_pickName">{instance.displayName}</div>)
+                    <div class="_pickName">{name}</div>)
               }</li>
             }
           } </ul> {

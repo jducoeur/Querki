@@ -319,7 +319,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
   
   private lazy val Apps = interface[querki.apps.Apps]
   def InternalProp:Property[Boolean,Boolean]
-  def Links:querki.links.Links
+  private lazy val Links = interface[querki.links.Links]
   
   def namePairs(candidates:Seq[Thing], state:SpaceState, rcOpt:Option[RequestContext]):Future[Seq[(String, Thing)]] = {
     Future.sequence(candidates.map { t => 
@@ -337,7 +337,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
    * The Property passed into here should usually be of LinkType -- while in theory that's not required,
    * it would be surprising for it to be used otherwise.
    */
-  def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], Links:querki.links.Links, prop:Property[_,_]):Future[Seq[(String, Thing)]] = {
+  def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], prop:Property[_,_]):Future[Seq[(String, Thing)]] = {
     implicit val s = state
     
     val choiceOrderOpt =
@@ -425,14 +425,13 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {
     val state = context.state
-    val Links = interface[querki.links.Links]
     // Give the Property a chance to chime in on which candidates belong here:
     val candidatesFut = prop match {
       case f:LinkCandidateProvider => {
         val rawCandidates = f.getLinkCandidates(state, currentValue)
         namePairs(rawCandidates, state, context.requestOpt)
       }
-      case _ => linkCandidates(state, context.requestOpt, Links, prop)
+      case _ => linkCandidates(state, context.requestOpt, prop)
     }
     val realOptionsFut:Future[Seq[NodeSeq]] =
       candidatesFut.flatMap { candidates =>
