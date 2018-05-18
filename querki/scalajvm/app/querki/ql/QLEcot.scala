@@ -209,6 +209,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
       case QLExpStage(exp) => findBindingsIn(exp)
       case QLListLiteral(exps) => findBindingsInSeq(exps)(findBindingsIn(_))
       case QLNumber(_) => Set.empty
+      case QLTextBlockLiteral(_) => Set.empty
     }
   }
   private def findBindingsIn(contents:ParsedQLText):Set[String] = {
@@ -554,6 +555,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
               }
             }
             case exp:QLExpStage => encodeString(exp.reconstructString)
+            case block: QLTextBlockLiteral => encodeString(block.reconstructString)
           }
         }
         case None => {

@@ -172,13 +172,16 @@ class QLParser(
   def qlDef:Parser[QLBindingDef] = "\\s*_def\\s+\\$".r ~> name ~ opt("(" ~> rep1sep("$" ~> name, "\\s*,\\s*".r) <~ ")") ~ ("\\s+=\\s+".r ~> qlPhrase) ^^ {
     case name ~ params ~ phrase => QLBindingDef(name, Some(phrase), params)
   }
+  def qlTextBlockLiteral: Parser[QLTextBlockLiteral] = "\\s*".r ~ "```" ~> "(?s)(?:(?!```).)*".r <~ "```" ^^ {
+    block => QLTextBlockLiteral(block) 
+  }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { 
     case name => QLBinding(name) 
   }
   def qlBindingDef:Parser[QLBindingDef] = "\\s*\\+\\$".r ~> name ~ opt("\\(\\s*".r ~> (repsep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case name ~ params => QLBindingDef(name, None, None) 
   }
-  def qlBasicStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage | qlList | qlExpStage
+  def qlBasicStage:Parser[QLStage] = qlTextBlockLiteral | qlNumber | qlCall | qlTextStage | qlList | qlExpStage
   def qlUnOpStage:Parser[QLStage] = opt(qlUnOp <~ "\\s*".r) ~ qlBasicStage ^^ {
     case unop ~ guts => {
       unop match {
@@ -527,6 +530,10 @@ class QLParser(
     }
   }
   
+  private def processTextBlockLiteral(contextIn: QLContext, block: QLTextBlockLiteral): Future[QLContext] = {
+    fut(contextIn.next(QL.WikitextValue(Wikitext(s"```${block.text}```"))))
+  }
+  
   private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):Future[QLContext] = {
     logStage(stage, contextIn) {
       val context = 
@@ -544,6 +551,7 @@ class QLParser(
         case num:QLNumber => Future.successful(processNumber(num, context))
         case list:QLListLiteral => processListLiteral(list, context)
         case QLExpStage(exp) => processExp(exp, context)
+        case block:QLTextBlockLiteral => processTextBlockLiteral(contextIn, block) 
       }
     }
   }

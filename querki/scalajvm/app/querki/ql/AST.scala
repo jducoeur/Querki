@@ -103,6 +103,10 @@ private[ql] case class QLSpace(text:String)
 private[ql] case class QLListLiteral(exps:Seq[QLExp]) extends QLStage(None) {
   def reconstructString = "<" + exps.map(_.reconstructStandalone).mkString(", ") + ">"
 }
+
+private[ql] case class QLTextBlockLiteral(text: String) extends QLStage(None) {
+  def reconstructString = "```\n" + text + "\n```" 
+}
   
 /**
  * Represents a Closure, more or less -- a QL Expression that is wrapped up so that it can be

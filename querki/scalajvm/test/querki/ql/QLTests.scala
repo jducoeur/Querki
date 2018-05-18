@@ -290,4 +290,27 @@ class QLTests extends QuerkiTests {
       pql("""[[_if(!(True & True) & True, ""yes"", ""no"")]]""") should equal ("no")
     }
   }
+  
+  "Text Block Literals" should {
+    "work in the trivial case" in {
+      implicit val s = commonSpace
+      
+      pql("""[[``````]]""") should equal ("``````")
+    }
+    
+    "work with some simple text" in {
+      implicit val s = commonSpace
+      
+      pql("""[[```foo```]]""") should equal ("```foo```")
+    }
+    
+    "work with some actual code" in {
+      implicit val s = commonSpace
+      
+      pql("""[[```[[Foo -> Bar]]```]]""") should equal ("```[[Foo -> Bar]]```")
+      pql("""[[```
+            |[[Foo -> Bar]]
+            |```]]""".stripReturns) should equal ("```\n[[Foo -> Bar]]\n```")
+    }
+  }
 }
