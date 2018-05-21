@@ -227,7 +227,10 @@ class QLParser(
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 
     ParsedQLText(_) }
-  def qlList:Parser[QLListLiteral] = "<" ~> rep1sep(qlExp, qlSpace ~ "," ~ qlSpace) <~ qlSpace ~ ">" ^^ { QLListLiteral(_) }
+  def qlList:Parser[QLCall] = "<" ~> rep1sep(qlExp, qlSpace ~ "," ~ qlSpace) <~ qlSpace ~ ">" ^^ 
+    // We've found that _concat already works well for this, so simply desugar to that:
+    // { QLListLiteral(_) }
+    { params => QLCall(QLSafeName("_concat"), None, Some(params.map(param => QLParam(None, param, false))), None) }
   
   /**
    * Note that the output here is nominally a new Context, but the underlying type is
@@ -516,6 +519,8 @@ class QLParser(
     context.next(Core.ExactlyOne(Core.IntType(num.n)))
   }
   
+  // TODO: this is now obsolete, since List Literals now desugar to _concat, so I think it can
+  // be deleted:
   private def processListLiteral(list:QLListLiteral, context:QLContext):Future[QLContext] = {
     // Process all of the list elements, in parallel:
     val futs:Seq[Future[Seq[QLContext]]] = list.exps.map(processExpAll(_, context))

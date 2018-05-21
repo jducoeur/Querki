@@ -197,6 +197,12 @@ class QLTests extends QuerkiTests {
       pql("""[[<Trivial, My Instance>]]""") should
         equal(listOfLinkText(s.trivialThing, s.instance))
     }
+    
+    "Work with an empty first Element" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<_if(false, 1), 2, 3>]]""") should equal ("\n2\n3")
+    }
   }
   
   "Numeric Literals" should {
