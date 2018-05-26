@@ -1,6 +1,7 @@
 package querki.core
 
 import language.existentials
+import scala.annotation.tailrec
 import scala.xml.{Attribute, NodeSeq, Null, Text}
 
 import play.api.Logger
@@ -52,6 +53,25 @@ trait CollectionBase { self:CoreEcot =>
     
     type implType = List[ElemValue]
     
+    // This is loosely adapted from SpacePersistence.escape()/unescape(). Can we come up with a unified approach?
+    // TODO: I *think* this is good enough to cope with truly nested data structures, but we need to test that.
+    val collEscape = '\u0005'
+    val collEscapeStr = s"$collEscape"
+    val escDelimit = s"$collEscape$collSerialDelimit"
+    def escape(str:String) = {
+      str.replace(collSerialDelimitStr, escDelimit)
+    }
+    def unescape(str:String) = {
+      str.replace(escDelimit, collSerialDelimitStr)
+    }
+    def showDelimiters(str: String): String = {
+      str.
+        replace(collEscapeStr, "ESC").
+        replace(collSerialDelimitStr, "DELIMIT").
+        replace(collSerialCloseStr, "CLOSE").
+        replace(collSerialOpenStr, "OPEN")
+    }
+  
     /**
      * Concrete Collections should override this if they previously stored their data in a different
      * format. We fall back to that when deserializing a record that doesn't fit the current format.
@@ -63,18 +83,34 @@ trait CollectionBase { self:CoreEcot =>
         oldDeserialize(ser, elemT)
       } else { 
         val guts = ser.slice(1, ser.length() - 1)
-          
+
         if (guts.isEmpty())
           doDefault(elemT)
         else {
-          val elemStrs = guts.split(collSerialDelimit).toList
+          // This walks through the String, splitting it on delimiters:
+          @tailrec
+          def splitElems(elemStart: Int, checkFrom: Int, soFar: Vector[String]): Vector[String] = {
+            val nextDelimit = guts.indexOf(collSerialDelimit, checkFrom)
+            if (nextDelimit == -1)
+              // We're done:
+              soFar :+ guts.substring(elemStart)
+            else if ((nextDelimit != 0) && (guts.charAt(nextDelimit - 1) == collEscape))
+              // It's an escaped delimiter, so move the cursor forward but stay with this element:
+              splitElems(elemStart, nextDelimit + 1, soFar)
+            else
+              // It's an actual delimiter, so add the element and move the cursors:
+              splitElems(nextDelimit + 1, nextDelimit + 1, soFar :+ guts.substring(elemStart, nextDelimit))
+          }
+
+          // First split this into elements, and *then* unescape each element:
+          val elemStrs = splitElems(0, 0, Vector.empty).toList.map(unescape(_))
           elemStrs.map(elemT.deserialize(_))
         }
       }
     }
     
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      v.map(elem => elemT.serialize(elem)).
+      v.map(elem => escape(elemT.serialize(elem))).
         mkString(collSerialOpenStr, collSerialDelimitStr, collSerialCloseStr)
     }
   }
@@ -93,7 +129,7 @@ trait CollectionBase { self:CoreEcot =>
       } else {
         val formV = form(fieldIds.inputControlId).value
         formV match {
-    	  // Normal case: pass it to the PType for parsing the value out:
+        // Normal case: pass it to the PType for parsing the value out:
           case Some(v) => {
             rawInterpretation(v, prop, elemT).getOrElse {
               TryTrans { elemT.validate(v, prop, state) }.
@@ -148,7 +184,7 @@ trait CollectionBase { self:CoreEcot =>
       toProps(
         setName(commonName(_.core.exactlyOneColl)))) 
   {
-  	override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.deserialize(ser))
     }
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
@@ -324,8 +360,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
         setInternal
         ))
   {
-	  type implType = List[ElemValue]
-	
+    type implType = List[ElemValue]
+  
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to deserialize root collection!")
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = 
@@ -334,16 +370,16 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to default root collection!")    
-  	def wrap(elem:ElemValue):implType =
-  	  throw new Error("Trying to wrap root collection!")    
-  	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
-  	  throw new Error("Trying to makePropValue root collection!")    
+    def wrap(elem:ElemValue):implType =
+      throw new Error("Trying to wrap root collection!")    
+    def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
+      throw new Error("Trying to makePropValue root collection!")    
     def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] =
-  	  throw new Error("Trying to render input on root collection!")
-  	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
-  	  throw new Error("Trying to fromUser on root collection!")
-  	def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
-  	def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
+      throw new Error("Trying to render input on root collection!")
+    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
+      throw new Error("Trying to fromUser on root collection!")
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
+    def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
   }
   
   class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
@@ -484,7 +520,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     }
 
     def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
-	  throw new Error("Trying to fromUser on Unit!")
+    throw new Error("Trying to fromUser on Unit!")
     
     def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
     
