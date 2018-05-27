@@ -6,7 +6,7 @@ import models._
 
 import querki.ecology._
 import querki.time.DateTime
-import querki.types.{ComplexSpace, ModelTypeDefiner}
+import querki.types.{ComplexSpace, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values.{QValue, SpaceState}
 
 /**
@@ -107,6 +107,78 @@ class SpaceLoadTests extends QuerkiTests {
       
       processQText(loadedContext(loadedState, space.thingWithComplex.id), """[[My Tree -> Left -> Right -> Node Id]]""") should
         equal ("3")      
+    }
+    
+    // Regression test for QI.9v5kc1r:
+    "successfully save and load a Space with Model Types that contain Lists and Sets" in {
+      class TSpace extends CommonSpace {
+        val listProp = new TestProperty(Core.IntType, QList, "List of Ints")
+        val tagSetProp = new TestProperty(Core.TagType, QSet, "Set of Tags")
+        
+        val innerModel = new SimpleTestThing("Inner",
+          listProp(),
+          tagSetProp())
+        val innerType = new ModelType(toid, innerModel.id, 
+            Core.toProps(
+              Core.setName("Inner Type")
+                ))
+        registerType(innerType)
+        val listOfInners = new TestProperty(innerType, QList, "List of Inners")
+        
+        val outerModel = new SimpleTestThing("Outer Model", listOfInners())
+        val outerWithOne = new TestThing("Outer with One Inner", outerModel,
+          listOfInners(SimplePropertyBundle(
+            listProp(0, 1, 2, 3),
+            tagSetProp("Fear", "Can Affect Adjacent", "Something Else")            
+          )))
+        
+        val outerType = new ModelType(toid, outerModel.id,
+            Core.toProps(
+              Core.setName("Outer Type")))
+        registerType(outerType)
+        val listOfOuters = new TestProperty(outerType, QList, "List of Outers")
+        
+        val outererModel = new SimpleTestThing("Outerer Model", listOfOuters())
+        val outerer = new TestThing("Outerer", outererModel,
+          listOfOuters(
+            SimplePropertyBundle(
+              listOfInners(
+                SimplePropertyBundle(
+                  listProp(1, 2, 3),
+                  tagSetProp("hello", "world")
+                ),
+                SimplePropertyBundle(
+                  listProp(4, 5, 6),
+                  tagSetProp("hi", "there")
+                )
+              )
+            ),
+            SimplePropertyBundle(
+              listOfInners(
+                SimplePropertyBundle(
+                  listProp(7, 8, 9),
+                  tagSetProp("Larry", "Moe", "Curly")
+                ),
+                SimplePropertyBundle(
+                  listProp(21, 42, 999),
+                  tagSetProp("me", "myself", "I")
+                )
+              )
+            )
+          ))
+      }
+      val space = new TSpace
+      
+      val loadedState = saveLoad(space)
+      
+      // The straightforward test:
+      processQText(loadedContext(loadedState, space.outerWithOne.id), """[[List of Inners -> List of Ints]]""") should
+        equal("\n0\n1\n2\n3")
+      processQText(loadedContext(loadedState, space.outerWithOne.id), """[[List of Inners -> Set of Tags]]""") should
+        equal(listOfTags("Fear", "Can Affect Adjacent", "Something Else"))
+      // And now, the acid test:
+      processQText(loadedContext(loadedState, space.outerer.id), """[[List of Outers -> _drop(1) -> List of Inners -> _first -> Set of Tags]]""") should
+        equal(listOfTags("Larry", "Moe", "Curly"))
     }
   }
 }
