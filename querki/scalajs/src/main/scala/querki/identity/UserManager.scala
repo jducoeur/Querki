@@ -60,7 +60,6 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
       fut.foreach { result =>
         if (result == "failed") {
           $(badLoginMsg.elem).show()
-          loginPromise.failure(new Exception("Wasn't a legal login"))
         } else {
           val userInfoOpt = read[Option[UserInfo]](result)
           setUser(userInfoOpt)
