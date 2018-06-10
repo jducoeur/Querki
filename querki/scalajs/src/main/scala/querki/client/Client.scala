@@ -20,6 +20,44 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
+  def translateServerException(ex: Throwable): Nothing = {
+    ex match {
+      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+        if (jqXHR.status == 412) {
+          // The server sent a PreconditionFailed, which is the signal that the Client
+          // is out of date and the protocols may be inconsistent. So force a hard refresh.
+          // IMPORTANT: I suspect this doesn't return anything; we're tearing down the world
+          // and starting again.
+          PageManager.fullReload()
+        }
+        
+        try {
+          val aex = read[ApiException](jqXHR.responseText)
+          throw aex
+        } catch {
+          // The normal case -- the server sent an ApiException, which we will propagate up
+          // to the calling code:
+          case aex:querki.api.ApiException => throw aex
+          // The server sent a non-ApiException, which is unfortunate. Just display it:
+          case _:Throwable => {
+            if (jqXHR.status >= 500)
+              StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
+            else
+              StatusLine.showUntilChange(jqXHR.responseText)
+            throw ex                
+          }
+        }
+      }
+      case _:Throwable => {
+        // Well, that's not good.
+        // TODO: should we have some mechanism to propagate this exception back to the server,
+        // and log it? Probably...
+        println(s"Client.interceptFailures somehow got non-PlayAjaxException $ex")
+        throw ex
+      }
+    }
+  }
+  
   def interceptFailures(caller: => Future[String]):Future[String] = {
     caller.transform(
       { response =>
@@ -27,43 +65,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         UserAccess.setUser(wrapped.currentUser)
         wrapped.payload 
       },
-      { ex =>
-        ex match {
-	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
-          if (jqXHR.status == 412) {
-            // The server sent a PreconditionFailed, which is the signal that the Client
-            // is out of date and the protocols may be inconsistent. So force a hard refresh.
-            // IMPORTANT: I suspect this doesn't return anything; we're tearing down the world
-            // and starting again.
-            PageManager.fullReload()
-          }
-          
-          try {
-            val aex = read[ApiException](jqXHR.responseText)
-            throw aex
-          } catch {
-	          // The normal case -- the server sent an ApiException, which we will propagate up
-	          // to the calling code:
-	          case aex:querki.api.ApiException => throw aex
-	          // The server sent a non-ApiException, which is unfortunate. Just display it:
-	          case _:Throwable => {
-              if (jqXHR.status >= 500)
-                StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
-              else
-  	            StatusLine.showUntilChange(jqXHR.responseText)
-		          throw ex	              
-	          }
-	        }
-	      }
-	      case _:Throwable => {
-	        // Well, that's not good.
-	        // TODO: should we have some mechanism to propagate this exception back to the server,
-	        // and log it? Probably...
-	        println(s"Client.interceptFailures somehow got non-PlayAjaxException $ex")
-	        throw ex
-	      }
-        }
-      }
+      { ex => translateServerException(ex) }
     )
   }
   

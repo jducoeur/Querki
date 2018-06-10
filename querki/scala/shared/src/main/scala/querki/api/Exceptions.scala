@@ -92,3 +92,11 @@ sealed trait ImportException extends ApiException
  * Tried to create a Space using a name that you already have in use.
  */
 case class SpaceExistsException(name:String) extends ImportException
+
+
+/**
+ * Expected exceptions from User/Identity functions.
+ */
+sealed trait UserException extends ApiException
+case class HandleAlreadyTakenException(handle: String) extends UserException
+case class EmailAlreadyTakenException(email: String) extends UserException

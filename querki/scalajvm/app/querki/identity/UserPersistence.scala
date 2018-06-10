@@ -11,6 +11,7 @@ import play.api.mvc._
 
 import models.{AsName, AsOID, OID, ThingId, UnknownOID}
 
+import querki.api.{HandleAlreadyTakenException, EmailAlreadyTakenException}
 import querki.core.NameUtils
 import querki.db._
 import querki.ecology._
@@ -235,9 +236,9 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     // We intentionally check email first, to catch the case where you've already created an
     // account and have forgotten about it.
     if (loadByEmail(EmailAddress(info.email), None).isDefined)
-      Future.failed(new PublicException("User.emailExists", info.email))
+      Future.failed(new EmailAlreadyTakenException(info.email))
     else if (loadByHandle(info.handle, None).isDefined)
-      Future.failed(new PublicException("User.handleExists", info.handle))
+      Future.failed(new HandleAlreadyTakenException(info.handle))
     else if (identityException.isDefined)
       Future.failed(identityException.get)
     else {

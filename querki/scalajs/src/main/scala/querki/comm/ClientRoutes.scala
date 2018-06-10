@@ -131,6 +131,7 @@ class PlayAjax(call:PlayCall) {
     }
     deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
       promise.success(Failure({
+        println(s"Got AJAX error $errorThrown (${jqXHR.status}) with ${jqXHR.responseText}")
         cb(AjaxFailure(jqXHR, textStatus, errorThrown))
         PlayAjaxException(jqXHR, textStatus, errorThrown)
       }))

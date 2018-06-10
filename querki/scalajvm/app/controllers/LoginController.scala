@@ -23,6 +23,7 @@ import upickle.default._
 
 import models._
 
+import querki.api.ApiException
 import querki.cluster.OIDAllocator._
 import querki.data.UserInfo
 import querki.db.ShardKind
@@ -394,7 +395,8 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
         }.recover {
           case error => {
             val msg = error match {
-              case err:PublicException => err.display(request, ecology)
+              case ex: ApiException => write(ex)
+              case err: PublicException => err.display(request, ecology)
               case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
             }
             BadRequest(s"$msg")
