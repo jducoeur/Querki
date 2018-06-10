@@ -2,6 +2,8 @@ package querki.identity
 
 import scala.util.Success
 
+import org.scalajs.dom.html
+
 import upickle.default._
 import rx._
 import scalatags.JsDom.all.{name => nm, _}
@@ -57,7 +59,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
         controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text.now, "password" -> passwordInput.get.text.now)
       fut.foreach { result =>
         if (result == "failed") {
-          StatusLine.showBriefly(s"That isn't a correct email and password; please try again.")
+          $(badLoginMsg.elem).show()
           loginPromise.failure(new Exception("Wasn't a legal login"))
         } else {
           val userInfoOpt = read[Option[UserInfo]](result)
@@ -77,6 +79,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
           }
         }
       }
+    lazy val badLoginMsg = GadgetRef.of[html.Div]
     
     def showSignup():Unit = {
       loginDialog.done()
@@ -92,6 +95,16 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
         p("""If you are already a member of Querki, enter your login info here:"""),
         handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
         passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
+        badLoginMsg <= 
+          div(
+            cls := "alert alert-danger alert-dismissable",
+            style := "display: none",
+            button(tpe := "button", cls := "close", data("dismiss") := "alert", aria.label := "Close", span(aria.hidden := "true", raw("&times;"))),
+            b("That isn't a correct email and password."), 
+            " Please try again. "
+          ),
+        p(a(href := controllers.LoginController.sendPasswordReset().url,
+          "Click here if you have forgotten your password.")),
         p("or, if you are new to Querki:"),
         new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki", id := "_signupButton")({ () =>
           showSignup()
