@@ -28,19 +28,27 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   var _user:Option[UserInfo] = None
   def user:Option[UserInfo] = _user
   
-  def setUser(user:Option[UserInfo]) = _user = user
+  def setUser(user:Option[UserInfo]) = { 
+    _user = user
+    SkillLevel.updateSkillLevel()
+  }
   
   def name = _user.map(_.mainIdentity.name).getOrElse("Not logged in")
   
   def isActualUser = user.map(_.actualUser).getOrElse(false)
   
   def login()(implicit ctx:Ctx.Owner):Future[Page] = {
-    loginCore().flatMap(_ => PageManager.reload())
+    for {
+      _ <- loginCore()
+      page <- PageManager.reload()
+    }
+      yield page
   }
   
   def loginCore()(implicit ctx:Ctx.Owner):Future[Unit] = {

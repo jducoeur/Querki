@@ -20,6 +20,7 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val consts = DataAccess.std.skillLevel
 
@@ -28,10 +29,11 @@ class SkillLevelEcot(e:Ecology) extends ClientEcot(e) with SkillLevel {
   var _current:Option[Complexity] = None
   def current:Complexity = {
     if (_current.isEmpty) {
-      _current = Some(DataAccess.request.user.map(user => tid2Complexity(user.skillLevel)).getOrElse(EasyComplexity))
+      _current = Some(UserAccess.user.map(user => tid2Complexity(user.skillLevel)).getOrElse(EasyComplexity))
     }
     _current.get
   }
+  def updateSkillLevel(): Unit = _current = None
   
   sealed case class ComplexityImpl(name:String, thing:ThingInfo, desc:String, includes:Set[Complexity], id:String) extends Complexity {
     def selected = { current == this }

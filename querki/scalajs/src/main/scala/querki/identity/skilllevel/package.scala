@@ -36,5 +36,10 @@ package object skilllevel {
      * NOTE that this may lead to reloading the page!
      */
     def changeSkillLevel():Unit
+    
+    /**
+     * Forced the SkillLevel to update to match the current User.
+     */
+    def updateSkillLevel(): Unit
   }
 }
