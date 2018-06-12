@@ -106,29 +106,48 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
           div(
             cls := "alert alert-danger alert-dismissable",
             style := "display: none",
-            button(tpe := "button", cls := "close", data("dismiss") := "alert", aria.label := "Close", span(aria.hidden := "true", raw("&times;"))),
+            button(
+              tpe := "button", 
+              cls := "close", 
+              data("dismiss") := "alert", 
+              aria.label := "Close", 
+              span(aria.hidden := "true", raw("&times;")),
+              tabindex := 7),
             b("That isn't a correct email and password."), 
             " Please try again. "
           ),
+        div(cls := "row",
+          div(cls := "col-sm-3",
+            new ButtonGadget(
+              ButtonGadget.Primary, 
+              "Log in", 
+              disabled := Rx { 
+                val handleEmpty = handleInput.rxEmpty
+                val passwordEmpty = passwordInput.rxEmpty
+                handleEmpty() || passwordEmpty() 
+              }, 
+              tabindex := 3)({ () => doLogin()})
+          ),
+          div(cls := "col-sm-3 col-sm-offset-6",
+            new ButtonGadget(
+              ButtonGadget.Normal, 
+              "Sign up", 
+              id := "_signupButton",
+              tabindex := 4)({ () => showSignup() })                
+          )
+        ),
         p(a(href := controllers.LoginController.sendPasswordReset().url,
-          "Click here if you have forgotten your password.")),
-        p("or, if you are new to Querki:"),
-        new ButtonGadget(ButtonGadget.Normal, "Click here to sign up for Querki", id := "_signupButton")({ () =>
-          showSignup()
-        }),
+          "Click here if you have forgotten your password.",
+          tabindex := 5)),
         if (user.isDefined && !user.get.actualUser)
           div(
             p("or:"),
-            new ButtonGadget(ButtonGadget.Normal, "Continue as a Guest")({ () => dismiss() })
+            new ButtonGadget(
+              ButtonGadget.Normal, 
+              "Continue as a Guest",
+              tabindex := 6)({ () => dismiss() })
           )
-      ),
-      (ButtonGadget.Primary, Seq("Log in", disabled := Rx { 
-          val handleEmpty = handleInput.rxEmpty
-          val passwordEmpty = passwordInput.rxEmpty
-          handleEmpty() || passwordEmpty() 
-        }, tabindex := 3), { dialog =>
-        doLogin()
-      })
+      )
     )
     loginDialog.show()
     
