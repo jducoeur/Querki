@@ -5,6 +5,7 @@ import js.JSConverters._
 import scala.util.{Failure, Success}
 import org.scalajs.dom.{raw => dom}
 import org.querki.gadgets._
+import org.querki.gadgets.core.GadgetElementRef
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
@@ -22,6 +23,7 @@ import querki.display.{ButtonGadget, HookedGadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx._
 import querki.editing.EditFunctions
+import EditFunctions._
 import querki.identity.UserLevel._
 import querki.security.{PersonInfo, SecurityFunctions}
 import querki.session.UserFunctions
@@ -68,8 +70,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   }
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
       
-  // TODO: this should probably become an RxSelect instead?
-  class RoleSelector(parent:RoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
+  class StandardRoleSelector(parent:StandardRoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
     val roleName = Rx { role().displayName }
     
     override def onCreate(e:dom.HTMLSelectElement) = {
@@ -90,7 +91,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       )
   }
   
-  class RoleDisplay(parent:RolesDisplay, initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
+  class StandardRoleDisplay(parent:RolesDisplay, initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
     def findInitial(info:RoleInfo):ThingInfo = info.roles.find(role => initialRoles.contains(role.oid)).getOrElse(info.default)
       
     def roleChosen() = {
@@ -110,7 +111,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         new RxTextFrag(roleSelector.roleName)
       )
         
-    val roleSelector = new RoleSelector(this, roleInfo, Var(findInitial(roleInfo)))
+    val roleSelector = new StandardRoleSelector(this, roleInfo, Var(findInitial(roleInfo)))
     lazy val selector = (roleSelector).render
     
     def curValue:Option[String] = {
@@ -122,13 +123,116 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
     }
   }
   
-  class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
+  case class OneRoleRx(role: ThingInfo, selected: Boolean = false) {
+    val id = role.oid
+    val display = role.displayName
+    val rx = Var(selected)
+  }
+  
+  /**
+   * This is the drop-down displayed when you click on the display of the current Custom Roles.
+   */
+  class CustomRoleSelector(parent:CustomRoleDisplay, info:RoleInfo, val roles:Var[Seq[ThingInfo]]) extends Gadget[dom.HTMLDivElement] {
+    val roleFlags = info.roles.map(role => OneRoleRx(role, roles.now.exists(_.oid.underlying == role.underlying)))
+    val selectedRoleRxs = Rx { roleFlags.filter(_.rx()) }
+    
+    def path = parent.parent.path
+    
+    def recalcRoles() = {
+      roles() = selectedRoleRxs.now.map(_.role)
+    }
+    
+    // TODO: this doesn't combine properly with the way StandardRoleSelector works. This one sends diffs;
+    // that one slams the entire value. Choose one way and commit to it.
+    roleFlags.foreach { oneRole =>
+      oneRole.rx.triggerLater {
+        val selected = oneRole.rx.now
+        val v = oneRole.id.underlying
+        val msg = if (selected) {
+          AddToSet(path, v)
+        } else {
+          RemoveFromSet(path, v)
+        }
+        parent.parent.saveChange(msg)
+        recalcRoles()
+      }
+    }
+    
+    def doRender() =
+      div(display := "none", cls := "panel panel-primary",
+        div(cls := "panel-heading",
+          div(cls := "panel-title", "Select Custom Roles")
+        ),
+        
+        div(cls := "panel-body",
+          roleFlags.map { item =>
+            div(
+              new RxCheckbox(item.rx, item.display, cls:="_checkOption")
+            )        
+          },
+          
+          button(cls:="btn btn-primary",
+            "Done",
+            onclick := { () => parent.roleChosen() }
+          )
+        )
+      )
+  }
+  
+  class CustomRoleDisplay(val parent:RolesDisplay, initialRoles:Seq[TID], val tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
+    def findInitial(info:RoleInfo):Seq[ThingInfo] = info.roles.filter(role => initialRoles.contains(role.oid))
+    val roles = Var(findInitial(roleInfo))
+    val roleName = Rx { 
+      val raw = roles().map(_.displayName).mkString(", ")
+      if (raw.length == 0)
+        "No Custom Roles Selected"
+      else
+        raw
+    }
+    val currentRoleIds = Rx { roles().map(_.oid.underlying) }
+    val showingSelector = Var(false)
+
+    def roleChosen() = {
+      $(selector).hide(200)
+      showingSelector() = false      
+      parent.save()
+    }
+      
+    def hook() = {
+      $(elem).click({ evt:JQueryEventObject =>
+        if (showingSelector.now) {
+          roleChosen()
+        } else {
+          $(selector).show(200)
+          showingSelector() = true
+        }
+      })
+    }
+          
+    def doRender() =
+      span(cls:="_chooseCustomRole label label-info",
+        data("personid"):=tid.underlying,
+        new RxTextFrag(roleName)
+      )
+
+    lazy val roleSelector = new CustomRoleSelector(this, roleInfo, roles)
+    lazy val selector = {
+      // When we need the actual selector, we drop it in place of the placeholder:
+      val e = (roleSelector).render
+      parent.selectorArea <= roleSelector
+      e
+    }
+  }
+  
+  class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo, val selectorArea: GadgetElementRef[dom.HTMLDivElement]) 
+    extends InputGadget[dom.HTMLSpanElement](ecology) 
+  {
     override lazy val thingId = tid
     override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-    def values = List(roleDisplay.curValue, customDisplayRef.opt.now.flatMap(_.curValue)).flatten
+    def values = roleDisplay.curValue.toList ++ customDisplayRef.opt.now.map(_.currentRoleIds.now.toList).getOrElse(List()) 
     
-    val roleDisplay = new RoleDisplay(this, initialRoles, tid, roleInfo)
-    val customDisplayRef = GadgetRef[RoleDisplay]
+    val roleDisplay = new StandardRoleDisplay(this, initialRoles, tid, roleInfo)
+    val customDisplayRef = GadgetRef[CustomRoleDisplay]
     
     def doRender() =
       span(
@@ -136,7 +240,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         if (!customInfo.isEmpty) {
           MSeq(
             " and ",
-            customDisplayRef <= new RoleDisplay(this, initialRoles, tid, customInfo))
+            customDisplayRef <= new CustomRoleDisplay(this, initialRoles, tid, customInfo))
         }
       )
       
@@ -144,15 +248,18 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
   }
   
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
+    val customDisplay = GadgetRef.of[dom.HTMLDivElement]
+    
     def doRender() =
       tr(cls:=showCls,
-      td({
+      td(
         MSeq(
           person.person.displayName, 
           " -- ",
-          new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo)
-        )
-      })
+          new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay)
+        ),
+        customDisplay <= div(display := "None")
+      )
     )
   }
   
@@ -233,13 +340,16 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       )
   }
   
-  def pageContent = for {
+  def pageContent = {
+    val customDisplay = GadgetRef.of[dom.HTMLDivElement]
+    
+    for {
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
     (roles, custom) <- Client[SecurityFunctions].getRoles().call()
     inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
     awaitingValidation = (DataAccess.request.userLevel == PendingUser)
     roleMap = makeRoleMap(roles)
-    customMap = makeRoleMap(noRole +: custom)
+    customMap = makeRoleMap(custom)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
     
     pageTitle = msg("pageTitle", ("spaceName" -> space.displayName))
@@ -294,7 +404,8 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
             div(cls:="control-group",
               div(cls:="controls",
                 "These people should be invited as ",
-                new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap)
+                new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap, customDisplay),
+                customDisplay <= div(display := "None")
               )
             ),
           
@@ -372,6 +483,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       )
   }
     yield PageContents(pageTitle, guts)
+  }
 }
 
 object SharingPage {
