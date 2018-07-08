@@ -1,4 +1,4 @@
-package querki.pages
+package querki.security
 
 import scala.scalajs.js
 import js.JSConverters._
@@ -25,7 +25,7 @@ import querki.display.rx._
 import querki.editing.EditFunctions
 import EditFunctions._
 import querki.identity.UserLevel._
-import querki.security.{PersonInfo, SecurityFunctions}
+import querki.pages._
 import querki.session.UserFunctions
 
 class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("sharing") {
@@ -54,198 +54,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
       cls:="tab-pane"
   }
   
-  val noRole = ThingInfo(
-    TID(""),
-    Some("None"),
-    models.QWikitext("No Custom Role"),
-    TID(""),
-    models.Kind.Thing,
-    false, false, false, false, false,
-    None, Set.empty, Set.empty
-  )
-  
-  case class RoleInfo(map:Map[TID, ThingInfo], roles:Seq[ThingInfo]) {
-    def default = roles.head
-    def isEmpty = roles.find(_.oid.underlying.length > 0).isEmpty
-  }
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
-      
-  class StandardRoleSelector(parent:StandardRoleDisplay, info:RoleInfo, val role:Var[ThingInfo]) extends Gadget[dom.HTMLSelectElement] {
-    val roleName = Rx { role().displayName }
-    
-    override def onCreate(e:dom.HTMLSelectElement) = {
-      $(elem).value(role.now.oid.underlying)
-        
-      $(elem).change({ evt:JQueryEventObject =>
-        val chosen = $(elem).find(":selected").valueString
-        role() = info.map(TID(chosen))
-        parent.roleChosen()
-      })
-    }
-      
-    def doRender() =
-      select(
-        for (r <- info.roles)
-          yield option(value:=r.oid.underlying,
-            r.displayName)
-      )
-  }
-  
-  class StandardRoleDisplay(parent:RolesDisplay, initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
-    def findInitial(info:RoleInfo):ThingInfo = info.roles.find(role => initialRoles.contains(role.oid)).getOrElse(info.default)
-      
-    def roleChosen() = {
-      $(selector).detachReplaceWith(elem)
-      parent.save()
-    }
-      
-    def hook() = {
-      $(elem).click({ evt:JQueryEventObject =>
-        $(elem).detachReplaceWith(selector)
-      })
-    }
-          
-    def doRender() =
-      span(cls:="_chooseRole label label-info",
-        data("personid"):=tid.underlying,
-        new RxTextFrag(roleSelector.roleName)
-      )
-        
-    val roleSelector = new StandardRoleSelector(this, roleInfo, Var(findInitial(roleInfo)))
-    lazy val selector = (roleSelector).render
-    
-    def curValue:Option[String] = {
-      val raw = roleSelector.role.now.oid.underlying
-      if (raw.length == 0)
-        None
-      else
-        Some(raw)
-    }
-  }
-  
-  case class OneRoleRx(role: ThingInfo, selected: Boolean = false) {
-    val id = role.oid
-    val display = role.displayName
-    val rx = Var(selected)
-  }
-  
-  /**
-   * This is the drop-down displayed when you click on the display of the current Custom Roles.
-   */
-  class CustomRoleSelector(parent:CustomRoleDisplay, info:RoleInfo, val roles:Var[Seq[ThingInfo]]) extends Gadget[dom.HTMLDivElement] {
-    val roleFlags = info.roles.map(role => OneRoleRx(role, roles.now.exists(_.oid.underlying == role.underlying)))
-    val selectedRoleRxs = Rx { roleFlags.filter(_.rx()) }
-    
-    def path = parent.parent.path
-    
-    def recalcRoles() = {
-      roles() = selectedRoleRxs.now.map(_.role)
-    }
-    
-    // TODO: this doesn't combine properly with the way StandardRoleSelector works. This one sends diffs;
-    // that one slams the entire value. Choose one way and commit to it.
-    roleFlags.foreach { oneRole =>
-      oneRole.rx.triggerLater {
-        val selected = oneRole.rx.now
-        val v = oneRole.id.underlying
-        val msg = if (selected) {
-          AddToSet(path, v)
-        } else {
-          RemoveFromSet(path, v)
-        }
-        parent.parent.saveChange(msg)
-        recalcRoles()
-      }
-    }
-    
-    def doRender() =
-      div(display := "none", cls := "panel panel-primary",
-        div(cls := "panel-heading",
-          div(cls := "panel-title", "Select Custom Roles")
-        ),
-        
-        div(cls := "panel-body",
-          roleFlags.map { item =>
-            div(
-              new RxCheckbox(item.rx, item.display, cls:="_checkOption")
-            )        
-          },
-          
-          button(cls:="btn btn-primary",
-            "Done",
-            onclick := { () => parent.roleChosen() }
-          )
-        )
-      )
-  }
-  
-  class CustomRoleDisplay(val parent:RolesDisplay, initialRoles:Seq[TID], val tid:TID, roleInfo:RoleInfo) extends HookedGadget[dom.HTMLSpanElement](ecology) {
-    def findInitial(info:RoleInfo):Seq[ThingInfo] = info.roles.filter(role => initialRoles.contains(role.oid))
-    val roles = Var(findInitial(roleInfo))
-    val roleName = Rx { 
-      val raw = roles().map(_.displayName).mkString(", ")
-      if (raw.length == 0)
-        "No Custom Roles Selected"
-      else
-        raw
-    }
-    val currentRoleIds = Rx { roles().map(_.oid.underlying) }
-    val showingSelector = Var(false)
-
-    def roleChosen() = {
-      $(selector).hide(200)
-      showingSelector() = false      
-      parent.save()
-    }
-      
-    def hook() = {
-      $(elem).click({ evt:JQueryEventObject =>
-        if (showingSelector.now) {
-          roleChosen()
-        } else {
-          $(selector).show(200)
-          showingSelector() = true
-        }
-      })
-    }
-          
-    def doRender() =
-      span(cls:="_chooseCustomRole label label-info",
-        data("personid"):=tid.underlying,
-        new RxTextFrag(roleName)
-      )
-
-    lazy val roleSelector = new CustomRoleSelector(this, roleInfo, roles)
-    lazy val selector = {
-      // When we need the actual selector, we drop it in place of the placeholder:
-      val e = (roleSelector).render
-      parent.selectorArea <= roleSelector
-      e
-    }
-  }
-  
-  class RolesDisplay(initialRoles:Seq[TID], tid:TID, roleInfo:RoleInfo, customInfo:RoleInfo, val selectorArea: GadgetElementRef[dom.HTMLDivElement]) 
-    extends InputGadget[dom.HTMLSpanElement](ecology) 
-  {
-    override lazy val thingId = tid
-    override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-    def values = roleDisplay.curValue.toList ++ customDisplayRef.opt.now.map(_.currentRoleIds.now.toList).getOrElse(List()) 
-    
-    val roleDisplay = new StandardRoleDisplay(this, initialRoles, tid, roleInfo)
-    val customDisplayRef = GadgetRef[CustomRoleDisplay]
-    
-    def doRender() =
-      span(
-        roleDisplay,
-        if (!customInfo.isEmpty) {
-          MSeq(
-            " and ",
-            customDisplayRef <= new CustomRoleDisplay(this, initialRoles, tid, customInfo))
-        }
-      )
-      
-    def hook() = {}
-  }
   
   class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, customInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     val customDisplay = GadgetRef.of[dom.HTMLDivElement]
@@ -256,7 +65,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         MSeq(
           person.person.displayName, 
           " -- ",
-          new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay)
+          new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay, std)
         ),
         customDisplay <= div(display := "None")
       )
@@ -359,6 +168,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         h2(pageTitle),
         p("This page allows you to invite people into this Space, and manage what roles they play in it"),
           
+        div(
         ul(cls:="nav nav-tabs", role:="tablist",
           li(role:="presentation", if (initTab == Tab.Invite) cls:="active", a(href:="#sendInvitations", role:="tab", attr("data-toggle"):="tab", "Invites")),
           li(role:="presentation", if (initTab == Tab.Members) cls:="active", a(href:="#members", role:="tab", attr("data-toggle"):="tab", "Members")),
@@ -373,8 +183,8 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
             p("""Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
             |including [[]]-style expressions; however, links may not yet work quite the way you expect.""".stripMargin),
             
-          p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
-          |twice, doing so excessively is frowned upon, as is sending unwelcome invitations.""".stripMargin, br(), 
+            p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
+            |twice, doing so excessively is frowned upon, as is sending unwelcome invitations.""".stripMargin, br(), 
             em("Either of these is considered spam, and is grounds for removal from Querki.")),
             
             p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
@@ -404,7 +214,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
             div(cls:="control-group",
               div(cls:="controls",
                 "These people should be invited as ",
-                new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap, customDisplay),
+                new RolesDisplay(securityInfo.defaultRoles, DataAccess.space.get.oid, roleMap, customMap, customDisplay, std),
                 customDisplay <= div(display := "None")
               )
             ),
@@ -480,6 +290,7 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
               new CustomRoleManager(customMap)
             ) 
         )
+      )
       )
   }
     yield PageContents(pageTitle, guts)

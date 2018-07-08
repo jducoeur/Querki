@@ -23,6 +23,7 @@ import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
 import querki.display.{QLButtonGadget, QText, QuerkiUIUtils, WrapperDiv}
+import querki.security.SharingPage
 
 class ThingPage(name:TID, params:ParamMap)(implicit val ecology:Ecology) extends Page() with QuerkiUIUtils {
 
