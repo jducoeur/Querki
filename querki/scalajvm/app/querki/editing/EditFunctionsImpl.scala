@@ -11,7 +11,7 @@ import EditFunctions._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
 import querki.util.{PublicException}
-import querki.values.QLRequestContext
+import querki.values.{QLRequestContext, QValue}
 import models.OID.thing2OID
 import models.ThingId.thingId2Str
 
@@ -112,11 +112,11 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
-  def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
-    if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $change")
+  def alterProperty(thingId:TID, changeTop:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
+    if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $changeTop")
     implicit val s = state
     
-    val propsOpt:Option[PropMap] = change match {
+    def evaluateOneChange(change: PropertyChange): Option[PropMap] = change match {
       case ChangePropertyValue(path, vs) => changeToProps(Some(thing), path, vs)
       
       case MoveListItem(path, from, to) => alterListOrder(thing, path, from, to)
@@ -183,7 +183,26 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         }
           yield Core.toProps((prop, newV))
       }
+      
+      case MultiplePropertyChanges(changes) => {
+        // In a perfect world, we would do this with a simple monoidal |+|. Unfortunately, that
+        // doesn't work, because the value of PropMap is QValue, and that doesn't (currently) have
+        // a semigroup. Besides, it would be weird and suspicious to combine the QValues like that.
+        // TODO: is it an error if this change list includes multiple changes to the same Property?
+        // Maybe.
+        (Option.empty[PropMap] /: changes) { (optMap, chg) =>
+          val result = evaluateOneChange(chg)
+          (optMap, result) match {
+            case (None, None) => None
+            case (Some(l), None) => optMap
+            case (None, Some(r)) => result
+            case (Some(l), Some(r)) => Some(l ++ r)
+          }
+        }
+      }
     }
+    
+    val propsOpt:Option[PropMap] = evaluateOneChange(changeTop)
     
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)

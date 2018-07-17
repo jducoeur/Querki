@@ -90,12 +90,17 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
   }
   
   /**
+   * Build the PropertyChange message for this control, based on its current values.
+   */
+  def propertyChangeMsg() = ChangePropertyValue(path, values)
+  
+  /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't
    * usually require that. The Gadget should call this whenever it is appropriate to save the current
    * value.
    */
   def save():Future[PropertyChangeResponse] = {
-    saveChange(ChangePropertyValue(path, values))
+    saveChange(propertyChangeMsg())
   }
 
   /**
@@ -140,10 +145,12 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
     fut.onComplete {
       case Success(response) => {
         InputGadgetsInternal.saveComplete(this)
-	      response match {
+        response match {
           case PropertyChanged => {
             $(elem).trigger("savecomplete")
           }
+          // Implies a deferred change; we should never get here
+          case PropertyNotChangedYet => 
         }
       }
       
@@ -177,10 +184,12 @@ object InputGadget {
     val promise = Promise[PropertyChangeResponse]
     Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
       case Success(response) => {
-	      response match {
+        response match {
           case PropertyChanged => {
             StatusLine.showBriefly("Saved")
           }
+          // Implies a deferred change; we should never get here:
+          case PropertyNotChangedYet => 
         }
         promise.success(response)
       }

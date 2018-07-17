@@ -140,6 +140,7 @@ class ModelDesignerPage(params:ParamMap)(implicit val ecology:Ecology)
             }
           }
         }
+        case PropertyNotChangedYet => // We should never get here!
       }
     }
   }

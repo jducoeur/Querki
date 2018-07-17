@@ -73,10 +73,7 @@ trait EditFunctions {
 }
 
 object EditFunctions {
-  sealed abstract trait PropertyChange {
-    // The path to the Property being altered:
-    def path:String
-  }
+  sealed trait PropertyChange
   
   /**
    * Describes a changed value on a Property. Note that the values are a List, to be able to support
@@ -93,20 +90,24 @@ object EditFunctions {
   case class AddToSet(path:String, value:String) extends PropertyChange
   case class RemoveFromSet(path:String, value:String) extends PropertyChange
   
+  case class MultiplePropertyChanges(changes: Seq[PropertyChange]) extends PropertyChange
+  
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
+  // Client-only, used when we are not actually making changes now; never returned from the server.
+  case object PropertyNotChangedYet extends PropertyChangeResponse
   
   case class FullEditInfo(instancePropIds:Seq[TID], instancePropPath:String, derivingName:Boolean, propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
     propInfo:PropInfo,
-	  path:String,
-	  prompt:Option[Wikitext],
+    path:String,
+    prompt:Option[Wikitext],
     tooltip:Option[Wikitext],
-	  inheritedFrom:Option[String],
-	  canEditProperty:Boolean,
-	  // This is the raw HTML for the Editor
-	  editor:String
+    inheritedFrom:Option[String],
+    canEditProperty:Boolean,
+    // This is the raw HTML for the Editor
+    editor:String
   )
   
   case class PropUsage(nModels:Int, nInstances:Int)
