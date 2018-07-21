@@ -7,4 +7,5 @@ import querki.globals._
 
 trait NoAutoSave { self: InputGadget[_] =>
   override def save(): Future[PropertyChangeResponse] = Future.successful(PropertyNotChangedYet)
+  override def beginChanges(): Unit = {}
 }

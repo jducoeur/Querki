@@ -1,5 +1,7 @@
 package querki.security
 
+import scala.concurrent.Future
+
 import org.scalajs.dom.html
 
 import scalatags.JsDom.all._
@@ -8,21 +10,85 @@ import rx._
 import org.querki.gadgets._
 
 import querki.data.ThingInfo
+import querki.editing.EditFunctions._
 import querki.globals._
+import querki.display.ButtonGadget
 import querki.display.input._
 
-class EditRolePanel(
-    role: ThingInfo
+/**
+ * The panel for editing or creating a Role. Don't create this directly; use the helper functions in the
+ * companion object. (Needed because we may need to fetch info from the server to create this.)
+ */
+private[security] class EditRolePanel(
+    roleOpt: Option[ThingInfo]
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
   extends Gadget[html.Div] with EcologyMember
 {
+  lazy val DataAccess = interface[querki.data.DataAccess]
+  
+  type InputGadgetRef = GadgetRef[InputGadget[_]]
+  val nameInput = GadgetRef[InputGadget[_]]
+  
+  val fields: List[InputGadgetRef] = List(nameInput)
+  
+  val creating = roleOpt.isEmpty
+  def initialName = roleOpt.map(_.displayName).getOrElse("")
+  
+  def saveMsg(): PropertyChange = {
+    def oneSaveMsg(ref: InputGadgetRef): Option[PropertyChange] = ref.mapNow(_.propertyChangeMsg())
+    MultiplePropertyChanges(fields.map(oneSaveMsg).flatten)
+  }
+  
   def doRender() = 
-    div(
-      // TODO: text input for the name of the role; use TextInputGadget with NoAutoSave
-      // TODO: list of checkboxes for the permissions of the role
-      // TODO: list of the Shared Invites using this Role
-      // TODO: modifiable list of the Members with this role
-      // TODO: Save button, which takes all of the inputs, accumulates their values, and saves
-      //   them at one shot
+    div(cls := "panel panel-default",
+      div(cls := "panel-heading",
+        div(
+          if (creating)
+            "Create new Role"
+          else
+            span(b(initialName))
+        )
+      ),
+      div(cls := "panel-body",
+        form(
+          div(cls := "form-group",
+            label("Role Name"),
+            nameInput <= 
+              new TextInputGadget(Seq("form-control", "col-md-3"), value := initialName) 
+                with NoAutoSave
+                with ForProp { val prop = DataAccess.std.basic.displayNameProp }
+          ),
+          
+          // TODO: list of checkboxes for the permissions of the role
+          // TODO: list of the Shared Invites using this Role
+          // TODO: modifiable list of the Members with this role
+          
+          div(
+            new ButtonGadget(ButtonGadget.Primary, "Save")({() => 
+              roleOpt match {
+                case Some(role) => {
+                  InputGadget.doSaveChange(role.oid, saveMsg()).map { result =>
+                    // TODO: close this panel
+                  }
+                }
+                case None => ??? // TODO
+              }
+            })
+          )
+        )
+      )
     )
+}
+
+object EditRolePanel {
+  def prepToEdit(role: ThingInfo)(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
+    for {
+      // TODO: fetch the Role's permissions from the server:
+      dummy <- Future.successful(())
+    }
+      yield new EditRolePanel(Some(role))
+  }
+  
+  def create()(implicit ecology: Ecology, ctx: Ctx.Owner): EditRolePanel =
+    new EditRolePanel(None)
 }

@@ -8,13 +8,35 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
+import org.querki.jquery._
 import org.querki.gadgets._
 
+import querki.data.ThingInfo
 import querki.display.{ButtonGadget, TabGadget}
 import querki.display.rx.RxText
 import querki.editing.EditFunctions
 import querki.globals._
 import querki.pages.Page
+  
+class OneRoleGadget(role: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.Owner) extends Gadget[html.Div] {
+  val roleDiv = GadgetRef.of[html.Div]
+  val nameGadget = GadgetRef.of[html.Anchor]
+    .whenRendered { g =>
+      $(g.elem).click { evt: JQueryEventObject =>
+        EditRolePanel.prepToEdit(role).map { panel: Gadget[html.Div] =>
+          roleDiv <~ panel
+        }
+        evt.preventDefault()
+      }
+    }
+  
+  def doRender() =
+    div(
+      roleDiv <= div(
+        nameGadget <= a(href := "#", role.displayName)
+      )
+    )
+}
 
 class CustomRolesTab(
     customMap: RoleInfo,
@@ -45,7 +67,7 @@ class CustomRolesTab(
           role <- customRoles.roles
           if (role.oid.underlying.length > 0)
         }
-          yield p(role.displayName),
+          yield new OneRoleGadget(role),
         h4("Create a new Custom Role"),
         roleAdder <= new RxText(cls:="form-control col-md-3"),
         " ", 
