@@ -6,9 +6,11 @@ import org.scalajs.dom.html
 
 import scalatags.JsDom.all._
 import rx._
+import autowire._
 
 import org.querki.gadgets._
 
+import querki.api.ThingFunctions
 import querki.data.ThingInfo
 import querki.editing.EditFunctions._
 import querki.globals._
@@ -20,10 +22,12 @@ import querki.display.input._
  * companion object. (Needed because we may need to fetch info from the server to create this.)
  */
 private[security] class EditRolePanel(
-    roleOpt: Option[ThingInfo]
+    roleOpt: Option[ThingInfo],
+    parent: RoleEditCompleter
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
   extends Gadget[html.Div] with EcologyMember
 {
+  lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   type InputGadgetRef = GadgetRef[InputGadget[_]]
@@ -67,9 +71,11 @@ private[security] class EditRolePanel(
             new ButtonGadget(ButtonGadget.Primary, "Save")({() => 
               roleOpt match {
                 case Some(role) => {
-                  InputGadget.doSaveChange(role.oid, saveMsg()).map { result =>
-                    // TODO: close this panel
+                  for {
+                    result <- InputGadget.doSaveChange(role.oid, saveMsg())
+                    newRole <- Client[ThingFunctions].getThingInfo(role.oid).call()
                   }
+                    parent.roleComplete(newRole)
                 }
                 case None => ??? // TODO
               }
@@ -81,14 +87,14 @@ private[security] class EditRolePanel(
 }
 
 object EditRolePanel {
-  def prepToEdit(role: ThingInfo)(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
+  def prepToEdit(role: ThingInfo, parent: RoleEditCompleter)(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
     for {
       // TODO: fetch the Role's permissions from the server:
       dummy <- Future.successful(())
     }
-      yield new EditRolePanel(Some(role))
+      yield new EditRolePanel(Some(role), parent)
   }
   
-  def create()(implicit ecology: Ecology, ctx: Ctx.Owner): EditRolePanel =
-    new EditRolePanel(None)
+  def create(parent: RoleEditCompleter)(implicit ecology: Ecology, ctx: Ctx.Owner): EditRolePanel =
+    new EditRolePanel(None, parent)
 }

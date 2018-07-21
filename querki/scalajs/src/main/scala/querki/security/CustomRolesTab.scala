@@ -17,24 +17,44 @@ import querki.display.rx.RxText
 import querki.editing.EditFunctions
 import querki.globals._
 import querki.pages.Page
+
+trait RoleEditCompleter {
+  def roleComplete(role: ThingInfo): Unit
+}
   
-class OneRoleGadget(role: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.Owner) extends Gadget[html.Div] {
-  val roleDiv = GadgetRef.of[html.Div]
-  val nameGadget = GadgetRef.of[html.Anchor]
-    .whenRendered { g =>
-      $(g.elem).click { evt: JQueryEventObject =>
-        EditRolePanel.prepToEdit(role).map { panel: Gadget[html.Div] =>
-          roleDiv <~ panel
+class OneRoleGadget(roleIn: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.Owner) 
+  extends Gadget[html.Div] with RoleEditCompleter 
+{ roleGadget =>
+  val role = Var(roleIn)
+  
+  class RoleDisplayGadget() extends Gadget[html.Anchor] {
+    override def onCreate(e: html.Anchor) = {
+      $(e).click { evt: JQueryEventObject =>
+        EditRolePanel.prepToEdit(role.now, roleGadget).map { panel: Gadget[html.Div] =>
+          roleDiv <= panel
         }
         evt.preventDefault()
-      }
+      }      
     }
+    
+    def doRender() = a(href := "#", role.now.displayName)
+  }
+  
+  val roleDiv = GadgetRef.of[html.Div]
+  
+  def displayRoleName() = 
+    roleDiv <= div(
+      new RoleDisplayGadget()
+    )
+  
+  def roleComplete(newRole: ThingInfo) = {
+    role() = newRole
+    displayRoleName()
+  }
   
   def doRender() =
     div(
-      roleDiv <= div(
-        nameGadget <= a(href := "#", role.displayName)
-      )
+      displayRoleName()
     )
 }
 
