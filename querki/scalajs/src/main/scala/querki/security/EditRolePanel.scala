@@ -85,7 +85,7 @@ private[security] class EditRolePanel(
                     result <- InputGadget.doSaveChange(role.oid, saveMsg())
                     newRole <- Client[ThingFunctions].getThingInfo(role.oid).call()
                   }
-                    parent.roleComplete(newRole)
+                    parent.roleComplete(Some(newRole))
                 }
                 case None => {
                   for {
@@ -93,9 +93,14 @@ private[security] class EditRolePanel(
                     // MultiplePropertyChanges:
                     newRole <- Client[EditFunctions].create(std.security.customRoleModel, changeMsgs()).call()
                   }
-                    parent.roleComplete(newRole)
+                    parent.roleComplete(Some(newRole))
                 }
               }
+            }),
+            
+            " ",
+            new ButtonGadget(ButtonGadget.Normal, "Cancel")({() =>
+              parent.roleComplete(None)
             })
           )
         )

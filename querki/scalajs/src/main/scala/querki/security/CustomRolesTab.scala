@@ -19,7 +19,7 @@ import querki.globals._
 import querki.pages.Page
 
 trait RoleEditCompleter {
-  def roleComplete(role: ThingInfo): Unit
+  def roleComplete(roleOpt: Option[ThingInfo]): Unit
 }
   
 class OneRoleGadget(roleIn: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.Owner) 
@@ -47,8 +47,8 @@ class OneRoleGadget(roleIn: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.O
       new RoleDisplayGadget()
     )
   
-  def roleComplete(newRole: ThingInfo) = {
-    role() = newRole
+  def roleComplete(newRoleOpt: Option[ThingInfo]) = {
+    newRoleOpt.map(newRole => role() = newRole)
     displayRoleName()
   }
   
@@ -71,10 +71,12 @@ class CustomRolesTab(
     val addDiv = GadgetRef.of[html.Div]
     val roleDiv = GadgetRef.of[html.Div]
     
-    def roleComplete(newRole: ThingInfo) = {
+    def roleComplete(newRoleOpt: Option[ThingInfo]) = {
       roleDiv <= div()
-      addDiv.mapElemNow { e =>
-        $(e).append((new OneRoleGadget(newRole)).render)
+      newRoleOpt.map { newRole =>
+        addDiv.mapElemNow { e =>
+          $(e).append((new OneRoleGadget(newRole)).render)
+        }
       }
     }
     
