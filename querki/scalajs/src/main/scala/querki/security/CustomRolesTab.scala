@@ -67,32 +67,33 @@ class CustomRolesTab(
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
 
-  class CustomRoleManager(customRoles:RoleInfo) extends Gadget[html.Div] {
-    val roleAdder = GadgetRef[RxText]
+  class CustomRoleManager(customRoles:RoleInfo) extends Gadget[html.Div] with RoleEditCompleter {
+    val addDiv = GadgetRef.of[html.Div]
+    val roleDiv = GadgetRef.of[html.Div]
     
-    def createRole(name:String) = {
-      val change = Seq(EditFunctions.ChangePropertyValue(Editing.propPath(page.std.basic.displayNameProp), List(name)))
-      
-      for {
-        role <- Client[EditFunctions].create(page.std.security.customRoleModel, change).call()
+    def roleComplete(newRole: ThingInfo) = {
+      roleDiv <= div()
+      addDiv.mapElemNow { e =>
+        $(e).append((new OneRoleGadget(newRole)).render)
       }
-        // For now, we're just going to reload, instead of trying to do anything clever:
-        yield page.PageManager.reload()
     }
     
     def doRender() =
       div(
-        h4("Existing Roles"),
+        h4("Custom Roles"),
         for {
           role <- customRoles.roles
           if (role.oid.underlying.length > 0)
         }
           yield new OneRoleGadget(role),
-        h4("Create a new Custom Role"),
-        roleAdder <= new RxText(cls:="form-control col-md-3"),
-        " ", 
-        new ButtonGadget(ButtonGadget.Warning, "Add Role", disabled := roleAdder.flatMapRxOrElse(_.length)(_ == 0, true)) ({ () =>
-          createRole(roleAdder.get.text.now)
+          
+        // New Roles will get placed in here:
+        addDiv <= div(),
+        // We stick the Create Role panel in here, when open:
+        roleDiv <= div(),
+        new ButtonGadget(ButtonGadget.Warning, "Add a new Custom Role") ({ () =>
+          val panel = EditRolePanel.create(this)
+          roleDiv <= panel
         })
       )
   }
@@ -103,11 +104,10 @@ class CustomRolesTab(
       guts =
         div(
           h3("Custom Roles"),
-          p(b("Advanced: "),
-            """You can define special custom Roles for your Space, if you need more control. For the moment, you
-              |can only use these Roles in the fine-grained permission system (that is, using them for permissions
-              |such as Who Can Edit); in the future, we will allow you to define Space-wide permissions for people
-              |with these Roles. Note that, for now, you can only add up to one of these Roles per Member.""".stripMargin),
+          p("""You can create Custom Roles, and assign members to them, in order to give them specific Permissions. Permissions assigned to
+              |the Role itself apply to all Things in this Space. You can also use the Security page for a Thing or Model to give a specific
+              |Permission to a specific Role for that Thing or Model.""".stripMargin),
+          p("""Click on a Role to edit it, or to create a Shared Link that will give that Role to anyone who clicks on it.""".stripMargin),
           new CustomRoleManager(customMap)
         )
     }

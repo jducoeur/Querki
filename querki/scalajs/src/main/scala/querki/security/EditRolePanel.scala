@@ -12,14 +12,19 @@ import org.querki.gadgets._
 
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
+import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
 import querki.display.ButtonGadget
 import querki.display.input._
 
+
 /**
  * The panel for editing or creating a Role. Don't create this directly; use the helper functions in the
  * companion object. (Needed because we may need to fetch info from the server to create this.)
+ * 
+ * This panel is a bit experimental, in that it uses an explicit Save button. I'm not entirely sure that
+ * I like this, now that I've done it -- it's inconsistent with the rest of Querki.
  */
 private[security] class EditRolePanel(
     roleOpt: Option[ThingInfo],
@@ -30,6 +35,8 @@ private[security] class EditRolePanel(
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
+  lazy val std = DataAccess.std
+  
   type InputGadgetRef = GadgetRef[InputGadget[_]]
   val nameInput = GadgetRef[InputGadget[_]]
   
@@ -38,9 +45,12 @@ private[security] class EditRolePanel(
   val creating = roleOpt.isEmpty
   def initialName = roleOpt.map(_.displayName).getOrElse("")
   
-  def saveMsg(): PropertyChange = {
+  def changeMsgs(): List[PropertyChange] = {
     def oneSaveMsg(ref: InputGadgetRef): Option[PropertyChange] = ref.mapNow(_.propertyChangeMsg())
-    MultiplePropertyChanges(fields.map(oneSaveMsg).flatten)
+    fields.map(oneSaveMsg).flatten
+  }
+  def saveMsg(): PropertyChange = {
+    MultiplePropertyChanges(changeMsgs())
   }
   
   def doRender() = 
@@ -60,7 +70,7 @@ private[security] class EditRolePanel(
             nameInput <= 
               new TextInputGadget(Seq("form-control", "col-md-3"), value := initialName) 
                 with NoAutoSave
-                with ForProp { val prop = DataAccess.std.basic.displayNameProp }
+                with ForProp { val prop = std.basic.displayNameProp }
           ),
           
           // TODO: list of checkboxes for the permissions of the role
@@ -77,7 +87,14 @@ private[security] class EditRolePanel(
                   }
                     parent.roleComplete(newRole)
                 }
-                case None => ??? // TODO
+                case None => {
+                  for {
+                    // TODO: This really ought to take a single PropertyChange, now that we have
+                    // MultiplePropertyChanges:
+                    newRole <- Client[EditFunctions].create(std.security.customRoleModel, changeMsgs()).call()
+                  }
+                    parent.roleComplete(newRole)
+                }
               }
             })
           )
