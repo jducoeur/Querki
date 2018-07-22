@@ -71,12 +71,12 @@ class StandardThings(h:PassthroughHandlerBase) {
   
   object core {
     val exactlyOneColl = h.pass("Required")
-  	val optionalColl = h.pass("Optional")
-  	val listColl = h.pass("List")
-  	val setColl = h.pass("Set")
-  	
-  	val linkType = h.pass("Thing Type")
-  	val tagType = h.pass("Tag Type")
+    val optionalColl = h.pass("Optional")
+    val listColl = h.pass("List")
+    val setColl = h.pass("Set")
+    
+    val linkType = h.pass("Thing Type")
+    val tagType = h.pass("Tag Type")
   
     val urProp = h.pass("Property")
     val nameProp = h.pass("Link Name")
@@ -96,8 +96,8 @@ class StandardThings(h:PassthroughHandlerBase) {
   object basic {
     val simpleThing = h.pass("Simple-Thing")
     val displayNameProp = h.pass("Name")
-  	val defaultView = h.pass("Default View")
-  	val printView = h.pass("Print View")
+    val defaultView = h.pass("Default View")
+    val printView = h.pass("Print View")
   }
   
   object css {
@@ -138,6 +138,7 @@ class StandardThings(h:PassthroughHandlerBase) {
     val customRoleModel = h.pass("_customRoleModel")
     val inviteTextProp = h.pass("Space Invitation Text")
     val personRolesProp = h.pass("Person Roles")
+    val rolePermissionsProp = h.pass("Role Permissions")
     
     val appliesToSpace = h.pass("_Applies To Space")
     val appliesToModels = h.pass("_Applies To Models")
@@ -160,8 +161,8 @@ class StandardThings(h:PassthroughHandlerBase) {
   
   object types {
     val deriveNameProp = h.pass("_deriveName")
-  	val deriveAlways = h.pass("Always Derive Name")
-  	val deriveNever = h.pass("Never Derive Name")
+    val deriveAlways = h.pass("Always Derive Name")
+    val deriveNever = h.pass("Never Derive Name")
   }
   
   // This is necessary in order to force the objects to come into being. Each of the

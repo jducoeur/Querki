@@ -516,7 +516,7 @@ class AccessControlModule(e:Ecology)
   
   lazy val RolePermissionsProp = new SystemProperty(RolePermissionsOID, LinkType, QSet,
       toProps(
-        setName("Role Permissions"),
+        setName(commonName(_.security.rolePermissionsProp)),
         SkillLevel(SkillLevelAdvanced),
         // TODO: this really should set LinkModel to a Model that all Permissions are under, but we
         // don't have that concept yet:

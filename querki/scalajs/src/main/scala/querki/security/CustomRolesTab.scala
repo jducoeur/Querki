@@ -94,8 +94,9 @@ class CustomRolesTab(
         // We stick the Create Role panel in here, when open:
         roleDiv <= div(),
         new ButtonGadget(ButtonGadget.Warning, "Add a new Custom Role") ({ () =>
-          val panel = EditRolePanel.create(this)
-          roleDiv <= panel
+          EditRolePanel.create(this).map { panel =>
+            roleDiv <= panel
+          }
         })
       )
   }
