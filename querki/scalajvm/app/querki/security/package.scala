@@ -118,8 +118,10 @@ package object security {
     def EditorRole:Thing
     def ManagerRole:Thing
     def CustomRoleModel:Thing
+    def SharedInviteModel:Thing
     
     def CanExplorePerm:Property[OID,OID]
     def IsOpenInvitation:Property[Boolean,Boolean]
+    def InviteRoleLink:Property[OID,OID]
   }
 }

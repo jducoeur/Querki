@@ -563,48 +563,81 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       yield SpaceOps.askSpace[ThingResponse, B](changeRequest)(cb)
   }
   
-  def acceptOpenInvitation(rc:RequestContext, roleId:OID)(implicit state:SpaceState):Future[Option[PublicException]] = {
-    state.anything(roleId) match {
-      // First, make sure that the invitation is still open:
-      case Some(role) if (role.ifSet(Roles.IsOpenInvitation)) => {
-        // TODO: this is much too arbitrary:
-        implicit val timeout = Timeout(30 seconds)
-        val identity = rc.requester.get.mainIdentity
-        withCache { cache =>
-          cache.localPerson(identity.id) match {
-            case Some(person) => {
-              // There's an existing Person, so modify it to add this invitation's role:
-              val existingRoles = person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType)
-              val msg = ChangeProps(rc.requester.get, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
-              (SpaceOps.spaceRegion ? msg) map {
-                case ThingFound(_, _) => None
-                case ThingError(ex, _) => Some(ex)
-              }
-            }
-            case None => {
-              // There is no Person for this Identity, so create it from scratch:
-              val propMap = 
-                toProps(
-                  IdentityLink(identity.id),
-                  InvitationStatusProp(StatusMemberOID),
-                  DisplayNameProp(identity.name),
-                  AccessControl.PersonRolesProp(roleId)) ++
-                (if (identity.kind == IdentityKind.Trivial)
-                   toProps(IsSimpleGuestProp(true))
-                 else
-                   emptyProps)
-              // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
-              // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
-              val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)
-              (SpaceOps.spaceRegion ? msg) map {
-                case ThingFound(_, _) => None
-                case ThingError(ex, _) => Some(ex)
-              }
-            }
+  /**
+   * This is the internal guts of accepting an invite via a Shared Link, once we have resolved what Role the recipient
+   * will get.
+   */
+  private def acceptOpenInvitationForRole(rc:RequestContext, role: Thing)(implicit state:SpaceState):Future[Option[PublicException]] = {
+    val roleId = role.id
+    // TODO: this is much too arbitrary:
+    implicit val timeout = Timeout(30 seconds)
+    val identity = rc.requester.get.mainIdentity
+    withCache { cache =>
+      cache.localPerson(identity.id) match {
+        case Some(person) => {
+          // There's an existing Person, so modify it to add this invitation's role:
+          val existingRoles = person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType)
+          val msg = ChangeProps(rc.requester.get, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
+          (SpaceOps.spaceRegion ? msg) map {
+            case ThingFound(_, _) => None
+            case ThingError(ex, _) => Some(ex)
+          }
+        }
+        case None => {
+          // There is no Person for this Identity, so create it from scratch:
+          val propMap = 
+            toProps(
+              IdentityLink(identity.id),
+              InvitationStatusProp(StatusMemberOID),
+              DisplayNameProp(identity.name),
+              AccessControl.PersonRolesProp(roleId)) ++
+            (if (identity.kind == IdentityKind.Trivial)
+               toProps(IsSimpleGuestProp(true))
+             else
+               emptyProps)
+          // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
+          // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
+          val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)
+          (SpaceOps.spaceRegion ? msg) map {
+            case ThingFound(_, _) => None
+            case ThingError(ex, _) => Some(ex)
           }
         }
       }
-      case _ => fut(Some(new PublicException("Invites.unknownInvitation")))
+    }    
+  }
+  
+  def acceptOpenInvitation(rc:RequestContext, inviteId:OID)(implicit state:SpaceState):Future[Option[PublicException]] = {
+    // All errors show up the same way publicly.
+    // TODO: we really should build some correlation between this reported error that the user sees, and
+    // the internal logging for it:
+    def fail = fut(Some(new PublicException("Invites.unknownInvitation")))
+    
+    state.anything(inviteId) match {
+      // First, make sure that the invitation is still open:
+      case Some(invite) if (invite.ifSet(Roles.IsOpenInvitation)) => {
+        if (invite.model == Roles.SharedInviteModel.id) {
+          // This is a new-style invitation, with a separate invitation object
+          val resultOpt = for {
+            roleId <- invite.firstOpt(Roles.InviteRoleLink)
+            role <- state.anything(roleId)
+          }
+            yield acceptOpenInvitationForRole(rc, role)
+          
+          resultOpt.getOrElse {
+            QLog.error(s"Shared Invite $invite somehow doesn't have a linked Role!")
+            fail
+          }
+        } else if (invite.model == Roles.CustomRoleModel.id) {
+          // This is an old-style invitation, linking directly to the role
+          acceptOpenInvitationForRole(rc, invite)
+        } else {
+          // WTF? This shouldn't be possible, even when hacked:
+          QLog.error(s"Shared Invite $invite is of some unrecognized type! How did this get signed?")
+          fail
+        }
+      }
+      case _ => fail
     }
   }
   

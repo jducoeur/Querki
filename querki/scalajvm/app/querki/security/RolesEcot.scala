@@ -14,6 +14,8 @@ object RolesMOIDs extends EcotIds(51) {
   val CanExplorePermOID = moid(6)
   val CustomRoleModelOID = moid(7)
   val OpenInvitationOID = moid(8)
+  val InviteRoleLinkOID = moid(9)
+  val SharedInviteModelOID = moid(10)
 }
 
 /**
@@ -42,7 +44,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   }
     
   /***********************************************
-   * PERMISSIONS
+   * PERMISSIONS AND PROPERTIES
    ***********************************************/
   
   /**
@@ -61,11 +63,18 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
     toProps(
       setName("_isOpenInvitation"),
       setInternal,
-      Summary("Flag on a Custom Role, indicating that it represents an Open Invitation")))
+      Summary("Flag on a Shared Invite, indicating that it is still open.")))
+  
+  lazy val InviteRoleLink = new SystemProperty(InviteRoleLinkOID, LinkType, Optional,
+    toProps(
+      setName("_inviteRoleLink"),
+      setInternal,
+      Summary("Link from a Shared Invite to the Role that recipients will receive.")))
       
   override lazy val props = Seq(
     CanExplorePerm,
-    IsOpenInvitation
+    IsOpenInvitation,
+    InviteRoleLink
   )
 
   /***********************************************
@@ -121,11 +130,19 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       Core.IsModelProp(true),
       SkillLevel(SkillLevelAdvanced)))
       
+  lazy val SharedInviteModel = ThingState(SharedInviteModelOID, systemOID, RootOID,
+    toProps(
+      setName("_sharedInviteModel"),
+      setInternal,
+      Summary("The Thing pointer to by a Shared Invite. Still good iff _isOpenInvitation is true. Not to be used directly."),
+      Core.IsModelProp(true)))
+      
   override lazy val things = Seq(
     CommentatorRole,
     ContributorRole,
     EditorRole,
     ManagerRole,
-    CustomRoleModel
+    CustomRoleModel,
+    SharedInviteModel
   )
 }

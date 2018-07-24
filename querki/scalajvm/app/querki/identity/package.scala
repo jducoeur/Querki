@@ -97,7 +97,7 @@ package object identity {
   
   trait Person extends EcologyInterface {
     def IdentityLink:Property[OID,OID]
-    def InviteText:Property[QLText, String]    
+    def InviteText:Property[QLText, String]
     
     def sendValidationEmail(rc:RequestContext, email:EmailAddress, user:User):Future[Unit]
     def validateEmail(user:User, validationStr:String):Future[Boolean]
