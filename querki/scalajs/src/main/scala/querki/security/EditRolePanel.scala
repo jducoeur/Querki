@@ -26,9 +26,6 @@ import SaveablePropertyValue._
 /**
  * The panel for editing or creating a Role. Don't create this directly; use the helper functions in the
  * companion object. (Needed because we may need to fetch info from the server to create this.)
- * 
- * This panel is a bit experimental, in that it uses an explicit Save button. I'm not entirely sure that
- * I like this, now that I've done it -- it's inconsistent with the rest of Querki.
  */
 private[security] class EditRolePanel(
     allPerms: Seq[PermInfo],
@@ -92,7 +89,8 @@ private[security] class EditRolePanel(
           
           // The Shared Invitations for this Role (doesn't actually participate in Save. You have
           // to create the Role first, and then add Invitations for it.
-          // TODO: this is awkward. How can we make it better?
+          // TODO: this is awkward UX. How can we make it better? Ideally, I'd like to be able to
+          // set up the invitation as part of creating the Role.
           roleOpt.map { role =>
             MSeq(
               new RoleInvitesList(invites, role),
