@@ -143,6 +143,7 @@ abstract class ItemListManager[TItem](itemList: Seq[TItem], title: String, butto
       addDiv <= div(),
       // We stick the edit panel in here, when you add a new one:
       itemDiv <= div(),
+      // TODO: when you press the Create button, hide it until we're done:
       new ButtonGadget(ButtonGadget.Warning, buttonLabel) ({ () =>
         prepToCreate(this).map { panel =>
           itemDiv <= panel

@@ -7,6 +7,8 @@ import querki.data._
 import querki.pages.ThingPageDetails
 
 trait ThingFunctions {
+  import ThingFunctions._
+  
   /**
    * Fetch the initial info for showing the Client.
    */
@@ -37,8 +39,17 @@ trait ThingFunctions {
   
   /**
    * Fetch the raw values of the Properties on this Thing.
+   * 
+   * NOTE: getPropertyValues(), below, is often more useful.
    */
   def getProperties(thingId:TID):Future[Seq[PropValInfo]]
+  
+  /**
+   * Fetches the values of the specified Properties, in a better-typed way.
+   * 
+   * The resulting Map contains the values that are actually defined; if not, it will be empty.
+   */
+  def getPropertyValues(thingId: TID, props: List[TOID]): Future[Map[TOID, PV]]
   
   /**
    * Fetches the rendered value of the specified Property of this Thing.
@@ -76,4 +87,12 @@ trait ThingFunctions {
    * Reloads this Space. Mainly intended for testing.
    */
   def reloadSpace():Future[Unit]
+}
+
+object ThingFunctions {
+  /**
+   * PV is a better replacement for PropValInfo, producing strongly-typed results.
+   */
+  sealed trait PV
+  case class BoolV(vs: List[Boolean]) extends PV
 }

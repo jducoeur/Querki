@@ -21,6 +21,8 @@ import querki.globals._
 import querki.security.SecurityFunctions._
 import querki.util.ScalatagUtils
 
+import SaveablePropertyValue._
+
 /**
  * The panel for editing or creating a Role. Don't create this directly; use the helper functions in the
  * companion object. (Needed because we may need to fetch info from the server to create this.)
@@ -47,14 +49,15 @@ private[security] class EditRolePanel(
   val nameInput = GadgetRef[InputGadget[_]]
   val permCheckboxes = GadgetRef[InputGadget[_]]
   
-  val fields: List[InputGadgetRef] = List(nameInput, permCheckboxes)
-  
   val creating = roleOpt.isEmpty
   def initialName = roleOpt.map(_.displayName).getOrElse("")
   
   def changeMsgs(): List[PropertyChange] = {
-    def oneSaveMsg(ref: InputGadgetRef): Option[PropertyChange] = ref.mapNow(_.propertyChangeMsg())
-    fields.map(oneSaveMsg).flatten
+    def s[T: SaveablePropertyValue](t: T) = t.getSaveable
+    List(
+      s(nameInput),
+      s(permCheckboxes)
+    ).flatten
   }
   def saveMsg(): PropertyChange = {
     MultiplePropertyChanges(changeMsgs())

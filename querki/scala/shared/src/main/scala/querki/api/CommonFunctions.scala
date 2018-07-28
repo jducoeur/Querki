@@ -142,6 +142,7 @@ class StandardThings(h:PassthroughHandlerBase) {
     val personRolesProp = h.pass("Person Roles")
     val rolePermissionsProp = h.pass("Role Permissions")
     val inviteRoleLink = h.pass("_inviteRoleLink")
+    val inviteRequiresMembership = h.pass("_inviteRequiresMembership")
     
     val appliesToSpace = h.pass("_Applies To Space")
     val appliesToModels = h.pass("_Applies To Models")

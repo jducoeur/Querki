@@ -15,6 +15,8 @@ import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 import querki.tags.IsTag
 
+import ThingFunctions._
+
 class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ThingFunctions {
   
   lazy val Basic = interface[querki.basic.Basic]
@@ -99,6 +101,26 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   
   def getProperties(thingId:TID):Future[Seq[PropValInfo]] = withThing(thingId) { thing =>
     ClientApi.propValInfo(thing, rc)(state)
+  }
+  
+  def getPropertyValues(thingId: TID, props: List[TOID]): Future[Map[TOID, PV]] = withThing(thingId) { thing =>
+    implicit val s = state
+    val result = (Map.empty[TOID, PV] /: props) { (m, propTOID) =>
+      val propId = OID.fromTOID(propTOID)
+      thing.getPropOpt(propId) match {
+        case Some(pv) => {
+          // TODO: we should have a better mechanism that goes from a server-side PropAndVal to an API PV:
+          if (pv.prop.pType == Core.YesNoType) {
+            m + (propTOID -> BoolV(pv.v.rawList(Core.YesNoType)))
+          } else {
+            QLog.error(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
+            m
+          }
+        }
+        case None => m
+      }
+    }
+    fut(result)
   }
   
   def getPropertyDisplay(thingId:TID, propIdStr:TID):Future[Option[Wikitext]] = withThing(thingId) { thing =>

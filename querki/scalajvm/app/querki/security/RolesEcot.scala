@@ -17,6 +17,7 @@ object RolesMOIDs extends EcotIds(51) {
   val InviteRoleLinkOID = moid(9)
   val SharedInviteModelOID = moid(10)
   val CanManageSecurityPermOID = moid(11)
+  val InviteRequiresMembershipOID = moid(12)
 }
 
 /**
@@ -80,12 +81,19 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       setName(commonName(_.security.inviteRoleLink)),
       setInternal,
       Summary("Link from a Shared Invite to the Role that recipients will receive.")))
+  
+  lazy val InviteRequiresMembership = new SystemProperty(InviteRequiresMembershipOID, YesNoType, Optional,
+    toProps(
+      setName(commonName(_.security.inviteRequiresMembership)),
+      setInternal,
+      Summary("When set on a Shared Invitation Link, that Link will force recipients to sign up, rather than being Guests.")))
       
   override lazy val props = Seq(
     CanExplorePerm,
     CanManageSecurityPerm,
     IsOpenInvitation,
-    InviteRoleLink
+    InviteRoleLink,
+    InviteRequiresMembership
   )
 
   /***********************************************

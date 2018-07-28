@@ -9,9 +9,11 @@ import autowire._
 import org.querki.gadgets._
 
 import querki.api.ThingFunctions
-import querki.data.ThingInfo
+import querki.api.ThingFunctions._
+import querki.data.{PropValInfo, ThingInfo, TOID}
 import querki.display.ButtonGadget
 import querki.display.input._
+import querki.display.rx.RxCheckbox
 import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
@@ -38,6 +40,64 @@ class RoleInvitesList(invites: Seq[ThingInfo], role: ThingInfo)(implicit e: Ecol
   def prepToCreate(completer: EditCompleter[ThingInfo]) = EditShareableInvite.create(role, completer)
 }
 
+
+trait SaveableBase extends EcologyMember {
+  lazy val Editing = interface[querki.editing.Editing]
+  
+  def prop: ThingInfo
+  def values: List[String]
+  
+  def path = Editing.propPath(prop.oid)
+  def propertyChangeMsg() = ChangePropertyValue(path, values)  
+}
+
+trait RxSaveable[R] extends SaveableBase {
+  val rx: Rx[R]
+  def values = saveables(rx.now)
+  def saveables(r: R): List[String]
+}
+case class SaveableRxBoolean(prop: ThingInfo, rx: Rx[Boolean])(implicit val ecology: Ecology)
+  extends RxSaveable[Boolean] 
+{
+  def saveables(r: Boolean) = 
+    if (r)
+      List("on")
+    else
+      List("off")
+}
+
+case class HardcodedSaveable(prop: ThingInfo, values: List[String])(implicit val ecology: Ecology)
+  extends SaveableBase
+
+/**
+ * Typeclass representing something that contains a Property Value that we know how to Save.
+ */
+trait SaveablePropertyValue[T] {
+  // Fetch the change represented here, if that currently makes sense.
+  def get(saveable: T): Option[PropertyChange]
+}
+
+object SaveablePropertyValue {
+  implicit class SaveableOps[S: SaveablePropertyValue](s: S) {
+    def getSaveable: Option[PropertyChange] = implicitly[SaveablePropertyValue[S]].get(s)
+  }
+  
+  implicit val saveableInputGadget = new SaveablePropertyValue[InputGadget[_]] {
+    def get(g: InputGadget[_]) = Some(g.propertyChangeMsg())
+  }
+  implicit def saveableGadgetRef[S <: Gadget[_] : SaveablePropertyValue] = new SaveablePropertyValue[GadgetRef[S]] {
+    def get(gr: GadgetRef[S]) = gr.mapNow(_.getSaveable).flatten
+  }
+  implicit def saveableFromBase[B <: SaveableBase] = new SaveablePropertyValue[B] {
+    def get(h: B) = Some(h.propertyChangeMsg())
+  }
+}
+
+
+
+
+import SaveablePropertyValue._
+
 /**
  * This is the actual editor for Shareable Invitations.
  * 
@@ -45,6 +105,7 @@ class RoleInvitesList(invites: Seq[ThingInfo], role: ThingInfo)(implicit e: Ecol
  */
 class EditShareableInvite(
     inviteOpt: Option[ThingInfo],
+    invitePropsOpt: Option[Map[TOID, PV]],
     forRole: ThingInfo,
     completer: EditCompleter[ThingInfo]
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
@@ -55,33 +116,37 @@ class EditShareableInvite(
   
   lazy val std = DataAccess.std
   
+  // TBD: this approach to fetching the values from the server is still only so-so; in particular, the
+  // way that the fetch and test are so separate from each and poorly typed. But it's an improvement...
+  val requiresMembership: Var[Boolean] = 
+    invitePropsOpt match {
+      case Some(propMap) => {
+        val current = for {
+          inviteProps <- invitePropsOpt
+          BoolV(vList) <- inviteProps.get(std.security.inviteRequiresMembership.oid2)
+          v <- vList.headOption
+        }
+          yield v
+        
+        Var(current.getOrElse(false))
+      }
+      case None => Var(false)
+    }
+  
   type InputGadgetRef = GadgetRef[InputGadget[_]]
   
   val nameInput = GadgetRef[InputGadget[_]]
-  
-  // TODO: lift the common concept of a "saveable" out of InputGadget, to actually be this
-  // static value. Or create a "saveable" typeclass, as mentioned below:
-  class RoleLinkSaver extends
-    InputGadget(ecology) with NoAutoSave with ForProp
-  {
-    val prop = std.security.inviteRoleLink
-    def values = List(forRole.oid2.underlying)
-    def doRender = ???
-    def hook = ???
-  }
-  // TODO: This is unreasonably complex. Should fields actually take a context bound instead, and
-  // we can have typeclass instances for it?
-  val roleSaver = GadgetRef[InputGadget[_]]
-  roleSaver <= new RoleLinkSaver
-  
-  val fields: List[InputGadgetRef] = List(nameInput, roleSaver)
   
   val creating = inviteOpt.isEmpty
   def initialName = inviteOpt.map(_.displayName).getOrElse("")
   
   def changeMsgs(): List[PropertyChange] = {
-    def oneSaveMsg(ref: InputGadgetRef): Option[PropertyChange] = ref.mapNow(_.propertyChangeMsg())
-    fields.map(oneSaveMsg).flatten
+    def s[T: SaveablePropertyValue](t: T) = t.getSaveable
+    List(
+      s(nameInput),
+      s(HardcodedSaveable(std.security.inviteRoleLink, List(forRole.oid2.underlying))),
+      s(SaveableRxBoolean(std.security.inviteRequiresMembership, requiresMembership))
+    ).flatten
   }
   def saveMsg(): PropertyChange = {
     MultiplePropertyChanges(changeMsgs())
@@ -108,6 +173,13 @@ class EditShareableInvite(
               new TextInputGadget(Seq("form-control", "col-md-3"), value := initialName)
                 with NoAutoSave
                 with ForProp { val prop = std.basic.displayNameProp }
+          ),
+          
+          div(cls := "form-group",
+            label("Does this Invitation require login?"),
+            p("""If you check this, people who use this Invitation will be required to sign up; they
+                |cannot participate as anonymous guests.""".stripMargin),
+            new RxCheckbox(requiresMembership, "Login required")
           ),
           
           div(
@@ -144,17 +216,19 @@ class EditShareableInvite(
 object EditShareableInvite {
   def prepToEdit(invite: ThingInfo, forRole: ThingInfo, completer: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
     val Client = ecology.api[querki.client.Client]
+    val DataAccess = ecology.api[querki.data.DataAccess]
+    val std = DataAccess.std
     
     for {
-      dummy <- Future.successful(())
+      inviteProps <- Client[ThingFunctions].getPropertyValues(invite, List(std.security.inviteRequiresMembership.oid2)).call()
     }
-      yield new EditShareableInvite(Some(invite), forRole, completer)
+      yield new EditShareableInvite(Some(invite), Some(inviteProps), forRole, completer)
   }
   
   def create(forRole: ThingInfo, completer: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
     for {
       dummy <- Future.successful(())
     }
-      yield new EditShareableInvite(None, forRole, completer)
+      yield new EditShareableInvite(None, None, forRole, completer)
   }
 }
