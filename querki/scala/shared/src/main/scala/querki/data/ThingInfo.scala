@@ -45,6 +45,10 @@ trait BasicThingInfo {
  */
 case class ThingInfo(
   oid:TID, 
+  // TODO: this is duplicative, but it's so we can count on having an OID when we want it.
+  // This wants to get rationalized with the oid field, which might be a name or an OID.
+  // (It's really the ThingId.)
+  oid2: TOID,
   linkName:Option[String],
   // We transmit the raw form, for the occasions where we need it.
   // Use this with great care, and always be sure to escape it when needed!

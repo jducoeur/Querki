@@ -3,6 +3,7 @@ package querki.security
 import scala.concurrent.Future
 
 import querki.data._
+import querki.editing.EditFunctions.PropertyChange
 
 trait SecurityFunctions {
   import SecurityFunctions._
@@ -57,33 +58,14 @@ trait SecurityFunctions {
   def getAllPerms():Future[Seq[PermInfo]]
   
   /**
-   * Fetch the available permission levels for Shareable Links. These should be presented to
-   * the user who is creating the Link, and the actual permissions passed in to
-   * makeShareableLink().
-   * 
-   * Note that this is deliberately a bit over-designed, to make it easier to change these
-   * levels, or even add custom options, down the road. It also allows for a possible
-   * fine-grained UI in the Client, which lets a power user specify the permissions more
-   * precisely.
+   * Fetch all of the Shared Links associated with this Role.
    */
-  def getLinkPermChoices():Future[Seq[LinkPermsChoice]]
+  def getSharedLinksForRole(roleId: TOID): Future[Seq[ThingInfo]]
   
   /**
-   * This creates a new Open Invitation, and returns a signed URL for getting into it.
-   * 
-   * IMPORTANT: this uses the coarse-grained security model, and the permissions are Space-wide.
-   * This is intentional -- trying to get it to work correctly with the fine-grained model is
-   * tricky at best, since that would involve adding explicit overrides to specific Things, and
-   * thus overriding the expected default behavior. It would likely result in unexpected behavior
-   * on the target Thing.
-   * 
-   * We would really *like* to be able to have Model/Instance-specific invitations, but it requires
-   * enhancements to the fine-grained Security system. See QI.7w4g8ht.
-   * 
-   * @param name The name of the resulting Custom Role.
-   * @param perms The permissions granted by this Link.
+   * Given the TID of a Shared Link Thing, this returns the URL to pass around.
    */
-  def makeShareableLink(name:String, perms:Seq[TOID]):Future[String]
+  def getSharedLinkURL(link: TOID): Future[String]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])

@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import org.scalajs.dom.html
 
+import scalatags.JsDom.TypedTag
 import scalatags.JsDom.all._
 import autowire._
 import rx._
@@ -18,44 +19,159 @@ import querki.editing.EditFunctions
 import querki.globals._
 import querki.pages.Page
 
-trait RoleEditCompleter {
-  def roleComplete(roleOpt: Option[ThingInfo]): Unit
+/**
+ * Represents the concept of what to do when editing is finished.
+ * 
+ * TODO: this really should just be a callback function. Rewrite it!
+ */
+trait EditCompleter[T] {
+  def editComplete(itemOpt: Option[T]): Unit
 }
+
+abstract class OneItemGadget[TItem](in: TItem)(implicit val ecology: Ecology, ctx: Ctx.Owner) 
+  extends Gadget[html.Div] with EditCompleter[TItem]
+{
+  itemGadget =>
+
+  //////////////////////
+  //
+  // Abstract Members
+  //
+  // Concrete classes must fill these in.
+  //
+    
+  /**
+   * Given one Item (in practice, the value currently being displayed), get the String to display
+   * for it.
+   */
+  def displayName(current: TItem): String
   
-class OneRoleGadget(roleIn: ThingInfo)(implicit val ecology: Ecology, ctx: Ctx.Owner) 
-  extends Gadget[html.Div] with RoleEditCompleter 
-{ roleGadget =>
-  val role = Var(roleIn)
+  /**
+   * Given one Item (in practice, the value currently being displayed), set up an Editor Gadget
+   * for it. This is a Future[] specifically to allow you to do server communication, in order
+   * to fetch more-detailed information.
+   * 
+   * @param current The Item to edit.
+   * @param completer The object that will be called when editing is finished.
+   * @return The Edit Gadget, ready to insert into the page.
+   */
+  def prepToEdit(current: TItem, completer: EditCompleter[TItem]): Future[Gadget[html.Div]]
   
-  class RoleDisplayGadget() extends Gadget[html.Anchor] {
+  ////////////////////
+    
+  val v = Var(in)
+  val itemDiv = GadgetRef.of[html.Div]
+  
+  class ItemDisplayGadget() extends Gadget[html.Anchor] {
     override def onCreate(e: html.Anchor) = {
       $(e).click { evt: JQueryEventObject =>
-        EditRolePanel.prepToEdit(role.now, roleGadget).map { panel: Gadget[html.Div] =>
-          roleDiv <= panel
+        prepToEdit(v.now, itemGadget).map { panel: Gadget[html.Div] =>
+          itemDiv <= panel
         }
         evt.preventDefault()
       }      
     }
     
-    def doRender() = a(href := "#", role.now.displayName)
+    def doRender() = a(href := "#", displayName(v.now))
   }
   
-  val roleDiv = GadgetRef.of[html.Div]
-  
-  def displayRoleName() = 
-    roleDiv <= div(
-      new RoleDisplayGadget()
+  def displayItemName() = 
+    itemDiv <= div(
+      new ItemDisplayGadget()
     )
   
-  def roleComplete(newRoleOpt: Option[ThingInfo]) = {
-    newRoleOpt.map(newRole => role() = newRole)
-    displayRoleName()
+  def editComplete(newItemOpt: Option[TItem]) = {
+    newItemOpt.map(newItem => v() = newItem)
+    displayItemName()
   }
   
   def doRender() =
     div(
-      displayRoleName()
+      displayItemName()
     )
+}
+
+/**
+ * Shows a List of Items, each of which can be clicked on to edit it. Includes a Create button for adding another one.
+ */
+abstract class ItemListManager[TItem](itemList: Seq[TItem], title: String, buttonLabel: String, details: TypedTag[_])
+  (implicit val ecology: Ecology, ctx: Ctx.Owner)
+  extends Gadget[html.Div] with EditCompleter[TItem]
+{
+  //////////////////////
+  //
+  // Abstract Members
+  //
+  // Concrete classes must fill these in.
+  //
+
+  /**
+   * Display one Item, by creating an instance of a subclass of OneItemGadget for it.
+   */
+  def showItem(item: TItem): OneItemGadget[TItem]
+  
+  /**
+   * Do whatever is necessary to set up an Editor, ready to create a new Item. This returns a
+   * Future, specifically so that you may do server communication to fetch additional info.
+   */
+  def prepToCreate(completer: EditCompleter[TItem]): Future[Gadget[html.Div]]
+  
+  /////////////////////
+  
+  val addDiv = GadgetRef.of[html.Div]
+  val itemDiv = GadgetRef.of[html.Div]
+  
+  def editComplete(newItemOpt: Option[TItem]) = {
+    itemDiv <= div()
+    newItemOpt.map { newItem =>
+      addDiv.mapElemNow { e =>
+        $(e).append(showItem(newItem).render)
+      }
+    }
+  }
+  
+  def doRender() =
+    div(
+      h4(title),
+      details,
+      for {
+        item <- itemList
+      }
+        yield showItem(item),
+        
+      // New Items will get placed in here:
+      addDiv <= div(),
+      // We stick the edit panel in here, when you add a new one:
+      itemDiv <= div(),
+      new ButtonGadget(ButtonGadget.Warning, buttonLabel) ({ () =>
+        prepToCreate(this).map { panel =>
+          itemDiv <= panel
+        }
+      })
+    )
+}
+  
+class OneRoleGadget(roleIn: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner) 
+  extends OneItemGadget[ThingInfo](roleIn)
+{
+  def displayName(current: ThingInfo): String = current.displayName
+  def prepToEdit(current: ThingInfo, completer: EditCompleter[ThingInfo]): Future[EditRolePanel] =
+    EditRolePanel.prepToEdit(current, completer)
+}
+
+class CustomRoleList(customRoles:RoleInfo)(implicit e: Ecology, ctx: Ctx.Owner)
+  extends ItemListManager(
+    customRoles.roles, 
+    "Custom Roles", 
+    "Add a new Custom Role",
+    div(
+      p("""You can create Custom Roles, and assign members to them, in order to give them specific Permissions. Permissions assigned to
+          |the Role itself apply to all Things in this Space. You can also use the Security page for a Thing or Model to give a specific
+          |Permission to a specific Role for that Thing or Model.""".stripMargin),
+      p("""Click on a Role to edit it, or to create a Shared Link that will give that Role to anyone who clicks on it.""".stripMargin)))
+{
+  def showItem(role: ThingInfo) = new OneRoleGadget(role)
+  def prepToCreate(completer: EditCompleter[ThingInfo]) = EditRolePanel.create(completer)
 }
 
 class CustomRolesTab(
@@ -64,55 +180,5 @@ class CustomRolesTab(
   )(implicit val ecology: Ecology, ctx: Ctx.Owner)
   extends TabGadget(SharingPage.Tab.CustomRoles.entryName, "custom", "Roles") with EcologyMember
 {
-  lazy val Client = interface[querki.client.Client]
-  lazy val Editing = interface[querki.editing.Editing]
-
-  class CustomRoleManager(customRoles:RoleInfo) extends Gadget[html.Div] with RoleEditCompleter {
-    val addDiv = GadgetRef.of[html.Div]
-    val roleDiv = GadgetRef.of[html.Div]
-    
-    def roleComplete(newRoleOpt: Option[ThingInfo]) = {
-      roleDiv <= div()
-      newRoleOpt.map { newRole =>
-        addDiv.mapElemNow { e =>
-          $(e).append((new OneRoleGadget(newRole)).render)
-        }
-      }
-    }
-    
-    def doRender() =
-      div(
-        h4("Custom Roles"),
-        for {
-          role <- customRoles.roles
-          if (role.oid.underlying.length > 0)
-        }
-          yield new OneRoleGadget(role),
-          
-        // New Roles will get placed in here:
-        addDiv <= div(),
-        // We stick the Create Role panel in here, when open:
-        roleDiv <= div(),
-        new ButtonGadget(ButtonGadget.Warning, "Add a new Custom Role") ({ () =>
-          EditRolePanel.create(this).map { panel =>
-            roleDiv <= panel
-          }
-        })
-      )
-  }
-  
-  def tabContent =
-    for {
-      dummy <- Future.successful(())
-      guts =
-        div(
-          h3("Custom Roles"),
-          p("""You can create Custom Roles, and assign members to them, in order to give them specific Permissions. Permissions assigned to
-              |the Role itself apply to all Things in this Space. You can also use the Security page for a Thing or Model to give a specific
-              |Permission to a specific Role for that Thing or Model.""".stripMargin),
-          p("""Click on a Role to edit it, or to create a Shared Link that will give that Role to anyone who clicks on it.""".stripMargin),
-          new CustomRoleManager(customMap)
-        )
-    }
-      yield guts 
+  def tabContent = Future.successful(div(new CustomRoleList(customMap)))
 }

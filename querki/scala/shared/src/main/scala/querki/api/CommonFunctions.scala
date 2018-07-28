@@ -129,6 +129,7 @@ class StandardThings(h:PassthroughHandlerBase) {
   
   object roles {
     val canExplorePerm = h.pass("Who Can Explore")
+    val canManageSecurityPerm = h.pass("Who Can Manage Security")
   }
   
   object security {
@@ -136,9 +137,11 @@ class StandardThings(h:PassthroughHandlerBase) {
     val canCreatePerm = h.pass("Who Can Create")
     val canDesignPerm = h.pass("Who Can Design")
     val customRoleModel = h.pass("_customRoleModel")
+    val sharedInviteModel = h.pass("_sharedInviteModel")
     val inviteTextProp = h.pass("Space Invitation Text")
     val personRolesProp = h.pass("Person Roles")
     val rolePermissionsProp = h.pass("Role Permissions")
+    val inviteRoleLink = h.pass("_inviteRoleLink")
     
     val appliesToSpace = h.pass("_Applies To Space")
     val appliesToModels = h.pass("_Applies To Models")

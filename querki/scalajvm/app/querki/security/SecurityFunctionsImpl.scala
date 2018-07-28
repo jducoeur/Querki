@@ -239,21 +239,60 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     fut(choices)
   }
   
-  def makeShareableLink(name:String, permTIDs:Seq[TOID]):Future[String] = {
-    if (!rc.isOwner)
+  def getSharedLinksForRole(roleTid: TOID): Future[Seq[ThingInfo]] = {
+    if (!AccessControl.hasPermission(Roles.CanManageSecurityPerm, state, user, state.id))
       throw new NotAllowedException()
     
-    val makeRoleMsg = CreateThing(user, state.id, Kind.Thing, RolesMOIDs.CustomRoleModelOID, 
-      toProps(
-        Basic.DisplayNameProp(name),
-        AccessControl.RolePermissionsProp(permTIDs.map(OID.fromTOID(_)):_*),
-        Roles.IsOpenInvitation(true)))
-        
-    for {
-      ThingFound(roleId, newState) <- spaceRouter ? makeRoleMsg
-      url = NotifyInvitations.generateShareableLink(roleId, newState)
-    }
-      yield url
-
+    val roleId = OID.fromTOID(roleTid)
+    
+    // TODO: yes, this is ugly with the hard .get. But this is a real error, that suggests
+    // something bad is going on, if it fails.
+    val link = state.anything(roleId).get
+    
+    val allLinks = state.children(Roles.SharedInviteModel).toList
+    
+    val linksForThisRole = allLinks.collect { case link =>
+      for {
+        linkRoleId <- link.firstOpt(Roles.InviteRoleLink)
+        if (linkRoleId == roleId)
+      }
+        yield link
+    }.flatten
+    
+    Future.sequence(linksForThisRole.map(ClientApi.thingInfo(_, rc)))
   }
+  
+  def getSharedLinkURL(linkId: TOID): Future[String] = {
+    if (!AccessControl.hasPermission(Roles.CanManageSecurityPerm, state, user, state.id))
+      throw new NotAllowedException()
+    
+    // TODO: yes, this is ugly with the hard .get. But this is a real error, that suggests
+    // something bad is going on, if it fails.
+    val link = state.anything(OID.fromTOID(linkId)).get
+    
+    if (!link.ifSet(Roles.IsOpenInvitation))
+      // Again, this shouldn't happen -- somebody is trying to get the URL of a closed Shared Link.
+      throw new NotAllowedException()
+    
+    // Okay -- at this point, we have what appears to be a legit Link, so generate the URL:
+    fut(NotifyInvitations.generateShareableLink(link.id, state))
+  }
+//  
+//  def makeShareableLink(name:String, permTIDs:Seq[TOID]):Future[String] = {
+//    if (!rc.isOwner)
+//      throw new NotAllowedException()
+//    
+//    val makeRoleMsg = CreateThing(user, state.id, Kind.Thing, RolesMOIDs.CustomRoleModelOID, 
+//      toProps(
+//        Basic.DisplayNameProp(name),
+//        AccessControl.RolePermissionsProp(permTIDs.map(OID.fromTOID(_)):_*),
+//        Roles.IsOpenInvitation(true)))
+//        
+//    for {
+//      ThingFound(roleId, newState) <- spaceRouter ? makeRoleMsg
+//      url = NotifyInvitations.generateShareableLink(roleId, newState)
+//    }
+//      yield url
+//
+//  }
 }

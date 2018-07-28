@@ -121,6 +121,7 @@ package object security {
     def SharedInviteModel:Thing
     
     def CanExplorePerm:Property[OID,OID]
+    def CanManageSecurityPerm: Property[OID, OID]
     def IsOpenInvitation:Property[Boolean,Boolean]
     def InviteRoleLink:Property[OID,OID]
   }

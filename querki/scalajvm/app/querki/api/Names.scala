@@ -1,6 +1,6 @@
 package querki.api
 
-import models.{Kind, Wikitext}
+import models.{Kind, UnknownOID, Wikitext}
 
 import querki.data.{ThingInfo, TID}
 
@@ -35,6 +35,7 @@ private [api] object NamePassthroughHandler extends PassthroughHandlerBase {
     // The only field that matters here is the linkName:
     ThingInfo(
       tid,
+      UnknownOID.toTOID,
       Some(name), 
       Wikitext(""),
       tid,

@@ -16,6 +16,7 @@ object RolesMOIDs extends EcotIds(51) {
   val OpenInvitationOID = moid(8)
   val InviteRoleLinkOID = moid(9)
   val SharedInviteModelOID = moid(10)
+  val CanManageSecurityPermOID = moid(11)
 }
 
 /**
@@ -25,6 +26,7 @@ object RolesMOIDs extends EcotIds(51) {
  */
 class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   import RolesMOIDs._
+  import querki.api.commonName
   
   val AccessControl = initRequires[AccessControl]
   val Apps = initRequires[querki.apps.Apps]
@@ -52,12 +54,20 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
    * put it.
    */
   lazy val CanExplorePerm = AccessControl.definePermission(CanExplorePermOID, 
-      querki.api.commonName(_.roles.canExplorePerm),
+      commonName(_.roles.canExplorePerm),
       "These people are allowed to explore this Space, with functions like Search, Explore, All Things and so on. If disabled, these people will not see those features.",
       Seq(AccessControl.PublicTag, AccessControl.OwnerTag),
       Seq(AccessControl.AppliesToSpace),
       false,
       true)
+      
+  lazy val CanManageSecurityPerm = AccessControl.definePermission(CanManageSecurityPermOID, 
+      commonName(_.roles.canManageSecurityPerm), 
+      "These people are allowed to manage security -- invite people, create Roles, and so on", 
+      Seq(AccessControl.OwnerTag), 
+      Seq(AccessControl.AppliesToSpace), 
+      false, 
+      false)
       
   lazy val IsOpenInvitation = new SystemProperty(OpenInvitationOID, YesNoType, Optional,
     toProps(
@@ -67,12 +77,13 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   
   lazy val InviteRoleLink = new SystemProperty(InviteRoleLinkOID, LinkType, Optional,
     toProps(
-      setName("_inviteRoleLink"),
+      setName(commonName(_.security.inviteRoleLink)),
       setInternal,
       Summary("Link from a Shared Invite to the Role that recipients will receive.")))
       
   override lazy val props = Seq(
     CanExplorePerm,
+    CanManageSecurityPerm,
     IsOpenInvitation,
     InviteRoleLink
   )
@@ -115,7 +126,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
         |implemented, Editors will be able to moderate contributions from non-Members.""".stripMargin,
       editorPerms)
       
-  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm) ++ editorPerms
+  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm, CanManageSecurityPerm) ++ editorPerms
   lazy val ManagerRole =
     defineRole(ManagerOID, "Manager Role", "Manager",
       """Manager -- can do everything an Editor can, plus almost everything the Owner of the Space can do. You should only make
@@ -124,18 +135,26 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   lazy val CustomRoleModel = ThingState(CustomRoleModelOID, systemOID, AccessControl.RoleModel,
     toProps(
-      setName(querki.api.commonName(_.security.customRoleModel)),
+      setName(commonName(_.security.customRoleModel)),
       Categories(SecurityTag),
       Summary("The model underlying custom user-defined Roles"),
       Core.IsModelProp(true),
-      SkillLevel(SkillLevelAdvanced)))
+      SkillLevel(SkillLevelAdvanced),
+      // TODO: this is too coarse-grained and hard-coded. In principle, we should have a Who Can Manage Security
+      // Permission that controls this. But we don't currently have a way to delegate from one Permission
+      // (CanCreate) to another (CanManageSecurity), so we'll deal with just keeping it locked down.
+      AccessControl.CanCreateProp(ManagerRole),
+      AccessControl.CanEditProp(ManagerRole)))
       
   lazy val SharedInviteModel = ThingState(SharedInviteModelOID, systemOID, RootOID,
     toProps(
-      setName("_sharedInviteModel"),
+      setName(commonName(_.security.sharedInviteModel)),
       setInternal,
       Summary("The Thing pointer to by a Shared Invite. Still good iff _isOpenInvitation is true. Not to be used directly."),
-      Core.IsModelProp(true)))
+      Core.IsModelProp(true),
+      // TODO: see above comment on CustomRoleModel
+      AccessControl.CanCreateProp(ManagerRole),
+      AccessControl.CanEditProp(ManagerRole)))
       
   override lazy val things = Seq(
     CommentatorRole,

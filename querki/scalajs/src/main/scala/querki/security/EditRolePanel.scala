@@ -19,6 +19,7 @@ import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
 import querki.security.SecurityFunctions._
+import querki.util.ScalatagUtils
 
 /**
  * The panel for editing or creating a Role. Don't create this directly; use the helper functions in the
@@ -31,9 +32,10 @@ private[security] class EditRolePanel(
     allPerms: Seq[PermInfo],
     roleOpt: Option[ThingInfo],
     rolePropsOpt: Option[Seq[PropValInfo]],
-    parent: RoleEditCompleter
+    invites: Seq[ThingInfo],
+    parent: EditCompleter[ThingInfo]
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
-  extends Gadget[html.Div] with EcologyMember
+  extends Gadget[html.Div] with EcologyMember with ScalatagUtils
 {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -58,6 +60,8 @@ private[security] class EditRolePanel(
     MultiplePropertyChanges(changeMsgs())
   }
   
+  def spacer = p(" ")
+  
   def doRender() = 
     div(cls := "panel panel-default",
       div(cls := "panel-heading",
@@ -70,6 +74,7 @@ private[security] class EditRolePanel(
       ),
       div(cls := "panel-body",
         form(
+          // Edit the name of the Role:
           div(cls := "form-group",
             label("Role Name"),
             nameInput <= 
@@ -78,10 +83,21 @@ private[security] class EditRolePanel(
                 with ForProp { val prop = std.basic.displayNameProp }
           ),
           
+          // The permissions for this Role:
           permCheckboxes <= new PermCheckboxes(allPerms, rolePropsOpt, std),
+          spacer,
           
-          // TODO: list of the Shared Invites using this Role
-          // TODO: modifiable list of the Members with this role
+          // The Shared Invitations for this Role (doesn't actually participate in Save. You have
+          // to create the Role first, and then add Invitations for it.
+          // TODO: this is awkward. How can we make it better?
+          roleOpt.map { role =>
+            MSeq(
+              new RoleInvitesList(invites, role),
+              spacer
+            )
+          },
+          
+          // TODO: modifiable list of the Members with this role          
           
           div(
             new ButtonGadget(ButtonGadget.Primary, "Save")({() => 
@@ -91,7 +107,7 @@ private[security] class EditRolePanel(
                     result <- InputGadget.doSaveChange(role.oid, saveMsg())
                     newRole <- Client[ThingFunctions].getThingInfo(role.oid).call()
                   }
-                    parent.roleComplete(Some(newRole))
+                    parent.editComplete(Some(newRole))
                 }
                 case None => {
                   for {
@@ -99,14 +115,14 @@ private[security] class EditRolePanel(
                     // MultiplePropertyChanges:
                     newRole <- Client[EditFunctions].create(std.security.customRoleModel, changeMsgs()).call()
                   }
-                    parent.roleComplete(Some(newRole))
+                    parent.editComplete(Some(newRole))
                 }
               }
             }),
             
             " ",
             new ButtonGadget(ButtonGadget.Normal, "Cancel")({() =>
-              parent.roleComplete(None)
+              parent.editComplete(None)
             })
           )
         )
@@ -115,22 +131,23 @@ private[security] class EditRolePanel(
 }
 
 object EditRolePanel {
-  def prepToEdit(role: ThingInfo, parent: RoleEditCompleter)(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
+  def prepToEdit(role: ThingInfo, parent: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
     val Client = ecology.api[querki.client.Client]
     
     for {
       allPerms <- Client[SecurityFunctions].getAllPerms().call()
       thingProps <- Client[ThingFunctions].getProperties(role).call()
+      invites <- Client[SecurityFunctions].getSharedLinksForRole(role.oid2).call()
     }
-      yield new EditRolePanel(allPerms, Some(role), Some(thingProps), parent)
+      yield new EditRolePanel(allPerms, Some(role), Some(thingProps), invites, parent)
   }
   
-  def create(parent: RoleEditCompleter)(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
+  def create(parent: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditRolePanel] = {
     val Client = ecology.api[querki.client.Client]
    
     for {
       allPerms <- Client[SecurityFunctions].getAllPerms().call()      
     }
-      yield new EditRolePanel(allPerms, None, None, parent)
+      yield new EditRolePanel(allPerms, None, None, Seq.empty, parent)
   }
 }

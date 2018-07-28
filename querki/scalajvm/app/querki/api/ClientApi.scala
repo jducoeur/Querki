@@ -90,6 +90,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       t.nameOrComputedWiki(rc, state) map { name =>
         ThingInfo(
           t, 
+          t.id,
           // We link to Things in Apps by OID, not by Name, because their Names are likely to be shadowed.
           // If this Thing is neither in the current Space nor System Space, it's in an App.
           if (t.spaceId == state.id || t.spaceId == SystemIds.systemOID)
