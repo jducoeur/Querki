@@ -111,9 +111,11 @@ abstract class ItemListManager[TItem](itemList: Seq[TItem], title: String, butto
   
   val addDiv = GadgetRef.of[html.Div]
   val itemDiv = GadgetRef.of[html.Div]
+  val createButton = GadgetRef[ButtonGadget]
   
   def editComplete(newItemOpt: Option[TItem]) = {
     itemDiv <= div()
+    createButton.mapElemNow($(_).show())
     newItemOpt.map { newItem =>
       addDiv.mapElemNow { e =>
         $(e).append(showItem(newItem).render)
@@ -134,9 +136,9 @@ abstract class ItemListManager[TItem](itemList: Seq[TItem], title: String, butto
       addDiv <= div(),
       // We stick the edit panel in here, when you add a new one:
       itemDiv <= div(),
-      // TODO: when you press the Create button, hide it until we're done:
-      new ButtonGadget(ButtonGadget.Warning, buttonLabel) ({ () =>
+      createButton <= new ButtonGadget(ButtonGadget.Warning, buttonLabel) ({ () =>
         prepToCreate(this).map { panel =>
+          createButton.mapElemNow($(_).hide())
           itemDiv <= panel
         }
       })
