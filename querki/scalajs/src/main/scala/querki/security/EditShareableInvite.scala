@@ -79,7 +79,10 @@ class OneInviteGadget(inviteIn: SharedLinkInfo, role: ThingInfo)(implicit e: Eco
 {
   def displayName(invite: SharedLinkInfo): String = invite.thingInfo.displayName
   override def listingButtons(current: SharedLinkInfo) = 
-    Some(span(" ", new ShareableInviteUrlButton(current)))
+    if (current.enabled)
+      Some(span(" ", new ShareableInviteUrlButton(current)))
+    else
+      Some(span(" (closed)"))
   def prepToEdit(invite: SharedLinkInfo, completer: EditCompleter[SharedLinkInfo]): Future[EditShareableInvite] =
     EditShareableInvite.prepToEdit(invite, role, completer)
 }
@@ -94,7 +97,7 @@ class RoleInvitesList(invites: Seq[SharedLinkInfo], role: ThingInfo)(implicit e:
           |Anyone who clicks on that link will be able to join the Space, with this Role. Click on the name of an
           |Invitation to edit it, or its """.stripMargin,
         a(cls := "btn btn-default btn-xs querki-icon-button", i(cls := "fa fa-share-alt fa-lg")),
-        " button to get the shareable link.")))
+        " button to get the shareable link. If an invitation has been closed, it will be labeled as such.")))
 {
   def showItem(invite: SharedLinkInfo) = new OneInviteGadget(invite, role)
   def prepToCreate(completer: EditCompleter[SharedLinkInfo]) = EditShareableInvite.create(role, completer)
@@ -119,13 +122,8 @@ class EditShareableInvite(
   
   lazy val std = DataAccess.std
   
-  // TBD: this approach to fetching the values from the server is still only so-so; in particular, the
-  // way that the fetch and test are so separate from each and poorly typed. But it's an improvement...
-  val requiresMembership: Var[Boolean] = 
-    inviteOpt match {
-      case Some(invite) => Var(invite.requiresMembership)
-      case None => Var(false)
-    }
+  val requiresMembership: Var[Boolean] = Var(inviteOpt.map(_.requiresMembership).getOrElse(false))
+  val enabled: Var[Boolean] = Var(inviteOpt.map(_.enabled).getOrElse(true))
   
   type InputGadgetRef = GadgetRef[InputGadget[_]]
   
@@ -140,6 +138,7 @@ class EditShareableInvite(
       s(nameInput),
       s(HardcodedSaveable(std.security.inviteRoleLink, List(forRole.oid2.underlying))),
       s(SaveableRxBoolean(std.security.inviteRequiresMembership, requiresMembership)),
+      s(SaveableRxBoolean(std.security.isOpenInvite, enabled)),
       if (creating)
         s(HardcodedSaveable(std.security.isOpenInvite, List("on")))
       else
@@ -178,6 +177,14 @@ class EditShareableInvite(
             p("""If you check this, people who use this Invitation will be required to sign up; they
                 |cannot participate as anonymous guests.""".stripMargin),
             new RxCheckbox(requiresMembership, "Login required")
+          ),
+          
+          div(cls := "form-group",
+            label("Is this Invitation currently open?"),
+            p("""If you uncheck this, the invitation will be closed; anyone trying to use it will be
+                |turned away. You should uncheck this if the invitation has become available to people
+                |who you don't want to be able to join.""".stripMargin),
+            new RxCheckbox(enabled, "Invitation currently open")
           ),
           
           div(
