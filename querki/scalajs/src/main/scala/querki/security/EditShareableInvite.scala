@@ -1,5 +1,6 @@
 package querki.security
 
+import org.scalajs.dom
 import org.scalajs.dom.html
 
 import scalatags.JsDom.all._
@@ -7,21 +8,76 @@ import rx._
 import autowire._
 
 import org.querki.gadgets._
+import org.querki.jquery._
 
 import querki.api.ThingFunctions
 import querki.api.ThingFunctions._
 import querki.data.{PropValInfo, ThingInfo, TOID}
-import querki.display.ButtonGadget
+import querki.display.{ButtonGadget, Dialog, QuerkiUIUtils}
 import querki.display.input._
 import querki.display.rx.RxCheckbox
 import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
+
+class ShareableInviteUrlButton(invite: ThingInfo)(implicit val ecology: Ecology)
+  extends Gadget[html.Element] with QuerkiUIUtils with EcologyMember
+{
+  lazy val Client = interface[querki.client.Client]
+  
+  val urlDisplay = GadgetRef.of[html.Input]
+  def copyUrlToClipboard() = {
+    urlDisplay.mapElemNow { e =>
+      $(e).focus()
+      $(e).select()
+      // Yes, really, this seems to be the standard way to make this work. *Sigh*.
+      dom.window.document.execCommand("copy")
+    }
+  }
+  
+  def showDialogForUrl(url: String) = {
+    val d = 
+      new Dialog(
+        s"Share Invitation ${invite.displayName}",
+        div(
+          p("Press the Copy button to copy the Link to your clipboard"),
+          div(cls := "input-group",
+            urlDisplay <= input(
+              tpe := "text",
+              cls := "form-control",
+              value := url),
+            span(cls := "input-group-btn",
+              button(cls := "btn btn-default",
+                tpe := "button",
+                "Copy",
+                onclick := { () => copyUrlToClipboard() } 
+              )
+            )
+          )
+        ),
+        (ButtonGadget.Normal, Seq("Done"), { dialog => dialog.done() })
+      )
+    d.show()
+  }
+  
+  override def onCreate(e: html.Element) = {
+    $(e).click { evt: JQueryEventObject =>
+      for {
+        url <- Client[SecurityFunctions].getSharedLinkURL(invite.oid2).call()
+      }
+        showDialogForUrl(url)
+    }
+  }
+  
+  def doRender() = faIconButton("share-alt", Seq("btn-xs"))
+}
   
 class OneInviteGadget(inviteIn: ThingInfo, role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner) 
   extends OneItemGadget[ThingInfo](inviteIn)
 {
   def displayName(invite: ThingInfo): String = invite.displayName
+  override def listingButtons(current: ThingInfo) = 
+    Some(span(" ", new ShareableInviteUrlButton(current)))
   def prepToEdit(invite: ThingInfo, completer: EditCompleter[ThingInfo]): Future[EditShareableInvite] =
     EditShareableInvite.prepToEdit(invite, role, completer)
 }
@@ -34,7 +90,9 @@ class RoleInvitesList(invites: Seq[ThingInfo], role: ThingInfo)(implicit e: Ecol
     div(
       p("""A Shareable Invitation is a link that you can share with whoever you like -- by email, webpage, or however.
           |Anyone who clicks on that link will be able to join the Space, with this Role. Click on the name of an
-          |Invitation to edit it, or to get the link.""".stripMargin)))
+          |Invitation to edit it, or the """.stripMargin,
+        a(cls := "btn btn-default btn-xs querki-icon-button", i(cls := "fa fa-share-alt fa-lg")),
+        " button to get the shareable link.")))
 {
   def showItem(invite: ThingInfo) = new OneInviteGadget(invite, role)
   def prepToCreate(completer: EditCompleter[ThingInfo]) = EditShareableInvite.create(role, completer)
@@ -89,7 +147,11 @@ class EditShareableInvite(
     List(
       s(nameInput),
       s(HardcodedSaveable(std.security.inviteRoleLink, List(forRole.oid2.underlying))),
-      s(SaveableRxBoolean(std.security.inviteRequiresMembership, requiresMembership))
+      s(SaveableRxBoolean(std.security.inviteRequiresMembership, requiresMembership)),
+      if (creating)
+        s(HardcodedSaveable(std.security.isOpenInvite, List("on")))
+      else
+        None
     ).flatten
   }
   def saveMsg(): PropertyChange = {

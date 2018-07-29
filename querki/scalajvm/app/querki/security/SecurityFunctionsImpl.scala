@@ -277,22 +277,4 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     // Okay -- at this point, we have what appears to be a legit Link, so generate the URL:
     fut(NotifyInvitations.generateShareableLink(link.id, state))
   }
-//  
-//  def makeShareableLink(name:String, permTIDs:Seq[TOID]):Future[String] = {
-//    if (!rc.isOwner)
-//      throw new NotAllowedException()
-//    
-//    val makeRoleMsg = CreateThing(user, state.id, Kind.Thing, RolesMOIDs.CustomRoleModelOID, 
-//      toProps(
-//        Basic.DisplayNameProp(name),
-//        AccessControl.RolePermissionsProp(permTIDs.map(OID.fromTOID(_)):_*),
-//        Roles.IsOpenInvitation(true)))
-//        
-//    for {
-//      ThingFound(roleId, newState) <- spaceRouter ? makeRoleMsg
-//      url = NotifyInvitations.generateShareableLink(roleId, newState)
-//    }
-//      yield url
-//
-//  }
 }

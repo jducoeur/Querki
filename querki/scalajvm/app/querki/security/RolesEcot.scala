@@ -72,7 +72,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   lazy val IsOpenInvitation = new SystemProperty(OpenInvitationOID, YesNoType, Optional,
     toProps(
-      setName("_isOpenInvitation"),
+      setName(commonName(_.security.isOpenInvite)),
       setInternal,
       Summary("Flag on a Shared Invite, indicating that it is still open.")))
   

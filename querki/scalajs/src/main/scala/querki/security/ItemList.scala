@@ -38,6 +38,11 @@ abstract class OneItemGadget[TItem](in: TItem)(implicit val ecology: Ecology, ct
   def displayName(current: TItem): String
   
   /**
+   * Optional: lets the concrete Gadget fill in other stuff that shows up after the display name.
+   */
+  def listingButtons(current: TItem): Option[TypedTag[html.Element]] = None 
+  
+  /**
    * Given one Item (in practice, the value currently being displayed), set up an Editor Gadget
    * for it. This is a Future[] specifically to allow you to do server communication, in order
    * to fetch more-detailed information.
@@ -60,7 +65,7 @@ abstract class OneItemGadget[TItem](in: TItem)(implicit val ecology: Ecology, ct
           itemDiv <= panel
         }
         evt.preventDefault()
-      }      
+      }
     }
     
     def doRender() = a(href := "#", displayName(v.now))
@@ -68,7 +73,10 @@ abstract class OneItemGadget[TItem](in: TItem)(implicit val ecology: Ecology, ct
   
   def displayItemName() = 
     itemDiv <= div(
-      new ItemDisplayGadget()
+      new ItemDisplayGadget(),
+      listingButtons(v.now).map { btns =>
+        btns
+      }      
     )
   
   def editComplete(newItemOpt: Option[TItem]) = {
