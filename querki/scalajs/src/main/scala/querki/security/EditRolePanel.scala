@@ -31,7 +31,7 @@ private[security] class EditRolePanel(
     allPerms: Seq[PermInfo],
     roleOpt: Option[ThingInfo],
     rolePropsOpt: Option[Seq[PropValInfo]],
-    invites: Seq[ThingInfo],
+    invites: Seq[SharedLinkInfo],
     parent: EditCompleter[ThingInfo]
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
   extends Gadget[html.Div] with EcologyMember with ScalatagUtils

@@ -239,15 +239,34 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     fut(choices)
   }
   
-  def getSharedLinksForRole(roleTid: TOID): Future[Seq[ThingInfo]] = {
+  def makeSharedLinkInfo(link: Thing): Future[SharedLinkInfo] = {
+    ClientApi.thingInfo(link, rc).map { thingInfo =>
+      SharedLinkInfo(
+        thingInfo, 
+        link.firstOpt(Roles.InviteRoleLink).getOrElse(UnknownOID).toTOID, 
+        link.ifSet(Roles.InviteRequiresMembership), 
+        link.ifSet(Roles.IsOpenInvitation))
+    }
+  }
+    
+  def getOneSharedLink(linkToid: TOID): Future[SharedLinkInfo] = {
+    if (!AccessControl.hasPermission(Roles.CanManageSecurityPerm, state, user, state.id))
+      throw new NotAllowedException()
+    
+    val linkId = OID.fromTOID(linkToid)
+    
+    val link = state.anything(linkId).getOrElse {
+      throw new Exception(s"Trying to fetch unknown Shared Link $linkToid")
+    }
+    
+    makeSharedLinkInfo(link)
+  }
+  
+  def getSharedLinksForRole(roleTid: TOID): Future[Seq[SharedLinkInfo]] = {
     if (!AccessControl.hasPermission(Roles.CanManageSecurityPerm, state, user, state.id))
       throw new NotAllowedException()
     
     val roleId = OID.fromTOID(roleTid)
-    
-    // TODO: yes, this is ugly with the hard .get. But this is a real error, that suggests
-    // something bad is going on, if it fails.
-    val link = state.anything(roleId).get
     
     val allLinks = state.children(Roles.SharedInviteModel).toList
     
@@ -259,7 +278,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
         yield link
     }.flatten
     
-    Future.sequence(linksForThisRole.map(ClientApi.thingInfo(_, rc)))
+    Future.sequence(linksForThisRole.map(makeSharedLinkInfo))
   }
   
   def getSharedLinkURL(linkId: TOID): Future[String] = {

@@ -20,7 +20,9 @@ import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
 
-class ShareableInviteUrlButton(invite: ThingInfo)(implicit val ecology: Ecology)
+import SecurityFunctions._
+
+class ShareableInviteUrlButton(invite: SharedLinkInfo)(implicit val ecology: Ecology)
   extends Gadget[html.Element] with QuerkiUIUtils with EcologyMember
 {
   lazy val Client = interface[querki.client.Client]
@@ -38,7 +40,7 @@ class ShareableInviteUrlButton(invite: ThingInfo)(implicit val ecology: Ecology)
   def showDialogForUrl(url: String) = {
     val d = 
       new Dialog(
-        s"Share Invitation ${invite.displayName}",
+        s"Share Invitation ${invite.thingInfo.displayName}",
         div(
           p("Press the Copy button to copy the Link to your clipboard"),
           div(cls := "input-group",
@@ -63,7 +65,7 @@ class ShareableInviteUrlButton(invite: ThingInfo)(implicit val ecology: Ecology)
   override def onCreate(e: html.Element) = {
     $(e).click { evt: JQueryEventObject =>
       for {
-        url <- Client[SecurityFunctions].getSharedLinkURL(invite.oid2).call()
+        url <- Client[SecurityFunctions].getSharedLinkURL(invite.thingInfo.oid2).call()
       }
         showDialogForUrl(url)
     }
@@ -72,17 +74,17 @@ class ShareableInviteUrlButton(invite: ThingInfo)(implicit val ecology: Ecology)
   def doRender() = faIconButton("share-alt", Seq("btn-xs"))
 }
   
-class OneInviteGadget(inviteIn: ThingInfo, role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner) 
-  extends OneItemGadget[ThingInfo](inviteIn)
+class OneInviteGadget(inviteIn: SharedLinkInfo, role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner) 
+  extends OneItemGadget[SharedLinkInfo](inviteIn)
 {
-  def displayName(invite: ThingInfo): String = invite.displayName
-  override def listingButtons(current: ThingInfo) = 
+  def displayName(invite: SharedLinkInfo): String = invite.thingInfo.displayName
+  override def listingButtons(current: SharedLinkInfo) = 
     Some(span(" ", new ShareableInviteUrlButton(current)))
-  def prepToEdit(invite: ThingInfo, completer: EditCompleter[ThingInfo]): Future[EditShareableInvite] =
+  def prepToEdit(invite: SharedLinkInfo, completer: EditCompleter[SharedLinkInfo]): Future[EditShareableInvite] =
     EditShareableInvite.prepToEdit(invite, role, completer)
 }
 
-class RoleInvitesList(invites: Seq[ThingInfo], role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner)
+class RoleInvitesList(invites: Seq[SharedLinkInfo], role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner)
   extends ItemListManager(
     invites, 
     "Shareable Invitations", 
@@ -90,12 +92,12 @@ class RoleInvitesList(invites: Seq[ThingInfo], role: ThingInfo)(implicit e: Ecol
     div(
       p("""A Shareable Invitation is a link that you can share with whoever you like -- by email, webpage, or however.
           |Anyone who clicks on that link will be able to join the Space, with this Role. Click on the name of an
-          |Invitation to edit it, or the """.stripMargin,
+          |Invitation to edit it, or its """.stripMargin,
         a(cls := "btn btn-default btn-xs querki-icon-button", i(cls := "fa fa-share-alt fa-lg")),
         " button to get the shareable link.")))
 {
-  def showItem(invite: ThingInfo) = new OneInviteGadget(invite, role)
-  def prepToCreate(completer: EditCompleter[ThingInfo]) = EditShareableInvite.create(role, completer)
+  def showItem(invite: SharedLinkInfo) = new OneInviteGadget(invite, role)
+  def prepToCreate(completer: EditCompleter[SharedLinkInfo]) = EditShareableInvite.create(role, completer)
 }
 
 import SaveablePropertyValue._
@@ -106,10 +108,9 @@ import SaveablePropertyValue._
  * TODO: this is sufficiently similar to the EditRolePanel that they likely can/should be refactored.
  */
 class EditShareableInvite(
-    inviteOpt: Option[ThingInfo],
-    invitePropsOpt: Option[Map[TOID, PV]],
+    inviteOpt: Option[SharedLinkInfo],
     forRole: ThingInfo,
-    completer: EditCompleter[ThingInfo]
+    completer: EditCompleter[SharedLinkInfo]
   )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
   extends Gadget[html.Div] with EcologyMember 
 {
@@ -121,17 +122,8 @@ class EditShareableInvite(
   // TBD: this approach to fetching the values from the server is still only so-so; in particular, the
   // way that the fetch and test are so separate from each and poorly typed. But it's an improvement...
   val requiresMembership: Var[Boolean] = 
-    invitePropsOpt match {
-      case Some(propMap) => {
-        val current = for {
-          inviteProps <- invitePropsOpt
-          BoolV(vList) <- inviteProps.get(std.security.inviteRequiresMembership.oid2)
-          v <- vList.headOption
-        }
-          yield v
-        
-        Var(current.getOrElse(false))
-      }
+    inviteOpt match {
+      case Some(invite) => Var(invite.requiresMembership)
       case None => Var(false)
     }
   
@@ -140,7 +132,7 @@ class EditShareableInvite(
   val nameInput = GadgetRef[InputGadget[_]]
   
   val creating = inviteOpt.isEmpty
-  def initialName = inviteOpt.map(_.displayName).getOrElse("")
+  def initialName = inviteOpt.map(_.thingInfo.displayName).getOrElse("")
   
   def changeMsgs(): List[PropertyChange] = {
     def s[T: SaveablePropertyValue](t: T) = t.getSaveable
@@ -193,8 +185,8 @@ class EditShareableInvite(
               inviteOpt match {
                 case Some(invite) => {
                   for {
-                    result <- InputGadget.doSaveChange(invite.oid, saveMsg())
-                    newInvite <- Client[ThingFunctions].getThingInfo(invite.oid).call()
+                    result <- InputGadget.doSaveChange(invite.thingInfo.oid, saveMsg())
+                    newInvite <- Client[SecurityFunctions].getOneSharedLink(invite.thingInfo.oid2).call()
                   }
                     completer.editComplete(Some(newInvite))
                 }
@@ -202,7 +194,8 @@ class EditShareableInvite(
                   for {
                     // TODO: This really ought to take a single PropertyChange, now that we have
                     // MultiplePropertyChanges:
-                    newInvite <- Client[EditFunctions].create(std.security.sharedInviteModel, changeMsgs()).call()
+                    newInviteThing <- Client[EditFunctions].create(std.security.sharedInviteModel, changeMsgs()).call()
+                    newInvite <- Client[SecurityFunctions].getOneSharedLink(newInviteThing.oid2).call()
                   }
                     completer.editComplete(Some(newInvite))
                 }
@@ -220,21 +213,17 @@ class EditShareableInvite(
 }
 
 object EditShareableInvite {
-  def prepToEdit(invite: ThingInfo, forRole: ThingInfo, completer: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
-    val Client = ecology.api[querki.client.Client]
-    val DataAccess = ecology.api[querki.data.DataAccess]
-    val std = DataAccess.std
-    
-    for {
-      inviteProps <- Client[ThingFunctions].getPropertyValues(invite, List(std.security.inviteRequiresMembership.oid2)).call()
-    }
-      yield new EditShareableInvite(Some(invite), Some(inviteProps), forRole, completer)
-  }
-  
-  def create(forRole: ThingInfo, completer: EditCompleter[ThingInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
+  def prepToEdit(invite: SharedLinkInfo, forRole: ThingInfo, completer: EditCompleter[SharedLinkInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
     for {
       dummy <- Future.successful(())
     }
-      yield new EditShareableInvite(None, None, forRole, completer)
+      yield new EditShareableInvite(Some(invite), forRole, completer)
+  }
+  
+  def create(forRole: ThingInfo, completer: EditCompleter[SharedLinkInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
+    for {
+      dummy <- Future.successful(())
+    }
+      yield new EditShareableInvite(None, forRole, completer)
   }
 }

@@ -59,8 +59,16 @@ trait SecurityFunctions {
   
   /**
    * Fetch all of the Shared Links associated with this Role.
+   * 
+   * TODO: this is creating a new data structure, and all the assorted complexity, for one rarely-used
+   * type. Can we come up with a more general scheme for fetching a set of Properties for a Thing in a
+   * strongly-typed way? This feels like a problem crying out for an HList, but I don't have time to
+   * fiddle with it right now. Note that ThingFunctions.getPropertyValues() was a stab at this, but
+   * too poorly-structured to be quite what I want.
    */
-  def getSharedLinksForRole(roleId: TOID): Future[Seq[ThingInfo]]
+  def getSharedLinksForRole(roleId: TOID): Future[Seq[SharedLinkInfo]]
+  
+  def getOneSharedLink(linkId: TOID): Future[SharedLinkInfo]
   
   /**
    * Given the TID of a Shared Link Thing, this returns the URL to pass around.
@@ -105,4 +113,6 @@ object SecurityFunctions {
   )
   
   case class LinkPermsChoice(name:String, perms:Seq[TOID])
+  
+  case class SharedLinkInfo(thingInfo: ThingInfo, forRole: TOID, requiresMembership: Boolean, enabled: Boolean)
 }

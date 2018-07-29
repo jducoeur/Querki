@@ -124,5 +124,6 @@ package object security {
     def CanManageSecurityPerm: Property[OID, OID]
     def IsOpenInvitation:Property[Boolean,Boolean]
     def InviteRoleLink:Property[OID,OID]
+    def InviteRequiresMembership:Property[Boolean,Boolean]
   }
 }
