@@ -1,7 +1,11 @@
 package querki.identity
 
+import org.scalajs.dom.html
+
 import scalatags.JsDom.all._
 import upickle.default._
+
+import org.querki.gadgets._
 
 import querki.comm._
 import querki.data.UserInfo
@@ -34,7 +38,7 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
     }
   }
   
-  def handleInvite() = {
+  def handleInvite(): Future[Boolean] = {
     doInvite().flatMap { userInfoOpt =>
       userInfoOpt match {
         case Some(userInfo) => {
@@ -48,25 +52,34 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
                   |be able to more easily come back here. """.stripMargin,
                   new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
             }
+            
+            true
           }          
         }
         
         case None => {
-          Future.successful(StatusLine.showUntilChange("Sorry -- that is not a currently-valid invitation."))          
+          Future.successful(false)
         }
       }
-
     }
   }
   
+  val displayDiv = GadgetRef.of[html.Div]
+  
   def pageContent = {
     // Kick off the handler in parallel, and don't hold up page rendering for it:
-    handleInvite()
+    val inviteFut = handleInvite()
+    inviteFut.onSuccess {
+      case true => // No-op -- we've already side-effected the result. This might want to be changed
+      case false => displayDiv <= div(h3("Unable to join"), p("Sorry -- that doesn't appear to be a currently-valid invitation."))
+    }
     for {
       _ <- Future.successful()
       guts =
         div(
-          h1(i(cls:="fa fa-spinner fa-pulse fa-fw"), s"Joining $spaceName...")
+          displayDiv <= div(
+            h1(i(cls:="fa fa-spinner fa-pulse fa-fw"), s"Joining $spaceName...")
+          )
         )
     }
       yield PageContents(pageTitleWith("spaceName" -> spaceName), guts)
