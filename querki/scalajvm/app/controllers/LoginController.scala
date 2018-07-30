@@ -179,8 +179,13 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           
           // This was an Open Invitation, sent out through a Shared Link. We have the ID of the
           // Custom Role that represents the Invitation:
-          case OpenInvitation(roleId) => {
+          case OpenInvitation(inviteId) => {
+            // TODO: before anything else, we need to determine whether this invitation requires login. If so,
+            // we need a very different workflow. We probably need to stick the inviteId into a cookie for the
+            // time being, and get back to it.
             for {
+              // TODO: review this logic! This is really weird-looking -- if we already have a logged-in User, are
+              // we creating a new Identity for them? Why?
               // Note that these Identities do *not* exist in the System Shard. This should, in principle, be fine.
               // In the medium term, we will probably move away from System Shard more or less completely.
               NewOID(identityId) <- QuerkiCluster.oidAllocator ? NextOID
@@ -193,12 +198,20 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
               spaceId <- SpaceOps.getSpaceId(updatedRc.ownerId, spaceIdStr)
               // TODO: this returns Joined or JoinFailed. Ideally, if JoinFailed, we should propagate the exception to
               // to the Client as a proper error.
-              dummy <- SpaceOps.spaceRegion ? SpaceSubsystemRequest(updatedRc.requesterOrAnon, spaceId, JoinByOpenInvite(updatedRc, roleId))
+              joinReturned <- SpaceOps.spaceRegion ? SpaceSubsystemRequest(updatedRc.requesterOrAnon, spaceId, JoinByOpenInvite(updatedRc, inviteId))
+              joinSucceeded =
+                joinReturned match {
+                  case Joined => true
+                  case JoinFailed(_) => false
+                }
               userOpt = updatedRc.requester
               userInfoOpt <- ClientApi.userInfo(userOpt)              
             }
               yield {
-                if (loggedIn)
+                if (!joinSucceeded)
+                  // Crude, but we're going to use a simple empty String as the signal of a bad invitation:
+                  Ok("")
+                else if (loggedIn)
                   Ok(write(userInfoOpt.get))
                 else
                   // Set up the Session for this Guest, and record when the "invitation" period expires. Note

@@ -12,11 +12,12 @@ import querki.pages._
 class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Page("handleInvite")  {
   lazy val invitationString = params.requiredParam("invite")
   
+  lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
   
   lazy val spaceName = DataAccess.space.map(_.displayName).getOrElse("")
   
-  def doInvite():Future[UserInfo] = {
+  def doInvite():Future[Option[UserInfo]] = {
     // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
     val fut:Future[String] = 
       controllers.LoginController.handleInvite2(
@@ -25,23 +26,36 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
         "invite" -> invitationString)
         
     fut.map { str =>
-      read[UserInfo](str)
+      if (str.isEmpty) {
+        None
+      } else {
+        Some(read[UserInfo](str))
+      }
     }
   }
   
-  def handleInvite():Unit = {
-    doInvite().flatMap { userInfo =>
-      UserAccess.setUser(Some(userInfo))
-      PageManager.showRoot().map { page =>
-        if (!UserAccess.isActualUser) {
-          // We're not currently logged in
-          // Suggest to the user to log in or create an account:
-          page.flash(false, 
-            """You're logged in as a Guest. If you log into your Querki account, or create one, you will
-              |be able to more easily come back here. """.stripMargin,
-              new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
+  def handleInvite() = {
+    doInvite().flatMap { userInfoOpt =>
+      userInfoOpt match {
+        case Some(userInfo) => {
+          UserAccess.setUser(Some(userInfo))
+          PageManager.showRoot().map { page =>
+            if (!UserAccess.isActualUser) {
+              // We're not currently logged in
+              // Suggest to the user to log in or create an account:
+              page.flash(false, 
+                """You're logged in as a Guest. If you log into your Querki account, or create one, you will
+                  |be able to more easily come back here. """.stripMargin,
+                  new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
+            }
+          }          
+        }
+        
+        case None => {
+          Future.successful(StatusLine.showUntilChange("Sorry -- that is not a currently-valid invitation."))          
         }
       }
+
     }
   }
   
