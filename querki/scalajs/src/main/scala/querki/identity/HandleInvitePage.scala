@@ -15,19 +15,23 @@ import querki.pages._
 
 class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Page("handleInvite")  {
   lazy val invitationString = params.requiredParam("invite")
+  // This is set in the server's InvitationNotifierEcot.makeInviteLink. It should only apply to
+  // shared invites; if it is set to true, then we need to get them logged in *before* we go
+  // into invite-acceptance:
+  lazy val requiresMembership = params.get("reqMemb").map(_ == "true").getOrElse(false)
   
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
   
   lazy val spaceName = DataAccess.space.map(_.displayName).getOrElse("")
   
-  def doInvite():Future[Option[UserInfo]] = {
+  def doInvite(invite: String):Future[Option[UserInfo]] = {
     // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
     val fut:Future[String] = 
       controllers.LoginController.handleInvite2(
           DataAccess.userName, 
           DataAccess.spaceId.underlying).callAjax(
-        "invite" -> invitationString)
+        "invite" -> invite)
         
     fut.map { str =>
       if (str.isEmpty) {
@@ -38,8 +42,8 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
     }
   }
   
-  def handleInvite(): Future[Boolean] = {
-    doInvite().flatMap { userInfoOpt =>
+  def handleInvite(invite: String): Future[Boolean] = {
+    doInvite(invite).flatMap { userInfoOpt =>
       userInfoOpt match {
         case Some(userInfo) => {
           UserAccess.setUser(Some(userInfo))
@@ -64,11 +68,21 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
     }
   }
   
+  def startInviteProcess(): Future[Boolean] = {
+    if (requiresMembership && !(UserAccess.isActualUser)) {
+      // This invitation is only open to Querki members, and we don't currently have one. So toss
+      // them over to SignInOrUp first, and deal with the invitation afterwards:
+      SignUpPage.run(includeSignin = true).flatMap(_ => handleInvite(invitationString))
+    } else
+      // Normal case -- just begin the invitation:
+      handleInvite(invitationString)
+  }
+  
   val displayDiv = GadgetRef.of[html.Div]
   
   def pageContent = {
     // Kick off the handler in parallel, and don't hold up page rendering for it:
-    val inviteFut = handleInvite()
+    val inviteFut = startInviteProcess()
     inviteFut.onSuccess {
       case true => // No-op -- we've already side-effected the result. This might want to be changed
       case false => displayDiv <= div(h3("Unable to join"), p("Sorry -- that doesn't appear to be a currently-valid invitation."))

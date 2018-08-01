@@ -257,7 +257,7 @@ package object identity {
   trait NotifyInvitations extends EcologyInterface {
     private [identity] def notifyInvitation(req:User, textOpt:Option[QLText], invitees:Seq[FullIdentity])(implicit state:SpaceState):Unit
     
-    def generateShareableLink(roleId:OID, state:SpaceState):String
+    def generateShareableLink(role: Thing, state:SpaceState):String
     
     def parseInvite(encodedInvite:String):Option[ParsedInvitation]
   }

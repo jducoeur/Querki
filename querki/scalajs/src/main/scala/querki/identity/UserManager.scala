@@ -21,6 +21,51 @@ import QuerkiEmptyable._
 import querki.pages.Page
 import querki.session.UserFunctions
 
+/**
+ * This is a slightly nasty little hack, to try and preserve as much commonality
+ * as possible between the Login Dialog and the (optional) Login part of the
+ * SignInPage, while allowing the look-and-feel details to differ.
+ */
+class LoginLogic()(implicit val ecology: Ecology, ctx: Ctx.Owner) extends EcologyMember {
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val UserAccess = interface[UserAccess]
+  
+  val loginPromise = Promise[Unit]
+  
+  def finishLogin() = {
+    loginPromise.complete(Success(()))
+  }
+  
+  // The order of the logic here is a tad convoluted, because it's a bit recursive: we want to
+  // allow Enter, in the passwordInput, which is inside the Dialog, to *close* that Dialog.
+  // So everything needs to be pulled apart a bit.
+  def doLogin():Unit = {
+    // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
+    val fut:Future[String] = 
+      controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text.now, "password" -> passwordInput.get.text.now)
+    fut.foreach { result =>
+      if (result == "failed") {
+        $(badLoginMsg.elem).show()
+      } else {
+        val userInfoOpt = read[Option[UserInfo]](result)
+        UserAccess.setUser(userInfoOpt)
+        finishLogin()
+      }
+    }
+  }
+  
+  lazy val handleInput = GadgetRef[RxInput]
+  lazy val passwordInput = GadgetRef[RxInput]
+    .whenSet { g => 
+      g.onEnter { text =>
+        if (text.length() > 0) {
+          doLogin()
+        }
+      }
+    }
+  lazy val badLoginMsg = GadgetRef.of[html.Div]
+}
+
 class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   def implements = Set(classOf[UserAccess])
@@ -52,47 +97,13 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   }
   
   def loginCore()(implicit ctx:Ctx.Owner):Future[Unit] = {
-    val loginPromise = Promise[Unit]
-    
-    def finishLogin() = {
-      loginPromise.complete(Success(()))
-    }
-    
-    // The order of the logic here is a tad convoluted, because it's a bit recursive: we want to
-    // allow Enter, in the passwordInput, which is inside the Dialog, to *close* that Dialog.
-    // So everything needs to be pulled apart a bit.
-    def doLogin():Unit = {
-      // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
-      val fut:Future[String] = 
-        controllers.LoginController.clientlogin().callAjax("name" -> handleInput.get.text.now, "password" -> passwordInput.get.text.now)
-      fut.foreach { result =>
-        if (result == "failed") {
-          $(badLoginMsg.elem).show()
-        } else {
-          val userInfoOpt = read[Option[UserInfo]](result)
-          setUser(userInfoOpt)
-          loginDialog.done()
-          finishLogin()
-        }
-      }
-    }
-    
-    lazy val handleInput = GadgetRef[RxText]
-    lazy val passwordInput = GadgetRef[RxInput]
-      .whenSet { g => 
-        g.onEnter { text =>
-          if (text.length() > 0) {
-            doLogin()
-          }
-        }
-      }
-    lazy val badLoginMsg = GadgetRef.of[html.Div]
-    
+    val logic = new LoginLogic()
+
     def showSignup():Unit = {
       loginDialog.done()
-      SignUpPage.run.foreach { userInfo =>
-        finishLogin()
-      }      
+      SignUpPage.run(false).foreach { userInfo =>
+        logic.finishLogin()
+      }
     }
     
     def dismiss():Unit = loginDialog.done()
@@ -100,9 +111,9 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     lazy val loginDialog = new Dialog("Log in to Querki",
       div(
         p("""If you are already a member of Querki, enter your login info here:"""),
-        handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
-        passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
-        badLoginMsg <= 
+        logic.handleInput <= new RxText(placeholder := "Handle or email address", width := "80%", nm := "name", id := "name", tabindex := 1),
+        logic.passwordInput <= new RxInput("password", placeholder := "Password", width := "80%", nm := "password", id := "password", tabindex := 2),
+        logic.badLoginMsg <= 
           div(
             cls := "alert alert-danger alert-dismissable",
             style := "display: none",
@@ -122,11 +133,11 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
               ButtonGadget.Primary, 
               "Log in", 
               disabled := Rx { 
-                val handleEmpty = handleInput.rxEmpty
-                val passwordEmpty = passwordInput.rxEmpty
+                val handleEmpty = logic.handleInput.rxEmpty
+                val passwordEmpty = logic.passwordInput.rxEmpty
                 handleEmpty() || passwordEmpty() 
               }, 
-              tabindex := 3)({ () => doLogin()})
+              tabindex := 3)({ () => logic.doLogin()})
           ),
           div(cls := "col-sm-3 col-sm-offset-6",
             new ButtonGadget(
@@ -151,7 +162,11 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
     )
     loginDialog.show()
     
-    loginPromise.future
+    val doneFuture = logic.loginPromise.future
+    doneFuture.onComplete {
+      case _ => loginDialog.done()
+    }
+    doneFuture
   }
   
   def resendActivationButton =

@@ -41,6 +41,7 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val Person = interface[Person]
+  lazy val Roles = interface[querki.security.Roles]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
   lazy val Unsubscribe = interface[querki.email.Unsubscribe]
@@ -135,30 +136,36 @@ class InvitationNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with
   
   val inviteParam = "invite"
   
-  def makeInviteLink(encoded:String, state:SpaceState):String = {
+  def makeInviteLink(encoded:String, state:SpaceState, requiresMembership: Boolean):String = {
     // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
     // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
     urlBase + 
       "u/" + state.ownerHandle + 
       "/" + state.toThingId + "/" + 
       "#_handleInvite" +
-      "?" + inviteParam + "=" + encoded    
+      "?" + inviteParam + "=" + encoded +
+      (if (requiresMembership)
+        "&reqMemb=true"
+       else
+        "")
   }
   
   def generateInviteLink(person:Thing, inviteeId:IdentityId, email:EmailAddress, state:SpaceState):String = {
     val idString = person.id.toString + ":" + email.addr + ":" + inviteeId.toString
     val signed = Hasher.sign(idString, emailSepChar)
     val encoded = SafeUrl(signed.toString)
-    makeInviteLink(encoded, state)
+    makeInviteLink(encoded, state, false)
   }
   
   val sharePrefix = "share;"
   
-  def generateShareableLink(roleId:OID, state:SpaceState):String = {
-    val idString = roleId.toString
+  def generateShareableLink(role: Thing, state:SpaceState):String = {
+    implicit val s = state
+    val idString = role.id.toString
+    val requiresMembership = role.firstOr(Roles.InviteRequiresMembership, false)
     val signed = Hasher.sign(idString, emailSepChar)
     val encoded = SafeUrl(sharePrefix + signed.toString)
-    makeInviteLink(encoded, state)
+    makeInviteLink(encoded, state, requiresMembership)
   }
   
   def parseInvite(encodedInvite:String):Option[ParsedInvitation] = {

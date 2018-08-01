@@ -26,7 +26,7 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology) extends Page("signup") {
+class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(implicit val ecology:Ecology) extends Page("signup") {
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
@@ -35,6 +35,15 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   if (UserAccess.isActualUser)
     // Already logged in, so this page isn't going to work right:
     PageManager.showIndexPage()
+    
+  // Encapsulates some of the login guts, if we are showing that, and glue the pieces together.
+  // TODO: this is awkward. Why aren't we exposing a plain old Future in the first place?
+  lazy val logic = new LoginLogic()
+  onReady.map { cb =>
+    logic.loginPromise.future.map { _ =>
+      cb(UserAccess.user.get)
+    }
+  }
     
   // This is a *very* primitive email-checker, but enough to start with:
   lazy val emailRegex = ".+@.+\\..+"
@@ -65,6 +74,10 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
     val displayEmpty = displayInput.rxEmpty
     !displayEmpty() 
   }
+  
+  lazy val loginHandleOkay = logic.handleInput.flatMapRxOrElse(_.length)(_ >= 3, false)
+  lazy val loginPasswordOkay = logic.passwordInput.flatMapRxOrElse(_.length)(_ >= 8, false)
+  lazy val loginOkay = Rx { loginHandleOkay() && loginPasswordOkay() }
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   lazy val signupEnabled = Rx { 
@@ -162,6 +175,53 @@ class SignUpPage[T](onReady:Option[UserInfo => T])(implicit val ecology:Ecology)
   
   def pageContent = for {
     guts <- scala.concurrent.Future.successful(div(
+      if (includeSignin) {
+        div(
+          h1("Sign in"),
+          // TODO: the following is currently hard-coded to the invite-link logic, and probably
+          // shouldn't be:
+          p(b(DataAccess.space.get.displayName), s" requires that you log in (if you have an account already), or sign up below."),
+          
+          form(
+            showInput(logic.handleInput, None, "Handle or Email Address", "emailSigninInput", "text", "joe@example.com", 
+                "Must be your handle or email address", loginHandleOkay, None),
+            showInput(logic.passwordInput, None, "Password", "passwordSigninInput", "password", "", 
+                "Must be your valid password", loginPasswordOkay, None),
+            logic.badLoginMsg <= 
+              div(
+                cls := "alert alert-danger alert-dismissable",
+                style := "display: none",
+                button(
+                  tpe := "button", 
+                  cls := "close", 
+                  data("dismiss") := "alert", 
+                  aria.label := "Close", 
+                  span(aria.hidden := "true", raw("&times;")),
+                  tabindex := 7),
+                b("That isn't a correct email and password."), 
+                " Please try again. "
+              ),
+              
+            div(cls := "row",
+              div(cls := "col-sm-3",
+                new ButtonGadget(
+                  ButtonGadget.Primary, 
+                  "Log in", 
+                  disabled := Rx { !loginOkay() },
+                  tabindex := 3
+                )({ () => logic.doLogin()})
+              )
+            )
+          ),
+          
+          p(a(href := controllers.LoginController.sendPasswordReset().url,
+            "Click here if you have forgotten your password.",
+            tabindex := 5)),
+            
+          hr
+        )
+      },
+        
       h1(pageTitle),
       p("Please fill in all of these fields, and then press the Sign Up button to join."),
       errorDisplay <= div(),
@@ -191,10 +251,10 @@ object SignUpPage {
   /**
    * Encapsulates the SignUp workflow so that other systems can compose it.
    */
-  def run(implicit ecology:Ecology):Future[UserInfo] = {
+  def run(includeSignin: Boolean)(implicit ecology:Ecology):Future[UserInfo] = {
     val promise = Promise[UserInfo]
     val completeFunc:UserInfo => Unit = user => promise.complete(Success(user))
-    val page = new SignUpPage(Some(completeFunc))
+    val page = new SignUpPage(includeSignin)(Some(completeFunc))
     // NOTE: this doesn't actually change the URL! This is arguably a horrible hack.
     ecology.api[querki.display.PageManager].renderPage(page)
     promise.future

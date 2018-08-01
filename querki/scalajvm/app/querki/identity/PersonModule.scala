@@ -618,15 +618,22 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       case Some(invite) if (invite.ifSet(Roles.IsOpenInvitation)) => {
         if (invite.model == Roles.SharedInviteModel.id) {
           // This is a new-style invitation, with a separate invitation object
-          val resultOpt = for {
-            roleId <- invite.firstOpt(Roles.InviteRoleLink)
-            role <- state.anything(roleId)
-          }
-            yield acceptOpenInvitationForRole(rc, role)
-          
-          resultOpt.getOrElse {
-            QLog.error(s"Shared Invite $invite somehow doesn't have a linked Role!")
+          val requiresMembership = invite.ifSet(Roles.InviteRequiresMembership)
+          if (requiresMembership && !(rc.requester.isDefined))
+            // Technically, we probably ought to give a better error, but something's gone weird here.
+            // The Client should have caught this and gotten the user signed up before we got to this point.
             fail
+          else {
+            val resultOpt = for {
+              roleId <- invite.firstOpt(Roles.InviteRoleLink)
+              role <- state.anything(roleId)
+            }
+              yield acceptOpenInvitationForRole(rc, role)
+            
+            resultOpt.getOrElse {
+              QLog.error(s"Shared Invite $invite somehow doesn't have a linked Role!")
+              fail
+            }
           }
         } else if (invite.model == Roles.CustomRoleModel.id) {
           // This is an old-style invitation, linking directly to the role

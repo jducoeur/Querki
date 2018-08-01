@@ -294,6 +294,6 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       throw new NotAllowedException()
     
     // Okay -- at this point, we have what appears to be a legit Link, so generate the URL:
-    fut(NotifyInvitations.generateShareableLink(link.id, state))
+    fut(NotifyInvitations.generateShareableLink(link, state))
   }
 }
