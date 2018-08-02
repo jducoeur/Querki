@@ -45,6 +45,11 @@ class SharingPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("s
         div(
           h2(pageTitle),
           p("This page allows you to invite people into this Space, and manage what roles they play in it"),
+          p(
+            b("To create an invitation that you can share with multiple people: "),
+            """Create or select a Custom Role below; make sure that it lets the recipients do what you want them to
+                |be able to do; then create an Invitation from that Role.""".stripMargin
+          ),
           tabSetContent
         )
     }

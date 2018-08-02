@@ -84,7 +84,6 @@ package object pages {
     def securityFactory:ThingPageFactory
     def infoFactory:PageFactory
     def undeleteFactory:PageFactory
-    def shareableLinkFactory:PageFactory
     
     /**
      * The URL of the given Space.

@@ -159,7 +159,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           "Share via Email...")),
         if (isSpace && DataAccess.request.isOwner) {
           MSeq(
-            li(a(href:=Pages.shareableLinkFactory.pageUrl(), "Get Shareable Link...")),
+            li(a(href := Pages.sharingFactory.pageUrl("tab" -> querki.security.SharingPage.Tab.CustomRoles.entryName), "Get Shareable Link...")),
             li(a(href:=Pages.sharingFactory.pageUrl("tab" -> SharingPage.Tab.Invite.entryName), "Invite Members...")),
             li(a(href:=Pages.sharingFactory.pageUrl("tab" -> SharingPage.Tab.Members.entryName), "Show Members"))
           )
