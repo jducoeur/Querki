@@ -64,8 +64,8 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
         val navigationFut = gotoPage match {
           case Some(pageName) => {
             // The link specified a page to go to after the invite was processed. All params get
-            // passed through to that page, in case there are some that it needs.
-            PageManager.showPage(pageName, params)
+            // passed through to that page (except the invitation itself), in case there are some that it needs.
+            PageManager.showPage(pageName, (params - "invite") - "goto")
           }
           case None => {
             // No explicit page specified, so just go to the root:
