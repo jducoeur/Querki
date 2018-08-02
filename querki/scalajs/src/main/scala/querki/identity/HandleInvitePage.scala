@@ -19,6 +19,8 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
   // shared invites; if it is set to true, then we need to get them logged in *before* we go
   // into invite-acceptance:
   lazy val requiresMembership = params.get("reqMemb").map(_ == "true").getOrElse(false)
+  // If this is set, it should be the name of a page to go to after we finish processing the invite:
+  lazy val gotoPage = params.get("goto")
   
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[UserAccess]
@@ -42,51 +44,50 @@ class HandleInvitePage(params:ParamMap)(implicit val ecology:Ecology) extends Pa
     }
   }
   
-  def handleInvite(invite: String): Future[Boolean] = {
-    doInvite(invite).flatMap { userInfoOpt =>
-      userInfoOpt match {
-        case Some(userInfo) => {
-          UserAccess.setUser(Some(userInfo))
-          PageManager.showRoot().map { page =>
-            if (!UserAccess.isActualUser) {
-              // We're not currently logged in
-              // Suggest to the user to log in or create an account:
-              page.flash(false, 
-                """You're logged in as a Guest. If you log into your Querki account, or create one, you will
-                  |be able to more easily come back here. """.stripMargin,
-                  new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
-            }
-            
-            true
-          }          
-        }
-        
-        case None => {
-          Future.successful(false)
-        }
-      }
-    }
-  }
-  
-  def startInviteProcess(): Future[Boolean] = {
+  def startInviteProcess(): Future[Option[UserInfo]] = {
     if (requiresMembership && !(UserAccess.isActualUser)) {
       // This invitation is only open to Querki members, and we don't currently have one. So toss
       // them over to SignInOrUp first, and deal with the invitation afterwards:
-      SignUpPage.run(includeSignin = true).flatMap(_ => handleInvite(invitationString))
+      SignUpPage.run(includeSignin = true).flatMap(_ => doInvite(invitationString))
     } else
       // Normal case -- just begin the invitation:
-      handleInvite(invitationString)
+      doInvite(invitationString)
   }
   
   val displayDiv = GadgetRef.of[html.Div]
   
   def pageContent = {
     // Kick off the handler in parallel, and don't hold up page rendering for it:
-    val inviteFut = startInviteProcess()
-    inviteFut.onSuccess {
-      case true => // No-op -- we've already side-effected the result. This might want to be changed
-      case false => displayDiv <= div(h3("Unable to join"), p("Sorry -- that doesn't appear to be a currently-valid invitation."))
+    startInviteProcess().onSuccess {
+      case Some(userInfo) => {
+        UserAccess.setUser(Some(userInfo))
+        val navigationFut = gotoPage match {
+          case Some(pageName) => {
+            // The link specified a page to go to after the invite was processed. All params get
+            // passed through to that page, in case there are some that it needs.
+            PageManager.showPage(pageName, params)
+          }
+          case None => {
+            // No explicit page specified, so just go to the root:
+            PageManager.showRoot()          
+          }
+        }
+        navigationFut.map { page =>
+          if (!UserAccess.isActualUser) {
+            // We're not currently logged in -- instead, we're a Guest
+            // Suggest to the user to log in or create an account:
+            page.flash(false, 
+              """You're logged in as a Guest. If you log into your Querki account, or create one, you will
+                |be able to more easily come back here. """.stripMargin,
+                new SmallButtonGadget(ButtonGadget.Primary, "Log in / Sign up", id := "_openLoginButton")({() => UserAccess.login() }))
+          }
+        }
+      }
+      case None => {
+        displayDiv <= div(h3("Unable to join"), p("Sorry -- that doesn't appear to be a currently-valid invitation."))
+      }
     }
+    
     for {
       _ <- Future.successful()
       guts =
