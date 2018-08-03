@@ -188,9 +188,11 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
         Roles.CanExplorePerm,
         
         UserValues.UserValuePermission,
-        
-        Apps.CanManipulateAppsPerm,
-        Apps.CanUseAsAppPerm,
+  
+        // TBD, but for now these can just be Manager Permissions. In the long run,
+        // these might be "advanced permissions" or some such. See QI.7w4gaqs
+//        Apps.CanManipulateAppsPerm,
+//        Apps.CanUseAsAppPerm,
         
         Publication.CanPublishPermission
       )
