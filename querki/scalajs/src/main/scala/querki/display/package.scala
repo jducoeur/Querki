@@ -186,6 +186,14 @@ package object display {
     def renderPage(page:Page):Future[Page]
     
     /**
+     * Modifies the current page params in the URL *without* re-rendering.
+     * 
+     * This is intended to support us injecting navigation information for Pages, so that when you
+     * reload the Page, you wind up in the right state.
+     */
+    def modifyPageParams(f: ParamMap => ParamMap): Unit
+    
+    /**
      * The Scala.Rx "Owner" to use at the moment. This is the Owner defined by the current Page.
      */
     def currentOwner:Ctx.Owner

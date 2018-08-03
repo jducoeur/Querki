@@ -186,6 +186,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
           }
           case None => Map.empty[String, String]
         }
+        currentPageName = pageName
       
         if (pageName.length == 0)
           showRoot(paramMap)
@@ -231,6 +232,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       }
     }
   }
+  
+  var currentPageName: String = ""
   
   var currentParams:ParamMap = Map.empty
   def currentPageParams:ParamMap = currentParams
@@ -329,5 +332,15 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       reload()
     else
       window.location.href = url
+  }
+  
+  def modifyPageParams(f: ParamMap => ParamMap): Unit = {
+    val newParams = f(currentParams)
+    val paramsHash = newParams.toSeq.map { case (k, v) => s"$k=$v" }.mkString("&")
+    // Note that we set these *before* setting the window.location.hash, so that this
+    // is perceived as a no-op:
+    _currentHash = "#!" + currentPageName + "?" + paramsHash
+    currentParams = newParams
+    window.location.hash = currentHash
   }
 }
