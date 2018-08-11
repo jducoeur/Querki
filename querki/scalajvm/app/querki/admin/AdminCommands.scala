@@ -19,6 +19,7 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
   import MOIDs._
   
   val Console = initRequires[querki.console.Console]
+  val Roles = initRequires[querki.security.Roles]
   
   lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -84,10 +85,12 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
     result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
   }
   
-  lazy val ShowThingCmd = Console.defineAdminCommand(
+  // TODO: this no longer belongs here, since it's no longer restricted to the Admins:
+  lazy val ShowThingCmd = Console.defineSpaceCommand(
     ShowThingCmdOID, 
     "Show Thing", 
-    "Shows a full dump of the specified Thing")
+    "Shows a full dump of the specified Thing",
+    Seq(Roles.CanManageSecurityPerm))
   { case CommandEffectArgs(inv, api) =>
     implicit val state = inv.state
     
