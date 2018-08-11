@@ -665,7 +665,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   }
   
   def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {
-    withCache(_.localPerson(person.id).map(_.id))
+    person.getFirstOpt(IdentityLink)
   }
   
   def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean = {

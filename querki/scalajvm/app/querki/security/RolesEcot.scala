@@ -134,6 +134,8 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
         |implemented, Editors will be able to moderate contributions from non-Members.""".stripMargin,
       editorPerms)
       
+  // Note: we put the permissions on Manager on general principles, but in practice a Manager can do
+  // *everything* an Owner can do, except functions that are specifically checked as isOwner.
   lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm, CanManageSecurityPerm) ++ editorPerms
   lazy val ManagerRole =
     defineRole(ManagerOID, "Manager Role", "Manager",

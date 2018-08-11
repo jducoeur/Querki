@@ -85,7 +85,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         Publication.SpaceHasPublications
       )
       val perms = setPerms(t, user,
-        Publication.CanPublishPermission
+        Publication.CanPublishPermission,
+        Roles.CanManageSecurityPerm
       )
       t.nameOrComputedWiki(rc, state) map { name =>
         ThingInfo(
@@ -133,7 +134,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         Apps.CanUseAsAppPerm +
         AccessControl.CanCreateProp +
         Roles.CanExplorePerm +
-        AccessControl.CanDesignPerm
+        AccessControl.CanDesignPerm +
+        Roles.CanManageSecurityPerm
     
     SpaceInfo(
       state, 

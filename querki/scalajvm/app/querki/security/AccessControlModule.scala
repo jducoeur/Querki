@@ -50,6 +50,7 @@ class AccessControlModule(e:Ecology)
   val Person = initRequires[querki.identity.Person]
   val Profiler = initRequires[querki.tools.Profiler]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Roles = interface[Roles]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
     
@@ -58,6 +59,8 @@ class AccessControlModule(e:Ecology)
   lazy val LinkModelProp = Links.LinkModelProp
   
   lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
+  
+  lazy val managerStateCacheKey = StateCacheKey(4, "managers")
   
   override def postInit() = {
     ApiRegistry.registerApiImplFor[SecurityFunctions, SecurityFunctionsImpl](SpaceOps.spaceRegion)
@@ -90,6 +93,34 @@ class AccessControlModule(e:Ecology)
     Person.hasMember(identityId)(state)
   }
   
+  /**
+   * Says whether this Identity has Manager rights within this Space. The Owner is always included, as is anybody
+   * with the Manager Role.
+   * 
+   * This is deathly important: Managers can do *everything* that the Owner can do which is covered by permissions.
+   * Only functions that are explicitly checked as "isOwner" are off-limits to Managers. This list should,
+   * intentionally, be very short.
+   * 
+   * Since this needs to be checked frequently, we build a cache of Managers within the Space's dynamic cache. So
+   * this only needs to be rebuilt when the Space changes.
+   */
+  def isManager(identityId: OID, state: SpaceState): Boolean = {
+    implicit val s = state
+    val managers = state.fetchOrCreateCache(managerStateCacheKey, {
+      (Set[OID](state.owner) /: Person.members(state)) { (ids, member) =>
+        val managerIdOpt = for {
+          rolesPV <- member.getPropOpt(PersonRolesProp)
+          if (rolesPV.rawList.contains(RolesMOIDs.ManagerOID))
+          identity <- Person.getPersonIdentity(member)
+        }
+          yield identity.id
+          
+        ids ++ managerIdOpt
+      }
+    })
+    managers.contains(identityId)
+  }
+  
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
     who.identities.exists(identity => hasPermission(aclProp, state, identity.id, thingId))
   }
@@ -97,7 +128,7 @@ class AccessControlModule(e:Ecology)
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
     try {
       hasPermissionProfile.profile {
-        if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
+        if (isManager(identityId, state) || identityId == querki.identity.MOIDs.SystemIdentityOID)
           true
         else {
           implicit val s = state
@@ -253,16 +284,15 @@ class AccessControlModule(e:Ecology)
 
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
     implicit val s = state
-    // TODO: for the time being, this is very simplistic: if the property is a permission,
-    // then only the owner can change it. Otherwise, let it through. Later, we should
-    // figure out how to expose field-level edit permissions to the UI.
-    val hasPermissionOpt = for (
-      prop <- state.prop(propId);
-      permissionVal <- prop.getPropOpt(isPermissionProp);
-      isPermission <- permissionVal.firstOpt;
+    // For the moment, the only thing we are filtering is Permissions, which require
+    // the CanManageSecurity permission.
+    val hasPermissionOpt = for {
+      prop <- state.prop(propId)
+      permissionVal <- prop.getPropOpt(isPermissionProp)
+      isPermission <- permissionVal.firstOpt
       if isPermission
-        )
-      yield who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID
+    }
+      yield hasPermission(Roles.CanManageSecurityPerm, state, who, state.id) 
       
     hasPermissionOpt.getOrElse(true)
   }
@@ -349,6 +379,9 @@ class AccessControlModule(e:Ecology)
     toProps(
       setName("_Instance Permissions Model"),
       setInternal,
+      // TODO (QI.7w4gasb): properly speaking, this should be anyone who has the Can Manage Security permission, but we don't
+      // yet have a way for one permission to delegate to another:
+      (CanEditPropOID -> QList(LinkType(RolesMOIDs.ManagerOID))),
       Summary("This is the Model for the Things that hold Default Permissions.")))
       
   lazy val AppliesToSpace = ThingState(AppliesToSpaceOID, systemOID, RootOID, 
@@ -391,6 +424,10 @@ class AccessControlModule(e:Ecology)
         setInternal,
         // Permissions do not get edited in the traditional way:
         (querki.editing.MOIDs.NotEditableOID -> ExactlyOne(YesNoType(true))),
+        // TODO (QI.7w4gasb): this isn't precisely correct. What it *should* do is allow anyone with the
+        // Roles.CanManageSecurity Permission to do this. But we don't yet have a way for
+        // a Permission to delegate to another Permission:
+        (CanEditPropOID -> QList(LinkType(RolesMOIDs.ManagerOID))),
         isPermissionProp(true),
         IsInstancePermissionProp(isInstance),
         SkillLevel(SkillLevelAdvanced),

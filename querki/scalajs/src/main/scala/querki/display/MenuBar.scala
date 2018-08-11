@@ -48,6 +48,10 @@ class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends Hoo
     space.permissions.contains(std.roles.canExplorePerm)
   }.getOrElse(false)
   
+  lazy val canShare = spaceOpt.map { space =>
+    space.permissions.contains(std.roles.canManageSecurityPerm)
+  }.getOrElse(false)
+  
   val maxNameDisplay = 25
   def truncateName(name:String) = {
     if (name.length < maxNameDisplay)
@@ -135,7 +139,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends Hoo
             enabled = space.permissions.contains(std.security.canCreatePerm)),
           NavLink("Show all Things", thing("All-Things"), complexity = Standard, allowedDuringHistory = true),
           NavLink("Show all Properties", thing("All-Properties"), complexity = Standard, allowedDuringHistory = true),
-          NavLink("Sharing", Pages.sharingFactory.pageUrl(), id = "_sharingButton", enabled = DataAccess.request.isOwner),
+          NavLink("Sharing", Pages.sharingFactory.pageUrl(), id = "_sharingButton", enabled = canShare),
           NavLink("Advanced...", 
               Pages.advancedFactory.pageUrl(thingOpt.getOrElse(space)), 
               id = "_openAdvancedItem", 
@@ -172,7 +176,7 @@ class MenuBar(std:StandardThings)(implicit e:Ecology, ctx:Ctx.Owner) extends Hoo
         },
         NavLink("View Source", Pages.viewFactory.pageUrl(thing), requiresExplore = true, complexity = Standard, allowedDuringHistory = true),
         NavLink(s"Security for ${thing.displayName}", Pages.securityFactory.pageUrl(thing), requiresExplore = true,
-            enabled = DataAccess.request.isOwner,
+            enabled = canShare,
             id = "_securityItem",
             complexity = Advanced),
         NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), requiresExplore = true, complexity = Standard, allowedDuringHistory = true),
