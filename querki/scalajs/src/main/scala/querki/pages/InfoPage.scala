@@ -22,6 +22,10 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
   // be a *parameter* to this Page instead?
   lazy val spaceInfo = DataAccess.space.get
   
+  lazy val canManageApps = DataAccess.space.map { space =>
+    space.permissions.contains(std.apps.canManipulateAppsPerm.oid)
+  }.getOrElse(false)
+  
   lazy val isApp = spaceInfo.isApp
   
   def pageContent = {
@@ -41,7 +45,7 @@ class InfoPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
       appsInfo <- appsFut
       // For the moment, we only allow you to extract an App if there isn't already an App. This will change.
       allowExtract = 
-        DataAccess.request.isOwner && 
+        canManageApps && 
         (SkillLevel.current == SkillLevel.AdvancedComplexity) &&
         spaceInfo.apps.isEmpty
       guts =
