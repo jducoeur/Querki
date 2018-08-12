@@ -76,6 +76,7 @@ package object security {
     def CanDesignPerm:Property[OID,OID]
     def CanEditProp:Property[OID,OID]
     def CanEditChildrenProp:Property[OID,OID]
+    def CanManageDataPerm: Property[OID, OID]
     def CanReadProp:Property[OID,OID]
     
     // TODO: ChildPermissionsProp is deprecated, and should eventually go away. It is no

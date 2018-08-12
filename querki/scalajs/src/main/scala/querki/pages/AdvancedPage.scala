@@ -23,6 +23,10 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
   lazy val History = interface[querki.history.History]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
+  lazy val canManageData = DataAccess.space.map { space =>
+    space.permissions.contains(std.security.canManageDataPerm.oid)
+  }.getOrElse(false)
+
   def archiveAfterConfirm(info:SpaceInfo) = {
     val archiveDialog:Dialog = 
       new Dialog("Confirm Archive",
@@ -84,7 +88,7 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
             Console.consoleFactory.showPage()
           })
         ),
-        if (DataAccess.request.isOwner) {
+        if (canManageData) {
           div(
             p("""Press this button to reload this Space. (This is mainly for testing; you can usually ignore it.)"""),
             new ButtonGadget(ButtonGadget.Info, "Reload", id := "_reloadButton") ({ () =>
@@ -107,8 +111,13 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
               target:="_blank",
               href:="_export.xml",
               "Export Space to XML"
-            ),
-            
+            )
+          )
+        },
+          
+        // Archiving is one of the few functions that Managers can *not* do:
+        if (DataAccess.request.isOwner) {
+          div(
             p("""Press this button to Archive this Space. NOTE: there is currently no way to list or recover Archived
               Spaces! Those capabilities are at least a few months away, so only Archive this Space if you are sure
               you aren't going to need it any time soon!"""),
@@ -117,6 +126,7 @@ class AdvancedPage(params:ParamMap)(implicit val ecology:Ecology) extends Page("
             })
           )
         },
+        
         new ButtonGadget(ButtonGadget.Primary, "Done")({ () => 
           Pages.thingPageFactory.showPage(thingId)
         })

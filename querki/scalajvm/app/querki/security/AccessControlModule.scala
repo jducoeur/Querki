@@ -35,6 +35,7 @@ object MOIDs extends EcotIds(4) {
   val AppliesToSpaceOID = moid(22)
   val AppliesToModelsOID = moid(23)
   val AppliesToInstancesOID = moid(24)
+  val CanManageDataPermOID = moid(25)
 }
 
 class AccessControlModule(e:Ecology) 
@@ -531,6 +532,14 @@ class AccessControlModule(e:Ecology)
       Seq(AppliesToSpace, AppliesToModels),
       true,
       false)
+      
+  lazy val CanManageDataPerm = definePermission(CanManageDataPermOID,
+      commonName(_.security.canManageDataPerm),
+      "Who can manage the Data contained in this Space",
+      Seq(OwnerTag),
+      Seq(AppliesToSpace),
+      false,
+      false)
   
   lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
       toProps(
@@ -648,7 +657,9 @@ class AccessControlModule(e:Ecology)
     CanDesignPerm,
     CanEditProp,
     CanEditChildrenProp,
+    CanManageDataPerm,
     CanReadProp,
+    
     DefaultPermissionProp,
     RolePermissionsProp,
     PersonRolesProp,

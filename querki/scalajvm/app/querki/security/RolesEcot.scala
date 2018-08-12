@@ -136,7 +136,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   // Note: we put the permissions on Manager on general principles, but in practice a Manager can do
   // *everything* an Owner can do, except functions that are specifically checked as isOwner.
-  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm, CanManageSecurityPerm) ++ editorPerms
+  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm, CanManageSecurityPerm, AccessControl.CanManageDataPerm) ++ editorPerms
   lazy val ManagerRole =
     defineRole(ManagerOID, "Manager Role", "Manager",
       """Manager -- can do everything an Editor can, plus almost everything the Owner of the Space can do. You should only make

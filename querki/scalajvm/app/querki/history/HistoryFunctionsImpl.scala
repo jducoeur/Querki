@@ -11,13 +11,19 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
   import HistoryFunctions._
   import SpaceHistory._
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ClientApi = interface[querki.api.ClientApi]
   
   def doRoute(req:Request):Future[String] = route[HistoryFunctions](this)(req)
+  
+  // At least for the time being, we are considering History management to fall under more-general Data management.
+  // We might make this more fine-grained eventually (especially for management of specific Things), but Managers
+  // should always be able to do it.
+  lazy val canManageHistory = AccessControl.hasPermission(AccessControl.CanManageDataPerm, state, user, state)
 
   def getHistorySummary():Future[HistorySummary] = {
-    // In theory, non-owner shouldn't be able to call this, but belt and suspenders:
-    if (!isOwner)
+    // Only Managers can call this:
+    if (!canManageHistory)
       throw new Exception(s"Only the owner of the Space is allowed to view its history!")
     
     for {
@@ -27,8 +33,7 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
   }
   
   def rollbackTo(v:HistoryVersion):Future[SpaceInfo] = {
-    // In theory, non-owner shouldn't be able to call this, but belt and suspenders:
-    if (!isOwner)
+    if (!canManageHistory)
       throw new Exception(s"Only the owner of the Space is allowed to view its history!")
     
     for {
