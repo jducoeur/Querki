@@ -23,6 +23,7 @@ import messages._
  */
 class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ConversationFunctions {
 
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
@@ -64,7 +65,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
         content,
         c.primaryResponse,
         c.createTime.getMillis,
-        theRc.isOwner || theRc.requesterOrAnon.hasIdentity(c.authorId),
+        AccessControl.hasPermission(Conversations.CanModerate, state, user, t) || theRc.requesterOrAnon.hasIdentity(c.authorId),
         c.isDeleted
       )
     }

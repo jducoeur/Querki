@@ -126,8 +126,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       """Contributor -- can do everything a Commentator can, plus create and edit Instances.""".stripMargin,
       contributorPerms)
       
-  // TODO: once we have Moderation, add the CanModerate permission here. 
-  lazy val editorPerms = Seq(AccessControl.CanDesignPerm) ++ contributorPerms
+  lazy val editorPerms = Seq(AccessControl.CanDesignPerm, Conversations.CanModerate) ++ contributorPerms
   lazy val EditorRole =
     defineRole(EditorOID, "Editor Role", "Editor",
       """Editor / Designer -- can do everything a Contributor can, plus design Models. Once Moderation is
@@ -136,7 +135,12 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   // Note: we put the permissions on Manager on general principles, but in practice a Manager can do
   // *everything* an Owner can do, except functions that are specifically checked as isOwner.
-  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm, CanManageSecurityPerm, AccessControl.CanManageDataPerm) ++ editorPerms
+  lazy val managerPerms = 
+    Seq(
+      Apps.CanManipulateAppsPerm, 
+      CanManageSecurityPerm, 
+      AccessControl.CanManageDataPerm
+    ) ++ editorPerms
   lazy val ManagerRole =
     defineRole(ManagerOID, "Manager Role", "Manager",
       """Manager -- can do everything an Editor can, plus almost everything the Owner of the Space can do. You should only make

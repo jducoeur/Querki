@@ -28,6 +28,7 @@ object MOIDs extends EcotIds(35) {
   val ConversationTypeOID = moid(7)
   val CommentsFunctionOID = moid(8)
   val LatestCommentTimeFunctionOID = moid(9)
+  val CanModeratePermOID = moid(10)
 }
 import MOIDs._
 
@@ -279,6 +280,11 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
       Seq(AccessControl.OwnerTag, AccessControl.PublicTag), 
       Seq(AccessControl.AppliesToSpace, AccessControl.AppliesToModels, AccessControl.AppliesToInstances),
       true, true)
+      
+  lazy val CanModerate = AccessControl.definePermission(CanModeratePermOID, "Who Can Moderate", "Who can moderate comments on this Thing", 
+      Seq(AccessControl.OwnerTag), 
+      Seq(AccessControl.AppliesToSpace, AccessControl.AppliesToModels, AccessControl.AppliesToInstances), 
+      true, false)
   
   override lazy val props = Seq(
     ThingConversationsFunction,
@@ -287,6 +293,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
     
     CommentText,
     CanComment,
-    CanReadComments
+    CanReadComments,
+    CanModerate
   )
 }

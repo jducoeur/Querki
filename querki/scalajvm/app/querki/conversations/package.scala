@@ -41,6 +41,8 @@ package object conversations {
      */
     def CanReadComments:Property[OID,OID]
     
+    def CanModerate: Property[OID, OID]
+    
     /**
      * The *old* public interface to create a SpaceConversationsActor.
      */

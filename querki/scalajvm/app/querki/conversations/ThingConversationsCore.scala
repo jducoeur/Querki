@@ -33,6 +33,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
   extends EcologyMember with PersistentActorCore with PersistentEvents with IdentityPersistence
 { self:querki.types.ModelTypeDefiner =>
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ConvEcot = interface[Conversations]
   
   def convTrace = ConvEcot.convTrace _
@@ -279,7 +280,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
         case DeleteComment(_, commentId) => {
           conversations.findNode(commentId) match {
             case Some((node, parents)) => {
-              if (req.hasIdentity(state.owner) || req.hasIdentity(node.comment.authorId)) {
+              if (AccessControl.hasPermission(ConvEcot.CanModerate, state, req, thingId) || req.hasIdentity(node.comment.authorId)) {
                 doPersist(DHDeleteComment(req, commentId)) { _ =>
                   doDelete(commentId)
                   respond(CommentDeleted)
