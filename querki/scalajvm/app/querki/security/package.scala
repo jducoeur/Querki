@@ -67,6 +67,11 @@ package object security {
      */
     def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing]
     
+    /**
+     * Convenience function for checking whether this User is a Manager in this Space.
+     */
+    def isManager(who: User, state: SpaceState): Boolean
+    
     def RolePermissionsProp:Property[OID,OID]
     def PersonRolesProp:Property[OID,OID]
     

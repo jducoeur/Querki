@@ -122,6 +122,10 @@ class AccessControlModule(e:Ecology)
     managers.contains(identityId)
   }
   
+  def isManager(who: User, state: SpaceState): Boolean = {
+    who.identities.exists(identity => isManager(identity.id, state))
+  }
+  
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
     who.identities.exists(identity => hasPermission(aclProp, state, identity.id, thingId))
   }
