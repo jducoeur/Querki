@@ -124,6 +124,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   lazy val hasExplore = spaceOpt.map { space =>
     space.permissions.contains(std.roles.canExplorePerm)
   }.getOrElse(false)
+  
+  lazy val canShare = spaceOpt.map { space =>
+    space.permissions.contains(std.roles.canManageSecurityPerm)
+  }.getOrElse(false)
     
   def editButton(addlCls:Seq[String] = Seq.empty) = faIconButton("pencil", addlCls)
   
@@ -157,7 +161,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           href:=s"mailto:?subject=${thing.displayName}&body=${js.URIUtils.encodeURI(fulldom.window.location.href)}",
           target:="_blank",
           "Share via Email...")),
-        if (isSpace && DataAccess.request.isOwner) {
+        if (isSpace && canShare) {
           MSeq(
             li(a(href := Pages.sharingFactory.pageUrl("tab" -> querki.security.SharingPage.Tab.CustomRoles.entryName), "Get Shareable Link...")),
             li(a(href:=Pages.sharingFactory.pageUrl("tab" -> SharingPage.Tab.Invite.entryName), "Invite Members...")),
