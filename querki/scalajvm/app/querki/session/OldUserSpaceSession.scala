@@ -401,9 +401,11 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
         History.viewingHistoryVersion(rc) match {
           case Some(v) => {
             // We're exploring history, which is a more complex problem.
-            // First, we only allow the Owner to play with this stuff:
-            if (!rc.isOwner)
-              throw new Exception(s"Only the Owner of a Space is currently allow to explore History!")
+            // First, we only allow the Managers to play with this stuff
+            // TODO: we should make this a separate permission, and eventually open it more.
+            // Might be available to Editors as well? But it requires global read permission.
+            if (!AccessControl.isManager(user, state))
+              throw new Exception(s"Only a Manager of a Space is currently allow to explore History!")
             
             // Fetch the state as of that point:
             for {
