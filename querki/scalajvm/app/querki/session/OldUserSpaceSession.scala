@@ -102,10 +102,10 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     _rawState match {
       case Some(rs) => {
         // Managers act as Owners for purposes of being able to read everything:
-        val isOwner = AccessControl.isManager(user, rs)
+        val isManager = AccessControl.isManager(user, rs)
         val safeState =
-          if (isOwner) {
-            monitor(s"makeEnhancedState() skipped -- it is the owner")
+          if (isManager) {
+            monitor(s"makeEnhancedState() skipped -- it is a manager")
             rs
           } else {
             monitor(s"makeEnhancedState() starting read filtering for User ${user.id}...")

@@ -93,6 +93,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   }
   
   def archiveThisSpace():Future[Boolean] = {
+    // This really-and-for-true is only allowed for the Owner, not a Manager:
     if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)
       throw new NotAllowedException()
     
