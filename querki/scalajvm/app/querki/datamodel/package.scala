@@ -3,7 +3,8 @@ package querki
 import models.{AnyProp, Property, Thing}
 
 import querki.ecology._
-import querki.values.{QValue, SpaceState}
+import querki.globals._
+import querki.values.QValue
 
 package object datamodel {
   
@@ -19,5 +20,10 @@ package object datamodel {
     def getDeletedValue(prop:AnyProp)(implicit state:SpaceState):QValue
     
     def isDeletable(t:Thing, allowIfProp:Boolean = false)(implicit state:SpaceState):Boolean
+  }
+  
+  trait Choices extends EcologyInterface {
+    def ChooseFromPropProp: Property[OID, OID]
+    def ChooseFromThingProp: Property[OID, OID]
   }
 }

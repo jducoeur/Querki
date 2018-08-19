@@ -29,6 +29,7 @@ object MOIDs extends EcotIds(26)
  */
 class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with querki.core.NameUtils with querki.core.LinkUtils {
   
+  lazy val Choices = interface[querki.datamodel.Choices]
   lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
   lazy val Tags = interface[querki.tags.Tags]
@@ -219,19 +220,86 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       // If the Type wants to own the rendering, on its head be it:
       case renderingType:FullInputRendering => Some(fut(renderingType.renderInputFull(prop, context, currentValue)))
       case _ => {
-      if (cType == Optional && pType == YesNoType)
-        Some(fut(renderOptYesNo(state, prop, currentValue)))
-      else if (cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
-        Some(renderOptLink(context, prop, currentValue))
-      else if (Tags.isTaggableProperty(prop)) {
-        if (specialization.contains(PickList))
-          Some(renderPickList(state, context.request, prop, currentValue, specialization))
-        else
-          Some(renderTagSet(state, context.request, prop, currentValue))
-      } else
-        None
+        prop.getFirstOpt(Choices.ChooseFromPropProp) match {
+          case Some(chooseFromProp) => {
+            // This is a Choice Property, so the renderer is a selection among those choices:
+            Some(renderChoice(context, prop, currentValue, chooseFromProp))
+          }
+          case None => {
+            if (cType == Optional && pType == YesNoType)
+              Some(fut(renderOptYesNo(state, prop, currentValue)))
+            else if (cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
+              Some(renderOptLink(context, prop, currentValue))
+            else if (Tags.isTaggableProperty(prop)) {
+              if (specialization.contains(PickList))
+                Some(renderPickList(state, context.request, prop, currentValue, specialization))
+              else
+                Some(renderTagSet(state, context.request, prop, currentValue))
+            } else
+              None            
+          }
+        }
       }
     }
+  }
+  
+  def renderChoice(context: QLContext, prop: AnyProp, currentValue: DisplayPropVal, chooseFromPropId: OID): Future[NodeSeq] = {
+    implicit val state = context.state
+    val targetType = prop.pType
+    
+    def constructForKnownThing(chooseFromProp: AnyProp, chooseFromThing: Thing, currentSelectedElemOpt: Option[ElemValue]): Future[NodeSeq] = {
+      val optionElems = chooseFromThing.getPropVal(chooseFromProp).elems
+      
+      val optionFuts = optionElems.map { option =>
+        val isSelected = currentSelectedElemOpt.map(cur => targetType.matches(cur, option)).getOrElse(false)
+        // TODO: Eeeeevil! This shouldn't be hard-coded, but Links are sadly weird right now:
+        val vStr =
+          if (targetType == LinkType)
+            option.get(LinkType).toString
+          else
+            targetType.toUser(option)
+        targetType.wikify(context)(option).map { wiki =>
+          (wiki.strip.toString, isSelected, vStr)
+        }
+      }
+      val optionsFut = Future.sequence(optionFuts)
+      
+      optionsFut.map { options =>
+        <select>{
+          options.map { case (display, isSelected, v) =>
+            if (isSelected)
+              <option value={v} selected="selected">{display}</option>
+            else
+              <option value={v}>{display}</option>
+          }
+        }</select>
+      }
+    }
+    
+    val resultOpt = for {
+      chooseFromPropRaw <- state.prop(chooseFromPropId)
+      // Make sure the types line up. For now the current Prop and the Choose From Prop must be
+      // exactly the same PType. We might eventually loosen this to a *limited* degree, but
+      // it's a helpful check.
+      chooseFromProp <- chooseFromPropRaw.confirmType(targetType)
+      // Note that, for now, this only works with single values. Multi-valued Properties are going
+      // to need more thought, to line up "currentValue" correctly.
+      currentSelectedElem = currentValue.effectiveV.flatMap(_.firstOpt)
+      // It is intentionally optional to have a Choose From Thing, to allow us to set that
+      // dynamically in the Client.
+      chooseFromThingOpt = prop.firstOpt(Choices.ChooseFromThingProp).flatMap(id => state.anything(id))
+    }
+      yield chooseFromThingOpt match {
+        case Some(chooseFromThing) => constructForKnownThing(chooseFromProp, chooseFromThing, currentSelectedElem)
+        // TODO: how do we deal with it if there *is* a current selection, but not a chooseFromThing? It's entirely
+        // legal, and should show as selected, but the list of choices is dynamically based on the dependency!
+        // If it doesn't have Choose From Thing, look at Choose From Thing Through. And if it doesn't have *that*,
+        // expect to find the values directly on this Property.
+        case None => ??? // TODO
+      }
+      
+    // TODO: this should be an ordinary Warning, not an Exception! How do we make that work in this stack?
+    resultOpt.getOrElse(throw new Exception(s"Trying to show editor for poorly-formed Choice!"))
   }
   
   def renderOptYesNo(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {

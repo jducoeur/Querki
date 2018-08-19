@@ -580,8 +580,6 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     override def doComp(context:QLContext)(left:OID, right:OID):Boolean = { 
       compareNames(getNameFromId(context)(left), getNameFromId(context)(right))
     } 
-    
-    // TODO: define doFromUser()
 
     def doDefault(implicit state:SpaceState) = UnknownOID
     
@@ -593,6 +591,20 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
       state.anything(v) match {
         case Some(thing) => thing.displayName
         case None => v.toString
+      }
+    }
+    
+    override def doFromUser(str:String)(implicit state:SpaceState): OID = {
+      // Is it an OID?
+      OID.parseOpt(str) match {
+        case Some(oid) => oid
+        case None => {
+          // No -- is it a name?
+          state.anythingByName(str) match {
+            case Some(thing) => thing.id
+            case None => throw new Exception(s"Can't find a Thing named $str")
+          }
+        }
       }
     }
     
