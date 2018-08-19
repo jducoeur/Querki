@@ -288,14 +288,19 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       // It is intentionally optional to have a Choose From Thing, to allow us to set that
       // dynamically in the Client.
       chooseFromThingOpt = prop.firstOpt(Choices.ChooseFromThingProp).flatMap(id => state.anything(id))
+      // Alternately, you can use Choose From Thing Through, which indirectly specifies which Thing the
+      // choices are coming from
+      chooseFromThroughOpt = prop.firstOpt(Choices.ChooseFromThingThroughProp).flatMap(id => state.anything(id))
     }
-      yield chooseFromThingOpt match {
-        case Some(chooseFromThing) => constructForKnownThing(chooseFromProp, chooseFromThing, currentSelectedElem)
-        // TODO: how do we deal with it if there *is* a current selection, but not a chooseFromThing? It's entirely
-        // legal, and should show as selected, but the list of choices is dynamically based on the dependency!
-        // If it doesn't have Choose From Thing, look at Choose From Thing Through. And if it doesn't have *that*,
-        // expect to find the values directly on this Property.
-        case None => ??? // TODO
+      yield {
+        if (chooseFromThingOpt.isDefined) {
+          constructForKnownThing(chooseFromProp, chooseFromThingOpt.get, currentSelectedElem)
+        } else if (chooseFromThroughOpt.isDefined) {
+          ???
+        } else {
+          // If no Thing is specified, we expect to find the Choose From Prop on this Prop itself:
+          constructForKnownThing(chooseFromProp, prop, currentSelectedElem)
+        }
       }
       
     // TODO: this should be an ordinary Warning, not an Exception! How do we make that work in this stack?

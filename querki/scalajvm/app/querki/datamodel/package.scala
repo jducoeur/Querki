@@ -25,5 +25,6 @@ package object datamodel {
   trait Choices extends EcologyInterface {
     def ChooseFromPropProp: Property[OID, OID]
     def ChooseFromThingProp: Property[OID, OID]
+    def ChooseFromThingThroughProp: Property[OID, OID]
   }
 }
