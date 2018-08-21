@@ -17,6 +17,7 @@ import querki.display._
 import querki.display.HookedGadget
 import querki.editing.EditFunctions
 import EditFunctions._
+import querki.pages.Page
 
 /**
  * Base class for input controls. When you create a new concrete class, make sure to add it to
@@ -26,6 +27,7 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]  
   lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
+  private lazy val Pages = interface[querki.pages.Pages]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   /**
@@ -87,6 +89,19 @@ abstract class InputGadget[T <: Element](e:Ecology) extends HookedGadget[T](e) w
     val propColl = $(elem).dataString("collid")
     val core = DataAccess.std.core
     isColl(propColl, core.optionalColl).isDefined
+  }
+  
+  private var pageOpt: Option[Page] = None
+  /**
+   * What Page is this Gadget on? Cached for efficiency.
+   * 
+   * TODO: this is pretty terrible. This *should* be passed down the line, probably as an implicit?
+   */
+  def onPage: Option[Page] = {
+    pageOpt orElse {
+      pageOpt = Pages.findPageFor(this)
+      pageOpt
+    }
   }
   
   /**

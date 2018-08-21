@@ -243,36 +243,64 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
+  /**
+   * This is called when we have a full-fledged Choice Property.
+   * 
+   * A Choice is a value, of any Type, that is drawn from a list of options that is specified in another Property.
+   * The Choice Property must specify the Choose From Property meta-prop, which says what the other Property is.
+   * It *may* specify the Choose From Thing meta-prop (which says which other Thing that other Property is found on),
+   * or the Choose From Thing Through meta-prop (which points to *another* Property, which indicates which Thing to look
+   * on). If neither is provided, the Choose From Property points to a list directly on the main Property; this is
+   * expected to be the conventional case once we have a proper creation UI for these.
+   */
   def renderChoice(context: QLContext, prop: AnyProp, currentValue: DisplayPropVal, chooseFromPropId: OID): Future[NodeSeq] = {
     implicit val state = context.state
     val targetType = prop.pType
     
-    def constructForKnownThing(chooseFromProp: AnyProp, chooseFromThing: Thing, currentSelectedElemOpt: Option[ElemValue]): Future[NodeSeq] = {
-      val optionElems = chooseFromThing.getPropVal(chooseFromProp).elems
-      
-      val optionFuts = optionElems.map { option =>
-        val isSelected = currentSelectedElemOpt.map(cur => targetType.matches(cur, option)).getOrElse(false)
-        // TODO: Eeeeevil! This shouldn't be hard-coded, but Links are sadly weird right now:
-        val vStr =
-          if (targetType == LinkType)
-            option.get(LinkType).toString
-          else
-            targetType.toUser(option)
-        targetType.wikify(context)(option).map { wiki =>
-          (wiki.strip.toString, isSelected, vStr)
+    def construct(
+      chooseFromProp: AnyProp, 
+      chooseFromOpt: Option[Thing], 
+      chooseThroughOpt: Option[AnyProp], 
+      currentSelectedElemOpt: Option[ElemValue]): Future[NodeSeq] = 
+    {
+      val optionsFut: Future[Iterable[(String, Boolean, String)]] = chooseFromOpt.map(_.getPropVal(chooseFromProp).elems) match {
+        case Some(optionElems) => {
+          // There is a current Thing that is providing the values, so get them from there:
+          val optionFuts = optionElems.map { option =>
+            val isSelected = currentSelectedElemOpt.map(cur => targetType.matches(cur, option)).getOrElse(false)
+            // TODO: Eeeeevil! This shouldn't be hard-coded, but Links are sadly weird right now:
+            val vStr =
+              if (targetType == LinkType)
+                option.get(LinkType).toString
+              else
+                targetType.toUser(option)
+            targetType.wikify(context)(option).map { wiki =>
+              (wiki.strip.toString, isSelected, vStr)
+            }
+          }
+          Future.sequence(optionFuts)
         }
+        // We don't have a current Thing, so there are no current options:
+        case None => fut(Iterable.empty)
       }
-      val optionsFut = Future.sequence(optionFuts)
+      
+      def innards(options: Iterable[(String, Boolean, String)]) = {
+        options.map { case (display, isSelected, v) =>
+          if (isSelected)
+            <option value={v} selected="selected">{display}</option>
+          else
+            <option value={v}>{display}</option>
+        }        
+      }
       
       optionsFut.map { options =>
-        <select>{
-          options.map { case (display, isSelected, v) =>
-            if (isSelected)
-              <option value={v} selected="selected">{display}</option>
-            else
-              <option value={v}>{display}</option>
+        chooseThroughOpt match {
+          case Some(chooseThrough) => {
+            val fieldId = new FieldIds(currentValue.on, chooseThrough)
+            <select class="_depends" data-dependson={fieldId.inputControlId}>{innards(options)}</select> 
           }
-        }</select>
+          case None => <select>{innards(options)}</select>
+        }
       }
     }
     
@@ -290,16 +318,29 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       chooseFromThingOpt = prop.firstOpt(Choices.ChooseFromThingProp).flatMap(id => state.anything(id))
       // Alternately, you can use Choose From Thing Through, which indirectly specifies which Thing the
       // choices are coming from
-      chooseFromThroughOpt = prop.firstOpt(Choices.ChooseFromThingThroughProp).flatMap(id => state.anything(id))
+      chooseFromThroughOpt = prop.firstOpt(Choices.ChooseFromThingThroughProp).flatMap(id => state.prop(id))
     }
       yield {
         if (chooseFromThingOpt.isDefined) {
-          constructForKnownThing(chooseFromProp, chooseFromThingOpt.get, currentSelectedElem)
+          // An explicit Thing contains the list of options:
+          construct(chooseFromProp, chooseFromThingOpt, chooseFromThroughOpt, currentSelectedElem)
         } else if (chooseFromThroughOpt.isDefined) {
-          ???
+          // This is the tricky case: we are pointing to another Property, on this same Thing, that says
+          // which Thing to draw the list from. This is how we manage Dependent Choices:
+          val curThingOpt = for {
+            chooseFromRaw <- chooseFromThroughOpt
+            // At least for now, Choose From Through must specify a Thing Property:
+            chooseFrom <- chooseFromRaw.confirmType(LinkType)
+            bundle <- currentValue.on
+            thingId <- bundle.getFirstOpt(chooseFrom)
+            thing <- state.anything(thingId)
+          }
+            yield thing
+            
+          construct(chooseFromProp, curThingOpt, chooseFromThroughOpt, currentSelectedElem)
         } else {
           // If no Thing is specified, we expect to find the Choose From Prop on this Prop itself:
-          constructForKnownThing(chooseFromProp, prop, currentSelectedElem)
+          construct(chooseFromProp, Some(prop), chooseFromThroughOpt, currentSelectedElem)
         }
       }
       

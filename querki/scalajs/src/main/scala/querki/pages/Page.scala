@@ -17,6 +17,7 @@ import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
+import querki.display.input.{InputDependencies, InputDependenciesHandler}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
   def titleOr(f: => String):String =
@@ -47,9 +48,10 @@ abstract class Page(pageName:String = "")
    */
   implicit val ctx:Ctx.Owner = Ctx.Owner.safe()
   
+  def unload() = {
+    inputDependencies.clear()
   // TODO: what we *want* this to do is kill this Owner, and all of its recursive dependencies,
   // when the page unloads. But Scala.Rx doesn't yet support that, so I *suspect* we are leaking.
-  def unload() = {
 //    ctx.kill()
   }
   
@@ -222,4 +224,10 @@ abstract class Page(pageName:String = "")
       reindex(e, 20100)
     }
   }
+  
+  /**
+   * This handles any dependencies between inputs on the page. It lives here so that it will get cleaned
+   * up on page change.
+   */
+  lazy val inputDependencies: InputDependencies = new InputDependenciesHandler
 }

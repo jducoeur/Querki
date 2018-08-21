@@ -46,6 +46,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     Gadgets.registerSimpleGadget("._optYesNo", { new OptYesNoGadget })
     Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)
     Gadgets.registerSimpleGadget("._dateInput", { new DateGadget })
+    Gadgets.registerSimpleGadget("._depends", { new DependentInputGadget })
   }
   
   /**
@@ -83,6 +84,8 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
       savePromise = None
       promise.success(())
     }
+    // If anything's listening for this, notify them:
+    gadget.onPage.foreach(_.inputDependencies.updated(gadget.path))
   }
   
   def afterAllSaved:Future[Unit] = {

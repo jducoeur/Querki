@@ -10,8 +10,8 @@ class SelectGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSelectElement
   // IMPORTANT: this currently does not allow for multi-select! Value() returns an array if
   // multi-select is turned on!
   def values = List($(elem).find("option:selected").value().asInstanceOf[String])
-  
-  def hook() = {
+    
+  def hook() = {  
     $(elem).change({ e:dom.Element => save() })
     // For Bootstrap:
     $(elem).addClass("form-control")

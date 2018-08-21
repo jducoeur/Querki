@@ -42,6 +42,7 @@ class ChoiceEcot(e:Ecology) extends QuerkiEcot(e) with Choices {
       setName("_chooseFromThingThrough"),
       SkillLevel(SkillLevelAdvanced),
       Core.AppliesToKindProp(Kind.Property),
+      Links.LinkKindProp(Kind.Property),
       Categories(DataModelTag),
       Summary("""When a Property is a Choice, this can list *another* Property that specifies which Thing the choices come from.""")))
   
