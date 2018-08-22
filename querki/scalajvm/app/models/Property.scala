@@ -81,7 +81,8 @@ case class Property[VT, RT](
     // worry about -- the Collections are pretty fungible:
 //    if ((v.cType != cType) && (id != querki.core.MOIDs.NameOID))
 //      QLog.error(s"Property $displayName Validation Failed: expected collection ${cType.displayName}, but got ${v.cType.displayName}")
-    if (v.pType.realType != pType.realType)
+    // We explicitly allow UnknownType, because that's what we get in the case of an Empty Optional:
+    if (v.pType.realType != pType.realType && v.pType.realType != Core.UnknownType)
       QLog.error(s"Property $displayName Validation Failed: expected type ${pType.displayName}, but got ${v.pType.displayName}")
       
     f

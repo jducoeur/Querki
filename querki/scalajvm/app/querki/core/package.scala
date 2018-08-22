@@ -51,6 +51,11 @@ package object core {
   val CoreTag = "Querki Core"
   
   /**
+   * Magic value to put in an HTML select tag, for the "empty" value in an Optional choice.
+   */
+  final val EmptyOptionValue = "++None++"
+  
+  /**
    * The formal definition of the syntax of a Link Name.
    * 
    * TBD: this probably isn't the ideal place for this, but it's needed in a couple of different

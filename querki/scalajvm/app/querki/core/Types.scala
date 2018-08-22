@@ -436,7 +436,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     val realOptionsFut:Future[Seq[NodeSeq]] =
       candidatesFut.flatMap { candidates =>
         if (candidates.isEmpty) {
-          Future.successful(Seq(<option value={UnknownOID.toString}><i>None defined</i></option>))
+          Future.successful(Seq(<option value={EmptyOptionValue}><i>None defined</i></option>))
         } else {
           // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
           // name sanitizing for us:
@@ -464,7 +464,7 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
         // Note the second clause here: this is so that, even in a Required field, it will *initially* display
         // as "Nothing selected" until you choose a value.
         if (allowEmpty || (v.elem == UnknownOID))
-          <option value={UnknownOID.id.toString}>Nothing selected</option> +: realOptions
+          <option value={EmptyOptionValue}>Nothing selected</option> +: realOptions
         else
           realOptions
       fullContents = withOpt

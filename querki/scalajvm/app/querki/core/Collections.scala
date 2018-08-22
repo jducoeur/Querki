@@ -442,6 +442,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       val prop = info.p
       val elemT = prop.pType
       vs.headOption match {
+        case Some(v) if (v == EmptyOptionValue) => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
         case Some(v) => fromUserString(prop, v, elemT, state)
         case None => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
       }

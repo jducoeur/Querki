@@ -7,7 +7,7 @@ import play.api.data.Form
 
 import models._
 
-import querki.core.QLText
+import querki.core.{EmptyOptionValue, QLText}
 import querki.ecology._
 import querki.globals._
 import querki.util.XmlHelpers
@@ -256,6 +256,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def renderChoice(context: QLContext, prop: AnyProp, currentValue: DisplayPropVal, chooseFromPropId: OID): Future[NodeSeq] = {
     implicit val state = context.state
     val targetType = prop.pType
+    val isOptional = prop.cType == Optional
     
     def construct(
       chooseFromProp: AnyProp, 
@@ -263,6 +264,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       chooseThroughOpt: Option[AnyProp], 
       currentSelectedElemOpt: Option[ElemValue]): Future[NodeSeq] = 
     {
+      val currentExists = currentSelectedElemOpt.isDefined
       val optionsFut: Future[Iterable[(String, Boolean, String)]] = chooseFromOpt.map(_.getPropVal(chooseFromProp).elems) match {
         case Some(optionElems) => {
           // There is a current Thing that is providing the values, so get them from there:
@@ -284,6 +286,25 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         case None => fut(Iterable.empty)
       }
       
+      def unselectedOption: Seq[scala.xml.Elem] = {
+        if (isOptional)
+          Seq(<option value={EmptyOptionValue}>Nothing selected</option>)
+        else
+          Seq.empty
+      }
+      
+      def invalidCurrentOption(invalidCurrentOpt: Option[String], chooseThrough: AnyProp): Seq[scala.xml.Elem] = {
+        invalidCurrentOpt match {
+          case Some(display) => Seq(<option disabled="disabled" selected="selected">{display} (invalid)</option>)
+          case None => {
+            if (chooseFromOpt.isDefined)
+              Seq.empty
+            else
+              Seq(<option disabled="disabled" selected="selected">Choose from {chooseThrough.displayName}</option>)
+          }
+        }
+      }
+      
       def innards(options: Iterable[(String, Boolean, String)]) = {
         options.map { case (display, isSelected, v) =>
           if (isSelected)
@@ -293,13 +314,27 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         }        
       }
       
-      optionsFut.map { options =>
-        chooseThroughOpt match {
-          case Some(chooseThrough) => {
-            val fieldId = new FieldIds(currentValue.on, chooseThrough)
-            <select class="_depends" data-dependson={fieldId.inputControlId}>{innards(options)}</select> 
+      optionsFut.flatMap { options =>
+        val invalidCurrentFut: Future[Option[String]] =
+          if (!currentExists || options.exists(_._2))
+            fut(None)
+          else
+            futOpt(currentSelectedElemOpt.map { elem =>
+              elem.pType.wikify(context)(elem).map(_.strip.toString)
+            })
+        
+        invalidCurrentFut.map { invalidCurrent =>
+          chooseThroughOpt match {
+            case Some(chooseThrough) => {
+              val fieldId = new FieldIds(currentValue.on, chooseThrough)
+              <select class="_depends" data-dependson={fieldId.inputControlId}>
+                {unselectedOption}
+                {invalidCurrentOption(invalidCurrent, chooseThrough)}
+                {innards(options)}
+              </select> 
+            }
+            case None => <select>{innards(options)}</select>
           }
-          case None => <select>{innards(options)}</select>
         }
       }
     }
@@ -541,7 +576,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     if (prop.cType == Optional && pType == YesNoType)
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
-      Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
+      Some(handleOptionalForm(prop, newVal, LinkType, _ == EmptyOptionValue))
     else
       None
   }
