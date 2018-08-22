@@ -164,7 +164,8 @@ object MarcoPoloInput {
   def apply(rawElement:dom.HTMLInputElement)(implicit e:Ecology) = {
     // Required data attributes of any Tag Set Input:
     val isNames = $(rawElement).data("isnames").asInstanceOf[Boolean]
-    val propId = $(rawElement).data("prop").asInstanceOf[String]
+    // Note that we might find the "prop" here, or on an ancestor if this is, eg, a List:
+    val propId = $(rawElement).closest("[data-prop]").data("prop").asInstanceOf[String]
     val kind = if (isNames) TagSetKind.Tag else TagSetKind.Link
     
     new MarcoPoloInput(propId, !isNames, kind).setElem(rawElement)
