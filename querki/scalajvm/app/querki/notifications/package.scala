@@ -22,6 +22,8 @@ package object notifications {
   
   val EmptyNotificationId = Common.EmptyNotificationId
   
+  final val NotifyTag = "Notifications"
+  
   /**
    * How we represent the guts of a Notification. Note that this is necessarily a *serialized*
    * PropMap, because we use it in cross-node messages.

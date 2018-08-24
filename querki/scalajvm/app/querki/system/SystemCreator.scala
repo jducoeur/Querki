@@ -113,6 +113,7 @@ object SystemCreator {
     new querki.console.ConsoleEcot(ecology)                        // 71
     new querki.identity.IdentityCommands(ecology)                  // 72
     new querki.datamodel.ChoiceEcot(ecology)                       // 73
+    new querki.notifications.UserlandNotifierEcot(ecology)         // 74
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {

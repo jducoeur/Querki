@@ -333,8 +333,18 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
       Categories(QLTag),
       Summary("This is an internal Text Type that results from the system parsing some Text"))) with SimplePTypeBuilder[Wikitext]
   {
-    def doDeserialize(v:String)(implicit state:SpaceState) = throw new SerializationException(this)
-    def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new SerializationException(this)
+    // We didn't originally permit serialization of Wikitext, but do now for Notifications. Since we want to
+    // retain the Wikitext's structure properly, we are serializing it using upickle, since that's the
+    // well-established way we handle it over the wire. It's a bit inefficient, but should be liveable.
+    def doDeserialize(v:String)(implicit state:SpaceState) = {
+      import upickle.default._
+      read[Wikitext](v)
+    }
+    def doSerialize(v:Wikitext)(implicit state:SpaceState) = {
+      import upickle.default._
+      write[Wikitext](v)
+    }
+    
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
       Future.successful(v)
     override def doToUrlParam(v:Wikitext, raw:Boolean)(implicit state:SpaceState):String = {
