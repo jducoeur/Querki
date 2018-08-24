@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.util.{PublicException, QLog}
-import querki.values.{ElemValue, QLContext, QFut, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, QFut, QValue, RequestContext, ShowLinksAsFullAnchors, SpaceState}
 
 import MOIDs._
 
@@ -505,7 +505,13 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     }
     
     def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
-      Wikitext("[") + display + Wikitext("](" + thing.toThingId + ")")
+      if (context.flags.contains(ShowLinksAsFullAnchors))
+        // Rare case, intended for when we are rendering outside the context of the Space itself.
+        // (Eg, in Notifications.)
+        HtmlWikitext(s"""<a href="${Links.thingUrl(thing.id)(context.state)}">${display.strip.toString}</a>""")
+      else
+        // Normal case:
+        Wikitext("[") + display + Wikitext("](" + thing.toThingId + ")")
     }
 
     def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {

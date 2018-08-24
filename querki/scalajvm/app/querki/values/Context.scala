@@ -8,11 +8,27 @@ import querki.ecology._
 import querki.ql.{QLCall, QLPhrase, QLParser, QLScopes}
 import querki.util.DebugRenderable
 
+/**
+ * These are rather ad-hoc flags, allowing the caller of a process to pass them way down through the system.
+ * 
+ * Set one of these in a context by calling .withFlag() on it. Keep in mind that all children of that
+ * context will have that flag. (Which is kind of the point.)
+ * 
+ * In a happier world, these would be handled as Reader and Writer effects. 20/20 hindsight is a lovely thing.
+ */
+sealed trait ContextFlag
+/**
+ * If set, all Links rendered under this context will be render as full, explicit <a> tags in HtmlWikitext,
+ * instead of the usual [display](url) format. This should be used only if we expect the reader to be
+ * reading it outside the context of the Space.
+ */
+case object ShowLinksAsFullAnchors extends ContextFlag
+
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
                      fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None,
-                     scopes:Map[QLParser,QLScopes] = Map.empty)
+                     scopes:Map[QLParser,QLScopes] = Map.empty, flags: Set[ContextFlag] = Set.empty)
                      (implicit val state:SpaceState, val ecology:Ecology)
   extends DebugRenderable with EcologyMember
 {
@@ -227,6 +243,13 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   def withState(newState:SpaceState) = copy()(newState, ecology)
   
   def withScopes(p:QLParser, newScopes:QLScopes) = copy(scopes = scopes + (p -> newScopes))
+  
+  /**
+   * Adds the specified flag to this pathway.
+   * 
+   * We don't bother incrementing the depth for this, since it's only accessible from internals.
+   */
+  def withFlag(flag: ContextFlag) = copy(flags = flags + flag)
   
   /**
    * The Text Property that we are currently processing. Mainly used for error reporting, currently.

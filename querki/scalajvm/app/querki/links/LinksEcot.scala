@@ -13,7 +13,7 @@ import querki.globals._
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.spaces.messages.{CreateThing, ThingFound}
 import querki.values.{ElemValue, QLContext, SpaceState}
-import querki.util.{Contributor, PublicException, Publisher}
+import querki.util.{Contributor, PublicException, Publisher, SafeUrl}
 
 object MOIDs extends EcotIds(27) {
   val ChoiceOrderOID = moid(1)
@@ -31,7 +31,9 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val Links = this // Needed for LinkUtils
   
   lazy val InternalProp = Core.InternalProp
-  
+
+  lazy val urlBase = Config.getString("querki.app.urlRoot")
+
   override def init = {
     SpaceChangeManager.thingChanges += ChoiceCreator
   }
@@ -42,9 +44,15 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
   
+  def thingUrl(thingId: OID)(state: SpaceState): String = {
+    urlBase + "u/" + state.ownerHandle + "/" + SafeUrl.apply(state.name) + "/" + thingId.toThingId
+  }
+  
   /**
    * This hooks into the Thing-change pipeline, specifically listening for the creation of Choice Properties.
    * When it sees one happening, it creates the associated Choice Model.
+   * 
+   * TODO: this is probably entirely obsolete, since this Choice mechanism didn't come about.
    */
   private object ChoiceCreator extends Contributor[TCRReq, TCRReq] {
     // This is called whenever we get a Create or Modify request; we only care about a few

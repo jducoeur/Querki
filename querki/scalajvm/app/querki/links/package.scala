@@ -4,7 +4,7 @@ import models.{OID, Property, PType, PTypeBuilder}
 
 import querki.basic.PlainText
 import querki.ecology._
-
+import querki.globals._
 import querki.values.QValue
 
 package object links {
@@ -41,5 +41,10 @@ package object links {
     def ChoiceOrderProp:Property[OID,OID]
     
     def LinkValue(target:OID):QValue
+    
+    /**
+     * Given a Thing and a Space, this returns the absolute URL to get to that Thing.
+     */
+    def thingUrl(thingId: OID)(state: SpaceState): String
   }
 }

@@ -9,7 +9,7 @@ import querki.identity.FullIdentity
 import querki.persistence.UseKryo
 import querki.time.DateTime
 import querki.util.SafeUrl
-import querki.values.QLContext
+import querki.values.{ShowLinksAsFullAnchors, QLContext}
 
 private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
   val NotifyMethodOID = moid(1)
@@ -28,6 +28,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
   val Basic = initRequires[querki.basic.Basic]
   val QL = initRequires[querki.ql.QL]
   
+  lazy val Links = interface[querki.links.Links]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val Person = interface[querki.identity.Person]
@@ -177,7 +178,9 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
         recipientPersons = recipientPersonIds.map(state.anything(_)).flatten
         recipientIdentities = recipientPersons.map(Person.getPersonIdentity(_)).flatten
         subject <- inv.processAs("subject", ParsedTextType)
-        body <- inv.processAs("body", ParsedTextType)
+        // We need links below this to be expressed fully, so they work in email and in Notifications
+        // when viewed from outside this Space:
+        body <- inv.processAs("body", ParsedTextType, inv.context.withFlag(ShowLinksAsFullAnchors))
         thing <- inv.processAsOpt("thing", LinkType)
         topic <- inv.processAsOpt("topic", ParsedTextType)
         
