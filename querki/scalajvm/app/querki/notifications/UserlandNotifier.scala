@@ -20,6 +20,7 @@ private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
   val NotifySpaceOwnerOID = moid(6)
   val NotifyThingOID = moid(7)
   val NotifyTopicOID = moid(8)
+  val NotifySpaceDisplayNameOID = moid(9)
 }
 
 class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with querki.core.MethodDefs {
@@ -28,6 +29,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
   val Basic = initRequires[querki.basic.Basic]
   val QL = initRequires[querki.ql.QL]
   
+  lazy val Email = interface[querki.email.Email]
   lazy val Links = interface[querki.links.Links]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
@@ -74,7 +76,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     }
   }
   
-  case class UserlandPayload(subject: String, body: Wikitext, spaceName: String, spaceOwner: String, thing: Option[OID], topic: Option[String])
+  case class UserlandPayload(subject: String, body: Wikitext, spaceName: String, spaceDisplayName: String, spaceOwner: String, thing: Option[OID], topic: Option[String])
   def parsePayload(note: Notification): UserlandPayload = {
     val rawPayload = note.payload
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
@@ -83,6 +85,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       payload.getFirst(NotifySubjectProp).text,
       payload.getFirst(NotifyBodyProp),
       payload.getFirst(NotifySpaceNameProp).text,
+      payload.getFirstOpt(NotifySpaceDisplayNameProp).map(_.text).getOrElse(""),
       payload.getFirst(NotifySpaceOwnerProp).text,
       payload.getFirstOpt(NotifyThingProp),
       payload.getFirstOpt(NotifyTopicProp).map(_.text)
@@ -94,7 +97,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     
     urlBase + 
       "u/" + payload.spaceOwner + 
-      "/" + payload.spaceName +
+      "/" + SafeUrl.apply(payload.spaceName) +
       "/" + thingId
   }
   
@@ -108,27 +111,50 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     ))
   }
   
-  def emailNotifier = None //Some(this)
+  def emailNotifier = Some(this)
   
   /***********************************************
    * Implementation of EmailNotifier
    ***********************************************/
   
-  def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]):Boolean = {
-    // TODO: this should be true unless unsubbed:
-    false
+  def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]): Boolean = {
+    // TODO: get this working properly, checking for Unsubs:
+    true
   }
   
-  def toEmail(note:Notification, recipient:FullIdentity):Future[EmailMsg] = {
-    ???
+  val wikibreak = Wikitext("\n\n")
+  
+  def toEmail(note:Notification, recipient:FullIdentity): Future[EmailMsg] = {
+    val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
+    val payload = parsePayload(note)
+    val UserlandPayload(subject, body, spaceName, spaceDisplayName, spaceOwner, thing, topic) = payload
+    val spaceId = spaceIdOpt.getOrElse(throw new Exception(s"Somehow got UserlandNotification with no spaceId: $note"))
+    
+    val fullBody =
+      body +
+      HtmlWikitext("<hr/>") +
+      Wikitext(s"""<a href="${noteUrl(payload)}"><i>Click here to go to $spaceDisplayName.</i></a>""")
+      
+    val emailMsg = EmailMsg(
+      EmailAddress(Email.from),
+      recipient.email,
+      recipient.name,
+      spaceDisplayName,
+      Wikitext(s"$subject (from $spaceDisplayName)"),
+      fullBody,
+      // TODO: add the footer, with the Unsub link:
+      Wikitext("")
+    )
+    
+    fut(emailMsg)
   }
   
   // TODO: we should have unsub options based on this Space, and this Topic
-  def unsubOptions(unsubInfo:UnsubInfo):Future[(Wikitext, Seq[UnsubOption])] = {
+  def unsubOptions(unsubInfo:UnsubInfo): Future[(Wikitext, Seq[UnsubOption])] = {
     ???
   }
   
-  def getUnsubEvent(unsubId:OID, context:Option[String]):(Wikitext, UnsubEvent with UseKryo) = {
+  def getUnsubEvent(unsubId:OID, context:Option[String]): (Wikitext, UnsubEvent with UseKryo) = {
     ???
   }
 
@@ -187,7 +213,8 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
         payload = toProps(
           NotifySubjectProp(subject.strip),
           NotifyBodyProp(body),
-          NotifySpaceNameProp(SafeUrl.apply(state.name)),
+          NotifySpaceNameProp(state.name),
+          NotifySpaceDisplayNameProp(state.displayName),
           NotifySpaceOwnerProp(state.ownerHandle)
         ) ++ 
           thing.map(t => toProps(NotifyThingProp(t))).getOrElse(emptyProps) ++ 
@@ -232,7 +259,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     toProps(
       setName("_notifyRecordSpaceName"),
       setInternal,
-      Summary("The Name of the Space of this userland _notify()")))
+      Summary("The Link Name of the Space of this userland _notify()")))
 
   lazy val NotifySpaceOwnerProp = new SystemProperty(NotifySpaceOwnerOID, PlainTextType, ExactlyOne,
     toProps(
@@ -251,6 +278,12 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       setName("_notifyRecordTopic"),
       setInternal,
       Summary("The optional Topic of this userland _notify()")))
+
+  lazy val NotifySpaceDisplayNameProp = new SystemProperty(NotifySpaceDisplayNameOID, PlainTextType, ExactlyOne,
+    toProps(
+      setName("_notifyRecordSpaceDisplayName"),
+      setInternal,
+      Summary("The Name of the Space of this userland _notify()")))
   
   override lazy val props = Seq(
     NotifyMethod,
@@ -260,6 +293,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     NotifySpaceNameProp,
     NotifySpaceOwnerProp,
     NotifyThingProp,
-    NotifyTopicProp
+    NotifyTopicProp,
+    NotifySpaceDisplayNameProp
   )
 }
