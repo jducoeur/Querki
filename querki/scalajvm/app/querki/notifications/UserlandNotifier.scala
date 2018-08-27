@@ -1,12 +1,12 @@
 package querki.notifications
 
-import models.{HtmlWikitext, emptyProps, Wikitext}
+import models.{HtmlWikitext, emptyProps, OID, Wikitext}
 import querki.ecology._
 import querki.email._
 import EmailFunctions.UnsubOption
 import querki.globals._
 import querki.identity.FullIdentity
-import querki.persistence.UseKryo
+import querki.persistence._
 import querki.time.DateTime
 import querki.util.SafeUrl
 import querki.values.{ShowLinksAsFullAnchors, QLContext}
@@ -21,7 +21,19 @@ private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
   val NotifyThingOID = moid(7)
   val NotifyTopicOID = moid(8)
   val NotifySpaceDisplayNameOID = moid(9)
+  
+  val UnsubUserlandTopicOID = moid(10)
+  val UnsubUserlandSpaceOID = moid(11)
 }
+
+case class DHUnsubUserlandTopic(
+  @KryoTag(1) topic: String,
+  @KryoTag(2) spaceId: OID
+) extends UnsubEvent with UseKryo
+
+case class DHUnsubUserlandSpace(
+  @KryoTag(1) spaceId: OID
+) extends UnsubEvent with UseKryo
 
 class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with querki.core.MethodDefs {
   import UserlandNotifierMOIDs._
@@ -36,6 +48,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
   lazy val Person = interface[querki.identity.Person]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
+  lazy val Unsubscribe = interface[querki.email.Unsubscribe]
   
   lazy val ParsedTextType = QL.ParsedTextType
   lazy val PlainTextType = Basic.PlainTextType
@@ -50,6 +63,11 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
   override def term() = {
     NotifierRegistry.unregister(this)
   }
+  
+  override def persistentMessages = persist(74,
+    (classOf[DHUnsubUserlandTopic] -> 100),
+    (classOf[DHUnsubUserlandSpace] -> 101)
+  )
 
   object Notifiers {
     val UserlandNotifierId:Short = 1
@@ -118,8 +136,24 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
    ***********************************************/
   
   def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]): Boolean = {
-    // TODO: get this working properly, checking for Unsubs:
-    true
+    val payload = parsePayload(note)
+    
+    def violation(unsub: UnsubEvent): Boolean = {
+      unsub match {
+        case DHUnsubUserlandSpace(spaceId) => (Some(spaceId) == note.spaceId)
+        
+        case DHUnsubUserlandTopic(unsubTopic, spaceId) => {
+          payload.topic match {
+            case Some(topic) => (Some(spaceId) == note.spaceId) && (topic == unsubTopic)
+            case None => false
+          }
+        }
+        
+        case _ => throw new Exception(s"UserlandNotifierEcot.shouldSendEmail() got unexpected UnsubEvent $unsub")
+      }
+    }
+    
+    !unsubs.exists(violation)
   }
   
   val wikibreak = Wikitext("\n\n")
@@ -135,6 +169,11 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       HtmlWikitext("<hr/>") +
       Wikitext(s"""<a href="${noteUrl(payload)}"><i>Click here to go to $spaceDisplayName.</i></a>""")
       
+    val unsubLink = Unsubscribe.generateUnsubLink(this, recipient.id, recipient.email, 
+      spaceId.toString, spaceDisplayName, topic.getOrElse(""))
+    val footer = s"""You received this email as a member of $spaceDisplayName.
+                    |If you don't want to receive emails like these, click [Unsubscribe]($unsubLink)""".stripMargin
+      
     val emailMsg = EmailMsg(
       EmailAddress(Email.from),
       recipient.email,
@@ -142,20 +181,65 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       spaceDisplayName,
       Wikitext(s"$subject (from $spaceDisplayName)"),
       fullBody,
-      // TODO: add the footer, with the Unsub link:
-      Wikitext("")
+      Wikitext(footer)
     )
     
     fut(emailMsg)
   }
   
-  // TODO: we should have unsub options based on this Space, and this Topic
   def unsubOptions(unsubInfo:UnsubInfo): Future[(Wikitext, Seq[UnsubOption])] = {
-    ???
+    val spaceIdStr :: spaceName :: topicOrEmpty :: Nil = unsubInfo.rest
+    val spaceId = OID(spaceIdStr)
+    val topicOpt = if (topicOrEmpty.isEmpty) None else Some(topicOrEmpty)
+    
+    fut((
+      Wikitext(s"""You received this email from $spaceName.
+                  |${topicOpt.map(t => s" It is a $t email.").getOrElse("")}""".stripMargin),
+                  
+      topicOpt.map { topic =>
+        Seq(
+          UnsubOption(
+            userlandNotifierId.toString,
+            UnsubUserlandTopicOID.toTOID,
+            Some(s"$spaceIdStr-$topic"),
+            s"Block emails on the topic $topic",
+            s"""Pressing this button will prevent $topic messages from being sent to you as email.
+               |You will still be able to see them by going into Querki and pressing the bell-shaped
+               |icon in the menu bar.""".stripMargin
+          )
+        )
+      }.getOrElse(Seq.empty) ++
+      Seq(
+        UnsubOption(
+          userlandNotifierId.toString,
+          UnsubUserlandSpaceOID.toTOID,
+          Some(spaceIdStr),
+          s"Block all emails defined in $spaceName",
+          s"""Pressing this button will prevent messages from $spaceName being sent to you in email.
+             |You will still be able to see them by going into Querki and pressing the bell-shaped
+             |icon in the menu bar.""".stripMargin
+        )
+      )
+    ))
   }
   
-  def getUnsubEvent(unsubId:OID, context:Option[String]): (Wikitext, UnsubEvent with UseKryo) = {
-    ???
+  def getUnsubEvent(unsubId:OID, contextOpt:Option[String]): (Wikitext, UnsubEvent with UseKryo) = {
+    unsubId match {
+      case UnsubUserlandTopicOID => {
+        val context = contextOpt.get
+        val splitAt = context.indexOf("-")
+        val spaceIdStr = context.take(splitAt)
+        val spaceId = OID(spaceIdStr)
+        val topic = context.drop(splitAt + 1)
+        (Wikitext(s"Saved - you will no longer get emails about $topic"), DHUnsubUserlandTopic(topic, spaceId))
+      }
+      
+      case UnsubUserlandSpaceOID => {
+        val context = contextOpt.get
+        val spaceId = OID(context)
+        (Wikitext(s"Saved - you will no longer get emails from this Space"), DHUnsubUserlandSpace(spaceId))
+      }
+    }
   }
 
   /***********************************************
