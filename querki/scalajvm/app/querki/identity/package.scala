@@ -122,6 +122,7 @@ package object identity {
     def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity]
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
     def localPerson(identity:IdentityId)(implicit state:SpaceState):Option[Thing]
+    def localPerson(user:User)(implicit state:SpaceState):Option[Thing]
     def localPersonIncludingInvitees(identity:IdentityId)(implicit state:SpaceState):Option[Thing]
     
     /**

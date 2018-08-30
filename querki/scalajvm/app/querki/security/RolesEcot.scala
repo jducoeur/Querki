@@ -3,7 +3,8 @@ package querki.security
 import models.ThingState
 
 import querki.ecology._
-import querki.values.SpaceState
+import querki.globals._
+import querki.values.{QLContext, SpaceState}
 
 object RolesMOIDs extends EcotIds(51) {
   val CommentatorOID = moid(1)
@@ -18,6 +19,8 @@ object RolesMOIDs extends EcotIds(51) {
   val SharedInviteModelOID = moid(10)
   val CanManageSecurityPermOID = moid(11)
   val InviteRequiresMembershipOID = moid(12)
+  val HasRoleOID = moid(13)
+  val RoleMembersOID = moid(14)
 }
 
 /**
@@ -25,7 +28,7 @@ object RolesMOIDs extends EcotIds(51) {
  * for dependency reasons: whereas AccessControl is fairly central (core of the onion), this depends on lots of stuff
  * (outer layer of the onion).
  */
-class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
+class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles with querki.core.MethodDefs {
   import RolesMOIDs._
   import querki.api.commonName
   
@@ -34,6 +37,8 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   val Basic = initRequires[querki.basic.Basic]
   val Conversations = initRequires[querki.conversations.Conversations]
   val UserValues = initRequires[querki.uservalues.UserValues]
+  
+  lazy val Person = interface[querki.identity.Person]
   
   def allRoles(state:SpaceState):(Seq[Thing], Seq[Thing]) = {
     (Seq(
@@ -45,7 +50,59 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
      ),
      state.descendants(CustomRoleModel, false, true, false).toSeq)
   }
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  lazy val HasRoleFunction = new InternalMethod(HasRoleOID,
+    toProps(
+      setName("_hasRole"),
+      Summary("Lets you check whether the current user, or some other Person, has the specified Role"),
+      Categories(SecurityTag),
+      Signature(
+        expected = Some(Seq(AnyType), "A Person, or anything"),
+        reqs = Seq(
+          ("role", LinkType, "A Role")
+        ),
+        opts = Seq.empty,
+        returns = (YesNoType, "True iff the specified Person has the specified Role.")
+      ),
+      Details("""If this function receives a Person, it checks that Person. Otherwise, it checks the current
+                |user. These are both useful, in different situations.""".stripMargin)))
+  {
+    def receivedPerson(received: QValue)(implicit state: SpaceState): Option[Thing] = {
+      for {
+        id <- received.firstAs(LinkType)
+        thing <- state.anything(id)
+        if thing.isAncestor(querki.identity.MOIDs.PersonOID)
+      }
+        yield thing
+    }
     
+    def requestingPerson(context: QLContext)(implicit state:SpaceState): Option[Thing] = {
+      for {
+        user <- context.request.requester
+        person <- Person.localPerson(user)
+      }
+        yield person
+    }
+    
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val state = inv.state
+      val personOpt: Option[Thing] = receivedPerson(inv.context.value) orElse requestingPerson(inv.context)
+      
+      personOpt.map { person =>
+        val personRoles = person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType)
+        val qf: QFut = for {
+          role <- inv.processAs("role", LinkType)
+        }
+          yield ExactlyOne(YesNoType(personRoles.contains(role)))
+        qf
+      }.getOrElse(fut(ExactlyOne(YesNoType(false))))
+    }
+  }
+
   /***********************************************
    * PERMISSIONS AND PROPERTIES
    ***********************************************/
@@ -89,6 +146,8 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       Summary("When set on a Shared Invitation Link, that Link will force recipients to sign up, rather than being Guests.")))
       
   override lazy val props = Seq(
+    HasRoleFunction,
+      
     CanExplorePerm,
     CanManageSecurityPerm,
     IsOpenInvitation,
