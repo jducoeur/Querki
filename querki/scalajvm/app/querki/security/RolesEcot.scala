@@ -103,6 +103,32 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles with querki.core.Met
     }
   }
 
+  lazy val RoleMembersFunction = new InternalMethod(RoleMembersOID,
+    toProps(
+      setName("_roleMembers"),
+      Summary("Lists all of the Persons with the specified Role"),
+      Categories(SecurityTag),
+      Signature(
+        expected = Some(Seq(AnyType), "Anything"),
+        reqs = Seq(
+          ("role", LinkType, "A Role")
+        ),
+        opts = Seq.empty,
+        returns = (LinkType, "All of the Persons with that Role.")
+      )))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val state = inv.state
+      val allPersons = state.descendants(querki.identity.MOIDs.PersonOID, false, true, false).toList
+      for {
+        role <- inv.processAs("role", LinkType)
+        person <- inv.iter(allPersons)
+        if (person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType).contains(role))
+      }
+        yield ExactlyOne(LinkType(person.id))
+    }
+  }
+
   /***********************************************
    * PERMISSIONS AND PROPERTIES
    ***********************************************/
@@ -147,7 +173,8 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles with querki.core.Met
       
   override lazy val props = Seq(
     HasRoleFunction,
-      
+    RoleMembersFunction,
+    
     CanExplorePerm,
     CanManageSecurityPerm,
     IsOpenInvitation,
