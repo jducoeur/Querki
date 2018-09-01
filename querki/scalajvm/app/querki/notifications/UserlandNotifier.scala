@@ -252,7 +252,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       Summary("Sends a notification to one or more Members of this Space"),
       Categories(NotifyTag),
       Signature(
-        expected = Some(Seq(AnyType), "Anything -- this will only be used by the parameters"),
+        expected = Some(Seq.empty, "Anything -- this will only be used by the parameters"),
         reqs = Seq(
           ("recipients", LinkType, "The Members to receive this notification"),
           ("subject", ParsedTextType, "The subject line for the notification"),

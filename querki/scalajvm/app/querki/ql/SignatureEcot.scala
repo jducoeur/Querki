@@ -282,7 +282,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               |      ""[[_Function Context Types -> Link Name -> _join("" *or* "")]]."")
               |  ]][[Link Name]][[
               |  _Function Signature -> _concat(_Required Parameters, _Optional Parameters) -> 
-              |        _if(_isNonEmpty, *""([[Link Name -> _join("", "")]])"")]][[
+              |        *_if(_isNonEmpty, *""([[Link Name -> _join("", "")]])"")]][[
               |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
               |      "" -> [[Link Name]]""]]""""".stripMargin)))
           
@@ -297,8 +297,8 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
             |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
             |    "": [[Link Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
-            |    _Function Signature -> _Function Return Type -> "" 
-            |      : Produces : [[Summary]]""]]""""".stripMargin)))
+            |    _Function Signature -> _Function Return Type -> ""
+            |: Produces : [[Summary]]""]]""""".stripMargin)))
       
   override lazy val things = Seq(
     ParameterModel,
