@@ -674,6 +674,19 @@ dd {
   color: #328a32;
 }
 
+._signupTosHeading {
+  font-size: x-large;
+}
+
+._signupTosBody {
+  height: 150px; 
+  overflow-y: scroll;
+}
+
+._signupTosBody h1 {
+  margin-top: 0px;
+}
+
 /***************************
  * The Edit Space Info page
  */

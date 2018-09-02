@@ -6,6 +6,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import upickle.default._
+import autowire._
 
 import org.querki.squery._
 import org.querki.jquery._
@@ -15,13 +16,17 @@ import org.querki.gadgets.core.GadgetElementRef
 import querki.api._
 import querki.comm._
 import querki.data.UserInfo
-import querki.display.ButtonGadget
+import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import QuerkiEmptyable._
 import querki.ecology._
 import querki.globals._
 import querki.pages._
+import querki.session.UserFunctions
 import querki.util.InputUtils
+
+import CommonFunctions._
+import UserFunctions._
 
 /**
  * @author jducoeur
@@ -47,6 +52,8 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
     
   // This is a *very* primitive email-checker, but enough to start with:
   lazy val emailRegex = ".+@.+\\..+"
+  
+  lazy val tosAgreed = Var[Boolean](false) 
     
   lazy val emailInput = GadgetRef[RxInput]
     .whenRendered { g =>
@@ -77,14 +84,15 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
   
   lazy val loginHandleOkay = logic.handleInput.flatMapRxOrElse(_.length)(_ >= 3, false)
   lazy val loginPasswordOkay = logic.passwordInput.flatMapRxOrElse(_.length)(_ >= 8, false)
-  lazy val loginOkay = Rx { loginHandleOkay() && loginPasswordOkay() }
+  lazy val loginOkay = Rx { loginHandleOkay() && loginPasswordOkay() && tosAgreed() }
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   lazy val signupEnabled = Rx { 
     emailOkay() &&
     passwordOkay() &&
     handleOkay() &&
-    displayOkay()
+    displayOkay() &&
+    tosAgreed()
   }
   
   def showInput(
@@ -134,6 +142,23 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
     g
   }
   
+  def showTOSPanel(tosInfo: TOSInfo) = {
+    val TOSInfo(version, text) = tosInfo
+    
+    div(
+      div(cls := "panel panel-default",
+        div(cls := "panel-heading", span(cls := "_signupTosHeading", s"Querki Terms of Service, version $version")),
+        div(cls := "panel-body",
+          div(cls:="well _signupTosBody",
+            new QText(text)
+          )
+        )
+      ),
+      
+      p(new RxCheckbox(tosAgreed, " I have read, and agree to, the Querki Terms of Service."))
+    )
+  }
+  
   def doSignup():Future[UserInfo] = {
     // We call this one as a raw AJAX call, instead of going through client, since it is a weird case:
     val fut:Future[String] = 
@@ -148,11 +173,12 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
     }
   }
   
-  def signup() = {
-    doSignup().map { user =>
+  def signup(tosInfo: TOSInfo) = {
+    doSignup().flatMap { user =>
       UserAccess.setUser(Some(user))
-      // Okay, we have a User -- now, deal with Terms of Service:
-      TOSPage.run.map { _ =>
+      // Okay, we have a User -- now, check off the Terms of Service, which they had to agree to
+      // in order to get to this point:
+      Client[UserFunctions].agreeToTOS(tosInfo.version).call().map { _ =>
         // Iff an onReady was passed in, we're part of a workflow, so invoke that. Otherwise, we're
         // running imperatively, so just show the Index: 
         onReady.map(_(user)).getOrElse(PageManager.showIndexPage())        
@@ -174,7 +200,8 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
   }
   
   def pageContent = for {
-    guts <- scala.concurrent.Future.successful(div(
+    tos <- Client[CommonFunctions].fetchTOS().call()
+    guts = div(
       if (includeSignin) {
         div(
           h1("Sign in"),
@@ -238,11 +265,13 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
           """Your public name in Querki, which will show most of the time. This may be your real-life name,
             |but does not have to be. You can change this later.""".stripMargin,
           displayOkay),
+          
+        showTOSPanel(tos),
 
         signupButton <= new RunButton(ButtonGadget.Primary, "Sign Up", "Signing up...", id := "signupButton", disabled := Rx { !signupEnabled() }) 
-          ({ _ => signup() })
+          ({ _ => signup(tos) })
       )
-    ))
+    )
   }
     yield PageContents(guts)
 }
