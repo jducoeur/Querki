@@ -256,8 +256,16 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def renderChoice(context: QLContext, prop: AnyProp, currentValue: DisplayPropVal, chooseFromPropId: OID): Future[NodeSeq] = {
     implicit val state = context.state
     val targetType = prop.pType
-    val isOptional = prop.cType == Optional
     
+    def isCurrentlyEmpty: Boolean = {
+      currentValue.v.isEmpty ||
+      // HACK: The concept of UnknownOID *desperately* needs to be normalized. We need a formal concept of "emptiness",
+      // even for Required Properties.
+      currentValue.v.get.firstTyped(LinkType) == Some(UnknownOID)
+    }
+    
+    val isOptional = (prop.cType == Optional) || isCurrentlyEmpty
+        
     def construct(
       chooseFromProp: AnyProp, 
       chooseFromOpt: Option[Thing], 
@@ -333,7 +341,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
                 {innards(options)}
               </select> 
             }
-            case None => <select>{innards(options)}</select>
+            case None => 
+              <select>
+                {unselectedOption}
+                {innards(options)}
+              </select>
           }
         }
       }
