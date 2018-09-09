@@ -601,8 +601,11 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     }
     
     override def doFromUser(str:String)(implicit state:SpaceState): OID = {
+      if (str == EmptyOptionValue)
+        // Legit: this signifies emptiness:
+        UnknownOID
       // Is it an OID?
-      OID.parseOpt(str) match {
+      else OID.parseOpt(str) match {
         case Some(oid) => oid
         case None => {
           // No -- is it a name?

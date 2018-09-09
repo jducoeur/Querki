@@ -72,9 +72,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    */
   lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, 
     toProps(
-      setName("Required Property has not been set"),
+      setName("Value has not been set"),
       setInternal,
       Basic.DisplayTextProp("""This shows up when you have a Required Property (usually a Required Thing)
+        |or a List Element
         |that hasn't actually been set to a value. Set the Property to something real in order to make this
         |message go away.
         |
