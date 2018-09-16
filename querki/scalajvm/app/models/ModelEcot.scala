@@ -28,20 +28,27 @@ class ModelEcot(e:Ecology) extends QuerkiEcot(e) with Models {
     (classOf[DHSpaceState] -> 104)
   )
 
-  // TODO: this is now only being in SpaceEcot, internally in _createThing and _changeProperties. It should arguably
-  // get moved there, and maybe could be removed entirely.
   lazy val PropValType = new SystemType[PropMap](PropValTypeOID, 
     toProps(
-      setName("_propValType"),
+      setName("_propBundleType"),
       setInternal,
-      Summary("Encapsulates a single Property Value."),
-      Details("This is simply a standard PropMap, with only a single value -- essentially a degenerate PropertyBundle.")
+      Summary("Encapsulates some Property Values."),
+      Details("""This is a bunch of values bundled together -- similar to a Thing, but more ad-hoc. It cannot be saved
+                |or used as a normal Type, but some functions allow you to pass it and use it in QL.""".stripMargin)
     )) with SimplePTypeBuilder[PropMap]
   {
     def doDeserialize(ser:String)(implicit state:SpaceState):PropMap = ???
     def doSerialize(v:PropMap)(implicit state:SpaceState):String = ???
     def doWikify(context:QLContext)(v:PropMap, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      v.values.headOption.map(_.wikify(context, displayOpt, lexicalThing)).getOrElse(fut(Wikitext.empty))
+      implicit val state = context.state
+      val wikiFuts = v.map { case (propId, pv) =>
+        val propName = state.prop(propId).map(_.displayName).getOrElse("Unknown Property!")
+        pv.wikify(context, displayOpt, lexicalThing).map { wiki =>
+          Wikitext(s": $propName : ") + wiki + Wikitext.nl + Wikitext.nl
+        }
+      }
+      val futWikis = Future.sequence(wikiFuts)
+      futWikis.map { wikis => wikis.reduce(_ + _)}
     }
     def doDefault(implicit state:SpaceState):PropMap = ???
     def doComputeMemSize(v:PropMap):Int = 0

@@ -26,6 +26,7 @@ object SpaceEcotMOIDs extends EcotIds(37) {
   val ChangePropertiesOID = moid(2)
   val CreateThingFunctionOID = moid(3)
   val DeleteThingFunctionOID = moid(4)
+  val MakePropertyBundleFunctionOID = moid(5)
 }
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
@@ -33,9 +34,9 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   import SpaceEcotMOIDs._
   import SpaceMessagePersistence._
   
+  val Models = initRequires[models.Models]
   val SystemManagement = initRequires[querki.system.SystemManagement]
   
-  lazy val Models = interface[models.Models]
   lazy val QL = interface[querki.ql.QL]
   
   lazy val PropValType = Models.PropValType
@@ -307,12 +308,45 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     }
   }
   
+  lazy val MakePropertyBundleFunction = new InternalMethod(MakePropertyBundleFunctionOID,
+    toProps(
+      setName("_makePropertyBundle"),
+      Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Create an ad-hoc collection of Property Values"),
+      Signature(
+        expected = Some(Seq.empty, "Anything"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (PropValType, "The collected Values, in a Bundle.")
+      ),
+      Details("""Occasionally, you have a complex QL expression, where you don't want to be passing a real Thing
+                |from Stage to Stage, but instead you want a specific, rather ad-hoc bundle of Property Values.
+                |`_makePropertyBundle` allows you to create such a bundle.
+                |
+                |When we talk about a "Property Bundle", we mean a collection of Property Values that has no
+                |real *identity* -- it doesn't have an OID, or a Name, and you can't view it as a page in Querki.
+                |It's just some value that you are going to use in further QL processing.
+                |
+                |As of this writing, this is a very new feature, and most QL functions do *not* work with Property Bundles yet. If you see a
+                |function that doesn't do something sensible with a Property Bundle, and you would like to use
+                |it with one, please write to us.""".stripMargin)))
+  {
+    override def qlApply(inv: Invocation): QFut = {
+      for {
+        context <- inv.contextElements
+        bundle <- getPropVals(inv, context, 0)
+      }
+        yield ExactlyOne(PropValType(bundle))
+    }
+  }
+  
   lazy val CreateHere = new InternalMethod(CreateHereOID,
     toProps(
       setName("_createHere"),
       Categories(querki.datamodel.DataModelTag),
       SkillLevel(SkillLevelAdvanced),
-      Summary("Create a new Thing as part of displaying this expression"),
+      Summary("**Deprecated** -- Create a new Thing as part of displaying this expression"),
       Details("""```
         |MODEL -> LINK PROPERTY._createHere -> THING
         |```
@@ -369,6 +403,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     ChangeProperties,
     CreateThingFunction,
     DeleteThingFunction,
+    MakePropertyBundleFunction,
     CreateHere
   )
 }
