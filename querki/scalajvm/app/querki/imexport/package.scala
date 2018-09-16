@@ -11,6 +11,8 @@ import querki.values.{RequestContext, SpaceState}
  * we get into Synchronization.)
  */
 package object imexport {
+  
+  final val ImportExportCategory = "Import/Export"
 
   /**
    * The flag indicating the format to import/export.
