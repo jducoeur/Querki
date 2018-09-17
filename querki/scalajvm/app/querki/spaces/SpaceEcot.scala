@@ -151,6 +151,8 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
           inv.wrap(qv)
         else if (qv.pType.canCoerceTo(prop.pType)) {
           inv.wrap(qv.coerceTo(prop.pType).get)
+        } else if (qv.pType == Core.UnknownType && qv.size == 0) {
+          inv.wrap(EmptyValue(prop.pType))
         } else {
           inv.error("Func.paramWrongType", prop.displayName, "0", prop.pType.displayName, qv.pType.displayName)
         }

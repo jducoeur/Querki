@@ -85,7 +85,8 @@ class JsonExport(implicit val state: SpaceState, val ecology: Ecology) extends E
       jsonifyIf(Core.TextType) or
       jsonifyIf(Core.LargeTextType) or
       jsonifyIf(Basic.PlainTextType) or
-      jsonifyIf(Core.IntType)
+      jsonifyIf(Core.IntType) or
+      jsonifyIf(Core.YesNoType)
     
     resultOpt.getOrElse(throw new Exception(s"Don't yet know how to JSONify a value of Type ${qv.pType.displayName}!"))
   }
