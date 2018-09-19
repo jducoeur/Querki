@@ -1,6 +1,6 @@
 package querki.imexport
 
-import models.{MIMEType, Thing}
+import models.{MIMEType, Thing, Wikitext}
 
 import querki.ecology._
 import querki.util._
@@ -25,9 +25,11 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
   import MOIDs._
   
   val Basic = initRequires[querki.basic.Basic]
+  val Logic = initRequires[querki.logic.Logic]
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val QL = interface[querki.ql.QL]
   lazy val Session = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
@@ -36,6 +38,8 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
     ApiRegistry.registerApiImplFor[ImexportFunctions, ImexportFunctionsImpl](SpaceOps.spaceRegion)
     // ImportSpaceFunctions runs in the context of the UserSession:
     ApiRegistry.registerApiImplFor[ImportSpaceFunctions, ImportSpaceFunctionsImpl](Session.sessionManager)
+    // JsonFunctions require the UserSpaceSession:
+    ApiRegistry.registerApiImplFor[JsonFunctions, JsonFunctionsImpl](SpaceOps.spaceRegion, requiresLogin = false)
   }
   
   lazy val csv = new CSVImexport
@@ -79,7 +83,9 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       Signature(
         expected = Some(Seq.empty, "Anything"),
         reqs = Seq.empty,
-        opts = Seq.empty,
+        opts = Seq(
+          ("pretty", YesNoType, ExactlyOne(Logic.False), "If set to True, the Json will be pretty-printed. Otherwise, it will be compact.")
+        ),
         returns = (Basic.PlainTextType, "The JSON representation of the received values.")
       ),
       Details("""Sometimes you want to export some data from Querki. One of the common export formats is JSON
@@ -101,9 +107,12 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       val exporter = new JsonExport()
       for {
         qv <- inv.contextValue
-        jsv = exporter.jsonify(qv)
+        pretty <- inv.processAs("pretty", YesNoType)
+        jsv = exporter.jsonify(qv, pretty)
       }
-        yield ExactlyOne(Basic.PlainTextType(jsv))
+        // TBD: instead of returning Wikitext, this should arguably produce a specialized JSON type that
+        // *renders* as the right Wikitext. But it'll do to start.
+        yield QL.WikitextValue(Wikitext(s"```\n$jsv\n```"))
     }
   }
   
