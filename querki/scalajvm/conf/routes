@@ -57,6 +57,11 @@ POST    /resetPassword              @controllers.LoginController.doResetPassword
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
 
+# JSON API inquiries:
+GET     /json/:userName/:spaceId/:thingId @controllers.JsonController.json(userName, spaceId, thingId, propIdStr = "")
+GET     /json/:userName/:spaceId/:thingId/:propId @controllers.JsonController.json(userName, spaceId, thingId, propId)
+
+
 # Serve scala files under the scalajs subproject to be used by sourcemaps.
 # TODO: This route and its controller method should be removed for production
 GET     /scalajs/*file              @controllers.Application.scalajsFile(file)
