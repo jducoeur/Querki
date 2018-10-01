@@ -340,6 +340,12 @@ class AccessControlModule(e:Ecology)
       setName("Person"),
       Core.InternalProp(true),
       Core.IsModelProp(true),
+      // The presence of Instance Edit Props makes the Model visible to the Client:
+      (querki.editing.MOIDs.InstanceEditPropsOID -> EmptyValue(LinkType)),
+      // In theory, nobody is allowed to directly create a Person.
+      // TODO: for the moment, Owners can do this. We should probably find a better way to do this:
+      CanCreateProp(),
+      SkillLevel(SkillLevelAdvanced),
       // This is to fix a specific edge case: when importing a Space, it might contain a Thing with the same
       // name as the Owner of the Space, causing all sorts of havoc. And more generally, when we add someone to
       // a Space, there might already be a Thing with that name, so we have to cope.
