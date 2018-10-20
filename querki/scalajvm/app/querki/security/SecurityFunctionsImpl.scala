@@ -195,7 +195,8 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
 //        Apps.CanManipulateAppsPerm,
 //        Apps.CanUseAsAppPerm,
         
-        Publication.CanPublishPermission
+        Publication.CanPublishPermission,
+        Roles.CanManageSecurityPerm
       )
     val infos = perms.map(perm2Api(_))
     fut(infos)

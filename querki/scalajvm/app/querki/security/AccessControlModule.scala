@@ -286,20 +286,27 @@ class AccessControlModule(e:Ecology)
       hasPermission(perm, state, who, thingId)
     }
   }
-
-  def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
-    implicit val s = state
-    // For the moment, the only thing we are filtering is Permissions, which require
-    // the CanManageSecurity permission.
-    val hasPermissionOpt = for {
+  
+  def isPermission(propId: OID)(implicit state: SpaceState): Boolean = {
+    val isPermissionOpt = for {
       prop <- state.prop(propId)
       permissionVal <- prop.getPropOpt(isPermissionProp)
       isPermission <- permissionVal.firstOpt
-      if isPermission
     }
-      yield hasPermission(Roles.CanManageSecurityPerm, state, who, state.id) 
+      yield isPermission
       
-    hasPermissionOpt.getOrElse(true)
+    isPermissionOpt.getOrElse(false)
+  }
+
+  def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
+    implicit val s = state
+    
+    if ((propId == PersonRolesOID) || isPermission(propId)) {
+      // Only someone with CanManageSecurity is allowed to assign Roles or change Permissions directly:
+      hasPermission(Roles.CanManageSecurityPerm, state, who, state.id)
+    } else {
+      true
+    }
   }
   
   def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing] = {
