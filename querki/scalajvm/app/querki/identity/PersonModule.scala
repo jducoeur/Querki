@@ -307,9 +307,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         person <- inv.contextAllThings
         identityPV <- inv.opt(person.getPropOpt(IdentityLink))
         identityId <- inv.opt(identityPV.firstOpt)
-        name = person.displayName
+        identityOpt <- inv.fut(IdentityAccess.getIdentity(identityId))
+        name = identityOpt.map(_.name).getOrElse(person.displayName)
+        handle = identityOpt.map(_.handle).getOrElse("")
       }
-        yield ExactlyOne(IdentityAccess.IdentityType(SimpleIdentity(identityId, name, name)))
+        yield ExactlyOne(IdentityAccess.IdentityType(SimpleIdentity(identityId, handle, name)))
     }
   }
   

@@ -246,7 +246,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     with SimplePTypeBuilder[PublicIdentity]
   {
     def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      Future.successful(Wikitext(s"[${v.name}](_displayIdentity?identity=${v.id})"))
+      Future.successful(Wikitext(s"[${v.name} (${v.handle})](_displayIdentity?identity=${v.id})"))
     }
     
     override def doComp(context:QLContext)(left:PublicIdentity, right:PublicIdentity):Boolean = {
