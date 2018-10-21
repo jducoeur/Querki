@@ -24,23 +24,14 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
   
   def hook() = {
     val jq = $(elem)
-    def tidOpt(name:String) = jq.data(name).toOption.map(v => TID(v.asInstanceOf[String]))
     val isTextInput:Boolean = (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
-    val thingIdOpt = tidOpt("thingid")
-    val (typeIdOpt, contextOpt) =
-      if (thingIdOpt.isEmpty)
-        // Note that the server intentionally prepends a junk char in front of context, to make sure
-        // this registers as a "string" in the JavaScript layer. So we drop that:
-        (Some(jq.tidString("ptype")), Some(jq.data("context").asInstanceOf[String].drop(1)))
-      else
-        (None, None)
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val replace = jq.data("replace").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val noIcon = jq.data("noicon").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val noDiv = jq.data("nodiv").map(_.asInstanceOf[Boolean]).getOrElse(false)
-    val lexicalOpt = tidOpt("lexical")
+    val updateSectionAfter = jq.data("updatesection").map(_.asInstanceOf[Boolean]).getOrElse(false)
     val (useIcons, openicon, closeicon, thinkingicon) =
       if (noIcon || isTextInput || append || replace)
         (false, "", "", "")
@@ -69,18 +60,38 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
     
     setIcon(openicon)
     
-    def activate(evt:JQueryEventObject, actualQL:String) = {
-      val targetJQ = $(s"#$target")
-      def runQL() = {
-        $(elem).addClass("running")
-        setIcon(thinkingicon)
-        $(elem).attr("disabled", true)
-        
-        def handleResult(result:models.Wikitext) = {
+    def runQL(targetJQ: JQuery, jq: JQuery, actualQL:String, actualNoDiv: Boolean, recurseUpwards: Boolean): Unit = {
+      def tidOpt(name:String) = jq.data(name).toOption.map(v => TID(v.asInstanceOf[String]))
+      val thingIdOpt = tidOpt("thingid")
+      val lexicalOpt = tidOpt("lexical")
+      val (typeIdOpt, contextOpt) =
+        if (thingIdOpt.isEmpty)
+          // Note that the server intentionally prepends a junk char in front of context, to make sure
+          // this registers as a "string" in the JavaScript layer. So we drop that:
+          (Some(jq.tidString("ptype")), Some(jq.data("context").asInstanceOf[String].drop(1)))
+        else
+          (None, None)
+
+      $(elem).addClass("running")
+      setIcon(thinkingicon)
+      $(elem).attr("disabled", true)
+      
+      def handleResult(result:models.Wikitext) = {
+        if (recurseUpwards) {
+          // Find the enclosing section, and runQL on *that* now:
+          val sectionJQ = targetJQ.closest("updateable")
+          if (sectionJQ.length > 0) {
+            val sectionQL = sectionJQ.data("ql").asInstanceOf[String]
+            // Note that sections can't yet contain other sections. I think that way lies madness.
+            // Also, note that we specifically are *not* inserting a div here. Is that right?
+            runQL(sectionJQ, sectionJQ, sectionQL, true, false)
+          }
+        } else {
           val qtext:dom.html.Element =
-            if (noDiv) {
+            if (actualNoDiv) {
               // Render this raw, with no ScalaTags wrapper. Do we have a better way to do this?
-              $(result.raw.html.toString).get(0).asInstanceOf[dom.html.Element]
+              //$(result.raw.html.toString).get(0).asInstanceOf[dom.html.Element]
+              (new QTextSpan(result)).render
             } else {
               (new QText(result)).render
             }
@@ -96,16 +107,20 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
           Gadgets.hookPendingGadgets()
           updatePage()
         }
-        
-        thingIdOpt match {
-          case Some(thingId) => Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach(handleResult)
-          case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, lexicalOpt, actualQL).call().foreach(handleResult)
-        }   
       }
       
+      thingIdOpt match {
+        case Some(thingId) => Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach(handleResult)
+        case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, lexicalOpt, actualQL).call().foreach(handleResult)
+      }   
+    }
+    
+    def activate(evt:JQueryEventObject, actualQL:String) = {
+      val targetJQ = $(s"#$target")
+
       if ($(elem).hasClass("open")) {
         if (append || replace) {
-          runQL()
+          runQL(targetJQ, jq, actualQL, noDiv, updateSectionAfter)
         } else {
           targetJQ.hide()
           $(elem).removeClass("open")
@@ -115,10 +130,10 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
       } else if ($(elem).hasClass("running")) {
         // Query in progress -- don't do anything
       } else {
-        runQL()
+        runQL(targetJQ, jq, actualQL, noDiv, updateSectionAfter)
       }
       
-      evt.preventDefault()      
+      evt.preventDefault()
     }
     
     if (isTextInput)

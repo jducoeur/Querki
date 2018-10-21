@@ -39,6 +39,8 @@ object UIMOIDs extends EcotIds(11) {
   val MenuButtonOID = moid(11)
   val QLInputOID = moid(12)
   val UniqueHtmlIdOID = moid(13)
+  val UpdateableSectionOID = moid(14)
+  val UpdateSectionOID = moid(15)
 }
 
 /**
@@ -637,6 +639,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         replace <- inv.processAs("replace", YesNoType)
         noIcon <- inv.processAs("noIcon", YesNoType)
         noDiv <- inv.processAs("noDiv", YesNoType)
+        updateSectionAfter <- inv.processAs("updateSectionAfter", YesNoType)
         // QI.9v5kage: the singleContext here fixes the bug, resulting in only a single button.
         // TODO: why does this require singleContext? If this *specific* parameter uses the full
         // context, we can wind up with multiple buttons if the context contains multiple elements.
@@ -654,7 +657,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             buildHtml(
               label, 
               s"""data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-target="$targetName" data-ql="$ql" data-append="$append" """ +
-              s"""data-replace="$replace" data-noicon="$noIcon" """ +
+              s"""data-replace="$replace" data-noicon="$noIcon" data-updatesection="$updateSectionAfter" """ +
               (if (noDiv) """data-nodiv="true" """ else "") +
               s"""${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """) 
             + targetDiv)
@@ -682,7 +685,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the button,
                 |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin),
           ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
-                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin),
+          ("updateSectionAfter", YesNoType, ExactlyOne(YesNoType(false)), """If this is contained within an `_updateableSection`,
+                |and you set `updateSectionAfter` to `true`, that enclosing section will be redisplayed after this is clicked.""".stripMargin)
         ),
         returns = (RawHtmlType, "The button")
       ),
@@ -722,7 +727,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki adds an indicator icon to the link,
                 |showing that it opens and closes. If `noIcon` is set to `True`, that won't be shown.""".stripMargin),
           ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
-                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin),
+          ("updateSectionAfter", YesNoType, ExactlyOne(YesNoType(false)), """If this is contained within an `_updateableSection`,
+                |and you set `updateSectionAfter` to `true`, that enclosing section will be redisplayed after this is clicked.""".stripMargin)
         ),
         returns = (RawHtmlType, "The link, ready for the page")
       ),
@@ -762,7 +769,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL with the new value of the input field, and replaces the previous result in the target div.""".stripMargin),
           ("noIcon", YesNoType, ExactlyOne(YesNoType(false)), """Not currently used in _QLInput.""".stripMargin),
           ("noDiv", YesNoType, ExactlyOne(YesNoType(false)), """Normally, Querki displays the result of the QL expression
-                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin)
+                |in a div. If `noDiv` is set to `True`, the results will be added with nothing around them.""".stripMargin),
+          ("updateSectionAfter", YesNoType, ExactlyOne(YesNoType(false)), """If this is contained within an `_updateableSection`,
+                |and you set `updateSectionAfter` to `true`, that enclosing section will be redisplayed after this is clicked.""".stripMargin)
         ),
         returns = (RawHtmlType, "The input field, ready for the page")
       ),
@@ -777,6 +786,48 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   {
     def buildHtml(label:String, core:String):String = {
       s"""<input type="text" class="_qlInvoke" placeholder="$label" $core></input>"""
+    }
+  }
+  
+  lazy val UpdateableSection = new InternalMethod(UpdateableSectionOID,
+    toProps(
+      setName("_updateableSection"),
+      SkillLevel(SkillLevelAdvanced),
+      Categories(UITag),
+      Signature(
+        expected = None,
+        reqs = Seq(
+          ("contents", AnyType, "The contents of this section")
+        ),
+        opts = Seq.empty,
+        returns = (RawHtmlType, "The rendered section, which can be updated by calling `_updateSection` from inside.")
+      )))
+  {
+    override def qlApply(inv: Invocation): QFut = {
+      val qv = inv.context.value
+      for {
+        // The contents in serializable form:
+        contentsRaw <- inv.rawRequiredParam("contents")
+        contentsQuoted = HtmlEscape.escapeQuotes(contentsRaw.reconstructStandalone)
+        // And the contents actually rendered, to display:
+        contents <- inv.process("contents")
+        pt = qv.pType
+        lexicalBundleOpt = inv.context.parser.flatMap(_.lexicalThing)
+        lexicalThingOpt = lexicalBundleOpt.flatMap(_ match { case t:Thing => Some(t); case _ => None }) 
+        contentsWiki <- inv.fut(contents.wikify(inv.context, None, lexicalThingOpt))
+        serialized <- QL.serializeContext(inv, Some("contents"))
+        targetName = "target-" + scala.util.Random.nextInt.toString
+      }
+        yield 
+          QL.WikitextValue(
+            HtmlWikitext(
+              s"""<updateable id="$targetName" data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-ql="$contentsQuoted"""" +
+              s"""${lexicalThingOpt.map(lex => s"""data-lexical="${lex.id.toThingId}"""").getOrElse("")} href="#" """ +
+              ">"
+            ) +
+            contentsWiki +
+            HtmlWikitext(s"""</updateable>""")
+          )
     }
   }
   
@@ -985,6 +1036,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     new MixedButtonMethod,
     ShowSomeFunction,
     MenuButton,
-    UniqueHtmlId
+    UniqueHtmlId,
+    UpdateableSection
   )
 }

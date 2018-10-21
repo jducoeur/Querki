@@ -67,6 +67,19 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology)
   }
 }
 
+class QTextSpan(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) 
+  extends Gadget[Element] with QuerkiUIUtils with EcologyMember with ServerHtmlHolder 
+{
+  override def onCreate(root:Element) = prepContents(root)
+  
+  def doRender() = {
+    // TODO: putting this in a div() is WrongityWrongWrong, since it sometimes might be span-ish.
+    // How do we make this appropriately general? Conceptually, a Large Text is a div, and a Text is
+    // a span; do we need to distinguish that way somehow?
+    span(raw(text.span.html.toString), mods)
+  }
+}
+
 object QText {
   def apply(text:String)(implicit ecology:Ecology) = new QText(Wikitext(text))
 }

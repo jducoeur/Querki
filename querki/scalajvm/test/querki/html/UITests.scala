@@ -194,7 +194,7 @@ class UITests extends QuerkiTests {
       val serialized = QLTestTools.serializeContextCore(context, Map.empty)
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false" data-updatesection="false"  href="#" >Label</a>""")
     }
     
     "works with multiple items in context" in {
@@ -205,7 +205,7 @@ class UITests extends QuerkiTests {
       val serialized = QLTestTools.serializeContextCore(context, Map.empty)
       
       pql("""[[<My Instance, _space> -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="false" data-replace="false" data-noicon="false" data-updatesection="false"  href="#" >Label</a>""")
     }
     
     "use append properly" in {
@@ -216,7 +216,7 @@ class UITests extends QuerkiTests {
       val serialized = QLTestTools.serializeContextCore(context, Map.empty)
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"", append=True)]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false"  href="#" >Label</a>""")
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="My Optional Text" data-append="true" data-replace="false" data-noicon="false" data-updatesection="false"  href="#" >Label</a>""")
     }
     
     "work with a bound name" in {
@@ -229,7 +229,7 @@ class UITests extends QuerkiTests {
       
       pql("""[[My Instance -> +$bound 
         _QLButton(label=""Label"", ql=$bound, target=""myTarget"")]]""") should
-        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="$$bound" data-append="false" data-replace="false" data-noicon="false"  href="#" >Label</a>""")      
+        equal (s"""<a class="btn btn-primary _qlInvoke" data-ptype="${Core.LinkType.id.toThingId}" data-context=".$serialized" data-target="myTarget" data-ql="$$bound" data-append="false" data-replace="false" data-noicon="false" data-updatesection="false"  href="#" >Label</a>""")      
     }
   }
   
