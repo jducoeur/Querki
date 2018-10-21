@@ -577,10 +577,17 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         case Some(person) => {
           // There's an existing Person, so modify it to add this invitation's role:
           val existingRoles = person.getPropVal(AccessControl.PersonRolesProp).rawList(LinkType)
-          val msg = ChangeProps(rc.requester.get, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
-          (SpaceOps.spaceRegion ? msg) map {
-            case ThingFound(_, _) => None
-            case ThingError(ex, _) => Some(ex)
+          if (existingRoles.contains(roleId))
+            // They already have this Role, so it's a no-op success:
+            fut(None)
+          else {
+            // Note that this needs to be executed with root privs, because the requester doesn't have the right to
+            // make this change themselves:
+            val msg = ChangeProps(IdentityAccess.SystemUser, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
+            (SpaceOps.spaceRegion ? msg) map {
+              case ThingFound(_, _) => None
+              case ThingError(ex, _) => Some(ex)
+            }
           }
         }
         case None => {

@@ -84,7 +84,7 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
   
   lazy val loginHandleOkay = logic.handleInput.flatMapRxOrElse(_.length)(_ >= 3, false)
   lazy val loginPasswordOkay = logic.passwordInput.flatMapRxOrElse(_.length)(_ >= 8, false)
-  lazy val loginOkay = Rx { loginHandleOkay() && loginPasswordOkay() && tosAgreed() }
+  lazy val loginOkay = Rx { loginHandleOkay() && loginPasswordOkay() }
   
   // The Sign Up button is disabled until all fields are fully filled-in.
   lazy val signupEnabled = Rx { 
@@ -236,7 +236,17 @@ class SignUpPage[T](includeSignin: Boolean)(onReady:Option[UserInfo => T])(impli
                   "Log in", 
                   disabled := Rx { !loginOkay() },
                   tabindex := 3
-                )({ () => logic.doLogin()})
+                )({ () => 
+                  // TODO: the way doLogin works, with the Future managed as a side-effect, is hideous. Clean
+                  // this up!
+                  val doneFuture = logic.loginPromise.future
+                  doneFuture.onComplete {
+                    case _ => {
+                      onReady.map(_(UserAccess.user.get)).getOrElse(PageManager.showIndexPage())
+                    }
+                  }
+                  logic.doLogin()
+                })
               )
             )
           ),

@@ -180,9 +180,6 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
           // This was an Open Invitation, sent out through a Shared Link. We have the ID of the
           // Custom Role that represents the Invitation:
           case OpenInvitation(inviteId) => {
-            // TODO: before anything else, we need to determine whether this invitation requires login. If so,
-            // we need a very different workflow. We probably need to stick the inviteId into a cookie for the
-            // time being, and get back to it.
             for {
               // TODO: review this logic! This is really weird-looking -- if we already have a logged-in User, are
               // we creating a new Identity for them? Why?
