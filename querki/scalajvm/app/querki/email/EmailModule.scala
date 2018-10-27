@@ -1,5 +1,6 @@
 package querki.email
 
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 import akka.actor._
@@ -44,7 +45,7 @@ private [email] trait EmailSender extends EcologyInterface {
       recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
       subject:Wikitext, bodyMain:Wikitext):Try[Unit]
   
-  def sendEmail(msg:EmailMsg):Unit
+  def sendEmail(msg:EmailMsg)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[Int]
 }
 
 class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.MethodDefs {
@@ -107,10 +108,21 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     _sender = createActorCb(Props(classOf[EmailSendingActor], ecology), "EmailSender")
   }
   
-  def sendEmail(msg:EmailMsg):Unit = {
+  /**
+   * Note that this is intentionally fire-and-forget. That is because it can be a *long* time between calling
+   * this and the email actually going out, due to throttling.
+   * 
+   * TBD: we could change this to return a long-lived Future if preferred -- the underpinnings are in place.
+   * But that can't happen in user-time, since it could take tens or hundreds of seconds, so it isn't obvious
+   * that it's worth it.
+   */
+  def sendEmail(msg:EmailMsg): Unit = {
     sender ! msg
   }
   
+  /**
+   * TODO: this should use sendEmail(), above, instead of the deprecated sendInternal()!
+   */
   def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
     val session = EmailSender.createSession()
     
@@ -389,15 +401,9 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     
   lazy val AccessControl = interface[querki.security.AccessControl]
   
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Future[Seq[OID]] = {
-    val session = EmailSender.createSession()
-    
-    val oidOptFuts = people map { person =>
-      sendToPerson(context, person, session, subjectQL, bodyQL, from)
-    }
-    Future.sequence(oidOptFuts) map (_.flatten)
-  }
-  
+  /**
+   * TODO: this should be using the sendEmail() function above, not calling the deprecated sendInternal()!
+   */
   def sendRaw(recipientEmail:EmailAddress, recipientName:String, subject:Wikitext, body:Wikitext, from:String, requester:Identity):Future[Unit] = {
     val session = EmailSender.createSession()
     // All of this email-sending stuff is blocking, so it *should* be creating Futures. Let's at least start
@@ -405,41 +411,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     EmailSender.sendInternal(session, from, recipientEmail, recipientName, requester, subject, body) match {
       case Success(_) => fut(())
       case Failure(err) => Future.failed(err)
-    }
-  }
-	
-  def sendToPerson(context:QLContext, person:Thing, session:EmailSender.TSession, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {
-    val name = person.displayName
-    val addrList = person.getProp(EmailAddressProp)
-    if (addrList.isEmpty)
-      Future.successful(None)
-    else {
-      val addr = addrList.first
-	      	    
-      // TODO: this originally derived from the higher-level context of the Email itself. Really, it should do so.
-      // But PersonModule needs to get at this Person object from the Context *somehow*, and for now it's easiest
-      // to do so as context.root.
-      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
-      // use that in PersonModule. But first we need to introduce the idea of name bindings!
-      // Once that is done, restore the incoming context as the parent of this one.
-      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
-    
-      for {
-        subject <- QL.process(subjectQL, personContext.forProperty(emailSubject))
-        body <- QL.process(bodyQL, personContext.forProperty(emailBody))
-      
-        // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
-        // You are responsible for your own emails.
-        // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
-        // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
-        // leaking the wrong email address. But it'll do to start.
-        result = EmailSender.sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
-
-      }
-        yield result match {
-          case Success(_) => Some(person.id)
-          case Failure(ex) => QLog.error("Got an error while sending email ", ex); None 
-        }
     }
   }
 }

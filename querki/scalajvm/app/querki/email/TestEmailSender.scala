@@ -1,6 +1,9 @@
 package querki.email
 
+import scala.concurrent.ExecutionContext
 import scala.util.Try
+
+import akka.actor.Scheduler
 
 import models.Wikitext
 
@@ -75,10 +78,14 @@ private [email] class TestEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     }
   }
   
-  def sendEmail(msg:EmailMsg):Unit = {
+  /**
+   * Note: the scheduler below is *null* in the test environment!
+   */
+  def sendEmail(msg:EmailMsg)(implicit scheduler: Scheduler, ec: ExecutionContext): Future[Int] = {
     val session = createSession()
     val details = TestEmailMessageDetails(msg.from.addr, msg.to, msg.toName, null, msg.subject, msg.body)
     session.append(details)
+    Future.successful(250)
   }
   
   def sendInternal(session:TSession, from:String, 

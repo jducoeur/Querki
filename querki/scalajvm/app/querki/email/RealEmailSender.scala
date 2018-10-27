@@ -1,12 +1,17 @@
 package querki.email
 
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 import javax.activation.DataHandler
 import javax.mail._
 import javax.mail.internet._
 import javax.mail.util.ByteArrayDataSource
 import com.sun.mail.smtp._
+
+import akka.actor.Scheduler
+import akka.pattern.after
 
 import models.Wikitext
 
@@ -112,7 +117,44 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     |}
     |</style>""".stripMargin
     
-  def sendEmail(msgInfo:EmailMsg):Unit = {
+  val retryDelay = 1 second
+    
+  def futureWithRetries[R](name: String)(f: => R, retries: Int = 3)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[R] = {
+    val future = Future { f }
+    if (retries > 0) {
+      future.recoverWith {
+        case ex: Exception => {
+          if (debug) QLog.spew(s"$name() got Exception ${ex.getMessage}; retrying $retries")
+          // We delay a little, then try again:
+          after(retryDelay, scheduler) { futureWithRetries(name)(f, retries - 1) }
+        }
+      }
+    } else {
+      // We've run out of retries, so let failures be failures:
+      future.onComplete { _ match {
+        case Success(_) => // Yay!
+        case Failure(ex) => QLog.error(s"Failure trying to send email, in $name", ex)
+      }}
+      
+      future
+    }
+  }
+
+  def getTransport(session: Session, retries: Int = 3)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[SMTPTransport] = 
+    futureWithRetries("getTransport") { session.getTransport("smtp").asInstanceOf[SMTPTransport] }
+  
+  def connect(transport: SMTPTransport)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[Unit] = 
+    futureWithRetries("connect") { transport.connect(username, password) }
+  
+  def sendMessage(msg: MimeMessage, transport: SMTPTransport)(implicit scheduler: Scheduler, ex: ExecutionContext) =
+    futureWithRetries("sendMessage") { transport.sendMessage(msg, msg.getAllRecipients) }
+    
+  /**
+   * This returns the status code of the sent email, in case anybody cares.
+   * 
+   * TBD: we might want to eventually do something smarter in case of failure.
+   */
+  def sendEmail(msgInfo:EmailMsg)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[Int] = {
     val SessionWrapper(session) = createSession()
     val EmailMsg(from, to, toName, senderName, subjectWiki, bodyWiki, footerWiki) = msgInfo
     val msg = new MimeMessage(session)
@@ -174,14 +216,18 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     msg.setSentDate(new java.util.Date())
         
     if (username.length > 0) {
-      val transport = session.getTransport("smtp").asInstanceOf[SMTPTransport]
-      transport.connect(username, password)
-      transport.sendMessage(msg, msg.getAllRecipients)
-      if (debug)
-        QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+      for {
+        transport <- getTransport(session)
+        _ <- connect(transport)
+        _ <- sendMessage(msg, transport)
+        _ =  if (debug) QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+      }
+        yield transport.getLastReturnCode
     } else {
       // Non-TLS -- running on a test server, so just do it the easy way:
-      Transport.send(msg)
+      // TBD: we might eventually reallow this for test servers, but not for the time being:
+//      Transport.send(msg)
+      throw new Exception(s"Trying to send an email without TLS, which is no longer supported!")
     }
   }
   

@@ -70,8 +70,6 @@ package object email {
      */
     def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit]
     
-    def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Future[Seq[OID]]
-    
     /**
      * The thinnest shell over the underlying mail-sending capability. Assumes you've already done all the prep
      * work.
