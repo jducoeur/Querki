@@ -301,20 +301,36 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
   }
   
   /**
-   * You can apply _plus() to a QDate, with a Duration as the parameter.
+   * You can apply _plus and _minus to a QDate or QDateTime, with a Duration as the parameter.
+   * 
+   * TODO: this would probably be prettier with Scala 3 Match Types. As it is, it suggests that a typeclass
+   * version of the Invocation methods would be well-advised.
    */
-  lazy val plusDateImpl = new FunctionImpl(PlusDateImplOID, Logic.PlusMethod, Seq(QDate))
+  class DateMathBase(implOID: OID, implements: querki.core.MethodDefs#AbstractFunction)(fMath: (DateTime, Period) => DateTime)
+    extends FunctionImpl(implOID, implements, Seq(QDate, QDateTime))
   {
     override def qlApply(inv:Invocation):QFut = {
+      val contextType = inv.context.value.pType
       for {
-        date <- inv.contextAllAs(QDate)
+        date <- contextType match {
+          case QDate => inv.contextAllAs(QDate)
+          case QDateTime => inv.contextAllAs(QDateTime)
+        }
         duration <- inv.processParamFirstAs(0, QDuration.DurationType)
         period = QDuration.toPeriod(duration, inv.state)
-        result = date + period
+        result = fMath(date, period)
       }
-        yield ExactlyOne(QDate(result))
+        yield {
+          val typedVal = contextType match {
+            case QDate => QDate(result)
+            case QDateTime => QDateTime(result)
+          }
+          ExactlyOne(typedVal)
+        }
     }
   }
+  lazy val plusDateImpl = new DateMathBase(PlusDateImplOID, Logic.PlusMethod)(_ + _)
+  lazy val minusDateImpl = new DateMathBase(MinusDateImplOID, Logic.MinusMethod)(_ - _)
   
   lazy val CreateTimeFunction = new InternalMethod(CreateTimeFunctionOID,
     toProps(
@@ -350,6 +366,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     dayMethod,
     todayFunction,
     plusDateImpl,
+    minusDateImpl,
     CreateTimeFunction,
     InitOnCreateFlag
   )

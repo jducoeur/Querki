@@ -92,5 +92,19 @@ class DateTimeTests extends QuerkiTests {
       pql("""[[<DateTime Model._instances, Date Model._instances> -> _sort(Sort Function)]]""") should
         equal(listOfLinkText(s.thing5a, s.thing2a, s.thing3, s.thing4, s.thing1, s.thing5, s.thing2, s.thing3a, s.thing4a, s.thing1a))      
     }
+    
+    "work with _plus and _minus" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Thing 1a -> Date Prop -> _plus(Duration Type(5, days))]]""") should
+        equal("03/20/2016")
+      pql("""[[Thing 1 -> DateTime Prop -> _plus(Duration Type(5, days))]]""") should
+        equal("Mar 20, 2013 10:30:00 AM")
+      
+      pql("""[[Thing 1a -> Date Prop -> _minus(Duration Type(5, days))]]""") should
+        equal("03/10/2016")
+      pql("""[[Thing 1 -> DateTime Prop -> _minus(Duration Type(5, days))]]""") should
+        equal("Mar 10, 2013 10:30:00 AM")
+    }
   }
 }
