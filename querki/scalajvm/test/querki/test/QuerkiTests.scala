@@ -160,6 +160,10 @@ class QuerkiTests
     "[" + display + "](" + name + ")"     
   }
   
+  def listOf(strs: String*): String = {
+    strs.map { str => s"\n$str" }.mkString
+  }
+  
   /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the
    * wikitext for their rendered Links. Note that this is *specifically* for a List or Set.

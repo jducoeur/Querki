@@ -191,9 +191,6 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       Summary("Represents a particular date and time"),
       Details("""A value of this Type indicates a specific moment in time.
           |
-          |At the moment, the only way to get a DateTime is through the _modTime function, which
-          |produces the DateTime when the given Thing was last changed.
-          |
           |ADVANCED: under the hood, DateTimes are based on the [Joda-Time](http://www.joda.org/joda-time/)
           |library, and you can use Joda-Time format strings when displaying a DateTime. For example,
           |if you say:

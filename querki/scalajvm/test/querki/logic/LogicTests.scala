@@ -3,6 +3,8 @@ package querki.logic
 import querki.test._
 
 class LogicTests extends QuerkiTests {
+  def listOfBoolean(bs: Boolean*) = listOf(bs.map(_.toString):_*)
+  
   // === _and ===
   "_and" should {
     "work correctly with True and False" in {
@@ -144,6 +146,14 @@ class LogicTests extends QuerkiTests {
       
       pql("""[[Trivial -> _equals(Link Name, My Thing -> My Num)]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")      
     }
+    
+    "cope with more than two elements" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<2, 3, 4, 5, 6> -> _equals(4)]]""") should equal (listOfBoolean(false, false, true, false, false))
+      pql("""[[4 -> _equals(<2, 3, 4, 5, 6>)]]""") should equal (listOfBoolean(false, false, true, false, false))
+      pql("""[[<2, 3, 4> -> _equals(<3, 4, 5>)]]""") should equal (listOfBoolean(false, false, false, true, false, false, false, true, false))
+    }
   }
   
   // === _greaterThan ===
@@ -173,6 +183,14 @@ class LogicTests extends QuerkiTests {
       
       pql("""[[_greaterThan(""hello"", ""there"")]]""") should equal ("false")
       pql("""[[_greaterThan(""there"", ""hello"")]]""") should equal ("true")
+    }
+    
+    "cope with more than two elements" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<2, 3, 4, 5, 6> -> _greaterThan(4)]]""") should equal (listOfBoolean(false, false, false, true, true))
+      pql("""[[4 -> _greaterThan(<2, 3, 4, 5, 6>)]]""") should equal (listOfBoolean(true, true, false, false, false))
+      pql("""[[<2, 3, 4> -> _greaterThan(<3, 4, 5>)]]""") should equal (listOfBoolean(false, false, false, false, false, false, true, false, false))
     }
   }
   
@@ -283,6 +301,14 @@ class LogicTests extends QuerkiTests {
       
       pql("""[[_lessThan(""hello"", ""there"")]]""") should equal ("true")
       pql("""[[_lessThan(""there"", ""hello"")]]""") should equal ("false")
+    }
+    
+    "cope with more than two elements" in {
+      implicit val s = commonSpace
+      
+      pql("""[[<2, 3, 4, 5, 6> -> _lessThan(4)]]""") should equal (listOfBoolean(true, true, false, false, false))
+      pql("""[[4 -> _lessThan(<2, 3, 4, 5, 6>)]]""") should equal (listOfBoolean(false, false, false, true, true))
+      pql("""[[<2, 3, 4> -> _lessThan(<3, 4, 5>)]]""") should equal (listOfBoolean(true, true, true, false, true, true, false, false, true))
     }
   }
   

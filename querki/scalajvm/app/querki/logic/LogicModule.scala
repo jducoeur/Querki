@@ -179,7 +179,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     }
   }
   
-  def compareValues(firstIn:QValue, secondIn:QValue, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
+  def compareValues(firstIn:QValue, secondIn:QValue, method:String)(comparer:(PType[_], ElemValue, ElemValue) => Boolean): QValue = {
     var first = firstIn
     var second = secondIn
     
@@ -194,14 +194,20 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         }
       }
     }
-        
-    if (first.size == second.size) {
-      val pt = first.pType
-      val pairs = first.cv.zip(second.cv)
-      pairs.forall(pair => comparer(pt, pair._1, pair._2))
+
+    val pt = first.pType
+    if ((first.size == 1) && (second.size == 1)) {
+      // The common and easy case:
+      ExactlyOne(boolean2YesNo(comparer(pt, first.cv.head, second.cv.head)))
     } else {
-      false
-    }    
+      val allPairs = for {
+        f <- first.cv
+        s <- second.cv
+      }
+        yield comparer(pt, f, s)
+        
+      QList.makePropValue(allPairs.map(boolean2YesNo(_)), YesNoType)
+    }
   }
 
   /**
@@ -212,7 +218,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       first <- inv.processParamNofM(0, 2)
       second <- inv.processParamNofM(1, 2)
     }
-      yield boolean2YesNoQValue(compareValues(first, second, method)(comparer))
+      yield compareValues(first, second, method)(comparer)
   }
   
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
@@ -230,7 +236,15 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |```
           |VALUE -> _equals(EXP) -> YES OR NO
           |```
-          |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it matches the given EXP.
+          |
+          |If you provide more than one value on either side, it will do *all* of the comparisons, and
+          |return all of the results. So for example, if you say:
+          |[[```
+          |<2, 3, 4, 5, 6> -> _equals(4)
+          |```]]
+          |the result will be `false false true false false`.
+          |""".stripMargin)))
   {  
     override def qlApply(inv:Invocation):QFut = {
       binaryComparer(inv, "_equals")( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
@@ -252,7 +266,15 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |```
           |VALUE -> _lessThan(EXP) -> YES OR NO
           |```
-          |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it is less than the given EXP.
+          |
+          |If you provide more than one value on either side, it will do *all* of the comparisons, and
+          |return all of the results. So for example, if you say:
+          |[[```
+          |<2, 3, 4, 5, 6> -> _lessThan(4)
+          |```]]
+          |the result will be `true true false false false`.
+          |""".stripMargin)))
   {  
     override def qlApply(inv:Invocation):QFut = {
       binaryComparer(inv, "_lessThan")( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
@@ -274,7 +296,15 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
           |```
           |VALUE -> _greaterThan(EXP) -> YES OR NO
           |```
-          |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
+          |This receives a VALUE, and tells you whether it is greater than the given EXP.
+          |
+          |If you provide more than one value on either side, it will do *all* of the comparisons, and
+          |return all of the results. So for example, if you say:
+          |[[```
+          |<2, 3, 4, 5, 6> -> _greaterThan(4)
+          |```]]
+          |the result will be `false false false true true`.
+          |""".stripMargin)))
   {  
     override def qlApply(inv:Invocation):QFut = {
       binaryComparer(inv, "_greaterThan") { (pt, elem1, elem2) =>
