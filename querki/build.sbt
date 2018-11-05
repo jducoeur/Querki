@@ -5,7 +5,7 @@ import ByteConversions._
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.11"
-lazy val akkaV = "2.4.10"
+lazy val akkaV = "2.4.20"
 lazy val enumeratumV = "1.5.3"
 lazy val appV = "2.8.2"
 
@@ -16,6 +16,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     version := appV,
     scalaJSProjects := clients,
   	pipelineStages := Seq(scalaJSProd, digest, gzip),
+  	// Needed for the in-memory Cassandra driver, used during tests:
+    resolvers += "dnvriend" at "http://dl.bintray.com/dnvriend/maven",
     // To prevent duplicate-artifact errors in Stage:
     publishArtifact in (Compile, packageSrc) := false,
     libraryDependencies ++= sharedDependencies.value ++ Seq(
@@ -65,7 +67,11 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // We are also using BooPickle for embedding: 
       "io.suzaku" %% "boopickle" % "1.2.6",
       // We use JSoup for HTML cleaning:
-      "org.jsoup" % "jsoup" % "1.11.2"
+      "org.jsoup" % "jsoup" % "1.11.2",
+      // In-memory Akka Persistence driver, used for tests. Note that this is for Akka 2.4!
+      "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.4.20.0" % "test",
+      // In-memory H2 database, used for tests:
+      "com.h2database" % "h2" % "1.4.192" % "test"
     ),
     
     // ConductR params

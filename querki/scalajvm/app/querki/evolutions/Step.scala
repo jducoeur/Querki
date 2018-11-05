@@ -11,6 +11,7 @@ import models._
 
 import querki.db._
 import querki.db.ShardKind._
+import querki.util.Config
 import querki.util.SqlHelpers._
 
 /**
@@ -27,6 +28,8 @@ trait Step extends EcologyMember {
   def version:Int
   
   implicit def ecology:Ecology
+  
+  lazy val inMemoryTest = Config.getBoolean("querki.test.inmemory", false)
   
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query, version)
@@ -62,13 +65,16 @@ trait Step extends EcologyMember {
    * for now.
    */
   def backupTables(info:SpaceInfo)(implicit conn:Connection):Unit = {
-    // TODO: back up the history and attachments as well?
-    SpacePersistence.SpaceSQL(info.id, """
-        CREATE TABLE {bname} LIKE {tname}
-        """, info.version).executeUpdate
-    SpacePersistence.SpaceSQL(info.id, """
-        INSERT {bname} SELECT * FROM {tname}
-        """, info.version).executeUpdate
+    // These backup operations just plain don't exist in the H2 test environment:
+    if (!inMemoryTest) {
+      // TODO: back up the history and attachments as well?
+      SpacePersistence.SpaceSQL(info.id, """
+          CREATE TABLE {bname} LIKE {tname}
+          """, info.version).executeUpdate
+      SpacePersistence.SpaceSQL(info.id, """
+          INSERT {bname} SELECT * FROM {tname}
+          """, info.version).executeUpdate
+    }
   }
   
   /**

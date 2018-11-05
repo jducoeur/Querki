@@ -261,7 +261,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
           QDB(ShardKind.System) { implicit conn =>
             // Okay, seems to be legit
             val userInsert = SQL("""
-                INSERT User
+                INSERT INTO User
                   (id, level, join_date)
                   VALUES
                   ({userId}, {level}, {now})
@@ -293,7 +293,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
             } else {
               // There is no pre-existing Identity, so create it from scratch:
               val identityInsert = SQL("""
-                  INSERT Identity
+                  INSERT INTO Identity
                     (id, name, userId, kind, handle, email, authentication)
                     VALUES
                     ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})
@@ -453,7 +453,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState):Boolean = {
     QDB(ShardKind.System) { implicit conn =>
       val insert = SQL("""
-          INSERT SpaceMembership
+          INSERT INTO SpaceMembership
             (identityId, spaceId, membershipState)
             VALUES
             ({identityId}, {spaceId}, {membershipState})
