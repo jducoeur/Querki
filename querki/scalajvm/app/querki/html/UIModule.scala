@@ -612,6 +612,84 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
+  // TODO: replace this with a QL function! It certainly requires basic math functions, but I'm
+  // not sure it needs much else...
+  lazy val ShowSomeFunction = new InternalMethod(ShowSomeOID,
+    toProps(
+      setName("_showSome"),
+      Categories(UITag),
+      Signature(
+        expected = Some((Seq(AnyType), "A value that will be passed to the parameters.")),
+        reqs = Seq(
+          ("start", IntType, "The index to begin listing from, usually 0"),
+          ("len", IntType, "The number of entries to show"),          
+          ("label", ParsedTextType, "The text to display on the link to show more."),
+          ("ql", Basic.QLType, "The QL that lists *all* of the desired entries."),
+          ("render", Basic.QLType, "QL describing how to display the entries that will be shown this time.")
+        ),
+        opts = Seq(),
+        returns = (ParsedTextType, "The current subset of all of the entries.")
+      ),
+      Summary("Show some of the contents at a time"),
+      SkillLevel(SkillLevelAdvanced),
+      Details("""This is a useful but complex function for dealing with long lists. Given some incoming context,
+        |it runs the expression in `ql` to compute a bunch of expressions. It produces a List of `len` of them
+        |with indexes starting at `start`, feeds that to `render`, and produces the result of that. The whole
+        |thing will be finished with `label`; clicking on that produces the next `len` items.
+        |
+        |The division between `ql` and `render` is a bit subtle, and is mainly for efficiency. `ql` should
+        |contain the code up until the order is clear -- typically until _sort. You *can* put everything
+        |into `ql`, but it will run more slowly, because it will do all the render processing for everything,
+        |including the entries that aren't being shown right now. (That is, when it shows "some", it will
+        |run the `ql`, and then only run `render` on the entries to be displayed.)
+        |
+        |In the long run, this should be replaced by a cleverer and more automatic mechanism. Also, this
+        |may be replaced by a QL function in due course. So consider this experimental; it may go away
+        |down the line.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      val qv = inv.context.value
+      val pt = qv.pType
+      for {
+        ctx <- inv.contextValue
+        start <- inv.processAs("start", IntType)
+        len <- inv.processAs("len", IntType)
+        label <- inv.processAs("label", ParsedTextType)
+        all <- inv.process("ql")
+        done = (start + len >= all.size)
+        rawLabel <- inv.rawRequiredParam("label")
+        rawQL <- inv.rawRequiredParam("ql")
+        rawDisplay <- inv.rawRequiredParam("render")
+        selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
+        result <- inv.process("render", inv.context.next(selectedElems))
+        wiki <- inv.fut(result.wikify(inv.context))
+        serialized <- QL.serializeContext(inv, Some("ql"))
+        nextButton =
+          if (done)
+            ""
+          else {
+            val nextDiv = s"_nextButton${(scala.math.random * 1000000).toInt.toString()}"
+            div(idAttr := nextDiv,
+              p(b(a(
+                cls := "_qlInvoke",
+                label.raw.toString,
+                data.context := s".$serialized",
+                data.ptype := s"${pt.id.toThingId}",
+                data.target := nextDiv,
+                data.noicon := true,
+                data.ql := s"_showSome(${start + len},$len,${rawLabel.reconstructStandalone},${rawQL.reconstructStandalone},${rawDisplay.reconstructStandalone})")))
+            ).toString
+          }
+        complete =
+          if (all.size == 0)
+            Wikitext("")
+          else
+            wiki + HtmlWikitext(nextButton)
+      }
+        yield QL.WikitextValue(complete)
+    }
+  }
+  
   abstract class ClickableQLBase(oid:OID, pf:PropMap) extends InternalMethod(oid, pf)
   {
     def buildHtml(label:String, core:String):String
@@ -916,70 +994,6 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             cls:=classes,
             data.menuid := id.strip.toString(),
             label.strip.toString()))
-    }
-  }
-  
-  // TODO: replace this with a QL function! It certainly requires basic math functions, but I'm
-  // not sure it needs much else...
-  lazy val ShowSomeFunction = new InternalMethod(ShowSomeOID,
-    toProps(
-      setName("_showSome"),
-      Categories(UITag),
-      Summary("Show some of the contents at a time"),
-      SkillLevel(SkillLevelAdvanced),
-      Details("""```
-        |THING -> _showSome(START, LEN, MSG, ALL, DISPLAY)
-        |```
-        |
-        |This is a useful but complex function for dealing with long lists. Given the incoming THING,
-        |it runs the expression in ALL to compute a bunch of expressions. It produces a LIST of LEN of them
-        |with indexes starting at START, feeds that to DISPLAY, and produces the result of that. The whole
-        |thing will be finished with MSG; clicking on that produces the next LEN items.
-        |
-        |The division between ALL and DISPLAY is a bit subtle, and is mainly for efficiency. ALL should
-        |contain the code up until the order is clear -- typically until _sort. You *can* put everything
-        |into ALL, but it will run more slowly.
-        |
-        |In the long run, this should be replaced by a cleverer and more automatic mechanism. Also, this
-        |may be replaced by a QL function in due course. So consider this experimental; it may go away
-        |down the line.""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
-      for {
-        thing <- inv.contextFirstThing
-        start <- inv.processParamFirstAs(0, IntType)
-        len <- inv.processParamFirstAs(1, IntType)
-        msg <- inv.processParamFirstAs(2, ParsedTextType)
-        all <- inv.processParam(3)
-        done = (start + len >= all.size)
-        rawMsg <- inv.rawParam(2)
-        rawAll <- inv.rawParam(3)
-        rawDisplay <- inv.rawParam(4)
-        selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
-        result <- inv.processParam(4, inv.context.next(selectedElems))
-        wiki <- inv.fut(result.wikify(inv.context))
-        nextButton =
-          if (done)
-            ""
-          else {
-            val nextDiv = s"_nextButton${(scala.math.random * 1000000).toInt.toString()}"
-            div(idAttr := nextDiv,
-              p(b(a(
-                cls := "_qlInvoke",
-                msg.raw.toString,
-                data.thingId := s"${thing.toThingId}",
-                data.target := nextDiv,
-                data.noicon := true,
-                data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructStandalone},${rawAll.reconstructStandalone},${rawDisplay.reconstructStandalone})")))
-            ).toString
-          }
-        complete =
-          if (all.size == 0)
-            Wikitext("")
-          else
-            wiki + HtmlWikitext(nextButton)
-      }
-        yield QL.WikitextValue(complete)
     }
   }
   
