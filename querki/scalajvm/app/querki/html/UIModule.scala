@@ -652,14 +652,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val pt = qv.pType
       for {
         ctx <- inv.contextValue
-        start <- inv.processAs("start", IntType)
-        len <- inv.processAs("len", IntType)
-        label <- inv.processAs("label", ParsedTextType)
+        start <- inv.processAs("start", IntType).one
+        len <- inv.processAs("len", IntType).one
+        label <- inv.processAs("label", ParsedTextType).one
         all <- inv.process("ql")
         done = (start + len >= all.size)
-        rawLabel <- inv.rawRequiredParam("label")
-        rawQL <- inv.rawRequiredParam("ql")
-        rawDisplay <- inv.rawRequiredParam("render")
+        rawLabel <- inv.rawRequiredParam("label").one
+        rawQL <- inv.rawRequiredParam("ql").one
+        rawDisplay <- inv.rawRequiredParam("render").one
         selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
         result <- inv.process("render", inv.context.next(selectedElems))
         wiki <- inv.fut(result.wikify(inv.context))

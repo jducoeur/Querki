@@ -81,6 +81,13 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[
     }
     InvocationValueImpl(inv, allFut)
   }
+  
+  def one: InvocationValue[T] = {
+    val oneFut = fut.map { ivd =>
+      IVData(ivd.vs.headOption, ivd.metadata)
+    }
+    InvocationValueImpl(inv, oneFut)    
+  }
 }
 
 object InvocationValueImpl {

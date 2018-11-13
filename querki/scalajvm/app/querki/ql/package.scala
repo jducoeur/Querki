@@ -63,6 +63,15 @@ package object ql {
      * get that.
      */
     def all:InvocationValue[Iterable[T]]
+    
+    /**
+     * Occasionally you really only want a single result to come out. For example, when you are generating
+     * something like a label, you probably only want *one* label -- otherwise, you wind up with a multiplicative
+     * explosion of results. This function restricts the results to just the first one found.
+     * 
+     * If *no* results are found, then this will be empty and skipped, as usual.
+     */
+    def one: InvocationValue[T]
   }
   
   /**
