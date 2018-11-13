@@ -216,13 +216,19 @@ private [email] class RealEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
     msg.setSentDate(new java.util.Date())
         
     if (username.length > 0) {
-      for {
-        transport <- getTransport(session)
+      val transportFut = getTransport(session)
+      val returnCodeFut = for {
+        transport <- transportFut
         _ <- connect(transport)
         _ <- sendMessage(msg, transport)
         _ =  if (debug) QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
       }
         yield transport.getLastReturnCode
+        
+      returnCodeFut.andThen {
+        // When the whole thing finishes, regardless of what happens, make sure we release the Transport:
+        case _ => transportFut.onSuccess { case transport => transport.close() }
+      }
     } else {
       // Non-TLS -- running on a test server, so just do it the easy way:
       // TBD: we might eventually reallow this for test servers, but not for the time being:

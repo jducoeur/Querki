@@ -277,7 +277,11 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
                 |the recipient so chooses.)
                 |
                 |The `topic` parameter is optional, but can be helpful. It should name the general category of this *kind* of message.
-                |Recipients can decide to unsubscribe a certain topic from email, while still receiving other notifications by email.""".stripMargin)))
+                |Recipients can decide to unsubscribe a certain topic from email, while still receiving other notifications by email.
+                |
+                |**Important:** this is likely to become a paid-only feature in the future, and the number of emails that can
+                |be sent this way *will* be limited for most Spaces. (Sending email costs actual money, so we will have to
+                |pass that on.)""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       implicit val state = inv.state
