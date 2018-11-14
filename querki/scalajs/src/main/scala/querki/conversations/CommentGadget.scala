@@ -34,7 +34,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo, val thingId
       div(cls:="_commentHeader",
         span(cls:="_commentAuthor", comment.author.name),
         " ",
-        span(cls:="_commentTime", created)
+        span(cls:="_commentTime", s"(@${comment.author.handle}) $created")
       ),
       new QText(comment.content, cls:="_commentText")
     )
