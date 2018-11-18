@@ -20,10 +20,13 @@ import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 trait MidTestBase 
   extends PlaySpec
   with OneAppPerSuite
+  with EcologyMember
 {
   lazy val dbManager = new MidFuncDB
   
   def spew(msg: => String) = QLog.spew(msg)
+  
+  def step(msg: String) = QLog.info(s"**** $msg")
   
   override implicit lazy val app: Application = {
     val context = ApplicationLoader.createContext(
@@ -49,10 +52,11 @@ trait MidTestBase
     val app = new QuerkiApplicationLoader().load(context)
     
     // Fetch the actual running Ecology, so that tests can introspect into the system.
-    ecology = QuerkiRoot.ecology    
+    _ecology = Some(QuerkiRoot.ecology)    
     
     app
   }
   
-  var ecology: Ecology = null
+  var _ecology: Option[Ecology] = None
+  implicit def ecology: Ecology = _ecology.getOrElse(throw new Exception(s"Attempting to fetch the Ecology before the Application has loaded!"))
 }

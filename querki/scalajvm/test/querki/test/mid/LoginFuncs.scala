@@ -3,6 +3,7 @@ package querki.test.mid
 import scala.concurrent.Future
 
 import upickle.default._
+import autowire._
 
 import play.api.mvc.{Result, Session}
 import play.api.test._
@@ -11,6 +12,8 @@ import play.api.test.Helpers._
 import controllers.LoginController
 
 import querki.data.UserInfo
+import querki.globals._
+import querki.session.UserFunctions
 
 case class TestUser(base: String) {
   def email = s"$base@querkitest.com"
@@ -24,11 +27,11 @@ case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Ses
 /**
  * Functions that wrap the LoginController with a higher-level API.
  */
-trait LoginFuncs extends FormFuncs { self: MidTestBase =>
+trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   private def controller = app.injector.instanceOf[LoginController]
   def loginController = controller
   
-  implicit lazy val materializer = app.materializer
+  private implicit lazy val materializer = app.materializer
   
   def trySignup(email: String, password: String, handle: String, display: String): Future[Result] = {
     val request = formRequest(
@@ -38,7 +41,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase =>
       "display" -> display
     )
     
-    call(controller.signupStart(), request)    
+    call(controller.signupStart(), request)
   }
   
   def signup(email: String, password: String, handle: String, display: String): LoginResults = {
@@ -53,6 +56,16 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase =>
   
   def signup(user: TestUser): LoginResults = {
     signup(user.email, user.password, user.handle, user.display)
+  }
+  
+  def validateSignup(user: TestUser)(implicit session: Session): Unit = {
+    val validateHash = EmailTesting.extractValidateHash()
+    withNsClient { c =>
+      c[UserFunctions].validateActivationHash(validateHash).call().foreach { success =>
+        if (!success)
+          throw new Exception(s"Failed to validate user $user with hash $validateHash")
+      }
+    }
   }
   
   def tryLogin(name: String, password: String): Future[Result] = {
