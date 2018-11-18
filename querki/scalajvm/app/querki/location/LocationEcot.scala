@@ -7,6 +7,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.InvocationValue
 import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
+import querki.util.SafeUrl
 
 object MOIDs extends EcotIds(63) {
   val StreetAddressOID = moid(1)
@@ -140,7 +141,7 @@ class LocationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         addr <- txt(locationBundle, StreetAddressProp)
         town <- txt(locationBundle, TownProp)
         state <- txt(locationBundle, StateProp)
-        str = s"$addr, $town, $state".replace(" ", "+")
+        str = SafeUrl(s"$addr, $town, $state")
       }
         yield ExactlyOne(Links.URLType(s"https://www.google.com/maps/place/" + str))
     }

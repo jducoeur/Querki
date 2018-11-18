@@ -35,6 +35,14 @@ class LocationTests extends QuerkiTests {
     val emptyLoc = new SimpleTestThing("Empty Location",
       locProp(
         SimplePropertyBundle()))
+    
+    // Note that Google Maps doesn't actually like this address, but this is the specific example that triggered QI.bu6oe4i:
+    val withUnicode = new SimpleTestThing("With Unicode",
+      locProp(
+        SimplePropertyBundle(
+          Location.StreetAddressProp("Arts at the Armory Caf\u00E9, 191 Highland Avenue"),
+          Location.TownProp("Somerville"),
+          Location.StateProp("MA"))))
   }
   
   "Location text display" should {
@@ -42,7 +50,7 @@ class LocationTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[With full Location -> My Location]]""") should
-        equal("100 Memorial Drive, Cambridge, MA ([map](https://www.google.com/maps/place/100+Memorial+Drive,+Cambridge,+MA))")
+        equal("100 Memorial Drive, Cambridge, MA ([map](https://www.google.com/maps/place/100+Memorial+Drive%2C+Cambridge%2C+MA))")
     }
     
     "degrade gracefully if the state is missing" in {
@@ -72,7 +80,7 @@ class LocationTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[With full Location -> My Location -> _mapLink]]""") should
-        equal ("[https://www.google.com/maps/place/100+Memorial+Drive,+Cambridge,+MA](https://www.google.com/maps/place/100+Memorial+Drive,+Cambridge,+MA)")
+        equal ("[https://www.google.com/maps/place/100+Memorial+Drive%2C+Cambridge%2C+MA](https://www.google.com/maps/place/100+Memorial+Drive%2C+Cambridge%2C+MA)")
     }
     
     "not display if the state is missing" in {
@@ -86,7 +94,15 @@ class LocationTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[With full Location -> My Location -> _mapLink -> ""__map__""]]""") should
-        equal ("[map](https://www.google.com/maps/place/100+Memorial+Drive,+Cambridge,+MA)")
+        equal ("[map](https://www.google.com/maps/place/100+Memorial+Drive%2C+Cambridge%2C+MA)")
+    }
+       
+    // QI.bu6oe4i
+    "work with Unicode in the name" in {
+      implicit val s = new TSpace
+      
+      pql("""[[With Unicode -> My Location -> _mapLink]]""") should
+        equal("[https://www.google.com/maps/place/Arts+at+the+Armory+Caf%C3%A9%2C+191+Highland+Avenue%2C+Somerville%2C+MA](https://www.google.com/maps/place/Arts+at+the+Armory+Caf%C3%A9%2C+191+Highland+Avenue%2C+Somerville%2C+MA)")
     }
   }
 }
