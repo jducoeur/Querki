@@ -25,8 +25,8 @@ class Step4(implicit val ecology:Ecology) extends Step {
         |  isDeleted BOOLEAN NOT NULL DEFAULT FALSE,
         |  isArchived BOOLEAN NOT NULL DEFAULT FALSE,
         |  PRIMARY KEY (id),
-        |  INDEX comments_by_thingid (thingId),
-        |  INDEX moderation_queue (needsModeration, createTime)
+        |  INDEX comments_by_thingid_{cname} (thingId),
+        |  INDEX moderation_queue_{cname} (needsModeration, createTime)
         |) DEFAULT CHARSET=utf8;
         |""".stripMargin).execute
   }

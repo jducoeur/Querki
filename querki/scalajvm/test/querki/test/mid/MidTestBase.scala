@@ -16,6 +16,12 @@ import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
  * real server, but with stubbed databases, at the Client-API level, with no real UI. This testing approach
  * is much faster and easier than full-fledged functional tests, but provides a somewhat less realistic
  * environment.
+ * 
+ * TODO: it's annoying that we're building another inheritance-based cake here. The main reason is context:
+ * the fact that *everything* needs access to app, and the Clients, and so on. I have a nasty suspicion that
+ * we could do this much better in Dotty, with implicit functions. At some point after we get to Scala 3,
+ * explore trying to rewrite this, pretty mechanically, into separate functions held together by implicit
+ * functions.
  */
 trait MidTestBase 
   extends PlaySpec

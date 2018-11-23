@@ -14,6 +14,7 @@ import controllers.LoginController
 import querki.data.UserInfo
 import querki.globals._
 import querki.session.UserFunctions
+import querki.util.SafeUrl
 
 case class TestUser(base: String) {
   def email = s"$base@querkitest.com"
@@ -59,7 +60,8 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   }
   
   def validateSignup(user: TestUser)(implicit session: Session): Unit = {
-    val validateHash = EmailTesting.extractValidateHash()
+    val validateHashRaw = EmailTesting.extractValidateHash()
+    val validateHash = SafeUrl.decode(validateHashRaw)
     withNsClient { c =>
       c[UserFunctions].validateActivationHash(validateHash).call().foreach { success =>
         if (!success)

@@ -82,7 +82,7 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       call(controller.rawApiRequest(), request)
     }
   }
-  def withNsClient(body: ClientBase => Unit)(implicit session: Session) = {
+  def withNsClient[R](body: ClientBase => R)(implicit session: Session): R = {
     body(new NSClient)
   }
   
@@ -91,7 +91,7 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       call(controller.apiRequest(ctx.ownerId, ctx.spaceId), request)
     }
   }
-  def withClient(body: ClientBase => Unit)(implicit ctx: ClientContext, session: Session) = {
+  def withClient[R](body: ClientBase => R)(implicit ctx: ClientContext, session: Session): R = {
     body(new Client)
   }
 }

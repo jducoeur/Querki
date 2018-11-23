@@ -18,6 +18,7 @@ class FullMidTests
   extends MidTestBase
   with ClientFuncs
   with LoginFuncs
+  with SpaceFuncs
 {
   "The system" should {
     "smoketest fully" in {
@@ -25,6 +26,8 @@ class FullMidTests
       val signupSession = signup(MainUser).session
       validateSignup(MainUser)(signupSession)
       implicit val mainSession = login(MainUser).session
+      
+      val mainSpace = createSpace("Main Space")
       
     }
   }
