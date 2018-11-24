@@ -1,5 +1,7 @@
 package querki.test.mid
 
+import scala.concurrent.Promise
+
 import upickle._
 import autowire._
 
@@ -33,6 +35,9 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
     implicit def session: Session
     def callApi(req: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result]
     
+    private val resultSessionPromise = Promise[Session]
+    val resultSessionFut = resultSessionPromise.future
+    
     def sendRequest(req: Request, metadata: RequestMetadata): Future[Result] = {
       val request = sessionFormRequest(
         "pickledRequest" -> write(req),
@@ -46,6 +51,8 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       val metadata = RequestMetadata(querkiVersion, currentPageParams)
       for {
         result <- sendRequest(req, metadata)
+        // Set the Session as a side-effect, since Autowire will squash it out:
+        _ = resultSessionPromise.success(result.sess)
         // TODO: handle Exceptions from sendRequest -- see Client.scala
         // Note that most of the below code is adapted from play.api.test.Helpers, basically deconstructing
         // contentAsString() without all the Awaits:

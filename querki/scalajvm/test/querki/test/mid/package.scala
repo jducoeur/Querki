@@ -3,6 +3,11 @@ package querki.test
 import scala.concurrent.{Await, Awaitable}
 import scala.concurrent.duration._
 
+import cats.data.StateT
+import cats.effect.IO
+
+import play.api.mvc.Result
+
 package object mid {
   /**
    * We're not going to try to compose everything beautifully in a Future-centric world.
@@ -11,4 +16,9 @@ package object mid {
   implicit class Waitable[T](a: Awaitable[T]) {
     def waitFor(): T = Await.result(a, 5 seconds)
   }
+  
+  /**
+   * Provides synchronous functions for fetching fields from a Result, suitable for mapping.
+   */
+  implicit def result2Helpers(result: Result) = new ResultHelpers(result)
 }

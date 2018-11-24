@@ -30,7 +30,7 @@ trait MidTestBase
 {
   lazy val dbManager = new MidFuncDB
   
-  def spew(msg: => String) = QLog.spew(msg)
+  def spew(msg: => Any) = QLog.spew(msg.toString)
   
   def step(msg: String) = QLog.info(s"**** $msg")
   

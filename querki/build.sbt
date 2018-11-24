@@ -4,7 +4,7 @@ import ByteConversions._
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.11"
+lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.4.20"
 lazy val enumeratumV = "1.5.3"
 lazy val appV = "2.8.2"
@@ -59,7 +59,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "ai.x" %% "diff" % "1.2.0" % "test",
       // Only used for debugging at this point:
       "com.github.pathikrit" %% "better-files" % "2.17.1",
-      "org.typelevel" %% "cats-core" % "1.2.0",
+      "org.typelevel" %% "cats-core" % "1.3.1",
+      "org.typelevel" %% "cats-effect" % "1.0.0",
       // Updated version of the XML library:
       "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
       // A simple Base64 library, for embedding stuff into HTML:
@@ -94,6 +95,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 	// instead of on-disk:
     javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
     fork in Test := true,
+    
+    // For cats:
+    scalacOptions += "-Ypartial-unification",
     
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "querki",
