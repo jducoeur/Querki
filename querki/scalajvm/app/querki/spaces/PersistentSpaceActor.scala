@@ -48,6 +48,11 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   
   /**
+   * Iff set to true, this will produce *prodigious* spewage. Use with caution!
+   */
+  lazy val monitorSpaces = Config.getBoolean("querki.test.traceSpaces", false)
+  
+  /**
    * This is the Actor that manages all MySQL operations -- in the medium term, access to the System
    * database.
    */
@@ -178,6 +183,9 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   def monitor(msg: => String):Unit = {
     if (timeSpaceOps) {
       stateRouter ! MonitorMsg(msg, DateTime.now)
+    }
+    if (monitorSpaces) {
+      QLog.spew(s"SPACE MONITOR ($id): $msg")
     }
   }
   

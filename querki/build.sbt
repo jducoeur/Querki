@@ -88,7 +88,12 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 	BundleKeys.endpoints := Map(
  	  "akka-remote" -> Endpoint("tcp"),
       "web" -> Endpoint("http", services = Set(URI("http://:9000")))
-	),    
+	),
+	
+	// When running server tests, use this alternate config file, which uses the in-memory persistence
+	// instead of on-disk:
+    javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
+    fork in Test := true,
     
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "querki",

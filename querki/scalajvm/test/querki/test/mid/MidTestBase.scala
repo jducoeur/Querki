@@ -35,6 +35,8 @@ trait MidTestBase
   def step(msg: String) = QLog.info(s"**** $msg")
   
   override implicit lazy val app: Application = {
+    // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
+    // enhances the built-in one!
     val context = ApplicationLoader.createContext(
       Environment.simple(),
       Map(
@@ -45,12 +47,10 @@ trait MidTestBase
         "db.system.url" -> "jdbc:h2:mem:system;MODE=MYSQL",
         "db.user.driver" -> "org.h2.Driver",
         "db.user.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
+        
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":
-        "querki.mail.test" -> "true",
-        // Use the in-memory Akka Persistence driver:
-        "akka.persistence.journal.plugin" -> "inmemory-journal",
-        "akka.persistence.snapshot-store.plugin" -> "inmemory-snapshot-store"
+        "querki.mail.test" -> "true"
       ))
       
     // We run setupDatabase *during* load -- after Play initializes but before the Ecology:

@@ -720,15 +720,21 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * receiveCommand should only be called *once*, and is returning *one* Receive, which is used thereafter.
    * We should instead be using a guard in receiveCommand. See IdentityEmailCore for a more sensible approach.
    */
-  def receiveCommand:Receive = {
-    if (initializing) {
-      // Whilst we're initializing, we need to stash everything except the responses:
-      handleRequestResponse orElse {
-        case _ => stash()
-      }
-    } else
-      handleRequestResponse orElse normalReceiveCommand orElse pluginReceive
-  }
+  def receiveCommand:Receive =     
+    // If we're monitoring this Space, record the name of the received message
+    // TODO: we should probably eventually turn this clause off unless monitoring is turned on
+    // for this Space
+    PartialFunction[Any, Any] {
+      case msg => { monitor(s"receiveCommand: ${msg.getClass().getName}"); msg }
+    } andThen {
+      if (initializing) {
+        // Whilst we're initializing, we need to stash everything except the responses:
+        handleRequestResponse orElse {
+          case _ => stash()
+        }
+      } else
+        handleRequestResponse orElse normalReceiveCommand orElse pluginReceive
+    }
       
   var _pubState:Option[CurrentPublicationState] = None
   var _enhancedState:Option[SpaceState] = None
