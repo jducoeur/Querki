@@ -29,29 +29,21 @@ class FullMidTests
 {
   "The system" should {
     "smoketest fully" in {
-//      step("Set up the main User")
-//      val signupSession = signup(MainUser).session
-//      validateSignup(MainUser)(signupSession)
-//      implicit val mainSession = login(MainUser).session
-//      
-//      val mainSpace = createSpace("Main Space")
-//      spew(mainSpace)
-      
-      def doSpew(msg: => Any) = StateT.pure[IO, ClientState, Unit] { spew(msg) }
-      
       val stateIO = for {
-        _ <- StateT.pure[IO, ClientState, Unit] { () }
-        _ <- StateT.pure[IO, ClientState, Unit] { step("Setup the main User") }
-        signupResults <- signupF(MainUser)
-        _ <- validateSignupF(MainUser)
-        loginResults <- loginF(MainUser)
+        _ <- TestOp.unit
+        _ <- step("Setup the main User")
+        signupResults <- signup(MainUser)
+        _ <- validateSignup(MainUser)
+        loginResults <- login(MainUser)
         
-        mainSpace <- createSpaceF("Main Space")
-        _ <- doSpew(mainSpace)
+        mainSpace <- createSpace("Main Space")
+        _ <- spew(mainSpace)
       }
         yield ()
         
-      // At the very end of time, we do this to actually run the test:
+      // At the very end of time, we do this to actually run the test. Note that we have to
+      // use unsafeRunSync(), to make sure that we don't shut down the test environment before
+      // everything is finished running.
       val ioa = stateIO.run(ClientState(new Session()))
       ioa.unsafeRunSync()
     }

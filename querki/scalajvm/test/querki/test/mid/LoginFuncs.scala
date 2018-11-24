@@ -1,6 +1,7 @@
 package querki.test.mid
 
 import scala.concurrent.Future
+import scala.util.{Success, Failure}
 
 import cats._
 import cats.data._
@@ -50,50 +51,23 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     call(controller.signupStart(), request)
   }
   
-  def signup(email: String, password: String, handle: String, display: String): LoginResults = {
-    val result = trySignup(email, password, handle, display)
-    
-    status(result) mustBe(OK)
-    val pickledUserInfo = contentAsString(result)
-    val userInfo = read[UserInfo](pickledUserInfo)
-    
-    LoginResults(result, userInfo, session(result))
-  }
-  
-  def signupF(email: String, password: String, handle: String, display: String): StateT[IO, ClientState, LoginResults] = StateT { state =>
-    IO.fromFuture(IO {
-      val resultFut = trySignup(email, password, handle, display)
-      val loginResultsFut = for {
-        result <- resultFut
-        _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
-        pickledUserInfo <- result.contentAsStringFut
-        userInfo = read[UserInfo](pickledUserInfo)
-      }
-        yield LoginResults(fut(result), userInfo, result.sess)
-        
-      resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
-    })
-  }
-  
-  def signup(user: TestUser): LoginResults = {
-    signup(user.email, user.password, user.handle, user.display)
-  }
-  
-  def signupF(user: TestUser): StateT[IO, ClientState, LoginResults] =
-    signupF(user.email, user.password, user.handle, user.display)
-  
-  def validateSignup(user: TestUser)(implicit session: Session): Unit = {
-    val validateHashRaw = EmailTesting.extractValidateHash()
-    val validateHash = SafeUrl.decode(validateHashRaw)
-    withNsClient { c =>
-      c[UserFunctions].validateActivationHash(validateHash).call().foreach { success =>
-        if (!success)
-          throw new Exception(s"Failed to validate user $user with hash $validateHash")
-      }
+  def signup(email: String, password: String, handle: String, display: String): TestOp[LoginResults] = TestOp.fut { state =>
+    val resultFut = trySignup(email, password, handle, display)
+    val loginResultsFut = for {
+      result <- resultFut
+      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
+      pickledUserInfo <- result.contentAsStringFut
+      userInfo = read[UserInfo](pickledUserInfo)
     }
+      yield LoginResults(fut(result), userInfo, result.sess)
+      
+    resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
   }
   
-  def validateSignupF(user: TestUser): StateT[IO, ClientState, Unit] = StateT { state =>
+  def signup(user: TestUser): TestOp[LoginResults] =
+    signup(user.email, user.password, user.handle, user.display)
+  
+  def validateSignup(user: TestUser): TestOp[Unit] = StateT { state =>
     for {
       validateHashRaw <- IO { EmailTesting.extractValidateHash()}
       validateHash = SafeUrl.decode(validateHashRaw)
@@ -121,47 +95,33 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   
   /**
    * Log in with the given credentials. Note that "name" may be either handle or email.
-   */
-  def login(name: String, password: String): LoginResults = {
-    val result = tryLogin(name, password)
-    
-    status(result) mustBe(OK)
-    val pickledUserInfo = contentAsString(result)
-    val userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
-    assert(userInfoOpt.isDefined)
-    
-    LoginResults(result, userInfoOpt.get, session(result))
+   */  
+  def login(name: String, password: String): TestOp[LoginResults] = TestOp.fut { state =>
+    val resultFut = tryLogin(name, password)
+    val loginResultsFut = for {
+      result <- resultFut
+      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"loginF got status ${result.status}!")
+      pickledUserInfo <- result.contentAsStringFut
+      userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
+      _ = if (userInfoOpt.isEmpty) throw new Exception(s"loginF didn't get userInfo when trying to log in $name!")
+    }
+      yield LoginResults(resultFut, userInfoOpt.get, result.sess)
+      
+    resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
   }
   
-  def loginF(name: String, password: String): StateT[IO, ClientState, LoginResults] = StateT { state =>
-    IO.fromFuture(IO {
-      val resultFut = tryLogin(name, password)
-      val loginResultsFut = for {
-        result <- resultFut
-        _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"loginF got status ${result.status}!")
-        pickledUserInfo <- result.contentAsStringFut
-        userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
-        _ = if (userInfoOpt.isEmpty) throw new Exception(s"loginF didn't get userInfo when trying to log in $name!")
-      }
-        yield LoginResults(resultFut, userInfoOpt.get, result.sess)
-        
-      resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
-    })
-  }
-  
-  def login(user: TestUser): LoginResults = {
+  def login(user: TestUser): TestOp[LoginResults] =
     login(user.handle, user.password)
-  }
   
-  def loginF(user: TestUser): StateT[IO, ClientState, LoginResults] =
-    loginF(user.handle, user.password)
-  
-  def logout(implicit sessionIn: Session): Session = {
-    val result = controller.logout()(sessionRequest)
-    
-    // SEE_OTHER is the official name of the Redirect function:
-    status(result) must be (SEE_OTHER)
-    
-    session(result)
+  def logout: TestOp[Session] = TestOp.fut { state =>
+    implicit val session = state.session
+    val resultFut = controller.logout()(sessionRequest)
+    val checkFut = resultFut.andThen {
+      // SEE_OTHER is the official name of the Redirect function:
+      case Success(result) => result.status must be (SEE_OTHER)
+      case Failure(ex) => throw ex
+    }
+    val sessionFut = checkFut.map(_.sess)
+    resultFut.map(result => ClientState(result.sess)) zip sessionFut
   }
 }

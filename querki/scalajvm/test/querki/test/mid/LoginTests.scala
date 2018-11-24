@@ -2,6 +2,8 @@ package querki.test.mid
 
 import org.scalatest.tags.Slow
 
+import play.api.mvc.Session
+
 /**
  * Primary tests of the signup/login/logout sequence.
  */
@@ -10,14 +12,19 @@ class LoginTests extends MidTestBase with LoginFuncs with ClientFuncs {
   "A new user" should {
     "be able to sign up, login and logout" in {
       val user = TestUser("simpleuser")
-      val signupSession = signup(user).session
-      validateSignup(user)(signupSession)
-      
-      val session = login(user).session
-      session("username") must be (user.handle)
-      
-      val loggedOutSession = logout(session)
-      loggedOutSession.get("username") must be (None)
+      val testOp = for {
+        _ <- TestOp.unit
+        _ <- signup(user)
+        _ <- validateSignup(user)
+        loginResults <- login(user)
+        _ = loginResults.session("username") must be (user.handle)
+        sess <- logout
+        _ = sess.get("username") must be (None)
+      }
+        yield ()
+        
+      val ioa = testOp.run(ClientState(new Session()))
+      ioa.unsafeRunSync()
     }
   }
 }

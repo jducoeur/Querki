@@ -18,6 +18,11 @@ package object mid {
   }
   
   /**
+   * The base type of all operations in the mid-test harness.
+   */
+  type TestOp[T] = StateT[IO, ClientState, T]
+  
+  /**
    * Provides synchronous functions for fetching fields from a Result, suitable for mapping.
    */
   implicit def result2Helpers(result: Result) = new ResultHelpers(result)

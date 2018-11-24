@@ -30,9 +30,9 @@ trait MidTestBase
 {
   lazy val dbManager = new MidFuncDB
   
-  def spew(msg: => Any) = QLog.spew(msg.toString)
+  def spew(msg: => Any) = TestOp.pure { QLog.spew(msg.toString) }
   
-  def step(msg: String) = QLog.info(s"**** $msg")
+  def step(msg: String) = TestOp.pure { QLog.info(s"**** $msg") }
   
   override implicit lazy val app: Application = {
     // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
