@@ -61,7 +61,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     }
       yield LoginResults(fut(result), userInfo, result.sess)
       
-    resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
+    resultFut.map(result => state.copy(session = result.sess)) zip loginResultsFut
   }
   
   def signup(user: TestUser): TestOp[LoginResults] =
@@ -78,7 +78,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
           if (!success)
             throw new Exception(s"Failed to validate user $user with hash $validateHash")          
         }
-        clnt.resultSessionFut.map(ClientState(_)) zip fChecked
+        clnt.resultSessionFut.map(sess => state.copy(session = sess)) zip fChecked
       })
     }
       yield results
@@ -107,7 +107,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     }
       yield LoginResults(resultFut, userInfoOpt.get, result.sess)
       
-    resultFut.map(result => ClientState(result.sess)) zip loginResultsFut
+    resultFut.map(result => state.copy(session = result.sess)) zip loginResultsFut
   }
   
   def login(user: TestUser): TestOp[LoginResults] =
@@ -122,6 +122,6 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       case Failure(ex) => throw ex
     }
     val sessionFut = checkFut.map(_.sess)
-    resultFut.map(result => ClientState(result.sess)) zip sessionFut
+    resultFut.map(result => state.copy(session = result.sess)) zip sessionFut
   }
 }

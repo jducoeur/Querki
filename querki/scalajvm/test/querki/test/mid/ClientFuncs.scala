@@ -12,9 +12,14 @@ import play.api.test.Helpers._
 import controllers.ClientController
 
 import querki.api.{RequestMetadata, ResponseWrapper}
+import querki.data.SpaceInfo
 import querki.globals._
 
 case class ClientContext(ownerId: String, spaceId: String)
+
+object ClientContext {
+  def apply(spaceInfo: SpaceInfo): ClientContext = ClientContext(spaceInfo.ownerHandle, spaceInfo.urlName.underlying)
+}
 
 /**
  * Interface layer for making calls to the Client API. Most tests will mix this in, but you
@@ -25,6 +30,8 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
   def clientController = controller
   
   private implicit lazy val materializer = app.materializer
+  
+  implicit lazy val clientFuncs = this
   
   lazy val querkiVersion:String = querki.BuildInfo.version
   // TODO: we eventually want to be able to let tests populate this map, which becomes the metadata
