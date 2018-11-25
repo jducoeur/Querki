@@ -30,12 +30,10 @@ class FullMidTests
   "The system" should {
     "smoketest fully" in {
       val stateIO = for {
-        _ <- TestOp.unit
         _ <- step("Setup the main User")
-        signupResults <- signup(MainUser)
-        _ <- validateSignup(MainUser)
-        loginResults <- login(MainUser)
+        loginResults <- newUser(MainUser)
         
+        _ <- step("Create the main Space for general testing")
         mainSpace <- createSpace("Main Space")
         _ <- spew(mainSpace)
       }

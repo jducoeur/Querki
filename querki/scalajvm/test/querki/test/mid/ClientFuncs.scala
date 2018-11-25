@@ -42,8 +42,8 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
     implicit def session: Session
     def callApi(req: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result]
     
-    private val resultSessionPromise = Promise[Session]
-    val resultSessionFut = resultSessionPromise.future
+    private val resultPromise = Promise[Result]
+    val resultFut = resultPromise.future
     
     def sendRequest(req: Request, metadata: RequestMetadata): Future[Result] = {
       val request = sessionFormRequest(
@@ -58,8 +58,8 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       val metadata = RequestMetadata(querkiVersion, currentPageParams)
       for {
         result <- sendRequest(req, metadata)
-        // Set the Session as a side-effect, since Autowire will squash it out:
-        _ = resultSessionPromise.success(result.sess)
+        // Set the Result as a side-effect, since Autowire will squash it out:
+        _ = resultPromise.success(result)
         // TODO: handle Exceptions from sendRequest -- see Client.scala
         // Note that most of the below code is adapted from play.api.test.Helpers, basically deconstructing
         // contentAsString() without all the Awaits:

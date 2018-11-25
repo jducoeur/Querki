@@ -28,6 +28,9 @@ case class TestUser(base: String) {
   def handle = base
   def display = s"Test User $base"
 }
+object TestUser {
+  val Anonymous = TestUser("")
+}
 
 case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Session)
 
@@ -51,8 +54,9 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     call(controller.signupStart(), request)
   }
   
-  def signup(email: String, password: String, handle: String, display: String): TestOp[LoginResults] = TestOp.fut { state =>
-    val resultFut = trySignup(email, password, handle, display)
+  def signup: TestOp[LoginResults] = TestOp.fut { state =>
+    val user = state.testUser
+    val resultFut = trySignup(user.email, user.password, user.handle, user.display)
     val loginResultsFut = for {
       result <- resultFut
       _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
@@ -61,13 +65,11 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     }
       yield LoginResults(fut(result), userInfo, result.sess)
       
-    resultFut.map(result => state.copy(session = result.sess)) zip loginResultsFut
+    state.plus(resultFut) zip loginResultsFut
   }
   
-  def signup(user: TestUser): TestOp[LoginResults] =
-    signup(user.email, user.password, user.handle, user.display)
-  
-  def validateSignup(user: TestUser): TestOp[Unit] = StateT { state =>
+  def validateSignup: TestOp[Unit] = StateT { state =>
+    val user = state.testUser
     for {
       validateHashRaw <- IO { EmailTesting.extractValidateHash()}
       validateHash = SafeUrl.decode(validateHashRaw)
@@ -78,7 +80,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
           if (!success)
             throw new Exception(s"Failed to validate user $user with hash $validateHash")          
         }
-        clnt.resultSessionFut.map(sess => state.copy(session = sess)) zip fChecked
+        state.plus(clnt.resultFut) zip fChecked
       })
     }
       yield results
@@ -94,24 +96,36 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   }
   
   /**
+   * Creates a new User, and initializes the ClientState for it. Usually the beginning of a test.
+   */
+  def newUser(user: TestUser): TestOp[LoginResults] = {
+    for {
+      _ <- StateT.set[IO, ClientState](ClientState.forUser(user))
+      _ <- signup
+      _ <- validateSignup
+      loginResults <- login
+      _ = loginResults.session("username") must be (user.handle)
+    }
+      yield loginResults
+  }
+  
+  /**
    * Log in with the given credentials. Note that "name" may be either handle or email.
    */  
-  def login(name: String, password: String): TestOp[LoginResults] = TestOp.fut { state =>
-    val resultFut = tryLogin(name, password)
+  def login: TestOp[LoginResults] = TestOp.fut { state =>
+    val user = state.testUser
+    val resultFut = tryLogin(user.handle, user.password)
     val loginResultsFut = for {
       result <- resultFut
       _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"loginF got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
       userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
-      _ = if (userInfoOpt.isEmpty) throw new Exception(s"loginF didn't get userInfo when trying to log in $name!")
+      _ = if (userInfoOpt.isEmpty) throw new Exception(s"loginF didn't get userInfo when trying to log in ${user.handle}!")
     }
       yield LoginResults(resultFut, userInfoOpt.get, result.sess)
       
-    resultFut.map(result => state.copy(session = result.sess)) zip loginResultsFut
+    state.plus(resultFut) zip loginResultsFut
   }
-  
-  def login(user: TestUser): TestOp[LoginResults] =
-    login(user.handle, user.password)
   
   def logout: TestOp[Session] = TestOp.fut { state =>
     implicit val session = state.session
@@ -122,6 +136,6 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       case Failure(ex) => throw ex
     }
     val sessionFut = checkFut.map(_.sess)
-    resultFut.map(result => state.copy(session = result.sess)) zip sessionFut
+    state.plus(resultFut) zip sessionFut
   }
 }

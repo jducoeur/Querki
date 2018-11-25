@@ -9,6 +9,8 @@ import cats.effect.IO
 import cats.implicits._
 
 object TestOp {
+  def apply[A](f: ClientState => IO[(ClientState, A)])(implicit F: Applicative[IO]): TestOp[A] = StateT[IO, ClientState, A] { f }
+  
   def pure[T](f: => T): TestOp[T] = StateT.pure[IO, ClientState, T] { f }
   def unit: TestOp[Unit] = StateT.pure[IO, ClientState, Unit] { () }
   
@@ -29,6 +31,6 @@ object TestOp {
       case None => new cf.NSClient()(state.session)
     }
     val resultFut: Future[T] = f(clnt)
-    clnt.resultSessionFut.map(resultSess => state.copy(session = resultSess)) zip resultFut
+    state.plus(clnt.resultFut) zip resultFut
   }
 }

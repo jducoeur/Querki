@@ -13,10 +13,7 @@ class LoginTests extends MidTestBase with LoginFuncs with ClientFuncs {
     "be able to sign up, login and logout" in {
       val user = TestUser("simpleuser")
       val testOp = for {
-        _ <- TestOp.unit
-        _ <- signup(user)
-        _ <- validateSignup(user)
-        loginResults <- login(user)
+        loginResults <- newUser(user)
         _ = loginResults.session("username") must be (user.handle)
         sess <- logout
         _ = sess.get("username") must be (None)
