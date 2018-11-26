@@ -5,9 +5,9 @@ import ByteConversions._
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
-lazy val akkaV = "2.4.20"
+lazy val akkaV = "2.4.10"
 lazy val enumeratumV = "1.5.3"
-lazy val appV = "2.8.3"
+lazy val appV = "2.8.3.1"
 
 lazy val sharedSrcDir = "scala"
 
@@ -70,7 +70,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // We use JSoup for HTML cleaning:
       "org.jsoup" % "jsoup" % "1.11.2",
       // In-memory Akka Persistence driver, used for tests. Note that this is for Akka 2.4!
-      "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.4.20.0" % "test",
+      "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.9" % "test",
       // In-memory H2 database, used for tests:
       "com.h2database" % "h2" % "1.4.192" % "test"
     ),
