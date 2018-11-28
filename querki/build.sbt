@@ -61,6 +61,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.github.pathikrit" %% "better-files" % "2.17.1",
       "org.typelevel" %% "cats-core" % "1.3.1",
       "org.typelevel" %% "cats-effect" % "1.0.0",
+      "com.github.julien-truffaut" %%  "monocle-core"  % "1.5.0",
+      "com.github.julien-truffaut" %%  "monocle-macro" % "1.5.0",
       // Updated version of the XML library:
       "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
       // A simple Base64 library, for embedding stuff into HTML:

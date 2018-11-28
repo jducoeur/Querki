@@ -37,7 +37,7 @@ case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Ses
 /**
  * Functions that wrap the LoginController with a higher-level API.
  */
-trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
+trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>  
   private def controller = app.injector.instanceOf[LoginController]
   def loginController = controller
   
@@ -94,13 +94,20 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
     
     controller.clientlogin()(request)
   }
+
+  /**
+   * Pokes the specified TestUser into the current TestState.
+   */
+  def setUser(user: TestUser): TestOp[Unit] = TestOp { state =>
+    IO.pure((state.withUser(user), ()))
+  }
   
   /**
    * Creates a new User, and initializes the ClientState for it. Usually the beginning of a test.
    */
   def newUser(user: TestUser): TestOp[LoginResults] = {
     for {
-      _ <- StateT.set[IO, ClientState](ClientState.forUser(user))
+      _ <- setUser(user)
       _ <- signup
       _ <- validateSignup
       loginResults <- login

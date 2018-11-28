@@ -20,7 +20,7 @@ package object mid {
   /**
    * The base type of all operations in the mid-test harness.
    */
-  type TestOp[T] = StateT[IO, ClientState, T]
+  type TestOp[T] = StateT[IO, TestState, T]
   
   /**
    * Provides synchronous functions for fetching fields from a Result, suitable for mapping.

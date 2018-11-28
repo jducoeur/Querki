@@ -42,7 +42,7 @@ class FullMidTests
       // At the very end of time, we do this to actually run the test. Note that we have to
       // use unsafeRunSync(), to make sure that we don't shut down the test environment before
       // everything is finished running.
-      val ioa = stateIO.run(ClientState.empty)
+      val ioa = stateIO.run(TestState.empty)
       ioa.unsafeRunSync()
     }
   }

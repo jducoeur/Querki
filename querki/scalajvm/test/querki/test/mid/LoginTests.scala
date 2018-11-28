@@ -20,7 +20,7 @@ class LoginTests extends MidTestBase with LoginFuncs with ClientFuncs {
       }
         yield ()
         
-      val ioa = testOp.run(ClientState.empty)
+      val ioa = testOp.run(TestState.empty)
       ioa.unsafeRunSync()
     }
   }
