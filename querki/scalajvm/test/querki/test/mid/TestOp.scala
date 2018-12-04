@@ -33,4 +33,12 @@ object TestOp {
     val resultFut: Future[T] = f(clnt)
     state.plus(clnt.resultFut) zip resultFut
   }
+  
+  /**
+   * Pulls values from the current TestState.
+   */
+  def fetch[T](f: TestState => T): TestOp[T] = StateT { state =>
+    val result = f(state) 
+    IO.pure((state, result))
+  }
 }

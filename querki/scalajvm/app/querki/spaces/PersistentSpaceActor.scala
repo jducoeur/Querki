@@ -117,8 +117,6 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
    * we should check to see if it exists in the old-style form in MySQL. 
    */
   def recoverOldSpace():RequestM[Option[SpaceState]] = {
-    QLog.spew(s"Converting old Space $id to the new Cassandra style, if it exists")
-    
     for {
       // Need to fetch the Owner, so we can tell the App Loader about them:
       SpaceOwner(owner) <- persister ? GetOwner

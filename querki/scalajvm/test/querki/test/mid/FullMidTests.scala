@@ -29,13 +29,21 @@ class FullMidTests
 {
   "The system" should {
     "smoketest fully" in {
+      val mainSpaceName = "Main Space"
+      
       val stateIO = for {
         _ <- step("Setup the main User")
         loginResults <- newUser(MainUser)
         
         _ <- step("Create the main Space for general testing")
-        mainSpace <- createSpace("Main Space")
-        _ <- spew(mainSpace)
+        // mainSpace is the result of the createSpace() function...
+        mainSpace <- createSpace(mainSpaceName)
+        // ... createdSpaceOpt is what has actually been placed in the TestState...
+        createdSpaceOpt <- TestOp.fetch(_.client.spaceOpt)
+        _ = createdSpaceOpt.map(_.displayName) must be (Some(mainSpaceName))
+        // ... and the Space is also now in the World State:
+        createdInWorldOpt <- TestOp.fetch(_.world.spaces.get(mainSpace))
+        _ = createdInWorldOpt.map(_.info.displayName) must be (Some(mainSpaceName))
       }
         yield ()
         

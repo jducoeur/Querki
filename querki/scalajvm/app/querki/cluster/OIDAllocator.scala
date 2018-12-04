@@ -96,9 +96,6 @@ class OIDAllocator(e:Ecology, shardId:ShardId) extends PersistentActor with Requ
 
       def giveOID() = {        
         val oid = OID(shardId, current)
-        // TODO: this is a noisy spew, intentionally. But until we figure out QI.7w4g8ne, we need
-        // this in order to get a handle on what's going on...
-        QLog.spew(s"Shard $shardId allocating OID ${oid.toThingId.toString()}")
         sender ! NewOID(oid)
         current += 1
         
