@@ -14,4 +14,9 @@ object WorldState {
   lazy val empty = WorldState(Map.empty)
 }
 
-case class SpaceTestState(info: SpaceInfo)
+case class SpaceTestState(
+  info: SpaceInfo,
+  things: Map[TID, ThingTestState]
+)
+
+case class ThingTestState(info: ThingInfo)

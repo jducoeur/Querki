@@ -24,17 +24,22 @@ object MainUser extends TestUser("mainuser")
 class FullMidTests
   extends MidTestBase
   with ClientFuncs
+  with ApiFuncs
   with LoginFuncs
   with SpaceFuncs
+  with EditFuncs
 {
   "The system" should {
     "smoketest fully" in {
       val mainSpaceName = "Main Space"
       
       val stateIO = for {
+        _ <- step("Fetch the standard Things")
+        std <- fetchStandardThings()
+        
         _ <- step("Setup the main User")
         loginResults <- newUser(MainUser)
-        
+                
         _ <- step("Create the main Space for general testing")
         // mainSpace is the result of the createSpace() function...
         mainSpace <- createSpace(mainSpaceName)
@@ -44,6 +49,11 @@ class FullMidTests
         // ... and the Space is also now in the World State:
         createdInWorldOpt <- TestOp.fetch(_.world.spaces.get(mainSpace))
         _ = createdInWorldOpt.map(_.info.displayName) must be (Some(mainSpaceName))
+        
+        _ <- step("Create the first simple Thing")
+        simpleThingId <- createThing(std.basic.simpleThing.oid)
+        simpleThing <- TestOp.fetch(_.world.spaces(mainSpace).things(simpleThingId))
+        _ <- spew(s"simpleThing: $simpleThing")
       }
         yield ()
         

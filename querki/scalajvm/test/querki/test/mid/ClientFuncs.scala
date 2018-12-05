@@ -11,15 +11,9 @@ import play.api.test.Helpers._
 
 import controllers.ClientController
 
-import querki.api.{RequestMetadata, ResponseWrapper}
+import querki.api._
 import querki.data.SpaceInfo
 import querki.globals._
-
-case class ClientContext(ownerId: String, spaceId: String)
-
-object ClientContext {
-  def apply(spaceInfo: SpaceInfo): ClientContext = ClientContext(spaceInfo.ownerHandle, spaceInfo.urlName.underlying)
-}
 
 /**
  * Interface layer for making calls to the Client API. Most tests will mix this in, but you
@@ -53,6 +47,19 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       
       callApi(request)
     }
+    
+    def translateException(response: String): Nothing = {
+      try {
+        val aex = read[ApiException](response)
+        throw aex
+      } catch {
+        // The normal case -- the server sent an ApiException, which we will propagate up
+        // to the calling code:
+        case aex:querki.api.ApiException => throw aex
+        // The server sent a non-ApiException, which is unfortunate. Just display it:
+        case _:Throwable => throw new Exception(s"Unable to parse server response $response")
+      }
+    }
   
     override def doCall(req: Request): Future[String] = {
       val metadata = RequestMetadata(querkiVersion, currentPageParams)
@@ -69,7 +76,11 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
           case _ => None
         }
         response = byteString.decodeString(charset.getOrElse("utf-8"))
-        wrapped = read[ResponseWrapper](response)
+        wrapped = try {
+          read[ResponseWrapper](response)
+        } catch {
+          case t: Throwable => translateException(response)
+        }
         // TODO: we need to do something akin to this. How do we do so from inside here, without being
         // all horribly mutable? Maybe we should be taking the current User as a parameter, and asserting
         // that in the normal case? Should the result ever change outside of login/logout?
@@ -91,21 +102,15 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
     def write[Result: upickle.default.Writer](r: Result) = upickle.default.write(r)
   }
   
-  class NSClient(implicit val session: Session) extends ClientBase {
+  class NSClient(val session: Session) extends ClientBase {
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
       call(controller.rawApiRequest(), request)
     }
   }
-  def withNsClient[R](body: ClientBase => R)(implicit session: Session): R = {
-    body(new NSClient)
-  }
   
-  class Client(implicit ctx: ClientContext, val session: Session) extends ClientBase {
+  class Client(spaceInfo: SpaceInfo, val session: Session) extends ClientBase {
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
-      call(controller.apiRequest(ctx.ownerId, ctx.spaceId), request)
+      call(controller.apiRequest(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request)
     }
-  }
-  def withClient[R](body: ClientBase => R)(implicit ctx: ClientContext, session: Session): R = {
-    body(new Client)
   }
 }

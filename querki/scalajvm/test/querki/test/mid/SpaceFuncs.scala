@@ -11,9 +11,9 @@ import querki.session.UserFunctions
 /**
  * Provides functions for creating and manipulating Spaces.
  */
-trait SpaceFuncs { self: ClientFuncs =>
-  def addNewSpace(spaceInfo: SpaceInfo): TestOp[Unit] = TestOp { state =>
-    IO.pure((TestState.spacesL.modify(_ + (spaceInfo.oid -> SpaceTestState(spaceInfo)))(state), ()))
+trait SpaceFuncs { self: MidTestBase with ClientFuncs =>
+  private def addNewSpace(spaceInfo: SpaceInfo): TestOp[Unit] = TestOp { state =>
+    IO.pure((TestState.spacesL.modify(_ + (spaceInfo.oid -> SpaceTestState(spaceInfo, Map.empty)))(state), ()))
   }
   
   def setClientSpace(spaceInfo: SpaceInfo): TestOp[Unit] = TestOp { state =>

@@ -74,7 +74,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       validateHashRaw <- IO { EmailTesting.extractValidateHash()}
       validateHash = SafeUrl.decode(validateHashRaw)
       results <- IO.fromFuture(IO {
-        val clnt = new NSClient()(state.session)
+        val clnt = new NSClient(state.session)
         val f = clnt[UserFunctions].validateActivationHash(validateHash).call()
         val fChecked = f.map { success =>
           if (!success)

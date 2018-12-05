@@ -27,8 +27,8 @@ object TestOp {
    */
   def client[T](f: ClientFuncs#ClientBase => Future[T])(implicit cf: ClientFuncs): TestOp[T] = fut { state =>
     val clnt = state.client.spaceOpt match {
-      case Some(spaceInfo) => new cf.Client()(ClientContext(spaceInfo), state.client.session)
-      case None => new cf.NSClient()(state.client.session)
+      case Some(spaceInfo) => new cf.Client(spaceInfo, state.client.session)
+      case None => new cf.NSClient(state.client.session)
     }
     val resultFut: Future[T] = f(clnt)
     state.plus(clnt.resultFut) zip resultFut

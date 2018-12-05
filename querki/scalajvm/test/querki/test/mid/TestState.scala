@@ -27,6 +27,7 @@ case class TestState(client: ClientState, world: WorldState) {
     resultFut.map(result => clientL.modify(_.plus(result))(this))
   }
   
+  def std = stdL.get(this)
   def testUser = testUserL.get(this)
   def withUser(user: TestUser) = testUserL.set(user)(this)
   def session = sessionL.get(this)
@@ -36,6 +37,7 @@ object TestState {
   lazy val empty = TestState(ClientState.empty, WorldState.empty)
   
   val clientL = GenLens[TestState](_.client)
+  val stdL = GenLens[TestState](_.client.std)
   val testUserL = GenLens[TestState](_.client.testUser)
   val sessionL = GenLens[TestState](_.client.session)
   val spaceOptL = GenLens[TestState](_.client.spaceOpt)
