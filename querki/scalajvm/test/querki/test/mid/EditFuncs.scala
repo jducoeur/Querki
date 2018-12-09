@@ -43,10 +43,15 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
       yield info.oid
   }
   
+  // Idiotic, but I am suffering for mistakes made long ago:
+  def chop(id: TID): String = id.underlying.drop(1)
+    
   def propPath(thingId: TID, propId: TID): String = {
-    // Idiotic, but I am suffering for mistakes made long ago:
-    def chop(id: TID): String = id.underlying.drop(1)
     s"v-${chop(propId)}-${chop(thingId)}"
+  }
+  
+  def propPath(propId: TID): String = {
+    s"v-${chop(propId)}-"
   }
 
   /**
@@ -111,7 +116,22 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
     for {
       thingId <- makeUnnamedThing(modelId)
       std <- fetchStandardThings()
-      _ <- changeProp(thingId, std.basic.displayNameProp.oid :=> "First Thing")
+      _ <- changeProp(thingId, std.basic.displayNameProp.oid :=> name)
+      _ <- changeProps(thingId, vs.toList)
+    }
+      yield thingId
+  }
+
+  /**
+   * Create a normal Model, using Simple Thing as the base Model.
+   * 
+   * TODO: eventually we'll want a variant of this for sub-Models, but that's not as critical yet.
+   */
+  def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
+    for {
+      std <- fetchStandardThings()
+      thingId <- createThing(std.basic.simpleThing, List(ChangePropertyValue(propPath(std.core.isModelProp.oid), List("true"))))
+      _ <- changeProp(thingId, std.basic.displayNameProp.oid :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
       yield thingId

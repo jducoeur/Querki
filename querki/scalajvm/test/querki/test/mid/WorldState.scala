@@ -19,9 +19,27 @@ object WorldState {
     val fUpdatedSpaces = TestState.spacesL.modify { spaces =>
       val space = spaces(curSpaceId)
       val updated = f(space)
-      spaces + (curSpaceId -> updated)          
+      spaces + (curSpaceId -> updated)
     }
     fUpdatedSpaces(state)
+  }
+  
+  def currentSpace: TestOp[SpaceTestState] = {
+    for {
+      curSpaceId <- TestOp.fetch(_.client.spaceOpt.get.oid)
+      curSpace <- TestOp.fetch(_.world.spaces(curSpaceId))
+    }
+      yield curSpace
+  }
+  
+  /**
+   * Fetches the specified Thing from the *current* Space.
+   */
+  def fetchThing(thingId: TID): TestOp[ThingTestState] = {
+    for {
+      space <- currentSpace
+    }
+      yield space.things(thingId)
   }
 }
 

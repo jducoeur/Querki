@@ -53,8 +53,13 @@ class FullMidTests
         
         _ <- step("Create the first simple Thing")
         simpleThingId <- makeThing(std.basic.simpleThing, "First Thing")
-        simpleThing <- TestOp.fetch(_.world.spaces(mainSpace).things(simpleThingId))
+        simpleThing <- WorldState.fetchThing(simpleThingId)
         _ = simpleThing.info.displayName must be ("First Thing")
+        
+        _ <- step("Create the first simple Model")
+        modelId <- makeModel("First Model")
+        model <- WorldState.fetchThing(modelId)
+        _ = model.info.displayName must be ("First Model")
       }
         yield ()
         

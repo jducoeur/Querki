@@ -24,6 +24,9 @@ object Saveable {
   implicit object StringSaveable extends Saveable[String] {
     def toSaveable(t: String) = SaveableText(t)
   }
+  implicit object BoolSaveable extends Saveable[Boolean] {
+    def toSaveable(t: Boolean) = SaveableText(t.toString)
+  }
 }
 
 case class SaveablePropVal(propId: TID, v: SaveableVal)
