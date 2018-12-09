@@ -27,6 +27,7 @@ class FullMidTests
   with ApiFuncs
   with LoginFuncs
   with SpaceFuncs
+  with ThingFuncs
   with EditFuncs
 {
   "The system" should {
@@ -51,9 +52,9 @@ class FullMidTests
         _ = createdInWorldOpt.map(_.info.displayName) must be (Some(mainSpaceName))
         
         _ <- step("Create the first simple Thing")
-        simpleThingId <- createThing(std.basic.simpleThing.oid)
+        simpleThingId <- makeThing(std.basic.simpleThing, "First Thing")
         simpleThing <- TestOp.fetch(_.world.spaces(mainSpace).things(simpleThingId))
-        _ <- spew(s"simpleThing: $simpleThing")
+        _ = simpleThing.info.displayName must be ("First Thing")
       }
         yield ()
         

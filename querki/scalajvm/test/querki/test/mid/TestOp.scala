@@ -13,7 +13,14 @@ object TestOp {
   
   def pure[T](f: => T): TestOp[T] = StateT.pure[IO, TestState, T] { f }
   def unit: TestOp[Unit] = StateT.pure[IO, TestState, Unit] { () }
-  
+
+  /**
+   * Makes the given transformation to the current TestState.
+   */
+  def update(f: TestState => TestState): TestOp[Unit] = TestOp { state =>
+    IO.pure(f(state), ())
+  }
+
   /**
    * This wraps up the common pattern of a "test operation", which takes a ClientState, and does
    * something Future-y with it.

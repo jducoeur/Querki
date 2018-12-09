@@ -12,7 +12,7 @@ import play.api.test.Helpers._
 import controllers.ClientController
 
 import querki.api._
-import querki.data.SpaceInfo
+import querki.data._
 import querki.globals._
 
 /**
@@ -26,6 +26,8 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
   private implicit lazy val materializer = app.materializer
   
   implicit lazy val clientFuncs = this
+  
+  implicit def ThingInfo2TID(thingInfo: ThingInfo): TID = thingInfo.oid
   
   lazy val querkiVersion:String = querki.BuildInfo.version
   // TODO: we eventually want to be able to let tests populate this map, which becomes the metadata
@@ -48,7 +50,7 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
       callApi(request)
     }
     
-    def translateException(response: String): Nothing = {
+    def translateException(response: String, req: Request): Nothing = {
       try {
         val aex = read[ApiException](response)
         throw aex
@@ -57,7 +59,11 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
         // to the calling code:
         case aex:querki.api.ApiException => throw aex
         // The server sent a non-ApiException, which is unfortunate. Just display it:
-        case _:Throwable => throw new Exception(s"Unable to parse server response $response")
+        case _:Throwable => {
+          if (response.startsWith("Unexpected error."))
+            throw new Exception(s"Got unexpected error from request $req")
+          throw new Exception(s"Unable to parse server response $response from request $req")
+        }
       }
     }
   
@@ -79,7 +85,7 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
         wrapped = try {
           read[ResponseWrapper](response)
         } catch {
-          case t: Throwable => translateException(response)
+          case t: Throwable => translateException(response, req)
         }
         // TODO: we need to do something akin to this. How do we do so from inside here, without being
         // all horribly mutable? Maybe we should be taking the current User as a parameter, and asserting

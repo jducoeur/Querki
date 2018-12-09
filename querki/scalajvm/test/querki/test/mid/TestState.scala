@@ -31,6 +31,11 @@ case class TestState(client: ClientState, world: WorldState) {
   def testUser = testUserL.get(this)
   def withUser(user: TestUser) = testUserL.set(user)(this)
   def session = sessionL.get(this)
+  
+  def curSpace: SpaceTestState = {
+    val spaceId = spaceOptL.get(this).getOrElse(throw new Exception(s"Trying to fetch curSpace, but the Client isn't in a Space!")).oid
+    spacesL.get(this).get(spaceId).getOrElse(throw new Exception(s"Client is pointing to unknown Space $spaceId!"))
+  }
 }
 
 object TestState {  
