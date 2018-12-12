@@ -48,7 +48,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "org.querki" %% "requester" % "2.6",
       "com.github.mauricio" %% "mysql-async" % "0.2.16",
       "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
-      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2-SNAPSHOT",
+      "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
       "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
       "org.scalatest" %% "scalatest" % "2.2.6" % "test",
