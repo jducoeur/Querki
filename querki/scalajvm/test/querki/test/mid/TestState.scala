@@ -2,10 +2,12 @@ package querki.test.mid
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.reflect.ClassTag
 
 import monocle.Lens
 import monocle.macros.GenLens
 
+import play.api.Application
 import play.api.mvc.Result
 
 import querki.data._
@@ -17,7 +19,7 @@ import querki.data._
  * The ClientState describes a single Client's viewpoint, and you can swap Clients in the middle of testing
  * in order to represent multiple Users hitting the system at once.
  */
-case class TestState(client: ClientState, world: WorldState) {
+case class TestState(harness: HarnessInfo, client: ClientState, world: WorldState) {
   import TestState._
   
   /**
@@ -39,7 +41,7 @@ case class TestState(client: ClientState, world: WorldState) {
 }
 
 object TestState {  
-  lazy val empty = TestState(ClientState.empty, WorldState.empty)
+  def empty(test: MidTestBase) = TestState(HarnessInfo(test), ClientState.empty, WorldState.empty)
   
   val clientL = GenLens[TestState](_.client)
   val stdL = GenLens[TestState](_.client.std)
@@ -49,4 +51,12 @@ object TestState {
   
   val worldL = GenLens[TestState](_.world)
   val spacesL = GenLens[TestState](_.world.spaces)
+}
+
+case class HarnessInfo(test: MidTestBase) {
+  lazy val app = test.app
+  lazy val ecology = test.ecology
+  lazy val injector = app.injector
+  
+  def controller[T : ClassTag] = injector.instanceOf[T]
 }

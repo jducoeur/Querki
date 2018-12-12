@@ -7,6 +7,8 @@ import cats.implicits._
 
 import play.api.mvc.Session
 
+import AllFuncs._
+
 object MainUser extends TestUser("mainuser")
 
 /**
@@ -21,14 +23,7 @@ object MainUser extends TestUser("mainuser")
  * a consistent sense of "current client state", since we mostly don't care -- at the API level,
  * it is totally straightforward to have a lot of separate sessions going.
  */
-class FullMidTests
-  extends MidTestBase
-  with ClientFuncs
-  with ApiFuncs
-  with LoginFuncs
-  with SpaceFuncs
-  with ThingFuncs
-  with EditFuncs
+class FullMidTests extends MidTestBase
 {
   "The system" should {
     "smoketest fully" in {
@@ -66,7 +61,7 @@ class FullMidTests
       // At the very end of time, we do this to actually run the test. Note that we have to
       // use unsafeRunSync(), to make sure that we don't shut down the test environment before
       // everything is finished running.
-      val ioa = stateIO.run(TestState.empty)
+      val ioa = stateIO.run(initialState())
       ioa.unsafeRunSync()
     }
   }

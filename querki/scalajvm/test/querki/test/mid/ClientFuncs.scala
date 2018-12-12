@@ -15,19 +15,14 @@ import querki.api._
 import querki.data._
 import querki.globals._
 
+import AllFuncs._
+
 /**
  * Interface layer for making calls to the Client API. Most tests will mix this in, but you
  * won't usually make the calls explicitly. Instead, call this via Autowire.
  */
-trait ClientFuncs extends FormFuncs { self: MidTestBase =>
-  private def controller = app.injector.instanceOf[ClientController]
-  def clientController = controller
-  
-  private implicit lazy val materializer = app.materializer
-  
+trait ClientFuncs {
   implicit lazy val clientFuncs = this
-  
-  implicit def ThingInfo2TID(thingInfo: ThingInfo): TID = thingInfo.oid
   
   lazy val querkiVersion:String = querki.BuildInfo.version
   // TODO: we eventually want to be able to let tests populate this map, which becomes the metadata
@@ -36,7 +31,11 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
     
   trait ClientBase extends autowire.Client[String, upickle.default.Reader, upickle.default.Writer] {
     implicit def session: Session
+    def harness: HarnessInfo
     def callApi(req: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result]
+    
+    implicit lazy val materializer = harness.app.materializer
+    def controller = harness.controller[ClientController]
     
     private val resultPromise = Promise[Result]
     val resultFut = resultPromise.future
@@ -108,15 +107,17 @@ trait ClientFuncs extends FormFuncs { self: MidTestBase =>
     def write[Result: upickle.default.Writer](r: Result) = upickle.default.write(r)
   }
   
-  class NSClient(val session: Session) extends ClientBase {
+  class NSClient(val harness: HarnessInfo, val session: Session) extends ClientBase {
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
       call(controller.rawApiRequest(), request)
     }
   }
   
-  class Client(spaceInfo: SpaceInfo, val session: Session) extends ClientBase {
+  class Client(val harness: HarnessInfo, spaceInfo: SpaceInfo, val session: Session) extends ClientBase {
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
       call(controller.apiRequest(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request)
     }
   }
 }
+
+object ClientFuncs extends ClientFuncs

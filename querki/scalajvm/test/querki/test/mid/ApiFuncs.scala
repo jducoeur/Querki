@@ -8,7 +8,9 @@ import querki.api._
 import querki.data.ThingInfo
 import querki.globals._
 
-trait ApiFuncs { self: MidTestBase with ClientFuncs =>
+import AllFuncs._
+
+trait ApiFuncs {
   private def setStd(raw: Map[String, ThingInfo]): TestOp[StdThings] = TestOp { state =>
     val std = StdThings(raw)
     IO.pure((TestState.stdL.set(std)(state), std))
@@ -23,7 +25,16 @@ trait ApiFuncs { self: MidTestBase with ClientFuncs =>
     }
       yield std
   }
+  
+  def fetchStd[T](f: StdThings => T): TestOp[T] = {
+    for {
+      std <- fetchStandardThings()
+    }
+      yield f(std)
+  }
 }
+
+object ApiFuncs extends ApiFuncs
 
 case class TestPassthroughHandler(raw: Map[String, ThingInfo]) extends PassthroughHandlerBase {
   def pass(name:String):ThingInfo = raw(name)

@@ -9,7 +9,9 @@ import querki.editing._
 import querki.editing.EditFunctions._
 import querki.globals._
 
-trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
+import AllFuncs._
+
+trait EditFuncs {
   
   /**
    * Given a newly-created Thing, put it into the current Space.
@@ -35,7 +37,8 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
    * The raw, underlying call to create a new Thing. Use this when you want to set initialProps,
    * but that's not a good representation of how things usually work in the client.
    */
-  def createThing(modelId: TID, initialProps: Seq[PropertyChange] = Seq.empty): TestOp[TID] = {
+  def createThing(modelId: TID, initialPropsRaw: SaveablePropVal*): TestOp[TID] = {
+    val initialProps = initialPropsRaw.map(toPropVal(_))
     for {
       info <- TestOp.client { _[EditFunctions].create(modelId, initialProps).call() }
       _ <- addNewThing(info)
@@ -53,6 +56,12 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
   def propPath(propId: TID): String = {
     s"v-${chop(propId)}-"
   }
+  
+  def toPropVal(thingId: TID, v: SaveablePropVal): ChangePropertyValue =
+    ChangePropertyValue(propPath(thingId, v.propId), v.v.toSave)
+  
+  def toPropVal(v: SaveablePropVal): ChangePropertyValue =
+    ChangePropertyValue(propPath(v.propId), v.v.toSave)
 
   /**
    * Calls the server to change the specified Thing's Property value. Throws an Exception if the result indicates
@@ -61,7 +70,7 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
   def changeProp(thingId: TID, v: SaveablePropVal, permitErrors: Boolean = false): TestOp[Unit] = {
     for {
       response <- TestOp.client { 
-        _[EditFunctions].alterProperty(thingId, ChangePropertyValue(propPath(thingId, v.propId), v.v.toSave)).call()
+        _[EditFunctions].alterProperty(thingId, toPropVal(thingId, v)).call()
       }
       _ = if ((response == PropertyNotChangedYet) && !permitErrors) throw new Exception(s"Got false when trying to set $thingId.$v")
       _ <- updateThing(thingId)
@@ -116,7 +125,7 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
     for {
       thingId <- makeUnnamedThing(modelId)
       std <- fetchStandardThings()
-      _ <- changeProp(thingId, std.basic.displayNameProp.oid :=> name)
+      _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
       yield thingId
@@ -130,8 +139,8 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
   def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
       std <- fetchStandardThings()
-      thingId <- createThing(std.basic.simpleThing, List(ChangePropertyValue(propPath(std.core.isModelProp.oid), List("true"))))
-      _ <- changeProp(thingId, std.basic.displayNameProp.oid :=> name)
+      thingId <- createThing(std.basic.simpleThing, std.core.isModelProp :=> true)
+      _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
       yield thingId
@@ -141,5 +150,8 @@ trait EditFuncs { self: ClientFuncs with ApiFuncs with ThingFuncs =>
     def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = {
       SaveablePropVal(propId, saveable.toSaveable(v))    
     }
+  }
+  implicit class RichProp(prop: ThingInfo) {
+    def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = prop.oid :=> v
   }
 }

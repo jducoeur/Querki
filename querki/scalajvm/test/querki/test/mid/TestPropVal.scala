@@ -1,6 +1,6 @@
 package querki.test.mid
 
-import querki.data.TID
+import querki.data.{ThingInfo, TID}
 
 /**
  * Describes a value that can be "saved" through the Client API.
@@ -26,6 +26,12 @@ object Saveable {
   }
   implicit object BoolSaveable extends Saveable[Boolean] {
     def toSaveable(t: Boolean) = SaveableText(t.toString)
+  }
+  implicit object TIDSaveable extends Saveable[TID] {
+    def toSaveable(t: TID) = SaveableText(t.underlying)
+  }
+  implicit object ThingInfoSaveable extends Saveable[ThingInfo] {
+    def toSaveable(t: ThingInfo) = SaveableText(t.oid.underlying)
   }
 }
 

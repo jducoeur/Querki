@@ -49,3 +49,5 @@ case class SpaceTestState(
 )
 
 case class ThingTestState(info: ThingInfo)
+
+case class SystemStuff(typeInfo: AllTypeInfo)

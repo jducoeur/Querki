@@ -11,6 +11,10 @@ import cats.implicits._
 import upickle.default._
 import autowire._
 
+import org.scalatest._
+import Matchers._
+
+import play.api.Application
 import play.api.mvc.{Result, Session}
 import play.api.test._
 import play.api.test.Helpers._
@@ -21,6 +25,8 @@ import querki.data.UserInfo
 import querki.globals._
 import querki.session.UserFunctions
 import querki.util.SafeUrl
+
+import AllFuncs._
 
 case class TestUser(base: String) {
   def email = s"$base@querkitest.com"
@@ -37,13 +43,11 @@ case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Ses
 /**
  * Functions that wrap the LoginController with a higher-level API.
  */
-trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>  
-  private def controller = app.injector.instanceOf[LoginController]
-  def loginController = controller
-  
-  private implicit lazy val materializer = app.materializer
-  
-  def trySignup(email: String, password: String, handle: String, display: String): Future[Result] = {
+trait LoginFuncs {
+  private def controller(implicit app: Application) = app.injector.instanceOf[LoginController]
+  private def mat(implicit app: Application) = app.materializer
+    
+  def trySignup(email: String, password: String, handle: String, display: String)(implicit app: Application): Future[Result] = {
     val request = formRequest(
       "email" -> email,
       "password" -> password,
@@ -51,10 +55,13 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       "display" -> display
     )
     
+    implicit val m = mat
     call(controller.signupStart(), request)
   }
   
   def signup: TestOp[LoginResults] = TestOp.fut { state =>
+    implicit val app = state.harness.app
+    implicit val m = mat
     val user = state.testUser
     val resultFut = trySignup(user.email, user.password, user.handle, user.display)
     val loginResultsFut = for {
@@ -69,12 +76,13 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   }
   
   def validateSignup: TestOp[Unit] = StateT { state =>
+    implicit val ecology = state.harness.ecology
     val user = state.testUser
     for {
       validateHashRaw <- IO { EmailTesting.extractValidateHash()}
       validateHash = SafeUrl.decode(validateHashRaw)
       results <- IO.fromFuture(IO {
-        val clnt = new NSClient(state.session)
+        val clnt = new NSClient(state.harness, state.session)
         val f = clnt[UserFunctions].validateActivationHash(validateHash).call()
         val fChecked = f.map { success =>
           if (!success)
@@ -86,7 +94,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       yield results
   }
   
-  def tryLogin(name: String, password: String): Future[Result] = {
+  def tryLogin(name: String, password: String)(implicit app: Application): Future[Result] = {
     val request = formRequest(
       "name" -> name,
       "password" -> password
@@ -111,7 +119,7 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
       _ <- signup
       _ <- validateSignup
       loginResults <- login
-      _ = loginResults.session("username") must be (user.handle)
+      _ = loginResults.session("username") should be (user.handle)
     }
       yield loginResults
   }
@@ -120,6 +128,8 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
    * Log in with the given credentials. Note that "name" may be either handle or email.
    */  
   def login: TestOp[LoginResults] = TestOp.fut { state =>
+    implicit val app = state.harness.app
+    implicit val m = mat
     val user = state.testUser
     val resultFut = tryLogin(user.handle, user.password)
     val loginResultsFut = for {
@@ -135,14 +145,17 @@ trait LoginFuncs extends FormFuncs { self: MidTestBase with ClientFuncs =>
   }
   
   def logout: TestOp[Session] = TestOp.fut { state =>
+    implicit val app = state.harness.app
     implicit val session = state.session
     val resultFut = controller.logout()(sessionRequest)
     val checkFut = resultFut.andThen {
       // SEE_OTHER is the official name of the Redirect function:
-      case Success(result) => result.status must be (SEE_OTHER)
+      case Success(result) => result.status should be (SEE_OTHER)
       case Failure(ex) => throw ex
     }
     val sessionFut = checkFut.map(_.sess)
     state.plus(resultFut) zip sessionFut
   }
 }
+
+object LoginFuncs extends LoginFuncs

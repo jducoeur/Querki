@@ -34,6 +34,11 @@ trait MidTestBase
   
   def step(msg: String) = TestOp.pure { QLog.info(s"**** $msg") }
   
+  /**
+   * Constructs the standard "blank" initial state of a test run.
+   */
+  def initialState(): TestState = TestState.empty(this)
+  
   override implicit lazy val app: Application = {
     // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
     // enhances the built-in one!

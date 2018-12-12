@@ -4,11 +4,13 @@ import org.scalatest.tags.Slow
 
 import play.api.mvc.Session
 
+import AllFuncs._
+
 /**
  * Primary tests of the signup/login/logout sequence.
  */
 @Slow
-class LoginTests extends MidTestBase with LoginFuncs with ClientFuncs {
+class LoginTests extends MidTestBase {
   "A new user" should {
     "be able to sign up, login and logout" in {
       val user = TestUser("simpleuser")
@@ -20,7 +22,7 @@ class LoginTests extends MidTestBase with LoginFuncs with ClientFuncs {
       }
         yield ()
         
-      val ioa = testOp.run(TestState.empty)
+      val ioa = testOp.run(initialState())
       ioa.unsafeRunSync()
     }
   }
