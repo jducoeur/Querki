@@ -52,6 +52,8 @@ trait MidTestBase
         "db.system.url" -> "jdbc:h2:mem:system;MODE=MYSQL",
         "db.user.driver" -> "org.h2.Driver",
         "db.user.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
+        "db.template.driver" -> "org.h2.Driver",
+        "db.template.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
         
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":

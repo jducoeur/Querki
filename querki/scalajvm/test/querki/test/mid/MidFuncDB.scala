@@ -34,13 +34,8 @@ class MidFuncDB {
       }
     }
     
-    // First, create the test databases.
-    DB(Template) { implicit conn =>
-      SQL("DROP DATABASE IF EXISTS system").execute()
-      SQL("DROP DATABASE IF EXISTS user").execute()
-      SQL("CREATE DATABASE system").execute()
-      SQL("CREATE DATABASE user").execute()
-    }
+    // Note that, in the H2 world, we don't need to create the databases, and in fact
+    // aren't allowed to!
     
     DB(System) { implicit conn =>
       def cmd(str:String) = SQL(str).execute()
