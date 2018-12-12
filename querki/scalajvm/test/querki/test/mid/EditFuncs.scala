@@ -124,7 +124,7 @@ trait EditFuncs {
   def makeThing(modelId: TID, name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
       thingId <- makeUnnamedThing(modelId)
-      std <- fetchStandardThings()
+      std <- getStd()
       _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
@@ -138,7 +138,7 @@ trait EditFuncs {
    */
   def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
-      std <- fetchStandardThings()
+      std <- getStd()
       thingId <- createThing(std.basic.simpleThing, std.core.isModelProp :=> true)
       _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)

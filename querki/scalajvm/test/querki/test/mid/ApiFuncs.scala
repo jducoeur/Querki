@@ -1,8 +1,13 @@
 package querki.test.mid
 
+import cats._
+import cats.data._
 import cats.effect.IO
+import cats.implicits._
 
 import autowire._
+
+import play.api.mvc.Session
 
 import querki.api._
 import querki.data.ThingInfo
@@ -11,24 +16,35 @@ import querki.globals._
 import AllFuncs._
 
 trait ApiFuncs {
-  private def setStd(raw: Map[String, ThingInfo]): TestOp[StdThings] = TestOp { state =>
-    val std = StdThings(raw)
-    IO.pure((TestState.stdL.set(std)(state), std))
-  }
-  
+  /**
+   * Fetch the StandardThings.
+   * 
+   * This is a constant data structure, so we simply have it cached in the TestState.
+   */
   def getStd(): TestOp[StdThings] = TestOp.fetch(_.client.std)
   
-  def fetchStandardThings(): TestOp[StdThings] = {
-    for {
-      thingMap <- TestOp.client { _[CommonFunctions].getStandardThings().call() }
-      std <- setStd(thingMap)
+  /**
+   * Initialize the TestState.
+   * 
+   * This involves fetching the StandardThings, same as the Client does at startup. It might
+   * later involve other operations.
+   */
+  def initState: IndexedStateT[IO, PreInitialState, TestState, Unit] = IndexedStateT { preState =>
+    val client = new NSClient(preState.harness, new Session())
+    val resultFut = client[CommonFunctions].getStandardThings().call()
+    val stateFut = resultFut.map { stdThingMap =>
+      TestState(
+        preState.harness,
+        ClientState(StdThings(stdThingMap), TestUser.Anonymous, None, Session(client.resultFut.value.get.get.sess.data), None),
+        WorldState.empty
+      )
     }
-      yield std
+    IO.fromFuture { IO { stateFut zip fut(()) } }
   }
   
   def fetchStd[T](f: StdThings => T): TestOp[T] = {
     for {
-      std <- fetchStandardThings()
+      std <- getStd()
     }
       yield f(std)
   }

@@ -30,8 +30,9 @@ class FullMidTests extends MidTestBase
       val mainSpaceName = "Main Space"
       
       val stateIO = for {
-        _ <- step("Fetch the standard Things")
-        std <- fetchStandardThings()
+        _ <- initState
+        _ <- step("Initialize the test")
+        std <- getStd()
         
         _ <- step("Setup the main User")
         loginResults <- newUser(MainUser)

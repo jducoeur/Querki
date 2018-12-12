@@ -41,8 +41,6 @@ case class TestState(harness: HarnessInfo, client: ClientState, world: WorldStat
 }
 
 object TestState {  
-  def empty(test: MidTestBase) = TestState(HarnessInfo(test), ClientState.empty, WorldState.empty)
-  
   val clientL = GenLens[TestState](_.client)
   val stdL = GenLens[TestState](_.client.std)
   val testUserL = GenLens[TestState](_.client.testUser)
@@ -59,4 +57,13 @@ case class HarnessInfo(test: MidTestBase) {
   lazy val injector = app.injector
   
   def controller[T : ClassTag] = injector.instanceOf[T]
+}
+
+/**
+ * The state of a test before we call initState().
+ */
+case class PreInitialState(harness: HarnessInfo)
+
+object PreInitialState {
+  def empty(test: MidTestBase) = PreInitialState(HarnessInfo(test))  
 }

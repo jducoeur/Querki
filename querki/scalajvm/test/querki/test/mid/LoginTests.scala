@@ -15,6 +15,7 @@ class LoginTests extends MidTestBase {
     "be able to sign up, login and logout" in {
       val user = TestUser("simpleuser")
       val testOp = for {
+        _ <- initState
         loginResults <- newUser(user)
         _ = loginResults.session("username") must be (user.handle)
         sess <- logout
