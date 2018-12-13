@@ -33,6 +33,10 @@ object Saveable {
   implicit object ThingInfoSaveable extends Saveable[ThingInfo] {
     def toSaveable(t: ThingInfo) = SaveableText(t.oid.underlying)
   }
+  
+  implicit class SaveableOps[T : Saveable](v: T) {
+    def toSaveable: SaveableVal = implicitly[Saveable[T]].toSaveable(v)
+  }
 }
 
 case class SaveablePropVal(propId: TID, v: SaveableVal)

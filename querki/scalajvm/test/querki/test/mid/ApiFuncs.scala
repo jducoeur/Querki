@@ -31,14 +31,15 @@ trait ApiFuncs {
    */
   def initState: IndexedStateT[IO, PreInitialState, TestState, Unit] = IndexedStateT { preState =>
     val client = new NSClient(preState.harness, new Session())
-    val resultFut = client[CommonFunctions].getStandardThings().call()
-    val stateFut = resultFut.map { stdThingMap =>
-      TestState(
+    val stateFut = for {
+      stdThingMap <- client[CommonFunctions].getStandardThings().call()
+    }
+      yield TestState(
         preState.harness,
         ClientState(StdThings(stdThingMap), TestUser.Anonymous, None, Session(client.resultFut.value.get.get.sess.data), None),
         WorldState.empty
       )
-    }
+
     IO.fromFuture { IO { stateFut zip fut(()) } }
   }
   

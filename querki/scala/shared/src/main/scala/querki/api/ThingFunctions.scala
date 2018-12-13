@@ -93,6 +93,15 @@ object ThingFunctions {
   /**
    * PV is a better replacement for PropValInfo, producing strongly-typed results.
    */
-  sealed trait PV
-  case class BoolV(vs: List[Boolean]) extends PV
+  sealed trait PV {
+    type TContent
+    
+    def vs: List[TContent]
+  }
+  case class BoolV(vs: List[Boolean]) extends PV {
+    type TContent = Boolean
+  }
+  case class TextV(vs: List[String]) extends PV {
+    type TContent = String
+  }
 }

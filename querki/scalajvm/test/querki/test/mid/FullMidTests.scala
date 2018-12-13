@@ -56,6 +56,11 @@ class FullMidTests extends MidTestBase
         modelId <- makeModel("First Model")
         model <- WorldState.fetchThing(modelId)
         _ = model.info.displayName must be ("First Model")
+        
+        _ <- step(s"Create and use the first Property")
+        propId <- makeProperty("First Property", exactlyOne, textType)
+        _ <- addAndSetProperty(modelId, propId, "Default value of First Property")
+        _ <- checkPropValue(modelId, propId, "Default value of First Property")
       }
         yield ()
         

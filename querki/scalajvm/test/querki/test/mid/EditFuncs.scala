@@ -62,20 +62,35 @@ trait EditFuncs {
   
   def toPropVal(v: SaveablePropVal): ChangePropertyValue =
     ChangePropertyValue(propPath(v.propId), v.v.toSave)
-
+    
+  def changeProp(thingId: TID, propVal: PropertyChange, permitErrors: Boolean): TestOp[Unit] = {
+    for {
+      response <- TestOp.client { 
+        _[EditFunctions].alterProperty(thingId, propVal).call()
+      }
+      _ = if ((response == PropertyNotChangedYet) && !permitErrors) throw new Exception(s"Got false when trying to set $thingId.$propVal")
+      _ <- updateThing(thingId)
+    }
+      yield ()
+  }
+  
+  /**
+   * This entry point is intended for when you're simulating the Editor -- you've fetched a Property Editor,
+   * and are now using it to set the value. This most closely simulates the way we actually do things in
+   * the Client.
+   */
+  def changeProp[T : Saveable](thingId: TID, info: PropEditInfo, v: T): TestOp[Unit] = {
+    import Saveable._
+    val propVal = ChangePropertyValue(info.path, v.toSaveable.toSave)
+    changeProp(thingId, propVal, false)
+  }
+  
   /**
    * Calls the server to change the specified Thing's Property value. Throws an Exception if the result indicates
    * that it was not saved, unless permitErrors is true.
    */
   def changeProp(thingId: TID, v: SaveablePropVal, permitErrors: Boolean = false): TestOp[Unit] = {
-    for {
-      response <- TestOp.client { 
-        _[EditFunctions].alterProperty(thingId, toPropVal(thingId, v)).call()
-      }
-      _ = if ((response == PropertyNotChangedYet) && !permitErrors) throw new Exception(s"Got false when trying to set $thingId.$v")
-      _ <- updateThing(thingId)
-    }
-      yield ()
+    changeProp(thingId, toPropVal(thingId, v), permitErrors)
   }
   
   /**

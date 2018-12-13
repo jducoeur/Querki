@@ -8,10 +8,10 @@ import querki.data._
 /**
  * The state of the world -- the Spaces and Things in them -- from the test harness' point of view.
  */
-case class WorldState(spaces: Map[TID, SpaceTestState])
+case class WorldState(spaces: Map[TID, SpaceTestState], system: SystemStuff)
 
 object WorldState {
-  lazy val empty = WorldState(Map.empty)
+  val empty = WorldState(Map.empty, SystemStuff(None))
   
   def updateCurrentSpace(f: SpaceTestState => SpaceTestState): TestOp[Unit] = TestOp.update { state =>
     require(state.client.spaceOpt.isDefined)
@@ -50,4 +50,4 @@ case class SpaceTestState(
 
 case class ThingTestState(info: ThingInfo)
 
-case class SystemStuff(typeInfo: AllTypeInfo)
+case class SystemStuff(typeInfoOpt: Option[AllTypeInfo])

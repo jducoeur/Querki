@@ -105,14 +105,23 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   
   def getPropertyValues(thingId: TID, props: List[TOID]): Future[Map[TOID, PV]] = withThing(thingId) { thing =>
     implicit val s = state
+    
     val result = (Map.empty[TOID, PV] /: props) { (m, propTOID) =>
       val propId = OID.fromTOID(propTOID)
       thing.getPropOpt(propId) match {
         case Some(pv) => {
-          // TODO: we should have a better mechanism that goes from a server-side PropAndVal to an API PV:
-          if (pv.prop.pType == Core.YesNoType) {
-            m + (propTOID -> BoolV(pv.v.rawList(Core.YesNoType)))
-          } else {
+          // Given a PType and a constructor for the API version of that type, add it to the Map
+          // iff this Property *is* that PType.
+          def tryType[VT](pt: PType[VT])(constructPV: List[VT] => PV): Option[Map[TOID, PV]] = {
+            if (pv.prop.pType == pt) {
+              Some(m + (propTOID -> constructPV(pv.v.rawList(pt))))
+            } else
+              None
+          }
+          
+          tryType(Core.YesNoType)(BoolV) orElse
+          tryType(Core.TextType) { vs => TextV(vs.map(_.text)) } orElse
+          tryType(Core.LargeTextType) { vs => TextV(vs.map(_.text)) } getOrElse {
             QLog.error(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
             m
           }
