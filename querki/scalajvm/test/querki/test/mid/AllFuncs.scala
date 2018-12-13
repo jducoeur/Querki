@@ -7,6 +7,7 @@ package querki.test.mid
 trait AllFuncs
   extends ApiFuncs
      with ClientFuncs
+     with CoreFuncs
      with EditFuncs
      with FormFuncs
      with LoginFuncs

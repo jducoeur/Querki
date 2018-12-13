@@ -14,17 +14,15 @@ class LoginTests extends MidTestBase {
   "A new user" should {
     "be able to sign up, login and logout" in {
       val user = TestUser("simpleuser")
-      val testOp = for {
-        _ <- initState
-        loginResults <- newUser(user)
-        _ = loginResults.session("username") must be (user.handle)
-        sess <- logout
-        _ = sess.get("username") must be (None)
+      runTest {
+        for {
+          loginResults <- newUser(user)
+          _ = loginResults.session("username") must be (user.handle)
+          sess <- logout
+          _ = sess.get("username") must be (None)          
+        }
+          yield ()
       }
-        yield ()
-        
-      val ioa = testOp.run(initialState())
-      ioa.unsafeRunSync()
     }
   }
 }
