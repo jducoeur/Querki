@@ -11,6 +11,8 @@ import querki.db.ShardKind
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 
+import AllFuncs._
+
 /**
  * Primary base trait for all "mid-level" tests. These are semi-functional tests: testing the more or less
  * real server, but with stubbed databases, at the Client-API level, with no real UI. This testing approach
@@ -29,10 +31,6 @@ trait MidTestBase
   with EcologyMember
 {
   lazy val dbManager = new MidFuncDB
-  
-  def spew(msg: => Any) = TestOp.pure { QLog.spew(msg.toString) }
-  
-  def step(msg: String) = TestOp.pure { QLog.info(s"**** $msg") }
   
   /**
    * Constructs the standard "blank" initial state of a test run.
@@ -72,4 +70,18 @@ trait MidTestBase
   
   var _ecology: Option[Ecology] = None
   implicit def ecology: Ecology = _ecology.getOrElse(throw new Exception(s"Attempting to fetch the Ecology before the Application has loaded!"))
+  
+  /**
+   * The standard boilerplate to set up and initialize a mid-test.
+   */
+  def runTest(test: TestOp[Unit]) = {
+    val testOp = for {
+      _ <- initState
+      _ <- test
+    }
+      yield ()
+      
+    val ioa = testOp.run(initialState())
+    ioa.unsafeRunSync()
+  }
 }

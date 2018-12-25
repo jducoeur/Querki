@@ -49,6 +49,7 @@ object TestState {
   
   val worldL = GenLens[TestState](_.world)
   val spacesL = GenLens[TestState](_.world.spaces)
+  val systemL = GenLens[TestState](_.world.system)
 }
 
 case class HarnessInfo(test: MidTestBase) {

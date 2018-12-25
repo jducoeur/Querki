@@ -29,10 +29,13 @@ import querki.util.SafeUrl
 import AllFuncs._
 
 case class TestUser(base: String) {
-  def email = s"$base@querkitest.com"
-  def password = s"Passw0rd$base"
-  def handle = base
-  def display = s"Test User $base"
+  // "Safe" version of the name, suitable for email and display:
+  lazy val safe = base.toLowerCase().filter(_.isLetter)
+  
+  lazy val email = s"$safe@querkitest.com"
+  lazy val password = s"Passw0rd$base"
+  lazy val handle = safe
+  lazy val display = s"Test User $base"
 }
 object TestUser {
   val Anonymous = TestUser("")
