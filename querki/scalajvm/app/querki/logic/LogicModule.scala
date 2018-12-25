@@ -29,6 +29,9 @@ object MOIDs extends EcotIds(9) {
   val TimesNumericMethodOID = moid(12)
   val DivideMethodOID = moid(13)
   val DivideNumericMethodOID = moid(14)
+
+  val MinMethodOID = moid(15)
+  val MaxMethodOID = moid(16)
 }
 
 /**
@@ -314,7 +317,91 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       }
     }
   }
-  
+
+  /**
+    * From the received values, apply the "exp" parameter to each (if it exists), and apply the chooser function
+    * to decide whether this value is "more" than the current accumulator.
+    * @param inv The Invocation of the current function.
+    * @param chooser A function that is given the PType (after applying exp if appropriate), the current
+    *                accumulator, and the next value. It should return true if the next value is more than
+    *                the accumulator, and false otherwise.
+    * @return The "most" value from the results.
+    */
+  private def findMostOfList(inv: Invocation)(chooser: (PType[_], ElemValue, ElemValue) => Boolean): QFut = {
+    // First, process all of the values, if they are to be processed, and flatten it down to pairs of
+    // (received, processed), each of which is a single-element QValue:
+    val processed: InvocationValue[(QValue, QValue)] =
+      if (inv.numParams == 0)
+        for {
+          elemCtx <- inv.contextElements
+          elemQV = elemCtx.value
+        }
+          yield (elemQV, elemQV)
+      else
+        for {
+          elemCtx <- inv.contextElements
+          qv <- inv.process("exp", elemCtx)
+        }
+          yield (elemCtx.value, qv)
+
+    // Then find the "most" among them:
+    processed.get.map { pairs: Iterable[(QValue, QValue)] =>
+      if (pairs.isEmpty)
+        Core.QNone
+      else {
+        val comparePt = pairs.head._2.pType
+        val mostPair = (pairs.head /: pairs.tail) { (current, next) =>
+          val (curReceived, curProcessed) = current
+          val (nextReceived, nextProcessed) = next
+          if (chooser(comparePt, curProcessed.first, nextProcessed.first))
+            next
+          else
+            current
+        }
+        mostPair._1
+      }
+    }
+  }
+
+  lazy val MinMethod = new InternalMethod(MinMethodOID,
+    toProps(
+      setName("_min"),
+      Categories(LogicTag),
+      Summary("Produces the least of the received values"),
+      Signature(
+        expected = Some(Seq.empty, "A List of any sort"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("exp", AnyType, Core.QNone, "An optional expression to apply to each received value")
+        ),
+        returns = (AnyType, "The lowest of the received values")
+      ),
+      Details(
+        """In its simple form, with no parameters, `_min` takes a List of values, and
+          |produces whatever is least from them:
+          |[[```
+          |<7, 28, 3, 5, 108> -> _min
+          |```]]
+          |produces 3.
+          |
+          |The more interesting and common usage, however, takes one parameter, which is an expression.
+          |This applies the received values (usually Things) to that expression, and produces the one that
+          |had the lowest result:
+          |[[```
+          |All Games -> _min(Price)
+          |```]]
+          |produces the Game with the lowest Price.
+          |
+          |You can get a similar result by using `_sort` and taking the first value of the results, but `_min`
+          |is much, much faster, and should be used instead when possible.
+        """.stripMargin)
+    ))
+  {
+    override def qlApply(inv: Invocation): QFut = {
+      findMostOfList(inv) { (pt, current, next) => pt.comp(inv.context)(next, current) }
+    }
+  }
+
   /**
    * Goes through a parameter list full of YesNo expressions, and returns the results.
    */
@@ -519,7 +606,6 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
         yield comp.divide
     }
   }
-
   
   override lazy val props = Seq(
     new FirstNonEmptyMethod,
@@ -528,6 +614,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     EqualsMethod,
     LessThanMethod,
     GreaterThanMethod,
+    MinMethod,
     OrMethod,
     AndMethod,
     

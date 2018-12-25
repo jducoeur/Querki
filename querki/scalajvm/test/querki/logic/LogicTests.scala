@@ -311,6 +311,33 @@ class LogicTests extends QuerkiTests {
       pql("""[[<2, 3, 4> -> _lessThan(<3, 4, 5>)]]""") should equal (listOfBoolean(true, true, true, false, true, true, false, false, true))
     }
   }
+
+  // === _min ===
+  "_min" should {
+    "work with simple passed-in values" in {
+      implicit val s = commonSpace
+
+      pql(s"""[[<34, 23, 67, 12, 78, 56> -> _min]]""") should equal ("12")
+      pql("""[[<""the"", ""quick"", ""brown"", ""dog"", ""jumped"", ""over""> -> _min]]""") should equal ("brown")
+    }
+
+    "work with Things and Expressions" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+
+        val model = new SimpleTestThing("My Model", numProp(0))
+
+        val thing1 = new TestThing("Thing 1", model, numProp(44))
+        val thing2 = new TestThing("Thing 2", model, numProp(3))
+        val thing3 = new TestThing("Thing 3", model, numProp(12))
+        val thing4 = new TestThing("Thing 4", model, numProp(14))
+        val thing5 = new TestThing("Thing 5", model, numProp(22))
+      }
+      implicit val s = new TSpace
+
+      pql("""[[My Model._instances -> _min(My Num)]]""") should equal (linkText(s.thing2))
+    }
+  }
   
   // === _minus ===
   "_minus" should {
