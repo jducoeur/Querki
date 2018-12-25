@@ -402,6 +402,45 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     }
   }
 
+  lazy val MaxMethod = new InternalMethod(MaxMethodOID,
+    toProps(
+      setName("_max"),
+      Categories(LogicTag),
+      Summary("Produces the most of the received values"),
+      Signature(
+        expected = Some(Seq.empty, "A List of any sort"),
+        reqs = Seq.empty,
+        opts = Seq(
+          ("exp", AnyType, Core.QNone, "An optional expression to apply to each received value")
+        ),
+        returns = (AnyType, "The highest of the received values")
+      ),
+      Details(
+        """In its simple form, with no parameters, `_max` takes a List of values, and
+          |produces whatever is most from them:
+          |[[```
+          |<7, 28, 3, 5, 108> -> _min
+          |```]]
+          |produces 108.
+          |
+          |The more interesting and common usage, however, takes one parameter, which is an expression.
+          |This applies the received values (usually Things) to that expression, and produces the one that
+          |had the highest result:
+          |[[```
+          |All Games -> _max(Price)
+          |```]]
+          |produces the Game with the highest Price.
+          |
+          |You can get a similar result by using `_sort` and taking the last value of the results, but `_max`
+          |is much, much faster, and should be used instead when possible.
+        """.stripMargin)
+    ))
+  {
+    override def qlApply(inv: Invocation): QFut = {
+      findMostOfList(inv) { (pt, current, next) => pt.comp(inv.context)(current, next) }
+    }
+  }
+
   /**
    * Goes through a parameter list full of YesNo expressions, and returns the results.
    */
@@ -615,6 +654,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     LessThanMethod,
     GreaterThanMethod,
     MinMethod,
+    MaxMethod,
     OrMethod,
     AndMethod,
     
