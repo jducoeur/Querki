@@ -139,11 +139,19 @@ trait EditFuncs {
   def makeThing(modelId: TID, name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
       thingId <- makeUnnamedThing(modelId)
-      std <- getStd()
+      std <- getStd
       _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
       yield thingId
+  }
+
+  def makeSimpleThing(name: String, vs: SaveablePropVal*): TestOp[TID] = {
+    for {
+      std <- getStd
+      tid <- makeThing(std.basic.simpleThing, name, vs:_*)
+    }
+      yield tid
   }
 
   /**
@@ -153,7 +161,7 @@ trait EditFuncs {
    */
   def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
-      std <- getStd()
+      std <- getStd
       thingId <- createThing(std.basic.simpleThing, std.core.isModelProp :=> true)
       _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
@@ -170,3 +178,5 @@ trait EditFuncs {
     def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = prop.oid :=> v
   }
 }
+
+object EditFuncs extends EditFuncs

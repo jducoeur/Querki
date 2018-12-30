@@ -21,7 +21,7 @@ trait ApiFuncs {
    * 
    * This is a constant data structure, so we simply have it cached in the TestState.
    */
-  def getStd(): TestOp[StdThings] = TestOp.fetch(_.client.std)
+  val getStd: TestOp[StdThings] = TestOp.fetch(_.client.std)
   
   /**
    * Initialize the TestState.
@@ -45,7 +45,7 @@ trait ApiFuncs {
   
   def fetchStd[T](f: StdThings => T): TestOp[T] = {
     for {
-      std <- getStd()
+      std <- getStd
     }
       yield f(std)
   }

@@ -12,7 +12,7 @@ object BasicMidTests {
   val basicTests: TestOp[Unit] = {
     for {
       _ <- step("Basic smoketest suite")
-      std <- getStd()
+      std <- getStd
       basicUser = TestUser("Basic Test User")
       basicSpaceName = "Basic Test Space"
       
