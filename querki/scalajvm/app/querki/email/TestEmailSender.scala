@@ -1,7 +1,7 @@
 package querki.email
 
-import scala.concurrent.ExecutionContext
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Promise}
+import scala.util.{Success, Try}
 
 import akka.actor.Scheduler
 
@@ -35,6 +35,11 @@ trait TestEmailInspector extends EcologyInterface {
    * is at the head of the list.
    */
   def sessions:List[TestEmailSession]
+
+  /**
+   * Registers a listener that will be called with the content of the next email "sent".
+   */
+  def handleNextEmail: Future[TestEmailMessageDetails]
 }
 
 /**
@@ -79,12 +84,29 @@ private [email] class TestEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
   }
   
   /**
+   * If the test code has registered a listener, it gets stored here.
+   */
+  var nextEmailListener: Option[Promise[TestEmailMessageDetails]] = None
+  def handleNextEmail: Future[TestEmailMessageDetails] = {
+    val promise = Promise[TestEmailMessageDetails]
+    nextEmailListener = Some(promise)
+    promise.future
+  }
+  def notifyListener(msg: TestEmailMessageDetails): Unit = {
+    nextEmailListener.foreach { promise =>
+      promise.complete(Success(msg))
+      nextEmailListener = None
+    }
+  }
+
+  /**
    * Note: the scheduler below is *null* in the test environment!
    */
   def sendEmail(msg:EmailMsg)(implicit scheduler: Scheduler, ec: ExecutionContext): Future[Int] = {
     val session = createSession()
     val details = TestEmailMessageDetails(msg.from.addr, msg.to, msg.toName, null, msg.subject, msg.body)
     session.append(details)
+    notifyListener(details)
     Future.successful(250)
   }
   
@@ -94,5 +116,6 @@ private [email] class TestEmailSender(e:Ecology) extends QuerkiEcot(e) with Emai
   Try {
     val details = TestEmailMessageDetails(from, recipientEmail, recipientName, requester, subject, bodyMain)
     session.append(details)
+    notifyListener(details)
   }
 }

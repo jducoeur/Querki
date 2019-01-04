@@ -25,4 +25,23 @@ case class ClientState(std: StdThings, testUser: TestUser, userInfo: Option[User
 
 object ClientState {  
   lazy val empty = ClientState(StdThings(Map.empty), TestUser.Anonymous, None, new Session(), None)
+  
+  val save: TestOp[ClientState] = TestOp.fetch(_.client)
+  def restore(clientState: ClientState): TestOp[Unit] = TestOp.update(state => TestState.clientL.set(clientState)(state))
+
+  /**
+   * Stores the current version of the ClientState in the cache. This should generally be done just before switching to a
+   * different user.
+   */
+  val cache: TestOp[Unit] = TestOp.update(state => TestState.clientCacheL.modify(_ + (state.client.testUser.base -> state.client))(state))
+  /**
+   * Switches to a different active user. This user must have previously been cached!
+   */
+  def switchToUser(user: TestUser): TestOp[Unit] = {
+    for {
+      _ <- cache
+      _ <- TestOp.update(state => TestState.clientL.set(state.clientCache(user.base))(state))
+    }
+      yield ()
+  }
 }

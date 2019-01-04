@@ -19,7 +19,7 @@ import querki.data._
  * The ClientState describes a single Client's viewpoint, and you can swap Clients in the middle of testing
  * in order to represent multiple Users hitting the system at once.
  */
-case class TestState(harness: HarnessInfo, client: ClientState, world: WorldState) {
+case class TestState(harness: HarnessInfo, client: ClientState, world: WorldState, clientCache: Map[String, ClientState]) {
   import TestState._
   
   /**
@@ -50,6 +50,8 @@ object TestState {
   val worldL = GenLens[TestState](_.world)
   val spacesL = GenLens[TestState](_.world.spaces)
   val systemL = GenLens[TestState](_.world.system)
+  
+  val clientCacheL = GenLens[TestState](_.clientCache)
 }
 
 case class HarnessInfo(test: MidTestBase) {

@@ -21,7 +21,7 @@ import play.api.test.Helpers._
 
 import controllers.LoginController
 
-import querki.data.UserInfo
+import querki.data.{SpaceInfo, UserInfo}
 import querki.globals._
 import querki.session.UserFunctions
 import querki.util.SafeUrl
@@ -118,6 +118,8 @@ trait LoginFuncs {
    */
   def newUser(user: TestUser): TestOp[LoginResults] = {
     for {
+      // If there was a previous active user, save their state for later restore:
+      _ <- ClientState.cache
       _ <- setUser(user)
       _ <- signup
       _ <- validateSignup
@@ -158,6 +160,38 @@ trait LoginFuncs {
     }
     val sessionFut = checkFut.map(_.sess)
     state.plus(resultFut) zip sessionFut
+  }
+  
+  /**
+   * Process the given invitation (which should be for the current user) to join the specified Space.
+   */
+  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[Unit] = TestOp.fut { state =>
+    implicit val app = state.harness.app
+    implicit val session = state.session
+    implicit val m = mat
+    
+    val invite = SafeUrl.decode(inviteRaw)
+    
+    val request = formRequest(
+      "invite" -> invite
+    )
+    val resultFut = call(controller.handleInvite2(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request)
+    val inviteResultFut = for {
+      result <- resultFut
+      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"acceptInvite got status ${result.status}!")
+      pickledUserInfo <- result.contentAsStringFut
+      _ = 
+        if (expectFailure)
+          assert(pickledUserInfo.isEmpty)
+        else {
+          // Normally, make sure there is a legal user info here:
+          assert (!pickledUserInfo.isEmpty, s"acceptInvite got an empty return value!")
+          read[UserInfo](pickledUserInfo)
+        }
+    }
+      yield ()
+      
+    inviteResultFut.map((state, _))
   }
 }
 

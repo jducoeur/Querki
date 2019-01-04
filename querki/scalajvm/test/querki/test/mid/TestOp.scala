@@ -20,6 +20,14 @@ object TestOp {
   def update(f: TestState => TestState): TestOp[Unit] = TestOp { state =>
     IO.pure(f(state), ())
   }
+  
+  /**
+   * For functions that do *not* update the TestState, but need to access it.
+   */
+  def withState[R](f: TestState => R): TestOp[R] = TestOp { state =>
+    IO.pure(state, f(state))
+  }
+  
 
   /**
    * This wraps up the common pattern of a "test operation", which takes a ClientState, and does

@@ -55,7 +55,9 @@ trait MidTestBase
         
         // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
         // mail, but instead lets us inspect what has been "sent":
-        "querki.mail.test" -> "true"
+        "querki.mail.test" -> "true",
+        // Don't bother to throttle emails significantly:
+        "querki.mail.throttle" -> "10ms"
       ))
       
     // We run setupDatabase *during* load -- after Play initializes but before the Ecology:

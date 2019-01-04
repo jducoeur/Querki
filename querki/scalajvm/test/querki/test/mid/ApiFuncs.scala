@@ -37,7 +37,8 @@ trait ApiFuncs {
       yield TestState(
         preState.harness,
         ClientState(StdThings(stdThingMap), TestUser.Anonymous, None, Session(client.resultFut.value.get.get.sess.data), None),
-        WorldState.empty
+        WorldState.empty,
+        Map.empty
       )
 
     IO.fromFuture { IO { stateFut zip fut(()) } }
