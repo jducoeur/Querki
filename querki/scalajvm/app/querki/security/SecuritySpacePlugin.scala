@@ -36,7 +36,9 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
     val hasInstancePerms = (thing.kind == Kind.Space || thing.isModel(state))
     if (hasInstancePerms) {
       val permThingOpt = for {
-        oid <- thing.getFirstOpt(AccessControl.InstancePermissionsProp)(state)
+        // IMPORTANT: this should *not* inherit, because submodels should use a separate Instance Permissions
+        // Thing from the parent model. See QI.bu6oeej -- this is the fix for that.
+        oid <- thing.localFirst(AccessControl.InstancePermissionsProp)(state)
         t <- state.anything(oid)
       }
         yield t
