@@ -155,21 +155,30 @@ trait EditFuncs {
   }
 
   /**
-   * Create a normal Model, using Simple Thing as the base Model.
-   * 
-   * TODO: eventually we'll want a variant of this for sub-Models, but that's not as critical yet.
-   */
-  def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
+    * Create a Model based on the specified parent. Note that this is the exception case.
+    */
+  def makeModel(parentModelId: TID, name: String, vs: SaveablePropVal*): TestOp[TID] = {
     for {
       std <- getStd
-      thingId <- createThing(std.basic.simpleThing, std.core.isModelProp :=> true)
+      thingId <- createThing(parentModelId, std.core.isModelProp :=> true)
       _ <- changeProp(thingId, std.basic.displayNameProp :=> name)
       _ <- changeProps(thingId, vs.toList)
     }
       yield thingId
   }
-  
-  implicit class RichPropId(propId: TID) {
+
+  /**
+    * Create a normal Model, using Simple Thing as the base Model.
+    */
+  def makeModel(name: String, vs: SaveablePropVal*): TestOp[TID] = {
+    for {
+      std <- getStd
+      thingId <- makeModel(std.basic.simpleThing, name, vs:_*)
+    }
+      yield thingId
+  }
+
+    implicit class RichPropId(propId: TID) {
     def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = {
       SaveablePropVal(propId, saveable.toSaveable(v))    
     }

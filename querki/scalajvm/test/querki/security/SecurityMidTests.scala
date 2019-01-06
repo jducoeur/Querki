@@ -3,8 +3,10 @@ package querki.security
 import org.scalatest.tags.Slow
 import org.scalatest.Matchers._
 
+import querki.data.TID
 import querki.test.mid._
 import AllFuncs._
+import SecurityMidFuncs._
 
 object SecurityMidTests {
   val securityTests: TestOp[Unit] = {
@@ -28,7 +30,8 @@ object SecurityMidTests {
       space <- createSpace(spaceName)
       
       _ <- newUser(member)
-      
+
+      // Set up the Space and members:
       _ <- ClientState.switchToUser(owner)
       // TODO: refactor this invite-to-space code into SetupFuncs:
       token <- EmailTesting.nextEmail
@@ -39,6 +42,40 @@ object SecurityMidTests {
       _ <- ClientState.switchToUser(member)
       inviteHash <- EmailTesting.extractInviteHash(token)
       _ <- acceptInvite(inviteHash, spaceInfo)
+
+      // Build the Things:
+      _ <- ClientState.switchToUser(owner)
+      parent <- makeModel("Parent Model")
+      parentInstanceName = "Parent Instance"
+      parentInstance <- makeThing(parent, parentInstanceName)
+      child <- makeModel(parent, "Child Model")
+      childInstanceName = "Child Instance"
+      childInstance <- makeThing(child, childInstanceName)
+
+      // Check that the Things are okay -- if isTag is false, that means it is a real Thing:
+      _ <- ClientState.switchToUser(member)
+      parentCheck1 <- getThingInfo(TID(parentInstanceName))
+      _ = parentCheck1.isTag should be (false)
+      childCheck1 <- getThingInfo(TID(childInstanceName))
+      _ = childCheck1.isTag should be (false)
+
+      // Change the security on the *child*. This is the heart of the bug: it was actually fetching the Parent's
+      // Instance Permissions Thing:
+      _ <- ClientState.switchToUser(owner)
+      // We need to fetch the parent's perms first, to set up the bug:
+      parentPerms <- permsFor(parent)
+      childPerms <- permsFor(child)
+      _ = assert(childPerms.instancePermThing.isDefined, "Model lacking an instancePermThing!")
+      instancePermThing = childPerms.instancePermThing.get
+      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.owner)
+
+      // Now, the member should still be able to see the parent, but not the child:
+      _ <- ClientState.switchToUser(member)
+      childCheck2 <- getThingInfo(TID(childInstanceName))
+      _ = childCheck2.isTag should be (true)
+      // The bug resulted in the *parent's* instances not being visible:
+      parentCheck2 <- getThingInfo(TID(parentInstanceName))
+      _ = parentCheck2.isTag should be (false)
     }
       yield ()
   }
