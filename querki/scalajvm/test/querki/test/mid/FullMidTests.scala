@@ -8,6 +8,7 @@ import cats.implicits._
 import play.api.mvc.Session
 
 import querki.conversations.ConvMidTests
+import querki.security.SecurityMidTests
 
 import AllFuncs._
 
@@ -33,6 +34,7 @@ class FullMidTests extends MidTestBase
         for {
           _ <- BasicMidTests.basicTests
           _ <- ConvMidTests.convTests
+          _ <- SecurityMidTests.securityTests
         }
           yield ()
       }
