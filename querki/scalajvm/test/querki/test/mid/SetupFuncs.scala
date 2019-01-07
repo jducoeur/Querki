@@ -1,6 +1,9 @@
 package querki.test.mid
 
+import querki.data._
 import AllFuncs._
+import org.scalatest.Matchers._
+import querki.security.SecurityMidFuncs
 
 /**
   * Functions that provide common setup, to reduce boilerplate for special-purpose tests.
@@ -21,6 +24,22 @@ trait SetupFuncs {
       loginResults <- newUser(user)
       space <- createSpace(spaceName)
 
+    }
+      yield ()
+  }
+
+  def inviteIntoSpace(owner:TestUser, spaceId: TID, member: TestUser): TestOp[Unit] = {
+    for {
+      _ <- ClientState.switchToUser(owner)
+      // TODO: refactor this invite-to-space code into SetupFuncs:
+      token <- EmailTesting.nextEmail
+      inviteResponse <- SecurityMidFuncs.invite(Seq(member.email), Seq.empty)
+      _ = inviteResponse.newInvites should contain (member.display)
+      spaceInfo <- TestOp.fetch(_.client.spaceOpt.get)
+
+      _ <- ClientState.switchToUser(member)
+      inviteHash <- EmailTesting.extractInviteHash(token)
+      _ <- acceptInvite(inviteHash, spaceInfo)
     }
       yield ()
   }
