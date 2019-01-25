@@ -46,17 +46,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   def toApi(t:Thing, c:Comment)(implicit identities:Map[OID, PublicIdentity], theRc:RequestContext):Future[CommentInfo] = {
     implicit val s = state
     
-    val contentFut =
-      if (c.isDeleted)
-        fut(Wikitext("*Comment deleted*"))
-      else {
-        Conversations.CommentText.firstOpt(c.props) match {
-          case Some(comment) => {
-            QL.process(comment, t.thisAsContext)
-          }
-          case _ => fut(Wikitext(""))
-        }
-      }
+    val contentFut = Conversations.renderComment(t, c)
     
     contentFut.map { content =>
       CommentInfo(

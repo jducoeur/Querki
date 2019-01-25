@@ -178,13 +178,20 @@ trait EditFuncs {
       yield thingId
   }
 
-    implicit class RichPropId(propId: TID) {
+  implicit class RichPropId(propId: TID) {
     def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = {
       SaveablePropVal(propId, saveable.toSaveable(v))    
     }
   }
   implicit class RichProp(prop: ThingInfo) {
     def :=>[T](v: T)(implicit saveable: Saveable[T]): SaveablePropVal = prop.oid :=> v
+  }
+  
+  def defaultView(text: String): TestOp[SaveablePropVal] = {
+    for {
+      std <- getStd
+    }
+      yield std.basic.defaultView :=> text
   }
 }
 

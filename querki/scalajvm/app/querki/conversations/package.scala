@@ -2,15 +2,16 @@ package querki
 
 import akka.actor.{ActorRef, Props}
 
-import models.{OID, Property}
+import models.{OID, Property, Thing, Wikitext}
 
 import querki.conversations.messages.Comment
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.values.SpaceState
+import querki.values.{RequestContext, SpaceState}
 
 package object conversations {
   
@@ -68,6 +69,8 @@ package object conversations {
      * since the Identity is what gets given access.
      */
     def canWriteComments(identity:OID, thingId:OID, state:SpaceState):Boolean
+    
+    def renderComment(t:Thing, c: Comment)(implicit rc: RequestContext, s: SpaceState): Future[Wikitext]
   }
 
   trait NotifyComments extends EcologyInterface {
