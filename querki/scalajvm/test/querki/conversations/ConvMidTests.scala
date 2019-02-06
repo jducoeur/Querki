@@ -37,6 +37,36 @@ object ConvMidTests {
       convNode22 = convNode21.responses.head
       _ = convNode22.comment.isDeleted should be (false)
       _ = assertCommentText(convNode22, cmt2txt)
+      
+      _ <- step("Conversation Regression Tests")
+      _ <- testQIbu6oehi
+    }
+      yield ()
+  }
+  
+  /**
+   * "_thingConversations does not render the QL in the comments"
+   * 
+   * We are testing this by including a link and making sure it renders.
+   */
+  val testQIbu6oehi: TestOp[Unit] = {
+    for {
+      _ <- step("Testing QI.bu6oehi")
+      // Create the source thing, and a comment with some QL
+      convTid <- makeSimpleThing("bu6oehi Comment Thing")
+      rawQuery = s"[[${convTid.underlying}]]"
+      cmt1txt = s"Referring back to myself: $rawQuery"
+      node1 <- startConversation(convTid, cmt1txt)
+
+      // Create the reader thing:
+      view <- defaultView("The comments on the other Thing are [[bu6oehi Comment Thing -> _thingConversations]]")
+      readTid <- makeSimpleThing("bu6oehi Read Thing", view)
+      
+      // Look at it and validate it:
+      readPage <- getThingPage(readTid, None)
+      pageWikitext = readPage.rendered.plaintext
+      _ = pageWikitext shouldNot include (rawQuery)
+      _ = pageWikitext should include ("""<a href="bu6oehi-Comment-Thing">bu6oehi Comment Thing</a>""")
     }
       yield ()
   }
