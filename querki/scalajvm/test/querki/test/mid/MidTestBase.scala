@@ -18,16 +18,13 @@ import AllFuncs._
  * real server, but with stubbed databases, at the Client-API level, with no real UI. This testing approach
  * is much faster and easier than full-fledged functional tests, but provides a somewhat less realistic
  * environment.
- * 
- * TODO: it's annoying that we're building another inheritance-based cake here. The main reason is context:
- * the fact that *everything* needs access to app, and the Clients, and so on. I have a nasty suspicion that
- * we could do this much better in Dotty, with implicit functions. At some point after we get to Scala 3,
- * explore trying to rewrite this, pretty mechanically, into separate functions held together by implicit
- * functions.
+  *
+  * This intentionally uses OneAppPerTest, not OneAppPerSuite, because the latter creates the app even if
+  * we aren't running any actual tests due to -l filtering.
  */
 trait MidTestBase 
   extends PlaySpec
-  with OneAppPerSuite
+  with OneAppPerTest
   with EcologyMember
 {
   lazy val dbManager = new MidFuncDB
@@ -37,7 +34,7 @@ trait MidTestBase
    */
   def initialState(): PreInitialState = PreInitialState.empty(this)
   
-  override implicit lazy val app: Application = {
+  override implicit def newAppForTest(testData: TestData): Application = {
     // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
     // enhances the built-in one!
     val context = ApplicationLoader.createContext(
