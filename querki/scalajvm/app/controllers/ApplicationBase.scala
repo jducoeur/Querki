@@ -10,13 +10,10 @@ import upickle.default._
 import models._
 
 import querki.api._
-import querki.ecology._
 import querki.globals._
 import querki.identity._
-import querki.spaces.SpaceManager
 import querki.spaces.messages._
 import querki.util._
-import querki.values.SpaceState
 
 trait ApplicationBase extends Controller with EcologyMember {
   
@@ -24,7 +21,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   val appProv:Provider[play.api.Application]
   implicit lazy val app = appProv.get
   
-  implicit lazy val ecology = app.injector.instanceOf(classOf[querki.system.EcologyProvider]).ecology
+  implicit lazy val ecology: Ecology = app.injector.instanceOf(classOf[querki.system.EcologyProvider]).ecology
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
