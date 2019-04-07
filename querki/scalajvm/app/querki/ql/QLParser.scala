@@ -223,7 +223,8 @@ class QLParser(
     case nameOpt ~ immediateOpt ~ exp => QLParam(nameOpt, exp, immediateOpt.isDefined) 
   }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
-  def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n\\s*|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
+  // Phrases are separated either by qlSpace (including comments) or semicolons
+  def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, opt(qlSpace) ~ opt(";") ~ qlSpace) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 
     ParsedQLText(_) }

@@ -297,6 +297,13 @@ class QLTests extends QuerkiTests {
     "work on same line as the end of the expression" in {
       processQText(commonThingAsContext(_.sandbox), """[[My Model._instances ->
           |  _sort // This is a comment]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
-    }  
+    }
+
+    "work between phrases" in {
+      processQText(commonThingAsContext(_.sandbox),
+        """[[My Model._instances -> +$foo
+          |// This is a comment
+          |$foo -> _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))
+    }
   }
 }

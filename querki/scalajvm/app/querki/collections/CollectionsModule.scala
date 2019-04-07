@@ -804,6 +804,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     override def qlApply(inv:Invocation):QFut = {
       // TODO: this is using local mutable state, which is fugly. What's a better pattern for us to
       // find the first "real" PType in the list? Something involving the State monad?
+      // TODO: no, it's worse than that: this is actually broken. InvocationValueImpl.flatMap() does
+      // not guarantee the order of evaluation of the nested loops! So the typeCheck clause is
+      // thoroughly non-deterministic!
       var targetType: Option[PType[_]] = None
       for {
         n <- inv.iter(0 to (inv.numParams-1))
