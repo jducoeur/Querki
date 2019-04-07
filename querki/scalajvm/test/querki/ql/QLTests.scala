@@ -227,11 +227,12 @@ class QLTests extends QuerkiTests {
       
       pql("""[[Weird]]""") should equal (unknownName("Weird"))
     }
-    
-    "fail if the name is neither a Thing nor a Tag" in {
+
+    // Note: this behavior changed with QL.9v5kelv:
+    "work if the name is neither a Thing nor a Tag" in {
       implicit val s = new CDSpace
       
-      pql("""[[Some Other Genre]]""") should equal (expectedWarning("QL.unknownName"))
+      pql("""[[Some Other Genre]]""") should equal (unknownName("Some Other Genre"))
     }
     
     "work if the name is neither a Thing nor a Tag, but is marked explicitly as a Tag" in {
@@ -254,8 +255,8 @@ class QLTests extends QuerkiTests {
     "be placed at the appropriate place in the containing text" in {
       implicit val s = commonSpace
       
-      pql("""Before the error [[Some Other Genre]] After the error""") should
-        equal (s"""Before the error ${expectedWarning("QL.unknownName")} After the error""")
+      pql("""Before the error [[Some Other Genre -> _oid]] After the error""") should
+        equal (s"""Before the error ${expectedWarning("Func.notThing")} After the error""")
     }
   }
   

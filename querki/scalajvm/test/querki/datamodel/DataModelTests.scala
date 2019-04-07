@@ -403,7 +403,8 @@ class DataModelTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[Child Tag -> _tagRefs]]""") should equal (listOfLinkText(s.childThing))
-      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal (expectedWarning("QL.unknownName"))
+      // Note that this behavior is likely to change in the future:
+      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal ("")
     }
   }
 }

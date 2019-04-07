@@ -94,7 +94,9 @@ class CommonCoreTests extends QuerkiTests {
       
       pql("[[My Instance -> My Optional Text]]") should equal ("Hello world")
       s ! DeleteThing(s.owner, s.sc.id, s.instance)
-      pql("[[My Instance -> My Optional Text]]") should equal (expectedWarning("QL.unknownName"))
+      pql("[[My Instance -> My Optional Text]]") should equal ("")
+      pql("[[My Instance]]") should equal (unknownName("My Instance"))
+
     }
   }
   

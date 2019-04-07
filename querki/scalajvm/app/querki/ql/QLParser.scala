@@ -362,20 +362,12 @@ class QLParser(
           case Some(t) => processThing(t, context)
           // We *didn't* find the Thing...
           case None => {
-            // This gets a bit subtle. If you have put the name in backticks, as a QLDisplayName, then
-            // we say that you know what you're doing, and use it as a tag.
-            call.name match {
-              // Explicitly marked as a Tag:
-              case QLDisplayName(name) => Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(name))))
-              case _ => {
-                if (Tags.tagExists(call.name.name, context.state))
-                  // It's the name of a Tag that *is* being used in the Space, so allow it:
-                  Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
-                else
-                  // We can't find this name anyway, so give up:
-                  Future.failed(new PublicException("QL.unknownName", call.name.name))
-              }
-            }
+            // Note: before QI.9v5kelv, we distinguished depending on whether call.name.name was a known Tag
+            // (in which case we returned UnknownNameType) or not (in which case we raised the
+            // "QL.unknownName" error). We now only do the former -- the latter has simply proven to be
+            // annoying without much benefit. (We also allowed backtick-delimited names even if they were
+            // unknown, which was *way* too subtle.)
+            Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
           }
         }
       }
