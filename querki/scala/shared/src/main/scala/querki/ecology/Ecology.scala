@@ -287,6 +287,19 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
    * TODO: could this be done with Map[Type] instead of Map[Class]? Given Scala's preferences, that
    * might be more efficient. And I don't think there is anything terribly public that has wound
    * up relying on Class -- we're actually mostly using TypeTag in the APIs.
+    *
+    * TODO: in principle, using Class as a key in a Map isn't ideal, since it prevents GC in a more
+    * dynamic environment. This isn't critical for Querki, but might be an issue for some applications if
+    * this becomes a library. Java now has a ClassValue type that is more appropriate for this purpose,
+    * and Sebastien seems at least open to adding it to Scala.js. See this thread on Contributors:
+    *
+    * https://contributors.scala-lang.org/t/proposal-for-opaque-type-aliases/2947/51
+    *
+    * and the linked SO thread:
+    *
+    * https://stackoverflow.com/questions/7444420/classvalue-in-java-7
+    *
+    * Note that this applies to all the other Maps and Sets where we are currently storing Classes.
    */
   private var _registeredInterfaces:Map[Class[_], ET] = Map.empty
   
