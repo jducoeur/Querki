@@ -1,7 +1,7 @@
 package querki.tags
 
+import models.Thing
 import querki.test._
-
 import querki.types.SimplePropertyBundle
 
 class TagTests extends QuerkiTests {
@@ -32,6 +32,31 @@ class TagTests extends QuerkiTests {
       pql("""[[_equals(Thing 1 -> Single Tag -> Name, ""My Tag"")]]""") should equal ("true")
       // This requires coercion from Tag Type to Parsed Text:
       pql("""[[_equals(Thing 1 -> Single Tag, ""My Tag"")]]""") should equal ("true")
+    }
+  }
+
+  "TagThing" should {
+    // Test for QI.9v5kemu
+    "resolve correctly whether given dashes or spaces" in {
+      val Tags = interface[querki.tags.Tags]
+      val Links = interface[querki.links.Links]
+
+      class TSpace extends CommonSpace {
+        val linkModel = new SimpleTestThing("Linked Model")
+        val linkedTagsProp = new TestProperty(TagType, QSet, "Tags With Prop", Links.LinkModelProp(linkModel))
+
+        val model = new SimpleTestThing("My Model")
+        val thing1 = new TestThing("Thing 1", model, linkedTagsProp("My Tag"))
+      }
+      implicit val s = new TSpace
+      val state = s.state
+
+
+      val tagWithSpaces: Thing = Tags.getTag("My Tag", state)
+      val tagWithDashes: Thing = Tags.getTag("My-Tag", state)
+
+      tagWithSpaces.model should equal (s.linkModel.id)
+      tagWithDashes.model should equal (s.linkModel.id)
     }
   }
   

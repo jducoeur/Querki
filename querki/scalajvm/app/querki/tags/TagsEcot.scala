@@ -162,6 +162,15 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   )
 
   /**
+    * Takes a name that we get from the front end, and figures out its "real" name.
+    *
+    * This is rather horribly ad-hoc, and needs re-examination, particularly in light of anywhere else that might
+    * be using SafeUrl.decode(). The big issue that we sometimes need to deal with dashes, particularly in links
+    * from QL.
+    */
+  def decodeTagName(nameIn: String): String = SafeUrl.decode(nameIn).replaceAll("-", " ")
+
+  /**
    * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
    * exists to support the display of the Undefined Tag View.
    */
@@ -170,7 +179,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       Thing(
         UnknownOID, 
         space.id, 
-        preferredModelForTag(space, SafeUrl.decode(nameIn)), 
+        preferredModelForTag(space, decodeTagName(nameIn)),
         Kind.Thing, 
         toProps(
           Basic.DisplayNameProp(HtmlEscape.escapeAll(SafeUrl.decode(nameIn)))
@@ -178,10 +187,10 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
         querki.time.epoch)
     with IsTag
   {
-    // Undo the effects of SafeUrl.
+    // Undo the effects of SafeUrl. Also, cope with dashes in names the way that real Things do.
     // TODO: this arguably doesn't belong here. Should we be dealing with this up in Application instead? Are
     // real Thing names working properly with complex characters? If so, how?
-    val name = SafeUrl.decode(nameIn)
+    val name = decodeTagName(nameIn)
     override lazy val displayName = name
     override lazy val unsafeDisplayName = name
     override lazy val canonicalName = linkName
