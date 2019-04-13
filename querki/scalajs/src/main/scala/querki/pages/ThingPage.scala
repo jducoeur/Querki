@@ -110,6 +110,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     thing.importedFrom.map(spaceInfo => s"${spaceInfo.displayName}::").getOrElse("")
   
   val modelOpt = DataAccess.mainModel
+  def modelIsSimpleThing = modelOpt.map(_.is(std.basic.simpleThing)).getOrElse(false)
   
   def viewingHistory = History.viewingHistory
   
@@ -280,13 +281,27 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             MSeq(
               if (thing.isEditable) {
                 if (thing.isTag) {
-                  editButton()(
-                    title:=s"Make $thingName into a real Thing",
-                    href:=
-                      Pages.createAndEditFactory.pageUrl(
-                        modelOpt.getOrElse(std.basic.simpleThing),
-                        (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
-                        "reifyTag" -> "true"))
+                  modelOpt match {
+                    case Some(modelId) if (!modelIsSimpleThing) => {
+                      editButton()(
+                        title:=s"Make $thingName into a real Thing",
+                        href:=
+                          Pages.createAndEditFactory.pageUrl(
+                            modelId,
+                            (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
+                            "reifyTag" -> "true"))
+                    }
+                    case _ => {
+                      // If no Model is known for the Tag, then ask:
+                      editButton()(
+                        title:=s"Make $thingName into a real Thing",
+                        href:=
+                          Pages.createAndEditFactory.pageUrl(
+                            (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
+                            "reifyTag" -> "true"))
+                    }
+                  }
+
                 } else if (isSpace) {
                   editButton()(
                     title:=s"Edit Space Info",
