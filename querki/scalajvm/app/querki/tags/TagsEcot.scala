@@ -1,17 +1,15 @@
 package querki.tags
 
 import scala.xml.NodeSeq
-
-import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, PType, Thing, ThingId, ThingOps, UnknownOID, Wikitext}
-
+import models.{Thing, UnknownOID, AsDisplayName, OID, ThingId, Collection, DisplayPropVal, DisplayText, PropertyBundle, Kind, ThingOps, PType, Property, Wikitext}
 import querki.api.commonName
-import querki.basic.{PlainText, PlainTextBaseType}
-import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
+import querki.basic.{PlainTextBaseType, PlainText}
+import querki.core._
 import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.util.{HtmlEscape, SafeUrl}
-import querki.values._
+import querki.values.{QValue, _}
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
@@ -171,6 +169,13 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   def decodeTagName(nameIn: String): String = SafeUrl.decode(nameIn).replaceAll("-", " ")
 
   /**
+    * Return an Exception for the case where we try to fetch a Property from a Tag.
+    *
+    * TODO: the existence of this function strongly indicates that our factoring sucks, and should be improved.
+    */
+  def tagPropError(tagName: String, propName: String): PublicException = new PublicException("Tags.noProp", tagName, propName)
+
+  /**
    * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
    * exists to support the display of the Undefined Tag View.
    */
@@ -196,7 +201,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override lazy val canonicalName = linkName
     override lazy val linkName = Some(SafeUrl(name))
     override lazy val toThingId:ThingId = new AsDisplayName(name)
-    
+
     override def thingOps(e:Ecology) = new TagThingOps(this)
   }
   

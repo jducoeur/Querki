@@ -317,10 +317,17 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
             // Yes, and some of those Things have this Property, so return those real Things:
             Some(InvocationValueImpl(realThings.map(t => (t, context.next(ExactlyOne(LinkType(t)))))))
           } else {
-            // Nope, these Tags just don't seem to have this Property:
+            // Nope, these Tags just don't seem to have this Property. Note that we are intentionally treating this
+            // as legit, so that you can feed a mixed collection of defined and undefined Tags to a Property. This
+            // is different from UnknownNameType (below), which we are *always* treating as an error to feed to
+            // a Property.
             None
           }
         }
+      } else if (current.value.pType == QL.UnknownNameType) {
+        // QI.9v5kemx: Unknown Names can't be used with Properties:
+        val tags = current.value.rawList(QL.UnknownNameType)
+        Some(InvocationValueImpl(Tags.tagPropError(tags.mkString(", "), prop.displayName)))
       } else current.value.pType match {
         case mt:ModelTypeBase => {
           val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(ExactlyOne(elem))))

@@ -33,6 +33,26 @@ class TagTests extends QuerkiTests {
       // This requires coercion from Tag Type to Parsed Text:
       pql("""[[_equals(Thing 1 -> Single Tag, ""My Tag"")]]""") should equal ("true")
     }
+
+    // Part of QI.9v5kemx -- we are intentially allowing dereferencing of Tags in Properties, but not in
+    // explicit QL:
+    "be able to dereference a Property" in {
+      class TSpace extends CommonSpace {
+        val thing1 = new SimpleTestThing("Thing 1", singleTagProp("My Tag"))
+      }
+      implicit val s = new TSpace
+
+      pql("""[[Thing 1 -> Single Tag -> Single Text]]""") should equal ("")
+    }
+  }
+
+  "Tags in QL" should {
+    // QI.9v5kemx:
+    "give an error if you try to apply a Property" in {
+      implicit val s = commonSpace
+
+      pql("""[[Unknown Name -> Single Text]]""") should equal(expectedWarning("Tags.noProp"))
+    }
   }
 
   "TagThing" should {
