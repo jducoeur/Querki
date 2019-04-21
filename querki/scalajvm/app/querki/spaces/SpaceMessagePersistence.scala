@@ -1,19 +1,13 @@
 package querki.spaces
 
-import akka.persistence.PersistentActor
-
-import models.{ModelPersistence, UnknownOID, ThingId}
+import models.ModelPersistence
 import models.Kind.Kind
 import ModelPersistence._
-
 import querki.globals._
-import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{User, IdentityPersistence}
+import querki.identity.IdentityPersistence
 import IdentityPersistence._
-import querki.persistence._
+import querki.persistence.{KryoTag, AddedField, UseKryo}
 import querki.time.DateTime
-
-import messages._
 
 /**
  * This defines the "dehydrated" serializable forms of the SpaceMessages. These are the commands we
