@@ -113,7 +113,7 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
    */
   def !(msg:AnyRef):Option[AnyRef] = {
     msg match {
-      case msg @ CurrentState(curState) => {
+      case msg @ CurrentState(curState, _) => {
         routeToConv(msg)
       }
       case msg @ SpaceSubsystemRequest(_, _, payload:querki.conversations.messages.ConversationMessage) => routeToConv(msg)

@@ -9,7 +9,6 @@ import models.OID
 import querki.admin.SpaceTimingActor
 import querki.api.ClientRequest
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
-import querki.ecology._
 import querki.globals._
 import querki.history.SpaceHistory
 import querki.photos.PhotoUploadActor
@@ -88,7 +87,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     /**
      * The Space has sent an updated State, so tell everyone about it.
      */
-    case msg @ CurrentState(curState) => {
+    case msg @ CurrentState(curState, _) => {
       _state = Some(curState)
       conversations.forward(msg)
       sessions.forward(msg)

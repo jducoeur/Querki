@@ -51,7 +51,7 @@ trait TestConversations extends EcologyMember { self:TestSpace =>
    */
   def routeToConv(rawMsg:AnyRef):Option[AnyRef] = {
     rawMsg match {
-      case msg @ CurrentState(current) => {
+      case msg @ CurrentState(current, _) => {
         thingConvs.values.foreach { _ ! msg }
         None
       }

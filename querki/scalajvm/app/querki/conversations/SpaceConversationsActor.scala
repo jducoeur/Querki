@@ -72,7 +72,7 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
-    case CurrentState(current) => {
+    case CurrentState(current, _) => {
       // Only go through boot if this is the first time we get the state.
       val boot = (state == null)
       
@@ -204,7 +204,7 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
     /**
      * Update from the Space Actor that the state has been changed.
      */
-    case CurrentState(current) => {
+    case CurrentState(current, _) => {
       state = current
     }
     

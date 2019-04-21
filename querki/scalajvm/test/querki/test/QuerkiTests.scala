@@ -5,6 +5,7 @@ import akka.cluster.sharding.ShardRegion
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import models.{Thing, OID}
 import querki.core.QLText
+
 import querki.ecology._
 import querki.globals._
 import querki.identity.User

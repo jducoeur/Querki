@@ -297,7 +297,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * stay there for the rest of this actor's life.
    */
   def receive = LoggingReceive {
-    case CurrentState(s) => {
+    case CurrentState(s, _) => {
       setRawState(s)
       // Now, fetch the UserValues
       // In principle, we should probably parallelize waiting for the SpaceState and UserValues:
@@ -372,7 +372,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
   def normalReceive:Receive = LoggingReceive {
-    case CurrentState(s) => setRawState(s)
+    case CurrentState(s, _) => setRawState(s)
     
     case ps:CurrentPublicationState => setPublicationState(ps)
     
@@ -409,7 +409,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
             
             // Fetch the state as of that point:
             for {
-              CurrentState(state) <- spaceRouter.request(GetHistoryVersion(v))
+              CurrentState(state, _) <- spaceRouter.request(GetHistoryVersion(v))
             }
             {
               val params = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
