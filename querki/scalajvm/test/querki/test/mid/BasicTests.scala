@@ -2,8 +2,9 @@ package querki.test.mid
 
 import org.scalatest.Matchers._
 import org.scalatest.tags.Slow
-
+import ClientState.{switchToUser, cache, withUser}
 import AllFuncs._
+import querki.api.UnknownThingException
 
 object BasicMidTests {
   /**
@@ -14,10 +15,14 @@ object BasicMidTests {
       _ <- step("Basic smoketest suite")
       std <- getStd
       basicUser = TestUser("Basic Test User")
+      member = TestUser("Member Test User")
       basicSpaceName = "Basic Test Space"
       
-      _ <- step("Setup the User")
+      _ <- step("Setup the Users")
       loginResults <- newUser(basicUser)
+      _ <- cache
+      _ <- newUser(member)
+      _ <- switchToUser(basicUser)
 
       _ <- step("Create the main Space for general testing")
       // mainSpace is the result of the createSpace() function...
@@ -28,6 +33,7 @@ object BasicMidTests {
       // ... and the Space is also now in the World State:
       createdInWorldOpt <- TestOp.fetch(_.world.spaces.get(mainSpace))
       _ = createdInWorldOpt.map(_.info.displayName) should be (Some(basicSpaceName))
+      _ <- inviteIntoSpace(basicUser, mainSpace, member)
       
       _ <- step("Create the first simple Thing")
       simpleThingId <- makeThing(std.basic.simpleThing, "First Thing")
@@ -47,8 +53,14 @@ object BasicMidTests {
       _ <- step(s"Create an Instance, and mess with it")
       instanceId <- makeThing(modelId, "First Instance")
       _ <- checkPropValue(instanceId, propId, "Default value of First Property")
+      _ <- withUser(member) { checkPropValue(instanceId, propId, "Default value of First Property") }
       _ <- changeProp(instanceId, propId :=> "Instance value")
       _ <- checkPropValue(instanceId, propId, "Instance value")
+      _ <- withUser(member) { checkPropValue(instanceId, propId, "Instance value") }
+
+      _ <- step(s"Destroy the first Instance")
+      _ <- deleteThing(instanceId)
+      _ <- TestOp.expectingError[UnknownThingException](getThingPage(instanceId, None))
     }
       yield ()
   }

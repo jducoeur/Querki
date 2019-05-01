@@ -126,7 +126,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * Tells any outside systems about the updated state. Originally part of Space.updateState().
    */
-  def notifyUpdateState():Unit
+  def notifyUpdateState(events: Option[List[SpaceEvent]]):Unit
   
   /**
    * Sends a message to the MySQL side, telling it that this Space's name has changed.
@@ -212,9 +212,12 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * 
    * This deals with updating caches, and updating the State's version number based on Akka Persistence.
    */
-  def updateStateCore(newState:SpaceState, evt:Option[SpaceMessage] = None):SpaceState = {
+  def updateStateCore(newState:SpaceState):SpaceState = {
+    // TODO: 4/21/19 -- note that we are never actually setting the commands in CacheUpdate. We used to pass this down,
+    // but it turned out it was always None, which makes the whole thing suspect. Re-examine, and think about whether
+    // CacheUpdate should be taking an Option[List[SpaceEvent]] instead, since that is where things have settled.
     val filledState = 
-      SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState)).
+      SpaceChangeManager.updateStateCache(CacheUpdate(None, _currentState, newState)).
       current.
       copy(version = SpaceVersion(lastSequenceNr))
     _currentState = Some(filledState)
@@ -225,9 +228,9 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   /**
    * Look up any external cache changes, record the new state, and send notifications about it.
    */
-  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None):SpaceState = {
-    updateStateCore(newState, evt)
-    notifyUpdateState()
+  def updateState(newState:SpaceState, events: Option[List[SpaceEvent]] = None):SpaceState = {
+    updateStateCore(newState)
+    notifyUpdateState(events)
     currentState
   }
   
@@ -594,7 +597,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       def readied() = {
         monitor("Space is readied -- notifying the State")
         initializing = false
-        notifyUpdateState()
+        notifyUpdateState(None)
         unstashAll() 
       }
       

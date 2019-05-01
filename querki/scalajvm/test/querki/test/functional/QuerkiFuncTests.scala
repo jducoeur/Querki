@@ -35,8 +35,12 @@ trait FuncMixin
  * The actual test runner. This defines the functional-test "cake", and the tests to run.
  * 
  * See package.scala for lots more details.
+  *
+  * Disabled for now, since it isn't working.
+  * TODO: replace this with a new suite that works better!
  */
-@Slow
+//@Slow
+@Ignore
 class QuerkiFuncTests 
   // Infrastructure mix-ins, from ScalaTest and Play:
   extends WordSpec

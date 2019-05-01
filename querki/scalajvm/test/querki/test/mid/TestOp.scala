@@ -2,11 +2,15 @@ package querki.test.mid
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import cats._
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
+
+import scala.reflect.ClassTag
+
+case class UnexpectedSuccessError[R](result: R) extends Exception(s"TestOp expected failure, but instead got result $result")
+case class WrongExceptionException(actual: Throwable) extends Exception(s"TestOp got the wrong error $actual")
 
 object TestOp {
   def apply[A](f: TestState => IO[(TestState, A)])(implicit F: Applicative[IO]): TestOp[A] = StateT[IO, TestState, A] { f }
@@ -27,7 +31,6 @@ object TestOp {
   def withState[R](f: TestState => R): TestOp[R] = TestOp { state =>
     IO.pure(state, f(state))
   }
-  
 
   /**
    * This wraps up the common pattern of a "test operation", which takes a ClientState, and does
@@ -55,5 +58,23 @@ object TestOp {
   def fetch[T](f: TestState => T): TestOp[T] = StateT { state =>
     val result = f(state) 
     IO.pure((state, result))
+  }
+
+  // TODO: surely there is a more correct way to do this?
+  def expectingError[T <: Throwable](op: TestOp[_])(implicit tag: ClassTag[T]): TestOp[Unit] = {
+    op.attempt.map {
+      _ match {
+        case Left(error) => {
+          if (error.getClass == tag.runtimeClass) {
+            Right(())
+          } else {
+            throw new WrongExceptionException(error)
+          }
+        }
+        case Right(result) => {
+          throw new UnexpectedSuccessError(result)
+        }
+      }
+    }
   }
 }

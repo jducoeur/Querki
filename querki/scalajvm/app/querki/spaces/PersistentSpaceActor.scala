@@ -96,8 +96,8 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   /**
    * Tells any outside systems about the updated state.
    */
-  def notifyUpdateState():Unit = {
-    stateRouter ! CurrentState(currentState)
+  def notifyUpdateState(events: Option[List[SpaceEvent]]):Unit = {
+    stateRouter ! CurrentState(currentState, events)
   }
   
   /**

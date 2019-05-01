@@ -27,7 +27,9 @@ class CollectionsTests extends QuerkiTests {
           favoriteGenresProp("Rock", "Weird"))
       }
       implicit val s = new TSpace
-      
+
+      // TODO: this is mysteriously flaky, sometimes returning the Func.generalWrongType warning instead. Maddening:
+      // fix this!
       pql("""[[More Favorites -> _concat(Favorite Artists, Favorite Genres)]]""") should
         equal (expectedWarning("Collections.concat.mismatchedTypes"))
     }

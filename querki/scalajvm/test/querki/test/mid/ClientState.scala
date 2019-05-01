@@ -44,4 +44,29 @@ object ClientState {
     }
       yield ()
   }
+
+  /**
+    * Performs the specified operation with the specified user, and then restores the current user.
+    */
+  def withUser[T](user: TestUser)(op: TestOp[T]): TestOp[T] = {
+    for {
+      originalUser <- TestOp.fetch(_.client.testUser)
+      _ <- switchToUser(user)
+      t <- op
+      _ <- switchToUser(originalUser)
+    }
+      yield t
+  }
+
+  /**
+    * Performs the specified operation, and then pop the original user back out at the end.
+    */
+  def cachingUser[T](op: TestOp[T]): TestOp[T] = {
+    for {
+      originalUser <- TestOp.fetch(_.client.testUser)
+      t <- op
+      _ <- switchToUser(originalUser)
+    }
+      yield t
+  }
 }

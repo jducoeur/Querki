@@ -7,6 +7,7 @@ import autowire._
 import querki.data._
 import querki.editing._
 import querki.editing.EditFunctions._
+import querki.api.ThingFunctions
 import querki.globals._
 
 import AllFuncs._
