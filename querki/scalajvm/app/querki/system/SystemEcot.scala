@@ -4,8 +4,8 @@ import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.sharding._
 import akka.cluster.singleton._
-
 import querki.ecology._
+import querki.globals.OID
 import querki.values.SpaceState
 
 /**
@@ -173,5 +173,22 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem], val asyncIni
       case _ => (Some(ActorRef.noSender), Some(ActorRef.noSender))
     }
 
+  }
+
+  // Since the value of hiddenOIDs is never expected to change, and is system-wide, we compute and cache it once, at
+  // first access:
+  var _hiddenOIDs: Option[List[OID]] = None
+  def hiddenOIDs: List[OID] = {
+    _hiddenOIDs.getOrElse {
+      _state match {
+        case Some(state) => {
+          val hiddenProps = state.spaceProps.values.filter(_.ifSet(Basic.SystemHiddenProp)(state))
+          val oids = hiddenProps.map(_.id).toList
+          _hiddenOIDs = Some(oids)
+          oids
+        }
+        case None => List.empty
+      }
+    }
   }
 }

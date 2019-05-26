@@ -90,6 +90,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   /**
    * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
    * read. There should *not* be many of these.
+    *
+    * TODO: can be deleted once we lift it out to SpaceEvolution.
    */
   def isReadException(thingId:OID)(implicit state:SpaceState):Boolean = {
     // I always have access to my own Person record, so that _me always works:
@@ -105,10 +107,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
         val isManager = AccessControl.isManager(user, rs)
         val safeState =
           if (isManager) {
-            monitor(s"makeEnhancedState() skipped -- it is a manager")
             rs
           } else {
-            monitor(s"makeEnhancedState() starting read filtering for User ${user.id}...")
             // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
             // caching, and do much more sensitive updating as things change.
             val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
