@@ -204,5 +204,11 @@ Foo foo
         equal("""<p><a href="http://www.google.com/" rel="nofollow" target="_blank">floob</a></p>
           |""".stripReturns)
     }
+
+    "allow use of the self tab if explicitly requested" in {
+      apply("""<a href="http://www.google.com/" target="_self">floob</a>""") should
+        equal("""<p><a href="http://www.google.com/" target="_self" rel="nofollow">floob</a></p>
+                |""".stripReturns)
+    }
   }
 }

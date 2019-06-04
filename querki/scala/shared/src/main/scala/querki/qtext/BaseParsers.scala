@@ -240,6 +240,12 @@ trait BaseParsers extends RegexParsers {
      * Story .3y28awg.
      */
     def anchorTargetHack:Parser[(String, String)] = ws ~ """target="_blank"""" ^^ { case w ~ v => ("target", "_blank") }
+
+    /**
+      * We now allow you to explicitly request targeting of the same tab. See QI.9v5kev0
+      * @return
+      */
+    def selfTargetHack: Parser[(String, String)] = ws ~ """target="_self"""" ^^ { case w ~ v => ("target", "_self") }
     
     /**
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
@@ -263,7 +269,7 @@ trait BaseParsers extends RegexParsers {
      *  pretty much suggests that the entire String-focused approach is corrupt. We should be building up Tags instead,
      *  unifying the architecture with the markup side, and decorating the resulting Tags as necessary.
      */
-    def xmlStartOrEmptyTag:Parser[String] = '<' ~> xmlName ~ ((xmlAttr | anchorTargetHack)*) ~ ows ~ (">" | "/>") ^^ {
+    def xmlStartOrEmptyTag:Parser[String] = '<' ~> xmlName ~ ((xmlAttr | anchorTargetHack | selfTargetHack)*) ~ ows ~ (">" | "/>") ^^ {
         case name ~ attrs ~ w ~ e => {
           val allAttrs = {
             if (name.toLowerCase() == "a") {
@@ -274,9 +280,12 @@ trait BaseParsers extends RegexParsers {
                       pair._2.substring(1)
                     else
                       pair._2
+                  val selfTargeted: Boolean = attrs.find(_._1 == "target").map(_._2 == "_self").getOrElse(false)
                   val nurlLower = withoutQuote.toLowerCase()
                   val isExternal = (nurlLower.startsWith("http:") || nurlLower.startsWith("https:") || nurlLower.startsWith("./") || nurlLower.startsWith("/"))
-                  if (isExternal)
+                  if (isExternal && selfTargeted)
+                    attrs ++ List(("rel" -> "nofollow"))
+                  else if (isExternal)
                     attrs ++ List(("rel" -> "nofollow"), ("target" -> "_blank"))
                   else
                     attrs
