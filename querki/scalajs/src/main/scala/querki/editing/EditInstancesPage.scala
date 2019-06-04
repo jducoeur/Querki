@@ -45,8 +45,12 @@ class EditInstancesPage(params:ParamMap)(implicit val ecology:Ecology) extends P
           h3("Editing instances of ", thingLink(modelInfo), s" ($numInstances)"),
           paginator,
           new QText(editorWikitext),
-          if (modelInfo.isInstantiatable)
-            new CreateAnotherButton(modelInfo),
+          if (modelInfo.isInstantiatable) {
+            div(
+              new CreateAnotherButton(modelInfo),
+              p(" ")
+            )
+          },
           div(querkiButton(MSeq(href:=thingUrl(modelInfo), "Done")))
         )
     }
@@ -79,9 +83,10 @@ class EditInstancesPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     }
   
     def doRender() =
+      // TODO: this really should use plainQuerkiButton(); figure out how to get the types to align --
       input(
         tpe:="button",
-        cls:="_createAnother btn",
+        cls:="_createAnother btn btn-default btn-sm btn-primary querki-icon-button",
         value:=s"Create another ${modelInfo.displayName}"
       )
   }  
