@@ -184,6 +184,29 @@ class DataModelTests extends QuerkiTests {
       processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances]]""") should 
         equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
+
+    "produce an appropriate error when used on a non-Link Property" in {
+      implicit val s = commonSpace
+
+      pql("""[[Single Text -> _instances -> _sort]]""") should
+        equal (expectedWarning("Func.notThing"))
+    }
+
+    "produce an appropriate error if it does not receive any links" in {
+      class TSpace extends CommonSpace {
+        val instance1 = new SimpleTestThing("Thing Without Links", optLinkProp())
+      }
+      implicit val s = new TSpace
+
+      pql("""[[Thing Without Links -> Optional Link -> _instances]]""") should
+        equal (expectedWarning("Func.missingReceivedValue"))
+    }
+
+    "work with non-Models" in {
+      implicit val s = commonSpace
+
+      pql("""[[My Instance -> _instances]]""") should equal("")
+    }
   }
   
   // === _is ===

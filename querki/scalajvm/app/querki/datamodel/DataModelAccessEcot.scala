@@ -212,8 +212,9 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         // that descendants() returns SortedSets, which can be combined to preserve the sorting. The below
         // logic is designed specifically to preserve that sorting until we're done.
         context = inv.context
-        _ <- inv.test(context.value.matchesType(LinkType), "Func.notThing", displayName)
+        _ <- inv.test(context.value.matchesType(LinkType), "Func.notThing", List(displayName))
         rootsIn = context.value.rawList(LinkType)
+        _ <- inv.test(!rootsIn.isEmpty, "Func.missingReceivedValue", List(displayName))
         roots = {
           if (useAppModel) {
             getAppModels(rootsIn, inv.state)

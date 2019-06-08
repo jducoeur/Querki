@@ -22,20 +22,22 @@ Edit.checklist.propMissing={0} doesn't have the Property {1}
 
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.
 
+Func.emptyParamValue={0} expects a value in its parameter, but it is empty
+Func.generalWrongType=Expecting type {0}, but actually got type {1}
 Func.insufficientParams={0} requires at least {1} parameters
+Func.missingDefiningContext={0} must be used with a dot
+Func.missingNamedParam={0} missing required parameter {1}
 Func.missingParam={0} is meaningless without a parameter
+Func.missingReceivedValue={0} requires at least one received value, but didn't get anything
+Func.notModel={0} can only be used on Models
+Func.notProp={0} can only be used on Properties
 Func.notThing={0} didn't receive a Thing value
 Func.paramNotThing={0} parameter {1} should be a Thing
+Func.paramWrongType={0} parameter {1} should be of type {2} but is actually {3}
+Func.unknownParamName=Hit a reference to parameter {0}, which isn't listed in the parameters of {1}
+Func.unknownPropOID=Encountered unknown Property {0}; did you delete it?
 Func.unknownThing={0} received a link to an unknown Thing! (Maybe something got deleted?)
 Func.wrongType={0} didn't receive the expected type {1}
-Func.generalWrongType=Expecting type {0}, but actually got type {1}
-Func.paramWrongType={0} parameter {1} should be of type {2} but is actually {3}
-Func.missingDefiningContext={0} must be used with a dot
-Func.notProp={0} can only be used on Properties
-Func.unknownPropOID=Encountered unknown Property {0}; did you delete it?
-Func.emptyParamValue={0} expects a value in its parameter, but it is empty
-Func.unknownParamName=Hit a reference to parameter {0}, which isn't listed in the parameters of {1}
-Func.missingNamedParam={0} missing required parameter {1}
 
 Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export its instances.
 Imexport.unknownTag=That XML file contained unknown tag "{0}"
