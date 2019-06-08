@@ -14,6 +14,6 @@ package object client {
    * some pretty fancy implicit magic involved that I haven't managed to fold into globals yet.
    */
   trait Client extends EcologyInterface with autowire.Client[String, upickle.default.Reader, upickle.default.Writer] {
-    def translateServerException(ex: Throwable): Nothing
+    def translateServerException(ex: Throwable): Throwable
   }
 }

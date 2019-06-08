@@ -19,8 +19,8 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
-  def translateServerException(ex: Throwable): Nothing = {
+
+  def translateServerException(ex: Throwable): Throwable = {
     ex match {
       case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
         if (jqXHR.status == 412) {
@@ -29,31 +29,36 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
           // IMPORTANT: I suspect this doesn't return anything; we're tearing down the world
           // and starting again.
           PageManager.fullReload()
-        }
-        
-        try {
-          val aex = read[ApiException](jqXHR.responseText)
-          throw aex
-        } catch {
-          // The normal case -- the server sent an ApiException, which we will propagate up
-          // to the calling code:
-          case aex:querki.api.ApiException => throw aex
-          // The server sent a non-ApiException, which is unfortunate. Just display it:
-          case _:Throwable => {
-            if (jqXHR.status >= 500)
-              StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
-            else
+          ex
+        } else if (jqXHR.status == 504) {
+          // We got a Gateway Timeout, which basically means that the server took too long to respond, period. So there
+          // is no meaningful content here.
+          StatusLine.showUntilChange(s"The page took too long to display, and has failed. It may need simplifying to display in less time.")
+          ex
+        } else if (jqXHR.status >= 500) {
+          StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
+          ex
+        } else {
+          try {
+            read[ApiException](jqXHR.responseText)
+          } catch {
+            // The normal case -- the server sent an ApiException, which we will propagate up
+            // to the calling code:
+            case aex: querki.api.ApiException => aex
+            // The server sent a non-ApiException, which is unfortunate. Just display it:
+            case _: Throwable => {
               StatusLine.showUntilChange(jqXHR.responseText)
-            throw ex                
+              ex
+            }
           }
         }
       }
-      case _:Throwable => {
+      case _: Throwable => {
         // Well, that's not good.
         // TODO: should we have some mechanism to propagate this exception back to the server,
         // and log it? Probably...
         println(s"Client.interceptFailures somehow got non-PlayAjaxException $ex")
-        throw ex
+        ex
       }
     }
   }

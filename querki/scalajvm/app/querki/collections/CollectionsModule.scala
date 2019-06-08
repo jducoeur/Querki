@@ -806,7 +806,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       // find the first "real" PType in the list? Something involving the State monad?
       // TODO: no, it's worse than that: this is actually broken. InvocationValueImpl.flatMap() does
       // not guarantee the order of evaluation of the nested loops! So the typeCheck clause is
-      // thoroughly non-deterministic!
+      // thoroughly non-deterministic! This is probably why the unit test for this ("reject mismatched types")
+      // is proving flaky!
       var targetType: Option[PType[_]] = None
       for {
         n <- inv.iter(0 to (inv.numParams-1))
