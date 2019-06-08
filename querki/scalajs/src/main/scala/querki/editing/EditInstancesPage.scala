@@ -51,6 +51,7 @@ class EditInstancesPage(params:ParamMap)(implicit val ecology:Ecology) extends P
               p(" ")
             )
           },
+          paginator,
           div(querkiButton(MSeq(href:=thingUrl(modelInfo), "Done")))
         )
     }
