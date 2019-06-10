@@ -4,9 +4,9 @@ import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 import querki.globals._
-import querki.api.ThingFunctions
+import querki.api.{ThingFunctions, NotAllowedException}
 import querki.data.ThingInfo
-import querki.display.{QText}
+import querki.display.QText
 import org.querki.gadgets.core.GadgetLookup
 import querki.display.input.InputGadget
 import querki.editing.EditFunctions
@@ -60,7 +60,14 @@ class CreateAndEditPage(params:ParamMap)(implicit val ecology:Ecology) extends P
   def pageContent = for {
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()
     initVals <- initialValues
-    thingInfo <- Client[EditFunctions].create(modelId, initVals).call()
+    thingInfoFut = Client[EditFunctions].create(modelId, initVals).call()
+    _ = thingInfoFut.onFailure {
+      case ex: NotAllowedException => {
+        PageManager.nextChangeFuture.map(_.flash(true, "You aren't allowed to create things -- are you logged in?"))
+        PageManager.showRoot()
+      }
+    }
+    thingInfo <- thingInfoFut
     
     // TBD: this is grotesquely side-effecting -- if this is Publishable, we need
     // (for the moment) to redirect over to the Advanced Editor. Surely we can
