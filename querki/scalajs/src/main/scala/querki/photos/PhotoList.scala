@@ -5,8 +5,8 @@ import js.Math
 import org.scalajs.dom.{raw => domRaw, _}
 import org.querki.jquery._
 import scalatags.JsDom.all.{html => htmlTag, _}
-
 import querki.globals._
+import querki.util.ScalatagUtils
 
 /**
  * This pseudo-Gadget takes a List or Set of Photos, and turns them into a Bootstrap Carousel.
@@ -14,7 +14,7 @@ import querki.globals._
  * Note that this takes a very simple received div from the server, and massively mutates it
  * to make it Bootstrappy.
  */
-object PhotoList {
+object PhotoList extends ScalatagUtils {
   def hook(e:Element) = {
     // Remove the images; we'll re-attach them in a minute:
     val images = $(e).find(".item").get().asInstanceOf[js.Array[Element]]
@@ -33,6 +33,8 @@ object PhotoList {
         span(cls:="sr-only", slideHover)
       )
     }
+
+    val multiple = images.length > 1
     
     // The body of the new carousel. See
     //   http://getbootstrap.com/javascript/#carousel
@@ -46,20 +48,26 @@ object PhotoList {
         data("interval"):=false,
         
         // The indicators that you click on to choose a slide:
-        ol(cls:="carousel-indicators",
-          for (n <- 0 to images.length) 
-            yield li(
-              data("target"):=s"#$nodeId",
-              data("slide-to"):=n,
-              if (n == 0) cls:="active"
-            )
-        ),
+        if (multiple) {
+          ol(cls := "carousel-indicators",
+            for (n <- 0 to (images.length - 1))
+              yield li(
+                data("target") := s"#$nodeId",
+                data("slide-to") := n,
+                if (n == 0) cls := "active"
+              )
+          )
+        },
         
         // The slides themselves. These will get filled in below:
         div(cls:="carousel-inner", role:="listbox"),
-        
-        arrow("left", "prev", "Previous"),
-        arrow("right", "next", "Next")
+
+        if (multiple) {
+          MSeq(
+            arrow("left", "prev", "Previous"),
+            arrow("right", "next", "Next")
+          )
+        }
       )
     val newDiv = newDivTags.render
       
