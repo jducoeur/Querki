@@ -37,13 +37,11 @@ class Application @Inject() (val appProv:Provider[play.api.Application]) extends
     Ok.sendFile(new java.io.File(s"scala/$file"))
   }
   
-  // TODO: in the long run, we will want spidering of the main system pages, and allow users to
-  // choose to have their pages indexed. We're quite a ways from that, though.
   def robots = Action { implicit request =>
-    Ok("""# For the time being, Querki requests that robots stay out. This will change eventually.
+    Ok("""# We are experimentally allowing the robots in. If this severely harms system performance, we may turn it off again.
         
-user-agent: *
-disallow: /
+#user-agent: *
+#disallow: /
       
 user-agent: facebookexternalhit/1.1
 disallow:
