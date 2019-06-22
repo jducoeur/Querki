@@ -156,7 +156,7 @@ class QLParser(
       // If we haven't use the backslash for that, then just eat it as a normal character:
       "\\\\".r | 
       partialDelimiterRegex) ^^ { UnQLText(_) }
-  def qlNumber[QLNumber] = "\\s*".r ~> "\\-?\\d+".r ^^ { intStr => QLNumber(java.lang.Integer.parseInt(intStr)) }
+  def qlNumber[QLNumber] = "\\s*".r ~> "\\-?\\d+".r ^^ { intStr => QLNumber(java.lang.Long.parseLong(intStr)) }
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
@@ -509,7 +509,10 @@ class QLParser(
   }
   
   private def processNumber(num:QLNumber, context:QLContext):QLContext = {
-    context.next(Core.ExactlyOne(Core.IntType(num.n)))
+    if (num.n >= Integer.MAX_VALUE || num.n <= Integer.MIN_VALUE)
+      context.next(Core.ExactlyOne(Core.LongType(num.n)))
+    else
+      context.next(Core.ExactlyOne(Core.IntType(num.n.toInt)))
   }
   
   // TODO: this is now obsolete, since List Literals now desugar to _concat, so I think it can

@@ -27,7 +27,8 @@ object SystemCreator {
    */
   def createStubbableEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef) = {
     new querki.system.SystemEcot(ecology, actorSystem, asyncInitTarget)             // 18
-    new controllers.PublicUrlDefinitions(ecology)                  // 53    
+    new controllers.PublicUrlDefinitions(ecology)                  // 53
+    new querki.time.TimeProviderEcot(ecology)                      // 75
   }
   
   /**
@@ -114,6 +115,7 @@ object SystemCreator {
     new querki.identity.IdentityCommands(ecology)                  // 72
     new querki.datamodel.ChoiceEcot(ecology)                       // 73
     new querki.notifications.UserlandNotifierEcot(ecology)         // 74
+                                    // 75
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {

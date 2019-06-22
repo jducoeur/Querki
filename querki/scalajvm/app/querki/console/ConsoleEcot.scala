@@ -28,6 +28,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val System = interface[querki.system.System]
+  lazy val TimeProvider = interface[querki.time.TimeProvider]
   
   override def postInit() = {
     ApiRegistry.registerApiImplFor[ConsoleFunctions, ConsoleFunctionsImpl](SpaceOps.spaceRegion, true, true)
@@ -38,7 +39,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
       case stateImpl:SpaceApiImpl => stateImpl.state
       case _ => System.State
     }
-    val qlContext = QLContext(ExactlyOne(LinkType(state)), Some(context.rc))
+    val qlContext = QLContext(ExactlyOne(LinkType(state)), Some(context.rc), TimeProvider.qlEndTime)
     val cmdText = QLText(cmdStr)
     
     // First, we process the command as QL. Note that we do this completely ignoring permissions

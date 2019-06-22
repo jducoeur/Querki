@@ -52,6 +52,7 @@ QL.self.notDotted=The _self function can only be used when dotted after a proper
 QL.isBound.notABinding=The parameter to _isBound must be a binding, such as "$query".
 QL.unknownName=There is no Thing named "{0}" -- might be a typo? If you want to use that name as a Tag, put it in backticks.
 QL.unknownThingId=There is no Thing with OID "{0}".
+QL.timeout=This took too long to display -- it might need to be simplified.
 
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.

@@ -28,6 +28,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   lazy val QL = interface[querki.ql.QL]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val Stylesheets = interface[querki.css.Stylesheets]
+  lazy val TimeProvider = interface[querki.time.TimeProvider]
   
   def doRoute(req:Request):Future[String] = route[ThingFunctions](this)(req)
   
@@ -91,7 +92,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     implicit val r = rc
     implicit val s = state
     val (qv, bindings) = QL.deserializeContext(serializedContext)
-    val context = querki.values.QLContext(qv, Some(rc))
+    val context = querki.values.QLContext(qv, Some(rc), TimeProvider.qlEndTime)
     val lexicalContext = lexicalOpt.flatMap { lex =>
       val oid = ThingId(lex.underlying)
       state.anything(oid)

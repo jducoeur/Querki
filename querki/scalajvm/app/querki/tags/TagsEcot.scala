@@ -25,6 +25,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   
   lazy val PropPaths = interface[querki.types.PropPaths]
   lazy val QL = interface[querki.ql.QL]
+  lazy val TimeProvider = interface[querki.time.TimeProvider]
   
   lazy val PlainTextType = Basic.PlainTextType
   lazy val NameType = Core.NameType
@@ -220,7 +221,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))
-      val nameAsContext = QLContext(nameVal, Some(rc))
+      val nameAsContext = QLContext(nameVal, Some(rc), TimeProvider.qlEndTime)
       // TODO: the link below shouldn't be so hard-coded!
       propAndValOpt.map(pv => pv.render(nameAsContext)).
         getOrElse(Future.successful(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")")))

@@ -19,6 +19,8 @@ querki {
   
   app {
     urlRoot : "PUBLIC URL OF THIS SITE"
+    # How long to let a QL expression process before timing it out
+    qlTimeout : 30 seconds
   }
   
   akka {

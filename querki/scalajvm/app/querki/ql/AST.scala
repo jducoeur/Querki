@@ -16,7 +16,7 @@ import querki.values.QLContext
 // Marker trait for the types that can be results of parsing a complete QLText.
 sealed trait QLParseResultVal
 
-case class QLNumber(n:Int) extends QLStage(None) {
+case class QLNumber(n:Long) extends QLStage(None) {
   def reconstructString = n.toString
 }
 

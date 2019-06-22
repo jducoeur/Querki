@@ -1,6 +1,7 @@
 package querki.values
 
 import models._
+import com.github.nscala_time.time.Imports.DateTime
 
 import querki.ecology._
 
@@ -24,7 +25,8 @@ sealed trait ContextFlag
  */
 case object ShowLinksAsFullAnchors extends ContextFlag
 
-case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
+case class QLContext(value:QValue, requestOpt:Option[RequestContext], endTime: DateTime,
+                     parentOpt:Option[QLContext] = None,
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
                      fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None,
@@ -299,7 +301,10 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
  * Play template level.
  */
 object QLRequestContext {
-  def apply(request:RequestContext)(implicit state:SpaceState, ecology:Ecology) = QLContext(EmptyValue.untyped, Some(request))
+  def apply(request:RequestContext)(implicit state:SpaceState, ecology:Ecology) = {
+    val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
+    QLContext(EmptyValue.untyped, Some(request), endTime)
+  }
 }
 
 /**
@@ -310,5 +315,8 @@ object QLRequestContext {
  * TODO: deprecate and remove this.
  */
 object EmptyContext {
-  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)(ecology.api[querki.system.System].State, ecology)
+  def apply(implicit ecology:Ecology) = {
+    val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
+    QLContext(EmptyValue.untyped, None, endTime)(ecology.api[querki.system.System].State, ecology)
+  }
 }

@@ -1,19 +1,15 @@
 package querki.test
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, Actor, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion
-
-import org.scalatest.{WordSpec, BeforeAndAfterAll, Matchers}
-
-import models.{OID, Thing}
-
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import models.{Thing, OID}
 import querki.core.QLText
-
 import querki.ecology._
 import querki.globals._
 import querki.identity.User
-
-import querki.values.{QLContext, RequestContext, SpaceState}
+import querki.time.{DateTime, TimeProvider}
+import querki.values.{SpaceState, QLContext, RequestContext}
 
 class QuerkiTests 
   extends WordSpec
@@ -39,19 +35,40 @@ class QuerkiTests
       Some(ActorRef.noSender)
     }
   }
-  
+
+  class ControllableTimeProvider(e: Ecology) extends QuerkiEcot(e) with TimeProvider {
+    var _now: Option[DateTime] = None
+
+    def setTime(time: DateTime): Unit = _now = Some(time)
+
+    def now = _now.getOrElse(DateTime.now)
+
+    def qlEndTime = new DateTime(now.getMillis + maxRunTime)
+
+    // A short conceptual timeout for tests
+    def maxRunTime: Int = 5000
+  }
+
+  /**
+    * Use this to control the current time during testing.
+    */
+  def setTime(time: DateTime): Unit = {
+    ecology.api[querki.time.TimeProvider].asInstanceOf[ControllableTimeProvider].setTime(time)
+  }
+
   /**
    * This is the method to add the Ecots into the Ecology. By default, it creates the whole world, but
    * that is not required -- feel free to override this with a version that instantiates only some of them,
    * and stubs out others.
    */
-  def createEcots(e:Ecology) = {
+  def createEcots(e:Ecology): Unit = {
     querki.system.SystemCreator.createTestableEcots(e)
 
     // Testable stubs:
     new PublicUrlStub(e)
     new SystemEcotSemiStub(e, None)
     new UserAccessStub(e)
+    new ControllableTimeProvider(e)
   }
   
   def createEcology() = {

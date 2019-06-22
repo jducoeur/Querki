@@ -151,6 +151,9 @@ abstract class PropertyBundleOps(bundle:PropertyBundle)(implicit val ecology:Eco
    * Given the request we're operating within, this produces a Context you can use for
    * handle QL expressions.
    */
-  def thisAsContext(implicit request:RequestContext, state:SpaceState, ecology:Ecology):QLContext = QLContext(thisAsQValue, Some(request))
+  def thisAsContext(implicit request:RequestContext, state:SpaceState, ecology:Ecology):QLContext = {
+    val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
+    QLContext(thisAsQValue, Some(request), endTime)
+  }
   
 }

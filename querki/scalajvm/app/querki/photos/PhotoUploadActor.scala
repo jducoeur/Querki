@@ -42,6 +42,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
   lazy val Core = interface[querki.core.Core]
   lazy val PhotosInternal = interface[PhotosInternal]
   lazy val QL = interface[querki.ql.QL]
+  lazy val TimeProvider = interface[querki.time.TimeProvider]
   
   object AWS {
     def get(name:String) = Config.getString("querki.aws." + name)
@@ -219,7 +220,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
             val lastElem = qv.cv.last
-            val processFut = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc))(newState, ecology))
+            val processFut = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc), TimeProvider.qlEndTime)(newState, ecology))
             loopback(processFut) map { wikified =>
               sender ! PhotoInfo(wikified)
               finish()

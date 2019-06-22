@@ -40,8 +40,6 @@ private[ql] case class IVData[T](
 private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[T]])(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
 { self =>
-  lazy val QL = interface[QL]
-  
   def map[R](f:T => R):InvocationValue[R] = {
     val maps = fut.map(data => IVData(data.vs.map(v => f(v)), data.metadata))
     InvocationValueImpl(inv, maps)
@@ -49,12 +47,20 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[
   
   def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R] = {
     val results = fut.flatMap { data =>
-      val subs = data.vs.map(f(_)).map(_.asInstanceOf[InvocationValueImpl[R]])
-      val subFuts = subs.map(_.fut)
-      Future.sequence(subFuts) map { subDatas =>
-        val resultVs = subDatas.map(_.vs).flatten
-        val resultMetas = (data.metadata /: subDatas.map(_.metadata)) (_ + _)
-        IVData(resultVs, resultMetas)
+      // Check for timeouts. This is decidedly rough and ready, but should generally suffice to shut things down
+      // if they get pathological. When the QL pipeline gets rewritten to be properly monadic, we should be able
+      // to do this much more cleanly:
+      val timeProvider = ecology.api[querki.time.TimeProvider]
+      if (timeProvider.now.getMillis > inv.context.endTime.getMillis) {
+        Future.failed(PublicException("QL.timeout"))
+      } else {
+        val subs = data.vs.map(f(_)).map(_.asInstanceOf[InvocationValueImpl[R]])
+        val subFuts = subs.map(_.fut)
+        Future.sequence(subFuts) map { subDatas =>
+          val resultVs = subDatas.map(_.vs).flatten
+          val resultMetas = (data.metadata /: subDatas.map(_.metadata)) (_ + _)
+          IVData(resultVs, resultMetas)
+        }
       }
     }
     

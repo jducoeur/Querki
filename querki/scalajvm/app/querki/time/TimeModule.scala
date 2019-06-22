@@ -1,19 +1,32 @@
 package querki.time
 
 import scala.xml.NodeSeq
-
 import com.github.nscala_time.time.Imports._
 import com.github.nscala_time.time.StaticDateTime
-
 import org.querki.requester.RequestM
-
 import models._
-
 import querki.ecology._
 import querki.globals._
-import querki.spaces.{ThingChangeRequest, TCRReq}
-import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.spaces.{TCRReq, ThingChangeRequest}
+import querki.values.{SpaceState, ElemValue, QLContext}
 import querki.util.{Contributor, Publisher}
+
+class TimeProviderEcot(e: Ecology) extends QuerkiEcot(e) with TimeProvider {
+
+  /**
+    * The default definition, for real code, just forwards to the underlying DateTime.
+    */
+  def now: DateTime = DateTime.now
+
+  /**
+    * We default to a 30-second timeout for QL operations.
+    */
+  val maxRunTime: Int = Config.getInt("querki.app.qlTimeout", 30000)
+
+  def qlEndTime: DateTime = {
+    new DateTime(now.getMillis + maxRunTime)
+  }
+}
 
 /**
  * The TimeModule is responsible for all things Time-related in the Querki API.
@@ -84,7 +97,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       }
     }
   }
-    
+
   /******************************************
    * TYPES
    ******************************************/

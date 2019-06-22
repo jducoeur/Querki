@@ -1,12 +1,10 @@
 package querki
 
-import models.{Property, PType, PTypeBuilder, Thing}
-
+import models.{PTypeBuilder, Thing, PType, Property}
 import com.github.nscala_time.time._
-
 import querki.ecology._
 import querki.globals._
-import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
+import querki.types.{SimplePropertyBundle, ModeledPropertyBundle}
 
 /**
  * At least for the time being, querki.time is mostly nscala-time with some tweaks.
@@ -35,6 +33,24 @@ package object time extends Imports with Implicits {
   trait Time extends EcologyInterface {
     def QDate:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
     def QDateTime:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
+  }
+
+  trait TimeProvider extends EcologyInterface {
+    /**
+      * This is the officially approved way to get the current time.
+      *
+      * Use this in preference to DateTime.now, so that test code can simulate time passing.
+      *
+      * TODO: there is undoubtedly a *vast* amount of code that should be rewritten to use this.
+      */
+    def now: DateTime
+
+    /**
+      * The time when a QL expression starting now should finish by.
+      *
+      * We stick this into the QLContext so that processing can cut things off if they run too long.
+      */
+    def qlEndTime: DateTime
   }
   
   implicit class RichDateTime(val dt:DateTime) extends AnyVal {
