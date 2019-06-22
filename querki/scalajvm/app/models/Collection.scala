@@ -63,6 +63,10 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m
   def wrap(elem:ElemValue):implType
   def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
   def apply(elem:ElemValue):QValue = makePropValue(wrap(elem), elem.pType)
+  def apply[VT](pt: PType[VT])(vs: Iterable[VT]): QValue = {
+    val elemVals = vs.map(ElemValue(_, pt))
+    makePropValue(elemVals, pt)
+  }
   
   /**
    * Collections must implement this -- it builds the HTML representation of how to input this

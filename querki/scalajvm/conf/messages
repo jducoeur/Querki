@@ -75,6 +75,7 @@ Space.modifyThing.illegalCollectionChange=You are not current allowed to change 
 
 Tags.noProp="{0}" is a Tag; you can not fetch Property "{1}" from it
 
+Text.positions.subEmpty=_positions requires a non-empty Text for its parameter
 Text.toCase.badOption={0} isn't a legal parameter for _toCase
 
 Thing.find.noSuch=That path does not point to a Thing that you are allowed to see.

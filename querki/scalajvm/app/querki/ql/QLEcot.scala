@@ -331,7 +331,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     toProps(
       setName("Parsed Text Type"),
       Categories(QLTag),
-      Summary("This is an internal Text Type that results from the system parsing some Text"))) with SimplePTypeBuilder[Wikitext]
+      Summary("This is an internal Text Type that results from the system parsing some Text")))
+    with SimplePTypeBuilder[Wikitext] with querki.core.IsTextType
   {
     // We didn't originally permit serialization of Wikitext, but do now for Notifications. Since we want to
     // retain the Wikitext's structure properly, we are serializing it using upickle, since that's the
@@ -381,6 +382,16 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
         }
         case _ => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
       }
+    }
+
+    def rawString(elem: ElemValue): String = {
+      elem.elem match {
+        case w: Wikitext => w.plaintext
+        case _ => throw new Exception(s"ParsedTextType.rawString() got invalid value $elem!")
+      }
+    }
+    def apply(raw: String): ElemValue = {
+      ElemValue(Wikitext(raw), this)
     }
   }
   

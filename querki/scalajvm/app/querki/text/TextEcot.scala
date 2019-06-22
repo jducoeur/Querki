@@ -1,14 +1,13 @@
 package querki.text
 
 import querki.globals._
-
 import querki.ecology._
-
 import models.Wikitext
+import querki.core.IsTextType
+import querki.ql.{QLExp, QLCall, QLParam}
+import querki.values.QLContext
 
-import querki.core.QLText
-import querki.ql.{QLCall, QLParam, QLExp}
-import querki.values.{QFut, QLContext}
+import scala.annotation.tailrec
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
@@ -18,12 +17,14 @@ object MOIDs extends EcotIds(23) {
   val SubstringOID = moid(2)
   val TextLengthOID = moid(3)
   val ToCaseOID = moid(4)
+  val TextPositionsMethodOID = moid(5)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
-  
-  lazy val QL = interface[querki.ql.QL]
+
+  val Collections = initRequires[querki.collections.Collections]
+  val QL = initRequires[querki.ql.QL]
   
   val TextTag = "Text"
 
@@ -361,13 +362,43 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
         yield ExactlyOne(TextType(result))
     }
   }
-  
+
+  lazy val textPositionsMethodImpl = new FunctionImpl(TextPositionsMethodOID, Collections.PositionsMethod,
+    Seq(TextType, LargeTextType, QL.ParsedTextType))
+  {
+    @tailrec
+    def indexes(str: String, sub: String, curPos: Int, soFar: List[Int]): List[Int] = {
+      if (str.isEmpty)
+        soFar
+      else {
+        val next = str.indexOf(sub, curPos)
+        if (next == -1)
+          soFar
+        else
+          indexes(str, sub, next + sub.length, next +: soFar)
+      }
+    }
+
+    override def qlApply(inv: Invocation): QFut = {
+      for {
+        textType <- inv.contextTypeAs[IsTextType]
+        elemContext <- inv.contextElements
+        text = textType.rawString(elemContext.value.first)
+        subStr <- inv.processParamFirstAs(0, TextType)
+        _ <- inv.test(!(subStr.text.isEmpty), "Text.positions.subEmpty", Seq.empty)
+        ind = indexes(text, subStr.text, 0, Nil).reverse
+      }
+        yield QList(IntType)(ind)
+    }
+  }
+
   override lazy val props = Seq(
     PluralizeMethod,
     JoinMethod,
     MatchCaseMethod,
     SubstringMethod,
     TextLengthMethod,
-    ToCaseMethod
+    ToCaseMethod,
+    textPositionsMethodImpl
   )
 }

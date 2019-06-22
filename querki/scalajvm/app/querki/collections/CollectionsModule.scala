@@ -29,9 +29,10 @@ object MOIDs extends EcotIds(6) {
   val RandomOID = moid(8)
   val IsContainedInMethodOID = moid(9)
   val FoldFunctionOID = moid(10)
+  val PositionsMethodOID = moid(11)
 }
 
-class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
+class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils with Collections {
   import MOIDs._
 
   lazy val Basic = interface[querki.basic.Basic]
@@ -933,7 +934,20 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         }
       }
     }
-  }  
+  }
+
+  lazy val PositionsMethod = new AbstractFunction(PositionsMethodOID, Received,
+    toProps(
+      setName("_positions"),
+      Categories(CollTag),
+      Summary("Find the positions of a given value inside the received value"),
+      Details(
+        """    VALUE -> _positions(SUBVALUE) -> LIST
+          |This looks for `SUBVALUE` inside of `VALUE`, and returns a list of all locations where it is found.
+          |The exact meaning of "locations" depends on the type of `VALUE`. If `SUBVALUE` is not found, the resulting
+          |list will be empty.
+        """.stripMargin)
+    ))
   
   override lazy val props = Seq(
     FirstMethod,
@@ -955,7 +969,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     nextInListMethod,
     foreachMethod,
     containsMethod,
-    isContainedInMethod
+    isContainedInMethod,
+    PositionsMethod
   )
   
 }

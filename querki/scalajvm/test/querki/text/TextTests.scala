@@ -72,6 +72,52 @@ class TextTests extends QuerkiTests with ModelPersistence with querki.types.Mode
       pql("""[[Joe -> ze]]""") should equal("he")
     }
   }
+
+  "_positions" should {
+    "work for a single hit" in {
+      implicit val s = commonSpace
+
+      pql("""[[""hello there"" -> _positions(""lo"")]]""") should
+        equal(listOf("3"))
+    }
+
+    "work for multiple hits" in {
+      implicit val s = commonSpace
+
+      pql("""[[""lololol"" -> _positions(""lo"")]]""") should
+        equal(listOf("0", "2", "4"))
+    }
+
+    "work for no hits" in {
+      implicit val s = commonSpace
+
+      pql("""[[""the quick brown cow"" -> _positions(""lo"")]]""") should
+        equal(listOf())
+    }
+
+    "let me easily test for the existence of a substring" in {
+      implicit val s = commonSpace
+
+      pql("""[[""the quick brown cow"" -> _positions(""lo"") -> _isEmpty]]""") should
+        equal("true")
+      pql("""[[""lololol"" -> _positions(""lo"") -> _isEmpty]]""") should
+        equal("false")
+    }
+
+    "cope with an empty input" in {
+      implicit val s = commonSpace
+
+      pql("[[\"\"\"\" -> _positions(\"\"lo\"\")]]") should
+        equal(listOf())
+    }
+
+    "error on an empty substring" in {
+      implicit val s = commonSpace
+
+      pql("[[\"\"the quick brown cow\"\" -> _positions(\"\"\"\")]]") should
+        equal(expectedWarning("Text.positions.subEmpty"))
+    }
+  }
   
   "_substring" should {
     "allow oid manipulation" in {
