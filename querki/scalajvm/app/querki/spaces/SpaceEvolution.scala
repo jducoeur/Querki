@@ -4,7 +4,7 @@ import models.{OID, ThingState}
 import querki.basic.Basic
 import querki.globals.{SpaceState, Ecology}
 import querki.identity.{User, Person}
-import querki.publication.{Publication, PublicationState}
+import querki.publication.{Publication, PublicationState, CurrentPublicationState}
 import querki.spaces.messages.CurrentState
 import querki.system.System
 import querki.uservalues.PersistMessages.OneUserValue
@@ -21,7 +21,7 @@ object SpaceEvolution {
   def updateForUser(
     oldState: Option[SpaceState]
   )(
-    user: User, userValues: Seq[OneUserValue], pubState: Option[PublicationState]
+    user: User, userValues: Seq[OneUserValue], pubState: Option[CurrentPublicationState]
   )(
     changes: CurrentState
   )(implicit ecology: Ecology): SpaceState = {
@@ -92,7 +92,6 @@ object SpaceEvolution {
       ecology.api[Publication].enhanceState(stateWithUV, ps)
     }.getOrElse(stateWithUV)
   }
-
 
   /**
     * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
