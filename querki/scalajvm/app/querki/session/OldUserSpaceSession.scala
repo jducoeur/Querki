@@ -1,34 +1,29 @@
 package querki.session
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
-
+import scala.util.{Success, Failure}
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
-
 import upickle.default._
 import autowire._
-
 import org.querki.requester._
-
 import models._
-
 import querki.globals._
-
 import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.api._
 import querki.identity.{Identity, User}
 import querki.history.SpaceHistory._
 import querki.publication.CurrentPublicationState
 import querki.session.messages._
-import querki.spaces.messages.{ChangeProps, CurrentState, SpaceSubsystemRequest, SpacePluginMsg, ThingError, ThingFound}
+import querki.spaces.SpaceEvolution
+import querki.spaces.messages.{SpaceSubsystemRequest, ThingError, CurrentState, SpacePluginMsg, ThingFound, ChangeProps}
 import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
 import querki.uservalues.SummarizeChange
 import querki.uservalues.PersistMessages._
-import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
-import querki.values.{QValue, RequestContext, SpaceState}
+import querki.util.{PublicException, UnexpectedPublicException, TimeoutChild, QLog}
+import querki.values.{SpaceState, RequestContext, QValue}
 
 /**
  * The Actor that controls an individual's relationship with a Space.
@@ -60,15 +55,15 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     }
   }
   
-  /**
-   * IMPORTANT: this must be set before we begin any serious work! This is why we start
-   * in a rudimentary state, and don't become useful until it is received.
-   */
-  var _rawState:Option[SpaceState] = None
-  def setRawState(s:SpaceState) = {
-    clearEnhancedState()
-    _rawState = Some(s)
-  }
+//  /**
+//   * IMPORTANT: this must be set before we begin any serious work! This is why we start
+//   * in a rudimentary state, and don't become useful until it is received.
+//   */
+//  var _rawState:Option[SpaceState] = None
+//  def setRawState(s:SpaceState) = {
+//    clearEnhancedState()
+//    _rawState = Some(s)
+//  }
   var _publicationState:Option[CurrentPublicationState] = None
   def setPublicationState(s:CurrentPublicationState) = {
     clearEnhancedState()
@@ -98,93 +93,130 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     Person.hasPerson(user, thingId)
   }
 
-  var _enhancedState:Option[SpaceState] = None
+  /**
+    * The state as originally received from the Space Actor, with no filtering.
+    *
+    * USE THIS WITH EXTREME CARE! In general, stuff should be using the enhanced state instead.
+    */
+  var _rawState:Option[SpaceState] = None
+  /**
+    * The state without the bits that this User isn't allowed to see. Recomputed every time we get a change.
+    */
+  var _filteredState: Option[SpaceState] = None
+
+  /**
+    * The filtered state, plus publication and userValues if appropriate. Recomputed lazily when needed.
+    */
+  var _enhancedState: Option[SpaceState] = None
   def clearEnhancedState() = _enhancedState = None
-  def makeEnhancedState():SpaceState = {
-    _rawState match {
-      case Some(rs) => {
-        // Managers act as Owners for purposes of being able to read everything:
-        val isManager = AccessControl.isManager(user, rs)
-        val safeState =
-          if (isManager) {
-            rs
-          } else {
-            // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
-            // caching, and do much more sensitive updating as things change.
-            val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
-              val (thingId, thing) = thingPair
-              // Note that we need to pass rs into canRead(), not curState. That is because curState can
-              // be in an inconsistent state while we're in the middle of all this. For example, we may
-              // have already exised a Model from curState (because we don't have permission) when we get
-              // to an Instance of that Model. Things can then get horribly confused when we try to look
-              // at the Instance, try to examine its Model, and *boom*.
-              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
-                // Remove any SystemHidden Properties from this Thing, if there are any:
-                if (hiddenOIDs.exists(thing.props.contains(_))) {
-                  val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
-                  curState.copy(things = (curState.things + (newThing.id -> newThing)))
-                } else
-                  curState
-              } else
-                curState.copy(things = (curState.things - thingId))
-            }
-            monitor(s"... finished read filtering")
-            
-            if (AccessControl.canRead(readFiltered, user, rs.id))
-              readFiltered
-            else {
-              // This user isn't allowed to read the Root Page, so give them a stub instead.
-              // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
-              // bits of the Space while not breaking it entirely is tricky. Think about how to
-              // do this better.
-              readFiltered.copy(pf = readFiltered.props + 
-                  (Basic.DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
-            }
-          }
-        
-        val stateWithUV = (safeState /: userValues) { (curState, uv) =>
-          if (uv.thingId == curState.id) {
-            // We're enhancing the Space itself:
-            curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
-          }
-          else curState.anything(uv.thingId) match {
-            case Some(thing:ThingState) => {
-              val newThing = thing.copy(pf = thing.props + (uv.propId -> uv.v))
-              curState.copy(things = curState.things + (newThing.id -> newThing))
-            }
-            // Yes, this looks like an error, but it isn't: it means that there was a UserValue
-            // for a deleted Thing.
-            case _ => curState
-          }
-        }
-        
-        // If there is a PublicationState, overlay that on top of the rest:
-        // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
-        // Publishers currently won't see their User Values if there are changes to the Instance.
-        // TODO (QI.7w4g8nd): this will need rationalization, especially once we get to Experiments. But by and
-        // large, I expect to be bringing more stuff into here.
-        _publicationState.map { ps =>
-          Publication.enhanceState(stateWithUV, ps)
-        }.getOrElse(stateWithUV)
-      }
-      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
-    }
+
+  def handleStateChange(stateChange: CurrentState) = {
+    _rawState = Some(stateChange.state)
+    clearEnhancedState()
+    _filteredState = Some(SpaceEvolution.updateForUser(_filteredState)(user)(stateChange))
   }
+
+//  def makeEnhancedState():SpaceState = {
+//    _rawState match {
+//      case Some(rs) => {
+//        // Managers act as Owners for purposes of being able to read everything:
+//        val isManager = AccessControl.isManager(user, rs)
+//        val safeState =
+//          if (isManager) {
+//            rs
+//          } else {
+//            // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
+//            // caching, and do much more sensitive updating as things change.
+//            val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
+//              val (thingId, thing) = thingPair
+//              // Note that we need to pass rs into canRead(), not curState. That is because curState can
+//              // be in an inconsistent state while we're in the middle of all this. For example, we may
+//              // have already exised a Model from curState (because we don't have permission) when we get
+//              // to an Instance of that Model. Things can then get horribly confused when we try to look
+//              // at the Instance, try to examine its Model, and *boom*.
+//              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
+//                // Remove any SystemHidden Properties from this Thing, if there are any:
+//                if (hiddenOIDs.exists(thing.props.contains(_))) {
+//                  val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
+//                  curState.copy(things = (curState.things + (newThing.id -> newThing)))
+//                } else
+//                  curState
+//              } else
+//                curState.copy(things = (curState.things - thingId))
+//            }
+//            monitor(s"... finished read filtering")
+//
+//            if (AccessControl.canRead(readFiltered, user, rs.id))
+//              readFiltered
+//            else {
+//              // This user isn't allowed to read the Root Page, so give them a stub instead.
+//              // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
+//              // bits of the Space while not breaking it entirely is tricky. Think about how to
+//              // do this better.
+//              readFiltered.copy(pf = readFiltered.props +
+//                  (Basic.DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
+//            }
+//          }
+//
+//        val stateWithUV = (safeState /: userValues) { (curState, uv) =>
+//          if (uv.thingId == curState.id) {
+//            // We're enhancing the Space itself:
+//            curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
+//          }
+//          else curState.anything(uv.thingId) match {
+//            case Some(thing:ThingState) => {
+//              val newThing = thing.copy(pf = thing.props + (uv.propId -> uv.v))
+//              curState.copy(things = curState.things + (newThing.id -> newThing))
+//            }
+//            // Yes, this looks like an error, but it isn't: it means that there was a UserValue
+//            // for a deleted Thing.
+//            case _ => curState
+//          }
+//        }
+//
+//        // If there is a PublicationState, overlay that on top of the rest:
+//        // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
+//        // Publishers currently won't see their User Values if there are changes to the Instance.
+//        // TODO (QI.7w4g8nd): this will need rationalization, especially once we get to Experiments. But by and
+//        // large, I expect to be bringing more stuff into here.
+//        _publicationState.map { ps =>
+//          Publication.enhanceState(stateWithUV, ps)
+//        }.getOrElse(stateWithUV)
+//      }
+//      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
+//    }
+//  }
   /**
    * The underlying SpaceState, plus all of the UserValues for this Identity.
    * 
    * This is effectively a lazy val that gets recalculated after we get a new rawState.
    */
-  def state = {
-    if (_enhancedState.isEmpty) {
-      _enhancedState = Some(makeEnhancedState())
-      whenStateReady(_enhancedState.get)
+  def state = _filteredState match {
+    case Some(s) => {
+      if (_enhancedState.isEmpty) {
+        val withUV = SpaceEvolution.enhanceWithUserValues(s, userValues)
+        _enhancedState = Some(SpaceEvolution.enhanceWithPublication(withUV, _publicationState))
+      }
+      _enhancedState.get
     }
-    _enhancedState.get
+    case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
   }
+//  {
+//    if (_enhancedState.isEmpty) {
+//      _enhancedState = Some(makeEnhancedState())
+//      whenStateReady(_enhancedState.get)
+//    }
+//    _enhancedState.get
+//  }
   
   /**
    * This is executed each time we receive a new SpaceState.
+    *
+    * TODO: we're not currently calling this! Deal with this idiotic edge condition in some smarter way. At the
+    * least, deal with it at load time, not every time we get a new SpaceState as it previously had been doing,
+    * and maybe have an additional handler when I change my name that deals with all current Spaces of mine?
+    *
+    * *And* this seems to be redundant with checkDisplayName() below!!!
    */
   def whenStateReady(implicit state:SpaceState) = {
     // Do I have the right Display Name? If I've changed my Identity's Display Name (which is very common
@@ -268,6 +300,9 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * TODO: we're currently checking this on every SpaceSubsystemRequest, which is certainly overkill. Once we have a
    * real UserSession object, and it knows about the UserSpaceSessions, that should instead pro-actively notify
    * all of them about the change, so we don't have to hack around it.
+    *
+    * TODO: is this actually redundant with whenStateReady()?!? Do we have *two* different pathways doing this idiotic
+    * misfeature? It does strongly show just how bad the design is.
    * 
    * TBD: in general, the way we have denormalized the Display Name between Identity and Person is kind of suspicious.
    * There are good efficiency arguments for it, but I am suspicious.
@@ -297,8 +332,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * stay there for the rest of this actor's life.
    */
   def receive = LoggingReceive {
-    case CurrentState(s, _) => {
-      setRawState(s)
+    case change @ CurrentState(s, _) => {
+      handleStateChange(change)
       // Now, fetch the UserValues
       // In principle, we should probably parallelize waiting for the SpaceState and UserValues:
       // the current behaviour hits first-load latency slightly. OTOH, in the interest of not hammering
@@ -372,7 +407,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
   def normalReceive:Receive = LoggingReceive {
-    case CurrentState(s, _) => setRawState(s)
+    case change @ CurrentState(s, _) => handleStateChange(change)
     
     case ps:CurrentPublicationState => setPublicationState(ps)
     

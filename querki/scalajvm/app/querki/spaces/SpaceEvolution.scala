@@ -17,11 +17,21 @@ object SpaceEvolution {
   /**
     * This combines the various streams of information about a Space, and figures out how to handle it for this
     * specific user.
+    *
+    * TODO: update more efficiently, based on the given changes. Only do a full recompute for edge cases!
+    *
+    * @param oldState the previous filtered state for this User
+    * @param user who we are filtering for
+    * @param userValues the UserValues for this User
+    * @param pubState the current state of Publications, if any
+    * @param changes a new event that is changing the state of this Space
+    *
+    * @return the new state, appropriately filtered for this user
     */
   def updateForUser(
     oldState: Option[SpaceState]
   )(
-    user: User, userValues: Seq[OneUserValue], pubState: Option[CurrentPublicationState]
+    user: User
   )(
     changes: CurrentState
   )(implicit ecology: Ecology): SpaceState = {
@@ -30,44 +40,47 @@ object SpaceEvolution {
 
     // Managers act as Owners for purposes of being able to read everything:
     val isManager = AccessControl.isManager(user, rs)
-    val safeState =
-      if (isManager) {
-        rs
-      } else {
-        // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
-        // caching, and do much more sensitive updating as things change.
-        val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
-          val (thingId, thing) = thingPair
-          // Note that we need to pass rs into canRead(), not curState. That is because curState can
-          // be in an inconsistent state while we're in the middle of all this. For example, we may
-          // have already exised a Model from curState (because we don't have permission) when we get
-          // to an Instance of that Model. Things can then get horribly confused when we try to look
-          // at the Instance, try to examine its Model, and *boom*.
-          if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId, user)(rs, ecology)) {
-            // Remove any SystemHidden Properties from this Thing, if there are any:
-            val hiddenOIDs = ecology.api[System].hiddenOIDs
-            if (hiddenOIDs.exists(thing.props.contains(_))) {
-              val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
-              curState.copy(things = (curState.things + (newThing.id -> newThing)))
-            } else
-              curState
+    if (isManager) {
+      rs
+    } else {
+      // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
+      // caching, and do much more sensitive updating as things change.
+      val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
+        val (thingId, thing) = thingPair
+        // Note that we need to pass rs into canRead(), not curState. That is because curState can
+        // be in an inconsistent state while we're in the middle of all this. For example, we may
+        // have already exised a Model from curState (because we don't have permission) when we get
+        // to an Instance of that Model. Things can then get horribly confused when we try to look
+        // at the Instance, try to examine its Model, and *boom*.
+        if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId, user)(rs, ecology)) {
+          // Remove any SystemHidden Properties from this Thing, if there are any:
+          val hiddenOIDs = ecology.api[System].hiddenOIDs
+          if (hiddenOIDs.exists(thing.props.contains(_))) {
+            val newThing = thing.copy(pf = {
+              (thing.props -- hiddenOIDs)
+            })
+            curState.copy(things = (curState.things + (newThing.id -> newThing)))
           } else
-            curState.copy(things = (curState.things - thingId))
-        }
-
-        if (AccessControl.canRead(readFiltered, user, rs.id))
-          readFiltered
-        else {
-          // This user isn't allowed to read the Root Page, so give them a stub instead.
-          // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
-          // bits of the Space while not breaking it entirely is tricky. Think about how to
-          // do this better.
-          readFiltered.copy(pf = readFiltered.props +
-            (ecology.api[Basic].DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
-        }
+            curState
+        } else
+          curState.copy(things = (curState.things - thingId))
       }
 
-    val stateWithUV = (safeState /: userValues) { (curState, uv) =>
+      if (AccessControl.canRead(readFiltered, user, rs.id))
+        readFiltered
+      else {
+        // This user isn't allowed to read the Root Page, so give them a stub instead.
+        // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
+        // bits of the Space while not breaking it entirely is tricky. Think about how to
+        // do this better.
+        readFiltered.copy(pf = readFiltered.props +
+          (ecology.api[Basic].DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
+      }
+    }
+  }
+
+  def enhanceWithUserValues(state: SpaceState, userValues: Seq[OneUserValue]): SpaceState = {
+    (state /: userValues) { (curState, uv) =>
       if (uv.thingId == curState.id) {
         // We're enhancing the Space itself:
         curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
@@ -82,15 +95,12 @@ object SpaceEvolution {
         case _ => curState
       }
     }
+  }
 
-    // If there is a PublicationState, overlay that on top of the rest:
-    // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
-    // Publishers currently won't see their User Values if there are changes to the Instance.
-    // TODO (QI.7w4g8nd): this will need rationalization, especially once we get to Experiments. But by and
-    // large, I expect to be bringing more stuff into here.
+  def enhanceWithPublication(state: SpaceState, pubState: Option[CurrentPublicationState])(implicit ecology: Ecology): SpaceState = {
     pubState.map { ps =>
-      ecology.api[Publication].enhanceState(stateWithUV, ps)
-    }.getOrElse(stateWithUV)
+      ecology.api[Publication].enhanceState(state, ps)
+    }.getOrElse(state)
   }
 
   /**
