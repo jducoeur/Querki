@@ -34,10 +34,15 @@ import querki.values.{SpaceState, RequestContext, QValue}
  * concerns.
  */
 private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef, timeSpaceOps:Boolean)
-  extends Actor with Stash with Requester with EcologyMember with ReceivePipeline with TimeoutChild
+  extends Actor with Stash with Requester with EcologyMember with ReceivePipeline with TimeoutChild with SpaceEvolution
   with autowire.Server[String, Reader, Writer]
 {
   implicit val ecology = e
+
+  // Needed for SpacePure:
+  // TODO: gah. A fine example of the problems of the inheritance-based approach. Can/should we refactor SpacePure and
+  // SpaceEvolution to *actually* be pure?
+  val id: OID = spaceId
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
@@ -113,7 +118,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def handleStateChange(stateChange: CurrentState) = {
     _rawState = Some(stateChange.state)
     clearEnhancedState()
-    _filteredState = Some(SpaceEvolution.updateForUser(_filteredState)(user)(stateChange))
+    _filteredState = Some(updateForUser(_filteredState)(user)(stateChange))
   }
 
 //  def makeEnhancedState():SpaceState = {
@@ -194,8 +199,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def state = _filteredState match {
     case Some(s) => {
       if (_enhancedState.isEmpty) {
-        val withUV = SpaceEvolution.enhanceWithUserValues(s, userValues)
-        _enhancedState = Some(SpaceEvolution.enhanceWithPublication(withUV, _publicationState))
+        val withUV = enhanceWithUserValues(s, userValues)
+        _enhancedState = Some(enhanceWithPublication(withUV, _publicationState))
       }
       _enhancedState.get
     }
