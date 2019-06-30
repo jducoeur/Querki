@@ -502,7 +502,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     for {
       results <- run(funcs)(state)
       persistedState <- persistAllThenFinalState(results)
-      finalState = updateState(persistedState)
+      spaceEvents: List[SpaceEvent] = results.flatMap(_.events)
+      finalState = updateState(persistedState, Some(spaceEvents))
       _ = checkSnapshot()
     }
       yield (results, finalState)

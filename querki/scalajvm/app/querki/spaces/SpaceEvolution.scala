@@ -3,6 +3,7 @@ package querki.spaces
 import models.Kind.Kind
 import models.{Kind, OID, ModelPersistence, ThingState}
 import querki.basic.Basic
+import querki.ecology.{EcologyInterface, QuerkiEcot}
 import querki.globals.{SpaceState, Ecology}
 import querki.identity.{User, Person}
 import querki.publication.{Publication, CurrentPublicationState}
@@ -44,6 +45,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     // Managers act as Owners for purposes of being able to read everything:
     val isManager = AccessControl.isManager(user, rs)
     if (isManager) {
+      QLog.spew(s"Not doing anything, since I'm a Manager")
       rs
     } else {
       val readFiltered =
@@ -86,7 +88,9 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     implicit val s = fullState
     event match {
       case DHCreateThing(requester, oid, kind, modelId, props, modTime, _) => {
+        QLog.spew("It's a CreateThing event")
         def applyCreate(): Option[SpaceState] = {
+          QLog.spew(s"Evolving a Create")
           Some(createPure(requester, kind, oid, modelId, props, modTime)(prevState))
         }
         // TODO: Kind really ought to be an ADT, not just an Int, and we should match here:
@@ -96,9 +100,12 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
           // edge cases, and make sure they are sane:
           applyCreate()
         } else if (kind == Kind.Thing) {
-          // The common case, probably accounting for 99% of Creates:
-          // TODO: what about security values? In particular, what about Instance Permissions objects?
-          if (AccessControl.canRead(fullState, user, oid)) {
+          if (modelId == querki.security.MOIDs.InstancePermissionsModelOID) {
+            // Instance Permission objects can affect downstream instance visibility, so for now we're going to just
+            // re-filter instead of trying to be clever here:
+            None
+          } else if (AccessControl.canRead(fullState, user, oid)) {
+            // The common case, probably accounting for 99% of Creates:
             applyCreate()
           } else {
             // If this person can't read it, this is a no-op:
@@ -112,9 +119,11 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
           None
       }
       case DHModifyThing(req, id, modelIdOpt, propChanges, replaceAllProps, modTime) => {
+        QLog.spew(s"It's a ModifyThing event")
         fullState.anything(id) match {
           case Some(thing) => {
             def applyModify(): Option[SpaceState] = {
+              QLog.spew(s"Evolving a Modify")
               Some(modifyPure(id, thing, Some(thing.model), propChanges, replaceAllProps, modTime)(prevState))
             }
             val kind: Kind = thing.kind
@@ -126,7 +135,12 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
               // before and after:
               val couldReadBefore: Boolean = prevState.anything(id).isDefined
               val canReadAfter: Boolean = AccessControl.canRead(fullState, user, id)
-              if (couldReadBefore && canReadAfter) {
+              if (thing.model == querki.security.MOIDs.InstancePermissionsModelOID) {
+                // We modified an Instance Permissions Object. At least for now, we're not going to try to deal with
+                // this efficiently, since it potentially affects the visibility of this Model's Instances, so we
+                // might have to go add/remove instances from the view.
+                None
+              } else if (couldReadBefore && canReadAfter) {
                 // Still visible, so do the modification:
                 applyModify()
               } else if (!couldReadBefore && !canReadAfter) {
@@ -154,6 +168,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
       }
 
       case DHDeleteThing(req, id, modTime) => {
+        QLog.spew(s"It's a DeleteThing event")
         // This one's easy: if we could see it before, delete it:
         prevState.anything(id) match {
           case Some(thing) => Some(deletePure(id, thing)(prevState))
@@ -177,6 +192,8 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     */
   private def filterFully(user: User, rs: SpaceState, AccessControl: AccessControl)(implicit ecology: Ecology): SpaceState = {
     // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
+    ecology.api[querki.spaces.SpaceOps].notifyFullEvolution()
+    QLog.spew(s"Filtering fully!")
     (rs /: rs.things) { (curState, thingPair) =>
       val (thingId, thing) = thingPair
       // Note that we need to pass rs into canRead(), not curState. That is because curState can

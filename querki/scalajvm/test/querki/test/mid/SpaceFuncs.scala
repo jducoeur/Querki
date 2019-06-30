@@ -1,14 +1,14 @@
 package querki.test.mid
 
 import cats.effect.IO
-
 import autowire._
-
-import querki.data.{SpaceInfo, TID}
+import org.scalatest.Matchers._
+import org.scalactic.source.Position
+import querki.data.{TID, SpaceInfo}
 import querki.globals._
 import querki.session.UserFunctions
-
 import AllFuncs._
+import querki.spaces.SpaceOps
 
 /**
  * Provides functions for creating and manipulating Spaces.
@@ -29,6 +29,28 @@ trait SpaceFuncs {
       _ <- setClientSpace(spaceInfo)
     }
       yield spaceInfo.oid
+  }
+
+  def expectingFullFiltering[R](op: TestOp[R])(implicit position: Position): TestOp[R] = {
+    // EVIL!!! Can we substitute in a cats-effect Var instead?
+    var gotEvolution = false
+    for {
+      _ <- TestOp.withState(_.harness.ecology.api[SpaceOps].registerFullEvolutionListener(() => gotEvolution = true))
+      result <- op
+      _ = assert(gotEvolution, "Expected this operation to do an expensive full filtering, but it didn't!")
+    }
+      yield result
+  }
+
+  def expectingEfficientEvolution[R](op: TestOp[R])(implicit position: Position): TestOp[R] = {
+    // EVIL!!! Can we substitute in a cats-effect Var instead?
+    var gotEvolution = false
+    for {
+      _ <- TestOp.withState(_.harness.ecology.api[SpaceOps].registerFullEvolutionListener(() => gotEvolution = true))
+      result <- op
+      _ = assert(!gotEvolution, "This operation did an unexpected (expensive) full filter!")
+    }
+      yield result
   }
 }
 
