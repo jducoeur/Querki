@@ -68,6 +68,11 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     *
     * This is basically how we avoid having to do the fairly evil [[filterFully()]] every time there is a change.
     * Most world changes are simple, and require only tiny tweaks to the existing filtered state.
+    *
+    * TODO: in principle, we can make this even more efficient by scanning the events and pre-computing whether or not
+    * efficient evolution will be possible before we bother doing it. (Because sometimes we're going to evolve for a
+    * while and then hit an event that foils us and forces a full filter.) But in practice, getting this right is
+    * tricky (since later events depend on earlier ones), so we're not going to worry about that yet.
     */
   private def evolveForEvents(oldState: SpaceState, user: User, fullState: SpaceState, events: List[SpaceEvent], AccessControl: AccessControl): Option[SpaceState] = {
     // Run through all of the events in changes. If all of the evolutions produce Some, we win:
@@ -106,7 +111,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
             Some(prevState)
           }
         } else if (kind == Kind.Type) {
-          // TODO, but this is rare enough that I'm not too worried yet:
+          // TODO: in principle, we ought to be able to deal with this if the Type Model is visible, right?
           None
         } else
           // We might deal with Collection someday, and Space is just weird:
