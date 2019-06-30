@@ -1,18 +1,15 @@
 package querki.test.mid
 
 import org.scalatest.Matchers._
-
 import cats.effect.IO
-
 import autowire._
-
 import querki.api.ThingFunctions
 import querki.data._
 import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
 import querki.globals._
-
 import AllFuncs._
+import org.scalactic.source.Position
 
 trait PropFuncs {
   /**
@@ -88,11 +85,11 @@ trait PropFuncs {
    * 
    * This needs a bit of generalization, to work with other value types.
    */
-  def checkPropValue(thingId: TID, propId: TID, expected: String): TestOp[Unit] = {
+  def checkPropValue(thingId: TID, propId: TID, expected: String)(implicit position: Position): TestOp[Unit] = {
     val propOid = TOID(propId.underlying)
     for {
       valueMap <- TestOp.client { _[ThingFunctions].getPropertyValues(thingId, List(propOid)).call() }
-      v = valueMap.get(propOid).getOrElse(throw new Exception(s"Failed to find a value for $thingId.$propId!"))
+      v = valueMap.get(propOid).getOrElse(fail(s"Failed to find a value for $thingId.$propId!"))
       _ = v.vs.head should be (expected)
     }
       yield ()

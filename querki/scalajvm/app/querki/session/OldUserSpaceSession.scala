@@ -17,6 +17,7 @@ import querki.history.SpaceHistory._
 import querki.publication.CurrentPublicationState
 import querki.session.messages._
 import querki.spaces.SpaceEvolution
+import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.messages.{SpaceSubsystemRequest, ThingError, CurrentState, SpacePluginMsg, ThingFound, ChangeProps}
 import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
@@ -105,7 +106,12 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     */
   var _rawState:Option[SpaceState] = None
   /**
-    * The state without the bits that this User isn't allowed to see. Recomputed every time we get a change.
+    * The List of events received since we last recomputed, in *reverse* order for efficiency.
+    */
+  var _unprocessedEvents: List[SpaceEvent] = List.empty
+
+  /**
+    * The raw State, minus stuff that this user isn't allowed to see. This mostly gets evolved with events as they come in.
     */
   var _filteredState: Option[SpaceState] = None
 
@@ -116,103 +122,30 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def clearEnhancedState() = _enhancedState = None
 
   def handleStateChange(stateChange: CurrentState) = {
-    _rawState = Some(stateChange.state)
     clearEnhancedState()
-    _filteredState = Some(updateForUser(_filteredState)(user)(stateChange))
+    _rawState = Some(stateChange.state)
+    _unprocessedEvents = stateChange.events.getOrElse(List.empty).reverse ++ _unprocessedEvents
   }
 
-//  def makeEnhancedState():SpaceState = {
-//    _rawState match {
-//      case Some(rs) => {
-//        // Managers act as Owners for purposes of being able to read everything:
-//        val isManager = AccessControl.isManager(user, rs)
-//        val safeState =
-//          if (isManager) {
-//            rs
-//          } else {
-//            // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
-//            // caching, and do much more sensitive updating as things change.
-//            val readFiltered = (rs /: rs.things) { (curState, thingPair) =>
-//              val (thingId, thing) = thingPair
-//              // Note that we need to pass rs into canRead(), not curState. That is because curState can
-//              // be in an inconsistent state while we're in the middle of all this. For example, we may
-//              // have already exised a Model from curState (because we don't have permission) when we get
-//              // to an Instance of that Model. Things can then get horribly confused when we try to look
-//              // at the Instance, try to examine its Model, and *boom*.
-//              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
-//                // Remove any SystemHidden Properties from this Thing, if there are any:
-//                if (hiddenOIDs.exists(thing.props.contains(_))) {
-//                  val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
-//                  curState.copy(things = (curState.things + (newThing.id -> newThing)))
-//                } else
-//                  curState
-//              } else
-//                curState.copy(things = (curState.things - thingId))
-//            }
-//            monitor(s"... finished read filtering")
-//
-//            if (AccessControl.canRead(readFiltered, user, rs.id))
-//              readFiltered
-//            else {
-//              // This user isn't allowed to read the Root Page, so give them a stub instead.
-//              // TODO: this is a fairly stupid hack, but we have to be careful -- filtering out
-//              // bits of the Space while not breaking it entirely is tricky. Think about how to
-//              // do this better.
-//              readFiltered.copy(pf = readFiltered.props +
-//                  (Basic.DisplayTextProp("**You aren't allowed to read this Page; sorry.**")))
-//            }
-//          }
-//
-//        val stateWithUV = (safeState /: userValues) { (curState, uv) =>
-//          if (uv.thingId == curState.id) {
-//            // We're enhancing the Space itself:
-//            curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
-//          }
-//          else curState.anything(uv.thingId) match {
-//            case Some(thing:ThingState) => {
-//              val newThing = thing.copy(pf = thing.props + (uv.propId -> uv.v))
-//              curState.copy(things = curState.things + (newThing.id -> newThing))
-//            }
-//            // Yes, this looks like an error, but it isn't: it means that there was a UserValue
-//            // for a deleted Thing.
-//            case _ => curState
-//          }
-//        }
-//
-//        // If there is a PublicationState, overlay that on top of the rest:
-//        // TODO (QI.7w4g8n8): there is a known bug here, that if something is Publishable *and* has User Values, the
-//        // Publishers currently won't see their User Values if there are changes to the Instance.
-//        // TODO (QI.7w4g8nd): this will need rationalization, especially once we get to Experiments. But by and
-//        // large, I expect to be bringing more stuff into here.
-//        _publicationState.map { ps =>
-//          Publication.enhanceState(stateWithUV, ps)
-//        }.getOrElse(stateWithUV)
-//      }
-//      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
-//    }
-//  }
   /**
    * The underlying SpaceState, plus all of the UserValues for this Identity.
    * 
    * This is effectively a lazy val that gets recalculated after we get a new rawState.
    */
-  def state = _filteredState match {
-    case Some(s) => {
-      if (_enhancedState.isEmpty) {
-        val withUV = enhanceWithUserValues(s, userValues)
-        _enhancedState = Some(enhanceWithPublication(withUV, _publicationState))
+  def state = {
+    _rawState match {
+      case Some(rawState) => {
+        if (_enhancedState.isEmpty) {
+          _filteredState = Some(updateForUser(_filteredState)(user)(rawState, _unprocessedEvents))
+          _unprocessedEvents = List.empty
+          val withUV = enhanceWithUserValues(_filteredState.get, userValues)
+          _enhancedState = Some(enhanceWithPublication(withUV, _publicationState))
+        }
+        _enhancedState.get
       }
-      _enhancedState.get
+      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
     }
-    case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
   }
-//  {
-//    if (_enhancedState.isEmpty) {
-//      _enhancedState = Some(makeEnhancedState())
-//      whenStateReady(_enhancedState.get)
-//    }
-//    _enhancedState.get
-//  }
   
   /**
    * This is executed each time we receive a new SpaceState.

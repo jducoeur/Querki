@@ -37,22 +37,20 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
   )(
     user: User
   )(
-    changes: CurrentState
+    fullState: SpaceState, events: List[SpaceEvent]
   )(implicit ecology: Ecology): SpaceState = {
     val AccessControl = ecology.api[AccessControl]
-    val rs = changes.state
 
     // Managers act as Owners for purposes of being able to read everything:
-    val isManager = AccessControl.isManager(user, rs)
+    val isManager = AccessControl.isManager(user, fullState)
     if (isManager) {
-      QLog.spew(s"Not doing anything, since I'm a Manager")
-      rs
+      fullState
     } else {
       val readFiltered =
-        oldState.flatMap(s => evolveForEvents(s, user, changes, AccessControl))
-          .getOrElse(filterFully(user, rs, AccessControl))
+        oldState.flatMap(s => evolveForEvents(s, user, fullState, events, AccessControl))
+          .getOrElse(filterFully(user, fullState, AccessControl))
 
-      if (AccessControl.canRead(readFiltered, user, rs.id))
+      if (AccessControl.canRead(readFiltered, user, fullState.id))
         readFiltered
       else {
         // This user isn't allowed to read the Root Page, so give them a stub instead.
@@ -71,12 +69,10 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     * This is basically how we avoid having to do the fairly evil [[filterFully()]] every time there is a change.
     * Most world changes are simple, and require only tiny tweaks to the existing filtered state.
     */
-  private def evolveForEvents(oldState: SpaceState, user: User, changes: CurrentState, AccessControl: AccessControl): Option[SpaceState] = {
+  private def evolveForEvents(oldState: SpaceState, user: User, fullState: SpaceState, events: List[SpaceEvent], AccessControl: AccessControl): Option[SpaceState] = {
     // Run through all of the events in changes. If all of the evolutions produce Some, we win:
-    changes.events.flatMap { events =>
-      (Option(oldState) /: events) { (curStateOpt, event) =>
-        curStateOpt.flatMap(curState => evolveForEvent(curState, user, changes.state, event, AccessControl))
-      }
+    (Option(oldState) /: events) { (curStateOpt, event) =>
+      curStateOpt.flatMap(curState => evolveForEvent(curState, user, fullState, event, AccessControl))
     }
   }
 
@@ -88,9 +84,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     implicit val s = fullState
     event match {
       case DHCreateThing(requester, oid, kind, modelId, props, modTime, _) => {
-        QLog.spew("It's a CreateThing event")
         def applyCreate(): Option[SpaceState] = {
-          QLog.spew(s"Evolving a Create")
           Some(createPure(requester, kind, oid, modelId, props, modTime)(prevState))
         }
         // TODO: Kind really ought to be an ADT, not just an Int, and we should match here:
@@ -119,11 +113,9 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
           None
       }
       case DHModifyThing(req, id, modelIdOpt, propChanges, replaceAllProps, modTime) => {
-        QLog.spew(s"It's a ModifyThing event")
         fullState.anything(id) match {
           case Some(thing) => {
             def applyModify(): Option[SpaceState] = {
-              QLog.spew(s"Evolving a Modify")
               Some(modifyPure(id, thing, Some(thing.model), propChanges, replaceAllProps, modTime)(prevState))
             }
             val kind: Kind = thing.kind
@@ -168,7 +160,6 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
       }
 
       case DHDeleteThing(req, id, modTime) => {
-        QLog.spew(s"It's a DeleteThing event")
         // This one's easy: if we could see it before, delete it:
         prevState.anything(id) match {
           case Some(thing) => Some(deletePure(id, thing)(prevState))
@@ -191,9 +182,9 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     * When we can't do a smart evolution based on the event, filter the entire Space the hard way.
     */
   private def filterFully(user: User, rs: SpaceState, AccessControl: AccessControl)(implicit ecology: Ecology): SpaceState = {
-    // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
+    // If we are unit-testing, notify the tests that we are doing a full evolution:
     ecology.api[querki.spaces.SpaceOps].notifyFullEvolution()
-    QLog.spew(s"Filtering fully!")
+    // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
     (rs /: rs.things) { (curState, thingPair) =>
       val (thingId, thing) = thingPair
       // Note that we need to pass rs into canRead(), not curState. That is because curState can

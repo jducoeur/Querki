@@ -5,6 +5,7 @@ import org.scalatest.tags.Slow
 import ClientState.{switchToUser, cache, withUser}
 import AllFuncs._
 import querki.api.UnknownThingException
+import querki.data.TID
 
 object BasicMidTests {
   /**
@@ -39,7 +40,7 @@ object BasicMidTests {
       simpleThingId <- makeThing(std.basic.simpleThing, "First Thing")
       simpleThing <- WorldState.fetchThing(simpleThingId)
       _ = simpleThing.info.displayName should be ("First Thing")
-      
+
       _ <- step("Create the first simple Model")
       modelId <- makeModel("First Model")
       model <- WorldState.fetchThing(modelId)
@@ -53,14 +54,23 @@ object BasicMidTests {
       _ <- step(s"Create an Instance, and mess with it")
       instanceId <- makeThing(modelId, "First Instance")
       _ <- checkPropValue(instanceId, propId, "Default value of First Property")
-      _ <- withUser(member) { checkPropValue(instanceId, propId, "Default value of First Property") }
+      _ <- expectingFullFiltering {
+             withUser(member) {
+               checkPropValue(instanceId, propId, "Default value of First Property") } }
       _ <- changeProp(instanceId, propId :=> "Instance value")
       _ <- checkPropValue(instanceId, propId, "Instance value")
-      _ <- withUser(member) { checkPropValue(instanceId, propId, "Instance value") }
+      _ <- expectingEfficientEvolution {
+             withUser(member) {
+               checkPropValue(instanceId, propId, "Instance value") } }
 
       _ <- step(s"Destroy the first Instance")
       _ <- deleteThing(instanceId)
       _ <- TestOp.expectingError[UnknownThingException](getThingPage(instanceId, None))
+      deletedCheck <- expectingEfficientEvolution {
+                        withUser(member) {
+                          getThingInfo(TID("First Instance")) } }
+      _ = deletedCheck.isTag should be (true)
+
     }
       yield ()
   }
