@@ -137,6 +137,13 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
                 // this efficiently, since it potentially affects the visibility of this Model's Instances, so we
                 // might have to go add/remove instances from the view.
                 None
+              } else if (
+                (thing.model == querki.identity.MOIDs.PersonOID) &&
+                  (ecology.api[querki.identity.Person].localPerson(user).map(_.id == thing.id).getOrElse(false)))
+              {
+                // We modified this User's local Person record, which might mean we've changed their Roles, so do a
+                // full reload:
+                None
               } else if (couldReadBefore && canReadAfter) {
                 // Still visible, so do the modification:
                 applyModify()

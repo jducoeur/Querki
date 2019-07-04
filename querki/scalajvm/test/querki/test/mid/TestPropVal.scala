@@ -6,11 +6,15 @@ import querki.data.{ThingInfo, TID}
  * Describes a value that can be "saved" through the Client API.
  */
 trait SaveableVal {
-  def toSave: Seq[String]
+  def toSave: List[String]
 }
 
 case class SaveableText(str: String) extends SaveableVal {
   def toSave = List(str)
+}
+
+case class SaveableTextList(strs: List[String]) extends SaveableVal {
+  def toSave = strs
 }
 
 /**
@@ -32,6 +36,12 @@ object Saveable {
   }
   implicit object ThingInfoSaveable extends Saveable[ThingInfo] {
     def toSaveable(t: ThingInfo) = SaveableText(t.oid.underlying)
+  }
+  implicit def ListSaveable[T: Saveable] = new Saveable[List[T]] {
+    def toSaveable(ts: List[T]) = {
+      val contents: List[String] = ts.map(_.toSaveable).map(_.toSave).flatten
+      SaveableTextList(contents)
+    }
   }
   
   implicit class SaveableOps[T : Saveable](v: T) {

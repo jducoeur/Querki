@@ -2,11 +2,12 @@ package querki.security
 
 import org.scalatest.tags.Slow
 import org.scalatest.Matchers._
-
 import querki.data.TID
 import querki.test.mid._
 import AllFuncs._
+import ClientState.withUser
 import SecurityMidFuncs._
+import org.scalactic.source.Position
 
 object SecurityMidTests {
   val securityTests: TestOp[Unit] = {
@@ -15,6 +16,22 @@ object SecurityMidTests {
     }
       yield ()
   }
+
+  /**
+    * This (and the two convenience functions after it) are the easiest way to check read visibility of a particular
+    * Thing for the specified user.
+    */
+  def checkNameRealityFor(shouldBeReal: Boolean, name: String, who: TestUser)(implicit position: Position): TestOp[Unit] = {
+    for {
+      check <- withUser(who) { getThingInfo(TID(name)) }
+      _ = assert(check.isTag != shouldBeReal, s"Expected $name to be ${if (shouldBeReal) "real" else "tag"}, and it wasn't!")
+    }
+      yield ()
+  }
+  def checkNameIsRealFor(name: String, who: TestUser)(implicit position: Position)=
+    checkNameRealityFor(true, name, who)
+  def checkNameIsMissingFor(name: String, who: TestUser)(implicit position: Position) =
+    checkNameRealityFor(false, name, who)
   
   lazy val regressionTestQIbu6oeej: TestOp[Unit] = {
     val ownerName = "bu6oeej Owner"
@@ -70,15 +87,61 @@ object SecurityMidTests {
     }
       yield ()
   }
+
+  lazy val regressionTestQIbu6of67: TestOp[Unit] = {
+    val ownerName = "bu6of67 Owner"
+    val owner = TestUser(ownerName)
+    val memberName = "bu6of67 Member"
+    val member = TestUser(memberName)
+    val spaceName = "bu6of67 Space"
+
+    for {
+      _ <- step("Regression test for QI.bu6of67")
+      std <- getStd
+      _ <- newUser(owner)
+      space <- createSpace(spaceName)
+
+      _ <- newUser(member)
+
+      // Set up the Space and members:
+      _ <- inviteIntoSpace(owner, space, member)
+
+      // Build the Things:
+      _ <- ClientState.switchToUser(owner)
+      model <- makeModel("The Model")
+      instanceName = "The Instance"
+      instance <- makeThing(model, instanceName)
+
+      // Check that the member can see them:
+      _ <- checkNameIsRealFor(instanceName, member)
+
+      // Prevent the member from seeing the instance:
+      perms <- permsFor(model)
+      instancePermThing = perms.instancePermThing.get
+      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.owner)
+      _ <- checkNameIsMissingFor(instanceName, member)
+
+      // Create the role, and make the instance visible via the role, which should be enough to change anything:
+      role <- createRole("Visible Role", std.security.canReadPerm)
+      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> role)
+      _ <- checkNameIsMissingFor(instanceName, member)
+
+      // Give the role to the member, which *should* make the instance visible. (This is failing, hence the bug.)
+      _ <- grantRoleTo(member, role)
+      _ <- checkNameIsRealFor(instanceName, member)
+    }
+      yield ()
+  }
 }
 
 @Slow
 class SecurityMidTests extends MidTestBase {
   import SecurityMidTests._
   
-  "QI.bu6oeej" should {
+  "Regression tests" should {
     "pass" in {
       runTest(regressionTestQIbu6oeej)
+      runTest(regressionTestQIbu6of67)
     }
   }
 }
