@@ -129,6 +129,10 @@ object SecurityMidTests {
       // Give the role to the member, which *should* make the instance visible. (This is failing, hence the bug.)
       _ <- grantRoleTo(member, role)
       _ <- checkNameIsRealFor(instanceName, member)
+
+      // And for good measure, let's make sure the reverse works as expected:
+      _ <- revokeRoleFrom(member, role)
+      _ <- checkNameIsMissingFor(instanceName, member)
     }
       yield ()
   }
