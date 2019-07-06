@@ -95,8 +95,6 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
         // TODO: Kind really ought to be an ADT, not just an Int, and we should match here:
         if (kind == Kind.Property) {
           // Properties are always public, so this is always legit:
-          // TODO: does this work for, say, Link Properties to non-visible Models? We need to test the various
-          // edge cases, and make sure they are sane:
           applyCreate()
         } else if (kind == Kind.Thing) {
           if (modelId == querki.security.MOIDs.InstancePermissionsModelOID) {
