@@ -122,7 +122,8 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
           
           tryType(Core.YesNoType)(BoolV) orElse
           tryType(Core.TextType) { vs => TextV(vs.map(_.text)) } orElse
-          tryType(Core.LargeTextType) { vs => TextV(vs.map(_.text)) } getOrElse {
+          tryType(Core.LargeTextType) { vs => TextV(vs.map(_.text)) } orElse
+          tryType(Core.LinkType) { vs => LinkV(vs.map(_.toTID)) } getOrElse {
             QLog.error(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
             m
           }

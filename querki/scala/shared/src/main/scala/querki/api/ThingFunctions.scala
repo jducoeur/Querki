@@ -104,4 +104,7 @@ object ThingFunctions {
   case class TextV(vs: List[String]) extends PV {
     type TContent = String
   }
+  case class LinkV(vs: List[TID]) extends PV {
+    type TContent = TID
+  }
 }

@@ -43,7 +43,7 @@ private [conversations] class SpaceConversationNotifier(e:Ecology, initState:Spa
   }
   
   def doReceive = {
-    case CurrentState(current) => {
+    case CurrentState(current, _) => {
       state = current
     }
     

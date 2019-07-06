@@ -1,9 +1,8 @@
 package querki
 
 import scala.concurrent.Future
-
 import querki.ecology._
-
+import querki.globals.OID
 import querki.identity.User
 import querki.session.UserFunctions.TOSState
 import querki.values.SpaceState
@@ -16,6 +15,11 @@ package object system {
      * so instead of using the old backdoor through SystemSpace.State, which will eventually go away.
      */
     def State:SpaceState
+
+    /**
+      * OIDs in the System Space that should *never* be shown to the users.
+      */
+    def hiddenOIDs: List[OID]
   }
   
   trait TermsOfService extends EcologyInterface {

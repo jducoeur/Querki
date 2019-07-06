@@ -31,14 +31,14 @@ private [conversations] class SpaceConversationsManager(e:Ecology, router:ActorR
   def createChild(thingId:OID):ActorRef = context.actorOf(ThingConversationsActor.actorProps(state, thingId, notifier, ecology))
   
   def bootReceive:Receive = {
-    case CurrentState(current) => {
+    case CurrentState(current, _) => {
       _state = Some(current)
       doneBooting()
     }
   }
   
   def doReceive:Receive = {
-    case msg @ CurrentState(current) => {
+    case msg @ CurrentState(current, _) => {
       _state = Some(current)
       routeToAll(msg)
       notifier ! msg

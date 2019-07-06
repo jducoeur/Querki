@@ -92,7 +92,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
    * We stay in Boot mode until we receive *both* the SpaceState and the CurrentPublicationState.
    */
   def bootReceive = {
-    case msg @ CurrentState(s) => {
+    case msg @ CurrentState(s, _) => {
       state = Some(s)
       bootIfReady()
     }
@@ -110,7 +110,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
     /**
      * The Space has sent an updated State, so tell everyone about it.
      */
-    case msg @ CurrentState(s) => {
+    case msg @ CurrentState(s, _) => {
       state = Some(s)
       children.foreach(session => session.forward(msg))
     }

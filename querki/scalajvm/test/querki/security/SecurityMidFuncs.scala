@@ -2,10 +2,8 @@ package querki.security
 
 import autowire._
 
-import org.scalatest.Matchers._
-
 import querki.data._
-import querki.globals._
+import querki.globals.execContext
 import querki.test.mid._
 
 import SecurityFunctions._
@@ -55,6 +53,53 @@ trait SecurityMidFuncs {
 
   def getSharedLinkURL(link: TOID): TestOp[String] =
     TestOp.client { _[SecurityFunctions].getSharedLinkURL(link).call() }
+
+  // Higher-level functions
+
+  def createRole(name: String, perms: TID*): TestOp[TID] = {
+    for {
+      std <- getStd
+      role <- makeThing(std.security.customRoleModel, name, std.security.rolePermissionsProp :=> perms.toList)
+    }
+      yield role
+  }
+
+  def getPersonInfoFor(user: TestUser): TestOp[PersonInfo] = {
+    for {
+      std <- getStd
+      userId <- ClientState.userId(user)
+      // Note that we grant the role to the *Person*, not the *User*. So we need to fetch the Person records, and find
+      // the desired one:
+      membersAndInvitees <- getMembers
+      members = membersAndInvitees._1
+    }
+      // TODO: wow, we actually have no good way of finding this! We have the user, and are trying to find the right person.
+      // The connection is via Identity, but we don't have that on either side. Should we provide a way to get the
+      // current user's Person ID in the current Space, as a better way to do this, instead of comparing display names?
+      yield members.find(_.person.displayName == user.display).getOrElse(throw new Exception(s"Couldn't find Space member '${user.base}' to grant Role to!"))
+  }
+
+  def grantRoleTo(user: TestUser, role: TID): TestOp[Unit] = {
+    for {
+      std <- getStd
+      personInfo <- getPersonInfoFor(user)
+      roles = personInfo.roles
+      newRoles = (roles.toSet + role).toList
+      _ <- changeProp(personInfo.person.oid, std.security.personRolesProp :=> newRoles)
+    }
+      yield ()
+  }
+
+  def revokeRoleFrom(user: TestUser, role: TID): TestOp[Unit] = {
+    for {
+      std <- getStd
+      personInfo <- getPersonInfoFor(user)
+      roles = personInfo.roles
+      newRoles = (roles.toSet - role).toList
+      _ <- changeProp(personInfo.person.oid, std.security.personRolesProp :=> newRoles)
+    }
+      yield ()
+  }
 }
 
 object SecurityMidFuncs extends SecurityMidFuncs

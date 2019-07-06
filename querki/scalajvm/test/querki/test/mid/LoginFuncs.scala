@@ -61,8 +61,17 @@ trait LoginFuncs {
     implicit val m = mat
     call(controller.signupStart(), request)
   }
-  
-  def signup: TestOp[LoginResults] = TestOp.fut { state =>
+
+  def storeLoginResults(loginResults: LoginResults): TestOp[Unit] = {
+    TestOp.update { state =>
+      val userName = state.client.testUser.base
+      val updatedClientState = state.client.copy(userInfo = Some(loginResults.userInfo))
+      val updatedInClient = TestState.clientL.set(updatedClientState)(state)
+      TestState.clientCacheL.modify(_ + (userName -> updatedClientState))(updatedInClient)
+    }
+  }
+
+  def doSignup: TestOp[LoginResults] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val m = mat
     val user = state.testUser
@@ -76,6 +85,14 @@ trait LoginFuncs {
       yield LoginResults(fut(result), userInfo, result.sess)
       
     state.plus(resultFut) zip loginResultsFut
+  }
+
+  def signup: TestOp[LoginResults] = {
+    for {
+      loginResults <- doSignup
+      _ <- storeLoginResults(loginResults)
+    }
+      yield loginResults
   }
   
   def validateSignup: TestOp[Unit] = StateT { state =>
@@ -132,7 +149,7 @@ trait LoginFuncs {
   /**
    * Log in with the given credentials. Note that "name" may be either handle or email.
    */  
-  def login: TestOp[LoginResults] = TestOp.fut { state =>
+  def doLogin: TestOp[LoginResults] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val m = mat
     val user = state.testUser
@@ -147,6 +164,14 @@ trait LoginFuncs {
       yield LoginResults(resultFut, userInfoOpt.get, result.sess)
       
     state.plus(resultFut) zip loginResultsFut
+  }
+
+  def login: TestOp[LoginResults] = {
+    for {
+      loginResults <- doLogin
+      _ <- storeLoginResults(loginResults)
+    }
+      yield loginResults
   }
   
   def logout: TestOp[Session] = TestOp.fut { state =>

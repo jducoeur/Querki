@@ -23,7 +23,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
 
   def receive = {
-    case CurrentState(state) => {
+    case CurrentState(state, _) => {
       unstashAll()
       context.become(normalReceive(state))
     }
@@ -33,7 +33,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   
   // Normal behavior -- at any given time, state is the current known SpaceState
   def normalReceive(state:SpaceState):Receive = {
-    case CurrentState(newState) => context.become(normalReceive(newState))
+    case CurrentState(newState, _) => context.become(normalReceive(newState))
     
     case SpaceSubsystemRequest(_, _, msg) => msg match {
   	  // Someone is attempting to join this Space:

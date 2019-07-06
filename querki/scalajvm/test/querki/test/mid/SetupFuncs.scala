@@ -29,7 +29,7 @@ trait SetupFuncs {
   }
 
   def inviteIntoSpace(owner:TestUser, spaceId: TID, member: TestUser): TestOp[Unit] = {
-    for {
+    val doIt = for {
       _ <- ClientState.switchToUser(owner)
       // TODO: refactor this invite-to-space code into SetupFuncs:
       token <- EmailTesting.nextEmail
@@ -40,7 +40,10 @@ trait SetupFuncs {
       _ <- ClientState.switchToUser(member)
       inviteHash <- EmailTesting.extractInviteHash(token)
       _ <- acceptInvite(inviteHash, spaceInfo)
+      _ <- setClientSpace(spaceInfo)
     }
       yield ()
+
+    ClientState.cachingUser(doIt)
   }
 }

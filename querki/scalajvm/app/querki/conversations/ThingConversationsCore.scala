@@ -214,7 +214,7 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     /**
      * Update from the Space Actor that the state has been changed.
      */
-    case CurrentState(current) => {
+    case CurrentState(current, _) => {
       state = current
     }
         

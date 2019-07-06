@@ -1,18 +1,17 @@
 package querki.spaces.messages
 
 import language.implicitConversions
-
 import models._
 import Kind._
 import MIMEType.MIMEType
-import models.{AsOID, OID, ThingId, UnknownOID}
-
+import models.{ThingId, UnknownOID, OID, AsOID}
 import querki.conversations.messages.ConversationMessage
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{IdentityId, User, PublicIdentity}
 import querki.session.messages.SessionMessage
-import querki.spaces.{SpaceStatusCode, StatusNormal}
-import querki.values.{RequestContext, SpaceState, SpaceVersion}
+import querki.spaces.SpaceMessagePersistence.SpaceEvent
+import querki.spaces.{StatusNormal, SpaceStatusCode}
+import querki.values.{SpaceVersion, SpaceState, RequestContext}
 import querki.util.PublicException
 
 sealed trait SpaceMgrMsg
@@ -150,7 +149,17 @@ import SpaceError._
 
 // General message published from a Space to its subscribers. Possibly still a bit half-baked, but is likely to become
 // important.
-case class CurrentState(state:SpaceState)
+
+/**
+  * The current or updated state of this Space.
+  *
+  * If `events` is present, it is the list of changes that led to this new State. Clients may use this list to
+  * evolve their own view of the state, instead of using the new raw State.
+  *
+  * @param state The updated state of this Space
+  * @param events The events that caused this update.
+  */
+case class CurrentState(state: SpaceState, events: Option[List[SpaceEvent]] = None)
 
 sealed trait SpaceMembersBase extends SpaceMessagePayload
 

@@ -6,7 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import models.{Thing, OID}
 import querki.core.QLText
 import querki.ecology._
-import querki.globals._
+import querki.globals.{awaitIntentionally, Ecology, EcologyMember, EcologyInterface, QLog, QuerkiEcot}
 import querki.identity.User
 import querki.time.{DateTime, TimeProvider}
 import querki.values.{SpaceState, QLContext, RequestContext}

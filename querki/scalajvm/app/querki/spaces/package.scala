@@ -92,6 +92,13 @@ package object spaces {
     
     def askSpace[A, B](msg:SpaceMessage)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B]
     def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B]
+
+    /**
+      * This gets called when a SpaceState gets fully evolved, and sends out a notification to listeners. It exists
+      * *solely* for unit testing, and should not be used for anything else.
+      */
+    def notifyFullEvolution(): Unit
+    def registerFullEvolutionListener(f: () => Unit): Unit
   }
     
   trait SpacePersistence extends EcologyInterface {

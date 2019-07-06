@@ -13,8 +13,8 @@ import models._
 
 import querki.api.ClientRequest
 import querki.core.NameUtils
-import querki.ecology._
-import querki.globals._
+import querki.ecology.{CreateActorFunc, Ecology, EcotIds, QuerkiEcot}
+import querki.globals.{execContext, AnyProp, Future, _}
 import querki.ql._
 import querki.spaces.messages._
 import querki.util.PublicException
@@ -115,6 +115,14 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   
   def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     akka.pattern.ask(spaceRegion, msg).flatMap(cb)
+  }
+
+  var _evolutionListener: Option[() => Unit] = None
+  def notifyFullEvolution(): Unit = {
+    _evolutionListener.map(_())
+  }
+  def registerFullEvolutionListener(f: () => Unit): Unit = {
+    _evolutionListener = Some(f)
   }
 
   /***********************************************
