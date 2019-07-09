@@ -823,21 +823,27 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       respond(SpaceInfo(currentState.id, currentState.name, currentState.displayName, currentState.ownerHandle))
     }
     
-    case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
-      // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
-      // we are asking whether this Thing's *model* is publishable. Also, we need to exclude
-      // sub-Models -- those belong here, in the main fork.
-      val pubOpt = for {
-        creatingModel <- Some(props.contains(Core.IsModelProp))
-        model <- enhancedState.anything(modelId)
-        modelIsPublishable = model.ifSet(Publication.PublishableModelProp)(enhancedState)
+    case CreateThing(rc, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
+      rc.requester.map { who =>
+        // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
+        // we are asking whether this Thing's *model* is publishable. Also, we need to exclude
+        // sub-Models -- those belong here, in the main fork.
+        val pubOpt = for {
+          creatingModel <- Some(props.contains(Core.IsModelProp))
+          model <- enhancedState.anything(modelId)
+          modelIsPublishable = model.ifSet(Publication.PublishableModelProp)(enhancedState)
+        }
+          yield ((!creatingModel) && modelIsPublishable)
+        val pub = pubOpt.getOrElse(false)
+
+        val fullState = if (pub) enhancedState else currentState
+
+        runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
+      }.getOrElse {
+        // It shouldn't be possible to get here -- it means that something upstream passed on a message improperly:
+        QLog.error(s"SpaceCore got CreateThing without a requester: $rc")
+        respond(ThingError(UnexpectedPublicException))
       }
-        yield ((!creatingModel) && modelIsPublishable)
-      val pub = pubOpt.getOrElse(false)
-        
-      val fullState = if (pub) enhancedState else currentState
-      
-      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.

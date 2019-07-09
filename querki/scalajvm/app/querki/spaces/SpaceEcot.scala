@@ -277,7 +277,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       val vFut = for {
         model <- inv.processAs("model", LinkType)
         initialProps <- getPropVals(inv, inv.context, 1)
-        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
+        msg = CreateThing(inv.context.request, inv.context.state, Kind.Thing, model.id, initialProps)
         (thingId, newState) <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { (id, s) }
         })
@@ -381,7 +381,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       val vFut:QFut = for {
         model <- inv.contextFirstThing
         initialProps <- inv.fut(getInitialProps(inv))
-        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
+        msg = CreateThing(inv.context.request, inv.context.state, Kind.Thing, model.id, initialProps)
         newThingId <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => {
             newState = Some(s)

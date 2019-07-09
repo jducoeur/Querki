@@ -32,7 +32,7 @@ class ExperimentFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     } else if (state.anythingByName(linkName).isDefined) {
       Future.failed(ExperimentAlreadyExists(name))
     } else {
-      val createMsg = CreateThing(user, state.id, Kind.Thing, MOIDs.ExperimentModelOID,
+      val createMsg = CreateThing(rc, state.id, Kind.Thing, MOIDs.ExperimentModelOID,
         models.toProps(
           Core.setName(linkName),
           Basic.DisplayNameProp(name),

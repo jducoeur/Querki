@@ -211,6 +211,8 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
 
   def makeOwner:User = userAs("Owner Guy", "ownerHandle", PaidUser)
   lazy val owner:User = makeOwner
+
+  lazy val ownerRequest: RequestContext = RequestContext(Some(owner), owner.id)
     
   lazy val spaceName = "Test Space"
   

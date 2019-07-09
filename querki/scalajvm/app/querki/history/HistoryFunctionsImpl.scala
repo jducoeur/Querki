@@ -48,7 +48,7 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
     ThingId(tid.underlying) match {
       case AsOID(oid) => {
         for {
-          ThingFound(id, newState) <- spaceRouter.request(RestoreDeletedThing(user, oid))
+          ThingFound(id, newState) <- spaceRouter.request(RestoreDeletedThing(rc, oid))
           restored = newState.anything(id).getOrElse(throw new Exception(s"Couldn't find Thing $tid!"))
           result <- ClientApi.thingInfo(restored, rc)(newState)
         }

@@ -262,7 +262,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
       }
     }
     
-    case RestoreDeletedThing(user, thingId) => {
+    case RestoreDeletedThing(rc, thingId) => {
       readCurrentHistory().map { _ =>
         // Sanity-check: don't try to recreate the Thing if it currently exists!
         history.last.state.anything(thingId) match {
@@ -289,7 +289,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
             
             findThingRec(history.size - 1) match {
               case Some(thing) => {
-                spaceRouter.request(CreateThing(user, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
+                spaceRouter.request(CreateThing(rc, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
                   case resp:ThingFound => sender ! resp
                   case other => throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
                 }
@@ -334,7 +334,7 @@ object SpaceHistory {
   /**
    * Finds the last existing revision of the specified Thing, and re-creates it in this Space.
    */
-  case class RestoreDeletedThing(user:User, thingId:OID) extends HistoryMessage
+  case class RestoreDeletedThing(rc: RequestContext, thingId:OID) extends HistoryMessage
   
   case class FindAllStomped() extends HistoryMessage
   case class OneStompedThing(event:Long, oid:OID, display:String)

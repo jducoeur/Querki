@@ -447,7 +447,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
               AccessControl.PersonRolesProp(inviteeRoles:_*))
           // Note the explicit and important assumption here, that this is being run local to the
           // Space!
-          val msg = CreateThing(rc.requester.get, originalState.id, Kind.Thing, PersonOID, propMap)
+          val msg = CreateThing(rc, originalState.id, Kind.Thing, PersonOID, propMap)
           val nextFuture = SpaceOps.spaceRegion ? msg
           nextFuture.mapTo[ThingFound].map { case ThingFound(personId, newState) => newState }
         }
@@ -606,7 +606,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
                emptyProps)
           // This has to be sent by SystemUser, because ordinary Users can't touch CanReadProp.
           // TODO: this seems broken. Shouldn't CanReadProp be on Person itself if it's needed?
-          val msg = CreateThing(IdentityAccess.SystemUser, state.id, Kind.Thing, PersonOID, propMap)
+          val msg = CreateThing(IdentityAccess.escalateToSystemPrivileges(rc), state.id, Kind.Thing, PersonOID, propMap)
           (SpaceOps.spaceRegion ? msg) map {
             case ThingFound(_, _) => None
             case ThingError(ex, _) => Some(ex)

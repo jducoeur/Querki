@@ -131,7 +131,7 @@ abstract class SpaceCoreSpaceBase()(implicit val ecology:Ecology) extends TestSp
    */
   def addSomethingFull(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):Option[AnyRef] = {
     val props = makePropFetcher(name, propList)
-    this ! CreateThing(owner, sc.id, kind, model, props)
+    this ! CreateThing(ownerRequest, sc.id, kind, model, props)
   }
   
   def addSomething(name:String, kind:Kind, model:OID, propList:(OID, QValue)*):OID = {
@@ -207,7 +207,7 @@ class SpaceCoreTests extends QuerkiTests {
     "no longer throw an exception if it doesn't start with InitialState" in {
       implicit val s = new SpaceCoreSpace
 
-      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
     }
     
     // Test for the belt-and-suspenders check on QI.7w4g8ne:
@@ -237,11 +237,11 @@ class SpaceCoreTests extends QuerkiTests {
       implicit val s = new DuplicateOIDSpace(7)
       
       s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
-      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-      s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+      s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
       val caught = intercept[PublicException] {
-        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
       }
       assert(caught.msgName == "Space.createThing.OIDExists")
     }
@@ -260,20 +260,20 @@ class SpaceCoreTests extends QuerkiTests {
         
         val s = new TestSpace
         s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
-        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-        s ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         
         val s2 = new ReplayCoreSpace(s)
-        s2 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-        s2 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s2 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s2 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         
         val s3 = new ReplayCoreSpace(s2)
-        s3 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-        s3 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s3 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s3 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         
         val s4 = new ReplayCoreSpace(s3)
-        s4 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
-        s4 ! CreateThing(s.owner, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s4 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
+        s4 ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         
         // Need to add 1 to maxHist, to account for the Snapshot:
         assert(s4.sc.history.length <= (maxHist + 1))

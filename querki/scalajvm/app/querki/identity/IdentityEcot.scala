@@ -4,20 +4,16 @@ import akka.actor.{ActorRef, Props}
 import akka.cluster.sharding._
 import akka.pattern.ask
 import akka.util.Timeout
-
-import play.api.mvc.{RequestHeader, Security}
-
+import play.api.mvc.{Security, RequestHeader}
 import models._
-
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
 import querki.session.UserSessionMessages.UserSessionMsg
 import querki.system.TOSModule.noTOSUserVersion
 import querki.util.ActorHelpers._
-import querki.values.{EmptyValue, QLContext, SpaceState}
+import querki.values.{EmptyValue, SpaceState, QLContext, RequestContext}
 import querki.util.QLog
-
 import IdentityCacheMessages._
 import UserCacheMessages._
 
@@ -99,6 +95,9 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     val level = UserLevel.SuperadminUser
     val tosVersion = noTOSUserVersion
   }
+
+  def systemRequestContext(state: SpaceState) = RequestContext(Some(SystemUser), state.owner)
+  def escalateToSystemPrivileges(rc: RequestContext) = rc.copy(requester = Some(SystemUser))
   
   implicit val cacheTimeout = defaultTimeout
 

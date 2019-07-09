@@ -253,6 +253,23 @@ package object identity {
      * behalf that they cannot do themselves. That automatically requires a security audit.
      */
     def SystemUser:User
+
+    /**
+      * Create a RequestContext with the SystemUser's privileges, for the given Space.
+      *
+      * USE WITH EXTREME CAUTION, as above.
+      */
+    def systemRequestContext(state: SpaceState): RequestContext
+
+    /**
+      * Given an existing RequestContext, escalate it by making the "requester" the SystemUser.
+      *
+      * TODO: in principle, this sucks. We should keep the requester, and somehow record that they have been
+      * escalated for this purpose.
+      *
+      * USE WITH EXTREME CAUTION, as above.
+      */
+    def escalateToSystemPrivileges(rc: RequestContext): RequestContext
   }
   
   trait NotifyInvitations extends EcologyInterface {

@@ -246,7 +246,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         // Creating an Instance, so don't do anything special:
         propsFromClient
     
-    spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) flatMap {
+    spaceRouter.request(CreateThing(rc, state.id, model.kind, model.id, props)) flatMap {
       case ThingFound(thingId, newState) => {
         newState.anything(thingId) match {
           case Some(thing) => {
@@ -459,7 +459,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         // devastating, but it *is* unintentional, and it's a good example of why we need to move towards a more
         // transactional view of things, where our CreateThing message includes the version stamp of the state it
         // is based on, and fails if the stamp is out of date.
-        val spaceMsg = CreateThing(rc.requesterOrAnon, state.id, Kind.Type, Core.UrType, props)
+        val spaceMsg = CreateThing(rc, state.id, Kind.Type, Core.UrType, props)
         
         spaceRouter.request(spaceMsg) map {
           case ThingFound(typeId, newState) => {

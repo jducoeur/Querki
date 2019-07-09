@@ -35,11 +35,11 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val urlBase = Config.getString("querki.app.urlRoot")
 
   override def init = {
-    SpaceChangeManager.thingChanges += ChoiceCreator
+//    SpaceChangeManager.thingChanges += ChoiceCreator
   }
   
   override def term = {
-    SpaceChangeManager.thingChanges += ChoiceCreator
+//    SpaceChangeManager.thingChanges += ChoiceCreator
   }
   
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
@@ -54,38 +54,38 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
    * 
    * TODO: this is probably entirely obsolete, since this Choice mechanism didn't come about.
    */
-  private object ChoiceCreator extends Contributor[TCRReq, TCRReq] {
-    // This is called whenever we get a Create or Modify request; we only care about a few
-    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
-      evtReq.flatMap {
-        // Iff there is no Thing (so this is a Create) *and* it's a Property...
-        case tcr @ ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, props, changedProps)
-           // ... *and* its PType is Choice...
-           if (props.get(querki.core.MOIDs.TypePropOID).map { v => v.contains(LinkType, ChoiceTypeOID) }.getOrElse(false))=>
-        {
-          import req.RequestableActorRef
-          
-          // ... then we need to create a matching Model
-          // We expect Properties to have Names. Note that this will throw an exception if we don't have one!
-          val propName = props.get(Core.NameProp).get.firstAs(Core.NameType).get
-          val modelName = s"_$propName Model"
-          val modelCreateReq = 
-            CreateThing(who, state, Kind.Thing, ChoiceModelOID, 
-              toProps(
-                setName(modelName),
-                Core.IsModelProp(true)))
-          (router ? modelCreateReq).map { case ThingFound(modelId, _) =>
-            val newProps = props + (LinkModelProp(modelId))
-            val newChangedProps = changedProps :+ LinkModelProp.id
-            ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, newProps, newChangedProps)
-          }
-        }
-        
-        // Otherwise, just pass the same value along:
-        case tcr => RequestM.successful(tcr)  
-      }
-    }
-  }
+//  private object ChoiceCreator extends Contributor[TCRReq, TCRReq] {
+//    // This is called whenever we get a Create or Modify request; we only care about a few
+//    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
+//      evtReq.flatMap {
+//        // Iff there is no Thing (so this is a Create) *and* it's a Property...
+//        case tcr @ ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, props, changedProps)
+//           // ... *and* its PType is Choice...
+//           if (props.get(querki.core.MOIDs.TypePropOID).map { v => v.contains(LinkType, ChoiceTypeOID) }.getOrElse(false))=>
+//        {
+//          import req.RequestableActorRef
+//
+//          // ... then we need to create a matching Model
+//          // We expect Properties to have Names. Note that this will throw an exception if we don't have one!
+//          val propName = props.get(Core.NameProp).get.firstAs(Core.NameType).get
+//          val modelName = s"_$propName Model"
+//          val modelCreateReq =
+//            CreateThing(who, state, Kind.Thing, ChoiceModelOID,
+//              toProps(
+//                setName(modelName),
+//                Core.IsModelProp(true)))
+//          (router ? modelCreateReq).map { case ThingFound(modelId, _) =>
+//            val newProps = props + (LinkModelProp(modelId))
+//            val newChangedProps = changedProps :+ LinkModelProp.id
+//            ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, newProps, newChangedProps)
+//          }
+//        }
+//
+//        // Otherwise, just pass the same value along:
+//        case tcr => RequestM.successful(tcr)
+//      }
+//    }
+//  }
       
   /***********************************************
    * THINGS
