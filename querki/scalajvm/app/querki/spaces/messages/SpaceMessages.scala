@@ -74,7 +74,7 @@ case class CreateThing(rc: RequestContext, space:OID, kind:Kind, modelId:OID, pr
  */
 case class ModifyThing(rc: RequestContext, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
-case class ChangeModel(req:User, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(req, space)
+case class ChangeModel(rc: RequestContext, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.

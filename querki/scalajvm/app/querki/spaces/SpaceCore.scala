@@ -939,8 +939,10 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     
     // TODO: think through what we really ought to do if you change to/from a Publishable Model. But it's
     // an extreme edge case, so not worrying about it now. Might put it off until we fix Publication.
-    case ChangeModel(who, spaceId, thingId, newModelId, localCall) => {
-      runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false), false)(currentState)
+    case ChangeModel(rc, spaceId, thingId, newModelId, localCall) => {
+      getUserFromRc(rc) { who =>
+        runAndSendResponse("changeModel", localCall, modifyThing(who, thingId, Some(newModelId), emptyProps, false), false)(currentState)
+      }
     }
     
     case DeleteThing(who, spaceId, thingId) => {
