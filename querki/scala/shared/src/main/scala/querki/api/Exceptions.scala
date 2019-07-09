@@ -1,5 +1,7 @@
 package querki.api
 
+import querki.data.TID
+
 /**
  * The base class for "semantic API exceptions" -- that is, well-behaved Exceptions that
  * are considered to be part of the Querki API. The entry points that can throw these should
@@ -100,3 +102,12 @@ case class SpaceExistsException(name:String) extends ImportException
 sealed trait UserException extends ApiException
 case class HandleAlreadyTakenException(handle: String) extends UserException
 case class EmailAlreadyTakenException(email: String) extends UserException
+
+/**
+  * Expected exceptions from Experiment functions.
+  */
+sealed trait ExperimentException extends ApiException
+case class ExperimentBadName(name: String) extends ExperimentException
+case class ExperimentingNotAllowed() extends ExperimentException
+case class ExperimentAlreadyExists(name: String) extends ExperimentException
+case class ExperimentNotFound(id: TID) extends ExperimentException

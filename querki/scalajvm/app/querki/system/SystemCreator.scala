@@ -116,6 +116,7 @@ object SystemCreator {
     new querki.datamodel.ChoiceEcot(ecology)                       // 73
     new querki.notifications.UserlandNotifierEcot(ecology)         // 74
                                     // 75
+    new querki.experiments.ExperimentsEcot(ecology)                 // 76
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {
