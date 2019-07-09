@@ -1,25 +1,22 @@
 package querki.spaces
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.{Success, Failure, Try}
 import akka.actor._
 import Actor.Receive
 import akka.persistence._
-
 import models._
 import models.ModelPersistence.DHSpaceState
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{Identity, User, PublicIdentity}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.publication.{CurrentPublicationState, PublishedAck}
 import querki.time.DateTime
 import querki.util.UnexpectedPublicException
-import querki.values.{SpaceState, SpaceVersion}
-
+import querki.values.{SpaceVersion, SpaceState, RequestContext}
 import messages._
 import SpaceError._
 import SpaceMessagePersistence._
@@ -780,6 +777,17 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   }
   def isPublishable(thingId:ThingId, permissive:Boolean = false):Boolean =
     enhancedState.anythingLocal(thingId).map(t => isPublishable(t.id, permissive)).getOrElse(false)
+
+  def getUserFromRc(rc: RequestContext)(f: User => Unit): Unit = {
+    rc.requester match {
+      case Some(user) => f(user)
+      case None => {
+        // It shouldn't be possible to get here -- it means that something upstream passed on a message improperly:
+        QLog.error(s"SpaceCore got CreateThing without a requester: $rc")
+        respond(ThingError(UnexpectedPublicException))
+      }
+    }
+  }
   
   val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
@@ -824,7 +832,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case CreateThing(rc, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
-      rc.requester.map { who =>
+      getUserFromRc(rc) { who =>
         // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
         // we are asking whether this Thing's *model* is publishable. Also, we need to exclude
         // sub-Models -- those belong here, in the main fork.
@@ -839,10 +847,6 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
         val fullState = if (pub) enhancedState else currentState
 
         runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
-      }.getOrElse {
-        // It shouldn't be possible to get here -- it means that something upstream passed on a message improperly:
-        QLog.error(s"SpaceCore got CreateThing without a requester: $rc")
-        respond(ThingError(UnexpectedPublicException))
       }
     }
     
@@ -921,14 +925,16 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       }
     }
     
-    case ModifyThing(who, spaceId, thingId, modelId, newProps, localCall) => {
-      val (pub, fullState) =
-        if (isPublishable(thingId))
+    case ModifyThing(rc, spaceId, thingId, modelId, newProps, localCall) => {
+      getUserFromRc(rc) { who =>
+        val (pub, fullState) =
+          if (isPublishable(thingId))
           // Modify on a Publishable is always using the Publication fork:
-          (true, enhancedState)
-        else
-          (false, currentState)
-      runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true), pub)(fullState)
+            (true, enhancedState)
+          else
+            (false, currentState)
+        runAndSendResponse("modifyThing", localCall, modifyThing(who, thingId, Some(modelId), newProps, true), pub)(fullState)
+      }
     }
     
     // TODO: think through what we really ought to do if you change to/from a Publishable Model. But it's

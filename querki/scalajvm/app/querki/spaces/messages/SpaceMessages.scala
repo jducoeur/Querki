@@ -67,12 +67,12 @@ case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String
  * 
  * If thingIdOpt is set, then we are re-creating a previously existing Thing from the History.
  */
-case class CreateThing(request: RequestContext, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(request.requesterOrAnon, space)
+case class CreateThing(rc: RequestContext, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
 /**
  * TODO: this is largely redundant with ChangeProps and ChangeModel at this point. It should be removed.
  */
-case class ModifyThing(req:User, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(req, space)
+case class ModifyThing(rc: RequestContext, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
 case class ChangeModel(req:User, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(req, space)
 
