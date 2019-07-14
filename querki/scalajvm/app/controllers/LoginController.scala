@@ -111,7 +111,7 @@ class LoginController @Inject() (val appProv:Provider[play.api.Application]) ext
   def withSpaceInfo(cb:(SpaceInfo, PublicIdentity) => Future[Result])(implicit rc:PlayRequestContext):Future[Result] = {
     IdentityAccess.getIdentity(rc.ownerId).flatMap { ownerIdOpt =>
       val ownerId = ownerIdOpt.get
-      askSpace(rc.ownerId, rc.spaceIdOpt.get)(GetSpaceInfo(rc.requesterOrAnon, _)) {
+      askSpace(rc.ownerId, rc.spaceIdOpt.get)(GetSpaceInfo(rc, _)) {
         case info:SpaceInfo => cb(info, ownerId)
       }
     }

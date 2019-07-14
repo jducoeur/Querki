@@ -48,12 +48,14 @@ case object StatusChanged
 /**
  * The base class for message that get routed to a Space.
  */
-sealed class SpaceMessage(val requester:User, val spaceId:OID) extends Serializable
+sealed class SpaceMessage(val requestContext: RequestContext, val spaceId:OID) extends Serializable {
+  def requester: User = requestContext.requesterOrAnon
+}
 object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.spaceId))
 }
 
-case class GetSpaceInfo(req:User, space:OID) extends SpaceMessage(req, space)
+case class GetSpaceInfo(rc: RequestContext, space:OID) extends SpaceMessage(rc, space)
   
 case class SpaceId(id:OID)
 case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String)
@@ -67,21 +69,21 @@ case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String
  * 
  * If thingIdOpt is set, then we are re-creating a previously existing Thing from the History.
  */
-case class CreateThing(rc: RequestContext, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
+case class CreateThing(rc: RequestContext, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(rc, space)
 
 /**
  * TODO: this is largely redundant with ChangeProps and ChangeModel at this point. It should be removed.
  */
-case class ModifyThing(rc: RequestContext, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
+case class ModifyThing(rc: RequestContext, space:OID, id:ThingId, modelId:OID, props:PropMap, localCall:Boolean = true) extends SpaceMessage(rc, space)
 
-case class ChangeModel(rc: RequestContext, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
+case class ChangeModel(rc: RequestContext, space:OID, id:ThingId, newModelId:OID, localCall:Boolean = true) extends SpaceMessage(rc, space)
 
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
  */
-case class ChangeProps(rc: RequestContext, space:OID, id:ThingId, changedProps:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
+case class ChangeProps(rc: RequestContext, space:OID, id:ThingId, changedProps:PropMap, localCall:Boolean = true) extends SpaceMessage(rc, space)
 
-case class DeleteThing(rc: RequestContext, space:OID, thing:ThingId) extends SpaceMessage(rc.requesterOrAnon, space)
+case class DeleteThing(rc: RequestContext, space:OID, thing:ThingId) extends SpaceMessage(rc, space)
 
 /**
  * This is the initialization message for a newly-created Space, with the basic starting info.
@@ -89,7 +91,7 @@ case class DeleteThing(rc: RequestContext, space:OID, thing:ThingId) extends Spa
  * 
  * Note that we only send the owning Identity's OID; it can then be fetched from req.
  */
-case class InitialState(rc: RequestContext, space:OID, display:String, owner:IdentityId) extends SpaceMessage(rc.requesterOrAnon, space)
+case class InitialState(rc: RequestContext, space:OID, display:String, owner:IdentityId) extends SpaceMessage(rc, space)
 /**
  * This is the ack from InitialState. We specifically do *not* respond with ThingFound in this case, because
  * the message often goes cross-node.
@@ -101,7 +103,7 @@ case object StateInitialized
  * sometimes after major changes. Either way, it may *ONLY* be sent from within the Space's own troupe, because
  * it contains a SpaceState!
  */
-case class SetState(rc: RequestContext, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(rc.requesterOrAnon, space)
+case class SetState(rc: RequestContext, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(rc, space)
 
 /**
  * The "payload" in a SpaceSubsystemRequest. Note that this is intentionally and necessarily *not* sealed --
@@ -114,7 +116,7 @@ trait SpaceMessagePayload
 /**
  * A message that is intended to be routed to a different member of the Space's troupe.
  */
-case class SpaceSubsystemRequest(rc: RequestContext, space:OID, payload:SpaceMessagePayload) extends SpaceMessage(rc.requesterOrAnon, space)
+case class SpaceSubsystemRequest(rc: RequestContext, space:OID, payload:SpaceMessagePayload) extends SpaceMessage(rc, space)
 
 /**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
@@ -123,18 +125,18 @@ case class SpaceSubsystemRequest(rc: RequestContext, space:OID, payload:SpaceMes
  * 
  * TBD: can/should these messages be unified? Maybe...
  */
-case class SpacePluginMsg(rc: RequestContext, space:OID, payload:Any) extends SpaceMessage(rc.requesterOrAnon, space)
+case class SpacePluginMsg(rc: RequestContext, space:OID, payload:Any) extends SpaceMessage(rc, space)
   
 /**
  * Launch a PhotoUploadActor.
  */
-case class BeginProcessingPhoto(rc: RequestContext, space:OID, mimeType:Option[String]) extends SpaceMessage(rc.requesterOrAnon, space)
+case class BeginProcessingPhoto(rc: RequestContext, space:OID, mimeType:Option[String]) extends SpaceMessage(rc, space)
 case object ImageComplete
 
 /**
  * Tells this Space to pro-actively close itself.
  */
-case class ShutdownSpace(rc: RequestContext, space:OID) extends SpaceMessage(rc.requesterOrAnon, space)
+case class ShutdownSpace(rc: RequestContext, space:OID) extends SpaceMessage(rc, space)
 case object ShutdownAck
 
 object SpaceError {  
