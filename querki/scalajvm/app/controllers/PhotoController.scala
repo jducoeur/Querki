@@ -3,22 +3,18 @@ package controllers
 import javax.inject._
 
 import scala.concurrent.duration._
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-
 import upickle.default._
-
 import play.api.libs.streams.Streams
 import play.api.mvc._
-
 import models.{OID, Wikitext}
-
 import querki.globals._
 import querki.photos.PhotoUploadMessages._
 import querki.spaces.messages.BeginProcessingPhoto
 import querki.util.QLog
+import querki.values.RequestContext
 
 class PhotoController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
   def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader) = {
@@ -27,7 +23,10 @@ class PhotoController @Inject() (val appProv:Provider[play.api.Application]) ext
       for {
         ownerId <- getOwnerIdentity(ownerIdStr)
         spaceId <- SpaceOps.getSpaceId(ownerId, spaceIdStr)
-        workerRef <- (SpaceOps.spaceRegion ? BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType)).mapTo[ActorRef]
+        // TODO: there's a bug here -- we are initiating Photo upload before we actually validate the uploading User.
+        // I don't think it's critical, but it should be looked into.
+        rc = RequestContext(None, ownerId, Some(spaceIdStr))
+        workerRef <- (SpaceOps.spaceRegion ? BeginProcessingPhoto(rc, spaceId, rh.contentType)).mapTo[ActorRef]
       }
         yield workerRef
     }

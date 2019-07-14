@@ -128,7 +128,7 @@ case class SpacePluginMsg(rc: RequestContext, space:OID, payload:Any) extends Sp
 /**
  * Launch a PhotoUploadActor.
  */
-case class BeginProcessingPhoto(req:User, space:OID, mimeType:Option[String]) extends SpaceMessage(req, space) 
+case class BeginProcessingPhoto(rc: RequestContext, space:OID, mimeType:Option[String]) extends SpaceMessage(rc.requesterOrAnon, space)
 case object ImageComplete
 
 /**
