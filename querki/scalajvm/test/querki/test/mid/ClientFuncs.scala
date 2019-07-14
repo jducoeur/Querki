@@ -67,7 +67,8 @@ trait ClientFuncs {
     }
   
     override def doCall(req: Request): Future[String] = {
-      val metadata = RequestMetadata(querkiVersion, currentPageParams)
+      // TODO: add machinery to support Experiments, and propagate that here:
+      val metadata = RequestMetadata(querkiVersion, currentPageParams, None)
       for {
         result <- sendRequest(req, metadata)
         // Set the Result as a side-effect, since Autowire will squash it out:

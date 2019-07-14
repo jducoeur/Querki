@@ -10,5 +10,7 @@ import querki.history.HistoryFunctions.HistoryVersion
  * 
  * @param version The version of the Client that we are currently using.
  * @param pageParams A map of the URL parameters, which may be used by QL under some circumstances.
+ * @param experimentOpt the opaque identity of the Experiment this user is operating within. In practice, this
+  *                     will be the stringified OID of the Experiment
  */
-case class RequestMetadata(version:String, pageParams:Map[String,String])
+case class RequestMetadata(version:String, pageParams:Map[String,String], experimentOpt: Option[String])

@@ -84,7 +84,7 @@ class QLTests extends QuerkiTests {
       implicit val s = commonSpace
       
       // A bit more involved than usual, since we have to fake a real request with query params:
-      val metadata = querki.api.RequestMetadata("1.0", Map("foo" -> "12"))
+      val metadata = querki.api.RequestMetadata("1.0", Map("foo" -> "12"), None)
       val rc = SimpleTestRequestContext(s.owner.mainIdentity.id, Some(metadata))
       val context = s.state.thisAsContext(rc, s.state, ecology)
       

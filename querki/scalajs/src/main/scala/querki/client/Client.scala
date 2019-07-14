@@ -83,7 +83,8 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
           PageManager.currentPageParams + ("_historyVersion" -> History.currentHistoryVersion.get.toString)
         else
           PageManager.currentPageParams
-      val metadata = RequestMetadata(DataAccess.querkiVersion, params)
+      // TODO: if I am currently in an Experiment, put it here:
+      val metadata = RequestMetadata(DataAccess.querkiVersion, params, None)
       interceptFailures(ajax.callAjax("pickledRequest" -> write(req), "pickledMetadata" -> write(metadata)))
     }
   }
