@@ -123,7 +123,7 @@ case class SpaceSubsystemRequest(rc: RequestContext, space:OID, payload:SpaceMes
  * 
  * TBD: can/should these messages be unified? Maybe...
  */
-case class SpacePluginMsg(req:User, space:OID, payload:Any) extends SpaceMessage(req, space) 
+case class SpacePluginMsg(rc: RequestContext, space:OID, payload:Any) extends SpaceMessage(rc.requesterOrAnon, space)
   
 /**
  * Launch a PhotoUploadActor.

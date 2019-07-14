@@ -81,8 +81,8 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   def receive:Actor.Receive = {
     // Note that this can be called cross-node, so we specifically do *not* use
     // runAndSendResponse. (Since that tries to send the new State.)
-    case SpacePluginMsg(req, _, AddApp(appId, appVersion, afterExtraction, replyWithState)) => {
-      api.runChanges(Seq(addApp(req, appId, appVersion, afterExtraction)))(api.currentState).onComplete {
+    case SpacePluginMsg(rc, _, AddApp(appId, appVersion, afterExtraction, replyWithState)) => {
+      api.runChanges(Seq(addApp(rc.requesterOrAnon, appId, appVersion, afterExtraction)))(api.currentState).onComplete {
         case Success(newState) => api.respond(AddAppResult(None, if (replyWithState) Some(newState._2) else None))
         case Failure(th) => {
           th match {

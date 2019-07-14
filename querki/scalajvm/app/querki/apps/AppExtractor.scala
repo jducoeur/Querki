@@ -91,7 +91,7 @@ class AppExtractor[RM[_]](state:SpaceState, rc: RequestContext)(rtcIn:RTCAble[RM
       _ <- extractorSupport.sendMessageToSelf(SetState(rc, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
       // ... and add the App to the child Space.
       AddAppResult(exOpt, stateOpt) <- 
-        extractorSupport.sendMessageToSelf(SpacePluginMsg(user, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true, true)))
+        extractorSupport.sendMessageToSelf(SpacePluginMsg(rc, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true, true)))
     }
       yield {
         // If there was an Exception, propagate it:

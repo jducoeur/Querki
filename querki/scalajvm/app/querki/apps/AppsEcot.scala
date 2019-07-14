@@ -3,10 +3,9 @@ package querki.apps
 import akka.actor._
 import akka.pattern._
 import akka.util.Timeout
+
 import scala.concurrent.duration._
-
 import models._
-
 import querki.api.commonName
 import querki.ecology._
 import querki.globals._
@@ -14,7 +13,7 @@ import querki.identity.User
 import querki.spaces._
 import querki.spaces.messages.SpacePluginMsg
 import querki.util.{Contributor, Publisher}
-import querki.values.SpaceVersion
+import querki.values.{SpaceVersion, RequestContext}
 import querki.spaces.StdSpaceCreator
 
 object MOIDs extends EcotIds(59) {
@@ -79,9 +78,9 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with
    * API
    ***********************************************/
   
-  def addAppToSpace(user:User, spaceId:OID, appId:OID):Future[Unit] = {
+  def addAppToSpace(rc: RequestContext, spaceId:OID, appId:OID):Future[Unit] = {
     // For the time being, we simply assume that you want the current version of the App:
-    SpaceOps.askSpace2(SpacePluginMsg(user, spaceId, AddApp(appId, SpaceVersion(Int.MaxValue), false, false))) {
+    SpaceOps.askSpace2(SpacePluginMsg(rc, spaceId, AddApp(appId, SpaceVersion(Int.MaxValue), false, false))) {
       case AddAppResult(exOpt, _) => {
         exOpt.map(ex => throw ex)
         fut(())

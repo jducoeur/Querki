@@ -111,7 +111,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         appIdOpt match {
           case Some(appId) => {
             for {
-              _ <- Apps.addAppToSpace(user, info.id, appId)
+              _ <- Apps.addAppToSpace(rc, info.id, appId)
               // The new Space should have the App as its Model:
               ThingAck(_) <- SpaceOps.spaceRegion ? ChangeModel(rc, info.id, info.id, appId, false)
             }

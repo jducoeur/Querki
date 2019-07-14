@@ -273,7 +273,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
                 LoadAllPropValues(prop, inv.state))
         ValuesForUser(values) <- inv.fut(SpaceOps.spaceRegion ? userValueRequest)
         // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
-        recalcRequest = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.id, RecalculateSummaries(prop, summaryPropId, values))
+        recalcRequest = SpacePluginMsg(inv.context.request, inv.state.id, RecalculateSummaries(prop, summaryPropId, values))
         // End of the line -- just fire and forget at this point:
         dummy = SpaceOps.spaceRegion ! recalcRequest
       }

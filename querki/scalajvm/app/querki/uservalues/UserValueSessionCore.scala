@@ -32,7 +32,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
   /**
    * This is called if a change calls for summarizing; it gets passed around to the Space itself.
    */
-  def summarizeChange(req:User, change:SummarizeChange[_]):Unit
+  def summarizeChange(rc: RequestContext, change:SummarizeChange[_]):Unit
   
   /**
    * This person's UserValues. Index is (thingId, propId).
@@ -49,7 +49,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
    * This tells the Space about the UserValues that need to be added to the summaries. It will only
    * call summarizeChange if this change is summarizable.
    */
-  def sendSummaries(req:User, thingId:OID, uvProps:PropMap)(implicit state:SpaceState) = {
+  def sendSummaries(rc: RequestContext, thingId:OID, uvProps:PropMap)(implicit state:SpaceState) = {
     uvProps.foreach { case (propId, v) =>
       val previous = userValues.get((thingId, propId))
       
@@ -60,7 +60,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
         newV = if (v.isDeleted) None else Some(v)
       }
         yield SummarizeChange(thingId, prop, summaryPropId, previous, newV)
-      msg.map(summarizeChange(req, _))
+      msg.map(summarizeChange(rc, _))
     }        
   }
   
@@ -91,7 +91,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
             doPersist(uv) { _ =>
               // Note that sendSummaries() must come *before* doChangeProps, since it uses the old contents of
               // userValues:
-              sendSummaries(rc.requesterOrAnon, thing.id, uvProps)
+              sendSummaries(rc, thing.id, uvProps)
               doChangeProps(thing.id, uvProps)
               forwardUserValue(rc.requesterOrAnon, uv)
             }

@@ -141,7 +141,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   def permsFor(thing:TID):Future[ThingPermissions] = withThing(thing) { thing =>
     for {
       // Go to the Space Plugin for the InstancePermissions, because it may create that object:
-      ThingFound(permsId, newState) <- spaceRouter ? SpacePluginMsg(user, state.id, GetInstancePermissionsObject(thing.id))
+      ThingFound(permsId, newState) <- spaceRouter ? SpacePluginMsg(rc, state.id, GetInstancePermissionsObject(thing.id))
       permThingOpt = 
         if (permsId == thing.id)
           None

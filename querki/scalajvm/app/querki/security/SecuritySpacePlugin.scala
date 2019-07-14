@@ -74,10 +74,10 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
    * handlers particular to Apps.
    */
   def receive:Actor.Receive = {
-    case SpacePluginMsg(req, _, GetInstancePermissionsObject(thingId)) => {
+    case SpacePluginMsg(rc, _, GetInstancePermissionsObject(thingId)) => {
       val state = api.currentState
       state.anything(thingId) match {
-        case Some(thing) => api.runAndSendResponse("getInstancePermissions", true, getInstancePermissionsThing(req, thing), false)(state)
+        case Some(thing) => api.runAndSendResponse("getInstancePermissions", true, getInstancePermissionsThing(rc.requesterOrAnon, thing), false)(state)
         case _ => api.respond(ThingError(PublicException("Thing.find.noSuch")))
       }
     }

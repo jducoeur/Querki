@@ -317,7 +317,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
                  summaryPropId <- summaryLinkPV.firstOpt
                  newV = if (v.isDeleted) None else Some(v)
                }
-                yield SpacePluginMsg(rc.requesterOrAnon, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
+                yield SpacePluginMsg(rc, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
               // ... then tell the user we're set.

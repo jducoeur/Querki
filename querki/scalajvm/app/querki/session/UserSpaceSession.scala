@@ -61,8 +61,8 @@ class UserSpaceSession(val ecology:Ecology, initState:SpaceState, val user:User,
   /**
    * This is called if a change calls for summarizing; it gets passed around to the Space itself.
    */
-  def summarizeChange(req:User, change:SummarizeChange[_]):Unit = {
-    spaceRouter ! SpacePluginMsg(req, spaceId, change) 
+  def summarizeChange(rc: RequestContext, change:SummarizeChange[_]):Unit = {
+    spaceRouter ! SpacePluginMsg(rc, spaceId, change)
   }
   
   def receiveRecover = {

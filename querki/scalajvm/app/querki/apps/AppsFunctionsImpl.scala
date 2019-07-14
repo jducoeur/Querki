@@ -99,7 +99,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
       case AsOID(appId) => {
         for {
           appVersion <- getCurrentAppVersion(appId)
-          AddAppResult(exOpt, _) <- spaceRouter.requestFor[AddAppResult](SpacePluginMsg(user, state.id, AddApp(appId, appVersion._1, false, false)))
+          AddAppResult(exOpt, _) <- spaceRouter.requestFor[AddAppResult](SpacePluginMsg(rc, state.id, AddApp(appId, appVersion._1, false, false)))
           _ = exOpt.map(ex => throw ex)
         }
           yield ()
