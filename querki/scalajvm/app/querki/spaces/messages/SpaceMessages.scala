@@ -134,7 +134,7 @@ case object ImageComplete
 /**
  * Tells this Space to pro-actively close itself.
  */
-case class ShutdownSpace(req:User, space:OID) extends SpaceMessage(req, space)
+case class ShutdownSpace(rc: RequestContext, space:OID) extends SpaceMessage(rc.requesterOrAnon, space)
 case object ShutdownAck
 
 object SpaceError {  

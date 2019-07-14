@@ -83,7 +83,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
               // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
               // that the creator can do horrible things with a locally-created one. See for example ImportSpace.
               val req = if (initialStatus != StatusNormal) {
-                SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(requester, spaceId))
+                SpaceOps.spaceRegion.requestFor[ShutdownAck.type](ShutdownSpace(rc, spaceId))
               } else {
                 RequestM.successful(ShutdownAck)
               }
