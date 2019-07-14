@@ -1,11 +1,8 @@
 package querki.conversations
 
 import akka.actor._
-
 import models.OID
-
 import org.querki.requester._
-
 import querki.conversations.messages._
 import querki.ecology._
 import querki.globals._
@@ -15,8 +12,7 @@ import querki.spaces.messages._
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.uservalues.PersistMessages._
 import querki.util.{PublicException, QuerkiBootableActor}
-import querki.values.SpaceState
-
+import querki.values.{SpaceState, RequestContext}
 import PersistMessages._
 
 /**
@@ -81,7 +77,7 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
       if (boot) {
         for {
           CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
-          ValuesForUser(prefs) <- space.request(SpaceSubsystemRequest(User.Anonymous, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+          ValuesForUser(prefs) <- space.request(SpaceSubsystemRequest(RequestContext(Some(User.Anonymous), state.owner), state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
         }
         {
           nextId = n + 1
@@ -210,7 +206,9 @@ private [conversations] class SpaceConversationsActor(ecology:Ecology, persisten
     
     case GetActiveThings => sender ! ActiveThings(loadedConversations.size)
     
-    case SpaceSubsystemRequest(req, _, msg) => {
+    case SpaceSubsystemRequest(rc, _, msg) => {
+      def req = rc.requesterOrAnon
+
       msg match {
       /**
        * Requester is fetching the current Conversations for this Thing.

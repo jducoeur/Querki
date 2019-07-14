@@ -37,7 +37,7 @@ class IdentityCommands(e:Ecology) extends QuerkiEcot(e) {
       val responseFuts = for {
         person <- cache.allPeopleIncludingInvitees
         msg = ChangeProps(
-            inv.context.request.requesterOrAnon, 
+            inv.context.request,
             state.id, 
             person.id, 
             toProps(CanReadProp(DataModel.getDeletedValue(CanReadProp))))

@@ -219,7 +219,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         context <- inv.contextElements
         thing <- inv.contextAllThings(context)
         initialProps <- getPropVals(inv, context, 0)
-        msg = ChangeProps(inv.context.request.requesterOrAnon, inv.context.state, thing.id, initialProps)
+        msg = ChangeProps(inv.context.request, inv.context.state, thing.id, initialProps)
         newState <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { s }
         })

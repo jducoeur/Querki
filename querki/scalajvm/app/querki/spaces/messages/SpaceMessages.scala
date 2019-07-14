@@ -79,7 +79,7 @@ case class ChangeModel(rc: RequestContext, space:OID, id:ThingId, newModelId:OID
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
  */
-case class ChangeProps(req:User, space:OID, id:ThingId, changedProps:PropMap, localCall:Boolean = true) extends SpaceMessage(req, space)
+case class ChangeProps(rc: RequestContext, space:OID, id:ThingId, changedProps:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
 case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(req, space)
 
@@ -114,7 +114,7 @@ trait SpaceMessagePayload
 /**
  * A message that is intended to be routed to a different member of the Space's troupe.
  */
-case class SpaceSubsystemRequest(req:User, space:OID, payload:SpaceMessagePayload) extends SpaceMessage(req, space)
+case class SpaceSubsystemRequest(rc: RequestContext, space:OID, payload:SpaceMessagePayload) extends SpaceMessage(rc.requesterOrAnon, space)
 
 /**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended

@@ -42,7 +42,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   /**
    * Change the properties of the specified Things.
    */
-  def sendChangeProps(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[SpaceState]
+  def sendChangeProps(rc: RequestContext, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):ME[SpaceState]
   
   /**
    * The OID of this Space.
@@ -175,12 +175,12 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
       }      
     }
   }
-  def updatePublishedThings(who:User, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
+  def updatePublishedThings(rc: RequestContext, thingIds:Seq[OID])(implicit state:SpaceState):ME[SpaceState] = {
     log(s"About to computePublishChanges for $thingIds")
     for {
       updates <- computePublishChanges(thingIds)
       _ = log(s"About to sendChangeProps($updates)")
-      result <- sendChangeProps(who, updates)
+      result <- sendChangeProps(rc, updates)
     }
       yield result
   }
@@ -188,21 +188,21 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   def receiveCommand:Receive = handleRequestResponse orElse {
     case _ if (initializing) => stash()
     
-    case Publish(who, things, meta, spaceState) => {
+    case Publish(rc, things, meta, spaceState) => {
       loggingErrors {
         for {
-          _ <- publish(who, things, meta, spaceState)
-          finalState <- updatePublishedThings(who, things)(spaceState)
+          _ <- publish(rc.requesterOrAnon, things, meta, spaceState)
+          finalState <- updatePublishedThings(rc, things)(spaceState)
         }
           yield { sender ! PublishResponse(finalState) }
       }
     }
     
-    case Update(who, things, meta, spaceState) => {
+    case Update(rc, things, meta, spaceState) => {
       loggingErrors {
         for {
-          _ <- publish(who, things, meta, spaceState)
-          finalState <- updatePublishedThings(who, things)(spaceState)
+          _ <- publish(rc.requesterOrAnon, things, meta, spaceState)
+          finalState <- updatePublishedThings(rc, things)(spaceState)
         }
           yield { sender ! PublishResponse(spaceState) }
       }

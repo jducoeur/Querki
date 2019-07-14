@@ -32,7 +32,7 @@ class PublicationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   }
 
   def publish(thingId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
-    doPublish(thing, Publish(user, List(thing.id), emptyProps, state))
+    doPublish(thing, Publish(rc, List(thing.id), emptyProps, state))
   }
   
   def update(thingId:TID, minor:Boolean):Future[ThingInfo] = withThing(thingId) { thing =>
@@ -41,7 +41,7 @@ class PublicationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
         toProps(Publication.MinorUpdateProp(true))
       else
         emptyProps
-    doPublish(thing, Update(user, List(thing.id), props, state))
+    doPublish(thing, Update(rc, List(thing.id), props, state))
   }
   
   def changePublishedModels():Future[Unit] = {

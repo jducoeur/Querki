@@ -513,6 +513,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   
   def removePropertyFromAll(propTid:TID):OperationHandle = withProp(propTid) { prop =>
     // All the work gets done by the child Actor:
-    ProgressActor.createProgressActor(requester, RemovePropertyActor.props(user, prop.id, ecology, state, spaceRouter))
+    ProgressActor.createProgressActor(requester, RemovePropertyActor.props(rc, prop.id, ecology, state, spaceRouter))
   }
 }

@@ -1,15 +1,14 @@
 package querki.conversations
 
 import akka.actor._
-
 import querki.conversations.messages._
 import querki.globals._
 import querki.identity.{IdentityId, User}
 import querki.spaces.messages._
 import querki.uservalues.PersistMessages._
 import querki.util.QuerkiActor
-
 import PersistMessages._
+import querki.values.RequestContext
 
 /**
  * This Actor belongs to the SpaceConversations troupe; it is responsible for sending notifications about comments
@@ -35,7 +34,7 @@ private [conversations] class SpaceConversationNotifier(e:Ecology, initState:Spa
    
   override def preStart() = {
     for {
-      ValuesForUser(prefs) <- spaceRouter.request(SpaceSubsystemRequest(User.Anonymous, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+      ValuesForUser(prefs) <- spaceRouter.request(SpaceSubsystemRequest(RequestContext(Some(User.Anonymous), state.owner), state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
     }
     {
       commentNotifyPrefs = prefs

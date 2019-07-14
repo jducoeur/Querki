@@ -58,7 +58,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       case AsOID(id) => id
       case AsName(name) => throw new Exception(s"Trying to send message $msg, but only have Space name $name!")
     } 
-    SpaceOps.askSpace2(SpaceSubsystemRequest(rc.requesterOrAnon, spaceId, msg))(cb)
+    SpaceOps.askSpace2(SpaceSubsystemRequest(rc, spaceId, msg))(cb)
   }
   
   def askUserSession[B](rc:PlayRequestContext, msg:ClientRequest)(cb: PartialFunction[Any, Future[B]]):Future[B] = {

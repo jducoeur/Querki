@@ -128,11 +128,11 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
     /**
      * Message to forward to a UserSpaceSession. Create the session, if needed.
      */
-    case msg @ SpaceSubsystemRequest(requester, _, payload) => {
+    case msg @ SpaceSubsystemRequest(rc, _, payload) => {
       payload match {
         // HACK: messages heading for the User Value Persister:
         case p:querki.uservalues.PersistMessages.ExternallyExposed => persister.forward(msg)
-        case _ => routeToChild(requester, msg)
+        case _ => routeToChild(rc.requesterOrAnon, msg)
       }
     }
     case msg @ ClientRequest(req, rc) => routeToChild(rc.requesterOrAnon, msg)

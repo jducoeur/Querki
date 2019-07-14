@@ -3,8 +3,9 @@ package querki.publication
 import models._
 import querki.core.QLText
 import querki.globals._
-import querki.identity.{PublicIdentity, User}
+import querki.identity.{User, PublicIdentity}
 import querki.time.DateTime
+import querki.values.RequestContext
 
 /**
  * The Commands that can legitimately be sent to the PublicationCore.
@@ -12,8 +13,8 @@ import querki.time.DateTime
 object PublicationCommands {
   sealed trait PublicationCommand extends querki.spaces.messages.SpaceMessagePayload
   
-  case class Publish(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
-  case class Update(who:User, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
+  case class Publish(rc: RequestContext, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
+  case class Update(rc: RequestContext, things:Seq[OID], meta:PropMap, state:SpaceState) extends PublicationCommand
   
   /**
    * Returned in response to Publish and Update -- this is the State that results after Publication.

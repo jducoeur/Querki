@@ -200,7 +200,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         thingId <- inv.contextAllAs(LinkType)
         prop <- inv.definingContextAsProperty
         msg = SpaceSubsystemRequest(
-                inv.context.request.requesterOrAnon, inv.state.id, 
+                inv.context.request, inv.state.id,
                 LoadThingPropValues(thingId, prop.id, inv.state))
         uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
         uv <- inv.iter(uvsFut.values)
@@ -231,7 +231,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       for {
         identity <- inv.contextAllAs(IdentityType)
         msg = SpaceSubsystemRequest(
-                inv.context.request.requesterOrAnon, inv.state.id, 
+                inv.context.request, inv.state.id,
                 LoadUserPropValues(identity, inv.state))
         uvsFut <- inv.fut(SpaceOps.spaceRegion.ask(msg)(ActorHelpers.timeout).mapTo[ValuesForUser])
         uv <- inv.iter(uvsFut.values)
@@ -269,7 +269,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         summaryPropId <- inv.opt(summaryPropPV.firstOpt)        
         // ... go fetch the actual User Values for this Property...
         userValueRequest = SpaceSubsystemRequest(
-                inv.context.request.requesterOrAnon, inv.state.id, 
+                inv.context.request, inv.state.id,
                 LoadAllPropValues(prop, inv.state))
         ValuesForUser(values) <- inv.fut(SpaceOps.spaceRegion ? userValueRequest)
         // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)

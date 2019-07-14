@@ -851,11 +851,12 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
-    case ChangeProps(who, spaceId, thingId, changedProps, localCall) => {
-      val initialState = currentState
-      // TODO: wow, this code is horrible, and goes a long ways to saying that we desperately need to rethink the
-      // InPublication architecture:
-      val (pub, fullState, publishing) = 
+    case ChangeProps(rc, spaceId, thingId, changedProps, localCall) => {
+      getUserFromRc(rc) { who =>
+        val initialState = currentState
+        // TODO: wow, this code is horrible, and goes a long ways to saying that we desperately need to rethink the
+        // InPublication architecture:
+        val (pub, fullState, publishing) =
         if (isPublishable(thingId)) {
           val unpubChangesFlag = changedProps.getFirstOpt(Publication.HasUnpublishedChanges)
           if (unpubChangesFlag.isDefined && unpubChangesFlag.get == false) {
@@ -868,60 +869,62 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
         } else {
           (false, currentState, false)
         }
-      
-      // Publication is the really complicated bit, since the one thing we *aren't* doing is handling
-      // the ChangeProps that started this:
-      def doPublish():RM[ChangeResult] = {
-        val thingToPublish = enhancedState.anythingLocal(thingId).get
-        val allProps = enhanceProps(thingToPublish.props, changedProps)
-        val oid = thingToPublish.id
-        val changesRM = 
-          if (currentState.anything(oid).isDefined) {
-            // Okay -- this Thing exists in the mainline. This means that it has already been
-            // Published, so we need to *modify* it. Note that we do this by slamming the value.
-            // In principle, we should figure out the diff and do this as a ChangeProps instead,
-            // but one problem at a time.
-            modifyThing(who, thingId, None, allProps, true)(currentState)
-          } else {
-            // This doesn't exist in the mainline yet, so we need to actually *create* it there.
-            createSomething(who, thingToPublish.model, allProps, thingToPublish.kind, Some(oid))(currentState)
+
+        // Publication is the really complicated bit, since the one thing we *aren't* doing is handling
+        // the ChangeProps that started this:
+        def doPublish(): RM[ChangeResult] = {
+          val thingToPublish = enhancedState.anythingLocal(thingId).get
+          val allProps = enhanceProps(thingToPublish.props, changedProps)
+          val oid = thingToPublish.id
+          val changesRM =
+            if (currentState.anything(oid).isDefined) {
+              // Okay -- this Thing exists in the mainline. This means that it has already been
+              // Published, so we need to *modify* it. Note that we do this by slamming the value.
+              // In principle, we should figure out the diff and do this as a ChangeProps instead,
+              // but one problem at a time.
+              modifyThing(who, thingId, None, allProps, true)(currentState)
+            } else {
+              // This doesn't exist in the mainline yet, so we need to actually *create* it there.
+              createSomething(who, thingToPublish.model, allProps, thingToPublish.kind, Some(oid))(currentState)
+            }
+          for {
+            cr <- changesRM
+            // And now that we've calculated that, tell the InPublicationActor that it can get
+            // rid of this Thing:
+            _ <- notifyPublished(who, oid)(enhancedState)
           }
-        for {
-          cr <- changesRM
-          // And now that we've calculated that, tell the InPublicationActor that it can get
-          // rid of this Thing:
-          _ <- notifyPublished(who, oid)(enhancedState)
+            yield cr
         }
-          yield cr
-      }
-      def modifyAndPublishIfNeeded(state:SpaceState):RM[ChangeResult] = {
-        if (publishing) {
-          doPublish()
-        } else {
-          modifyThing(who, thingId, None, changedProps, false)(state)
+
+        def modifyAndPublishIfNeeded(state: SpaceState): RM[ChangeResult] = {
+          if (publishing) {
+            doPublish()
+          } else {
+            modifyThing(who, thingId, None, changedProps, false)(state)
+          }
         }
-      }
-      
-      runAndSendResponse("changeProps", localCall, modifyAndPublishIfNeeded, pub)(fullState).map 
-      { changes =>
-        // After we finish persisting everything, we need to deal with the possibility that
-        // they've changed the name of the Space...
-        changes.last.changedThing.map { lastThingId => 
-          if (lastThingId == spaceId) {
-            // Okay, we're modifying the Space. Did we change either name?
-            val finalState = changes.last.resultingState
-            def linkName(state:SpaceState) = Core.NameProp.first(state.props)
-            def disp(state:SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
-        
-            if (!NameUtils.equalNames(linkName(finalState), linkName(initialState)) 
-              || !(disp(finalState).contentEquals(disp(initialState))))
-            {
-              // At least one of those names changed, so notify the MySQL layer:
-              changeSpaceName(NameUtils.canonicalize(linkName(finalState)), disp(finalState))
+
+        runAndSendResponse("changeProps", localCall, modifyAndPublishIfNeeded, pub)(fullState).map { changes =>
+          // After we finish persisting everything, we need to deal with the possibility that
+          // they've changed the name of the Space...
+          changes.last.changedThing.map { lastThingId =>
+            if (lastThingId == spaceId) {
+              // Okay, we're modifying the Space. Did we change either name?
+              val finalState = changes.last.resultingState
+
+              def linkName(state: SpaceState) = Core.NameProp.first(state.props)
+
+              def disp(state: SpaceState) = Basic.DisplayNameProp.firstOpt(state.props) map (_.raw.toString) getOrElse linkName(state)
+
+              if (!NameUtils.equalNames(linkName(finalState), linkName(initialState))
+                || !(disp(finalState).contentEquals(disp(initialState)))) {
+                // At least one of those names changed, so notify the MySQL layer:
+                changeSpaceName(NameUtils.canonicalize(linkName(finalState)), disp(finalState))
+              }
             }
           }
+
         }
-        
       }
     }
     

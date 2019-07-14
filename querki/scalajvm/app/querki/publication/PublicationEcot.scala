@@ -190,7 +190,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
         includeMinor <- inv.processAs("includeMinor", YesNoType)
         reverse <- inv.processAs("reverse", YesNoType)
         who = inv.context.request.requesterOrAnon
-        cmd = SpaceSubsystemRequest(who, inv.state.id, GetEvents(who, start, until, includeMinor, false))
+        cmd = SpaceSubsystemRequest(inv.context.request, inv.state.id, GetEvents(who, start, until, includeMinor, false))
         RequestedEvents(events) <- inv.fut(SpaceOps.spaceRegion ? cmd)
         orderedEvents = if (reverse) events.reverse else events
         filteredEvents = filterOnModels(changesTo, orderedEvents)(inv.state)

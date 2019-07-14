@@ -215,7 +215,7 @@ class PhotoUploadActor(e:Ecology, state:SpaceState, router:ActorRef) extends Act
       }
       
 //      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
-      router ? SpaceSubsystemRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
+      router ? SpaceSubsystemRequest(rc, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
         response match {
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:

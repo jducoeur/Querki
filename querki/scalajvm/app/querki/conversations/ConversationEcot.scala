@@ -197,7 +197,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations with 
       for {
         t <- inv.contextAllThings
         convs <- inv.fut((SpaceOps.spaceRegion ? 
-          SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, GetConversations(t.id))).mapTo[ThingConversations])
+          SpaceSubsystemRequest(inv.context.request, inv.state.id, GetConversations(t.id))).mapTo[ThingConversations])
         node <- inv.iter(convs.comments)
       }
         yield ExactlyOne(ConversationType(node))

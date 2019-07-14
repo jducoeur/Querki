@@ -1,12 +1,10 @@
 package querki.uservalues
 
 import models._
-
 import querki.globals._
 import querki.identity.{Identity, User}
 import querki.persistence._
-import querki.values.QValue
-
+import querki.values.{QValue, RequestContext}
 import PersistentEvents._
 
 /**
@@ -25,7 +23,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
   /**
    * This is called for all changes that are *not* UserValues (that is, most ofthem).
    */
-  def forwardNormalChanges(req:User, thingId:ThingId, props:PropMap):Unit
+  def forwardNormalChanges(rc: RequestContext, thingId:ThingId, props:PropMap):Unit
   /**
    * This is called for all changes that *are* UserValues, so that they can be denormalized to the
    * ThingUserValuesActor.
@@ -71,7 +69,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
    * It deals with persisting the ones that are, and forwards the rest of the changes to be dealt with
    * elsewhere.
    */
-  def changeProps(req:User, thingId:ThingId, props:PropMap):Unit = {
+  def changeProps(rc: RequestContext, thingId:ThingId, props:PropMap):Unit = {
     
     implicit val s = rawState
     
@@ -79,7 +77,7 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
     
     // First, if there are non-UserValue changes (which is true about 99% of the time), pass them along:
     if (!nonUvProps.isEmpty) {
-      forwardNormalChanges(req, thingId, nonUvProps)
+      forwardNormalChanges(rc, thingId, nonUvProps)
     }
     
     // Now, deal with the UserValue changes.
@@ -93,9 +91,9 @@ trait UserValueSessionCore extends PersistentActorCore with PersistentEvents wit
             doPersist(uv) { _ =>
               // Note that sendSummaries() must come *before* doChangeProps, since it uses the old contents of
               // userValues:
-              sendSummaries(req, thing.id, uvProps)
+              sendSummaries(rc.requesterOrAnon, thing.id, uvProps)
               doChangeProps(thing.id, uvProps)
-              forwardUserValue(req, uv)
+              forwardUserValue(rc.requesterOrAnon, uv)
             }
           }
         }

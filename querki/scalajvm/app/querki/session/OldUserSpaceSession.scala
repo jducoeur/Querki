@@ -176,7 +176,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       // answer -- the obvious alternative is to say that I can always change my own Person, but it
       // isn't at all clear that that's correct. In the case of, eg, whitelisted Commentators, it
       // very well might not be.
-      val msg = ChangeProps(IdentityAccess.SystemUser, state.id, person.id, Map(Basic.DisplayNameProp(actualIdentity.name)))
+      val msg = ChangeProps(IdentityAccess.systemRequestContext(state), state.id, person.id, Map(Basic.DisplayNameProp(actualIdentity.name)))
       // TODO: we really ought to do something if this fails. But what?
       spaceRouter ? msg
     }
@@ -245,14 +245,14 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * TBD: in general, the way we have denormalized the Display Name between Identity and Person is kind of suspicious.
    * There are good efficiency arguments for it, but I am suspicious.
    */
-  def checkDisplayName(req:User, space:OID) = {
+  def checkDisplayName(rc: RequestContext, space:OID) = {
     localPerson match {
       case Some(person) => {
-      val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)
+      val curIdentity = Person.localIdentities(rc.requesterOrAnon)(_rawState.get).headOption.getOrElse(user.mainIdentity)
       val curDisplayName = curIdentity.name
       if (person.displayName != curDisplayName) {
         // Tell the Space to alter the name of the Person record to fit our new expectations:
-        spaceRouter ! ChangeProps(req, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
+        spaceRouter ! ChangeProps(rc, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
         // Update the local identity:
         _identity = Some(curIdentity)
       }
@@ -294,7 +294,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     case _ => stash()
   }
   
-  def changeProps(req:User, thingId:ThingId, props:PropMap) = {
+  def changeProps(rc: RequestContext, thingId:ThingId, props:PropMap) = {
     val (uvProps, nonUvProps) = props.partition { case (propId, _) => UserValues.isUserValueProp(propId)(state) }
     
     // Note that this code really isn't right! In practice, if we get more than one User Value change, the replies
@@ -317,7 +317,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
                  summaryPropId <- summaryLinkPV.firstOpt
                  newV = if (v.isDeleted) None else Some(v)
                }
-                yield SpacePluginMsg(req, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
+                yield SpacePluginMsg(rc.requesterOrAnon, spaceId, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
               // ... then tell the user we're set.
@@ -334,7 +334,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     }
     
     if (!nonUvProps.isEmpty) {
-      spaceRouter.forward(ChangeProps(req, spaceId, thingId, nonUvProps))
+      spaceRouter.forward(ChangeProps(rc, spaceId, thingId, nonUvProps))
     }
   }
   
@@ -398,13 +398,13 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       }
     }
         
-    case request @ SpaceSubsystemRequest(req, space, payload) => { 
-      checkDisplayName(req, space)
+    case request @ SpaceSubsystemRequest(rc, space, payload) => {
+      checkDisplayName(rc, space)
       payload match {    
         case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")
                 
         case ChangeProps2(thingId, props) => {
-          changeProps(req, thingId, props)
+          changeProps(rc, thingId, props)
         }
         
         case MarcoPoloRequest(propId, q, rc) => {

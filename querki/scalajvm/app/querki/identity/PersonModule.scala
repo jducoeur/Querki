@@ -557,7 +557,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           // Iff this is a Guest, don't slam the DisplayName, which might have been right in
           // the first place!
           emptyProps
-      changeRequest = ChangeProps(IdentityAccess.SystemUser, state.id, person.toThingId, 
+      changeRequest = ChangeProps(IdentityAccess.escalateToSystemPrivileges(rc), state.id, person.toThingId,
           toProps(
             InvitationStatusProp(StatusMemberOID))
             ++ identityProps)
@@ -585,7 +585,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           else {
             // Note that this needs to be executed with root privs, because the requester doesn't have the right to
             // make this change themselves:
-            val msg = ChangeProps(IdentityAccess.SystemUser, state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
+            val msg = ChangeProps(IdentityAccess.escalateToSystemPrivileges(rc), state.id, person.id, toProps(AccessControl.PersonRolesProp((existingRoles :+ roleId):_*)))
             (SpaceOps.spaceRegion ? msg) map {
               case ThingFound(_, _) => None
               case ThingError(ex, _) => Some(ex)
@@ -663,7 +663,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     withCache { cache =>
       cache.localPerson(guestId).map { person =>
         val changeRequest = 
-          ChangeProps(IdentityAccess.SystemUser, state.id, person.id,
+          ChangeProps(IdentityAccess.systemRequestContext(state), state.id, person.id,
             toProps(
               IdentityLink(actualId.id),
               DisplayNameProp(actualId.name)),

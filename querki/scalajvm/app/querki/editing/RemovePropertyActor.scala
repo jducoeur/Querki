@@ -1,15 +1,13 @@
 package querki.editing
 
 import akka.actor._
-
 import org.querki.requester._
-
 import models._
-
 import querki.api.ProgressActor
 import querki.globals._
 import querki.identity.User
 import querki.spaces.messages._
+import querki.values.RequestContext
 
 /**
  * Removing a non-empty Property is a bit fraught, and requires touching a lot of Things.
@@ -18,7 +16,7 @@ import querki.spaces.messages._
  * 
  * @author jducoeur
  */
-class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state:SpaceState, router:ActorRef) 
+class RemovePropertyActor(rc: RequestContext, propId:OID, val ecology:Ecology, state:SpaceState, router:ActorRef)
   extends Actor with Requester with ProgressActor with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
@@ -62,7 +60,7 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
       dummy1 <- removeFrom(instances)
       dummy2 <- removeFrom(models)
       dummy3 = phaseDescription = s"Deleting Property $propName"
-      dummy4 <- router.request(DeleteThing(requester, state.id, propId))
+      dummy4 <- router.request(DeleteThing(rc.requesterOrAnon, state.id, propId))
     }
       finished = true
   }
@@ -81,7 +79,7 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
             } 
             case None => Map.empty
           }
-        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop))))) flatMap {
+        router.request(ChangeProps(rc, state.id, thing.id, instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop))))) flatMap {
           case ThingFound(tid, newState) => {
             nDone = nDone + 1
             removeFrom(things.tail)
@@ -96,6 +94,6 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
 }
 
 object RemovePropertyActor {
-  def props(requester:User, propId:OID, ecology:Ecology, state:SpaceState, router:ActorRef) = 
-    Props(classOf[RemovePropertyActor], requester, propId, ecology, state, router)
+  def props(rc: RequestContext, propId:OID, ecology:Ecology, state:SpaceState, router:ActorRef) =
+    Props(classOf[RemovePropertyActor], rc, propId, ecology, state, router)
 }

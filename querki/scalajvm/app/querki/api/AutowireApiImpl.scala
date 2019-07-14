@@ -183,7 +183,7 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
    * TODO: can we refactor this out of the general AutowireApiImpl?
    */
   def createSelfRequest(msg:SessionMessage):SpaceSubsystemRequest = {
-    SpaceSubsystemRequest(user, state.id, msg)
+    SpaceSubsystemRequest(rc, state.id, msg)
   }
 
 }

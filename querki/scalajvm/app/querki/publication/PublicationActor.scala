@@ -2,14 +2,13 @@ package querki.publication
 
 import akka.actor.{ActorRef, Props}
 import akka.persistence._
-
 import funcakka._
 import org.querki.requester._
-
 import models._
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{IdentityId, User, PublicIdentity}
 import querki.spaces.messages._
+import querki.values.RequestContext
 
 class PublicationActor(val ecology:Ecology, val id:OID, val router:ActorRef) 
   extends PublicationCore with RealActorCore with PersistentActor with Requester with EcologyMember 
@@ -18,11 +17,11 @@ class PublicationActor(val ecology:Ecology, val id:OID, val router:ActorRef)
    * TODO: enhance PersistentActorCore to include a version of request(), so this can run completely in
    * PublicationCore.
    */
-  def sendChangeProps(who:User, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[SpaceState] = {
+  def sendChangeProps(rc: RequestContext, pairs:Seq[(OID, PropMap)])(implicit state:SpaceState):RequestM[SpaceState] = {
     (RequestM.successful(state) /: pairs) { case (rm, (thingId, propMap)) =>
       for {
         _ <- rm
-        ThingFound(_, nextState) <- router.request(ChangeProps(who, state.id, thingId, propMap))
+        ThingFound(_, nextState) <- router.request(ChangeProps(rc, state.id, thingId, propMap))
       }
         yield nextState
     }

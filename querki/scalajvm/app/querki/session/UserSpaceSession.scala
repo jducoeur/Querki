@@ -2,15 +2,14 @@ package querki.session
 
 import akka.actor._
 import akka.persistence._
-
 import models._
-
 import querki.globals._
 import querki.identity._
 import querki.persistence._
 import querki.spaces.messages.{ChangeProps, SpacePluginMsg}
 import querki.uservalues._
 import querki.uservalues.PersistentEvents._
+import querki.values.RequestContext
 
 /**
  * This PersistentActor represents the relationship of this User to this Space.
@@ -45,8 +44,8 @@ class UserSpaceSession(val ecology:Ecology, initState:SpaceState, val user:User,
   /**
    * This is called for all changes that are *not* UserValues (that is, most ofthem).
    */
-  def forwardNormalChanges(req:User, thingId:ThingId, props:PropMap):Unit = {
-    spaceRouter.forward(ChangeProps(req, spaceId, thingId, props))
+  def forwardNormalChanges(rc: RequestContext, thingId:ThingId, props:PropMap):Unit = {
+    spaceRouter.forward(ChangeProps(rc, spaceId, thingId, props))
   }
   
   /**

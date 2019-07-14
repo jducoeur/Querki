@@ -100,7 +100,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
       implicit val theRc = rc
       
       for {
-        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](SpaceSubsystemRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
+        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](SpaceSubsystemRequest(rc, state.id, GetConversations(thing.id)))
         identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
         apiConvs <- Future.sequence(filterDeadThreads(convs).map(toApi(thing, _)(identities, theRc)))
       }
@@ -133,7 +133,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     
     val theRc = rc
     for {
-      AddedNode(parentId, node) <- spaceRouter.request(SpaceSubsystemRequest(user, state.id, NewComment(comment)))
+      AddedNode(parentId, node) <- spaceRouter.request(SpaceSubsystemRequest(theRc, state.id, NewComment(comment)))
       dummy1 = convTrace(s"    Have added the node for the new comment")
       identityResult <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
       identity = identityResult match { 
@@ -147,7 +147,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-    spaceRouter.request(SpaceSubsystemRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
+    spaceRouter.request(SpaceSubsystemRequest(rc, state.id, DeleteComment(thing.id, commentId))).map {
       case CommentDeleted => ()
       case CommentNotDeleted => throw new Exception("Unable to delete comment")      
     }

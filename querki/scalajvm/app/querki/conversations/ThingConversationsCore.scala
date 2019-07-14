@@ -233,7 +233,8 @@ abstract class ThingConversationsCore(initState:SpaceState, val thingId:OID)(imp
     /**
      * This is a wrapped message that was sent to the troupe. The guts are in msg.
      */
-    case SpaceSubsystemRequest(req, _, msg) => {
+    case SpaceSubsystemRequest(rc, _, msg) => {
+      def req = rc.requesterOrAnon
       msg match {
         case GetConversations(_) => {
           if (!ConvEcot.canReadComments(req, thingId, state)) {
