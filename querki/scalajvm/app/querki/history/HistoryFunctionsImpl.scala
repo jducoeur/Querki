@@ -37,7 +37,7 @@ class HistoryFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spac
       throw new Exception(s"Only the owner of the Space is allowed to view its history!")
     
     for {
-      ThingFound(id, newState) <- spaceRouter.request(RollbackTo(v, user))
+      ThingFound(id, newState) <- spaceRouter.request(RollbackTo(v, rc))
     }
       yield ClientApi.spaceInfo(newState, user)
   }

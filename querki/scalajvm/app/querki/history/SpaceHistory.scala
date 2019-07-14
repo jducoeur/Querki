@@ -251,9 +251,9 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
       }
     }
     
-    case RollbackTo(v, user) => {
+    case RollbackTo(v, rc) => {
       getHistoryRecord(v) map { record =>
-        spaceRouter.request(SetState(user, id, record.state, SetStateReason.RolledBack, v.toString)) foreach {
+        spaceRouter.request(SetState(rc, id, record.state, SetStateReason.RolledBack, v.toString)) foreach {
           _ match {
             case resp:ThingFound => sender ! resp
             case other => throw new Exception(s"Tried to roll space $id back to version $v, but received response $other")
@@ -329,7 +329,7 @@ object SpaceHistory {
    * The caller is expected to have already done confirmation! This doesn't precisely lose
    * information, but can hide a lot!
    */
-  case class RollbackTo(v:HistoryVersion, user:User) extends HistoryMessage
+  case class RollbackTo(v:HistoryVersion, rc: RequestContext) extends HistoryMessage
   
   /**
    * Finds the last existing revision of the specified Thing, and re-creates it in this Space.

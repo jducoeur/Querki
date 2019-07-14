@@ -815,17 +815,19 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       }
     }
     
-    case SetState(who, spaceId, newState, reason, details) => {
-      val prevState = _currentState.getOrElse(emptySpace)
-      // We can't currently count on newState having the ownerIdentity right; it is often coming from History, which doesn't
-      // know about the MySQL side of the world. See QI.7w4g8h7, a crash bug that was apparently due to ownerIdentity
-      // never getting set.
-      val filledState =
+    case SetState(rc, spaceId, newState, reason, details) => {
+      getUserFromRc(rc) { who =>
+        val prevState = _currentState.getOrElse(emptySpace)
+        // We can't currently count on newState having the ownerIdentity right; it is often coming from History, which doesn't
+        // know about the MySQL side of the world. See QI.7w4g8h7, a crash bug that was apparently due to ownerIdentity
+        // never getting set.
+        val filledState =
         if (newState.ownerIdentity.isEmpty)
           newState.copy(ownerIdentity = prevState.ownerIdentity)
         else
           newState
-      runAndSendResponse("setState", true, setState(who, filledState, reason, details), false)(prevState)
+        runAndSendResponse("setState", true, setState(who, filledState, reason, details), false)(prevState)
+      }
     }
     
     // This message is simple, since it isn't persisted:

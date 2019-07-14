@@ -137,7 +137,7 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
         // Boot the new Space *locally*, so we can throw the State over the wall:
         spaceActor = startSpaceActor(newSpaceId)
         // Slam the State:
-        ThingFound(_, finalState) <- spaceActor.request(SetState(user, newSpaceId, remappedState, SetStateReason.ImportedFromExport, rawState.displayName))
+        ThingFound(_, finalState) <- spaceActor.request(SetState(rc, newSpaceId, remappedState, SetStateReason.ImportedFromExport, rawState.displayName))
         _ = processPercent = 90
         // Finally, once it's all built, shut down this temp Actor:
         _ = context.stop(spaceActor)

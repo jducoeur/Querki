@@ -101,7 +101,7 @@ case object StateInitialized
  * sometimes after major changes. Either way, it may *ONLY* be sent from within the Space's own troupe, because
  * it contains a SpaceState!
  */
-case class SetState(req:User, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(req, space)
+case class SetState(rc: RequestContext, space:OID, state:SpaceState, reason:SetStateReason, details:String) extends SpaceMessage(rc.requesterOrAnon, space)
 
 /**
  * The "payload" in a SpaceSubsystemRequest. Note that this is intentionally and necessarily *not* sealed --

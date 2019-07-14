@@ -28,7 +28,7 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
    * This is the object you use to play with extracting an App from this Space.
    */
   def makeExtractor():AppExtractor[TCIdentity] = {
-    new AppExtractor(state, owner)(TestRTCAble, this)
+    new AppExtractor(state, ownerRequest)(TestRTCAble, this)
   }
   
   /* **************************************
@@ -45,7 +45,7 @@ class AppableSpace(implicit e:Ecology) extends SimpleCoreSpace with AppExtractor
   def setAppState(state:SpaceState):TCIdentity[SpaceState] = {
     world.getSpace(state.id) match {
       case app:SpaceCoreSpaceBase => {
-        (app ! SetState(owner, state.id, state, SetStateReason.InitialAppState, "")).get match {
+        (app ! SetState(ownerRequest, state.id, state, SetStateReason.InitialAppState, "")).get match {
           case ThingFound(_, newState) => success(newState)
           case other => throw new Exception(s"setAppState got unexpected return value $other")
         }

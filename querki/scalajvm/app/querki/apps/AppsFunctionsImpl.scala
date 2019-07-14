@@ -124,7 +124,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     val appRef = context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, requester.self, appId, false))
     for {
       // ... give it its initial state...
-      ThingFound(_, newState) <- appRef.request(SetState(user, appId, state, SetStateReason.InitialAppState, state.displayName))
+      ThingFound(_, newState) <- appRef.request(SetState(rc, appId, state, SetStateReason.InitialAppState, state.displayName))
       // ... shut it down again...
       _ = context.stop(appRef)      
     }
@@ -149,7 +149,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
-    val extractor = new AppExtractor(state, user)(RealRTCAble, this)
+    val extractor = new AppExtractor(state, rc)(RealRTCAble, this)
     extractor.extractApp(elements, display, summary, details).map(ClientApi.spaceInfo(_, user))
   }
   

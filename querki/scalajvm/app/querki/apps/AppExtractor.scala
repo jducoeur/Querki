@@ -6,8 +6,9 @@ import querki.data.TID
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
-import querki.spaces.{PersistentSpaceActor, RTCAble, SpaceCreator, StatusNormal}
+import querki.spaces.{StatusNormal, SpaceCreator, PersistentSpaceActor, RTCAble}
 import querki.spaces.messages._
+import querki.values.RequestContext
 
 trait AppExtractorSupport[RM[_]] {
   def getOIDs(nRequested:Int):RM[Seq[OID]]
@@ -25,7 +26,7 @@ trait AppExtractorSupport[RM[_]] {
  * Deals with extracting Apps. Assumes that it runs inside AppsFunctionsImpl or a reasonable
  * facsimile thereof.
  */
-class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val extractorSupport:AppExtractorSupport[RM])(implicit val ecology:Ecology)  
+class AppExtractor[RM[_]](state:SpaceState, rc: RequestContext)(rtcIn:RTCAble[RM], val extractorSupport:AppExtractorSupport[RM])(implicit val ecology:Ecology)
   extends EcologyMember with ExtracteeComputer with AppRemapper[RM] with Hollower
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
@@ -41,6 +42,8 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
   
   implicit val rtc = rtcIn
   private implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
+
+  val user = rc.requesterOrAnon
   
   def extractApp(elements:Seq[TID], display:String, summary:String, details:String):RM[SpaceState] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
@@ -85,7 +88,7 @@ class AppExtractor[RM[_]](state:SpaceState, user:User)(rtcIn:RTCAble[RM], val ex
       // ... set the App's state...
       finalAppState <- extractorSupport.setAppState(renumberedApp) // (appWithGallery)
       // ... update the child Space to reflect the new reality...
-      _ <- extractorSupport.sendMessageToSelf(SetState(user, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
+      _ <- extractorSupport.sendMessageToSelf(SetState(rc, hollowedSpace.id, hollowedSpace, SetStateReason.ExtractedAppFromHere, display))
       // ... and add the App to the child Space.
       AddAppResult(exOpt, stateOpt) <- 
         extractorSupport.sendMessageToSelf(SpacePluginMsg(user, hollowedSpace.id, AddApp(finalAppState.id, finalAppState.version, true, true)))
