@@ -200,7 +200,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   }
   
   def deleteThing(thingId:TID):Future[Unit] = withThing(thingId) { thing =>
-    spaceRouter.request(DeleteThing(user, state.id, thing.toThingId)) map {
+    spaceRouter.request(DeleteThing(rc, state.id, thing.toThingId)) map {
       // TODO: there is no longer an obvious reason to return newState here, and probably good
       // reasons not to:
       case ThingFound(thingId, newState) => ()

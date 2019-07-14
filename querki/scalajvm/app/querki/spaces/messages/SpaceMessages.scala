@@ -81,7 +81,7 @@ case class ChangeModel(rc: RequestContext, space:OID, id:ThingId, newModelId:OID
  */
 case class ChangeProps(rc: RequestContext, space:OID, id:ThingId, changedProps:PropMap, localCall:Boolean = true) extends SpaceMessage(rc.requesterOrAnon, space)
 
-case class DeleteThing(req:User, space:OID, thing:ThingId) extends SpaceMessage(req, space)
+case class DeleteThing(rc: RequestContext, space:OID, thing:ThingId) extends SpaceMessage(rc.requesterOrAnon, space)
 
 /**
  * This is the initialization message for a newly-created Space, with the basic starting info.

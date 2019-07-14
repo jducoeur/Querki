@@ -948,37 +948,39 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       }
     }
     
-    case DeleteThing(who, spaceId, thingId) => {
-      def doMainDelete() = runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
-      
-      // TODO: "permissive" is a temporary hack to work around some consequences of QI.9v5kal6. We were
-      // accidentally creating some sub-Models on the publication fork. We need to allow those to be deleted.
-      val publishable = isPublishable(thingId, permissive = true)
-      
-      // Note that we have to deal with deletion from the Publication and main forks *separately*.
-      // TODO: this is horrible. How can we unify it?
-      if (publishable) {
-        // Check that it's legal, and tell the Publication fork to delete it. Keep in mind that even
-        // if it doesn't exist locally, it might exist in Publication.
-        // TODO: the duplication here is horrible. We need a better way to do this!
-        implicit val s = enhancedState
-        enhancedState.anything(thingId).map { thing =>
-          if (!canEdit(who, thing.id)(enhancedState))
-            throw new PublicException(UnknownPath)
-          
-          val msg = DHDeleteThing(who, thing.id, DateTime.now)
-          sendPublicationChanges(List(msg)).map { pubState =>
-            setPubState(pubState)
-            if (currentState.anything(thingId).isEmpty) {
-              // Looks like this was never actually published, so we're done:
-              sendResponse(true, thing.id, currentState)
-            } else {
-              doMainDelete()
+    case DeleteThing(rc, spaceId, thingId) => {
+      getUserFromRc(rc) { who =>
+        def doMainDelete() = runAndSendResponse("deleteThing", true, deleteThing(who, thingId), false)(currentState)
+
+        // TODO: "permissive" is a temporary hack to work around some consequences of QI.9v5kal6. We were
+        // accidentally creating some sub-Models on the publication fork. We need to allow those to be deleted.
+        val publishable = isPublishable(thingId, permissive = true)
+
+        // Note that we have to deal with deletion from the Publication and main forks *separately*.
+        // TODO: this is horrible. How can we unify it?
+        if (publishable) {
+          // Check that it's legal, and tell the Publication fork to delete it. Keep in mind that even
+          // if it doesn't exist locally, it might exist in Publication.
+          // TODO: the duplication here is horrible. We need a better way to do this!
+          implicit val s = enhancedState
+          enhancedState.anything(thingId).map { thing =>
+            if (!canEdit(who, thing.id)(enhancedState))
+              throw new PublicException(UnknownPath)
+
+            val msg = DHDeleteThing(who, thing.id, DateTime.now)
+            sendPublicationChanges(List(msg)).map { pubState =>
+              setPubState(pubState)
+              if (currentState.anything(thingId).isEmpty) {
+                // Looks like this was never actually published, so we're done:
+                sendResponse(true, thing.id, currentState)
+              } else {
+                doMainDelete()
+              }
             }
           }
+        } else {
+          doMainDelete()
         }
-      } else {
-        doMainDelete()
       }
     }
     

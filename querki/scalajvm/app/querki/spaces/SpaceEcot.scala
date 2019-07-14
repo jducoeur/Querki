@@ -307,7 +307,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       val vFut = for {
         thingId <- inv.contextAllAs(LinkType)
-        msg = DeleteThing(inv.context.request.requesterOrAnon, inv.context.state, thingId)
+        msg = DeleteThing(inv.context.request, inv.context.state, thingId)
         (thingId, newState) <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => { (id, s) }
         })

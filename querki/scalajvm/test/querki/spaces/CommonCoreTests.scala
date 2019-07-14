@@ -93,7 +93,7 @@ class CommonCoreTests extends QuerkiTests {
       implicit val s = new CommonCoreSpace
       
       pql("[[My Instance -> My Optional Text]]") should equal ("Hello world")
-      s ! DeleteThing(s.owner, s.sc.id, s.instance)
+      s ! DeleteThing(s.ownerRequest, s.sc.id, s.instance)
       pql("[[My Instance -> My Optional Text]]") should equal (expectedWarning("Tags.noProp"))
       pql("[[My Instance]]") should equal (unknownName("My Instance"))
 

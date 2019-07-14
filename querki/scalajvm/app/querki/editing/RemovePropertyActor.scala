@@ -60,7 +60,7 @@ class RemovePropertyActor(rc: RequestContext, propId:OID, val ecology:Ecology, s
       dummy1 <- removeFrom(instances)
       dummy2 <- removeFrom(models)
       dummy3 = phaseDescription = s"Deleting Property $propName"
-      dummy4 <- router.request(DeleteThing(rc.requesterOrAnon, state.id, propId))
+      dummy4 <- router.request(DeleteThing(rc, state.id, propId))
     }
       finished = true
   }
