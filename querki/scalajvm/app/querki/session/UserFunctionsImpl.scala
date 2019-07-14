@@ -105,7 +105,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       }
     }
     
-    (SpaceOps.spaceManager ? CreateSpace(user, name)).flatMap {
+    (SpaceOps.spaceManager ? CreateSpace(rc, name)).flatMap {
       case info:querki.spaces.messages.SpaceInfo => {
         val result = ClientApi.spaceInfo(info)
         appIdOpt match {

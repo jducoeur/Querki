@@ -792,22 +792,24 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   val normalReceiveCommand:Receive = {
     // This is the initial "set up this Space" message. It *must* be the *very first message* received
     // by this Space!
-    case msg @ InitialState(who, spaceId, display, ownerId) => {
-      if (_currentState.isDefined) {
-        QLog.error(s"Space $id received $msg, but already has state $currentState!")
-      } else {
-        val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
-        persistAllAnd(List(msg)).map { _ =>
-          val identityOpt = who.identityById(ownerId)
-          val initState = initStatePure(who.id, ownerId, identityOpt, display)
-          // TODO: this shouldn't be necessary, but until everything is purified, it is:
-          updateStateCore(initState)
-          // Note that we intentionally do *not* use runAndSendResponse() here. That's
-          // because that function responds at the end with ThingFound, which we can't
-          // use for InitialState -- we're getting this call from a SpaceManager, often
-          // one on a different node, and ThingFound doesn't work cross-node:
-          runChanges(Seq(createOwnerPerson(identityOpt.get)))(currentState).map { resp =>
-            respond(StateInitialized)
+    case msg @ InitialState(rc, spaceId, display, ownerId) => {
+      getUserFromRc(rc) { who =>
+        if (_currentState.isDefined) {
+          QLog.error(s"Space $id received $msg, but already has state $currentState!")
+        } else {
+          val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
+          persistAllAnd(List(msg)).map { _ =>
+            val identityOpt = who.identityById(ownerId)
+            val initState = initStatePure(who.id, ownerId, identityOpt, display)
+            // TODO: this shouldn't be necessary, but until everything is purified, it is:
+            updateStateCore(initState)
+            // Note that we intentionally do *not* use runAndSendResponse() here. That's
+            // because that function responds at the end with ThingFound, which we can't
+            // use for InitialState -- we're getting this call from a SpaceManager, often
+            // one on a different node, and ThingFound doesn't work cross-node:
+            runChanges(Seq(createOwnerPerson(identityOpt.get)))(currentState).map { resp =>
+              respond(StateInitialized)
+            }
           }
         }
       }

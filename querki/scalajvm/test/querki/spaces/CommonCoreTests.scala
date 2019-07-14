@@ -35,7 +35,7 @@ class CommonCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with Model
   lazy val TagType = Tags.NewTagSetType
   
   // Boot the Space up
-  this ! InitialState(owner, sc.id, "Test Space", owner.mainIdentity.id)
+  this ! InitialState(ownerRequest, sc.id, "Test Space", owner.mainIdentity.id)
   
   // Build the contents of CommonSpace in it
   // First, create all the Properties...

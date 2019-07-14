@@ -40,7 +40,7 @@ case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
  * than StatusNormal, the Space will be shut down immediately after creation, so that the caller
  * can deal with post-creation operations.
  */
-case class CreateSpace(requester:User, name:String, initialStatus:SpaceStatusCode = StatusNormal) extends SpaceMgrMsg
+case class CreateSpace(rc: RequestContext, name:String, initialStatus:SpaceStatusCode = StatusNormal) extends SpaceMgrMsg
 
 case class ChangeSpaceStatus(spaceId:OID, newStatus:SpaceStatusCode) extends SpaceMgrMsg
 case object StatusChanged
@@ -89,7 +89,7 @@ case class DeleteThing(rc: RequestContext, space:OID, thing:ThingId) extends Spa
  * 
  * Note that we only send the owning Identity's OID; it can then be fetched from req.
  */
-case class InitialState(req:User, space:OID, display:String, owner:IdentityId) extends SpaceMessage(req, space)
+case class InitialState(rc: RequestContext, space:OID, display:String, owner:IdentityId) extends SpaceMessage(rc.requesterOrAnon, space)
 /**
  * This is the ack from InitialState. We specifically do *not* respond with ThingFound in this case, because
  * the message often goes cross-node.

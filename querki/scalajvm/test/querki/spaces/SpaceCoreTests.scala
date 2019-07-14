@@ -183,7 +183,7 @@ class SpaceCoreSpace(implicit e:Ecology) extends SpaceCoreSpaceBase {
 
 class SimpleCoreSpace(implicit e:Ecology) extends SpaceCoreSpace()(e) with querki.types.ModelTypeDefiner {
   // Boot the Space up
-  this ! InitialState(owner, sc.id, "Test Space", owner.mainIdentity.id)
+  this ! InitialState(ownerRequest, sc.id, "Test Space", owner.mainIdentity.id)
 }
 
 /**
@@ -236,7 +236,7 @@ class SpaceCoreTests extends QuerkiTests {
       // The 7 below assumes that building the Space + InitialState consumes 4 OIDs:
       implicit val s = new DuplicateOIDSpace(7)
       
-      s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
+      s ! InitialState(s.ownerRequest, s.sc.id, "Test Space", s.owner.mainIdentity.id)
       s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
       s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
       s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
@@ -259,7 +259,7 @@ class SpaceCoreTests extends QuerkiTests {
         }
         
         val s = new TestSpace
-        s ! InitialState(s.owner, s.sc.id, "Test Space", s.owner.mainIdentity.id)
+        s ! InitialState(s.ownerRequest, s.sc.id, "Test Space", s.owner.mainIdentity.id)
         s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         s ! CreateThing(s.ownerRequest, s.sc.id, Kind.Thing, SimpleThingOID, emptyProps)
         

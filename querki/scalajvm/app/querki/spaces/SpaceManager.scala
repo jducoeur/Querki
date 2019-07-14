@@ -61,7 +61,9 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
       }
     }
 
-    case req @ CreateSpace(requester, display, initialStatus) => {
+    case req @ CreateSpace(rc, display, initialStatus) => {
+      val requester = rc.requesterOrAnon
+
       val canon = NameUtils.canonicalize(display)
       val result = for {
         NewOID(spaceId) <- QuerkiCluster.oidAllocator.request(NextOID)
@@ -75,7 +77,7 @@ class SpaceManager(e:Ecology, val region:ActorRef) extends Actor with Requester 
         case Success(spaceId) => {
           // In the new Akka Persistence world, we send the new Space an InitialState message to finish
           // bootstrapping it:
-          SpaceOps.spaceRegion.request(InitialState(requester, spaceId, display, requester.mainIdentity.id)) foreach {
+          SpaceOps.spaceRegion.request(InitialState(rc, spaceId, display, requester.mainIdentity.id)) foreach {
             // *Now* the Space should be fully bootstrapped, so send the response back to the originator:
             case StateInitialized => {
               // Normally that's it, but if this is a non-Normal creation, we shut down the "real" Actor so
