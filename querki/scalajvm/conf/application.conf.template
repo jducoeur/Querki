@@ -42,6 +42,11 @@ querki {
     # semblance of recording of Space ups and downs.
     logMonitor : false
   }
+
+  experiment {
+    # Time before an Experiment times out for inactivity
+    timeout : 10 minutes
+  }
   
   session {
     # Time before a UserSpaceSession times out for inactivity

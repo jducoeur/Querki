@@ -2,13 +2,12 @@ package querki.spaces
 
 import akka.actor._
 import akka.event.LoggingReceive
-
 import org.querki.requester._
-
 import models.OID
 import querki.admin.SpaceTimingActor
 import querki.api.ClientRequest
-import querki.conversations.messages.{ActiveThings, GetActiveThings}
+import querki.conversations.messages.{GetActiveThings, ActiveThings}
+import querki.experiments.SpaceExperiments
 import querki.globals._
 import querki.history.SpaceHistory
 import querki.photos.PhotoUploadActor
@@ -17,7 +16,7 @@ import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
 import querki.util.ClusterTimeoutChild
-import querki.values.SpaceState
+import querki.values.{SpaceState, RequestContext}
 
 /**
  * The SpaceRouter is the root of the "troupe" of Actors for a single Space. It owns all of the Actors that
@@ -59,6 +58,10 @@ private[spaces] class SpaceRouter(e:Ecology)
     bootSpaceActor()
     context.actorOf(Conversations.conversationsManagerProps(self))
   }
+  lazy val experiments = {
+    bootSpaceActor()
+    context.actorOf(SpaceExperiments.actorProps(ecology, spaceId, self), name = "Experiments")
+  }
   lazy val sessions = {
     bootSpaceActor()
     context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self, timingOpt.isDefined), "Sessions")
@@ -81,6 +84,8 @@ private[spaces] class SpaceRouter(e:Ecology)
   
   var _state:Option[SpaceState] = None
   var _pubState:Option[CurrentPublicationState] = None
+
+  def isExperiment(rc: RequestContext) = rc.metadataOpt.map(_.experimentOpt.isDefined).getOrElse(false)
   
   def receive = LoggingReceive {
     
@@ -90,6 +95,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     case msg @ CurrentState(curState, _) => {
       _state = Some(curState)
       conversations.forward(msg)
+      experiments.forward(msg)
       sessions.forward(msg)
       members.forward(msg)
     }
@@ -114,10 +120,16 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
 
     // Messages for the various subsystems get routed based on the payload type:
-    case msg @ SpaceSubsystemRequest(_, _, payload) => {
+    case msg @ SpaceSubsystemRequest(rc, _, payload) => {
       payload match {
         case p:querki.conversations.messages.ConversationMessage => conversations.forward(msg)
-        case p:querki.session.messages.SessionMessage => sessions.forward(msg)
+        case p:querki.session.messages.SessionMessage => {
+          if (isExperiment(rc))
+            // If the user is in an Experiment, forward it that way instead:
+            experiments.forward(msg)
+          else
+            sessions.forward(msg)
+        }
         // HACK: messages heading for the User Value Persister:
         case p:querki.uservalues.PersistMessages.ExternallyExposed => sessions.forward(msg)
         case p:SpaceMembersBase => members.forward(msg)
@@ -127,7 +139,12 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     // Message for a Session:
-    case req:ClientRequest => sessions.forward(req)
+    case msg @ ClientRequest(req, rc) => {
+      if (isExperiment(rc))
+        experiments.forward(msg)
+      else
+        sessions.forward(msg)
+    }
     
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
@@ -158,7 +175,12 @@ private[spaces] class SpaceRouter(e:Ecology)
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     // FALLBACK -- NOTHING SHOULD GO BELOW HERE:
-    case msg:SpaceMessage => space.forward(msg)
+    case msg:SpaceMessage => {
+      if (isExperiment(msg.requestContext))
+        experiments.forward(msg)
+      else
+        space.forward(msg)
+    }
   }
 }
 
