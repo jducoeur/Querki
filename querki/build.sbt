@@ -68,7 +68,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // Updated version of the XML library:
       "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
       // A simple Base64 library, for embedding stuff into HTML:
-      "com.github.marklister" %% "base64" % "0.2.3",
+      "com.github.marklister" %% "base64" % "0.2.9",
       // We are also using BooPickle for embedding: 
       "io.suzaku" %% "boopickle" % "1.2.6",
       // We use JSoup for HTML cleaning:
