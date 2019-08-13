@@ -46,15 +46,45 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
 
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
-  final val idArgName = "oid"
-  final val nameArgName = "name"
+  final val idArgName = "_oid"
+  final val nameArgName = "_name"
 
   type SyncRes[T] = ValidatedNec[GraphQLError, T]
   type Res[T] = EitherT[IO, NonEmptyChain[GraphQLError], T]
 
   lazy val Core = ecology.api[querki.core.Core]
 
-  def processQuery(query: String): IO[ValidatedNec[GraphQLError, JsValue]] = {
+  def handle(query: String): IO[JsValue] = {
+    val result: IO[Either[NonEmptyChain[GraphQLError], JsValue]] = processQuery(query).value
+    result.map {
+      _ match {
+        case Right(jsv) => JsObject(Map("data" -> jsv))
+        case Left(errs) => {
+          val jsErrs: NonEmptyChain[JsValue] = errs.map { err =>
+            val msg = err.msg
+            err.location.map { loc =>
+              val jsLoc = JsObject(Map(
+                "line" -> JsNumber(loc.line),
+                "column" -> JsNumber(loc.column)
+              ))
+              JsObject(Map(
+                "message" -> JsString(msg),
+                "locations" -> JsArray(Seq(jsLoc))
+              ))
+            }.getOrElse {
+              JsObject(Map("message" -> JsString(msg)))
+            }
+          }
+          JsObject(Map(
+            "data" -> JsNull,
+            "errors" -> JsArray(jsErrs.toNonEmptyList.toList)
+          ))
+        }
+      }
+    }
+  }
+
+  def processQuery(query: String): Res[JsValue] = {
     val fields: SyncRes[Vector[Field]] =
       parseQuery(query) andThen
         (getDefinitions(_)) andThen
@@ -67,16 +97,13 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
         val queryResults: Vector[Res[(String, JsValue)]] = sels.map(processQuerySelection(_))
         val inverted: Res[Vector[(String, JsValue)]] = queryResults.sequence
         // Surely we can do this better by defining a Semigroup over JsObject:
-        val result: Res[JsValue] = inverted.map { pairs =>
+        inverted.map { pairs =>
           pairs.foldLeft(JsObject(Seq.empty)) { case (obj, (name, jsv)) =>
             obj + (name -> jsv)
           }
         }
-        result.value.map { either =>
-          either.toValidated
-        }
       }
-      case Invalid(err) => IO.pure(err.invalid)
+      case Invalid(err) => EitherT.leftT(err)
     }
   }
 
@@ -98,16 +125,16 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     definition match {
       case op: OperationDefinition if (op.operationType == OperationType.Query) => op.valid
         // TODO: deal with other Operation types!
-      case op: OperationDefinition => UnhandledOperationType(op.operationType).invalidNec
+      case op: OperationDefinition => UnhandledOperationType(op.operationType, definition.location).invalidNec
         // TODO: deal with other Definition types!
-      case _ => UnhandledDefinitionType(definition).invalidNec
+      case _ => UnhandledDefinitionType(definition, definition.location).invalidNec
     }
   }
 
   def confirmIsField(selection: Selection): SyncRes[Field] = {
     selection match {
       case field: Field => field.valid
-      case _ => UnhandledSelectionType(selection).invalidNec
+      case _ => UnhandledSelectionType(selection, selection.location).invalidNec
     }
   }
 
@@ -145,7 +172,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
         processedThings.map(JsArray(_))
       }
     } else {
-      resError(IllegalTopSelection(field.name))
+      resError(IllegalTopSelection(field.name, field.location))
     }
   }
 
@@ -171,10 +198,10 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
           case Some(oid) => {
             state.anything(oid) match {
               case Some(thing) => thing.valid
-              case None => OIDNotFound(oidStr).invalidNec
+              case None => OIDNotFound(oidStr, field.location).invalidNec
             }
           }
-          case None => NotAnOID(oidStr).invalidNec
+          case None => NotAnOID(oidStr, field.location).invalidNec
         }
       }
       case Valid(None) => {
@@ -182,10 +209,10 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
           case Valid(Some(thingName)) => {
             state.anythingByName(thingName) match {
               case Some(thing) => thing.valid
-              case None => NameNotFound(thingName).invalidNec
+              case None => NameNotFound(thingName, field.location).invalidNec
             }
           }
-          case Valid(None) => MissingRequiredArgument(field, selectionName, s"$idArgName or $nameArgName").invalidNec
+          case Valid(None) => MissingRequiredArgument(field, selectionName, s"$idArgName or $nameArgName", field.location).invalidNec
           case Invalid(err) => err.invalid
         }
       }
@@ -215,8 +242,15 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     * Given a Thing, process one Field that represents a Property of that Thing.
     */
   def processField(thing: Thing, field: Field): Res[JsValue] = {
-    getProperty(thing, field).toRes.flatMap { prop =>
-      processProperty(thing, prop, field)
+    if (field.name == idArgName) {
+      // They're asking for the OID of this Thing:
+      res(JsString(thing.id.toThingId.toString))
+    } else if (field.name == nameArgName) {
+      res(JsString(thing.toThingId.toString))
+    } else {
+      getProperty(thing, field).toRes.flatMap { prop =>
+        processProperty(thing, prop, field)
+      }
     }
   }
 
@@ -229,7 +263,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     }
       yield prop
 
-    propOpt.syncOrError(UnknownProperty(name))
+    propOpt.syncOrError(UnknownProperty(name, field.location))
   }
 
   def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
@@ -248,10 +282,10 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     val resultOpt: Option[Res[JsValue]] = propOpt.map { prop =>
       thing.getPropOpt(prop) match {
         case Some(propAndVal) => processValues(thing, prop, propAndVal.rawList, field)
-        case None => resError(PropertyNotOnThing(thing, prop))
+        case None => resError(PropertyNotOnThing(thing, prop, field.location))
       }
     }
-    resultOpt.getOrElse(resError(InternalGraphQLError("Hit a Property whose type doesn't confirm!")))
+    resultOpt.getOrElse(resError(InternalGraphQLError("Hit a Property whose type doesn't confirm!", field.location)))
   }
 
   def processValues[VT: JsValueable](thing: Thing, prop: Property[VT, _], vs: List[VT], field: Field): Res[JsValue] = {
@@ -259,7 +293,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     prop.cType match {
       case ExactlyOneOID => {
         if (vs.isEmpty) {
-          resError(MissingRequiredValue(thing, prop))
+          resError(MissingRequiredValue(thing, prop, field.location))
         } else {
           res(vs.head.toJsValue)
         }
@@ -306,7 +340,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
       field.arguments.find(_.name == name) match {
         case Some(arg) => arg.value match {
           case v: StringValue => Some(v.value).valid
-          case _ => UnhandledArgumentType(arg).invalidNec
+          case _ => UnhandledArgumentType(arg, field.location).invalidNec
         }
         case None => None.valid
       }
@@ -315,7 +349,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
       getArgumentStr(name) andThen {
         _ match {
           case Some(v) => v.valid
-          case None => MissingRequiredArgument(field, name, "string").invalidNec
+          case None => MissingRequiredArgument(field, name, "string", field.location).invalidNec
         }
       }
     }
@@ -333,50 +367,59 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
 
 sealed trait GraphQLError {
   def msg: String
+  def location: Option[AstLocation]
 }
-case class ParseFailure(msg: String) extends GraphQLError
-case object NoDefinitions extends GraphQLError { val msg = "No Definitions provided in the GraphQL Document!" }
-case class UnhandledOperationType(opType: OperationType) extends GraphQLError {
+case class ParseFailure(msg: String) extends GraphQLError {
+  val location = None
+}
+case object NoDefinitions extends GraphQLError {
+  val msg = "No Definitions provided in the GraphQL Document!"
+  val location = None
+}
+case class UnhandledOperationType(opType: OperationType, location: Option[AstLocation]) extends GraphQLError {
   val msg = s"Querki does not yet deal with ${opType.getClass.getSimpleName} operations; sorry."
 }
-case class UnhandledDefinitionType(definition: Definition) extends GraphQLError {
+case class UnhandledDefinitionType(definition: Definition, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Querki can not yet deal with ${definition.getClass.getSimpleName}"
 }
-case object TooManyOperations extends GraphQLError { val msg = "Querki can currently only deal with one Query at a time; sorry." }
-case class UnhandledSelectionType(selection: Selection) extends GraphQLError {
+case object TooManyOperations extends GraphQLError {
+  val msg = "Querki can currently only deal with one Query at a time; sorry."
+  val location = None
+}
+case class UnhandledSelectionType(selection: Selection, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Querki can not yet deal with ${selection.getClass.getSimpleName} selections; sorry."
 }
-case class UnhandledArgumentType(arg: Argument) extends GraphQLError {
+case class UnhandledArgumentType(arg: Argument, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Querki can not yet deal with ${arg.value.getClass.getSimpleName} arguments there; sorry."
 }
-case class MissingRequiredArgument(field: Field, name: String, tpe: String) extends GraphQLError {
+case class MissingRequiredArgument(field: Field, name: String, tpe: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Field ${field.name} requires a $tpe argument named '$name'"
 }
-case class UnknownThing(name: String) extends GraphQLError {
+case class UnknownThing(name: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"There is no Thing named $name"
 }
-case class IllegalTopSelection(name: String) extends GraphQLError {
+case class IllegalTopSelection(name: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"The top level of a GraphQL query must be _thing or _instances."
 }
-case class NotAnOID(str: String) extends GraphQLError {
+case class NotAnOID(str: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"$str is not a valid OID"
 }
-case class OIDNotFound(oid: String) extends GraphQLError {
+case class OIDNotFound(oid: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"No Thing found with OID $oid"
 }
-case class NameNotFound(name: String) extends GraphQLError {
+case class NameNotFound(name: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"No Thing found named $name -- maybe that isn't the correct Link Name?"
 }
-case class UnknownProperty(name: String) extends GraphQLError {
+case class UnknownProperty(name: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Unknown Property: $name"
 }
-case class PropertyNotOnThing(thing: Thing, prop: AnyProp) extends GraphQLError {
+case class PropertyNotOnThing(thing: Thing, prop: AnyProp, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"${thing.displayName} does not have requested property ${prop.displayName}"
 }
-case class UnsupportedType(prop: Property[_, _]) extends GraphQLError {
+case class UnsupportedType(prop: Property[_, _], location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Querki GraphQL does not yet support ${prop.pType.displayName} properties; sorry."
 }
-case class InternalGraphQLError(msg: String) extends GraphQLError
-case class MissingRequiredValue(thing: Thing, prop: Property[_, _]) extends GraphQLError {
+case class InternalGraphQLError(msg: String, location: Option[AstLocation]) extends GraphQLError
+case class MissingRequiredValue(thing: Thing, prop: Property[_, _], location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Required Property ${prop.displayName} on Thing ${thing.displayName} is empty!"
 }
