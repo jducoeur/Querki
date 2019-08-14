@@ -7,14 +7,17 @@ import querki.ecology._
  * chewier data. It will get gradually enhanced, but do a full retest when you do so.
  */
 class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
-  val artistModel = new SimpleTestThing("Artist")
+  val Basic = ecology.api[querki.basic.Basic]
+  val DisplayName = Basic.DisplayNameProp
+
+  val artistModel = new SimpleTestThing("Artist", DisplayName())
   val genreModel = new SimpleTestThing("Genre")
   
   val genres = new TestProperty(Tags.NewTagSetType, QSet, "Genres")
     
   val eurythmics = new TestThing("Eurythmics", artistModel, genres("Rock"))
-  val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"))
-  val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"))
+  val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"), DisplayName("They Might Be Giants"))
+  val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"), DisplayName("Blackmores Night"))
   val whitney = new TestThing("Whitney Houston", artistModel, genres("Pop"))
   val weirdAl = new TestThing("Weird Al", artistModel, genres("Parody"))
     

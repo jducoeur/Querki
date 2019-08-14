@@ -4,6 +4,7 @@ import cats.effect._
 import cats.implicits._
 import play.api.libs.json.Json
 import querki.test.{CDSpace, QuerkiTests}
+import querki.util.QLog
 
 class ComputeGraphQLTests extends QuerkiTests {
   "FPComputeGraphQL" should {
@@ -27,10 +28,14 @@ class ComputeGraphQLTests extends QuerkiTests {
 
       val instancesQuery =
         s"""
-           |query ArtistsQuery {
-           |  _instances(_name: "Artist") {
+           |query AlbumQuery {
+           |  _instances(_name: "Album") {
            |    _oid
            |    _name
+           |    Artists {
+           |      _name
+           |      Name
+           |    }
            |  }
            |}
          """.stripMargin

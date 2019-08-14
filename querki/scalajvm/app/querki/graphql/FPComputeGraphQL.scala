@@ -6,8 +6,9 @@ import cats.effect.IO
 import cats.implicits._
 import models.{Thing, OID, ThingId, PType, Property}
 import play.api.libs.json._
-import querki.core.MOIDs.{QSetOID, QListOID, ExactlyOneOID, OptionalOID}
-import querki.core.MOIDs.{TextTypeOID, LargeTextTypeOID, IntTypeOID, LinkTypeOID}
+import querki.basic.PlainText
+import querki.basic.MOIDs._
+import querki.core.MOIDs._
 import querki.core.QLText
 import querki.globals._
 import querki.values.{PropAndVal, QValue}
@@ -16,34 +17,7 @@ import sangria.parser.QueryParser
 
 import scala.util.{Success, Failure}
 
-trait JsValueable[VT] {
-  def toJsValue(v: VT): JsValue
-}
-
-object JsValueable {
-  implicit val intJsValueable = new JsValueable[Int] {
-    def toJsValue(v: Int) = JsNumber(v)
-  }
-
-  implicit val textJsValueable = new JsValueable[QLText] {
-    def toJsValue(v: QLText) = JsString(v.text)
-  }
-
-  // TODO: instead of returning the OID, we should dive down the graph here:
-  implicit val linkJsValueable = new JsValueable[OID] {
-    def toJsValue(v: OID): JsValue = JsString(v.toString)
-  }
-
-  implicit class JsValueableOps[T: JsValueable](t: T) {
-    def toJsValue: JsValue = {
-      implicitly[JsValueable[T]].toJsValue(t)
-    }
-  }
-}
-
 class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
-  import JsValueable._
-
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
   final val idArgName = "_oid"
@@ -52,7 +26,44 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
   type SyncRes[T] = ValidatedNec[GraphQLError, T]
   type Res[T] = EitherT[IO, NonEmptyChain[GraphQLError], T]
 
+  lazy val Basic = ecology.api[querki.basic.Basic]
   lazy val Core = ecology.api[querki.core.Core]
+
+  // This particular typeclass instance needs to live in here, because it continues to dive down into the stack:
+
+  trait JsValueable[VT] {
+    def toJsValue(v: VT, field: Field): Res[JsValue]
+  }
+
+  object JsValueable {
+    implicit val intJsValueable = new JsValueable[Int] {
+      def toJsValue(v: Int, field: Field) = res(JsNumber(v))
+    }
+
+    implicit val textJsValueable = new JsValueable[QLText] {
+      def toJsValue(v: QLText, field: Field) = res(JsString(v.text))
+    }
+    implicit val plainTextJsValueable = new JsValueable[PlainText] {
+      def toJsValue(v: PlainText, field: Field) = res(JsString(v.text))
+    }
+
+    implicit val linkJsValueable = new JsValueable[OID] {
+      def toJsValue(v: OID, field: Field) = {
+        // This is the really interesting one. This is a link, so we recurse down into it:
+        state.anything(v) match {
+          case Some(thing) => processThing(thing, field)
+          case None => resError(OIDNotFound(v.toThingId.toString, field.location))
+        }
+      }
+    }
+
+    implicit class JsValueableOps[T: JsValueable](t: T) {
+      def toJsValue(field: Field): Res[JsValue] = {
+        implicitly[JsValueable[T]].toJsValue(t, field)
+      }
+    }
+  }
+  import JsValueable._
 
   def handle(query: String): IO[JsValue] = {
     val result: IO[Either[NonEmptyChain[GraphQLError], JsValue]] = processQuery(query).value
@@ -267,14 +278,15 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
   }
 
   def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
-    // TODO: this is ugly and coded -- can we make it better? Do note that we need to rehydrate the types here
+    // TODO: this is ugly and hardcoded -- can we make it better? Do note that we need to rehydrate the types here
     // *somehow*, so this isn't trivial:
     prop.pType.id match {
       case IntTypeOID => processTypedProperty(thing, prop.confirmType(Core.IntType), Core.IntType, field)
       case TextTypeOID => processTypedProperty(thing, prop.confirmType(Core.TextType), Core.TextType, field)
       case LargeTextTypeOID => processTypedProperty(thing, prop.confirmType(Core.LargeTextType), Core.LargeTextType, field)
       case LinkTypeOID => processTypedProperty(thing, prop.confirmType(Core.LinkType), Core.LinkType, field)
-        // TODO: More types!
+      case PlainTextOID => processTypedProperty(thing, prop.confirmType(Basic.PlainTextType), Basic.PlainTextType, field)
+      case _ => resError(UnsupportedType(prop, field.location))
     }
   }
 
@@ -282,7 +294,16 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     val resultOpt: Option[Res[JsValue]] = propOpt.map { prop =>
       thing.getPropOpt(prop) match {
         case Some(propAndVal) => processValues(thing, prop, propAndVal.rawList, field)
-        case None => resError(PropertyNotOnThing(thing, prop, field.location))
+        case None => {
+          if (prop.id == DisplayNameOID) {
+            // Display Name is a very special case. It's specifically non-inherited, so it's entirely plausible that
+            // getPropOpt() might show it as entirely not existing. But it's really common, so we don't want to
+            // error on it. So we instead call a spade a spade:
+            res(JsString(""))
+          } else {
+            resError(PropertyNotOnThing(thing, prop, field.location))
+          }
+        }
       }
     }
     resultOpt.getOrElse(resError(InternalGraphQLError("Hit a Property whose type doesn't confirm!", field.location)))
@@ -290,24 +311,29 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
 
   def processValues[VT: JsValueable](thing: Thing, prop: Property[VT, _], vs: List[VT], field: Field): Res[JsValue] = {
     // What we return depends on the Collection of this Property:
-    prop.cType match {
+    prop.cType.id match {
       case ExactlyOneOID => {
         if (vs.isEmpty) {
           resError(MissingRequiredValue(thing, prop, field.location))
         } else {
-          res(vs.head.toJsValue)
+          vs.head.toJsValue(field)
         }
       }
       case OptionalOID => {
         vs.headOption match {
-          case Some(v) => res(v.toJsValue)
+          case Some(v) => v.toJsValue(field)
             // TODO: check the GraphQL spec -- is JsNull correct here?
           case None => res(JsNull)
         }
       }
       case QListOID | QSetOID => {
-        val jsvs = vs.map(_.toJsValue)
-        res(JsArray(jsvs))
+        val jsvs: Res[List[JsValue]] = vs.map(_.toJsValue(field)).sequence
+        jsvs.map(JsArray(_))
+      }
+      case other => {
+        // We don't expect this to happen until and unless we open up the possibility of more Collections:
+        QLog.error(s"FPComputeGraphQL: request to process a collection of type ${prop.cType} for Property ${prop.displayName}")
+        res(JsNull)
       }
     }
   }
