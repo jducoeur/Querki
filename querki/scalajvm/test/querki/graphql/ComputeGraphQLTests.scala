@@ -13,6 +13,11 @@ class ComputeGraphQLTests extends QuerkiTests {
 
       val computer = new FPComputeGraphQL()(cdSpace.state, ecology)
 
+      def runQuery(query: String): Unit = {
+        val jsv = computer.handle(query).unsafeRunSync()
+        println(Json.prettyPrint(jsv))
+      }
+
       val eurythmicsOID = cdSpace.eurythmics.id
       val thingQuery =
         s"""
@@ -23,8 +28,7 @@ class ComputeGraphQLTests extends QuerkiTests {
           |  }
           |}
         """.stripMargin
-      val thingJsv = computer.handle(thingQuery).unsafeRunSync()
-      println(Json.prettyPrint(thingJsv))
+      runQuery(thingQuery)
 
       val instancesQuery =
         s"""
@@ -35,12 +39,26 @@ class ComputeGraphQLTests extends QuerkiTests {
            |    Artists {
            |      _name
            |      Name
+           |      Genres
            |    }
            |  }
            |}
          """.stripMargin
-      val instancesJsv = computer.handle(instancesQuery).unsafeRunSync()
-      println(Json.prettyPrint(instancesJsv))
+      runQuery(instancesQuery)
+
+      val drillDownTagsQuery =
+        """
+          |query DrillDownTagQuery {
+          |  _thing(_name: "Gordon-Bok") {
+          |    Genres {
+          |      Exemplar {
+          |        _name
+          |      }
+          |    }
+          |  }
+          |}
+        """.stripMargin
+      runQuery(drillDownTagsQuery)
     }
   }
 }

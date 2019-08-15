@@ -9,6 +9,7 @@ import play.api.libs.json._
 import querki.basic.PlainText
 import querki.basic.MOIDs._
 import querki.core.MOIDs._
+import querki.tags.MOIDs._
 import querki.core.QLText
 import querki.globals._
 import querki.values.{PropAndVal, QValue}
@@ -28,6 +29,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
 
   lazy val Basic = ecology.api[querki.basic.Basic]
   lazy val Core = ecology.api[querki.core.Core]
+  lazy val Tags = ecology.api[querki.tags.Tags]
 
   // This particular typeclass instance needs to live in here, because it continues to dive down into the stack:
 
@@ -53,6 +55,31 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
         state.anything(v) match {
           case Some(thing) => processThing(thing, field)
           case None => resError(OIDNotFound(v.toThingId.toString, field.location))
+        }
+      }
+    }
+
+    /**
+      * Tags are a weird neither-fish-nor-fowl, and they violate the GraphQL convention that things need to be
+      * rigidly typed. This gets evaluated differently depending on how it is called. If there are sub-selections,
+      * we try to dereference it; if not, we just return the tag's text.
+      */
+    val tagJsValueable = new JsValueable[PlainText] {
+      def toJsValue(v: PlainText, field: Field) = {
+        if (field.selections.isEmpty) {
+          // Treat the tag as simple text:
+          res(JsString(v.text))
+        } else {
+          // There are sub-selections, so dereference it:
+          val name = v.text
+          val thing = state.anythingByName(name) match {
+            case Some(thing) => thing
+            case None => state.anythingByDisplayName(name) match {
+              case Some(thing) => thing
+              case None => Tags.getTag(name, state)
+            }
+          }
+          processThing(thing, field)
         }
       }
     }
@@ -286,11 +313,12 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
       case LargeTextTypeOID => processTypedProperty(thing, prop.confirmType(Core.LargeTextType), Core.LargeTextType, field)
       case LinkTypeOID => processTypedProperty(thing, prop.confirmType(Core.LinkType), Core.LinkType, field)
       case PlainTextOID => processTypedProperty(thing, prop.confirmType(Basic.PlainTextType), Basic.PlainTextType, field)
+      case NewTagSetOID => processTypedProperty(thing, prop.confirmType(Tags.NewTagSetType), Tags.NewTagSetType, field)(tagJsValueable)
       case _ => resError(UnsupportedType(prop, field.location))
     }
   }
 
-  def processTypedProperty[VT: JsValueable](thing: Thing, propOpt: Option[Property[VT, _]], pt: PType[VT], field: Field): Res[JsValue] = {
+  def processTypedProperty[VT](thing: Thing, propOpt: Option[Property[VT, _]], pt: PType[VT], field: Field)(implicit ev: JsValueable[VT]): Res[JsValue] = {
     val resultOpt: Option[Res[JsValue]] = propOpt.map { prop =>
       thing.getPropOpt(prop) match {
         case Some(propAndVal) => processValues(thing, prop, propAndVal.rawList, field)

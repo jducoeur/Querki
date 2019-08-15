@@ -11,6 +11,7 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val DisplayName = Basic.DisplayNameProp
 
   val artistModel = new SimpleTestThing("Artist", DisplayName())
+  val exemplar = new TestProperty(LinkType, Optional, "Exemplar", Links.LinkModelProp(artistModel))
   val genreModel = new SimpleTestThing("Genre")
   
   val genres = new TestProperty(Tags.NewTagSetType, QSet, "Genres")
@@ -20,6 +21,9 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"), DisplayName("Blackmores Night"))
   val whitney = new TestThing("Whitney Houston", artistModel, genres("Pop"))
   val weirdAl = new TestThing("Weird Al", artistModel, genres("Parody"))
+  val bok = new TestThing("Gordon Bok", artistModel, genres("Folk"))
+
+  val folk = new TestThing("Folk", genreModel, exemplar(blackmores))
     
   val artistsProp = new TestProperty(LinkType, QSet, "Artists", Links.LinkModelProp(artistModel))
     
