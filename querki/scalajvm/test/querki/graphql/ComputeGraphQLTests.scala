@@ -3,7 +3,7 @@ package querki.graphql
 import cats.effect._
 import cats.implicits._
 import org.scalactic.source.Position
-import play.api.libs.json.{Json, JsObject, JsValue, JsString}
+import play.api.libs.json._
 import querki.test.{TestSpace, CDSpace, QuerkiTests}
 import querki.util.QLog
 
@@ -28,14 +28,14 @@ class ComputeGraphQLTests extends QuerkiTests {
     runQueryAndCheck(query)(jsv => println(Json.prettyPrint(jsv)))
   }
 
-  implicit class RichJsObject(jsv: JsObject) {
+  implicit class RichJsValue(jsv: JsValue) {
     def field(path: String)(implicit p: Position): JsValue =
       (jsv \ path).getOrElse(fail(s"Couldn't find path $path in object $jsv"))
 
     def obj(path: String)(implicit p: Position): JsObject = {
       field(path) match {
         case o: JsObject => o
-        case other => fail(s"Field $path wasn't a String: $other")
+        case other => fail(s"Field $path wasn't an Object: $other")
       }
     }
 
@@ -44,6 +44,22 @@ class ComputeGraphQLTests extends QuerkiTests {
         case JsString(s) => s
         case other => fail(s"Field $path wasn't a String: $other")
       }
+    }
+
+    def array(path: String)(implicit p: Position): Seq[JsValue] = {
+      field(path) match {
+        case JsArray(a) => a
+        case other => fail(s"Field $path wasn't an Array: $other")
+      }
+    }
+
+    def name: String = string("_name")
+    def hasName(n: String) = name == n
+  }
+
+  implicit class RichJsSequence(seq: Seq[JsValue]) {
+    def findByName(name: String)(implicit p: Position): JsValue = {
+      seq.find(_.hasName(name)).getOrElse(fail(s"Couldn't find an element named $name in $seq"))
     }
   }
 
@@ -54,60 +70,116 @@ class ComputeGraphQLTests extends QuerkiTests {
 
       runQueryAndCheckData(
         s"""
-          |query CDQuery {
-          |  _thing(_oid: "$eurythmicsOID") {
-          |    _oid
-          |    _name
-          |  }
-          |}
+           |query CDQuery {
+           |  _thing(_oid: "$eurythmicsOID") {
+           |    _oid
+           |    _name
+           |  }
+           |}
         """.stripMargin
       ) { data =>
         val thing = data.obj("_thing")
         thing.string("_oid") shouldBe (eurythmicsOID.toThingId.toString)
         thing.string("_name") shouldBe (cdSpace.eurythmics.linkName.get)
       }
-//      val thingQuery =
-//        s"""
-//          |query CDQuery {
-//          |  justEurythmics: _thing(_oid: "$eurythmicsOID") {
-//          |    _oid
-//          |    _name
-//          |  }
-//          |}
-//        """.stripMargin
-//      runQuery(thingQuery)
-//
-//      val instancesQuery =
-//        s"""
-//           |query AlbumQuery {
-//           |  artistsForAlbums: _instances(_name: "Album") {
-//           |    _oid
-//           |    _name
-//           |    Artists {
-//           |      _name
-//           |      Name
-//           |      Genres
-//           |    }
-//           |  }
-//           |}
-//         """.stripMargin
-//      runQuery(instancesQuery)
-//
-//      val drillDownTagsQuery =
-//        """
-//          |query DrillDownTagQuery {
-//          |  _thing(_name: "Gordon-Bok") {
-//          |    Genres {
-//          |      Exemplar {
-//          |        _name
-//          |      }
-//          |    }
-//          |  }
-//          |}
-//        """.stripMargin
-//      runQuery(drillDownTagsQuery)
+    }
+
+    "handle top-level aliases" in {
+      implicit val cdSpace = new CDSpace
+      val eurythmicsOID = cdSpace.eurythmics.id
+
+      runQueryAndCheckData(
+        s"""
+           |query CDQuery {
+           |  justEurythmics: _thing(_oid: "$eurythmicsOID") {
+           |    _oid
+           |    _name
+           |  }
+           |}
+        """.stripMargin
+      ) { data =>
+        val thing = data.obj("justEurythmics")
+        thing.string("_oid") shouldBe (eurythmicsOID.toThingId.toString)
+        thing.string("_name") shouldBe (cdSpace.eurythmics.linkName.get)
+      }
+    }
+
+    // Also tests:
+    // * Getting the initial object by name instead of OID
+    // * Working with all the Instances of a Model
+    // * Fetching Display Names
+    // * Getting Tags as names
+    "dereference and drill down into Links in Instances" in {
+      implicit val cdSpace = new CDSpace
+
+      runQueryAndCheckData(
+        s"""
+           |query AlbumQuery {
+           |  artistsForAlbums: _instances(_name: "Album") {
+           |    _oid
+           |    _name
+           |    Artists {
+           |      _name
+           |      Name
+           |      Genres
+           |    }
+           |  }
+           |}
+         """.stripMargin
+      ) { data =>
+        val albums = data.array("artistsForAlbums")
+
+        // Spot-check some elements in here:
+        locally {
+          val album = albums.findByName("Be-Yourself-Tonight")
+          val artist = album.array("Artists").findByName("Eurythmics")
+          val genres = artist.array("Genres")
+          genres.length shouldBe (1)
+          genres.head shouldBe (JsString("Rock"))
+        }
+
+        locally {
+          val album = albums.findByName("Classical-Randomness")
+          album.array("Artists") shouldBe empty
+        }
+
+        locally {
+          val album = albums.findByName("Flood")
+          val artist = album.array("Artists").find(_.string("Name") == "They Might Be Giants").get
+          val genres = artist.array("Genres")
+          genres.length shouldBe (2)
+          genres should contain (JsString("Rock"))
+          genres should contain (JsString("Weird"))
+        }
+      }
+    }
+
+    "dereference and drill into Tags when requested" in {
+      implicit val cdSpace = new CDSpace
+
+      runQueryAndCheckData(
+        """
+          |query DrillDownTagQuery {
+          |  _thing(_name: "Gordon-Bok") {
+          |    Genres {
+          |      Exemplar {
+          |        _name
+          |      }
+          |    }
+          |  }
+          |}
+        """.stripMargin
+      ) { data =>
+        val exemplarName = data
+          .obj("_thing")
+          .array("Genres")
+          .head
+          .obj("Exemplar")
+          .name
+        exemplarName shouldBe ("Blackmores-Night")
+      }
     }
   }
 }
 
-// TODO: rendering of text fields, unit tests, support from Console, and real plumbing
+// TODO: rendering of text fields, support from Console, and real plumbing
