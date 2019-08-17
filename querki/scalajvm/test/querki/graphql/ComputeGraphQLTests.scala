@@ -22,7 +22,7 @@ class ComputeGraphQLTests extends QuerkiTests {
       val thingQuery =
         s"""
           |query CDQuery {
-          |  _thing(_oid: "$eurythmicsOID") {
+          |  justEurythmics: _thing(_oid: "$eurythmicsOID") {
           |    _oid
           |    _name
           |  }
@@ -33,7 +33,7 @@ class ComputeGraphQLTests extends QuerkiTests {
       val instancesQuery =
         s"""
            |query AlbumQuery {
-           |  _instances(_name: "Album") {
+           |  artistsForAlbums: _instances(_name: "Album") {
            |    _oid
            |    _name
            |    Artists {
@@ -62,3 +62,5 @@ class ComputeGraphQLTests extends QuerkiTests {
     }
   }
 }
+
+// TODO: rendering of text fields, unit tests, support from Console, and real plumbing

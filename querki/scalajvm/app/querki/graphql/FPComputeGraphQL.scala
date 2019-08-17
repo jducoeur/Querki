@@ -219,11 +219,13 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     * provided processing function, and tuple the result with the selectionName for the resulting JSON.
     */
   def withThingFromArgument(field: Field, selectionName: String)(f: Thing => Res[JsValue]): Res[(String, JsValue)] = {
+    // If an alias was specified, we use that to return the result:
+    val returnName = field.alias.getOrElse(selectionName)
     for {
       thing <- getThingFromArgument(field, selectionName).toRes
       jsValue <- f(thing)
     }
-      yield (selectionName, jsValue)
+      yield (returnName, jsValue)
   }
 
   /**
