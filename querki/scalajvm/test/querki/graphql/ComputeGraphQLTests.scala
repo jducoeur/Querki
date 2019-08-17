@@ -28,6 +28,25 @@ class ComputeGraphQLTests extends QuerkiTests {
     runQueryAndCheck(query)(jsv => println(Json.prettyPrint(jsv)))
   }
 
+  implicit class RichJsObject(jsv: JsObject) {
+    def field(path: String)(implicit p: Position): JsValue =
+      (jsv \ path).getOrElse(fail(s"Couldn't find path $path in object $jsv"))
+
+    def obj(path: String)(implicit p: Position): JsObject = {
+      field(path) match {
+        case o: JsObject => o
+        case other => fail(s"Field $path wasn't a String: $other")
+      }
+    }
+
+    def string(path: String)(implicit p: Position): String = {
+      field(path) match {
+        case JsString(s) => s
+        case other => fail(s"Field $path wasn't a String: $other")
+      }
+    }
+  }
+
   "FPComputeGraphQL" should {
     "process a basic query" in {
       implicit val cdSpace = new CDSpace
@@ -43,8 +62,9 @@ class ComputeGraphQLTests extends QuerkiTests {
           |}
         """.stripMargin
       ) { data =>
-        (data \ "_thing" \ "_oid").get shouldBe (JsString(eurythmicsOID.toThingId.toString))
-        (data \ "_thing" \ "_name").get shouldBe (JsString(cdSpace.eurythmics.linkName.get))
+        val thing = data.obj("_thing")
+        thing.string("_oid") shouldBe (eurythmicsOID.toThingId.toString)
+        thing.string("_name") shouldBe (cdSpace.eurythmics.linkName.get)
       }
 //      val thingQuery =
 //        s"""
