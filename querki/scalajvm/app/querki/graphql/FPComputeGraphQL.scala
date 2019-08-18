@@ -4,7 +4,7 @@ import cats.data._
 import cats.data.Validated._
 import cats.effect.IO
 import cats.implicits._
-import models.{Thing, OID, ThingId, PType, Property}
+import models.{Thing, OID, ThingId, DisplayText, PType, Property, Wikitext}
 import play.api.libs.json._
 import querki.basic.PlainText
 import querki.basic.MOIDs._
@@ -12,7 +12,7 @@ import querki.core.MOIDs._
 import querki.tags.MOIDs._
 import querki.core.QLText
 import querki.globals._
-import querki.values.{PropAndVal, QValue, RequestContext}
+import querki.values.{PropAndVal, RequestContext, QValue}
 import sangria.ast._
 import sangria.parser.QueryParser
 
@@ -45,17 +45,32 @@ class FPComputeGraphQL(implicit rc: RequestContext, state: SpaceState, ecology: 
 
     implicit val textJsValueable = new JsValueable[QLText] {
       def toJsValue(v: QLText, field: Field, thing: Thing): Res[JsValue] = {
-        field.getArgumentBoolean("render") match {
-          case Valid(Some(true)) => {
+        // TODO: make getArgumentEnum smarter, so that it only accepts values of a specific Enumeration:
+        val args: SyncRes[(Boolean, String)] =
+          (field.getArgumentBoolean("render", true), field.getArgumentEnum("mode", "STRIP")).mapN(Tuple2.apply)
+        args match {
+          case Valid((true, mode)) => {
+            def renderFromMode(wikitext: Wikitext): DisplayText = {
+              mode match {
+                case "RAW" => wikitext.raw
+                case "STRIP" => wikitext.strip
+                case "HTML" => wikitext.display
+              }
+            }
+
+            // Render the QL...
             val thingContext = thing.thisAsContext
             EitherT.right(IO.fromFuture(IO {
               val wikitextFuture = QL.process(v, thingContext, lexicalThing = Some(thing))
-              val htmlFuture = wikitextFuture.map(_.span.toString)
-              htmlFuture.map(JsString(_))
+              val textFuture: Future[DisplayText] =
+                wikitextFuture.map(renderFromMode(_))
+              textFuture.map(displayText => JsString(displayText.toString))
             }))
           }
-          // They didn't say to render it, so just return the literal text:
-          case Valid(Some(false)) | Valid(None) => res(JsString(v.text))
+          case Valid((false, _)) => {
+            // We're not rendering, so return the exact text:
+            res(JsString(v.text))
+          }
           case Invalid(err) => EitherT.leftT(err)
         }
       }
@@ -247,8 +262,8 @@ class FPComputeGraphQL(implicit rc: RequestContext, state: SpaceState, ecology: 
     * This field should have an argument specifying a Thing. Find that Thing.
     */
   def getThingFromArgument(field: Field, selectionName: String): SyncRes[Thing] = {
-    field.getArgumentStr(idArgName) match {
-      case Valid(Some(oidStr)) => {
+    field.getArgumentStr(idArgName, "") match {
+      case Valid(oidStr) if (!oidStr.isEmpty) => {
         OID.parseOpt(oidStr) match {
           case Some(oid) => {
             state.anything(oid) match {
@@ -259,15 +274,15 @@ class FPComputeGraphQL(implicit rc: RequestContext, state: SpaceState, ecology: 
           case None => NotAnOID(oidStr, field.location).invalidNec
         }
       }
-      case Valid(None) => {
-        field.getArgumentStr(nameArgName) match {
-          case Valid(Some(thingName)) => {
+      case Valid(_) => {
+        field.getArgumentStr(nameArgName, "") match {
+          case Valid(thingName) if (!thingName.isEmpty) => {
             state.anythingByName(thingName) match {
               case Some(thing) => thing.valid
               case None => NameNotFound(thingName, field.location).invalidNec
             }
           }
-          case Valid(None) => MissingRequiredArgument(field, selectionName, s"$idArgName or $nameArgName", field.location).invalidNec
+          case Valid(_) => MissingRequiredArgument(field, selectionName, s"$idArgName or $nameArgName", field.location).invalidNec
           case Invalid(err) => err.invalid
         }
       }
@@ -407,33 +422,64 @@ class FPComputeGraphQL(implicit rc: RequestContext, state: SpaceState, ecology: 
     }
   }
 
+  trait GraphQLValue[T <: Value, R] {
+    def name: String
+    def fromValue(v: Value): Option[T]
+    def value(t: T): R
+  }
+
+  implicit val BooleanV = new GraphQLValue[BooleanValue, Boolean] {
+    val name = "Boolean"
+    def fromValue(v: Value): Option[BooleanValue] = {
+      v match {
+        case b: BooleanValue => Some(b)
+        case _ => None
+      }
+    }
+    def value(t: BooleanValue): Boolean = t.value
+  }
+
+  implicit val StringV = new GraphQLValue[StringValue, String] {
+    val name = "String"
+    def fromValue(v: Value): Option[StringValue] = {
+      v match {
+        case b: StringValue => Some(b)
+        case _ => None
+      }
+    }
+    def value(t: StringValue): String = t.value
+  }
+
+  implicit val EnumV = new GraphQLValue[EnumValue, String] {
+    val name = "Enum"
+    def fromValue(v: Value): Option[EnumValue] = {
+      v match {
+        case b: EnumValue => Some(b)
+        case _ => None
+      }
+    }
+    def value(t: EnumValue): String = t.value
+  }
+
   implicit class RichField(field: Field) {
-    def getArgumentBoolean(name: String): SyncRes[Option[Boolean]] = {
+    def getArgument[T <: Value, R](name: String, default: => R)(implicit graphQLValue: GraphQLValue[T, R]): SyncRes[R] = {
       field.arguments.find(_.name == name) match {
-        case Some(arg) => arg.value match {
-          case v: BooleanValue => Some(v.value).valid
-          case _ => UnhandledArgumentType(arg, field.location).invalidNec
+        case Some(arg) => {
+          graphQLValue.fromValue(arg.value) match {
+            case Some(v) => graphQLValue.value(v).valid
+            case None => UnexpectedArgumentType(arg, "Boolean", field.location).invalidNec
+          }
         }
-        case None => None.valid
+        case None => default.valid
       }
     }
-    def getArgumentStr(name: String): SyncRes[Option[String]] = {
-      field.arguments.find(_.name == name) match {
-        case Some(arg) => arg.value match {
-          case v: StringValue => Some(v.value).valid
-          case _ => UnhandledArgumentType(arg, field.location).invalidNec
-        }
-        case None => None.valid
-      }
-    }
-    def getRequiredArgumentStr(name: String): SyncRes[String] = {
-      getArgumentStr(name) andThen {
-        _ match {
-          case Some(v) => v.valid
-          case None => MissingRequiredArgument(field, name, "string", field.location).invalidNec
-        }
-      }
-    }
+
+    def getArgumentBoolean(name: String, default: => Boolean): SyncRes[Boolean] =
+      getArgument[BooleanValue, Boolean](name, default)
+    def getArgumentStr(name: String, default: => String): SyncRes[String] =
+      getArgument[StringValue, String](name, default)
+    def getArgumentEnum(name: String, default: => String): SyncRes[String] =
+      getArgument[EnumValue, String](name, default)
   }
 
   implicit class RichSyncRes[T](syncRes: SyncRes[T]) {
@@ -470,8 +516,8 @@ case object TooManyOperations extends GraphQLError {
 case class UnhandledSelectionType(selection: Selection, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Querki can not yet deal with ${selection.getClass.getSimpleName} selections; sorry."
 }
-case class UnhandledArgumentType(arg: Argument, location: Option[AstLocation]) extends GraphQLError {
-  def msg = s"Querki can not yet deal with ${arg.value.getClass.getSimpleName} arguments there; sorry."
+case class UnexpectedArgumentType(arg: Argument, expected: String, location: Option[AstLocation]) extends GraphQLError {
+  def msg = s"${arg.value.getClass.getSimpleName} requires an argument of type $expected."
 }
 case class MissingRequiredArgument(field: Field, name: String, tpe: String, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Field ${field.name} requires a $tpe argument named '$name'"

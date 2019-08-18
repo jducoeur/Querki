@@ -55,5 +55,5 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
     favoriteArtistsProp(tmbg, blackmores),
     interestingArtistsProp(eurythmics),
     otherArtistsProp("Weird Al"),
-    faveDisplayProp("My favorite bands are: [[My Favorites -> _bulleted]]"))
+    faveDisplayProp("My favorite bands are: [[Favorite Artists -> _bulleted]]"))
 }

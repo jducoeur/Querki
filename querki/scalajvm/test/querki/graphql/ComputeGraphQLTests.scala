@@ -181,14 +181,14 @@ class ComputeGraphQLTests extends QuerkiTests {
   }
 
   // This also tests Properties with spaces in their names; you must use underscore for this:
-  "show text properties raw by default" in {
+  "show text properties raw when requested" in {
     implicit val cdSpace = new CDSpace
 
     runQueryAndCheckData(
       """
         |query RawTextQuery {
         |  _thing(_name: "My-Favorites") {
-        |    Show_Favorites
+        |    Show_Favorites(render: false)
         |  }
         |}
       """.stripMargin
@@ -197,7 +197,7 @@ class ComputeGraphQLTests extends QuerkiTests {
         .obj("_thing")
         .string("Show_Favorites")
 
-      favesString shouldBe ("My favorite bands are: [[My Favorites -> _bulleted]]")
+      favesString shouldBe ("My favorite bands are: [[Favorite Artists -> _bulleted]]")
     }
   }
 
@@ -206,21 +206,29 @@ class ComputeGraphQLTests extends QuerkiTests {
 
     runQueryAndCheckData(
       """
-        |query RawTextQuery {
+        |query HtmlTextQuery {
         |  _thing(_name: "My-Favorites") {
-        |    Show_Favorites(render: true)
+        |    Show_Favorites(render: true, mode: HTML)
         |  }
         |}
       """.stripMargin
-    ) { data =>
+    )
+    { data =>
       val favesString = data
         .obj("_thing")
         .string("Show_Favorites")
 
-      favesString shouldBe ("<span>My favorite bands are: <ul><li class=\"_bullet\">\n<a href=\"My-Favorites\">My Favorites</a></span></li>\n</ul>\n")
+      favesString shouldBe (
+        """<div class="para">My favorite bands are: </div><ul>
+          |<li class="_bullet">
+          |<div class="para"><a href="They-Might-Be-Giants">They Might Be Giants</a></div></li>
+          |<li class="_bullet">
+          |<div class="para"><a href="Blackmores-Night">Blackmores Night</a></div></li>
+          |</ul>
+          |""".stripMargin)
     }
   }
 
 }
 
-// TODO: rendering of text fields, QL functions, unit tests for errors, support from Console, and real plumbing
+// TODO: QL functions, unit tests for errors, support from Console, and real plumbing
