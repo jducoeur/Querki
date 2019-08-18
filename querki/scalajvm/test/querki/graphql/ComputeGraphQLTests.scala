@@ -5,11 +5,10 @@ import cats.implicits._
 import org.scalactic.source.Position
 import play.api.libs.json._
 import querki.test.{TestSpace, CDSpace, QuerkiTests}
-import querki.util.QLog
 
 class ComputeGraphQLTests extends QuerkiTests {
   def runQueryAndCheck[S <: TestSpace](query: String)(check: JsValue => Unit)(implicit space: S, p: Position): Unit = {
-    val computer = new FPComputeGraphQL()(space.state, ecology)
+    val computer = new FPComputeGraphQL()(getRc, space.state, ecology)
     val jsv = computer.handle(query).unsafeRunSync()
     check(jsv)
   }
@@ -180,6 +179,48 @@ class ComputeGraphQLTests extends QuerkiTests {
       }
     }
   }
+
+  // This also tests Properties with spaces in their names; you must use underscore for this:
+  "show text properties raw by default" in {
+    implicit val cdSpace = new CDSpace
+
+    runQueryAndCheckData(
+      """
+        |query RawTextQuery {
+        |  _thing(_name: "My-Favorites") {
+        |    Show_Favorites
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val favesString = data
+        .obj("_thing")
+        .string("Show_Favorites")
+
+      favesString shouldBe ("My favorite bands are: [[My Favorites -> _bulleted]]")
+    }
+  }
+
+  "show text properties rendered when requested" in {
+    implicit val cdSpace = new CDSpace
+
+    runQueryAndCheckData(
+      """
+        |query RawTextQuery {
+        |  _thing(_name: "My-Favorites") {
+        |    Show_Favorites(render: true)
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val favesString = data
+        .obj("_thing")
+        .string("Show_Favorites")
+
+      favesString shouldBe ("<span>My favorite bands are: <ul><li class=\"_bullet\">\n<a href=\"My-Favorites\">My Favorites</a></span></li>\n</ul>\n")
+    }
+  }
+
 }
 
-// TODO: rendering of text fields, support from Console, and real plumbing
+// TODO: rendering of text fields, QL functions, unit tests for errors, support from Console, and real plumbing

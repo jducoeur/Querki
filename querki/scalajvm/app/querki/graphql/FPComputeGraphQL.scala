@@ -12,13 +12,13 @@ import querki.core.MOIDs._
 import querki.tags.MOIDs._
 import querki.core.QLText
 import querki.globals._
-import querki.values.{PropAndVal, QValue}
+import querki.values.{PropAndVal, QValue, RequestContext}
 import sangria.ast._
 import sangria.parser.QueryParser
 
 import scala.util.{Success, Failure}
 
-class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
+class FPComputeGraphQL(implicit rc: RequestContext, state: SpaceState, ecology: Ecology) {
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
   final val idArgName = "_oid"
@@ -29,28 +29,43 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
 
   lazy val Basic = ecology.api[querki.basic.Basic]
   lazy val Core = ecology.api[querki.core.Core]
+  lazy val QL = ecology.api[querki.ql.QL]
   lazy val Tags = ecology.api[querki.tags.Tags]
 
   // This particular typeclass instance needs to live in here, because it continues to dive down into the stack:
 
   trait JsValueable[VT] {
-    def toJsValue(v: VT, field: Field): Res[JsValue]
+    def toJsValue(v: VT, field: Field, thing: Thing): Res[JsValue]
   }
 
   object JsValueable {
     implicit val intJsValueable = new JsValueable[Int] {
-      def toJsValue(v: Int, field: Field) = res(JsNumber(v))
+      def toJsValue(v: Int, field: Field, thing: Thing) = res(JsNumber(v))
     }
 
     implicit val textJsValueable = new JsValueable[QLText] {
-      def toJsValue(v: QLText, field: Field) = res(JsString(v.text))
+      def toJsValue(v: QLText, field: Field, thing: Thing): Res[JsValue] = {
+        field.getArgumentBoolean("render") match {
+          case Valid(Some(true)) => {
+            val thingContext = thing.thisAsContext
+            EitherT.right(IO.fromFuture(IO {
+              val wikitextFuture = QL.process(v, thingContext, lexicalThing = Some(thing))
+              val htmlFuture = wikitextFuture.map(_.span.toString)
+              htmlFuture.map(JsString(_))
+            }))
+          }
+          // They didn't say to render it, so just return the literal text:
+          case Valid(Some(false)) | Valid(None) => res(JsString(v.text))
+          case Invalid(err) => EitherT.leftT(err)
+        }
+      }
     }
     implicit val plainTextJsValueable = new JsValueable[PlainText] {
-      def toJsValue(v: PlainText, field: Field) = res(JsString(v.text))
+      def toJsValue(v: PlainText, field: Field, thing: Thing) = res(JsString(v.text))
     }
 
     implicit val linkJsValueable = new JsValueable[OID] {
-      def toJsValue(v: OID, field: Field) = {
+      def toJsValue(v: OID, field: Field, thing: Thing) = {
         // This is the really interesting one. This is a link, so we recurse down into it:
         state.anything(v) match {
           case Some(thing) => processThing(thing, field)
@@ -65,7 +80,7 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
       * we try to dereference it; if not, we just return the tag's text.
       */
     val tagJsValueable = new JsValueable[PlainText] {
-      def toJsValue(v: PlainText, field: Field) = {
+      def toJsValue(v: PlainText, field: Field, thing: Thing) = {
         if (field.selections.isEmpty) {
           // Treat the tag as simple text:
           res(JsString(v.text))
@@ -85,8 +100,8 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
     }
 
     implicit class JsValueableOps[T: JsValueable](t: T) {
-      def toJsValue(field: Field): Res[JsValue] = {
-        implicitly[JsValueable[T]].toJsValue(t, field)
+      def toJsValue(field: Field, thing: Thing): Res[JsValue] = {
+        implicitly[JsValueable[T]].toJsValue(t, field, thing: Thing)
       }
     }
   }
@@ -297,7 +312,8 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
   def getProperty(thing: Thing, field: Field): SyncRes[Property[_, _]] = {
     val name = field.name
     val propOpt = for {
-      thingId <- ThingId.parseOpt(name)
+      // Since neither spaces nor dashes are legal in GraphQL field names, we have to use underscore:
+      thingId <- ThingId.parseOpt(name.replace('_', '-'))
       thing <- state.anything(thingId)
       prop <- asProp(thing)
     }
@@ -346,18 +362,18 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
         if (vs.isEmpty) {
           resError(MissingRequiredValue(thing, prop, field.location))
         } else {
-          vs.head.toJsValue(field)
+          vs.head.toJsValue(field, thing)
         }
       }
       case OptionalOID => {
         vs.headOption match {
-          case Some(v) => v.toJsValue(field)
+          case Some(v) => v.toJsValue(field, thing)
             // TODO: check the GraphQL spec -- is JsNull correct here?
           case None => res(JsNull)
         }
       }
       case QListOID | QSetOID => {
-        val jsvs: Res[List[JsValue]] = vs.map(_.toJsValue(field)).sequence
+        val jsvs: Res[List[JsValue]] = vs.map(_.toJsValue(field, thing)).sequence
         jsvs.map(JsArray(_))
       }
       case other => {
@@ -392,6 +408,15 @@ class FPComputeGraphQL(implicit state: SpaceState, ecology: Ecology) {
   }
 
   implicit class RichField(field: Field) {
+    def getArgumentBoolean(name: String): SyncRes[Option[Boolean]] = {
+      field.arguments.find(_.name == name) match {
+        case Some(arg) => arg.value match {
+          case v: BooleanValue => Some(v.value).valid
+          case _ => UnhandledArgumentType(arg, field.location).invalidNec
+        }
+        case None => None.valid
+      }
+    }
     def getArgumentStr(name: String): SyncRes[Option[String]] = {
       field.arguments.find(_.name == name) match {
         case Some(arg) => arg.value match {
