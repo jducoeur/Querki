@@ -246,42 +246,48 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
     propOpt.syncOrError(UnknownProperty(name, field.location))
   }
 
+  /**
+    * This represents a "rehydrated" PType, capturing the VType such that we can then use it in further processing.
+    *
+    * We do things this way so that multiple code paths can use the rehydrated values, without excessive boilerplate.
+    *
+    * Theoretically, some of the stuff in here is just silly and pointless, but the compiler isn't smart enough to
+    * realize that the VT parameter and VType type member are the same without this massaging, and VType is the
+    * point of the exercise: that is what allows us to pass the rehydrated type around.
+    */
   case class PTypeInfo[VT](ptin: PType[VT], jsvin: JsValueable[VT]) {
     type VType = VT
     def pType: PType[VType] = ptin
     def jsv: JsValueable[VType] = jsvin
     def confirm(prop: AnyProp): Option[Property[VType, _]] = prop.confirmType(pType)
   }
-  def getPTypeInfo(pType: PType[_]): PTypeInfo[_] = {
+
+  /**
+    * Given a raw PType, fetch the PTypeInfo for it, if it's a known one.
+    */
+  def getPTypeInfo(pType: PType[_]): Option[PTypeInfo[_]] = {
     def infoFor[VT: JsValueable](pt: PType[VT]): PTypeInfo[VT] = {
       PTypeInfo(pt, implicitly[JsValueable[VT]])
     }
 
+    // TODO: prebuild and cache the instances of PTypeInfo, now that the mechanism is working. We can probably just
+    // have a Map[OID, PTypeInfo] that we fetch these from:
     pType.id match {
-      case IntTypeOID => infoFor(Core.IntType)
-      case TextTypeOID => infoFor(Core.TextType)
-      case LargeTextTypeOID => infoFor(Core.LargeTextType)
-      case LinkTypeOID => infoFor(Core.LinkType)
-      case PlainTextOID => infoFor(Basic.PlainTextType)
-      case NewTagSetOID => PTypeInfo(Tags.NewTagSetType, tagJsValueable)
+      case IntTypeOID => Some(infoFor(Core.IntType))
+      case TextTypeOID => Some(infoFor(Core.TextType))
+      case LargeTextTypeOID => Some(infoFor(Core.LargeTextType))
+      case LinkTypeOID => Some(infoFor(Core.LinkType))
+      case PlainTextOID => Some(infoFor(Basic.PlainTextType))
+      case NewTagSetOID => Some(PTypeInfo(Tags.NewTagSetType, tagJsValueable))
+      case _ => None
     }
   }
 
   def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
-    val info = getPTypeInfo(prop.pType)
-    processTypedProperty[info.VType](thing, info.confirm(prop), info.pType, field)(info.jsv)
-
-//    // TODO: this is ugly and hardcoded -- can we make it better? Do note that we need to rehydrate the types here
-//    // *somehow*, so this isn't trivial:
-//    prop.pType.id match {
-//      case IntTypeOID => processTypedProperty(thing, prop.confirmType(Core.IntType), Core.IntType, field)
-//      case TextTypeOID => processTypedProperty(thing, prop.confirmType(Core.TextType), Core.TextType, field)
-//      case LargeTextTypeOID => processTypedProperty(thing, prop.confirmType(Core.LargeTextType), Core.LargeTextType, field)
-//      case LinkTypeOID => processTypedProperty(thing, prop.confirmType(Core.LinkType), Core.LinkType, field)
-//      case PlainTextOID => processTypedProperty(thing, prop.confirmType(Basic.PlainTextType), Basic.PlainTextType, field)
-//      case NewTagSetOID => processTypedProperty(thing, prop.confirmType(Tags.NewTagSetType), Tags.NewTagSetType, field)(tagJsValueable)
-//      case _ => resError(UnsupportedType(prop, field.location))
-//    }
+    getPTypeInfo(prop.pType) match {
+      case Some(info) => processTypedProperty[info.VType](thing, info.confirm(prop), info.pType, field)(info.jsv)
+      case None => resError(UnsupportedType(prop, field.location))
+    }
   }
 
   def processTypedProperty[VT](thing: Thing, propOpt: Option[Property[VT, _]], pt: PType[VT], field: Field)(implicit ev: JsValueable[VT]): Res[JsValue] = {
