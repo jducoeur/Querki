@@ -10,9 +10,6 @@ trait GraphQLValue[T <: Value, R] {
 
 object GraphQLValue {
   implicit val BooleanV = new GraphQLValue[BooleanValue, Boolean] {
-
-    import sangria.ast.Value
-
     val name = "Boolean"
 
     def fromValue(v: Value): Option[BooleanValue] = {
