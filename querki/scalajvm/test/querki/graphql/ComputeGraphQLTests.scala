@@ -5,6 +5,7 @@ import cats.implicits._
 import org.scalactic.source.Position
 import play.api.libs.json._
 import querki.test.{TestSpace, CDSpace, QuerkiTests}
+import querki.util.QLog
 
 class ComputeGraphQLTests extends QuerkiTests {
   def runQueryAndCheck[S <: TestSpace](query: String)(check: JsValue => Unit)(implicit space: S, p: Position): Unit = {
@@ -226,6 +227,33 @@ class ComputeGraphQLTests extends QuerkiTests {
           |<div class="para"><a href="Blackmores-Night">Blackmores Night</a></div></li>
           |</ul>
           |""".stripMargin)
+    }
+  }
+
+  "work with the Apply function property" in {
+    implicit val s = new CDSpace {
+      val complexArtists =
+        new SimpleTestThing(
+          "Complex Artists",
+          Basic.ApplyMethod("Artist._instances -> _filter(Genres -> _count -> _greaterThan(1))"))
+    }
+
+    runQueryAndCheckData(
+      """query ComplexArtistsQuery {
+        |  complex: _thing(_name: "Complex-Artists") {
+        |    _apply {
+        |      _oid
+        |      _name
+        |    }
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val results = data
+        .obj("complex")
+        .array("_apply")
+
+      results.length shouldBe (2)
     }
   }
 

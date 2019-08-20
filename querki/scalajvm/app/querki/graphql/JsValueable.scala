@@ -105,6 +105,14 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
     }
   }
 
+  /**
+    * Another serious exception: Functions result in a JsArray of whatever type comes out of the function.
+    * Depending on that result, you may or may not be able to drill down into them.
+    */
+  val functionJsValueable = new JsValueable[QLText] {
+    def toJsValue(v: QLText, field: Field, thing: Thing) = processQL(v, thing, field)
+  }
+
   implicit class JsValueableOps[T: JsValueable](t: T) {
     def toJsValue(field: Field, thing: Thing): Res[JsValue] = {
       implicitly[JsValueable[T]].toJsValue(t, field, thing: Thing)

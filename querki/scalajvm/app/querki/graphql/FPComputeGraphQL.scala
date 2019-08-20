@@ -235,9 +235,11 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
 
   def getProperty(thing: Thing, field: Field): SyncRes[Property[_, _]] = {
     val name = field.name
+    // Since neither spaces nor dashes are legal in GraphQL field names, we have to use underscore. But a *leading*
+    // underscore is a Querki built-in, so leave it alone:
+    val propName = name.take(1) + name.drop(1).replace('_', '-')
     val propOpt = for {
-      // Since neither spaces nor dashes are legal in GraphQL field names, we have to use underscore:
-      thingId <- ThingId.parseOpt(name.replace('_', '-'))
+      thingId <- ThingId.parseOpt(propName)
       thing <- state.anything(thingId)
       prop <- asProp(thing)
     }
@@ -279,6 +281,7 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
       case LinkTypeOID => Some(infoFor(Core.LinkType))
       case PlainTextOID => Some(infoFor(Basic.PlainTextType))
       case NewTagSetOID => Some(PTypeInfo(Tags.NewTagSetType, tagJsValueable))
+      case QLTypeOID => Some(PTypeInfo(Basic.QLType, functionJsValueable))
       case _ => None
     }
   }
@@ -286,7 +289,7 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
   def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
     getPTypeInfo(prop.pType) match {
       case Some(info) => processTypedProperty[info.VType](thing, info.confirm(prop), info.pType, field)(info.jsv)
-      case None => resError(UnsupportedType(prop, field.location))
+      case None => resError(UnsupportedType(prop.pType, field.location))
     }
   }
 
@@ -337,6 +340,35 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
       }
     }
   }
+
+  def processQL(ql: QLText, thing: Thing, field: Field): Res[JsValue] = {
+    val thingContext = thing.thisAsContext
+    val qvRes: Res[QValue] = EitherT.right(IO.fromFuture(IO {
+      QL.processMethod(ql, thingContext, lexicalThing = Some(thing))
+    }))
+    qvRes.flatMap(qv => processQValue(qv, thing, field))
+  }
+
+  def processQValue(qv: QValue, thing: Thing, field: Field): Res[JsValue] = {
+    getPTypeInfo(qv.pType) match {
+      case Some(ptInfo) => {
+        // The 2.11 compiler isn't quite smart enough to thread together the VType relationships here unless we
+        // spell them out:
+        implicit val jsValueable: JsValueable[ptInfo.VType] = ptInfo.jsv
+        val vs: List[ptInfo.VType] = qv.rawList(ptInfo.pType)
+        val results = vs.map(_.toJsValue(field, thing)).sequence
+        // Function results are always returned as JsArray, no matter how many results come out, to make it reasonably
+        // predictable at the client end:
+        results.map(JsArray(_))
+      }
+      case None => resError(UnsupportedType(qv.pType, field.location))
+    }
+  }
+
+  ////////////////////////////////////////
+  //
+  // Utility Functions
+  //
 
   def res[T](v: T): Res[T] = {
     EitherT.rightT(v)
@@ -443,8 +475,8 @@ case class UnknownProperty(name: String, location: Option[AstLocation]) extends 
 case class PropertyNotOnThing(thing: Thing, prop: AnyProp, location: Option[AstLocation]) extends GraphQLError {
   def msg = s"${thing.displayName} does not have requested property ${prop.displayName}"
 }
-case class UnsupportedType(prop: Property[_, _], location: Option[AstLocation]) extends GraphQLError {
-  def msg = s"Querki GraphQL does not yet support ${prop.pType.displayName} properties; sorry."
+case class UnsupportedType(pType: PType[_], location: Option[AstLocation]) extends GraphQLError {
+  def msg = s"Querki GraphQL does not yet support ${pType.displayName} properties; sorry."
 }
 case class InternalGraphQLError(msg: String, location: Option[AstLocation]) extends GraphQLError
 case class MissingRequiredValue(thing: Thing, prop: Property[_, _], location: Option[AstLocation]) extends GraphQLError {
