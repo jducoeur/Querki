@@ -231,4 +231,4 @@ class ComputeGraphQLTests extends QuerkiTests {
 
 }
 
-// TODO: QL functions, unit tests for errors, support from Console, and real plumbing
+// TODO: QL functions and dynamic QL queries, unit tests for errors, support from Console, and real plumbing
