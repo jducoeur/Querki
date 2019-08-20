@@ -246,18 +246,42 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
     propOpt.syncOrError(UnknownProperty(name, field.location))
   }
 
-  def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
-    // TODO: this is ugly and hardcoded -- can we make it better? Do note that we need to rehydrate the types here
-    // *somehow*, so this isn't trivial:
-    prop.pType.id match {
-      case IntTypeOID => processTypedProperty(thing, prop.confirmType(Core.IntType), Core.IntType, field)
-      case TextTypeOID => processTypedProperty(thing, prop.confirmType(Core.TextType), Core.TextType, field)
-      case LargeTextTypeOID => processTypedProperty(thing, prop.confirmType(Core.LargeTextType), Core.LargeTextType, field)
-      case LinkTypeOID => processTypedProperty(thing, prop.confirmType(Core.LinkType), Core.LinkType, field)
-      case PlainTextOID => processTypedProperty(thing, prop.confirmType(Basic.PlainTextType), Basic.PlainTextType, field)
-      case NewTagSetOID => processTypedProperty(thing, prop.confirmType(Tags.NewTagSetType), Tags.NewTagSetType, field)(tagJsValueable)
-      case _ => resError(UnsupportedType(prop, field.location))
+  case class PTypeInfo[VT](ptin: PType[VT], jsvin: JsValueable[VT]) {
+    type VType = VT
+    def pType: PType[VType] = ptin
+    def jsv: JsValueable[VType] = jsvin
+    def confirm(prop: AnyProp): Option[Property[VType, _]] = prop.confirmType(pType)
+  }
+  def getPTypeInfo(pType: PType[_]): PTypeInfo[_] = {
+    def infoFor[VT: JsValueable](pt: PType[VT]): PTypeInfo[VT] = {
+      PTypeInfo(pt, implicitly[JsValueable[VT]])
     }
+
+    pType.id match {
+      case IntTypeOID => infoFor(Core.IntType)
+      case TextTypeOID => infoFor(Core.TextType)
+      case LargeTextTypeOID => infoFor(Core.LargeTextType)
+      case LinkTypeOID => infoFor(Core.LinkType)
+      case PlainTextOID => infoFor(Basic.PlainTextType)
+      case NewTagSetOID => PTypeInfo(Tags.NewTagSetType, tagJsValueable)
+    }
+  }
+
+  def processProperty(thing: Thing, prop: Property[_, _], field: Field): Res[JsValue] = {
+    val info = getPTypeInfo(prop.pType)
+    processTypedProperty[info.VType](thing, info.confirm(prop), info.pType, field)(info.jsv)
+
+//    // TODO: this is ugly and hardcoded -- can we make it better? Do note that we need to rehydrate the types here
+//    // *somehow*, so this isn't trivial:
+//    prop.pType.id match {
+//      case IntTypeOID => processTypedProperty(thing, prop.confirmType(Core.IntType), Core.IntType, field)
+//      case TextTypeOID => processTypedProperty(thing, prop.confirmType(Core.TextType), Core.TextType, field)
+//      case LargeTextTypeOID => processTypedProperty(thing, prop.confirmType(Core.LargeTextType), Core.LargeTextType, field)
+//      case LinkTypeOID => processTypedProperty(thing, prop.confirmType(Core.LinkType), Core.LinkType, field)
+//      case PlainTextOID => processTypedProperty(thing, prop.confirmType(Basic.PlainTextType), Basic.PlainTextType, field)
+//      case NewTagSetOID => processTypedProperty(thing, prop.confirmType(Tags.NewTagSetType), Tags.NewTagSetType, field)(tagJsValueable)
+//      case _ => resError(UnsupportedType(prop, field.location))
+//    }
   }
 
   def processTypedProperty[VT](thing: Thing, propOpt: Option[Property[VT, _]], pt: PType[VT], field: Field)(implicit ev: JsValueable[VT]): Res[JsValue] = {
