@@ -257,6 +257,25 @@ class ComputeGraphQLTests extends QuerkiTests {
     }
   }
 
+  "allow me to evaluate QL dynamically" in {
+    implicit val s = new CDSpace
+
+    runQueryAndCheckData(
+      """query ComplexArtistsQuery {
+        |  dynamic: _exp(_ql: "Artist._instances -> _filter(Genres -> _count -> _greaterThan(1))") {
+        |    _oid
+        |    _name
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val results = data
+        .array("dynamic")
+
+      results.length shouldBe (2)
+    }
+  }
+
 }
 
-// TODO: QL functions and dynamic QL queries, unit tests for errors, support from Console, and real plumbing
+// TODO: unit tests for errors, support from Console, and real plumbing

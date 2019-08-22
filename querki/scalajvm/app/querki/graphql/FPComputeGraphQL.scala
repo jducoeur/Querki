@@ -23,8 +23,10 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
 {
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
+  final val expQueryName = "_exp"
   final val idArgName = "_oid"
   final val nameArgName = "_name"
+  final val qlArgName = "_ql"
 
   lazy val Basic = ecology.api[querki.basic.Basic]
   lazy val Core = ecology.api[querki.core.Core]
@@ -147,6 +149,17 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
           processThing(thing, field)
         }.sequence
         processedThings.map(JsArray(_))
+      }
+    } else if (field.name == expQueryName) {
+      val selectionName = field.name
+      val returnName = field.alias.getOrElse(selectionName)
+      field.getArgumentStr(qlArgName, "") match {
+        case Valid(qlExp) if (!qlExp.isEmpty) => {
+          processQL(QLText(qlExp), state, field)
+            .map((returnName, _))
+        }
+        case Valid(_) => resError(MissingQLExp(field.location))
+        case Invalid(err) => EitherT.leftT(err)
       }
     } else {
       resError(IllegalTopSelection(field.name, field.location))
@@ -481,4 +494,7 @@ case class UnsupportedType(pType: PType[_], location: Option[AstLocation]) exten
 case class InternalGraphQLError(msg: String, location: Option[AstLocation]) extends GraphQLError
 case class MissingRequiredValue(thing: Thing, prop: Property[_, _], location: Option[AstLocation]) extends GraphQLError {
   def msg = s"Required Property ${prop.displayName} on Thing ${thing.displayName} is empty!"
+}
+case class MissingQLExp(location: Option[AstLocation]) extends GraphQLError {
+  def msg = s"_exp queries requires a _ql argument with the expression to process!"
 }
