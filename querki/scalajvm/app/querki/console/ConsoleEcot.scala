@@ -41,7 +41,7 @@ class ConsoleEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs w
     }
     val qlContext = QLContext(ExactlyOne(LinkType(state)), Some(context.rc), TimeProvider.qlEndTime)
     val cmdText = QLText(cmdStr)
-    
+
     // First, we process the command as QL. Note that we do this completely ignoring permissions
     // (aside from the built-in read permission), but that's okay -- processMethod() is pure.
     QL.processMethod(cmdText, qlContext).flatMap { qv =>
