@@ -57,7 +57,11 @@ POST    /resetPassword              @controllers.LoginController.doResetPassword
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
 
+# GraphQL API queries:
+POST    /graphql/:userName/:spaceId  @controllers.GraphQLController.graphQL(userName, spaceId)
+
 # JSON API inquiries:
+# TODO: delete this entire code path, now that we have GraphQL:
 GET     /json/:userName/:spaceId/:thingId @controllers.JsonController.json(userName, spaceId, thingId, propIdStr = "")
 GET     /json/:userName/:spaceId/:thingId/:propId @controllers.JsonController.json(userName, spaceId, thingId, propId)
 

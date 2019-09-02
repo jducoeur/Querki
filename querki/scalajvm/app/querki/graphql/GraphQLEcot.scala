@@ -18,6 +18,13 @@ class GraphQLEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   val Basic = initRequires[querki.basic.Basic]
   val Console = initRequires[querki.console.Console]
 
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+
+  override def postInit: Unit = {
+    ApiRegistry.registerApiImplFor[GraphQLFunctions, GraphQLFunctionsImpl](SpaceOps.spaceRegion, requiresLogin = false)
+  }
+
   lazy val GraphQLCommand = Console.defineSpaceCommand(
     GraphQLCommandOID,
     "Run GraphQL",
