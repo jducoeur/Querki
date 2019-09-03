@@ -7,7 +7,7 @@ lazy val clients = Seq(querkiClient)
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.4.18"
 lazy val enumeratumV = "1.5.3"
-lazy val appV = "2.8.6"
+lazy val appV = "2.9.0"
 
 lazy val sharedSrcDir = "scala"
 
@@ -61,8 +61,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "ai.x" %% "diff" % "1.2.0" % "test",
       // Only used for debugging at this point:
       "com.github.pathikrit" %% "better-files" % "2.17.1",
-      "org.typelevel" %% "cats-core" % "1.3.1",
-      "org.typelevel" %% "cats-effect" % "1.0.0",
+      "org.typelevel" %% "cats-core" % "1.6.1",
+      "org.typelevel" %% "cats-effect" % "1.3.1",
       "com.github.julien-truffaut" %%  "monocle-core"  % "1.5.0",
       "com.github.julien-truffaut" %%  "monocle-macro" % "1.5.0",
       // Updated version of the XML library:
@@ -76,7 +76,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // In-memory Akka Persistence driver, used for tests. Note that this is for Akka 2.4!
       "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.9" % "test",
       // In-memory H2 database, used for tests:
-      "com.h2database" % "h2" % "1.4.192" % "test"
+      "com.h2database" % "h2" % "1.4.192" % "test",
+      // For graphql processing:
+      "org.sangria-graphql" %% "sangria" % "1.4.2"
     ),
     
     // ConductR params

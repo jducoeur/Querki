@@ -67,7 +67,7 @@ private[ql] sealed abstract class QLTextPart {
   
   override def toString = reconstructString
 }
-private[ql] case class UnQLText(text:String) extends QLTextPart {
+case class UnQLText(text:String) extends QLTextPart {
   def reconstructString:String = text
 }
 private[ql] sealed abstract class QLStage(collFlag:Option[String]) {
@@ -80,7 +80,7 @@ private[ql] sealed abstract class QLStage(collFlag:Option[String]) {
   
   override def toString = reconstructString
 }
-private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
+case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
   
   override def clearUseCollection = collFlag.isEmpty

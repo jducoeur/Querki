@@ -28,6 +28,8 @@ case class Property[VT, RT](
     mt:DateTime)(implicit val ecology:Ecology) 
   extends Thing(i, s, m, Kind.Property, pf, mt)
 {
+  type valType = VT
+
   def Core = ecology.api[querki.core.Core]
     
   def default(implicit state:SpaceState) = {

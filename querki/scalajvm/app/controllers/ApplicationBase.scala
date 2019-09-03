@@ -118,7 +118,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser[B](requireLogin:Boolean, parser:BodyParser[B] = BodyParsers.parse.anyContent)(f: PlayRequestContext => Future[Result]) = withAuth(parser) { user => implicit request =>
+  def withUser[B](requireLogin:Boolean, parser:BodyParser[B] = BodyParsers.parse.anyContent)(f: PlayRequestContextFull[B] => Future[Result]) = withAuth(parser) { user => implicit request =>
     if (requireLogin && user == User.Anonymous) {
       Future.successful(onUnauthorized(request))
     } else {
@@ -168,10 +168,10 @@ trait ApplicationBase extends Controller with EcologyMember {
    * Note that this is the usual replacement for withSpace -- it fetches just enough info to
    * send messages off to the UserSession level, and nothing more.
    */
-  def withRouting
-    (ownerIdStr:String, spaceId:String)
-    (f: (PlayRequestContext => Future[Result])):EssentialAction = 
-  withUser(false) { originalRC =>
+  def withRouting[B]
+    (ownerIdStr:String, spaceId:String, parser:BodyParser[B] = BodyParsers.parse.anyContent)
+    (f: (PlayRequestContextFull[B] => Future[Result])):EssentialAction =
+  withUser(false, parser) { originalRC =>
     try {
       // Give the listeners a chance to chime in. Note that this is where things like invitation
       // management come into play.
@@ -212,8 +212,8 @@ trait ApplicationBase extends Controller with EcologyMember {
     def write[Result: Writer](r: Result) = upickle.default.write(r)
   }
   
-  def withLocalClient(ownerId:String, spaceIdStr:String)(cb:(PlayRequestContext, LocalClient) => Future[Result]) = 
-    withRouting(ownerId, spaceIdStr) 
+  def withLocalClient[B](ownerId:String, spaceIdStr:String, parser:BodyParser[B] = BodyParsers.parse.anyContent)(cb:(PlayRequestContextFull[B], LocalClient) => Future[Result]) =
+    withRouting(ownerId, spaceIdStr, parser)
   { implicit rawRc =>
     // Unlike the API calls, we have to assume we have a name-style ThingId here:
     SpaceOps.getSpaceId(rawRc.ownerId, spaceIdStr).flatMap { spaceId =>

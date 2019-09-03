@@ -33,7 +33,7 @@ trait PropFuncs {
     for {
       collProp <- fetchStd(_.core.collectionProp)
       tpeProp <- fetchStd(_.core.typeProp)
-      nameProp <- fetchStd(_.basic.displayNameProp)
+      nameProp <- fetchStd(_.core.nameProp)
       propModel <- fetchStd(_.core.urProp)
       propId <- createThing(propModel,
         nameProp :=> name,

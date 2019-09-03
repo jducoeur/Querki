@@ -58,6 +58,10 @@ case class HarnessInfo(test: MidTestBase) {
   lazy val app = test.app
   lazy val ecology = test.ecology
   lazy val injector = app.injector
+
+  // These are implicit so you can simply `import state.harness._` to get at them:
+  implicit def executionContext = app.actorSystem.dispatcher
+  implicit def materializer = app.materializer
   
   def controller[T : ClassTag] = injector.instanceOf[T]
 }

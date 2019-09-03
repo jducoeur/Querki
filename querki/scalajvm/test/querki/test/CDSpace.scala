@@ -7,16 +7,23 @@ import querki.ecology._
  * chewier data. It will get gradually enhanced, but do a full retest when you do so.
  */
 class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
-  val artistModel = new SimpleTestThing("Artist")
+  val Basic = ecology.api[querki.basic.Basic]
+  val DisplayName = Basic.DisplayNameProp
+
+  val artistModel = new SimpleTestThing("Artist", DisplayName())
+  val exemplar = new TestProperty(LinkType, Optional, "Exemplar", Links.LinkModelProp(artistModel))
   val genreModel = new SimpleTestThing("Genre")
   
   val genres = new TestProperty(Tags.NewTagSetType, QSet, "Genres")
     
   val eurythmics = new TestThing("Eurythmics", artistModel, genres("Rock"))
-  val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"))
-  val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"))
+  val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"), DisplayName("They Might Be Giants"))
+  val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"), DisplayName("Blackmores Night"))
   val whitney = new TestThing("Whitney Houston", artistModel, genres("Pop"))
   val weirdAl = new TestThing("Weird Al", artistModel, genres("Parody"))
+  val bok = new TestThing("Gordon Bok", artistModel, genres("Folk"))
+
+  val folk = new TestThing("Folk", genreModel, exemplar(blackmores))
     
   val artistsProp = new TestProperty(LinkType, QSet, "Artists", Links.LinkModelProp(artistModel))
     
@@ -48,5 +55,5 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
     favoriteArtistsProp(tmbg, blackmores),
     interestingArtistsProp(eurythmics),
     otherArtistsProp("Weird Al"),
-    faveDisplayProp("My favorite bands are: [[My Favorites -> _bulleted]]"))
+    faveDisplayProp("My favorite bands are: [[Favorite Artists -> _bulleted]]"))
 }
