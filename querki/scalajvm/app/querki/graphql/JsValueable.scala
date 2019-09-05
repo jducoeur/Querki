@@ -4,15 +4,12 @@ import cats.data._
 import cats.data.Validated._
 import cats.implicits._
 import cats.effect.IO
-
 import sangria.ast.Field
-
 import querki.basic.PlainText
 import querki.core.QLText
 import querki.globals._
 import models.{Thing, DisplayText, OID, Wikitext}
-
-import play.api.libs.json.{JsValue, JsString, JsNumber}
+import play.api.libs.json.{JsString, JsNumber, JsValue, JsBoolean}
 
 /**
   * Typeclass that represents the notion of a type that can be converted to a JsValue.
@@ -78,6 +75,10 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
         case None => resError(OIDNotFound(v.toThingId.toString, field.location))
       }
     }
+  }
+
+  implicit val booleanJsValueable = new JsValueable[Boolean] {
+    override def toJsValue(v: Boolean, field: Field, thing: Thing)= res(JsBoolean(v))
   }
 
   /**

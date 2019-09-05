@@ -292,6 +292,7 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
       case TextTypeOID => Some(infoFor(Core.TextType))
       case LargeTextTypeOID => Some(infoFor(Core.LargeTextType))
       case LinkTypeOID => Some(infoFor(Core.LinkType))
+      case YesNoTypeOID => Some(infoFor(Core.YesNoType))
       case PlainTextOID => Some(infoFor(Basic.PlainTextType))
       case NewTagSetOID => Some(PTypeInfo(Tags.NewTagSetType, tagJsValueable))
       case QLTypeOID => Some(PTypeInfo(Basic.QLType, functionJsValueable))

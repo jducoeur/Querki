@@ -241,6 +241,29 @@ class ComputeGraphQLTests extends QuerkiTests {
     }
   }
 
+  "work with TrueOrFalse values" in {
+    implicit val s = new CDSpace {
+      val excellent = new TestProperty(Core.YesNoType, Optional, "Excellent")
+      val abney = new TestThing("Abney Park", artistModel, excellent(true))
+    }
+
+    runQueryAndCheckData(
+      """query BooleanQuery {
+        |  abney: _thing(_name: "Abney-Park") {
+        |    _oid
+        |    Excellent
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val result = data
+        .obj("abney")
+        .bool("Excellent")
+
+      result shouldBe (true)
+    }
+  }
+
 }
 
 // TODO: unit tests for errors, and real plumbing

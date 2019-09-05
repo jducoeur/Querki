@@ -2,7 +2,7 @@ package querki
 
 import org.scalactic.source.Position
 import org.scalatest.Matchers._
-import play.api.libs.json.{JsArray, JsValue, JsString, JsObject}
+import play.api.libs.json._
 
 package object graphql {
 
@@ -28,6 +28,13 @@ package object graphql {
       field(path) match {
         case JsArray(a) => a
         case other => fail(s"Field $path wasn't an Array: $other")
+      }
+    }
+
+    def bool(path: String)(implicit p: Position): Boolean = {
+      field(path) match {
+        case JsBoolean(b) => b
+        case other => fail(s"Field $path wasn't a Boolean: $other")
       }
     }
 
