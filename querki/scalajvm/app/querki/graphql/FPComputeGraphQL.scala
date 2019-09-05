@@ -220,9 +220,11 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
     val selectionResults: Res[Vector[(String, JsValue)]] = parentField.selections.map { selection =>
       for {
         childField <- confirmIsField(selection).toRes
+        // If the field is aliased, return the result with that alias:
+        resultName = childField.alias.getOrElse(childField.name)
         jsValue <- processField(thing, childField)
       }
-        yield (childField.name, jsValue)
+        yield (resultName, jsValue)
     }.sequence
     selectionResults.map { pairs =>
       val pairMap = pairs.toMap

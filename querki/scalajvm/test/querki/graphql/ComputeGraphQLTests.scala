@@ -264,6 +264,30 @@ class ComputeGraphQLTests extends QuerkiTests {
     }
   }
 
+  "correctly deal with aliases in sub-Things" in {
+    implicit val s = new CDSpace
+
+    runQueryAndCheckData(
+      """query CheckSubAlias {
+        |  fires: _thing(_name: "Fires-at-Midnight") {
+        |    _oid
+        |    performers: Artists {
+        |      Name
+        |    }
+        |  }
+        |}
+      """.stripMargin
+    ) { data =>
+      val result = data
+        .obj("fires")
+        .array("performers")
+        .head
+        .string("Name")
+
+      result shouldBe ("Blackmores Night")
+    }
+  }
+
 }
 
 // TODO: unit tests for errors, and real plumbing
