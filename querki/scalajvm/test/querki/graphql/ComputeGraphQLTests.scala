@@ -185,11 +185,14 @@ class ComputeGraphQLTests extends QuerkiTests {
         .string("Show_Favorites")
 
       favesString shouldBe (
-        """<div class="para">My favorite bands are: </div><ul>
+        """<p>My favorite bands are: </p>
+          |<ul>
           |<li class="_bullet">
-          |<div class="para"><a href="They-Might-Be-Giants">They Might Be Giants</a></div></li>
+          |<p><a href="They-Might-Be-Giants">They Might Be Giants</a></p>
+          |</li>
           |<li class="_bullet">
-          |<div class="para"><a href="Blackmores-Night">Blackmores Night</a></div></li>
+          |<p><a href="Blackmores-Night">Blackmores Night</a></p>
+          |</li>
           |</ul>
           |""".stripMargin)
     }

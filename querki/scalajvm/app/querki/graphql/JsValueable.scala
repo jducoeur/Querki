@@ -9,7 +9,7 @@ import querki.basic.PlainText
 import querki.core.QLText
 import querki.globals._
 import models.{Thing, DisplayText, OID, Wikitext}
-import play.api.libs.json.{JsString, JsNumber, JsValue, JsBoolean}
+import play.api.libs.json.{JsString, JsBoolean, JsNumber, JsValue}
 
 /**
   * Typeclass that represents the notion of a type that can be converted to a JsValue.
@@ -42,7 +42,7 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
             mode match {
               case "RAW" => wikitext.raw
               case "STRIP" => wikitext.strip
-              case "HTML" => wikitext.display
+              case "HTML" => wikitext.html
             }
           }
 

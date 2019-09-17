@@ -18,6 +18,8 @@ object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str
 }
 
+// TODO: dear lord, can we redo this as a typeclass somehow? The matrix of subclasses of Wikitext and different
+// sorts of Transformers is clearly idiotic.
 sealed trait Wikitext extends DebugRenderable {
   
   def transform(builder: => Transformer)(str:String):String = {
@@ -25,6 +27,7 @@ sealed trait Wikitext extends DebugRenderable {
     transformer(str)
   }
   def transformDisplay = transform(new QuerkiTransformer) _
+  def transformHtml = transform(new HtmlTransformer) _
   def transformRaw = transform(new RawTransformer) _
   def transformSpan = transform(new SpanTransformer) _
   def transformStrip = transform(new StripTransformer) _
@@ -32,6 +35,8 @@ sealed trait Wikitext extends DebugRenderable {
   def displayWith(trans:TransformWrapper):DisplayText
   
   def display:DisplayText
+
+  def html: DisplayText
   
   /**
    * Produces the "raw" string, with minimal markup. Use this for situations where you
@@ -95,6 +100,7 @@ case class QWikitext(wiki:String) extends Wikitext {
   val keepRaw = false
   
   def display = DisplayText(transformDisplay(internal))
+  def html = DisplayText(transformDisplay(internal))
   def raw = DisplayText(transformRaw(internal))
   def span = DisplayText(transformSpan(internal))
   def strip = DisplayText(transformStrip(internal))
@@ -136,6 +142,7 @@ case class QWikitext(wiki:String) extends Wikitext {
  */
 case class HtmlWikitextImpl(str:String) extends Wikitext {
   def display = DisplayText(str)
+  def html = DisplayText(str)
   def raw = DisplayText(str)
   def span = DisplayText(str)
   // We don't want to display HTML in strip mode
@@ -226,6 +233,7 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   }
   
   def display = DisplayText(process(transformDisplay))
+  def html = DisplayText(process(transformHtml))
   def raw = DisplayText(process(transformRaw))
   def span = DisplayText(process(transformSpan))
   def strip = DisplayText(process(transformStrip, true))
@@ -262,6 +270,10 @@ class QuerkiTransformer extends Transformer with MainDecorator {
     // do not permit <form>s inside of <p> -- and restructure the HTML to prevent it, breaking our forms.
     override def decorateParagraphOpen():String = """<div class="para">"""
     override def decorateParagraphClose():String = """</div>"""
+}
+
+class HtmlTransformer extends Transformer with MainDecorator {
+  override def allowVerbatimXml():Boolean = true
 }
 
 class RawTransformer extends Transformer with MainDecorator {
