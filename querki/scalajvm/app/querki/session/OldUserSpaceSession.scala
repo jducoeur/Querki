@@ -208,6 +208,9 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     clearEnhancedState()
     previous
   }
+
+  var debugLog: List[Wikitext] = List.empty
+  def addToDebugLog(wikitext: Wikitext): Unit = debugLog = (wikitext +: debugLog)
   
   val timeoutConfig = "querki.session.timeout"
     
@@ -412,6 +415,19 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
           new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q) map { response =>
             savedSender ! response
           }
+        }
+
+        case AddToDebugLog(text) => {
+          addToDebugLog(text)
+        }
+
+        case GetDebugLog() => {
+          sender ! CurrentDebugLog(debugLog)
+        }
+
+        case ClearDebugLog() => {
+          debugLog = List.empty
+          sender ! DebugLogCleared
         }
       }
     }

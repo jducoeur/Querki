@@ -117,6 +117,7 @@ object SystemCreator {
     new querki.notifications.UserlandNotifierEcot(ecology)         // 74
                                     // 75
     new querki.graphql.GraphQLEcot(ecology)                        // 76
+    new querki.debugging.DebuggingEcot(ecology)                    // 77
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem], asyncInitTarget:ActorRef):Ecology = {
