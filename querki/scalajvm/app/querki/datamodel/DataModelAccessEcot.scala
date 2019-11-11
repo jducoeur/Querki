@@ -1,14 +1,15 @@
 package querki.datamodel
 
 import models.{Kind, PType}
-
 import querki.ecology._
 import querki.globals._
-import querki.ql.{QLCall, QLPhrase}
+import querki.ql.{InvocationValue, QLCall, QLExp}
 import querki.spaces.{TCRReq, ThingChangeRequest}
-import querki.util.{Contributor, PublicException, Publisher}
+import querki.util.{PublicException, Contributor, Publisher}
 import querki.values._
-import querki.types.PropPath
+
+import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.SortedSet
 
 object MOIDs extends EcotIds(21) {
   val InstancesMethodOID = sysId(44)
@@ -36,6 +37,7 @@ object MOIDs extends EcotIds(21) {
   val IsAFunctionOID = moid(8)
   val UsingSpaceOID = moid(9)
   val AllRefsOID = moid(10)
+  val WithValueInOID = moid(11)
 }
 
 
@@ -785,6 +787,137 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
 
+  lazy val instanceValueCacheKey = StateCacheKey(21, "instanceValues")
+
+  /**
+    * This is the heart of the optimization of _withValueIn: it is a cached map of values to the instances that
+    * contain them.
+    */
+  type InstanceValueMap[VT] = Map[VT, Set[OID]]
+
+  lazy val WithValueInMethod = new InternalMethod(WithValueInOID,
+    toProps(
+      setName("_withValueIn"),
+      Summary("Produces the instances of this Model that have the specified value"),
+      Signature(
+        expected = Some(Seq(AnyType), "One or more values"),
+        reqs = Seq(("exp", AnyType, "An expression to apply to the instances of the model")),
+        opts = Seq.empty,
+        returns = (AnyType, "The instances of this Model that have the given value in the given property")
+      ),
+      Details(
+        """
+          |In serious Querki spaces, you will sometimes find that you want to do something like this this:
+          |```
+          |value -> +$v
+          |model._instances -> _filter(property -> _equals($v))
+          |```
+          |That is, you want to collect all of the instances of the model with the given value.
+          |
+          |The problem is, the above code is a bit clunky; worse, it's quite slow. This isn't a huge problem when
+          |you are only doing it occasionally, for models with modest numbers of instances. But if you are doing it
+          |a lot, and you have thousands of instances, it can make pages unusably slow.
+          |
+          |This comes up particularly often when representing trees of data in Querki -- where you have "child"
+          |things pointing to "parent" ones. When you want to draw this, each parent needs to find all of the
+          |instances that point to it, recursively, all the way down. With just a few hundred instances, this can
+          |destroy a page.
+          |
+          |So this convenience function does exactly the same thing, but in a way that is easier to read and write
+          |and is, most importantly, a bazillion times faster. (The important bit is that this caches its results.
+          |So while it only runs somewhat faster the first time, it can run orders of magnitude faster if you
+          |do it repeatedly.)
+          |
+          |So when you need to do this sort of thing, reach
+          |for this function: your pages will work better, and it's better for Querki overall.
+          |
+          |The syntax is:
+          |```
+          |value -> model._withValueIn(property)
+          |```
+          |
+          |You can pass a collection of values into this; if so, all Things that match any of them will be produced.
+          |
+          |You aren't actually limited to a simple property as the parameter -- you can put any QL expression there,
+          |and it will be tried with all instances of the model.
+          |
+          |The property or expression may be a collection rather than a single value. If so, this will produces all
+          |of the instances where *any* of the received values match *any* of the results of the expression.
+          |
+          |For the moment, this is only really tested with Thing Type properties. It may work with others, but it
+          |certainly needs more work. If you have another type that isn't working, which would be really useful for
+          |you, please drop us a line!
+        """.stripMargin)
+    ))
+  {
+    /**
+      * This fetches (or creates) the dynacache table for the ValueMaps.
+      *
+      * This is a pretty complex table. The key is model/expression pairs; the value is the table of values, and
+      * which instances contain each value. Note that the value is an InvocationValue -- basically a Future -- so
+      * that we don't have to stop and block anywhere inconveniently stupid.
+      */
+    def getValueMaps[VT](inv: Invocation): TrieMap[(OID, QLExp), InvocationValue[InstanceValueMap[VT]]] = {
+      // Note that this plays a little fast and loose with the dynacache: VT varies from key to key. This only works
+      // because fetchOrCreateCache itself cheats.
+      inv.state.fetchOrCreateCache(instanceValueCacheKey, TrieMap.empty[(OID, QLExp), InvocationValue[InstanceValueMap[VT]]])
+    }
+
+    /**
+      * For a given Model, this evaluates the given expression over each instance of the model, and builds it into an
+      * InstanceValueMap.
+      */
+    def createValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): InvocationValue[InstanceValueMap[VT]] = {
+      implicit val rc = inv.context.request
+      implicit val state = inv.state
+
+      val instances: SortedSet[Thing] = inv.state.descendants(modelId, includeModels = false, includeInstances = true)
+      val instanceMap: InvocationValue[InstanceValueMap[VT]] =
+        instances.foldLeft(inv.wrap(Map.empty[VT, Set[OID]])) { (minv, thing) =>
+          minv.flatMap { m =>
+            val context = thing.thisAsContext
+            inv.process("exp", context).map { qv =>
+              val vs: List[VT] = qv.rawList(expectedType)
+              vs.foldLeft(m) { (nextm, v) =>
+                val oids = nextm.get(v).getOrElse(Set.empty[OID])
+                nextm + (v -> (oids + thing.id))
+              }
+            }
+          }
+        }
+      instanceMap
+    }
+
+    /**
+      * This tries to fetch the caches ValueMap for the given Model/Exp pair. If not found, it creates it.
+      */
+    def getValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): InvocationValue[InstanceValueMap[VT]] = {
+      getValueMaps[VT](inv).getOrElseUpdate((modelId, exp), createValueMap(inv, modelId, exp, expectedType))
+    }
+
+    override def qlApply(inv: Invocation): QFut = {
+      for {
+        // TODO: give a reasonable error if there is no defining context
+        definingContext <- inv.opt(inv.definingContext)
+        // TODO: give a reasonable error if the defining context isn't a thing
+        if (definingContext.value.pType == LinkType)
+        modelId = definingContext.value.rawList(LinkType).head
+        // TODO: is the below going to parallelize on the context elements? We actually don't want that.
+        contextElem <- inv.contextElements
+        pt = contextElem.value.pType
+        exp <- inv.rawRequiredParam("exp")
+        maps = getValueMaps(inv)
+        valueMap <- getValueMap(inv, modelId, exp, pt)
+        vOpt = contextElem.value.rawList(pt).headOption
+        if (vOpt.isDefined)
+        v = vOpt.get
+        instances: Set[OID] = valueMap.get(v).getOrElse(Set.empty)
+        instanceId <- inv.iter(instances)
+      }
+        yield ExactlyOne(LinkType(instanceId))
+    }
+  }
+
   override lazy val props = Seq(
     CopyIntoInstances,
       
@@ -810,6 +943,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     AllThingsMethod,
     AsTypeMethod,
     ModelFunction,
-    OrphanedInstancesFunction
+    OrphanedInstancesFunction,
+    WithValueInMethod
   )
 }

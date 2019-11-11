@@ -430,4 +430,34 @@ class DataModelTests extends QuerkiTests {
       pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal ("")
     }
   }
+
+  // === _withValueIn ===
+  "_withValueIn" should {
+    "work for the basic OID case" in {
+      implicit val s = new CDSpace
+
+      pql("""[[Blackmores Night -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+        s.firesAtMight,
+        s.ghostOfARose,
+        s.shadowOfTheMoon
+      ))
+
+      pql("""[[They Might Be Giants -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+        s.factoryShowroom,
+        s.flood
+      ))
+    }
+
+    "work indirectly" in {
+      implicit val s = new CDSpace
+
+      pql("""[[My Favorites -> Favorite Artists -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+        s.factoryShowroom,
+        s.flood,
+        s.firesAtMight,
+        s.ghostOfARose,
+        s.shadowOfTheMoon
+      ))
+    }
+  }
 }
