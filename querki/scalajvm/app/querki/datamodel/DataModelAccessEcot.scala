@@ -854,30 +854,32 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       * This fetches (or creates) the dynacache table for the ValueMaps.
       *
       * This is a pretty complex table. The key is model/expression pairs; the value is the table of values, and
-      * which instances contain each value. Note that the value is an InvocationValue -- basically a Future -- so
-      * that we don't have to stop and block anywhere inconveniently stupid.
+      * which instances contain each value. Note that the value is a Future, so
+      * that we don't have to stop and block anywhere inconveniently stupid. It is specifically *not* an
+      * InvocationValue -- we tried that, and discovered that InvocationValue really isn't designed to be
+      * long-lived. (For example, it checks for timeouts in its .flatMap().)
       */
-    def getValueMaps[VT](inv: Invocation): TrieMap[(OID, QLExp), InvocationValue[InstanceValueMap[VT]]] = {
+    def getValueMaps[VT](inv: Invocation): TrieMap[(OID, QLExp), Future[InstanceValueMap[VT]]] = {
       // Note that this plays a little fast and loose with the dynacache: VT varies from key to key. This only works
       // because fetchOrCreateCache itself cheats.
-      inv.state.fetchOrCreateCache(instanceValueCacheKey, TrieMap.empty[(OID, QLExp), InvocationValue[InstanceValueMap[VT]]])
+      inv.state.fetchOrCreateCache(instanceValueCacheKey, TrieMap.empty[(OID, QLExp), Future[InstanceValueMap[VT]]])
     }
 
     /**
       * For a given Model, this evaluates the given expression over each instance of the model, and builds it into an
       * InstanceValueMap.
       */
-    def createValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): InvocationValue[InstanceValueMap[VT]] = {
+    def createValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): Future[InstanceValueMap[VT]] = {
       implicit val rc = inv.context.request
       implicit val state = inv.state
 
       val instances: SortedSet[Thing] = inv.state.descendants(modelId, includeModels = false, includeInstances = true)
-      val instanceMap: InvocationValue[InstanceValueMap[VT]] =
-        instances.foldLeft(inv.wrap(Map.empty[VT, Set[OID]])) { (minv, thing) =>
+      val instanceMap: Future[InstanceValueMap[VT]] =
+        instances.foldLeft(Future.successful(Map.empty[VT, Set[OID]])) { (minv, thing) =>
           minv.flatMap { m =>
             val context = thing.thisAsContext
-            inv.process("exp", context).map { qv =>
-              val vs: List[VT] = qv.rawList(expectedType)
+            inv.process("exp", context).get.map { qv =>
+              val vs: List[VT] = qv.head.rawList(expectedType)
               vs.foldLeft(m) { (nextm, v) =>
                 val oids = nextm.get(v).getOrElse(Set.empty[OID])
                 nextm + (v -> (oids + thing.id))
@@ -891,7 +893,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     /**
       * This tries to fetch the caches ValueMap for the given Model/Exp pair. If not found, it creates it.
       */
-    def getValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): InvocationValue[InstanceValueMap[VT]] = {
+    def getValueMap[VT](inv: Invocation, modelId: OID, exp: QLExp, expectedType: PType[VT]): Future[InstanceValueMap[VT]] = {
       getValueMaps[VT](inv).getOrElseUpdate((modelId, exp), createValueMap(inv, modelId, exp, expectedType))
     }
 
@@ -907,7 +909,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         pt = contextElem.value.pType
         exp <- inv.rawRequiredParam("exp")
         maps = getValueMaps(inv)
-        valueMap <- getValueMap(inv, modelId, exp, pt)
+        valueMap <- inv.fut(getValueMap(inv, modelId, exp, pt))
         vOpt = contextElem.value.rawList(pt).headOption
         if (vOpt.isDefined)
         v = vOpt.get
