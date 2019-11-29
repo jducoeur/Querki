@@ -12,7 +12,13 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Preload the interesting bits, to speed things up a little. -->    
+    <!-- TODO: bake codemirror into the main Querki download, and minimize it. Maybe use webjars: -->
+      <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")">
+    <link rel="stylesheet" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.css")">
+    <!-- TODO: write QText and QL modes, but to begin: -->
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")">
+
+    <!-- Preload the interesting bits, to speed things up a little. -->
     @if(isProd) {
       <link rel="preload" href="@routes.Assets.versioned("querkiclient-jsdeps.min.js")" as="script">
       <link rel="preload" href="@routes.Assets.versioned("querkiclient-opt.js")" as="script">
@@ -78,6 +84,8 @@
       <script src="@routes.Assets.versioned("querkiclient-jsdeps.js")"></script>
       <script src="@routes.Assets.versioned("querkiclient-fastopt.js")" type="text/javascript"></script>
     }
+    <script src="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")"></script>
     
     <script>
       @Html({

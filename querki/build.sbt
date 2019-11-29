@@ -149,7 +149,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.fileupload.js" minified "jquery.fileupload.min.js" dependsOn "jquery.iframe-transport.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-process.js" minified "jquery.fileupload-process.min.js" dependsOn "jquery.fileupload.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-image.js" minified "jquery.fileupload-image.min.js" dependsOn "jquery.fileupload.js",
-  
+
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   

@@ -762,3 +762,11 @@ dd {
 ._consoleOutMsg {
   color: #ffffff;
 }
+
+/********************
+ * CodeMirror styling
+ */
+
+.cm-m-qtext {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
