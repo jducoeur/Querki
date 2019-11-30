@@ -801,13 +801,41 @@ dd {
 }
 
 .cm-m-ql {
+  background-color: #fff8e0;
+  font-weight: 300;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+.cm-ql-name {
+  background-color: #fff8e0;
+  font-weight: 300;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+}
+
+.cm-ql-arrow {
+  color: #06c;
+  background-color: #fff8e0;
+  font-weight: bold;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+}
+
+.cm-ql-syntax {
+  color: #06c;
+  background-color: #fff8e0;
+  font-weight: bold;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+}
+
 .cm-delimit-ql {
+  background-color: #fff8e0;
+  font-weight: bold;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
 }
 
 .cm-delimit-qtext {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.cm-m-qltext {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }

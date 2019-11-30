@@ -8,20 +8,13 @@
 })(function(CodeMirror) {
 "use strict";
 
-CodeMirror.defineMode("ql", function(config) {
-  return {
-    startState: function () {
-      return {};
-    },
-
-    token: function (stream, state) {
-    },
-
-    innerMode: function(state) {
-      if (state.block == htmlBlock) return {state: state.htmlState, mode: htmlMode};
-      if (state.localState) return {state: state.localState, mode: state.localMode};
-      return {state: state, mode: mode};
-    }
+CodeMirror.defineSimpleMode("ql", {
+  start: [
+    {regex: '->', token: "ql-arrow"},
+    {regex: /[\(\)]/, token: "ql-parens"},
+    {regex: '""', token: "delimit-qtext", mode: {spec: "qltext-outer", end: '""' }}
+  ],
+  meta: {
   }
 });
 

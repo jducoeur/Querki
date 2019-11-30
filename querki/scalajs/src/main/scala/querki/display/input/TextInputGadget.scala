@@ -80,7 +80,7 @@ class LargeTextInputGadget(mods:Modifier*)(implicit e:Ecology) extends InputGadg
 
     val opts =
       CodeMirrorOptions
-        .mode("qltext-outer")
+        .mode("qltext")
         .addModeClass(true)
         .lineWrapping(true)
     println(s"====> About to get the TextArea")
