@@ -10,7 +10,8 @@
 
 CodeMirror.defineSimpleMode("ql", {
   start: [
-    {regex: /[a-z$][\w$]*/, token: "variable"}
+    {regex: /[a-z$][\w$]*/, token: "variable"},
+    {regex: '""', token: "delimit-qtext", mode: {spec: "qltext-outer", end: '""' }}
   ],
   meta: {
   }

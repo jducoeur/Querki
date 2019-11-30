@@ -807,3 +807,7 @@ dd {
 .cm-delimit-ql {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
 }
+
+.cm-delimit-qtext {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

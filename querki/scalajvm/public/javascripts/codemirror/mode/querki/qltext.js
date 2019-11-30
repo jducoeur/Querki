@@ -8,25 +8,13 @@
 })(function(CodeMirror) {
 "use strict";
 
-CodeMirror.defineMode("qltext-inner", function(config) {
-  return CodeMirror.multiplexingMode(
-    CodeMirror.getMode(config, "text/x-ql"),
-    {
-      open: '""',
-      close: '""',
-      mode: CodeMirror.getMode(config, "text/x-qtext"),
-      delimStyle: "delimit-qtext"
-    }
-  )
-});
-
 CodeMirror.defineMode("qltext-outer", function(config) {
   return CodeMirror.multiplexingMode(
     CodeMirror.getMode(config, "text/x-qtext"),
     {
       open: '[[',
       close: ']]',
-      mode: CodeMirror.getMode(config, "text/x-ql"),
+      mode: CodeMirror.getMode(config, "ql"),
       delimStyle: "delimit-ql"
     }
   )
