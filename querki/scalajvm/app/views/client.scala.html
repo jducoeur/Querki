@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.css")">
     <!-- TODO: write QText and QL modes, but to begin: -->
     <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/xml/xml.js")">
 
     <!-- Preload the interesting bits, to speed things up a little. -->
     @if(isProd) {
@@ -86,7 +87,8 @@
     }
     <script src="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")"></script>
     <script src="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")"></script>
-    
+    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/xml/xml.js")"></script>
+
     <script>
       @Html({
 		  implicit val request = rc.request

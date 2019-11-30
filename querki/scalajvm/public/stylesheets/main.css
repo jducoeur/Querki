@@ -770,3 +770,32 @@ dd {
 .cm-m-qtext {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
+
+/* Mimic the Bootstrap code style -- keep this in sync! */
+.cm-qtext-code {
+  padding: 2px 4px;
+  font-size: 90%;
+  color: #c7254e;
+  background-color: #f9f2f4;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* Tags and attributes show code-like, but the contents should be plain old sans-serif. */
+.cm-m-xml {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.cm-tag {
+  color: #170;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.cm-attribute {
+  color: #00c;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.cm-string {
+  color: #a11;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}

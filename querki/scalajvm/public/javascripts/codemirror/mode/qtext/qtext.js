@@ -43,8 +43,8 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
   if (modeCfg.fencedCodeBlockHighlighting === undefined)
     modeCfg.fencedCodeBlockHighlighting = true;
 
-  if (modeCfg.xml === undefined)
-    modeCfg.xml = true;
+  // TODO: Do we need to include an XML mode here?
+  modeCfg.xml = true;
 
   // Allow token types to be overridden by user-provided token types.
   if (modeCfg.tokenTypeOverrides === undefined)
@@ -52,7 +52,7 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
 
   var tokenTypes = {
     header: "header",
-    code: "comment",
+    code: "qtext-code",
     quote: "quote",
     list1: "variable-2",
     list2: "variable-3",
@@ -80,9 +80,7 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
 
   var hrRE = /^([*\-_])(?:\s*\1){2,}\s*$/
   ,   listRE = /^(?:[*\-+]|^[0-9]+([.)]))\s+/
-  ,   taskListRE = /^\[(x| )\](?=\s)/i // Must follow listRE
   ,   atxHeaderRE = modeCfg.allowAtxHeaderWithoutSpace ? /^(#+)/ : /^(#+)(?: |$)/
-  ,   setextHeaderRE = /^ *(?:\={1,}|-{1,})\s*$/
   ,   textRE = /^[^#!\[\]*_\\<>` "'(~:]+/
   ,   fencedCodeRE = /^(~~~+|```+)[ \t]*([\w+#-]*)[^\n`]*$/
   ,   linkDefRE = /^\s*\[[^\]]+?\]:.*$/ // naive link-definition
@@ -592,7 +590,7 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
     }
 
     if (modeCfg.strikethrough) {
-      if (ch === '~' && stream.eatWhile(ch)) {
+      if (ch === '-' && stream.eatWhile(ch)) {
         if (state.strikethrough) {// Remove strikethrough
           if (modeCfg.highlightFormatting) state.formatting = "strikethrough";
           var t = getType(state);
@@ -604,7 +602,7 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
           return getType(state);
         }
       } else if (ch === ' ') {
-        if (stream.match(/^~~/, true)) { // Probably surrounded by space
+        if (stream.match(/^--/, true)) { // Probably surrounded by space
           if (stream.peek() === ' ') { // Surrounded by spaces, ignore
             return getType(state);
           } else { // Not surrounded by spaces, back up pointer
