@@ -13,11 +13,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- TODO: bake codemirror into the main Querki download, and minimize it. Maybe use webjars: -->
-      <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/addon/mode/simple.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/addon/mode/multiplex.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/querki/qtext.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/querki/ql.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/querki/qltext.js")" as="script">
+    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/xml/xml.js")" as="script">
     <link rel="stylesheet" href="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.css")">
-    <!-- TODO: write QText and QL modes, but to begin: -->
-    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")">
-    <link rel="preload" href="@routes.Assets.versioned("javascripts/codemirror/mode/xml/xml.js")">
 
     <!-- Preload the interesting bits, to speed things up a little. -->
     @if(isProd) {
@@ -86,7 +89,11 @@
       <script src="@routes.Assets.versioned("querkiclient-fastopt.js")" type="text/javascript"></script>
     }
     <script src="@routes.Assets.versioned("javascripts/codemirror/lib/codemirror.js")"></script>
-    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/qtext/qtext.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/addon/mode/simple.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/addon/mode/multiplex.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/querki/qtext.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/querki/ql.js")"></script>
+    <script src="@routes.Assets.versioned("javascripts/codemirror/mode/querki/qltext.js")"></script>
     <script src="@routes.Assets.versioned("javascripts/codemirror/mode/xml/xml.js")"></script>
 
     <script>

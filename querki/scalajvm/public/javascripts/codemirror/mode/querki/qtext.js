@@ -869,8 +869,6 @@ CodeMirror.defineMode("qtext", function(cmCfg, modeCfg) {
   return mode;
 }, "xml");
 
-CodeMirror.defineMIME("text/qtext", "qtext");
-
 CodeMirror.defineMIME("text/x-qtext", "qtext");
 
 });

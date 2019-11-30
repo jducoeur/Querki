@@ -799,3 +799,11 @@ dd {
   color: #a11;
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+.cm-m-ql {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.cm-delimit-ql {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+}
