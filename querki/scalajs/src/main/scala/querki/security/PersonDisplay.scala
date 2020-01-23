@@ -20,32 +20,39 @@ class PersonDisplay(
   extends Gadget[html.TableRow] with QuerkiUIUtils
 {
   val customDisplay = GadgetRef.of[html.Div]
-  val check = GadgetRef.of[html.Span]
 
   var selected = false
-  override def onCreate(e: html.TableRow) = {
-    $(e).click { evt:JQueryEventObject =>
-      if (selected) {
-        $(e).removeClass("warning")
-        $(e).addClass(showCls)
-        check.mapElemNow { checkElem =>
-          $(checkElem).css("visibility", "hidden")
+  val cell = GadgetRef.of[html.TableCell]
+    .whenRendered { g =>
+      g.elemOpt.map { e =>
+        $(e).click { evt:JQueryEventObject =>
+          if (selected) {
+            $(e).removeClass("warning")
+            $(e).addClass(showCls)
+            check.mapElemNow { checkElem =>
+              $(checkElem).css("visibility", "hidden")
+            }
+            selected = false
+          } else {
+            $(e).addClass("warning")
+            $(e).removeClass(showCls)
+            check.mapElemNow { checkElem =>
+              $(checkElem).css("visibility", "visible")
+            }
+            selected = true
+          }
+        }.children().click { evt:JQueryEventObject =>
+          // Don't let child clicks propagate to the row itself:
+          false
         }
-        selected = false
-      } else {
-        $(e).addClass("warning")
-        $(e).removeClass(showCls)
-        check.mapElemNow { checkElem =>
-          $(checkElem).css("visibility", "visible")
-        }
-        selected = true
       }
     }
-  }
-  
+
+  val check = GadgetRef.of[html.Span]
+
   def doRender() = {
     tr(cls:=showCls,
-      td(
+      cell <= td(
         check <= span(visibility := "hidden", icon("ok")),
         " ",
         MSeq(
