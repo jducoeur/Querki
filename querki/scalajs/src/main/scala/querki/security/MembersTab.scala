@@ -30,7 +30,7 @@ class MembersTab(
               for (member <- members) 
                 yield new PersonDisplay("info", member, roleMap, customMap, page.std)
             )
-          )            
+          )
         )
     }
       yield guts
