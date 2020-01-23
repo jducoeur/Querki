@@ -23,7 +23,7 @@ class MembersTab(
       guts =
         div(
           h3("Members"),
-          p("The following people are members of this Space. Click on a member's Role in order to change it."),
+          p("The following people are members of this Space. Click on a member's Role in order to change it. Click on a row to select that member."),
           
           table(cls:="table table-hover",
             tbody(
