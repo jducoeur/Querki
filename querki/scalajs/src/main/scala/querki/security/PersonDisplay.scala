@@ -12,8 +12,8 @@ import querki.globals._
 import querki.util.ScalatagUtils
 
 class PersonDisplay(
-    showCls:String, 
-    person:PersonInfo, 
+    showCls:String,
+    val person:PersonInfo,
     roleInfo:RoleInfo, 
     customInfo:RoleInfo,
     std: StandardThings)(implicit val ecology: Ecology, ctx:Ctx.Owner)
@@ -21,25 +21,25 @@ class PersonDisplay(
 {
   val customDisplay = GadgetRef.of[html.Div]
 
-  var selected = false
+  val selected = Var(false)
   val cell = GadgetRef.of[html.TableCell]
     .whenRendered { g =>
       g.elemOpt.map { e =>
         $(e).click { evt:JQueryEventObject =>
-          if (selected) {
+          if (selected.now) {
             $(e).removeClass("warning")
             $(e).addClass(showCls)
             check.mapElemNow { checkElem =>
               $(checkElem).css("visibility", "hidden")
             }
-            selected = false
+            selected.update(false)
           } else {
             $(e).addClass("warning")
             $(e).removeClass(showCls)
             check.mapElemNow { checkElem =>
               $(checkElem).css("visibility", "visible")
             }
-            selected = true
+            selected.update(true)
           }
         }.children().click { evt:JQueryEventObject =>
           // Don't let child clicks propagate to the row itself:

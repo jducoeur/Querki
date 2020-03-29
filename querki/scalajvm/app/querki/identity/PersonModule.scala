@@ -689,7 +689,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     } else {
       // Mark the Person record as Removed
       withCache { cache =>
-        cache.localPerson(personId).map { person: Thing =>
+        cache.peopleById.get(personId).map { person: Thing =>
           val identityIdOpt: Option[OID] = person.getFirstOpt(IdentityLink)
           val changeRequest =
             ChangeProps(IdentityAccess.SystemUser, state.id, personId,
