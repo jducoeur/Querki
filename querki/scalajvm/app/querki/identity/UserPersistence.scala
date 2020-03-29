@@ -461,6 +461,17 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       insert.execute
     }
   }
+
+  def deleteSpaceMembership(identityId: OID, spaceId: OID): Boolean = {
+    QDB(ShardKind.System) { implicit conn =>
+      val delete = SQL(
+        """
+          |DELETE FROM SpaceMembership
+          |WHERE spaceId={spaceId} AND identityId={identityId}
+          |""".stripMargin).on("spaceId" -> spaceId.raw, "identityId" -> identityId.raw)
+      delete.execute()
+    }
+  }
   
   private def updateUserCacheFor(userOpt:Option[User]) = {
     userOpt match {

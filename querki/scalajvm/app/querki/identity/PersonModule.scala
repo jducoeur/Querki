@@ -195,13 +195,20 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     toProps(
       setName("_Status Rejected"),
       setInternal))
+
+  lazy val StatusRemoved = ThingState(StatusRemovedOID, systemOID, InvitationStatusModel,
+    toProps(
+      setName("_Status Removed"),
+      setInternal
+    ))
       
   override lazy val things = Seq(
     InvitationStatusModel,
     StatusInvited,
     StatusRequested,
     StatusMember,
-    StatusRejected
+    StatusRejected,
+    StatusRemoved
   )
 
   /***********************************************
@@ -661,7 +668,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     import requester.RequestableActorRef
     
     withCache { cache =>
-      cache.localPerson(guestId).map { person =>
+      cache.localPerson(guestId).map { person: Thing =>
         val changeRequest = 
           ChangeProps(IdentityAccess.SystemUser, state.id, person.id,
             toProps(
@@ -670,6 +677,36 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             false)
         SpaceOps.spaceRegion.request(changeRequest)
       }.getOrElse(RequestM.successful(()))
+    }
+  }
+
+  def removePerson(rc: RequestContext, personId: OID)(implicit state: SpaceState, requester:Requester): RequestM[Boolean] = {
+    import requester.RequestableActorRef
+
+    if (personId == state.owner) {
+      // Make sure that the owner can't be removed from the Space:
+      RequestM.successful(false)
+    } else {
+      // Mark the Person record as Removed
+      withCache { cache =>
+        cache.localPerson(personId).map { person: Thing =>
+          val identityIdOpt: Option[OID] = person.getFirstOpt(IdentityLink)
+          val changeRequest =
+            ChangeProps(IdentityAccess.SystemUser, state.id, personId,
+              toProps(
+                IdentityLink(),
+                InvitationStatusProp(StatusRemoved)
+              ),
+              false
+            )
+          SpaceOps.spaceRegion.request(changeRequest).map { _ =>
+            // Remove this Person from the SpaceMembers, if this is a real identity:
+            identityIdOpt.map { identityId =>
+              UserAccess.deleteSpaceMembership(identityId, state.id)
+            }.getOrElse(false)
+          }
+        }.getOrElse(RequestM.successful(false))
+      }
     }
   }
   

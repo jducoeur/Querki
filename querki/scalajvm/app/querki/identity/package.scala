@@ -2,8 +2,8 @@ package querki
 
 import scala.concurrent.Future
 import scala.util.Try
-
 import akka.actor.ActorRef
+import querki.globals.SpaceState
 
 // TODO: this is an unfortunate abstraction break:
 import play.api.mvc.RequestHeader
@@ -56,6 +56,7 @@ package object identity {
     val IsSimpleGuestOID = moid(18)
     val CreatorFunctionOID = moid(19)
     val MakeAllPersonsPublicCommandOID = moid(20)
+    val StatusRemovedOID = moid(21)
   }
   
   val IdentityTag = "Users, Identities and Invitations"
@@ -106,7 +107,8 @@ package object identity {
     
     def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:querki.spaces.messages.ThingResponse => Future[B])(implicit state:SpaceState):Option[scala.concurrent.Future[B]]
     def acceptOpenInvitation(rc:RequestContext, roleId:OID)(implicit state:SpaceState):Future[Option[PublicException]]
-    
+    def removePerson(rc: RequestContext, personId: OID)(implicit state: SpaceState, requester:Requester): RequestM[Boolean]
+
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean
     // Simply asks whether this is a Member of this Space
@@ -274,6 +276,7 @@ package object identity {
    */
   trait UserAccess extends EcologyInterface {
     def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState = MembershipState.member):Boolean
+    def deleteSpaceMembership(identityId: OID, spaceId: OID): Boolean
     def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]
     def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User]
     def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Future[Option[User]]
