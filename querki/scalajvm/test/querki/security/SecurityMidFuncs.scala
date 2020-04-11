@@ -54,6 +54,9 @@ trait SecurityMidFuncs {
   def getSharedLinkURL(link: TOID): TestOp[String] =
     TestOp.client { _[SecurityFunctions].getSharedLinkURL(link).call() }
 
+  def removeFromSpace(people: TID*): TestOp[Boolean] =
+    TestOp.client { _[SecurityFunctions].removeFromSpace(people).call() }
+
   // Higher-level functions
 
   def createRole(name: String, perms: TID*): TestOp[TID] = {

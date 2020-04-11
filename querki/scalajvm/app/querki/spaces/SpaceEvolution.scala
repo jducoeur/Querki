@@ -4,7 +4,7 @@ import models.Kind.Kind
 import models.{Kind, OID, ModelPersistence, ThingState}
 import querki.basic.Basic
 import querki.ecology.{EcologyInterface, QuerkiEcot}
-import querki.globals.{SpaceState, Ecology}
+import querki.globals.{SpaceState, Ecology, spew}
 import querki.identity.{User, Person}
 import querki.publication.{Publication, CurrentPublicationState}
 import querki.security.AccessControl
@@ -121,6 +121,17 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
             def applyModify(): Option[SpaceState] = {
               Some(modifyPure(id, thing, Some(thing.model), propChanges, replaceAllProps, modTime)(prevState))
             }
+
+            // Weird special case: when someone is removed from this Space, they transition from member to non-member:
+            def isRemovingThisCaller: Boolean = {
+              if (thing.model == querki.identity.MOIDs.PersonOID) {
+                val Person = ecology.api[querki.identity.Person]
+                // It's a removal if they were defined in the previous version but aren't in the new one:
+                Person.localPerson(user)(prevState).isDefined && Person.localPerson(user)(fullState).isEmpty
+              } else
+                false
+            }
+
             val kind: Kind = thing.kind
             if (kind == Kind.Property) {
               // Same logic as in DHCreateThing:
@@ -134,6 +145,9 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
                 // We modified an Instance Permissions Object. At least for now, we're not going to try to deal with
                 // this efficiently, since it potentially affects the visibility of this Model's Instances, so we
                 // might have to go add/remove instances from the view.
+                None
+              } else if (isRemovingThisCaller) {
+                // This person has been removed from the Space:
                 None
               } else if (
                 (thing.model == querki.identity.MOIDs.PersonOID) &&

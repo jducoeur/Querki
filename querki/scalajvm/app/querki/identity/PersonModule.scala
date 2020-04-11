@@ -55,7 +55,7 @@ private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState
       yield identityId  
   }     
   
-  val (allPeopleById, allPeopleByIdentityId) = 
+  lazy val (allPeopleById, allPeopleByIdentityId) =
     ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true, false)) { (maps, person) =>
       val (personIdMap, identityIdMap) = maps
       val newPersonIdMap = personIdMap + (person.id -> person)
@@ -81,7 +81,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   val Email = initRequires[querki.email.Email]
   val PageEventManager = initRequires[controllers.PageEventManager]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
-  
+
+  lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
@@ -694,7 +695,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           val changeRequest =
             ChangeProps(IdentityAccess.SystemUser, state.id, personId,
               toProps(
-                IdentityLink(),
+                // We have to actively remove the IdentityLink property:
+                IdentityLink(DataModelAccess.getDeletedValue(IdentityLink)),
                 InvitationStatusProp(StatusRemoved)
               ),
               false
