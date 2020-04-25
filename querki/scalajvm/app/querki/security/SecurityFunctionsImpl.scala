@@ -91,7 +91,23 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     }
       yield InviteResponse(invited, alreadyInvited)
   }
-  
+
+  def removeFromSpace(peopleTids: Seq[TID]): Future[Boolean] = {
+    // This might eventually get its own permission, but for now I'm content to limit this to admins:
+    if (!AccessControl.isManager(rc.requesterOrAnon, state))
+      throw NotAllowedException()
+
+    val peopleIds = for {
+      tid <- peopleTids
+      thingId = ThingId(tid.underlying)
+      AsOID(oid) = thingId
+    }
+      yield oid
+
+    val msg = SpaceSubsystemRequest(user, state.id, RemoveMembers(rc, peopleIds))
+    (spaceRouter ? msg).map { _ => true}
+  }
+
   def archiveThisSpace():Future[Boolean] = {
     // This really-and-for-true is only allowed for the Owner, not a Manager:
     if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)

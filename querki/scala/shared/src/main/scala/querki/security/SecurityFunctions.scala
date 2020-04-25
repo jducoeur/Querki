@@ -74,6 +74,13 @@ trait SecurityFunctions {
    * Given the TID of a Shared Link Thing, this returns the URL to pass around.
    */
   def getSharedLinkURL(link: TOID): Future[String]
+
+  /**
+   * Remove the specified members from this Space.
+   *
+   * This does not actually delete the Person records (for data integrity), but it marks them as removed.
+   */
+  def removeFromSpace(people: Seq[TID]): Future[Boolean]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])

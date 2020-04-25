@@ -32,7 +32,7 @@ object SecurityMidTests {
     checkNameRealityFor(true, name, who)
   def checkNameIsMissingFor(name: String, who: TestUser)(implicit position: Position) =
     checkNameRealityFor(false, name, who)
-  
+
   lazy val regressionTestQIbu6oeej: TestOp[Unit] = {
     val ownerName = "bu6oeej Owner"
     val owner = TestUser(ownerName)
@@ -136,6 +136,49 @@ object SecurityMidTests {
     }
       yield ()
   }
+
+  def qi7w4gbn6RemoveMembers: TestOp[Unit] = {
+    val ownerName = "QI7w4gbn6 Owner"
+    val owner = TestUser(ownerName)
+    val memberName = "QI7w4gbn6 Member"
+    val member = TestUser(memberName)
+    val spaceName = "QI7w4gbn6 Space"
+
+    for {
+      _ <- step("Regression test for QI.7w4gbn6")
+      std <- getStd
+      _ <- newUser(owner)
+      space <- createSpace(spaceName)
+
+      memberInfo <- newUser(member)
+
+      // Build the Things:
+      _ <- ClientState.switchToUser(owner)
+      model <- makeModel("The Model")
+      instanceName = "The Instance"
+      instance <- makeThing(model, instanceName)
+
+      // Make the Space members-only readable:
+      perms <- permsFor(space)
+      instancePermThing = perms.instancePermThing.get
+      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.members)
+
+      // Initially, the member isn't a member, and can't see it:
+      _ <- checkNameIsMissingFor(instanceName, member)
+
+      // Add the member, and confirm they can see it:
+      _ <- inviteIntoSpace(owner, space, member)
+      _ <- checkNameIsRealFor(instanceName, member)
+
+      // Remove the member, and confirm they can't see it again:
+      personInfo <- getPersonInfoFor(member)
+      _ <- removeFromSpace(personInfo.person.oid)
+      _ <- spew(s"Removed person")
+      _ <- checkNameIsMissingFor(instanceName, member)
+    }
+      yield ()
+
+  }
 }
 
 @Slow
@@ -146,6 +189,7 @@ class SecurityMidTests extends MidTestBase {
     "pass" in {
       runTest(regressionTestQIbu6oeej)
       runTest(regressionTestQIbu6of67)
+      runTest(qi7w4gbn6RemoveMembers)
     }
   }
 }

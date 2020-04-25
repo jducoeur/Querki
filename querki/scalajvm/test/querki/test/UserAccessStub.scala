@@ -24,6 +24,7 @@ trait UserTesting extends EcologyInterface {
 class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserTesting {
   // Stubs for functions we aren't using yet:
   def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState = MembershipState.member):Boolean = ???
+  def deleteSpaceMembership(identityId: OID, spaceId: OID): Boolean = ???
   def changePassword(requester:User, identity:Identity, newPassword:String):Try[User] = ???
   def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User] = ???
   def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Future[Option[User]] = ???
@@ -45,7 +46,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def getUserVersion(userId:UserId):Option[Int] = ???
   def findOrCreateIdentityByEmail(emailIn:String):Future[FullIdentity] = ???
   def deleteEmailAddress(email:String):Future[Option[User]] = ???
-  
+
   // Implemented stubs
   def getIdentity(id:OID):Option[Identity] = identitiesById.get(id)
   

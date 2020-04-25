@@ -78,7 +78,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       // In-memory H2 database, used for tests:
       "com.h2database" % "h2" % "1.4.192" % "test",
       // For graphql processing:
-      "org.sangria-graphql" %% "sangria" % "1.4.2"
+      "org.sangria-graphql" %% "sangria" % "1.4.2",
+      "com.chuusai" %% "shapeless" % "2.3.3"
     ),
     
     // ConductR params

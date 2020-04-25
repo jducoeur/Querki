@@ -85,6 +85,23 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
             sender ! result
         }
   	  }
+
+			case RemoveMembers(rc, memberIds) => {
+				// Belt and suspenders check:
+				if (AccessControl.isManager(rc.requesterOrAnon, state)) {
+					val resultRM = (RequestM.successful(true) /: memberIds) { (last, memberId) =>
+						last.flatMap { soFar =>
+							if (soFar) {
+								Person.removePerson(rc, memberId)(state, this)
+							} else {
+								RequestM.successful(false)
+							}
+						}
+					}
+
+					resultRM.foreach( _ =>  sender ! RemoveMembersResult )
+				}
+			}
       
       case IsSpaceMemberP(rc) => {
         sender ! IsSpaceMember(AccessControl.isMember(rc.requesterOrAnon, state))
