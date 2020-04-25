@@ -38,6 +38,8 @@ private[spaces] class SpaceRouter(e:Ecology)
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
   implicit val ecology = e
+
+  lazy val tracing = TracingSpace(spaceId)
   
   lazy val spaceId:OID = OID(self.path.name)
   
@@ -53,23 +55,37 @@ private[spaces] class SpaceRouter(e:Ecology)
       Some(context.actorOf(SpaceTimingActor.actorProps(ecology), "SpaceTiming"))
     else
       None
-  lazy val space =
+  lazy val space = {
+    tracing.trace("Booting PersistentSpaceActor")
     context.actorOf(PersistentSpaceActor.actorProps(ecology, persistenceFactory, self, spaceId, timingOpt.isDefined), "Space")
+  }
   lazy val conversations = {
+    tracing.trace("Booting Conversations")
     bootSpaceActor()
     context.actorOf(Conversations.conversationsManagerProps(self))
   }
   lazy val sessions = {
+    tracing.trace("Booting Sessions")
     bootSpaceActor()
     context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self, timingOpt.isDefined), "Sessions")
   }
   lazy val members = {
+    tracing.trace("Booting SpaceMembers")
     bootSpaceActor()
     context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
   }
-  lazy val history = context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
-  lazy val publication = context.actorOf(PublicationActor.actorProps(ecology, spaceId, self), "Publication")
-  lazy val publicationStateActor = context.actorOf(InPublicationStateActor.actorProps(ecology, spaceId, self), "InPubState")
+  lazy val history = {
+    tracing.trace("Booting SpaceHistory")
+    context.actorOf(SpaceHistory.actorProps(ecology, spaceId, self))
+  }
+  lazy val publication = {
+    tracing.trace("Booting Publication")
+    context.actorOf(PublicationActor.actorProps(ecology, spaceId, self), "Publication")
+  }
+  lazy val publicationStateActor = {
+    tracing.trace("Booting InPublicationState")
+    context.actorOf(InPublicationStateActor.actorProps(ecology, spaceId, self), "InPubState")
+  }
   
   // This function just references the SpaceActor, so that it will boot and send CurrentState.
   // TODO: this is a dreadfully brittle approach. How can we restructure it to be more sensible
@@ -88,6 +104,7 @@ private[spaces] class SpaceRouter(e:Ecology)
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(curState, _) => {
+      tracing.trace(s"SpaceRouter publishing CurrentState ${curState.version}")
       _state = Some(curState)
       conversations.forward(msg)
       sessions.forward(msg)
@@ -95,6 +112,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     case msg:CurrentPublicationState => {
+      tracing.trace(s"SpaceRouter publishing CurrentPublicationState")
       _pubState = Some(msg)
       sessions.forward(msg)
       space.forward(msg)
@@ -104,6 +122,7 @@ private[spaces] class SpaceRouter(e:Ecology)
      * Admin has asked all of the Spaces to give a quick status report.
      */
     case GetSpacesStatus(requester) => {
+      tracing.trace(s"GetSpacesStatus")
       _state.map { state =>
         for {
           ActiveThings(nConvs) <- conversations.request(GetActiveThings)
@@ -115,6 +134,7 @@ private[spaces] class SpaceRouter(e:Ecology)
 
     // Messages for the various subsystems get routed based on the payload type:
     case msg @ SpaceSubsystemRequest(_, _, payload) => {
+      tracing.trace(s"SpaceSubsystemRequest(${payload.getClass.getSimpleName})")
       payload match {
         case p:querki.conversations.messages.ConversationMessage => conversations.forward(msg)
         case p:querki.session.messages.SessionMessage => sessions.forward(msg)
@@ -127,11 +147,15 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     // Message for a Session:
-    case req:ClientRequest => sessions.forward(req)
+    case req:ClientRequest => {
+      tracing.trace(s"SpaceRouter forwarding ClientRequest(${req.req.path})")
+      sessions.forward(req)
+    }
     
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
     case msg:BeginProcessingPhoto => {
+      tracing.trace(s"SpaceRouter booting PhotoUploadActor")
       _state.map { state =>
         val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
         worker.forward(msg)
@@ -141,24 +165,43 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     // Messages for the SpaceHistory:
-    case msg:SpaceHistory.HistoryMessage => history.forward(msg)
+    case msg:SpaceHistory.HistoryMessage => {
+      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      history.forward(msg)
+    }
     
     // Messages for the SpaceTimingActor, if one is running for this Space:
-    case msg:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
+    case msg:SpaceTimingActor.SpaceTimingMsg => {
+      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      timingOpt.map(_.forward(msg))
+    }
     
-    case msg:PublicationCommands.PublicationCommand => publication.forward(msg)
+    case msg:PublicationCommands.PublicationCommand => {
+      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      publication.forward(msg)
+    }
     
-    case msg:PublicationStateMessage => publicationStateActor.forward(msg)
+    case msg:PublicationStateMessage => {
+      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      publicationStateActor.forward(msg)
+    }
     
     case msg:ShutdownSpace => {
+      tracing.trace(s"Shutting down the Space")
       sender ! ShutdownAck
       self ! querki.util.Shutdown
     }
     
     // Message for the Space:
-    case msg:CreateSpace => space.forward(msg)
+    case msg:CreateSpace => {
+      tracing.trace("Creating the Space")
+      space.forward(msg)
+    }
     // FALLBACK -- NOTHING SHOULD GO BELOW HERE:
-    case msg:SpaceMessage => space.forward(msg)
+    case msg:SpaceMessage => {
+      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      space.forward(msg)
+    }
   }
 }
 

@@ -49,6 +49,8 @@ class PersistentSpaceActor(e:Ecology, val id:OID, stateRouter:ActorRef, persiste
   
   /**
    * Iff set to true, this will produce *prodigious* spewage. Use with caution!
+   *
+   * Deprecated: use the less-horrifying TracingSpace instead.
    */
   lazy val monitorSpaces = Config.getBoolean("querki.test.traceSpaces", false)
   

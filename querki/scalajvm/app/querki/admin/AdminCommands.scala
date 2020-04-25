@@ -20,7 +20,8 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
   
   val Console = initRequires[querki.console.Console]
   val Roles = initRequires[querki.security.Roles]
-  
+
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -84,6 +85,27 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
       
     result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find that email address")))
   }
+
+  lazy val ShowSpaceIdCmd = Console.defineAdminCommand(
+    ShowSpaceIdCmdOID,
+    "Show Space Id",
+    "Given the owner handle and name of a Space, this shows its OID"
+  ) { args =>
+    val inv = args.inv
+    implicit val state = inv.state
+
+    val result = for {
+      ownerHandle <- inv.processParamFirstAs(0, TextType)
+      ownerIdentityOpt <- inv.fut(IdentityAccess.getIdentity(ownerHandle.text))
+      if (ownerIdentityOpt.isDefined)
+      ownerId = ownerIdentityOpt.map(_.id).get
+      spaceName <- inv.processParamFirstAs(1, TextType)
+      spaceId <- inv.fut(SpaceOps.getSpaceId(ownerId, spaceName.text))
+    }
+      yield DisplayTextResult(s"The Space has OID $spaceId")
+
+    result.get.map(_.headOption.getOrElse(ErrorResult(s"Couldn't find an Identity with that handle!")))
+  }
   
   // TODO: this no longer belongs here, since it's no longer restricted to the Admins:
   lazy val ShowThingCmd = Console.defineSpaceCommand(
@@ -106,6 +128,7 @@ class AdminCommands(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
   override lazy val props = Seq(
     DeleteEmailAddressCmd,
     InspectByEmailCmd,
-    ShowThingCmd
+    ShowThingCmd,
+    ShowSpaceIdCmd
   )
 }
