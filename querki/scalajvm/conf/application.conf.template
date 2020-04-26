@@ -133,6 +133,19 @@ querki {
   invitations {
     inviteTimeout : 5 minutes
   }
+
+
+  debug {
+    space {
+# To deal with a problematic Space, put in a section here with its OID:
+#      7w4g7wj {
+# Trace turns on voluminous tracing about that Space
+#        trace : true
+# Block prevents that Space's Actors from being loaded
+#        block : false
+#      }
+    }
+  }
 }
 
 play.http.session {

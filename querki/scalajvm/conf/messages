@@ -54,6 +54,8 @@ QL.unknownName=There is no Thing named "{0}" -- might be a typo? If you want to 
 QL.unknownThingId=There is no Thing with OID "{0}".
 QL.timeout=This took too long to display -- it might need to be simplified.
 
+Space.blocked=This Space is temporarily blocked. Sorry: we are working to resolve the situation.
+
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.
 Space.create.maxSpaces=You are only allowed to create {0} Spaces at this time. This limit will be raised in the future.

@@ -40,6 +40,13 @@ private[spaces] class SpaceRouter(e:Ecology)
   implicit val ecology = e
 
   lazy val tracing = TracingSpace(spaceId)
+
+  /**
+   * This is the hard "None Shall Pass". If this is set on the Space, all messages will be rejected with an error.
+   *
+   * Obviously, use this only in extreme cases, generally when the Space is causing damage to the system as a whole.
+   */
+  lazy val spaceBlocked = Config.getBoolean(s"querki.debug.space.${spaceId.toString}.block", false)
   
   lazy val spaceId:OID = OID(self.path.name)
   
@@ -99,6 +106,17 @@ private[spaces] class SpaceRouter(e:Ecology)
   var _pubState:Option[CurrentPublicationState] = None
   
   def receive = LoggingReceive {
+
+    /**
+     * This Space is causing severe problems, so we have turned it off.
+     *
+     * THIS MUST COME FIRST!
+     */
+    case _ if spaceBlocked => {
+      // All roads lead to errors for the time being:
+      tracing.trace(s"Got a request for blocked Space")
+      sender ! SpaceBlocked(new PublicException("Space.blocked"))
+    }
     
     /**
      * The Space has sent an updated State, so tell everyone about it.
