@@ -185,6 +185,7 @@ case object PersonReplaced
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait SpaceResponse
+case class SpaceBlocked(error: PublicException)
 sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse

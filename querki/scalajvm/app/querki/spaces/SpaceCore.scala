@@ -66,6 +66,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
+
+  implicit lazy val tracing = TracingSpace(id)
   
   ////////////////////////////////////////////
   //
@@ -161,6 +163,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   
   /**
    * Iff this Space is being monitored, emit a message about what is going on.
+   *
+   * Deprecated -- use tracing.trace() instead unless you *really* want spewage from *all* Spaces.
    */
   def monitor(msg: => String):Unit
   
@@ -189,6 +193,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   
   var snapshotCounter = 0
   def doSaveSnapshot() = {
+    tracing.trace("Saving snapshot")
     val dhSpace = dh(currentState)
 //    val dhApps = currentState.allApps.values.toSeq.map(dh(_))
     val snapshot = SpaceSnapshot(dhSpace, Seq.empty)
@@ -213,6 +218,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * This deals with updating caches, and updating the State's version number based on Akka Persistence.
    */
   def updateStateCore(newState:SpaceState):SpaceState = {
+    tracing.trace("updateStateCore")
     // TODO: 4/21/19 -- note that we are never actually setting the commands in CacheUpdate. We used to pass this down,
     // but it turned out it was always None, which makes the whole thing suspect. Re-examine, and think about whether
     // CacheUpdate should be taking an Option[List[SpaceEvent]] instead, since that is where things have settled.
@@ -229,6 +235,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Look up any external cache changes, record the new state, and send notifications about it.
    */
   def updateState(newState:SpaceState, events: Option[List[SpaceEvent]] = None):SpaceState = {
+    tracing.trace(s"UpdateState ${newState.version} with ${events.map(_.size)} events")
     updateStateCore(newState)
     notifyUpdateState(events)
     currentState
@@ -262,6 +269,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * as in that case, there's no obvious right answer.
    */
   def loadAppsFor(state:SpaceState, appsSoFar:Map[OID, SpaceState]):RM[SpaceState] = {
+    tracing.trace("Loading apps")
     // This does the recursive dive through the tree, returning the Apps specified in there:
     val appsRM:RM[Map[OID, SpaceState]] = (rtc.successful(appsSoFar) /: state.appInfo) { (rm, appInfo) =>
       rm.flatMap { appMap =>
@@ -315,6 +323,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   }
   
   def setState(who:User, newState:SpaceState, reason:SetStateReason, details:String)(state:SpaceState):RM[ChangeResult] = {
+    tracing.trace(s"Setting state version ${newState.version} because $reason")
     implicit val s = state
     val evt = DHSetState(dh(newState), DateTime.now, reason.value, details)
     rtc.successful(ChangeResult(List(evt), Some(state.id), newState))
@@ -324,6 +333,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Create a Person for this Space's owner.
    */
   def createOwnerPerson(identity:PublicIdentity)(state:SpaceState):RM[ChangeResult] = {
+    tracing.trace("createOwnerPerson")
     createSomething(IdentityAccess.SystemUser, AccessControl.PersonModel.id,
       // Note that we specifically can *not* set the Name of the Person record. We used to do this, but
       // it meant that we could have Name collisions that prevented the Person from being created.
@@ -334,6 +344,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   }
 
   def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
+    tracing.trace(s"createSomething($modelId) forcing ID $thingIdOpt")
     implicit val s = state
     val changedProps = changedProperties(Map.empty, propsIn)
     // Let other systems put in their own oar about the PropMap:
@@ -390,6 +401,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * system apart, though.
    */
   def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
+    tracing.trace(s"doCreate($modelId, $thingIdOpt)")
     // All tests have passed, so now we actually persist the change: 
     val modTime = DateTime.now
     val thingIdRM = thingIdOpt.map(rtc.successful(_)).getOrElse(allocThingId())
@@ -415,6 +427,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     rawNewProps:PropMap, 
     replaceAllProps:Boolean)(state:SpaceState):RM[ChangeResult] = 
   {
+    tracing.trace(s"modifyThing($thingId)")
     implicit val s = state
     val oldThingOpt = state.anythingLocal(thingId)
     if (oldThingOpt.isEmpty)
@@ -441,6 +454,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   }
   
   def deleteThing(who:User, thingId:ThingId)(state:SpaceState):RM[ChangeResult] = {
+    tracing.trace(s"deleteThing($thingId)")
     implicit val s = state
     // TODO: we should probably allow deletion of local Model Types as well, but should probably check
     // that there are no Properties using that Type first.
@@ -472,6 +486,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * at least one ChangeResult.
    */
   def persistAllThenFinalState(changes:List[ChangeResult]):RM[SpaceState] = {
+    tracing.trace(s"persistAllThenFinalState()")
     val allEvents = changes.flatMap(change => change.events)
     if (allEvents.isEmpty)
       rtc.successful(changes.last.resultingState)
@@ -482,6 +497,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
   }
   
   def run(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[List[ChangeResult]] = {
+    tracing.trace(s"run(${funcs.size} funcs)")
     // Run through all the functions, collect the results or the first error. Note
     // that the resulting list is in reverse order, simply because it's easier that way.
     (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
@@ -499,6 +515,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * for complex collections of operations.
    */
   def runChanges(funcs:Seq[SpaceState => RM[ChangeResult]])(state:SpaceState):RM[(List[ChangeResult], SpaceState)] = {
+    tracing.trace(s"runChanges(${funcs.size} funcs")
     for {
       results <- run(funcs)(state)
       persistedState <- persistAllThenFinalState(results)
@@ -513,6 +530,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * Simple wrapper around runChanges -- this runs them, and then sends the appropriate response.
    */
   def runAndSendResponse(opName:String, localCall:Boolean, func:SpaceState => RM[ChangeResult], publishEvent:Boolean)(state:SpaceState):RM[List[ChangeResult]] = {
+    tracing.trace(s"runAndSendResponse($opName)")
     val result =
       if (publishEvent) {
         // This event shouldn't get persisted in the Space itself, but instead in the InPublicationStateActor:
@@ -573,10 +591,12 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    */
   def recoverPersistence:Receive = {
     case SnapshotOffer(metadata, dh:DHSpaceState) => {
+      tracing.trace(s"Recovering SnapshotOffer(DHSpaceState)")
       updateStateCore(rehydrate(dh))
     }
     
     case SnapshotOffer(metadata, SpaceSnapshot(dh, dhApps)) => {
+      tracing.trace(s"Recovering SnapshotOffer(SpaceSnapshot)")
       val rawSpace = rehydrate(dh)
       val filledSpace = 
         if (dhApps.isEmpty)
@@ -595,8 +615,9 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     }
     
     case RecoveryCompleted => {
+      tracing.trace(s"RecoveryCompleted beginning...")
       def readied() = {
-        monitor("Space is readied -- notifying the State")
+        tracing.trace("Space is readied -- notifying the State")
         initializing = false
         notifyUpdateState(None)
         unstashAll() 
@@ -650,11 +671,13 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       // In both of the below cases, we need to stash until we are actually ready to go. While initializing
       // is true, receiveCommand() will stash everything except Requester responses.
       if (_currentState.isEmpty) {
+        tracing.trace(s"This Space has no events")
         // We haven't gotten *any* events, so we should go to the old-style Persister and load that way, if
         // the Space exists already.
         initializing = true
         recoverOldSpace().map { _ match {
           case Some(oldState) => {
+            tracing.trace("Loading old-style Space")
             // There *is* an old Space from MySQL, so we should record that as the first event in the log:
             val msg = DHSetState(dh(oldState), DateTime.now, SetStateReason.ImportedFromMySQL.value, "")
             // Once we've recorded that, *then* we get the Space ready:
@@ -706,7 +729,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
     // TODO: we should probably eventually turn this clause off unless monitoring is turned on
     // for this Space
     PartialFunction[Any, Any] {
-      case msg => { monitor(s"receiveRecover: ${msg.getClass().getName}"); msg }
+      case msg => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
     } andThen
     // Recovery of high-level stuff like Snapshots:
     (recoverPersistence orElse 
@@ -726,10 +749,9 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    */
   def receiveCommand:Receive =     
     // If we're monitoring this Space, record the name of the received message
-    // TODO: we should probably eventually turn this clause off unless monitoring is turned on
     // for this Space
     PartialFunction[Any, Any] {
-      case msg => { monitor(s"receiveCommand: ${msg.getClass().getName}"); msg }
+      case msg => { tracing.trace(s"receiveCommand: ${msg.getClass().getName}"); msg }
     } andThen {
       if (initializing) {
         // Whilst we're initializing, we need to stash everything except the responses:
@@ -755,6 +777,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    */
   def enhancedState:SpaceState = {
     if (_enhancedState.isEmpty) {
+      tracing.trace("Rebuilding enhancedState")
       _enhancedState = Some(
         _pubState.map { ps => 
           val enhanced = Publication.enhanceState(currentState, ps)

@@ -4,13 +4,12 @@ import java.lang.reflect.Constructor
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
-
 import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
-
 import querki.ecology._
 import querki.globals._
+import querki.spaces.messages.SpaceBlocked
 import querki.streaming._
 
 /**
@@ -68,6 +67,9 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
         ask(router.router, req)(timeout).flatMap {
           case msg:ClientResponse => cb(msg)
           case err:ClientError => cb(err)
+          // Handle the unfortunate case where we have had to shut down this Space:
+          case SpaceBlocked(err) => cb(err)
+          case pex: PublicException => cb(ClientError(pex.display(Some(req.rc))))
           // This is essentially ClientResponse, but the contents are too large to send safely as a single
           // block. (Because of Akka message-size limits.) So we instead need to establish a channel to
           // stream it over to here:

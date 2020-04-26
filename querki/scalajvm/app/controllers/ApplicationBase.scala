@@ -205,6 +205,7 @@ trait ApplicationBase extends Controller with EcologyMember {
         case ClientResponse(pickled) => Future.successful(pickled)
         case ClientError(msg) => Future.failed(new Exception(msg))
         case ThingError(pex, _) => Future.failed(pex)
+        case pex: PublicException => Future.failed(pex)
       }
     }
     
