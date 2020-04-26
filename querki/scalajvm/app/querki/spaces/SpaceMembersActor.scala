@@ -22,8 +22,11 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
 
+	lazy val tracing = TracingSpace(spaceId, "SpaceMembers: ")
+
   def receive = {
     case CurrentState(state, _) => {
+			tracing.trace(s"Got Initial CurrentState v${state.version}")
       unstashAll()
       context.become(normalReceive(state))
     }
@@ -33,11 +36,15 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   
   // Normal behavior -- at any given time, state is the current known SpaceState
   def normalReceive(state:SpaceState):Receive = {
-    case CurrentState(newState, _) => context.become(normalReceive(newState))
+    case CurrentState(newState, _) => {
+			tracing.trace(s"CurrentState v${newState.version}")
+			context.become(normalReceive(newState))
+		}
     
     case SpaceSubsystemRequest(_, _, msg) => msg match {
   	  // Someone is attempting to join this Space:
   	  case JoinRequest(rc, personId) => {
+				tracing.trace(s"JoinRequest($personId)")
         implicit val s = state
   	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc, personId) {
   	      case ThingFound(id, state) => Future.successful(Joined) 
@@ -51,6 +58,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	  }
   	  
   	  case JoinByOpenInvite(rc, roleId) => {
+				tracing.trace(s"JoinByOpenInvite")
   	    implicit val s = state
   	    loopback(Person.acceptOpenInvitation(rc, roleId)).map {
   	      // acceptOpenInvitation returns an Exception iff something went wrong. Otherwise,
@@ -63,12 +71,14 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	  }
   	  
   	  case ReplacePerson(guestId, actualIdentity) => {
+				tracing.trace(s"ReplacePerson(${guestId}, ${actualIdentity.id})")
   	    Person.replacePerson(guestId, actualIdentity)(state, this).map { _ =>
   	      sender ! PersonReplaced
   	    }
   	  }
   	    
   	  case InviteRequest(rc, inviteeEmails, collabs) => {
+				tracing.trace(s"InviteRequest")
   	    val nCurrentMembers = Person.people(state).size
 	      if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
           // This is just a belt-and-suspenders check -- SecurityFunctionImpl should already have screened for this:
@@ -87,6 +97,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	  }
 
 			case RemoveMembers(rc, memberIds) => {
+				tracing.trace(s"RemoveMembers($memberIds)")
 				// Belt and suspenders check:
 				if (AccessControl.isManager(rc.requesterOrAnon, state)) {
 					val resultRM = (RequestM.successful(true) /: memberIds) { (last, memberId) =>
@@ -104,6 +115,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
 			}
       
       case IsSpaceMemberP(rc) => {
+				tracing.trace(s"IsSpaceMemberP")
         sender ! IsSpaceMember(AccessControl.isMember(rc.requesterOrAnon, state))
       }
     }

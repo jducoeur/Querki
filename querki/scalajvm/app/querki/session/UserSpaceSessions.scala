@@ -3,16 +3,15 @@ package querki.session
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
-
 import models._
-
-import querki.admin.{MonitorActor, SpaceMonitorEvent}
+import querki.admin.{SpaceMonitorEvent, MonitorActor}
 import querki.api.ClientRequest
 import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.publication.CurrentPublicationState
 import querki.session.messages._
+import querki.spaces.TracingSpace
 import querki.spaces.messages.{SpaceSubsystemRequest, CurrentState}
 import querki.util.{QuerkiBootableActor, RoutingParent}
 import querki.values._
@@ -26,6 +25,8 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   
   val persister = SpacePersistenceFactory.getUserValuePersister(spaceId)
+
+  lazy val tracing = TracingSpace(spaceId, "UserSpaceSessions: ")
   
   var state:Option[SpaceState] = None
   var pubState:Option[CurrentPublicationState] = None
@@ -34,15 +35,18 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
   // of this Space:
   lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
   override def childrenUpdated() = {
+    tracing.trace("childrenUpdated")
     state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, SystemManagement.clusterAddress, nChildren, s.spaceSize))
   }
   
   def createChild(key:User):ActorRef = {
+    tracing.trace(s"createChild(${key.id})")
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
     context.actorOf(OldUserSpaceSession.actorProps(ecology, spaceId, key, spaceRouter, persister, timeSpaceOps).withDispatcher("session-dispatcher"), key.id.toString)
   }
   
   def sendPublishStateToChild(user:User, session:ActorRef):Unit = {
+    tracing.trace(s"sendPublishStateToChild(${user.id})")
     // TODO: this is nasty and coupled -- we are checking whether this user has publication access:
     (state, pubState) match {
       case (Some(s), Some(ps)) => {
@@ -67,11 +71,13 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
   }
   
   override def initChild(user:User, child:ActorRef) = {
+    tracing.trace(s"initChild(${user.id})")
     sendPublishStateToChild(user, child)
     state.map(child ! CurrentState(_))
   }
   
   def bootIfReady() = {
+    tracing.trace(s"bootIfReady")
     // We always need the SpaceState in order to boot; if the Space is Publishable, then we
     // also need the CurrentPublicationState. If the Space is not Publishable, we'll eventually
     // get a probably-empty CurrentPublicationState, but we don't have to wait for it.
@@ -98,6 +104,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
     }
     
     case msg:CurrentPublicationState => {
+      tracing.trace("bootReceive: CurrentPublicationState")
       pubState = Some(msg)
       bootIfReady()
     }
@@ -111,6 +118,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(s, _) => {
+      tracing.trace("doReceive: CurrentState")
       state = Some(s)
       children.foreach(session => session.forward(msg))
     }
@@ -119,6 +127,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
      * There is a new Publication State, so tell the *right* people about it.
      */
     case msg:CurrentPublicationState => {
+      tracing.trace("doReceive: CurrentPublicationState")
       pubState = Some(msg)
       sendPublishStateToChildren()
     }
@@ -129,6 +138,7 @@ private [session] class UserSpaceSessions(e:Ecology, val spaceId:OID, val spaceR
      * Message to forward to a UserSpaceSession. Create the session, if needed.
      */
     case msg @ SpaceSubsystemRequest(requester, _, payload) => {
+      tracing.trace(s"doReceive: SpaceSubsystemRequest(${payload.getClass.getSimpleName})")
       payload match {
         // HACK: messages heading for the User Value Persister:
         case p:querki.uservalues.PersistMessages.ExternallyExposed => persister.forward(msg)

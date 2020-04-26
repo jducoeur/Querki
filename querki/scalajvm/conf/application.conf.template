@@ -134,7 +134,6 @@ querki {
     inviteTimeout : 5 minutes
   }
 
-
   debug {
     space {
 # To deal with a problematic Space, put in a section here with its OID:

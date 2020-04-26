@@ -16,7 +16,7 @@ import querki.identity.{Identity, User}
 import querki.history.SpaceHistory._
 import querki.publication.CurrentPublicationState
 import querki.session.messages._
-import querki.spaces.SpaceEvolution
+import querki.spaces.{SpaceEvolution, TracingSpace}
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.messages.{SpaceSubsystemRequest, ThingError, CurrentState, SpacePluginMsg, ThingFound, ChangeProps}
 import querki.spaces.messages.SpaceError._
@@ -54,6 +54,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   lazy val Publication = interface[querki.publication.Publication]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
+
+  lazy val tracing = TracingSpace(spaceId, "OldUserSpaceSession: ")
   
   def monitor(msg: => String):Unit = {
     if (timeSpaceOps) {
@@ -72,6 +74,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
 //  }
   var _publicationState:Option[CurrentPublicationState] = None
   def setPublicationState(s:CurrentPublicationState) = {
+    tracing.trace(s"setPublicationState")
     clearEnhancedState()
     _publicationState = Some(s)
   }
@@ -122,6 +125,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def clearEnhancedState() = _enhancedState = None
 
   def handleStateChange(stateChange: CurrentState) = {
+    tracing.trace("handleStateChange")
     clearEnhancedState()
     _rawState = Some(stateChange.state)
     _unprocessedEvents = stateChange.events.getOrElse(List.empty).reverse ++ _unprocessedEvents
@@ -136,6 +140,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     _rawState match {
       case Some(rawState) => {
         if (_enhancedState.isEmpty) {
+          tracing.trace(s"building enhancedState")
           _filteredState = Some(updateForUser(_filteredState)(user)(rawState, _unprocessedEvents))
           _unprocessedEvents = List.empty
           val withUV = enhanceWithUserValues(_filteredState.get, userValues)
@@ -157,6 +162,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     * *And* this seems to be redundant with checkDisplayName() below!!!
    */
   def whenStateReady(implicit state:SpaceState) = {
+    tracing.trace(s"whenStateReady")
     // Do I have the right Display Name? If I've changed my Identity's Display Name (which is very common
     // during the invite-accept process), update it.
     // TODO: there's a hard-to-avoid implication here, that the Person's Display Name property may be a
@@ -199,6 +205,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    * often, side-effects in functional code are a dangerous idea.
    */
   def addUserValue(uv:OneUserValue):Option[QValue] = {
+    tracing.trace(s"addUserValue")
     def isMatch(oldUv:OneUserValue) = (oldUv.thingId == uv.thingId) && (oldUv.propId == uv.propId)
     
     var previous = userValues.find(isMatch(_)).map(_.v)
@@ -274,6 +281,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
    */
   def receive = LoggingReceive {
     case change @ CurrentState(s, _) => {
+      tracing.trace(s"received initial CurrentState")
       handleStateChange(change)
       // Now, fetch the UserValues
       // In principle, we should probably parallelize waiting for the SpaceState and UserValues:
@@ -283,10 +291,12 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
     }
     
     case ps:CurrentPublicationState => {
+      tracing.trace(s"received initial CurrentPublicationState")
       setPublicationState(ps)
     }
     
     case ValuesForUser(uvs) => {
+      tracing.trace(s"received initial ValuesForUser")
       clearEnhancedState()
       userValues = uvs
       // Okay, ready to roll:
@@ -298,6 +308,7 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   }
   
   def changeProps(req:User, thingId:ThingId, props:PropMap) = {
+    tracing.trace(s"changeProps")
     val (uvProps, nonUvProps) = props.partition { case (propId, _) => UserValues.isUserValueProp(propId)(state) }
     
     // Note that this code really isn't right! In practice, if we get more than one User Value change, the replies
@@ -348,11 +359,18 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
   def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
   def normalReceive:Receive = LoggingReceive {
-    case change @ CurrentState(s, _) => handleStateChange(change)
+    case change @ CurrentState(s, _) => {
+      tracing.trace("received CurrentState")
+      handleStateChange(change)
+    }
     
-    case ps:CurrentPublicationState => setPublicationState(ps)
+    case ps:CurrentPublicationState => {
+      tracing.trace("received CurrentPublicationState")
+      setPublicationState(ps)
+    }
     
     case ClientRequest(req, rc) => {
+      tracing.trace(s"received ClientRequest(${req.path})")
       def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
         th match {
           case aex:querki.api.ApiException => {
@@ -401,7 +419,8 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
       }
     }
         
-    case request @ SpaceSubsystemRequest(req, space, payload) => { 
+    case request @ SpaceSubsystemRequest(req, space, payload) => {
+      tracing.trace(s"received SpaceSubsystemRequest(${payload.getClass.getSimpleName})")
       checkDisplayName(req, space)
       payload match {    
         case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")

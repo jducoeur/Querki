@@ -39,7 +39,7 @@ private[spaces] class SpaceRouter(e:Ecology)
   
   implicit val ecology = e
 
-  lazy val tracing = TracingSpace(spaceId)
+  lazy val tracing = TracingSpace(spaceId, "SpaceRouter: ")
 
   /**
    * This is the hard "None Shall Pass". If this is set on the Space, all messages will be rejected with an error.
@@ -122,7 +122,7 @@ private[spaces] class SpaceRouter(e:Ecology)
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(curState, _) => {
-      tracing.trace(s"SpaceRouter publishing CurrentState ${curState.version}")
+      tracing.trace(s"publishing CurrentState ${curState.version}")
       _state = Some(curState)
       conversations.forward(msg)
       sessions.forward(msg)
@@ -130,7 +130,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     case msg:CurrentPublicationState => {
-      tracing.trace(s"SpaceRouter publishing CurrentPublicationState")
+      tracing.trace(s"publishing CurrentPublicationState")
       _pubState = Some(msg)
       sessions.forward(msg)
       space.forward(msg)
@@ -166,14 +166,14 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Message for a Session:
     case req:ClientRequest => {
-      tracing.trace(s"SpaceRouter forwarding ClientRequest(${req.req.path})")
+      tracing.trace(s"forwarding ClientRequest(${req.req.path})")
       sessions.forward(req)
     }
     
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
     case msg:BeginProcessingPhoto => {
-      tracing.trace(s"SpaceRouter booting PhotoUploadActor")
+      tracing.trace(s"booting PhotoUploadActor")
       _state.map { state =>
         val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
         worker.forward(msg)
@@ -184,13 +184,13 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Messages for the SpaceHistory:
     case msg:SpaceHistory.HistoryMessage => {
-      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      tracing.trace(s"Sforwarding ${msg.getClass.getSimpleName}")
       history.forward(msg)
     }
     
     // Messages for the SpaceTimingActor, if one is running for this Space:
     case msg:SpaceTimingActor.SpaceTimingMsg => {
-      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      tracing.trace(s"forwarding ${msg.getClass.getSimpleName}")
       timingOpt.map(_.forward(msg))
     }
     
@@ -200,7 +200,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     
     case msg:PublicationStateMessage => {
-      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      tracing.trace(s"forwarding ${msg.getClass.getSimpleName}")
       publicationStateActor.forward(msg)
     }
     
@@ -217,7 +217,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     }
     // FALLBACK -- NOTHING SHOULD GO BELOW HERE:
     case msg:SpaceMessage => {
-      tracing.trace(s"SpaceRouter forwarding ${msg.getClass.getSimpleName}")
+      tracing.trace(s"forwarding ${msg.getClass.getSimpleName}")
       space.forward(msg)
     }
   }

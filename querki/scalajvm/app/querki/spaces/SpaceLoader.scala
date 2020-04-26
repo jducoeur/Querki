@@ -30,8 +30,12 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
   def id:OID
   def name:String
   def owner:OID
+
+  lazy val tracing = TracingSpace(id, "SpaceLoader: ")
   
   def doLoad(loader:ThingStreamLoader, apps:Seq[SpaceState]):SpaceState = {
+
+    tracing.trace("starting doLoad")
       
       // Start off using the App to boot this Space. Then we add each aspect as we read it in.
       // This works decently for now, but will fall afoul when we try to have local meta-Properties;
@@ -163,6 +167,8 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
       
       // BLOCKING, but useful: make the owner visible, so that we can, eg, write URLs
       curState = curState.copy(ownerIdentity = UserAccess.getIdentity(owner))
+
+    tracing.trace(s"doLoad complete")
           
       curState
   }

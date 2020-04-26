@@ -1,25 +1,21 @@
 package querki.publication
 
 import scala.math.Ordering._
-
 import cats._
 import cats.implicits._
-
 import akka.actor.Actor.Receive
 import akka.persistence.RecoveryCompleted
-
 import funcakka._
 import funcakka.Implicits._
-
 import models._
 import querki.core.QLText
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{IdentityId, User, PublicIdentity}
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.values.RequestContext
-
 import PublicationCommands._
 import PublicationEvents._
+import querki.spaces.TracingSpace
 
 trait PublicationCore extends PublicationPure with PersistentActorCore with EcologyMember with querki.types.ModelTypeDefiner with ModelPersistence {
   
@@ -50,6 +46,8 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   def id:OID
   
   //////////////////////////////////////////////////
+
+  lazy val tracing = TracingSpace(id, "PublicationCore: ")
   
   /**
    * Logging wrapper.
@@ -68,11 +66,8 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
     resultME.handleError(th => QLog.logAndThrowException(th))
   }
   
-  val shouldLog = Config.getBoolean("querki.publication.log", false)
   def log(msg: => String):Unit = {
-    if (shouldLog) {
-      QLog.spew(msg)
-    }
+    tracing.trace(msg)
   }
   
   def toPersistenceId(id:OID) = "publish-" + id.toThingId.toString
@@ -99,7 +94,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   
   def doPublish(who:User, thingIds:Seq[OID], meta:PropMap, spaceState:SpaceState):ME[PublicationState] = {
     implicit val state = spaceState
-    log("In doPublish")
+    log(s"doPublish")
     Person.localIdentities(who).headOption match {
       case Some(identity) => {
         log("We have an identity")
@@ -160,6 +155,7 @@ trait PublicationCore extends PublicationPure with PersistentActorCore with Ecol
   }
   
   def computePublishChanges(thingIds:Seq[OID])(implicit state:SpaceState):ME[Seq[(OID, PropMap)]] = {
+    tracing.trace(s"computePublishChanges")
     (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
       state.anything(thingId) match {
         case Some(thing) => {

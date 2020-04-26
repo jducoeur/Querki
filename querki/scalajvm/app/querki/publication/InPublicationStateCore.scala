@@ -2,15 +2,12 @@ package querki.publication
 
 import cats._
 import cats.implicits._
-
 import akka.actor.Actor.Receive
 import akka.persistence._
-
 import funcakka.PersistentActorCore
-
 import querki.globals._
 import querki.persistence._
-import querki.spaces.{SpaceMessagePersistenceBase, SpacePure}
+import querki.spaces.{SpaceMessagePersistenceBase, SpacePure, TracingSpace}
 import querki.spaces.SpaceMessagePersistence._
 import querki.time.DateTime
 
@@ -66,6 +63,8 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   
   def toPersistenceId(id:OID) = "inpubstate-" + id.toThingId.toString
   def persistenceId = toPersistenceId(id)
+
+  lazy val tracing = TracingSpace(id, "InPublicationStateCore: ")
   
   // TODO: this snapshot code is roughly copied from SpaceCore. It should, perhaps, be lifted
   // to PersistentActorCore.
@@ -91,6 +90,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
     notifyChanges(s)
   }
   def addEvent(curState:CurrentPublicationState, evt:SpaceEvent):CurrentPublicationState = {
+    tracing.trace(s"addEvent(${evt.getClass.getSimpleName})")
     // TODO: I *really* should be using a lens library here...
     val (isDelete, oid) = evt match {
       case e:DHCreateThing => (false, e.id)
@@ -115,6 +115,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
     }
     
     case AddPublicationEvents(evts) => {
+      tracing.trace(s"AddPublicationEvents")
       persistAllAnd(evts).map { _ =>
         val s = (pState /: evts) { (curState, evt) =>
           addEvent(curState, evt)
@@ -127,6 +128,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
     
     // This Thing has been Published, which means we can delete it from our local state:
     case ThingPublished(who, oid) => {
+      tracing.trace(s"ThingPublished($oid)")
       implicit val s = pState
       val evt = DHDeleteThing(who, oid, DateTime.now)
       persistAnd(evt).map { _ =>
@@ -139,6 +141,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   
   def receiveRecover:Receive = {
     case SnapshotOffer(metadata, state:CurrentPublicationState) => {
+      tracing.trace(s"SnapshotOffer")
       _pState = Some(state)
     }
     
@@ -149,6 +152,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
     }
     
     case RecoveryCompleted => {
+      tracing.trace(s"RecoveryCompleted")
       // We always fire this, even if it's empty, because UserSpaceSessions relies on it:
       // TODO: yes, this is all horribly incestuous. That's why Publication (and the way we handle SpaceState
       // and requests for it) needs a deep rearchitecting.

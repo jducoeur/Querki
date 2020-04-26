@@ -1,31 +1,26 @@
 package querki.history
 
 import scala.collection.immutable.VectorBuilder
-
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.persistence._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
 import akka.stream.ActorMaterializer
-
 import org.querki.requester._
-
 import models._
-
 import querki.data.TID
 import querki.globals._
 import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
-import querki.spaces.SpacePure
+import querki.spaces.{SpacePure, TracingSpace}
 import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
-import querki.util.{QuerkiActor, SingleRoutingParent, TimeoutChild}
-import querki.values.{RequestContext, SpaceState, SpaceVersion}
-
+import querki.util.{SingleRoutingParent, QuerkiActor, TimeoutChild}
+import querki.values.{SpaceVersion, SpaceState, RequestContext}
 import HistoryFunctions._
 
 /**
@@ -59,6 +54,8 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
   def timeoutConfig:String = "querki.history.timeout"
   
   def persistenceId = id.toThingId.toString
+
+  lazy val tracing = TracingSpace(id, "SpaceHistory: ")
   
   lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
     
@@ -134,6 +131,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
    * reload the client page and get any new events since it was last shown.
    */
   def readCurrentHistory():RequestM[Unit] = {
+    tracing.trace("readCurrentHistory")
     // TODO: this is utterly *profligate* with RAM. Think about how we might want to restructure this in
     // order to not hold the entire thing in memory all the time, while still providing reasonably
     // responsive access. Should we instead rebuild stuff on-demand? Should the client signal what
@@ -224,6 +222,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
   
   def doReceive = {
     case GetHistorySummary(rc) => {
+      tracing.trace(s"GetHistorySummary")
       readCurrentHistory().map { _ =>
         val (evtsBuilder, identityIds, thingIds) = ((new VectorBuilder[EvtSummary], Set.empty[OID], Set.empty[OID]) /: history) { (current, historyRec) =>
           val (builder, identities, thingIds) = current
@@ -246,12 +245,14 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     }
     
     case GetHistoryVersion(v) => {
+      tracing.trace("GetHistoryVersion")
       getHistoryRecord(v) map { record =>
         sender ! CurrentState(record.state)
       }
     }
     
     case RollbackTo(v, user) => {
+      tracing.trace(s"RollbackTo($v)")
       getHistoryRecord(v) map { record =>
         spaceRouter.request(SetState(user, id, record.state, SetStateReason.RolledBack, v.toString)) foreach {
           _ match {
@@ -263,6 +264,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     }
     
     case RestoreDeletedThing(user, thingId) => {
+      tracing.trace(s"RestoreDeletedThing($thingId)")
       readCurrentHistory().map { _ =>
         // Sanity-check: don't try to recreate the Thing if it currently exists!
         history.last.state.anything(thingId) match {
@@ -302,6 +304,7 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
     }
     
     case FindAllStomped() => {
+      tracing.trace(s"FindAllStomped")
       findAllStomped().map { stompedList =>
         sender ! StompedThings(stompedList)
       }

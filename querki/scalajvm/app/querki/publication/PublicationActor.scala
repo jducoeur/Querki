@@ -2,13 +2,12 @@ package querki.publication
 
 import akka.actor.{ActorRef, Props}
 import akka.persistence._
-
 import funcakka._
 import org.querki.requester._
-
 import models._
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{IdentityId, User, PublicIdentity}
+import querki.spaces.TracingSpace
 import querki.spaces.messages._
 
 class PublicationActor(val ecology:Ecology, val id:OID, val router:ActorRef) 
