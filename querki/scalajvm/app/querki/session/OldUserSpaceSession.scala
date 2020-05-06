@@ -148,7 +148,10 @@ private [session] class OldUserSpaceSession(e:Ecology, val spaceId:OID, val user
         }
         _enhancedState.get
       }
-      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
+      case None => {
+        tracing.trace("Trying to fetch state while _rawState is empty")
+        throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
+      }
     }
   }
   

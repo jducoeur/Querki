@@ -1,25 +1,22 @@
 package querki.api
 
-import scala.concurrent.{Promise}
-import scala.util.{Failure, Success}
+import scala.concurrent.Promise
+import scala.util.{Success, Failure}
 import akka.actor._
 import upickle.default._
 import autowire._
-
 import rx._
-
 import org.querki.requester._
-
-import models.{Thing, ThingId}
-
+import models.{ThingId, Thing}
 import querki.data.TID
 import querki.globals._
 import querki.identity.User
 import querki.session.messages.SessionMessage
+import querki.spaces.TracingSpace
 import querki.spaces.messages.SpaceSubsystemRequest
 import querki.streaming._
 import querki.util.UnexpectedPublicException
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{SpaceState, RequestContext}
 
 /**
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
@@ -78,6 +75,9 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
   def requester = info.actor
   
   implicit lazy val ecology = e
+
+  // This is mainly to support the implementation in SpaceApiImpl
+  def trace(msg: => String): Unit = {}
   
   /***************************************************
    * Wrapping code
@@ -87,6 +87,7 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
   def read[Result: Reader](p: String) = upickle.default.read[Result](p)
   
   def handleException(th:Throwable, req:Request) = {
+    trace(s"... ${req.toString} failed with ${th.getMessage}")
     def apiName = req.path(2)
     th match {
       case aex:querki.api.ApiException => {
@@ -122,8 +123,10 @@ abstract class AutowireApiImpl(info:AutowireParams, e:Ecology) extends EcologyMe
   
   def handleRequest(req:Request, completeCb: Any => Unit) = {
     try {
+      trace(s"API Request: ${req.toString}")
       doRoute(req).onComplete { 
         case Success(result) => {
+          trace(s"... ${req.toString} succeeded; replying with length ${result.length}")
           if (result.length > chunkSize) {
             // The result string is over-sized. We're going to stream it, so we don't hit inter-node
             // serialization limits. Fire up a StringSender, and pass its address along:
@@ -163,6 +166,10 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
   // TBD: we have both this and rc.isOwner. I like this definition more, but it's not always available. 
   // Hmm...
   def isOwner = user.hasIdentity(state.owner)
+
+  // If tracing is turned on in this Space, trace the API calls as well:
+  lazy val tracing = TracingSpace(state.spaceId)
+  override def trace(msg: => String): Unit = tracing.trace(s"${getClass.getSimpleName}: $msg")
   
   def withThing[R](thingId:TID)(f:Thing => R):R = {
     val oid = ThingId(thingId.underlying)
