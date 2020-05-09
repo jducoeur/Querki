@@ -41,6 +41,8 @@ object MOIDs extends EcotIds(68) {
   
   val RecentChangesPageOID = moid(20)
   val SpaceHasPublicationsOID = moid(21)
+
+  val PublishFunctionOID = moid(22)
 }
 
 class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Publication {
@@ -143,6 +145,36 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
   /******************************************
    * FUNCTIONS
    ******************************************/
+
+  lazy val PublishFunction = new InternalMethod(PublishFunctionOID,
+    toProps(
+      setName("_publish"),
+      Categories(PublicationTag),
+      Summary("Publish the received Things, just like pressing the Publish button in the UI"),
+      Signature(
+        expected = Some(Seq(LinkType), "The Things to publish"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (AnyType, "The Things that were published (same as the input list)")
+      ),
+      Details("")
+    ))
+  {
+    // TODO: this is annoyingly hard-coded. Think this through -- how long should it be? Should it
+    // be configurable? (Probably.)
+    implicit val timeout = Timeout(10 seconds)
+
+    override def qlApply(inv: Invocation): QFut = {
+      for {
+        // TODO: this would be more efficient if we fetched the entire List of Things here, and sent
+        // it as a list in the Publish() request. Enhance Invocation to support that?
+        thing <- inv.contextAllThings
+        who = inv.context.request.requesterOrAnon
+        cmd = SpaceSubsystemRequest(who, inv.state.id, Publish(who, List(thing.id), emptyProps, inv.state))
+        PublishResponse(updatedState) <- inv.fut(SpaceOps.spaceRegion ? cmd)
+      } yield ExactlyOne(LinkType(thing))
+    }
+  }
   
   lazy val GetChangesFunction = new InternalMethod(GetChangesOID,
     toProps(
@@ -426,6 +458,7 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
       Summary("This is set to true iff the Space contains Publishable Models")))
 
   override lazy val props = Seq(
+    PublishFunction,
     GetChangesFunction,
     
     PublishWhoImpl,

@@ -4,13 +4,11 @@ import cats._
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
-
 import play.api.mvc.Session
-
 import querki.conversations.ConvMidTests
 import querki.security.SecurityMidTests
-
 import AllFuncs._
+import querki.publication.PublicationMidTests
 
 /**
  * This is the primary mid-level test suite. It wraps up tons of other tests into a single run,
@@ -35,6 +33,7 @@ class FullMidTests extends MidTestBase
           _ <- BasicMidTests.basicTests
           _ <- ConvMidTests.convTests
           _ <- SecurityMidTests.securityTests
+          _ <- PublicationMidTests.basicPublicationTests
         }
           yield ()
       }
