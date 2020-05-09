@@ -17,22 +17,6 @@ object SecurityMidTests {
       yield ()
   }
 
-  /**
-    * This (and the two convenience functions after it) are the easiest way to check read visibility of a particular
-    * Thing for the specified user.
-    */
-  def checkNameRealityFor(shouldBeReal: Boolean, name: String, who: TestUser)(implicit position: Position): TestOp[Unit] = {
-    for {
-      check <- withUser(who) { getThingInfo(TID(name)) }
-      _ = assert(check.isTag != shouldBeReal, s"Expected $name to be ${if (shouldBeReal) "real" else "tag"}, and it wasn't!")
-    }
-      yield ()
-  }
-  def checkNameIsRealFor(name: String, who: TestUser)(implicit position: Position)=
-    checkNameRealityFor(true, name, who)
-  def checkNameIsMissingFor(name: String, who: TestUser)(implicit position: Position) =
-    checkNameRealityFor(false, name, who)
-
   lazy val regressionTestQIbu6oeej: TestOp[Unit] = {
     val ownerName = "bu6oeej Owner"
     val owner = TestUser(ownerName)

@@ -1,14 +1,14 @@
 package querki.security
 
 import autowire._
-
 import querki.data._
 import querki.globals.execContext
 import querki.test.mid._
-
 import SecurityFunctions._
-
 import AllFuncs._
+import org.scalactic.source.Position
+import org.scalatest.Matchers._
+import querki.test.mid.ClientState.withUser
 
 /**
  * Not included in AllFuncs, since the functions here are relatively specialized and I don't want to pollute that
@@ -103,6 +103,23 @@ trait SecurityMidFuncs {
     }
       yield ()
   }
+
+  /**
+   * This (and the two convenience functions after it) are the easiest way to check read visibility of a particular
+   * Thing for the specified user.
+   */
+  def checkNameRealityFor(shouldBeReal: Boolean, name: String, who: TestUser)(implicit position: Position): TestOp[Unit] = {
+    for {
+      check <- withUser(who) { getThingInfo(TID(name)) }
+      _ = assert(check.isTag != shouldBeReal, s"Expected $name to be ${if (shouldBeReal) "real" else "tag"}, and it wasn't!")
+    }
+      yield ()
+  }
+  def checkNameIsRealFor(name: String, who: TestUser)(implicit position: Position)=
+    checkNameRealityFor(true, name, who)
+  def checkNameIsMissingFor(name: String, who: TestUser)(implicit position: Position) =
+    checkNameRealityFor(false, name, who)
+
 }
 
 object SecurityMidFuncs extends SecurityMidFuncs
