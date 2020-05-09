@@ -42,6 +42,13 @@ object PublicationMidTests {
 
       // Now the member should be able to see it:
       _ <- checkNameIsRealFor(instanceName, member)
+
+      // Now, try the same tests with another instance, publishing via QL instead:
+      instance2Name = "Next Instance"
+      instance2 <- makeThing(model, instance2Name)
+      _ <- checkNameIsMissingFor(instance2Name, member)
+      _ <- evaluateQL(instance2, "_publish")
+      _ <- checkNameIsRealFor(instance2Name, member)
     }
       yield ()
   }
