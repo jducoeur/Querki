@@ -15,11 +15,11 @@ import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
-import querki.spaces.{SpacePure, TracingSpace}
+import querki.spaces.{TracingSpace, SpacePure}
 import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
-import querki.util.{SingleRoutingParent, QuerkiActor, TimeoutChild}
+import querki.util.{SingleRoutingParent, QuerkiActor, TimeoutChild, PublicException}
 import querki.values.{SpaceVersion, SpaceState, RequestContext}
 import HistoryFunctions._
 
@@ -309,6 +309,17 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
         sender ! StompedThings(stompedList)
       }
     }
+
+    case GetCurrentState(rc) => {
+      // This is only legal for admins:
+      if (rc.requesterOrAnon.isAdmin) {
+        readCurrentHistory().map { _ =>
+          sender ! CurrentState(latestState)
+        }
+      } else {
+        sender ! SpaceBlocked(PublicException("Space.blocked"))
+      }
+    }
   }
 }
 
@@ -342,4 +353,13 @@ object SpaceHistory {
   case class FindAllStomped() extends HistoryMessage
   case class OneStompedThing(event:Long, oid:OID, display:String)
   case class StompedThings(things:List[OneStompedThing])
+
+  /**
+   * Return the current State.
+   *
+   * This is rarely used in reality -- normally, it would make more sense to get this from the real SpaceActor. This
+   * is a backdoor that allows you to fetch the State without actually loading it completely. It is intended for
+   * admin use only, mainly for forensics.
+   */
+  case class GetCurrentState(rc: RequestContext) extends HistoryMessage
 }

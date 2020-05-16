@@ -65,6 +65,8 @@ POST    /graphql/:userName/:spaceId  @controllers.GraphQLController.graphQL(user
 GET     /json/:userName/:spaceId/:thingId @controllers.JsonController.json(userName, spaceId, thingId, propIdStr = "")
 GET     /json/:userName/:spaceId/:thingId/:propId @controllers.JsonController.json(userName, spaceId, thingId, propId)
 
+# Admin-only pages:
+GET     /admin/dumpreadable/:spaceId  @controllers.AdminController.dumpSpaceReadable(spaceId)
 
 # Serve scala files under the scalajs subproject to be used by sourcemaps.
 # TODO: This route and its controller method should be removed for production
