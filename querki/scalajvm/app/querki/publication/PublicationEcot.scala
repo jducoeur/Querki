@@ -165,11 +165,13 @@ class PublicationEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDe
     implicit val timeout = Timeout(10 seconds)
 
     override def qlApply(inv: Invocation): QFut = {
+      implicit val spaceState = inv.state
       for {
         // TODO: this would be more efficient if we fetched the entire List of Things here, and sent
         // it as a list in the Publish() request. Enhance Invocation to support that?
         thing <- inv.contextAllThings
         who = inv.context.request.requesterOrAnon
+        _ <- inv.test(AccessControl.hasPermission(CanPublishPermission, spaceState, who, spaceState), "Publication.publishNotAllowed", Seq(thing.displayName))
         cmd = SpaceSubsystemRequest(who, inv.state.id, Publish(who, List(thing.id), emptyProps, inv.state))
         PublishResponse(updatedState) <- inv.fut(SpaceOps.spaceRegion ? cmd)
       } yield ExactlyOne(LinkType(thing))

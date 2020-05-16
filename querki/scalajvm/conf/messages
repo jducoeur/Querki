@@ -47,6 +47,8 @@ Invites.unknownInvitation=That invitation is no longer valid.
 
 Logic.equals.typeMismatch=The parameters to {2} must be the same Type: got _equals({0}, {1})
 
+Publication.publishNotAllowed=You aren't allowed to publish {0}
+
 QL.invocation.notASpace=The _space parameter must be a Space -- either this Space or one of its Apps.
 QL.self.notDotted=The _self function can only be used when dotted after a property, as in "MyProp._self".
 QL.isBound.notABinding=The parameter to _isBound must be a binding, such as "$query".

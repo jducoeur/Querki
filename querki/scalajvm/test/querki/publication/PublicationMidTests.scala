@@ -49,6 +49,14 @@ object PublicationMidTests {
       _ <- checkNameIsMissingFor(instance2Name, member)
       _ <- evaluateQL(instance2, "_publish")
       _ <- checkNameIsRealFor(instance2Name, member)
+
+      // Now create another instance, and demonstrate that the member (who doesn't have the rights) cannot
+      // publish it:
+      instance3Name = "Third Instance"
+      instance3 <- makeThing(model, instance3Name)
+      _ <- checkNameIsMissingFor(instance3Name, member)
+      _ <- withUser(member) { evaluateQL(instance3, "_publish") }
+      _ <- checkNameIsMissingFor(instance3Name, member)
     }
       yield ()
   }
