@@ -12,3 +12,9 @@ dist
 /.classpath
 /.project
 /RUNNING_PID
+/scalajs/src/main/Client.iml
+/scala/shared/src/main/API.iml
+/scala/jvm/src/main/Shared JVM.iml
+/scala/js/src/main/Shared JS.iml
+/scalajvm/public/javascripts/codemirror/
+/scalajvm/Server.iml
