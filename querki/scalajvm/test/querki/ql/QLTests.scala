@@ -214,6 +214,19 @@ class QLTests extends QuerkiTests {
       pql("""[[5 -> _plus(-2)]]""") should equal ("3")
     }
   }
+
+  "Self-referential expressions" should {
+    // Note that the failure mode for this one is an infinite loop!
+    // This is a pretty simplistic check, but it guards against QI.bu6ofru
+    "not destroy the world" in {
+      class TSpace extends CommonSpace {
+        val deadlyProp = new SimpleTestThing("Deadly Thing", singleTextProp("[[Single Text]]"))
+      }
+      implicit val s = new TSpace
+
+      pql("""[[Deadly Thing -> Single Text]]""") should include("Too many levels of calls")
+    }
+  }
   
   "Tag / Name Literals" should {
     "work if the name is a defined Thing" in {
