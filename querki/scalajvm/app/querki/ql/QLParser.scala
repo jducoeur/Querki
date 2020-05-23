@@ -537,22 +537,25 @@ class QLParser(
   
   private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):Future[QLContext] = {
     logStage(stage, contextIn) {
-      val context = 
-        if (contextIn.depth > contextIn.maxDepth)
-          contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."))
-        else if (stage.useCollection) 
-          contextIn.asCollection
-        else if (stage.clearUseCollection)
-          contextIn.clearAsCollection
-        else 
-          contextIn
-      stage match {
-        case name:QLCall => processCall(name, context, isParam)
-        case subText:QLTextStage => processTextStage(subText, context)
-        case num:QLNumber => Future.successful(processNumber(num, context))
-        case list:QLListLiteral => processListLiteral(list, context)
-        case QLExpStage(exp) => processExp(exp, context)
-        case block:QLTextBlockLiteral => processTextBlockLiteral(contextIn, block) 
+      if (contextIn.depth > contextIn.maxDepth) {
+        Future.successful(
+          contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase.")))
+      } else {
+        val context =
+          if (stage.useCollection)
+            contextIn.asCollection
+          else if (stage.clearUseCollection)
+            contextIn.clearAsCollection
+          else
+            contextIn
+        stage match {
+          case name: QLCall => processCall(name, context, isParam)
+          case subText: QLTextStage => processTextStage(subText, context)
+          case num: QLNumber => Future.successful(processNumber(num, context))
+          case list: QLListLiteral => processListLiteral(list, context)
+          case QLExpStage(exp) => processExp(exp, context)
+          case block: QLTextBlockLiteral => processTextBlockLiteral(contextIn, block)
+        }
       }
     }
   }
