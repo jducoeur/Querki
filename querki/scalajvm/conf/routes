@@ -67,6 +67,7 @@ GET     /json/:userName/:spaceId/:thingId/:propId @controllers.JsonController.js
 
 # Admin-only pages:
 GET     /admin/dumpreadable/:spaceId  @controllers.AdminController.dumpSpaceReadable(spaceId)
+GET     /admin/dumphistory/:spaceId   @controllers.AdminController.dumpSpaceSummary(spaceId)
 
 # Serve scala files under the scalajs subproject to be used by sourcemaps.
 # TODO: This route and its controller method should be removed for production
