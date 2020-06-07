@@ -14,6 +14,7 @@ class EditorTests extends QuerkiTests {
       
       val fruits = new TestProperty(LinkType, QSet, "Fruits")
       val basket = new SimpleTestThing("Basket", fruits(banana, cherry))
+      val emptyBasket = new SimpleTestThing("Empty Basket", fruits())
     }
     
     implicit class strTests(str:String) {
@@ -53,6 +54,19 @@ class EditorTests extends QuerkiTests {
       res.lacks(blackberry)
       res.has(cherry, true)
       res.lacks(raspberry)      
+    }
+
+    // Regression test:
+    "cope if nothing is selected" in {
+      implicit val s = new TSpace
+      import s._
+
+      val res = pql("""[[Fruit._instances -> Fruits._checkList(on = Empty Basket, selectedOnly = true)]]""")
+      res.lacks(apple)
+      res.lacks(banana)
+      res.lacks(blackberry)
+      res.lacks(cherry)
+      res.lacks(raspberry)
     }
   }
   
