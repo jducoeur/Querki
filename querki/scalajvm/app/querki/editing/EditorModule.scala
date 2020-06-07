@@ -527,7 +527,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           ).toString
           
       // Turn them all into one String, to return to the main function:
-      itemInv.get.map(_.toSeq.reduce(_ + _))
+      itemInv.get.map { strs =>
+        if (strs.isEmpty)
+          ""
+        else
+          strs.toSeq.reduce(_ + _) }
     }
   }
   
