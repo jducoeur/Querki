@@ -1039,6 +1039,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Signature(
         reqs = Seq(
           ("id", TextType, "The id of this field, which should be unique on this page")
+        ),
+        opts = Seq(
+          ("placeholder", TextType, Core.QNone, "Some placeholder text to display when the field is empty")
         )
       )
     ))
@@ -1046,11 +1049,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     override def qlApply(inv: Invocation) = {
       for {
         idStr <- inv.processAs("id", TextType)
+        placeholderTxt <- inv.processAsOpt("placeholder", TextType)
       }
         yield HtmlValue(
           span(
             cls := "_rxTextInput",
-            data.elemid := idStr.text
+            data.elemid := idStr.text,
+            if (placeholderTxt.isDefined)
+              data.placeholder := placeholderTxt.get.text
           )
         )
     }
