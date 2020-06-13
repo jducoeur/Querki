@@ -90,8 +90,13 @@ class RxTextHolder()(implicit e: Ecology) extends HookedGadget[dom.html.Span](e)
 
   def hook() = {
     val childId: String = ${elem}.dataString("elemid")
-    implicit val owner = Pages.findPageFor(this).map(_.ctx).getOrElse(throw new Exception(s"Couldn't find my Page!"))
-    $(elem).append(new RxText(id:=childId).render)
+    val page = Pages.findPageFor(this).getOrElse(throw new Exception(s"Couldn't find my Page!"))
+    implicit val owner = page.ctx
+    val gadget = new RxText(id:=childId)
+    val field = gadget.render
+    $(elem).append(field)
+    // These fields largely exist to work with other gadgets, so expose them via the Page:
+    page.gadgetListeners.register(gadget)
   }
 
   def doRender() = ???

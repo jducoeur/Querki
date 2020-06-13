@@ -437,7 +437,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         ),
         opts = Seq(
           ("selectedOnly", YesNoType, ExactlyOne(Logic.False), "If True, only items currently in the Set will be displayed."),
-          ("display", AnyType, Core.QNone, "How to display each item.")
+          ("display", AnyType, Core.QNone, "How to display each item."),
+          ("filterField", TextType, Core.QNone, "If specified, the ID of a text field to filter on")
         ),
         returns = (AnyType, "The Check List, ready to display.")
       ),
@@ -481,6 +482,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       for {
         selectedOnly <- inv.processAs("selectedOnly", YesNoType)
         setOID <- inv.processAs("on", LinkType)
+        filterField <- inv.processAsOpt("filterField", TextType)
         setThing <- inv.opt(state.anything(setOID))
         setProp <- inv.definingContextAsPropertyOf(LinkType)
         currentPV <- inv.opt(setThing.getPropOpt(setProp), Some(new PublicException("Edit.checklist.propMissing", setThing.displayName, setProp.displayName)))
@@ -493,6 +495,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
               cls:="_checklist",
               data.thing:=setThing.id.toThingId.toString,
               data.prop:=setProp.id.toThingId.toString,
+              // Note that scalatags is one of the few contexts where an imbalanced if is legit:
+              if (filterField.isDefined)
+                data.filterid:=filterField.get.text,
               ul(
                 cls:="_listContent",
                 raw(itemStr)

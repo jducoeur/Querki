@@ -1,7 +1,6 @@
 package querki.pages
 
 import scala.concurrent.{Future, Promise}
-
 import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
@@ -10,13 +9,11 @@ import org.querki.gadgets._
 import org.querki.jsext._
 import org.querki.jquery._
 import org.querki.squery.Focusable._
-
 import querki.globals._
-
 import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, SmallButtonGadget, QuerkiUIUtils, WrapperDiv}
+import querki.display.{ButtonGadget, QuerkiUIUtils, GadgetListeners, SmallButtonGadget, GadgetListenersImpl, WrapperDiv}
 import querki.display.input.{InputDependencies, InputDependenciesHandler}
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement]) {  
@@ -230,4 +227,9 @@ abstract class Page(pageName:String = "")
    * up on page change.
    */
   lazy val inputDependencies: InputDependencies = new InputDependenciesHandler
+
+  /**
+   * This allows cooperating Gadgets to connect with each other.
+   */
+  lazy val gadgetListeners: GadgetListeners = new GadgetListenersImpl
 }
