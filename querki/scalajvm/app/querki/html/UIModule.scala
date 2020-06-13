@@ -41,6 +41,7 @@ object UIMOIDs extends EcotIds(11) {
   val UniqueHtmlIdOID = moid(13)
   val UpdateableSectionOID = moid(14)
   val UpdateSectionOID = moid(15)
+  val TextInputOID = moid(16)
 }
 
 /**
@@ -1029,6 +1030,31 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       fut(QL.WikitextValue(models.Wikitext(s"_rndid${n.toString}")))
     }
   }
+
+  lazy val TextInputMethod = new InternalMethod(TextInputOID,
+    toProps(
+      setName("_textInput"),
+      Categories(UITag),
+      Summary("Displays a text input field, which can be used by other displays like `_checkList`"),
+      Signature(
+        reqs = Seq(
+          ("id", TextType, "The id of this field, which should be unique on this page")
+        )
+      )
+    ))
+  {
+    override def qlApply(inv: Invocation) = {
+      for {
+        idStr <- inv.processAs("id", TextType)
+      }
+        yield HtmlValue(
+          span(
+            cls := "_rxTextInput",
+            data.elemid := idStr.text
+          )
+        )
+    }
+  }
   
   override lazy val props = Seq(
     classMethod,
@@ -1051,6 +1077,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     ShowSomeFunction,
     MenuButton,
     UniqueHtmlId,
-    UpdateableSection
+    UpdateableSection,
+    TextInputMethod
   )
 }
