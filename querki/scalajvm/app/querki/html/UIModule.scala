@@ -879,7 +879,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("contents", AnyType, "The contents of this section")
         ),
         opts = Seq.empty,
-        returns = (RawHtmlType, "The rendered section, which can be updated by calling `_updateSection` from inside.")
+        returns = (RawHtmlType, "The rendered section, which can be updated by setting `_updateSectionAfter` on a QLButton, QLLink or QLInput inside it.")
       )))
   {
     override def qlApply(inv: Invocation): QFut = {

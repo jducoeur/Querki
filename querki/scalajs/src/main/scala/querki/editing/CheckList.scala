@@ -22,6 +22,7 @@ import querki.display.rx.RxInput
 class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with QuerkiUIUtils {
 
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
 
   val std = DataAccess.std
@@ -71,7 +72,10 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
 
     for {
       thingInfo <- Client[EditFunctions].create(modelId, Seq(msg)).call()
-      _ <- saveChange(AddToSet(path, thingInfo.oid.underlying))
+      _ <- saveChange(AddToSet(Editing.propPath(propId), thingInfo.oid.underlying))
+      // TODO: it would be better to just reload this list, a la _updateableSection, but that's not modular
+      // enough yet:
+      reloadedPage <- PageManager.reload()
     }
       StatusLine.showBriefly("Saved")
   }
