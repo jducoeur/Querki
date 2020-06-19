@@ -2,6 +2,7 @@ package querki.editing
 
 import org.scalajs.dom.html
 import org.querki.jquery._
+import autowire._
 
 import rx._
 
@@ -19,18 +20,23 @@ import querki.display.rx.RxInput
  * @author jducoeur
  */
 class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with QuerkiUIUtils {
-  
+
   lazy val Editing = interface[querki.editing.Editing]
   lazy val Pages = interface[querki.pages.Pages]
 
+  val std = DataAccess.std
+
   def values = ???
   def doRender() = ???
-  
+
   lazy val propId = $(elem).tidString("prop")
 
   // _checkList() may optionally specify a filter input and a new-item input, which may be the same thing.
   // Either way, it should be the id of an RxInput.
   lazy val filterId: Option[String] = $(elem).data("filterid").toOption.map(_.asInstanceOf[String])
+  // _checkList() may specify a Model; if so, then typing a name and hitting Enter in the filter field will
+  // produce a new Instance of that Model, with the Display Name set:
+  lazy val modelIdOpt: Option[TID] = $(elem).data("modelid").toOption.map(s => TID(s.asInstanceOf[String]))
 
   lazy val allPicksByDisplay: Map[String, html.Element] = {
     // Index all of the list items by their display text, so that we can filter if desired:
@@ -56,7 +62,20 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
         RemoveFromSet(path, v)
     saveChange(msg)
   }
-  
+
+  /**
+   * Create a new element on the checklist. This is only present if the QL specifies addModel.
+   */
+  def quickCreate(modelId: TID)(name: String) = {
+    val msg = ChangePropertyValue(Editing.propPath(std.basic.displayNameProp), List(name))
+
+    for {
+      thingInfo <- Client[EditFunctions].create(modelId, Seq(msg)).call()
+      _ <- saveChange(AddToSet(path, thingInfo.oid.underlying))
+    }
+      StatusLine.showBriefly("Saved")
+  }
+
   def hook() = {
     $(elem).find("._checkOption").change({ (evt:JQueryEventObject) =>
       val checkbox = evt.target.asInstanceOf[html.Element]
@@ -88,6 +107,11 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
                 }
               }
             }
+          }
+
+          // If the Model ID is specified, that means we want to be able to quick-create new entries on this list:
+          modelIdOpt.map { modelId =>
+            rxInput.onEnter(quickCreate(modelId))
           }
         }
       }
