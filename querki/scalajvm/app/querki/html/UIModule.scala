@@ -1043,7 +1043,16 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         opts = Seq(
           ("placeholder", TextType, Core.QNone, "Some placeholder text to display when the field is empty")
         )
-      )
+      ),
+      Details(
+        """
+          |This is similar to [[_QLInput._self]], and might eventually be merged with it, but has a different purpose.
+          |`_textInput` is designed for live interaction within a page: it is a text field that can work with other
+          |controls to make things happen as the user types into it.
+          |
+          |For example, this works with the [[_checkList._self]] function, letting you filter the checklist items
+          |being displayed, or add new ones.
+          |""".stripMargin)
     ))
   {
     override def qlApply(inv: Invocation) = {

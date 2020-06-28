@@ -427,7 +427,6 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val CheckListMethod = new InternalMethod(CheckListOID,
     toProps(
       setName("_checkList"),
-      setInternal,
       Summary("""Display a checklist of items to add or remove from a Set."""),
       Signature(
         expected = Some(Seq(LinkType), "The items to choose from."),
@@ -450,9 +449,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         |for each item that you sometimes shop for, and a Shops Tag Set saying where it can be found.
         |You have a Thing named "Shopping List", with a Property "Contents", which is a Set of Things.
         |You would display the whole shopping list, as a checklist, like this:
-        |```
-        |\[[Shopping Item._instances -> Contents.checkList(on = Shopping List)\]]
-        |```
+        |[[```
+        |[[Shopping Item._instances -> Contents.checkList(on = Shopping List)]]
+        |```]]
         |That is, the actual list is found in Shopping List.Contents, and you are choosing from
         |all Instances of Shopping Item. This lets you easily add Items to the list.
         |
@@ -466,12 +465,28 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         |
         |You can filter which items show on the list. For instance, you could show a list of just the
         |Items to look for at Acme like this:
-        |```
-        |\[[Shopping Item._instances 
+        |[[```
+        |[[Shopping Item._instances
         |  -> _filter(Shops -> _contains(Acme))
-        |  -> Contents._checkList(on = Shopping List, selectedOnly = true)\]]
-        |```
+        |  -> Contents._checkList(on = Shopping List, selectedOnly = true)]]
+        |```]]
         |This way, you can easily display customized checklists for particular situations.
+        |
+        |You can also create a live filter-by-name. If you specify the `filterField` parameter, that should point
+        |to a _textInput that you can type into, to filter down the items being currently shown in the checklist.
+        |
+        |You can also use the `filterField` to add new items. If you add the `addModel` parameter, that specifies
+        |the model for the items in this list; if you type in a new name in the `filterField` and press Enter, a
+        |new instance of that model will be created, with the given name, and added to the checklist.
+        |
+        |So putting those together, you can specify a full shopping list, that lets you filter the items being
+        |shown and add new one on the fly, like this:
+        |[[```
+        |[[_textInput(id = ""itemfilter"", placeholder = ""Filter or add items"")]]
+        |
+        |[[Shopping Item._instances ->
+        |  Shopping Items._checkList(on = Shopping List, filterField = ""itemfilter"", addModel = Shopping Item)]]
+        |```]]
         |
         |By default, _checkList will display show each item's Name. But you can customize this using
         |the `display` parameter. If provided, this will be applied to every item, and the result is
