@@ -470,10 +470,10 @@ package object ql {
      *   not use the defining context, leave this as None.
      */
     def apply(
-      expected:Option[(Seq[PType[_]], String)], 
-      reqs:Seq[(String, PType[_], String)], 
-      opts:Seq[(String, PType[_], QValue, String)], 
-      returns:(PType[_], String),
+      expected:Option[(Seq[PType[_]], String)] = None,
+      reqs:Seq[(String, PType[_], String)] = Seq.empty,
+      opts:Seq[(String, PType[_], QValue, String)] = Seq.empty,
+      returns:(PType[_], String) = (AnyType, ""),
       defining:Option[(Boolean, Seq[PType[_]], String)] = None
     ):(OID, QValue)
   }

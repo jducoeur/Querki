@@ -41,6 +41,7 @@ object UIMOIDs extends EcotIds(11) {
   val UniqueHtmlIdOID = moid(13)
   val UpdateableSectionOID = moid(14)
   val UpdateSectionOID = moid(15)
+  val TextInputOID = moid(16)
 }
 
 /**
@@ -878,7 +879,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("contents", AnyType, "The contents of this section")
         ),
         opts = Seq.empty,
-        returns = (RawHtmlType, "The rendered section, which can be updated by calling `_updateSection` from inside.")
+        returns = (RawHtmlType, "The rendered section, which can be updated by setting `_updateSectionAfter` on a QLButton, QLLink or QLInput inside it.")
       )))
   {
     override def qlApply(inv: Invocation): QFut = {
@@ -1029,6 +1030,46 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       fut(QL.WikitextValue(models.Wikitext(s"_rndid${n.toString}")))
     }
   }
+
+  lazy val TextInputMethod = new InternalMethod(TextInputOID,
+    toProps(
+      setName("_textInput"),
+      Categories(UITag),
+      Summary("Displays a text input field, which can be used by other displays like `_checkList`"),
+      Signature(
+        reqs = Seq(
+          ("id", TextType, "The id of this field, which should be unique on this page")
+        ),
+        opts = Seq(
+          ("placeholder", TextType, Core.QNone, "Some placeholder text to display when the field is empty")
+        )
+      ),
+      Details(
+        """
+          |This is similar to [[_QLInput._self]], and might eventually be merged with it, but has a different purpose.
+          |`_textInput` is designed for live interaction within a page: it is a text field that can work with other
+          |controls to make things happen as the user types into it.
+          |
+          |For example, this works with the [[_checkList._self]] function, letting you filter the checklist items
+          |being displayed, or add new ones.
+          |""".stripMargin)
+    ))
+  {
+    override def qlApply(inv: Invocation) = {
+      for {
+        idStr <- inv.processAs("id", TextType)
+        placeholderTxt <- inv.processAsOpt("placeholder", TextType)
+      }
+        yield HtmlValue(
+          span(
+            cls := "_rxTextInput",
+            data.elemid := idStr.text,
+            if (placeholderTxt.isDefined)
+              data.placeholder := placeholderTxt.get.text
+          )
+        )
+    }
+  }
   
   override lazy val props = Seq(
     classMethod,
@@ -1051,6 +1092,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     ShowSomeFunction,
     MenuButton,
     UniqueHtmlId,
-    UpdateableSection
+    UpdateableSection,
+    TextInputMethod
   )
 }

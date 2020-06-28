@@ -6,9 +6,8 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import org.querki.gadgets._
-
+import querki.display.HookedGadget
 import querki.globals._
-
 import querki.display.input.AutosizeFacade._
 
 /**
@@ -84,6 +83,26 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
 }
 
 class RxText(mods:Modifier*)(implicit e:Ecology, ctx:Ctx.Owner) extends RxInput("text", mods)
+
+class RxTextHolder()(implicit e: Ecology) extends HookedGadget[dom.html.Span](e) with EcologyMember
+{
+  lazy val Pages = interface[querki.pages.Pages]
+
+  lazy val placeholderTxt: Option[String] = $(elem).data("placeholder").toOption.map(_.asInstanceOf[String])
+
+  def hook() = {
+    val childId: String = ${elem}.dataString("elemid")
+    val page = Pages.findPageFor(this).getOrElse(throw new Exception(s"Couldn't find my Page!"))
+    implicit val owner = page.ctx
+    val gadget = new RxText(id := childId, placeholder := placeholderTxt.getOrElse(""))
+    val field = gadget.render
+    $(elem).append(field)
+    // These fields largely exist to work with other gadgets, so expose them via the Page:
+    page.gadgetListeners.register(gadget)
+  }
+
+  def doRender() = ???
+}
 
 class RxTextArea(mods:Modifier*)(implicit val ecology:Ecology, val ctx:Ctx.Owner)
   extends RxTextBase[dom.html.TextArea]

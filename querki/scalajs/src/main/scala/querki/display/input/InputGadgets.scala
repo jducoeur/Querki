@@ -6,9 +6,9 @@ import org.scalajs.dom
 import dom.html.Element
 import org.querki.jquery._
 import org.querki.gadgets._
-
 import querki.globals._
 import querki.display.HookedGadget
+import querki.display.rx.{RxText, RxTextHolder}
 
 /**
  * Private interface, allowing InputGadgets to work with their master controller.
@@ -47,6 +47,8 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)
     Gadgets.registerSimpleGadget("._dateInput", { new DateGadget })
     Gadgets.registerSimpleGadget("._depends", { new DependentInputGadget })
+
+    Gadgets.registerSimpleGadget("._rxTextInput", { new RxTextHolder() })
   }
   
   /**
