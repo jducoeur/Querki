@@ -98,7 +98,7 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
                 case Some(filterText) => {
                   val txt = filterText.toLowerCase
                   allPicksByDisplay.foreach { case (text, e) =>
-                    if (text.toLowerCase.contains(filterText))
+                    if (text.toLowerCase.contains(txt))
                       $(e).show()
                     else
                       $(e).hide()
