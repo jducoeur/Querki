@@ -1041,7 +1041,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("id", TextType, "The id of this field, which should be unique on this page")
         ),
         opts = Seq(
-          ("placeholder", TextType, Core.QNone, "Some placeholder text to display when the field is empty")
+          ("placeholder", TextType, Core.QNone, "Some placeholder text to display when the field is empty"),
+          ("clearbutton", YesNoType, ExactlyOne(Logic.False), "If set to true, will show a button that clears the text field")
         )
       ),
       Details(
@@ -1059,11 +1060,13 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       for {
         idStr <- inv.processAs("id", TextType)
         placeholderTxt <- inv.processAsOpt("placeholder", TextType)
+        clearButton <- inv.processAs("clearbutton", YesNoType)
       }
         yield HtmlValue(
           span(
             cls := "_rxTextInput",
             data.elemid := idStr.text,
+            data.clearbutton := clearButton,
             if (placeholderTxt.isDefined)
               data.placeholder := placeholderTxt.get.text
           )

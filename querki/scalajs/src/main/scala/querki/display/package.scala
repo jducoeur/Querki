@@ -1,23 +1,28 @@
 package querki
 
 import scala.concurrent.Future
-
 import org.scalajs.dom
 import dom.html.Element
-
 import rx._
-
 import org.querki.gadgets._
-
+import org.querki.jquery.JQuery
 import querki.globals._
-
 import querki.api.OperationHandle
 import querki.comm.URL
 import querki.pages.{Page, ParamMap}
 import querki.util.Notifier
 
 package object display {
-  
+
+  implicit class RichJQuery(jq: JQuery) {
+    def dataAs[T](name: String): T = {
+      jq.data(name).get.asInstanceOf[T]
+    }
+    def dataAsOpt[T](name: String): Option[T] = {
+      jq.data(name).toOption.map(_.asInstanceOf[T])
+    }
+  }
+
   /**
    * The factory function for a Gadget. It is consistent and trivial, but we don't have
    * reflection here, so can't just automate it.

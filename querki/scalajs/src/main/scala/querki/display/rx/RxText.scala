@@ -6,7 +6,7 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import org.querki.gadgets._
-import querki.display.HookedGadget
+import querki.display.{RichJQuery, ButtonGadget, HookedGadget, QuerkiUIUtils}
 import querki.globals._
 import querki.display.input.AutosizeFacade._
 
@@ -33,6 +33,8 @@ trait RxTextBase[E <: Element] extends Gadget[E] {
     $(elem).value(v)
     update()
   }
+
+  def clear(): Unit = setValue("")
       
   def length:Rx[Int] = textOpt.map(_.map(_.length).getOrElse(0))
 }
@@ -84,18 +86,40 @@ class RxInput(charFilter:Option[(JQueryEventObject, String) => Boolean], inputTy
 
 class RxText(mods:Modifier*)(implicit e:Ecology, ctx:Ctx.Owner) extends RxInput("text", mods)
 
-class RxTextHolder()(implicit e: Ecology) extends HookedGadget[dom.html.Span](e) with EcologyMember
+class RxTextHolder()(implicit e: Ecology) extends HookedGadget[dom.html.Span](e) with EcologyMember with QuerkiUIUtils
 {
   lazy val Pages = interface[querki.pages.Pages]
 
-  lazy val placeholderTxt: Option[String] = $(elem).data("placeholder").toOption.map(_.asInstanceOf[String])
+  lazy val placeholderTxt: Option[String] = $(elem).dataAsOpt[String]("placeholder")
+  lazy val clearButton: Boolean = $(elem).dataAs[Boolean]("clearbutton")
 
   def hook() = {
     val childId: String = ${elem}.dataString("elemid")
     val page = Pages.findPageFor(this).getOrElse(throw new Exception(s"Couldn't find my Page!"))
     implicit val owner = page.ctx
-    val gadget = new RxText(id := childId, placeholder := placeholderTxt.getOrElse(""))
-    val field = gadget.render
+
+    val gadget =
+      new RxText(
+        id := childId,
+        placeholder := placeholderTxt.getOrElse(""),
+        cls := "form-control"
+      )
+    val btn = if (clearButton) {
+      Some(
+        new ButtonGadget(
+          ButtonGadget.Normal,
+          id := s"$childId-clear",
+          faIcon("times-circle")
+        )({ () =>
+          gadget.clear()
+        })
+      )
+    } else {
+      None
+    }
+    val wrapper = form(cls := "form-inline", div(cls := "form-group", gadget, btn))
+
+    val field = wrapper.render
     $(elem).append(field)
     // These fields largely exist to work with other gadgets, so expose them via the Page:
     page.gadgetListeners.register(gadget)
