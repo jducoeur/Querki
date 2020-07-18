@@ -396,31 +396,35 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
       // No LinkKind specified, so figure that they only want Things:
       state.things.values
     }
-    val allCandidates = allCandidatesIt.toSeq
-    
+    val allCandidates = allCandidatesIt.toList
+
     // Now, if they've specified a particular Model to be the limit of the candidate
     // tree -- essentially, they've specified what type you can link to -- filter for
     // that:
-    // TODO: we really should be building and caching the entire hierarchy, and if there
-    // is a LinkModelProp just use the children of that. As it stands, that isAncestor() call
-    // is n**2 (maybe worse) in context.
     val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
       prop.firstOpt(Links.LinkModelProp) match {
-        case Some(modelId) => allCandidates filter (_.isAncestor(modelId))
+        case Some(modelId) => {
+          val allInstanceIds =
+            state.descendants(modelId, true, true, true).map(_.id)
+          allCandidates.filter(candidate => allInstanceIds.contains(candidate.id))
+        }
         case None => allCandidates
       }
     } else {
       allCandidates
     }
-    
+
     val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
       filteredByModel filter (_.isModel)
     } else {
       filteredByModel
     }
-    
-    // We need to make sure we don't count Shadows, or we might wind up with duplicates:
-    filteredAsModel.filterNot(_.ifSet(InternalProp)).filterNot(_.ifSet(Apps.ShadowFlag)).toSet
+
+    // Note that this used to filter out Shadows, supposedly to avoid duplication. That doesn't make any sense, though:
+    // this list starts out as only including stuff from the local Space, not the App, so I'm not sure where the
+    // duplications would come from, and that was introducing the bug that we weren't listing lots of options that
+    // *should* be included.
+    filteredAsModel.filterNot(_.ifSet(InternalProp)).toSet
   }
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {

@@ -35,8 +35,14 @@ class AppsSpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val eco
   def modelsToShadow(app:SpaceState):Seq[Thing] = {
     val (models, instances) = app.things.values.partition(_.isModel(app))
     val (pages, plainInstances) = instances.partition(_.model == querki.basic.MOIDs.SimpleThingOID)
+    val specials =
+      instances
+      .filter { instance =>
+        // This clause is for weird little things that should get shadowed:
+        (instance.model == querki.css.MOIDs.StylesheetBaseOID)
+      }
     
-    (models ++ pages).toSeq
+    (models ++ pages ++ specials).toSeq
   }
   
   def addApp(req:User, appId:OID, appVersion:SpaceVersion, afterExtraction:Boolean)(state:SpaceState):RM[ChangeResult] = {
