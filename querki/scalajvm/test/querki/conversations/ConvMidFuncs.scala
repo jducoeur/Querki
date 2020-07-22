@@ -55,6 +55,7 @@ trait ConvMidFuncs {
   def assertCommentText(node: ConvNode, text: String): TestOp[Unit] = {
     TestOp.pure { commentText(node) should equal (text) }
   }
+
 }
 
 object ConvMidFuncs extends ConvMidFuncs

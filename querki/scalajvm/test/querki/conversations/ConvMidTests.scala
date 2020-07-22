@@ -4,7 +4,11 @@ import org.scalatest.tags.Slow
 import org.scalatest.Matchers._
 
 import querki.test.mid._
+
 import AllFuncs._
+import querki.notifications.NotificationMidFuncs._
+import querki.security.SecurityMidFuncs._
+import ClientState._
 
 object ConvMidTests {
   /**
@@ -70,6 +74,52 @@ object ConvMidTests {
     }
       yield ()
   }
+
+  /**
+   * "People shouldn't receive Comment Notifications for Things they can't Read"
+   *
+   * This one needs its own space and users, since it is very much a multi-user test.
+   */
+  val testQI7w4gdpe: TestOp[Unit] = {
+    for {
+      _ <- step("Testing QI.7w4gdpe")
+      _ <- setupUserAndSpace("QI7w4gdpe Owner", "QI7w4gdpe Space")
+      owner <- TestOp.fetch(_.testUser)
+      spaceId <- TestOp.fetch(_.curSpace.info.oid)
+      member = TestUser("QI7w4gdpe Member")
+      _ <- newUser(member)
+      _ <- inviteIntoSpace(owner, spaceId, member)
+      _ <- switchToUser(owner)
+      std <- getStd
+
+      _ <- withUser(member) { changeProp(spaceId, std.conversations.commentNotifyProp :=> true) }
+      // We need to reload in order to make the above take effect:
+      _ <- reloadSpace()
+
+      _ <- withUser(member) { clearNotifications() }
+
+      // Create the public Thing
+      publicThing <- makeSimpleThing("Public Thing")
+      publicNode <- startConversation(publicThing, "Public Text")
+      _ <- assertNumNotifications(member, 1)
+      _ <- withUser(member) { clearNotifications() }
+
+      // Create the private Thing
+      _ <- switchToUser(owner)
+      model <- makeModel("The Model")
+      instanceName = "The Instance"
+      instance <- makeThing(model, instanceName)
+      perms <- permsFor(model)
+      instancePermThing = perms.instancePermThing.get
+      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.owner)
+
+      // Comment on it, and make sure the Member doesn't get notified:
+      privateText = "This is private!"
+      privateNode <- startConversation(instance, privateText)
+      _ <- assertNumNotifications(member, 0)
+    }
+      yield ()
+  }
 }
 
 @Slow
@@ -81,6 +131,8 @@ class ConvMidTests extends MidTestBase {
       val test = for {
         _ <- setupUserAndSpace("Conv Mid Test User", "Conv Mid Test Space")
         _ <- convTests
+        // Stuff below here sets up other Spaces:
+        _ <- testQI7w4gdpe
       }
         yield ()
 

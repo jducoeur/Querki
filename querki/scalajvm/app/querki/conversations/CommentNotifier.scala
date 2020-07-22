@@ -2,6 +2,7 @@ package querki.conversations
 
 import models.{HtmlWikitext, PType, UnknownOID, Wikitext}
 
+import querki.api.commonName
 import querki.ecology._
 import querki.email.EmailNotifier
 import querki.globals._
@@ -27,13 +28,15 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   
   val Basic = initRequires[querki.basic.Basic]
   val UserValues = initRequires[querki.uservalues.UserValues]
-  
+
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Conversations = interface[Conversations]
   lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
-  
+
+  lazy val CanReadProp = AccessControl.CanReadProp
   lazy val CommentText = Conversations.CommentText
   lazy val PlainTextType = Basic.PlainTextType
   lazy val SystemState = System.State
@@ -108,7 +111,12 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         if (onePref.thingId == state.id || onePref.thingId == comment.thingId) {
           onePref.v.firstAs(YesNoType) match {
             case Some(bool) => {
-              if (bool) {
+              if (bool &&
+                // Okay, they want to get notifications. Are they *allowed* to see this?
+                // Bugfix for QI.7w4gdpe:
+                (AccessControl.hasPermission(CanReadProp, state, onePref.identity.id, comment.thingId) &&
+                  AccessControl.hasPermission(Conversations.CanReadComments, state, onePref.identity.id, comment.thingId)))
+              {
                 recip + onePref.identity.id
               } else {
                 recip - onePref.identity.id
@@ -129,7 +137,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       // TODO: all members of the Space should be able to opt into receiving comments, and the owner should
       // be able to opt out:
       val recipientsNotAuthor = recipients.filterNot(_ == comment.authorId).toSeq
-      
+
       Notifications.send(req, ExplicitRecipients(recipientsNotAuthor), note)
     }
   }
@@ -210,7 +218,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   
   lazy val GetCommentNotesPref = new SystemProperty(GetCommentNotesOID, YesNoType, Optional,
     toProps(
-      setName("_getCommentNotifications"),
+      setName(commonName(_.conversations.commentNotifyProp)),
       setInternal,
       UserValues.IsUserValueFlag(true)))
   
