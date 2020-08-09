@@ -202,6 +202,19 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       setName("_Status Removed"),
       setInternal
     ))
+
+  lazy val OwnedThings = ThingState(OwnedThingsOID, systemOID, RootOID,
+    toProps(
+      setName("_ownedThings"),
+      setInternal,
+      Summary("Given a Person, this produces the Things owned by that Person"),
+      Basic.ApplyMethod(
+        """+$person
+          |Simple Thing._instances ->
+          |_filter(_creator -> _isNonEmpty) ->
+          |_filter(_creator -> _is($person))
+          |""".stripMargin)
+    ))
       
   override lazy val things = Seq(
     InvitationStatusModel,
@@ -209,7 +222,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     StatusRequested,
     StatusMember,
     StatusRejected,
-    StatusRemoved
+    StatusRemoved,
+    OwnedThings
   )
 
   /***********************************************

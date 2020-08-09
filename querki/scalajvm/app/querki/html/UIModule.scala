@@ -42,6 +42,8 @@ object UIMOIDs extends EcotIds(11) {
   val UpdateableSectionOID = moid(14)
   val UpdateSectionOID = moid(15)
   val TextInputOID = moid(16)
+
+  val OwnedThingsPageOID = moid(17)
 }
 
 /**
@@ -105,6 +107,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   
   override lazy val types = Seq(
     RawHtmlType
+  )
+
+  /***********************************************
+   * THINGS
+   ***********************************************/
+
+  lazy val OwnedThingsPage = ThingState(OwnedThingsPageOID, systemOID, RootOID,
+    toProps(
+      setName("_ownedThingsPage"),
+      PageHeaderProperty("# Things owned by [[$person]]"),
+      setInternal,
+      Basic.DisplayTextProp(
+        """[[$person -> _ownedThings -> _bulleted]]""".stripMargin)
+    ))
+
+  override lazy val things = Seq(
+    OwnedThingsPage
   )
 
   /***********************************************
