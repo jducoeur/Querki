@@ -358,7 +358,10 @@ class AccessControlModule(e:Ecology)
       // a Space, there might already be a Thing with that name, so we have to cope.
       DeriveName.DeriveNameProp(DeriveName.DeriveAlways),
       Categories(SecurityTag),
-      Summary("""This represents a Member of this Space.""")))
+      Summary("""This represents a Member of this Space."""),
+      Basic.DisplayTextProp(
+        """### [[+$person
+          |_ownedThingsPage -> _withParam(""person"", $person) -> ""__Owned Things__""]]""".stripMargin)))
   
   lazy val PublicTag = ThingState(PublicTagOID, systemOID, SecurityPrincipal,
     toProps(
