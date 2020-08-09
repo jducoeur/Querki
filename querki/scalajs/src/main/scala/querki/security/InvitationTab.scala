@@ -180,7 +180,7 @@ class InvitationTab(
           table(cls:="table table-hover",
             tbody(
               for (member <- invitees.sortBy(_.person.displayName)) 
-                yield new PersonDisplay("warning", member, roleMap, customMap, std)
+                yield new PersonDisplay("warning", member, roleMap, customMap, std, page)
             )
           )
         )

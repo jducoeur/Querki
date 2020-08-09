@@ -62,7 +62,7 @@ class MembersTab(
             tbody(
               for {
                 member <- members
-                display = new PersonDisplay("info", member, roleMap, customMap, page.std)
+                display = new PersonDisplay("info", member, roleMap, customMap, page.std, page)
                 _ = personDisplays() = { personDisplays.now :+ display }
               }
                 yield display
