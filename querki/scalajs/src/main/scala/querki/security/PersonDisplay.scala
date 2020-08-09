@@ -57,7 +57,7 @@ class PersonDisplay(
         " ",
         MSeq(
           person.person.displayName,
-          " -- ",
+          s" (${person.person.oid2.underlying}) -- ",
           new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay, std)
         ),
         customDisplay <= div(display := "None")
