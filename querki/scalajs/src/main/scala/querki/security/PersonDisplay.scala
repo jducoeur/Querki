@@ -4,11 +4,11 @@ import org.scalajs.dom.html
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
-
 import org.querki.gadgets._
 import querki.api.StandardThings
 import querki.display.QuerkiUIUtils
 import querki.globals._
+import querki.pages.Page
 import querki.util.ScalatagUtils
 
 class PersonDisplay(
@@ -16,7 +16,8 @@ class PersonDisplay(
     val person:PersonInfo,
     roleInfo:RoleInfo, 
     customInfo:RoleInfo,
-    std: StandardThings)(implicit val ecology: Ecology, ctx:Ctx.Owner)
+    std: StandardThings,
+    page: Page)(implicit val ecology: Ecology, ctx:Ctx.Owner)
   extends Gadget[html.TableRow] with QuerkiUIUtils
 {
   val customDisplay = GadgetRef.of[html.Div]
@@ -43,7 +44,7 @@ class PersonDisplay(
           }
         }.children().click { evt:JQueryEventObject =>
           // Don't let child clicks propagate to the row itself:
-          false
+          evt.stopImmediatePropagation()
         }
       }
     }
@@ -51,13 +52,15 @@ class PersonDisplay(
   val check = GadgetRef.of[html.Span]
 
   def doRender() = {
+    val personUrl = page.PageManager.pageUrl(person.person.urlName.underlying)
     tr(cls:=showCls,
       cell <= td(
         check <= span(visibility := "hidden", icon("ok")),
         " ",
         MSeq(
-          person.person.displayName,
-          " -- ",
+          a(href := personUrl,
+            person.person.displayName),
+          s" (${person.person.oid2.underlying}) -- ",
           new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay, std)
         ),
         customDisplay <= div(display := "None")

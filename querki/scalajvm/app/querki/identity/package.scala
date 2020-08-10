@@ -57,6 +57,8 @@ package object identity {
     val CreatorFunctionOID = moid(19)
     val MakeAllPersonsPublicCommandOID = moid(20)
     val StatusRemovedOID = moid(21)
+
+    val OwnedThingsOID = moid(22)
   }
   
   val IdentityTag = "Users, Identities and Invitations"
