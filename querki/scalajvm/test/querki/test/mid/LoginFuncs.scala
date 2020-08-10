@@ -190,7 +190,7 @@ trait LoginFuncs {
   /**
    * Process the given invitation (which should be for the current user) to join the specified Space.
    */
-  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[Unit] = TestOp.fut { state =>
+  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[Option[UserInfo]] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val session = state.session
     implicit val m = mat
@@ -205,16 +205,17 @@ trait LoginFuncs {
       result <- resultFut
       _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"acceptInvite got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
-      _ = 
-        if (expectFailure)
+      userInfo =
+        if (expectFailure) {
           assert(pickledUserInfo.isEmpty)
-        else {
+          None
+        } else {
           // Normally, make sure there is a legal user info here:
           assert (!pickledUserInfo.isEmpty, s"acceptInvite got an empty return value!")
-          read[UserInfo](pickledUserInfo)
+          Some(read[UserInfo](pickledUserInfo))
         }
     }
-      yield ()
+      yield userInfo
       
     inviteResultFut.map((state, _))
   }

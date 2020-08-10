@@ -143,9 +143,7 @@ object SecurityMidTests {
       instance <- makeThing(model, instanceName)
 
       // Make the Space members-only readable:
-      perms <- permsFor(space)
-      instancePermThing = perms.instancePermThing.get
-      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.members)
+      _ <- setToMembersOnly(space)
 
       // Initially, the member isn't a member, and can't see it:
       _ <- checkNameIsMissingFor(instanceName, member)
@@ -163,6 +161,49 @@ object SecurityMidTests {
       yield ()
 
   }
+
+  def qi9v5kfifRemoveMultipleGuests: TestOp[Unit] = {
+    val ownerName = "QI9v5kfif Owner"
+    val spaceName = "QI9v5kfif Space"
+
+    for {
+      _ <- step("Regression test for QI.9v5kfif")
+      std <- getStd
+      owner <- setupUserAndSpace(ownerName, spaceName)
+      spaceId <- clientSpaceId()
+
+      // Create a role with read access:
+      roleId <- createRole("Role Name", std.security.canReadPerm)
+      // Create an open invite with that role:
+      sharedLinkInfo <- createShareableLinkForRole(roleId, "The Invite", false, true)
+      linkUrl <- getSharedLinkURL(sharedLinkInfo.thingInfo.oid2)
+      hash = extractOpenInviteHash(linkUrl)
+
+      // The Space is members-only, so we can work with visibility:
+      _ <- setToMembersOnly(spaceId)
+
+      model <- makeModel("The Model")
+      instanceName = "The Instance"
+      instance <- makeThing(model, instanceName)
+
+      spaceInfo <- fetchSpaceInfo()
+      guest1Opt <- acceptInvite(hash, spaceInfo)
+      guest1 = guest1Opt.get
+
+      guest2Opt <- acceptInvite(hash, spaceInfo)
+      guest2 = guest2Opt.get
+
+      // TODO: create both guests in the world state as TestUsers, so that they we can use switchUser() on them
+
+      // TODO: confirm that both guests can see the Thing
+
+      // TODO: remove both guests
+
+      // TODO: confirm that neither guest can see the Thing (which should be initially broken for one guest)
+      // TODO: fix the bug in SpaceMembersActor, which shouldn't be worrying about the return code
+    }
+      yield ()
+  }
 }
 
 @Slow
@@ -174,6 +215,7 @@ class SecurityMidTests extends MidTestBase {
       runTest(regressionTestQIbu6oeej)
       runTest(regressionTestQIbu6of67)
       runTest(qi7w4gbn6RemoveMembers)
+      runTest(qi9v5kfifRemoveMultipleGuests)
     }
   }
 }

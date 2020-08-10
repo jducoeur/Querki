@@ -9,6 +9,7 @@ import AllFuncs._
 import org.scalactic.source.Position
 import org.scalatest.Matchers._
 import querki.test.mid.ClientState.withUser
+import querki.test.mid.EmailTesting.inviteHashPre
 
 /**
  * Not included in AllFuncs, since the functions here are relatively specialized and I don't want to pollute that
@@ -102,6 +103,52 @@ trait SecurityMidFuncs {
       _ <- changeProp(personInfo.person.oid, std.security.personRolesProp :=> newRoles)
     }
       yield ()
+  }
+
+  /**
+   * This mimics what happens in EditShareableInvite.
+   */
+  def createShareableLinkForRole(role: TID,
+                                 name: String,
+                                 requiresMembership: Boolean,
+                                 isOpenInvite: Boolean): TestOp[SharedLinkInfo] =
+  {
+    for {
+      std <- getStd
+      inviteThing <-
+        makeThing(
+          std.security.sharedInviteModel,
+          name,
+          std.security.inviteRoleLink :=> role.underlying,
+          std.security.inviteRequiresMembership :=> requiresMembership,
+          // TBD: EditShareableInvite has another clause here that I don't entirely understand:
+          std.security.isOpenInvite :=> isOpenInvite)
+      linkInfo <- getOneSharedLink(TOID(inviteThing.underlying))
+    }
+      yield linkInfo
+  }
+
+  /**
+   * Given a URL from [[getSharedLinkURL()]], this extracts the bit we care about.
+   */
+  def extractOpenInviteHash(link: String): String = {
+    val hashPos = link.indexOf(inviteHashPre) + inviteHashPre.length
+    link.substring(hashPos)
+  }
+
+  def setInstancePermsFor(thing: TID, perm: ThingInfo, to: ThingInfo): TestOp[Unit] = {
+    for {
+      perms <- permsFor(thing)
+      instancePermThing = perms.instancePermThing.get
+      _ <- changeProp(instancePermThing, perm :=> to)
+    }
+      yield ()
+  }
+
+  def setToMembersOnly(thing: TID): TestOp[Unit] = {
+    getStd.flatMap { std =>
+      setInstancePermsFor(thing, std.security.canReadPerm, std.security.members)
+    }
   }
 
   /**

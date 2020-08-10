@@ -15,18 +15,19 @@ trait SetupFuncs {
     * @param usernameBase The base of this user's name. This must be unique, so should be based on the suite name.
     *                     Note that this is the display name, and may be arbitrarily long.
     * @param spaceName The name of the Space, which only needs to be unique per-User.
-    * @return Nothing, but the State is set up.
+    * @return The owner of the Space, and the TID of the Space.
     */
-  def setupUserAndSpace(usernameBase: String, spaceName: String): TestOp[Unit] = {
+  def setupUserAndSpace(usernameBase: String, spaceName: String): TestOp[TestUser] = {
     for {
       std <- getStd
       user = TestUser(usernameBase)
       loginResults <- newUser(user)
       space <- createSpace(spaceName)
-
     }
-      yield ()
+      yield user
   }
+
+  def fetchSpaceInfo(): TestOp[SpaceInfo] = TestOp.fetch(_.client.spaceOpt.get)
 
   def inviteIntoSpace(owner:TestUser, spaceId: TID, member: TestUser): TestOp[Unit] = {
     val doIt = for {
@@ -35,7 +36,7 @@ trait SetupFuncs {
       token <- EmailTesting.nextEmail
       inviteResponse <- SecurityMidFuncs.invite(Seq(member.email), Seq.empty)
       _ = inviteResponse.newInvites should contain (member.display)
-      spaceInfo <- TestOp.fetch(_.client.spaceOpt.get)
+      spaceInfo <- fetchSpaceInfo()
 
       _ <- ClientState.switchToUser(member)
       inviteHash <- EmailTesting.extractInviteHash(token)
