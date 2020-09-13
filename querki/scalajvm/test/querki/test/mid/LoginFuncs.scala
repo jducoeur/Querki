@@ -2,33 +2,36 @@ package querki.test.mid
 
 import scala.concurrent.Future
 import scala.util.{Success, Failure}
-
 import cats._
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
-
 import upickle.default._
 import autowire._
-
 import org.scalatest._
 import Matchers._
-
 import play.api.Application
 import play.api.mvc.{Result, Session}
 import play.api.test._
 import play.api.test.Helpers._
-
 import controllers.LoginController
-
-import querki.data.{SpaceInfo, UserInfo}
+import querki.data.{SpaceInfo, UserInfo, TID}
 import querki.globals._
 import querki.session.UserFunctions
 import querki.util.SafeUrl
-
 import AllFuncs._
+import org.scalactic.source.Position
 
-case class TestUser(base: String) {
+trait TestUser {
+  def base: String
+  def safe: String
+  def email: String
+  def password: String
+  def handle: String
+  def display: String
+}
+
+case class NormalTestUser(base: String) extends TestUser {
   // "Safe" version of the name, suitable for email and display:
   lazy val safe = base.toLowerCase().filter(_.isLetter)
   
@@ -37,7 +40,23 @@ case class TestUser(base: String) {
   lazy val handle = safe
   lazy val display = s"Test User $base"
 }
+
+/**
+ * A version of TestUser created from the UserInfo that we get for a Guest.
+ */
+case class GuestTestUser(info: UserInfo) extends TestUser {
+  lazy val base = s"${info.identities.headOption.map(_.name).getOrElse("")}-${info.oid}"
+  lazy val safe = base.toLowerCase().filter(_.isLetter)
+  lazy val email = ""
+  lazy val password = ""
+  lazy val handle = safe
+  lazy val display = s"Guest ${info.oid}"
+
+  lazy val oid = TID(info.oid)
+}
+
 object TestUser {
+  def apply(base: String): TestUser = NormalTestUser(base)
   val Anonymous = TestUser("")
 }
 
@@ -126,8 +145,14 @@ trait LoginFuncs {
   /**
    * Pokes the specified TestUser into the current TestState.
    */
-  def setUser(user: TestUser): TestOp[Unit] = TestOp { state =>
-    IO.pure((state.withUser(user), ()))
+  def setUser(user: TestUser)(implicit pos: Position): TestOp[Unit] = {
+    for {
+      _ <- TestOp { state =>
+        IO.pure((state.withUser(user), ()))
+      }
+      _ <- ClientState.cache
+    }
+      yield ()
   }
   
   /**
@@ -190,7 +215,7 @@ trait LoginFuncs {
   /**
    * Process the given invitation (which should be for the current user) to join the specified Space.
    */
-  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[Unit] = TestOp.fut { state =>
+  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[(Result, Option[UserInfo])] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val session = state.session
     implicit val m = mat
@@ -205,18 +230,37 @@ trait LoginFuncs {
       result <- resultFut
       _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"acceptInvite got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
-      _ = 
-        if (expectFailure)
+      userInfo =
+        if (expectFailure) {
           assert(pickledUserInfo.isEmpty)
-        else {
+          None
+        } else {
           // Normally, make sure there is a legal user info here:
           assert (!pickledUserInfo.isEmpty, s"acceptInvite got an empty return value!")
-          read[UserInfo](pickledUserInfo)
+          Some(read[UserInfo](pickledUserInfo))
         }
     }
-      yield ()
-      
-    inviteResultFut.map((state, _))
+      yield userInfo
+
+    (resultFut zip inviteResultFut).map((state, _))
+  }
+
+  def addGuest(hash: String, spaceInfo: SpaceInfo): TestOp[GuestTestUser] = {
+    for {
+      resultAndUserFut <- acceptInvite(hash, spaceInfo)
+      (result, guest1Opt) = resultAndUserFut
+      guest1 = GuestTestUser(guest1Opt.get)
+      // TODO: this is horrible and hacky, but appears to be correct:
+      _ <- TestOp.update { state =>
+        state.copy(
+          client = state.client.copy(
+            session = result.sess
+          )
+        )
+      }
+      _ <- setUser(guest1)
+    }
+      yield guest1
   }
 }
 

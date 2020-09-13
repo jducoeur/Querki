@@ -22,6 +22,11 @@ trait SecurityFunctions {
    * Fetch all of the members and invitees of this Space.
    */
   def getMembers():Future[(Seq[PersonInfo], Seq[PersonInfo])]
+
+  /**
+   * Fetch the Person info for the current User in the current Space, if they are a member of it.
+   */
+  def getMyInfo(): Future[Option[PersonInfo]]
   
   /**
    * Invite people to join this Space. This may be any number of invitees by email address and any

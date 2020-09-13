@@ -143,9 +143,7 @@ object SecurityMidTests {
       instance <- makeThing(model, instanceName)
 
       // Make the Space members-only readable:
-      perms <- permsFor(space)
-      instancePermThing = perms.instancePermThing.get
-      _ <- changeProp(instancePermThing, std.security.canReadPerm :=> std.security.members)
+      _ <- setToMembersOnly(space)
 
       // Initially, the member isn't a member, and can't see it:
       _ <- checkNameIsMissingFor(instanceName, member)
@@ -157,11 +155,55 @@ object SecurityMidTests {
       // Remove the member, and confirm they can't see it again:
       personInfo <- getPersonInfoFor(member)
       _ <- removeFromSpace(personInfo.person.oid)
-      _ <- spew(s"Removed person")
       _ <- checkNameIsMissingFor(instanceName, member)
     }
       yield ()
 
+  }
+
+  def qi9v5kfifRemoveMultipleGuests: TestOp[Unit] = {
+    val ownerName = "QI9v5kfif Owner"
+    val spaceName = "QI9v5kfif Space"
+
+    for {
+      _ <- step("Regression test for QI.9v5kfif")
+      std <- getStd
+      owner <- setupUserAndSpace(ownerName, spaceName)
+      spaceId <- clientSpaceId()
+
+      // Create a role with read access:
+      roleId <- createRole("Role Name", std.security.canReadPerm)
+      // Create an open invite with that role:
+      sharedLinkInfo <- createShareableLinkForRole(roleId, "The Invite", false, true)
+      linkUrl <- getSharedLinkURL(sharedLinkInfo.thingInfo.oid2)
+      hash = extractOpenInviteHash(linkUrl)
+
+      // The Space is members-only, so we can work with visibility:
+      _ <- setToMembersOnly(spaceId)
+
+      model <- makeModel("The Model")
+      instanceName = "The Instance"
+      instance <- makeThing(model, instanceName)
+      _ <- ClientState.cache
+
+      spaceInfo <- fetchSpaceInfo()
+      guest1 <- addGuest(hash, spaceInfo)
+      guest2 <- addGuest(hash, spaceInfo)
+
+      _ <- checkNameIsRealFor(instanceName, guest1)
+      _ <- checkNameIsRealFor(instanceName, guest2)
+
+      _ <- ClientState.switchToUser(owner)
+
+      guest1Info <- getPersonInfoFor(guest1)
+      guest2Info <- getPersonInfoFor(guest2)
+      _ <- removeFromSpace(guest1Info.person.oid, guest2Info.person.oid)
+
+      // This was where the bug showed up: only one of these two guests would actually be removed:
+      _ <- checkNameIsMissingFor(instanceName, guest1)
+      _ <- checkNameIsMissingFor(instanceName, guest2)
+    }
+      yield ()
   }
 }
 
@@ -174,6 +216,7 @@ class SecurityMidTests extends MidTestBase {
       runTest(regressionTestQIbu6oeej)
       runTest(regressionTestQIbu6of67)
       runTest(qi7w4gbn6RemoveMembers)
+      runTest(qi9v5kfifRemoveMultipleGuests)
     }
   }
 }

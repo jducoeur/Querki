@@ -21,6 +21,10 @@ trait SpaceFuncs {
   def setClientSpace(spaceInfo: SpaceInfo): TestOp[Unit] = TestOp { state =>
     IO.pure((TestState.spaceOptL.set(Some(spaceInfo))(state), ()))
   }
+
+  def clientSpaceId(): TestOp[TID] = {
+    TestOp.fetch(_.curSpace.info.oid)
+  }
   
   def createSpace(name: String): TestOp[TID] = {
     for {

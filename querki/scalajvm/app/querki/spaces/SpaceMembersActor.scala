@@ -102,11 +102,10 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
 				if (AccessControl.isManager(rc.requesterOrAnon, state)) {
 					val resultRM = (RequestM.successful(true) /: memberIds) { (last, memberId) =>
 						last.flatMap { soFar =>
-							if (soFar) {
-								Person.removePerson(rc, memberId)(state, this)
-							} else {
-								RequestM.successful(false)
-							}
+							// Accumulate the results: return true iff all of these return true.
+							// Do we care about these results? Not sure, but QI.9v5kfif was what
+							// happened when we got over-enthusiastic about interpreting them:
+  						Person.removePerson(rc, memberId)(state, this).map(_ && soFar)
 						}
 					}
 
