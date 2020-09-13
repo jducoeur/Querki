@@ -30,6 +30,9 @@ trait SecurityMidFuncs {
   
   def getMembers(): TestOp[(Seq[PersonInfo], Seq[PersonInfo])] =
     TestOp.client { _[SecurityFunctions].getMembers().call() }
+
+  def getMyInfo(): TestOp[Option[PersonInfo]] =
+    TestOp.client { _[SecurityFunctions].getMyInfo().call() }
   
   def invite(emails:Seq[String], collabs:Seq[TID]): TestOp[InviteResponse] =
     TestOp.client { _[SecurityFunctions].invite(emails, collabs).call() }
@@ -68,20 +71,18 @@ trait SecurityMidFuncs {
       yield role
   }
 
-  def getPersonInfoFor(user: TestUser): TestOp[PersonInfo] = {
+  def getPersonInfoFor(user: TestUser)(implicit pos: Position): TestOp[PersonInfo] = {
     for {
       std <- getStd
-      userId <- ClientState.userId(user)
-      // Note that we grant the role to the *Person*, not the *User*. So we need to fetch the Person records, and find
-      // the desired one:
-      membersAndInvitees <- getMembers
-      members = membersAndInvitees._1
+      personInfoOpt <- withUser(user) {
+        for {
+          info <- getMyInfo()
+        }
+          yield info
+      }
     }
-      // TODO: wow, we actually have no good way of finding this! We have the user, and are trying to find the right person.
-      // The connection is via Identity, but we don't have that on either side. Should we provide a way to get the
-      // current user's Person ID in the current Space, as a better way to do this, instead of comparing display names?
-      yield members.find(_.person.displayName == user.display).getOrElse(throw new Exception(s"Couldn't find Space member '${user.base}' to grant Role to!"))
-  }
+      yield personInfoOpt.getOrElse(throw new Exception(s"No Person found for '${user.base}!'"))
+ }
 
   def grantRoleTo(user: TestUser, role: TID): TestOp[Unit] = {
     for {
@@ -158,7 +159,7 @@ trait SecurityMidFuncs {
   def checkNameRealityFor(shouldBeReal: Boolean, name: String, who: TestUser)(implicit position: Position): TestOp[Unit] = {
     for {
       check <- withUser(who) { getThingInfo(TID(name)) }
-      _ = assert(check.isTag != shouldBeReal, s"Expected $name to be ${if (shouldBeReal) "real" else "tag"}, and it wasn't!")
+      _ = assert(check.isTag != shouldBeReal, s"Expected $name to be ${if (shouldBeReal) "real" else "tag"} for ${who.display}, and it wasn't!")
     }
       yield ()
   }

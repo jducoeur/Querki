@@ -54,18 +54,23 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
       case head :: tail :: _ => (head, tail)
     }
   }
-  
+
+  def toPersonInfo(person:Thing):Future[PersonInfo] = {
+    ClientApi.thingInfo(person, rc).map(PersonInfo(_, AccessControl.personRoles(person).map(role => oid2tid(role.id))))
+  }
+
   def getMembers():Future[(Seq[PersonInfo], Seq[PersonInfo])] = {
-    
-    def toPersonInfo(person:Thing):Future[PersonInfo] = {
-      ClientApi.thingInfo(person, rc).map(PersonInfo(_, AccessControl.personRoles(person).map(role => oid2tid(role.id))))
-    }
-    
     for {
       members <- Future.sequence(Person.members(state).toSeq.map(toPersonInfo(_)))
       invitees <- Future.sequence(Person.invitees(state).toSeq.map(toPersonInfo(_)))
     }
       yield (members, invitees)
+  }
+
+  def getMyInfo(): Future[Option[PersonInfo]] = {
+    Person.localPerson(user)
+      .map(personThing => toPersonInfo(personThing).map(Some(_)))
+      .getOrElse(Future.successful(None))
   }
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)

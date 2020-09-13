@@ -39,6 +39,11 @@ object TestOp {
   def fut[T](f: TestState => Future[(TestState, T)]): TestOp[T] = StateT { state =>
     IO.fromFuture(IO(f(state)))
   }
+
+  /**
+   * Declare an error.
+   */
+  def error(ex: => Exception): TestOp[Nothing] = StateT.liftF(IO.raiseError(ex))
   
   /**
    * This wraps the common pattern where we want a test operation that is simply an Autowire call.

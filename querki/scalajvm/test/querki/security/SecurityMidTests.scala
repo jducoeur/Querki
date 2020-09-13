@@ -155,7 +155,6 @@ object SecurityMidTests {
       // Remove the member, and confirm they can't see it again:
       personInfo <- getPersonInfoFor(member)
       _ <- removeFromSpace(personInfo.person.oid)
-      _ <- spew(s"Removed person")
       _ <- checkNameIsMissingFor(instanceName, member)
     }
       yield ()
@@ -185,22 +184,24 @@ object SecurityMidTests {
       model <- makeModel("The Model")
       instanceName = "The Instance"
       instance <- makeThing(model, instanceName)
+      _ <- ClientState.cache
 
       spaceInfo <- fetchSpaceInfo()
-      guest1Opt <- acceptInvite(hash, spaceInfo)
-      guest1 = guest1Opt.get
+      guest1 <- addGuest(hash, spaceInfo)
+      guest2 <- addGuest(hash, spaceInfo)
 
-      guest2Opt <- acceptInvite(hash, spaceInfo)
-      guest2 = guest2Opt.get
+      _ <- checkNameIsRealFor(instanceName, guest1)
+      _ <- checkNameIsRealFor(instanceName, guest2)
 
-      // TODO: create both guests in the world state as TestUsers, so that they we can use switchUser() on them
+      _ <- ClientState.switchToUser(owner)
 
-      // TODO: confirm that both guests can see the Thing
+      guest1Info <- getPersonInfoFor(guest1)
+      guest2Info <- getPersonInfoFor(guest2)
+      _ <- removeFromSpace(guest1Info.person.oid, guest2Info.person.oid)
 
-      // TODO: remove both guests
-
-      // TODO: confirm that neither guest can see the Thing (which should be initially broken for one guest)
-      // TODO: fix the bug in SpaceMembersActor, which shouldn't be worrying about the return code
+      // This was where the bug showed up: only one of these two guests would actually be removed:
+      _ <- checkNameIsMissingFor(instanceName, guest1)
+      _ <- checkNameIsMissingFor(instanceName, guest2)
     }
       yield ()
   }

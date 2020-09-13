@@ -3,7 +3,8 @@ package querki.test.mid
 import play.api.mvc.{Result, Session}
 import monocle.Lens
 import monocle.macros.GenLens
-import querki.data.{SpaceInfo, UserInfo, TID}
+import org.scalactic.source.Position
+import querki.data.{TID, SpaceInfo, UserInfo}
 
 /**
  * Describes the state of the "client" -- the current User, their session info, the Space they are looking at, and
@@ -35,12 +36,26 @@ object ClientState {
   /**
    * Switches to a different active user. This user must have previously been cached!
    */
-  def switchToUser(user: TestUser): TestOp[Unit] = {
+  def switchToUser(user: TestUser)(implicit pos: Position): TestOp[Unit] = {
     for {
       _ <- cache
-      _ <- TestOp.update(state => TestState.clientL.set(state.clientCache(user.base))(state))
+      userState <- fetchUserState(user)
+      _ <- TestOp.update(state => TestState.clientL.set(userState)(state))
     }
       yield ()
+  }
+
+  def fetchUserState(user: TestUser)(implicit pos: Position): TestOp[ClientState] = {
+    for {
+      cache <- TestOp.fetch(_.clientCache)
+      baseName = user.base
+      state <-
+        cache.get(baseName) match {
+          case Some(state) => TestOp.pure(state)
+          case None => TestOp.error(new Exception(s"Unable to find state for a user named '$baseName'!"))
+        }
+    }
+      yield state
   }
 
   /**
