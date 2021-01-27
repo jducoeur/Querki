@@ -61,7 +61,8 @@ object OID {
     try {
       Some(apply(name))
     } catch {
-      case ex:java.lang.NumberFormatException => None
+      // TODO: in principle, we really should return more useful errors here:
+      case ex: Exception => None
     }
   }
   def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)

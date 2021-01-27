@@ -262,6 +262,13 @@ class QLTests extends QuerkiTests {
       
       pql("""[[._something]]""") should equal (expectedWarning("QL.unknownThingId"))      
     }
+
+    // QI.7w4geqa: extra dot causes things to hang:
+    "cope reasonably if the OID syntax is broken" in {
+      implicit val s = new CDSpace
+
+      pql("""[[..123456]]""") should equal (expectedWarning("QL.unknownThingId"))
+    }
   }
   
   "Errors" should {
