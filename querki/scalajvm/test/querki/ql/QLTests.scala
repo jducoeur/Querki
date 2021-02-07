@@ -340,4 +340,18 @@ class QLTests extends QuerkiTests {
             |```]]""".stripReturns) should equal ("```\n[[Foo -> Bar]]\n```")
     }
   }
+
+  ///////////////////
+  //
+  // Regression tests
+  //
+
+  "QI.7w4geqk" should {
+    "be fixed" in {
+      implicit val s = new CDSpace
+
+      // This appears to be a variation of QI.7w4geqa, tested above:
+      pql("""[[.]]""") should equal(expectedWarning("QL.unknownThingId"))
+    }
+  }
 }
