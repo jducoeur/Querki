@@ -73,12 +73,15 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   def fullKey(key:String) = "querki.mail." + key
   lazy val from = Config.getString(fullKey("from"))
   lazy val test = Config.getBoolean(fullKey("test"), false)
+  lazy val dev = Config.getBoolean(fullKey("dev"), false)
   
   // Create the appropriate Email Sender, depending on whether we are in test mode or not. Note
   // that this is a sub-Ecot; we actually fetch it by the EmailSender interface later, rather than
   // holding on to the concrete type, to make sure we keep the interfaces clean.
   if (test) {
     new TestEmailSender(ecology)
+  } else if (dev) {
+    new DevEmailSender(ecology)
   } else {
     new RealEmailSender(ecology)
   }

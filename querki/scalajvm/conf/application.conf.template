@@ -68,6 +68,10 @@ querki {
   }
   
   mail {
+    # When set to true, this turns off the real email stack and just prints out the emails instead. This allows
+    # you to develop workflows that require email (eg, invites) without a convenient SMTP server.
+    dev : false
+
     smtpHost : SMTP HOST
     # Specify the port here, if desired
     # smtpPort : SMTP PORT
