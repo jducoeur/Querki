@@ -24,6 +24,8 @@ class MembersTab(
   val selectedPersons: Rx[Seq[PersonDisplay]] = Rx { personDisplays().filter(_.selected()) }
   val personsAreSelected: Rx[Boolean] = Rx { !selectedPersons().isEmpty }
 
+  val sortedMembers: Seq[PersonInfo] = members.sortBy(_.person.displayName.toLowerCase)
+
   lazy val deleteButton =
     new ButtonGadget(Info,
       disabled := Rx { !personsAreSelected() },
@@ -61,7 +63,7 @@ class MembersTab(
           table(cls:="table table-hover",
             tbody(
               for {
-                member <- members
+                member <- sortedMembers
                 display = new PersonDisplay("info", member, roleMap, customMap, page.std, page)
                 _ = personDisplays() = { personDisplays.now :+ display }
               }
