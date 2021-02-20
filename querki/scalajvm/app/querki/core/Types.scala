@@ -187,7 +187,7 @@ trait NameableType {
 }
 
 // Marker trait for NameTypeBase and everything that descends from it:
-trait IsNameType extends PType[String] 
+trait IsNameType extends PType[String] with IsTextType
 
 trait NameTypeBasis { self:CoreEcot with NameUtils with WithQL =>  
   /**
@@ -220,7 +220,11 @@ trait NameTypeBasis { self:CoreEcot with NameUtils with WithQL =>
       doValidate(v)
       toDisplay(v)
     }
-    
+
+    def rawString(elem:ElemValue):String = {
+      get(elem)
+    }
+
     def getName(context:QLContext)(v:ElemValue) = canonicalize(get(v))
     
     def nameToLink(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {

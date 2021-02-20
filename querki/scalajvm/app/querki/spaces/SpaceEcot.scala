@@ -27,6 +27,7 @@ object SpaceEcotMOIDs extends EcotIds(37) {
   val CreateThingFunctionOID = moid(3)
   val DeleteThingFunctionOID = moid(4)
   val MakePropertyBundleFunctionOID = moid(5)
+  val CopyThingFunctionOID = moid(6)
 }
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
@@ -287,7 +288,58 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       vFut.get.map(_.head)
     }
   }
-  
+
+  lazy val CopyThingFunction = new InternalMethod(CopyThingFunctionOID,
+    toProps(
+      setName("_copyThing"),
+      Categories(querki.datamodel.DataModelTag),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Copy an existing Thing"),
+      Signature(
+        expected = Some(Seq(LinkType), "The Thing to copy"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (LinkType, "The newly-copied Thing.")
+      ),
+      Details(
+        """Occasionally, you want to duplicate an existing Thing. This lets you do exactly that:
+          |it receives a Thing, and produces a copy of it.
+          |
+          |This may take any number of property-setter parameters, the same as in `_createThing`. These
+          |will override the copied parameters from the original Thing.
+          |
+          |Note that `Link Name` must be unique, so if you try to simply copy something that has a `Link Name`,
+          |it is likely to fail. In this case, you should set the `Link Name` in the operation:
+          |
+          |[[```
+          |_copyThing(Link Name(""New Thing Link Name""))
+          |```]]
+          |
+          |If you feed a List into `_copyThing`, it will copy all of them. **This is dangerous**, so please
+          |don't abuse it!
+          |
+          |Note that this will copy the Display Name of the original Thing if there was one, so you will
+          |often want to feed this into a call to `_edit`, to fix up those details.""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      val vFut = for {
+        original <- inv.contextAllThings
+        model = original.model
+        baseProps = original.propMap
+        overrideProps <- getPropVals(inv, inv.context, 0)
+        initialProps = baseProps ++ overrideProps
+        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
+        (thingId, newState) <- inv.fut(spaceRegion ? msg map {
+          case ThingFound(id, s) => { (id, s) }
+        })
+      }
+        yield inv.context.nextFrom(ExactlyOne(LinkType(thingId)), transformThing).withState(newState)
+
+      vFut.get.map(_.head)
+    }
+  }
+
+
   lazy val DeleteThingFunction = new InternalMethod(DeleteThingFunctionOID,
     toProps(
       setName("_deleteThing"),
@@ -412,6 +464,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
   override lazy val props = Seq(
     ChangeProperties,
     CreateThingFunction,
+    CopyThingFunction,
     DeleteThingFunction,
     MakePropertyBundleFunction,
     CreateHere
