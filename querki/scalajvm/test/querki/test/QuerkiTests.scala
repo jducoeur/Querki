@@ -6,10 +6,10 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import models.{Thing, OID}
 import querki.core.QLText
 import querki.ecology._
-import querki.globals.{awaitIntentionally, Ecology, EcologyMember, EcologyInterface, QLog, QuerkiEcot}
+import querki.globals.{awaitIntentionally, Ecology, QLog, EcologyInterface, EcologyMember, QuerkiEcot}
 import querki.identity.User
 import querki.time.{DateTime, TimeProvider}
-import querki.values.{SpaceState, QLContext, RequestContext}
+import querki.values.{SpaceState, QLContext, RequestContext, PropAndVal}
 
 class QuerkiTests 
   extends WordSpec
@@ -171,8 +171,16 @@ class QuerkiTests
    */
   def linkText(t:Thing):String = {
     // This is a bit convoluted, but is what we actually display in the link text. Indeed, it's
-    // arguably insufficient -- we should probably be factoring nameOrComputed into here.
-    val display = awaitIntentionally(t.fullLookupDisplayName.get.renderPlain).raw
+    // arguably insufficient -- we should be factoring nameOrComputed into here.
+    def fullLookupDisplayName:Option[PropAndVal[_]] = {
+      val dispOpt = t.localProp(DisplayNameProp)
+      if (dispOpt.isEmpty || dispOpt.get.isEmpty)
+        t.localProp(Core.NameProp)
+      else
+        dispOpt
+    }
+
+    val display = awaitIntentionally(fullLookupDisplayName.get.renderPlain).raw
     val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
     "[" + display + "](" + name + ")"     
   }

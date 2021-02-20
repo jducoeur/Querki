@@ -24,15 +24,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   
   def localProp[VT, CT](prop:Property[VT, _]):Option[PropAndVal[VT]] = thing.localProp(prop)
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = thing.getPropOpt(prop)
-  
-  def fullLookupDisplayName:Option[PropAndVal[_]] = {
-    val dispOpt = localProp(DisplayNameProp)
-    if (dispOpt.isEmpty || dispOpt.get.isEmpty)
-      localProp(NameProp)
-    else
-      dispOpt
-  }
-  
+
   def nameOrComputedWiki(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
     Basic.nameOrComputedCore(this)
   }

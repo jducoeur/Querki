@@ -11,7 +11,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.types._
-import querki.values.{ElemValue, QFut, QLContext, RequestContext, SpaceState, StateCacheKey}
+import querki.values.{SpaceState, ElemValue, QLContext, RequestContext, QFut, StateCacheKey, PropAndVal}
 
 class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
@@ -21,9 +21,10 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   val Types = initRequires[querki.types.Types]
   
   lazy val IsModelProp = Core.IsModelProp
-  
+  def NameProp = Core.NameProp
+
   val BasicTag = querki.core.CoreTag
-  
+
   /***********************************************
    * API
    ***********************************************/
@@ -40,33 +41,80 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
    * 
    * As always, we don't use the dynamic cache lightly. We use it here because few operations get hit as
    * often as nameOrComputed, and it can be *very* expensive if Computed Name is being used.
+   *
+   * The function is ghastly, and could be made a bit cleaner with, eg, some OptionT. But this is the hottest of
+   * hot paths, so we're going to inline it all.
+   *
+   * TODO: when we can, rewrite this in terms of IO, which won't be nearly as horrible.
    */
-  def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
+  def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState): Future[Wikitext] = {
     nameCache.getOrElseUpdate(tops.id, {
-      // If the name is "empty", for various definitions of empty, just use the TID:
-      def fallback() = Wikitext(tops.id.toThingId.toString)
-      def checkLength(w:Wikitext):Wikitext = {
-        if (w.plaintext.length() > 0)
-          w
-        else
-          fallback()
-      }
       def strip(w:Wikitext):Wikitext = {
         Wikitext(w.strip)
       }
-      
-      val localName = tops.fullLookupDisplayName
-      if (localName.isEmpty) {
-        val computed:Option[Future[Wikitext]] = for {
-          pv <- tops.getPropOpt(ComputedNameProp)
-          v <- pv.firstOpt
+
+      def fromOID: Wikitext = Wikitext(tops.id.toThingId.toString)
+
+      // Step three, invoked below:
+      // If the name is "empty", for various definitions of empty, use the Link Name, or failing that the TID:
+      def fromLinkNameOrOID(): Future[Wikitext] = {
+        val localOpt = tops.localProp(NameProp)
+        if (localOpt.isEmpty || localOpt.get.isEmpty) {
+          Future.successful(fromOID)
+        } else {
+          localOpt.get.renderPlain.map { w =>
+            if (w.plaintext.length > 0)
+              w
+            else
+              fromOID
+          }
         }
-          yield QL.process(v, tops.thisAsContext)
-          
-        // We need to strip any Wikitext out of the computed name, or we wind up with broken links-in-links:
-        computed.map { fut => fut.map(w => strip(checkLength(w))) }.getOrElse(Future.successful(fallback()))
-      } else {
-        localName.get.renderPlain.map(checkLength(_))
+      }
+
+      // Step one: try the Display Name
+      val dispOpt = tops.localProp(DisplayNameProp)
+      val dispPropVal: Option[PropAndVal[PlainText]] = if (dispOpt.isEmpty || dispOpt.get.isEmpty)
+        None
+      else
+        dispOpt
+
+      val dispFutOpt: Future[Option[Wikitext]] = dispPropVal match {
+        case Some(pv) => {
+          pv.renderPlain.map { w =>
+            if (w.plaintext.length > 0)
+              Some(w)
+            else
+              None
+          }
+        }
+        case None => Future.successful(None)
+      }
+
+      dispFutOpt.flatMap {
+        _.map(Future.successful(_)).getOrElse {
+          // Step two: no Display Name, so try Computed Name
+          val computed: Option[Future[Wikitext]] = for {
+            pv <- tops.getPropOpt(ComputedNameProp)
+            v <- pv.firstOpt
+          }
+            yield QL.process(v, tops.thisAsContext)
+
+          computed.map { fut =>
+            // We need to strip any Wikitext out of the computed name, or we wind up with broken links-in-links:
+            fut.flatMap { w =>
+              val stripped = strip(w)
+              if (stripped.plaintext.length > 0) {
+                Future.successful(stripped)
+              } else {
+                // The Computed Name turns out to be empty, so on to Step Three:
+                fromLinkNameOrOID()
+              }
+            }
+          }.getOrElse(
+            // No Computed name, so fall back to Link Name or OID:
+            fromLinkNameOrOID()
+          )
+        }
       }
     })
   }
