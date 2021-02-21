@@ -329,6 +329,13 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
           |The resulting displayed name is only as unique as you make it. Try to use a combination of Properties
           |that will consistently result in a unique name, to make it clear which Thing is which.
           |
+          |If you are using Computed Name on your Model, odds are that you are *not* using Name. In this case, you
+          |should seriously consider unchecking the `Derive the Link Name from the Name` checkbox in your Model's
+          |design. This will allow you to set explicit Link Names for your instances, which are sometimes more
+          |appropriate if you want to link to those instances from outside the Space. (Note that OIDs are globally
+          |unique, and will never be re-used -- so if you extract an App from the Space, or export/re-import the
+          |Space, it will assign new OIDs. Link Names are only unique within this particular Space.)
+          |
           |This is a pretty advanced Property, and only recommended for relatively complex Spaces.""".stripMargin)))
   
   // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
