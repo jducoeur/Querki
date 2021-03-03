@@ -19,9 +19,10 @@ import querki.spaces.{TracingSpace, SpacePure}
 import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
-import querki.util.{SingleRoutingParent, QuerkiActor, TimeoutChild, PublicException}
+import querki.util.{PublicException, SingleRoutingParent, QuerkiActor, TimeoutChild}
 import querki.values.{SpaceVersion, SpaceState, RequestContext}
 import HistoryFunctions._
+import akka.persistence.query.scaladsl.{ReadJournal, CurrentEventsByPersistenceIdQuery}
 
 /**
  * This is a very simplistic wrapper around SpaceHistory, so that the latter can only be in
@@ -56,9 +57,20 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
   def persistenceId = id.toThingId.toString
 
   lazy val tracing = TracingSpace(id, "SpaceHistory: ")
+
+  // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
+  // likely with machinery to override Ecology members. But it'll do for now.
+  lazy val test =
+    Config.getString("akka.persistence.journal.plugin") == "inmemory-journal"
   
-  lazy val readJournal = PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
-    
+  lazy val readJournal: ReadJournal with CurrentEventsByPersistenceIdQuery =
+    if (test)
+      // During tests, we are using the in-memory journal. Yes, this is the documented way to do it:
+      //   https://github.com/dnvriend/akka-persistence-inmemory
+      PersistenceQuery(context.system).readJournalFor("inmemory-read-journal").asInstanceOf[ReadJournal with CurrentEventsByPersistenceIdQuery]
+    else
+      PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
+
   case class HistoryRecord(sequenceNr:Long, evt:SpaceEvent, state:SpaceState)
   type StateHistory = Vector[HistoryRecord]
   val StateHistory = Vector
@@ -291,7 +303,18 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
             
             findThingRec(history.size - 1) match {
               case Some(thing) => {
-                spaceRouter.request(CreateThing(user, id, thing.kind, thing.model, thing.props, Some(thingId))) foreach {
+                val createMsg =
+                  CreateThing(
+                    user,
+                    id,
+                    thing.kind,
+                    thing.model,
+                    thing.props,
+                    Some(thingId),
+                    creatorOpt = thing.creatorOpt,
+                    createTimeOpt = thing.createTimeOpt
+                  )
+                spaceRouter.request(createMsg) foreach {
                   case resp:ThingFound => sender ! resp
                   case other => throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
                 }

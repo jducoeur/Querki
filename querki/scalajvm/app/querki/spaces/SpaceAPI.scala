@@ -1,15 +1,14 @@
 package querki.spaces
 
 import akka.actor._
-
 import org.querki.requester._
-
 import models._
-
+import org.joda.time.DateTime
+import querki.identity.IdentityPersistence.UserRef
 import querki.identity.User
-import querki.persistence.{PersistentActorCore, UseKryo}
+import querki.persistence.{UseKryo, PersistentActorCore}
 import querki.spaces.messages.SpaceMessage
-import querki.values.{SpaceState, SpaceVersion}
+import querki.values.{SpaceVersion, SpaceState}
 
 /**
  * The abstraction of a Space, so that SpacePlugins can interact with it.
@@ -35,7 +34,14 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
    * 
    * @param sendAck Iff true, the usual ThingFound message will be sent to sender.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind.Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult]
+  def doCreate(who:User,
+    modelId:OID,
+    props:PropMap,
+    kind:Kind.Kind,
+    thingIdOpt:Option[OID],
+    creatorOpt: Option[UserRef] = None,
+    createTimeOpt: Option[DateTime] = None
+  )(implicit state:SpaceState):RM[ChangeResult]
   
   /**
    * The newer and better way to modify a Thing.

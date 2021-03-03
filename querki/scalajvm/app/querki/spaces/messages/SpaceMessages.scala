@@ -3,15 +3,14 @@ package querki.spaces.messages
 import language.implicitConversions
 import models._
 import Kind._
-import MIMEType.MIMEType
-import models.{ThingId, UnknownOID, OID, AsOID}
-import querki.conversations.messages.ConversationMessage
+import models.{ThingId, OID}
+import org.joda.time.DateTime
 import querki.history.HistoryFunctions.SetStateReason
+import querki.identity.IdentityPersistence.UserRef
 import querki.identity.{IdentityId, User, PublicIdentity}
-import querki.session.messages.SessionMessage
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.{StatusNormal, SpaceStatusCode}
-import querki.values.{SpaceVersion, SpaceState, RequestContext}
+import querki.values.{SpaceState, RequestContext}
 import querki.util.PublicException
 
 sealed trait SpaceMgrMsg
@@ -67,7 +66,17 @@ case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String
  * 
  * If thingIdOpt is set, then we are re-creating a previously existing Thing from the History.
  */
-case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap, thingIdOpt:Option[OID] = None, localCall:Boolean = true) extends SpaceMessage(req, space)
+case class CreateThing(
+  req:User,
+  space:OID,
+  kind:Kind,
+  modelId:OID,
+  props:PropMap,
+  thingIdOpt:Option[OID] = None,
+  localCall:Boolean = true,
+  creatorOpt: Option[UserRef] = None,
+  createTimeOpt: Option[DateTime] = None
+) extends SpaceMessage(req, space)
 
 /**
  * TODO: this is largely redundant with ChangeProps and ChangeModel at this point. It should be removed.

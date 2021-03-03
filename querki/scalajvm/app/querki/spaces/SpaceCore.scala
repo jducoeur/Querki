@@ -1,29 +1,26 @@
 package querki.spaces
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.{Success, Failure, Try}
 import akka.actor._
 import Actor.Receive
 import akka.persistence._
-
 import models._
 import models.ModelPersistence.DHSpaceState
 import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{Identity, User, PublicIdentity, IdentityPersistence}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.publication.{CurrentPublicationState, PublishedAck}
 import querki.time.DateTime
 import querki.util.UnexpectedPublicException
-import querki.values.{SpaceState, SpaceVersion}
-
+import querki.values.{SpaceVersion, SpaceState}
 import messages._
 import SpaceError._
 import SpaceMessagePersistence._
-  
+
 /**
  * The result from a single Space-changing function.
  * 
@@ -52,7 +49,7 @@ case class ChangeResult(events:List[SpaceEvent with UseKryo], changedThing:Optio
  */
 abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecology) 
   extends SpaceMessagePersistenceBase with SpaceAPI[RM] with PersistentActorCore with PersistentRMCore[RM]
-  with SpacePure with EcologyMember with ModelPersistence 
+  with SpacePure with EcologyMember with ModelPersistence
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[querki.apps.Apps]
@@ -343,7 +340,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       Kind.Thing, None)(state)
   }
 
-  def createSomething(who:User, modelId:OID, propsIn:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
+  def createSomething(
+    who:User,
+    modelId:OID,
+    propsIn:PropMap,
+    kind:Kind,
+    thingIdOpt:Option[OID],
+    creatorOpt: Option[UserRef] = None,
+    createTimeOpt: Option[DateTime] = None
+  )(state:SpaceState):RM[ChangeResult] = {
     tracing.trace(s"createSomething($modelId) forcing ID $thingIdOpt")
     implicit val s = state
     val changedProps = changedProperties(Map.empty, propsIn)
@@ -387,7 +392,15 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       } else if (isDuplicateName)
         rtc.failed(new PublicException(NameExists, name.get))
       else {
-        doCreate(who, modelId, props, kind, thingIdOpt)(state)
+        doCreate(
+          who,
+          modelId,
+          props,
+          kind,
+          thingIdOpt,
+          creatorOpt,
+          createTimeOpt
+        )(state)
       }
     }
   }
@@ -400,10 +413,20 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
    * of an OID to be allocated at the end of time. Not at all clear how to do that without seriously ripping the
    * system apart, though.
    */
-  def doCreate(who:User, modelId:OID, props:PropMap, kind:Kind, thingIdOpt:Option[OID])(state:SpaceState):RM[ChangeResult] = {
+  def doCreate(
+    who:User,
+    modelId:OID,
+    props:PropMap,
+    kind:Kind,
+    thingIdOpt:Option[OID],
+    creatorOpt: Option[UserRef] = None,
+    createTimeOpt: Option[DateTime] = None
+  )(implicit state:SpaceState):RM[ChangeResult] = {
     tracing.trace(s"doCreate($modelId, $thingIdOpt)")
-    // All tests have passed, so now we actually persist the change: 
-    val modTime = DateTime.now
+    // All tests have passed, so now we actually persist the change:
+    val creator: UserRef = creatorOpt.getOrElse(Person.user2Ref(who))
+    val createTime = createTimeOpt.getOrElse(DateTime.now)
+
     val thingIdRM = thingIdOpt.map(rtc.successful(_)).getOrElse(allocThingId())
     thingIdRM.flatMap { thingId =>
       // QI.7w4g8ne: we've been hitting duplicate OIDs, and stomping old data. So let's put a
@@ -414,9 +437,8 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
         QLog.error(s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}")
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
       }
-      implicit val s = state
-      val msg = DHCreateThing(who, thingId, kind, modelId, props, modTime, thingIdOpt.isDefined)
-      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(who, kind, thingId, modelId, props, modTime)(state)))    
+      val msg = DHCreateThing(creator, thingId, kind, modelId, props, createTime, thingIdOpt.isDefined)
+      rtc.successful(ChangeResult(List(msg), Some(thingId), createPure(creator, kind, thingId, modelId, props, createTime)(state)))
     }
   }
   
@@ -846,7 +868,7 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
       respond(SpaceInfo(currentState.id, currentState.name, currentState.displayName, currentState.ownerHandle))
     }
     
-    case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall) => {
+    case CreateThing(who, spaceId, kind, modelId, props, thingIdOpt, localCall, creatorOpt, createTimeOpt) => {
       // Note that we can't use isPublishable(), because that explicitly excludes Models. Right now,
       // we are asking whether this Thing's *model* is publishable. Also, we need to exclude
       // sub-Models -- those belong here, in the main fork.
@@ -860,7 +882,12 @@ abstract class SpaceCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecolog
         
       val fullState = if (pub) enhancedState else currentState
       
-      runAndSendResponse("createSomething", localCall, createSomething(who, modelId, props, kind, thingIdOpt), pub)(fullState)
+      runAndSendResponse(
+        "createSomething",
+        localCall,
+        createSomething(who, modelId, props, kind, thingIdOpt, creatorOpt, createTimeOpt),
+        pub
+      )(fullState)
     }
     
     // Note that ChangeProps and ModifyThing handling are basically the same except for the replaceAllProps flag.
