@@ -348,8 +348,14 @@ private [history] class SpaceHistory(e:Ecology, val id:OID, val spaceRouter:Acto
 
 object SpaceHistory {
   def actorProps(e:Ecology, id:OID, spaceRouter:ActorRef) = Props(classOf[SpaceHistoryParent], e, id, spaceRouter)
-  
-  sealed trait HistoryMessage
+
+  /**
+   * Note that HistoryMessages *can* be used as a SpaceMessagePayload, but mostly are routed directly.
+   * TODO: we might want to change that, for consistency. Is there a reason for this to be a special
+   * snowflake?
+   */
+  sealed trait HistoryMessage extends SpaceMessagePayload
+
   /**
    * Fetches the HistorySummary (as described in the public API).
    */

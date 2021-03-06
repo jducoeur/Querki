@@ -52,6 +52,35 @@ object HistoryMidTests {
     }
       yield ()
   }
+
+  /**
+   * This tests the _undeleteThing function.
+   */
+  lazy val test7w4ger8: TestOp[Unit] = {
+    for {
+      _ <- step("Regression test for QI.7w4ger8")
+      std <- getStd
+      owner <- setupUserAndSpace("QI7w4ger8 Owner", "QI7w4ger8 Space")
+      spaceId <- TestOp.fetch(_.curSpace.info.oid)
+
+      model <- makeModel("The Model")
+      instance <- makeThing(model, "The Instance")
+      originalRendered <- evaluateQL(instance, "Name")
+
+      // Get the OID, which we will need:
+      oidWiki <- evaluateQL(instance, "_oid")
+      oid = oidWiki.plaintext
+
+      // Delete the Thing...
+      _ <- deleteThing(instance)
+      // ... then undelete it with the _undeleteThing function...
+      info <- evaluateQL(spaceId, s"_undeleteThing($oid)")
+      // ... and check that it looks correct:
+      rendered <- evaluateQL(instance, "Name")
+      _ <- testAssert(rendered.plaintext === originalRendered.plaintext)
+    }
+      yield ()
+  }
 }
 
 @Slow
@@ -61,6 +90,7 @@ class HistoryMidTests extends MidTestBase {
   "HistoryMidTests" should {
     "pass" in {
       runTest(testQIbu6oeer)
+      runTest(test7w4ger8)
     }
   }
 }

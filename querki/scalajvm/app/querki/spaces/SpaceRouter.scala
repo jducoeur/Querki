@@ -161,6 +161,7 @@ private[spaces] class SpaceRouter(e:Ecology)
         case p:SpaceMembersBase => members.forward(msg)
         case p:SpaceTimingActor.SpaceTimingMsg => timingOpt.map(_.forward(msg))
         case p:PublicationCommands.PublicationCommand => publication.forward(p)
+        case p: SpaceHistory.HistoryMessage => history.forward(p)
       }
     }
     
@@ -184,7 +185,7 @@ private[spaces] class SpaceRouter(e:Ecology)
     
     // Messages for the SpaceHistory:
     case msg:SpaceHistory.HistoryMessage => {
-      tracing.trace(s"Sforwarding ${msg.getClass.getSimpleName}")
+      tracing.trace(s"forwarding ${msg.getClass.getSimpleName}")
       history.forward(msg)
     }
     

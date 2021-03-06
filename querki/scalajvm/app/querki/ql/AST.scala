@@ -59,7 +59,7 @@ private[ql] case class QLBindingDef(n:String, func:Option[QLPhrase] = None, para
     }
   }
 }
-private[ql] case class QLThingId(n:String) extends QLName(n) {
+case class QLThingId(n:String) extends QLName(n) {
   def reconstructString = n
 }
 private[ql] sealed abstract class QLTextPart {

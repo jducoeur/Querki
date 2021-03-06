@@ -39,6 +39,9 @@ Func.unknownPropOID=Encountered unknown Property {0}; did you delete it?
 Func.unknownThing={0} received a link to an unknown Thing! (Maybe something got deleted?)
 Func.wrongType={0} didn't receive the expected type {1}
 
+History.undeleteNoOid=_undeleteThing requires an "oid" parameter
+History.undeleteNotOid=The parameter to _undeleteThing, {0}, is not an OID
+
 Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export its instances.
 Imexport.unknownTag=That XML file contained unknown tag "{0}"
 Imexport.ownerOnly=Only the owner of the Space is allowed to export it.

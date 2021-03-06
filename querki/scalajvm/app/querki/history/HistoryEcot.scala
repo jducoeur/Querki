@@ -1,17 +1,23 @@
 package querki.history
 
+import akka.pattern._
 import querki.ecology._
 import querki.globals._
 import querki.values.RequestContext
-
 import HistoryFunctions._
+import models.OID
+import querki.history.SpaceHistory.RestoreDeletedThing
+import querki.ql.{QLExp, QLThingId, QLCall}
+import querki.spaces.messages.{ThingFound, SpaceSubsystemRequest}
+import querki.util.{PublicException, ActorHelpers}
 
 object MOIDs extends EcotIds(65) {
   val FindAllStompedCmdOID = moid(1)
   val HistoryPermOID = moid(2)
+  val UndeleteFunctionOID = moid(3)
 }
 
-class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History {
+class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History with querki.core.MethodDefs {
   import MOIDs._
   
   val cmds = new HistoryCommands(e)
@@ -20,7 +26,9 @@ class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History {
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
-  
+
+  implicit val timeout = ActorHelpers.timeout
+
   override def postInit() = {
     ApiRegistry.registerApiImplFor[HistoryFunctions, HistoryFunctionsImpl](SpaceOps.spaceRegion, allowedDuringHistory = true)
   }
@@ -37,7 +45,7 @@ class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History {
   def isViewingHistory(rc:RequestContext):Boolean = {
     rc.rawParam("_historyVersion").map(_.length > 0).getOrElse(false)
   }
-  
+
   lazy val HistoryPerm = AccessControl.definePermission(
     HistoryPermOID,
     "Can View History", 
@@ -46,8 +54,68 @@ class HistoryEcot(e:Ecology) extends QuerkiEcot(e) with History {
     Seq(AccessControl.AppliesToSpace),
     false, 
     false)
-    
+
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+
+  lazy val UndeleteFunction = new InternalMethod(UndeleteFunctionOID,
+    toProps(
+      setName("_undeleteThing"),
+      Summary("Given the OID of a deleted Thing, restore it"),
+      Signature(
+        expected = None,
+        reqs = Seq(
+          ("oid", LinkType, "The OID of the Thing to restore")
+        ),
+        opts = Seq.empty,
+        returns = (LinkType, "The restored Thing")
+      ),
+      Details(
+        """Note that the OID is a parameter rather than a received value, and it has to be a literal OID.
+          |That's necessarily true (you can't pass in the OID, since the Thing doesn't exist any more).
+          |
+          |This is primarily intended for internal use, from the Deleted Things page.
+          |""".stripMargin)
+    )
+  ) {
+    // Since the Thing presumably doesn't exist in this Space currently, it would be illegal to process it in
+    // the normal way -- we would get a Thing Not Found error. Instead, we have to grovel down through the
+    // raw parse tree to fetch the OID itself:
+    def expToOid(exp: QLExp): Option[OID] = {
+      for {
+        phrase <- exp.phrases.headOption
+        op <- phrase.ops.headOption
+        call <- op match {
+          case call: QLCall => Some(call)
+          case _ => None
+        }
+        thingIdStr <- call.name match {
+          case QLThingId(n) => Some(n)
+          case _ => None
+        }
+        oid <- OID.parseOpt(thingIdStr)
+      }
+        yield oid
+    }
+
+    override def qlApply(inv:Invocation): QFut = {
+      val user = inv.context.request.requesterOrAnon
+      for {
+        expOpt <- inv.rawParam("oid")
+        exp <- inv.opt(expOpt, Some(PublicException("History.undeleteNoOid")))
+        oid <- inv.opt(expToOid(exp), Some(PublicException("History.undeleteNotOid", exp.reconstructString)))
+        ThingFound(id, newState) <-
+          inv.fut(SpaceOps.spaceRegion ?
+            SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id,
+              RestoreDeletedThing(user, oid)))
+      }
+        yield ExactlyOne(LinkType(id))
+    }
+  }
+
   override lazy val props = Seq(
-    HistoryPerm
+    HistoryPerm,
+    UndeleteFunction
   )
 }
