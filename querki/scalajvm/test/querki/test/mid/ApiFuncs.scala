@@ -2,18 +2,16 @@ package querki.test.mid
 
 import cats._
 import cats.data._
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
-
 import autowire._
-
 import play.api.mvc.Session
-
 import querki.api._
 import querki.data.ThingInfo
 import querki.globals._
-
 import AllFuncs._
+
+import scala.concurrent.ExecutionContext
 
 trait ApiFuncs {
   /**
@@ -41,6 +39,8 @@ trait ApiFuncs {
         Map.empty
       )
 
+    // In the cats-effect 2 world, we need this:
+    implicit val cs: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
     IO.fromFuture { IO { stateFut zip fut(()) } }
   }
   

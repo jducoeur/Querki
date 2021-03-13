@@ -1,10 +1,10 @@
 package querki.test.mid
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats._
 import cats.data._
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 
 import scala.reflect.ClassTag
@@ -31,6 +31,10 @@ object TestOp {
   def withState[R](f: TestState => R): TestOp[R] = TestOp { state =>
     IO.pure(state, f(state))
   }
+
+  // It's a bit evil to have this as a global, but since it is depending on a currently-global EC,
+  // the situation is already plenty evil:
+  implicit lazy val cs: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
 
   /**
    * This wraps up the common pattern of a "test operation", which takes a ClientState, and does

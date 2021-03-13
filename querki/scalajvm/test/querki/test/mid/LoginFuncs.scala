@@ -1,10 +1,10 @@
 package querki.test.mid
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Success, Failure}
 import cats._
 import cats.data._
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import upickle.default._
 import autowire._
@@ -15,7 +15,7 @@ import play.api.mvc.{Result, Session}
 import play.api.test._
 import play.api.test.Helpers._
 import controllers.LoginController
-import querki.data.{SpaceInfo, UserInfo, TID}
+import querki.data.{TID, SpaceInfo, UserInfo}
 import querki.globals._
 import querki.session.UserFunctions
 import querki.util.SafeUrl
@@ -68,6 +68,8 @@ case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Ses
 trait LoginFuncs {
   private def controller(implicit app: Application) = app.injector.instanceOf[LoginController]
   private def mat(implicit app: Application) = app.materializer
+
+  implicit lazy val cs: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
     
   def trySignup(email: String, password: String, handle: String, display: String)(implicit app: Application): Future[Result] = {
     val request = formRequest(
@@ -117,6 +119,7 @@ trait LoginFuncs {
   def validateSignup: TestOp[Unit] = StateT { state =>
     implicit val ecology = state.harness.ecology
     val user = state.testUser
+    // Needed for cats-effect 2:
     for {
       validateHashRaw <- IO { EmailTesting.extractValidateHash()}
       validateHash = SafeUrl.decode(validateHashRaw)

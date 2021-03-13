@@ -2,7 +2,7 @@ package querki.graphql
 
 import cats.data._
 import cats.data.Validated._
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import models.{Thing, OID, ThingId, DisplayText, PType, Property, Wikitext}
 import play.api.libs.json._
@@ -16,6 +16,7 @@ import querki.values.{PropAndVal, RequestContext, QValue}
 import sangria.ast._
 import sangria.parser.QueryParser
 
+import scala.concurrent.ExecutionContext
 import scala.util.{Success, Failure}
 
 class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, val ecology: Ecology)
@@ -32,6 +33,10 @@ class FPComputeGraphQL(implicit val rc: RequestContext, val state: SpaceState, v
   lazy val Core = ecology.api[querki.core.Core]
   lazy val QL = ecology.api[querki.ql.QL]
   lazy val Tags = ecology.api[querki.tags.Tags]
+
+  // This bit of evil is required for cats-effect 2. Note that it is sucking down the global EC, which is
+  // why it is evil. But that's a headache for another day:
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
 
   def handle(query: String): IO[JsValue] = {
     val result: IO[Either[NonEmptyChain[GraphQLError], JsValue]] = processQuery(query).value
