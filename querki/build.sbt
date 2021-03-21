@@ -63,7 +63,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
       "com.github.pathikrit" %% "better-files" % "2.17.1",
       "org.typelevel" %% "cats-core" % "2.0.0",
       "org.typelevel" %% "cats-effect" % "2.0.0",
-//      "co.fs2" %% "fs2-core" % "2.1.0",
+      "co.fs2" %% "fs2-core" % "2.1.0",
       "com.github.julien-truffaut" %%  "monocle-core"  % "1.5.0",
       "com.github.julien-truffaut" %%  "monocle-macro" % "1.5.0",
       // Updated version of the XML library:
