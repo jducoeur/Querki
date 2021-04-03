@@ -16,7 +16,7 @@ object MOIDs extends EcotIds(65) {
   val FindAllStompedCmdOID = moid(1)
   val HistoryPermOID = moid(2)
   val UndeleteFunctionOID = moid(3)
-  val ListDeletedThingsOID = moid(4)
+  val ShowDeletedThingsOID = moid(4)
 }
 
 class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.core.MethodDefs {
@@ -118,18 +118,18 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     }
   }
 
-  lazy val ListDeletedThings = new InternalMethod(
-    ListDeletedThingsOID,
+  lazy val ShowDeletedThings = new InternalMethod(
+    ShowDeletedThingsOID,
     toProps(
-      setName("_listDeletedThings"),
-      Summary("Lists the Things in this Space that pass the given predicate, that have been deleted."),
+      setName("_showDeletedThings"),
+      Summary("Shows the Things in this Space that pass the given predicate, that have been deleted."),
       Signature(
         expected = None,
         reqs = Seq.empty,
         opts = Seq(
           ("predicate", AnyType, Core.QNone, "A QL expression returning YesOrNoType, to try on each deleted Thing")
         ),
-        returns = (AnyType, "A List of the deleted Things")
+        returns = (TextType, "A List of Text entries for the deleted Things")
       ),
       Details("""If no predicate is given, all deleted Things will be returned.""")
     )
@@ -148,14 +148,16 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
             )
         )
         thing <- inv.iter(things)
+        displayStr =
+          s"${thing.display.str} (${thing.oid.toThingId}) -- deleted ${thing.when.toString("YYYY-MM-dd hh:mma")}"
         // TODO: create a more useful return display
-      } yield ExactlyOne(TextType(thing.display.str))
+      } yield ExactlyOne(TextType(displayStr))
     }
   }
 
   override lazy val props = Seq(
     HistoryPerm,
     UndeleteFunction,
-    ListDeletedThings
+    ShowDeletedThings
   )
 }
