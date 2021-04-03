@@ -20,10 +20,10 @@ import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
 import querki.time._
 import querki.util.{PublicException, QuerkiActor, SingleRoutingParent, TimeoutChild}
-import querki.values.{QLContext, QValue, RequestContext, SpaceState, SpaceVersion}
+import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 import HistoryFunctions._
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
-import querki.core.QLText
+import querki.ql.QLExp
 
 /**
  * This is a very simplistic wrapper around SpaceHistory, so that the latter can only be in
@@ -299,9 +299,8 @@ private[history] class SpaceHistory(
   // TODO: someday, once we have rewritten the stack to use IO, this should be much, much faster:
   def findAllDeleted(
     rc: RequestContext,
-    predicateOpt: Option[QLText]
+    predicateOpt: Option[QLExp]
   ): Future[List[OneDeletedThing]] = {
-    val predicate = predicateOpt.getOrElse(QLText("True"))
     readCurrentHistory().flatMap { _ =>
       history
         .foldLeft(Future.successful((List.empty[OneDeletedThing], emptySpace))) { (requestM, record) =>
@@ -315,8 +314,12 @@ private[history] class SpaceHistory(
                 // Thing still existed:
                 val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
                 val context = QLContext(ExactlyOne(LinkType(thingId)), Some(rc), endTime)(prevState, ecology)
-                QL.processMethod(predicate, context).flatMap { qv =>
-                  if (toBoolean(qv)) {
+                val predicateResultFut: Future[Boolean] = predicateOpt match {
+                  case Some(predicate) => QL.processExp(context, predicate).map(_.value).map(toBoolean(_))
+                  case _               => Future.successful(true)
+                }
+                predicateResultFut.flatMap { passes =>
+                  if (passes) {
                     // Passes the predicate, so figure out its name, and add it to the list:
                     prevState.resolveOpt(thingId)(_.things).map { thing =>
                       thing.nameOrComputed(rc, prevState).map { name =>
@@ -540,7 +543,7 @@ object SpaceHistory {
    */
   case class ForAllDeletedThings(
     rc: RequestContext,
-    predicate: Option[QLText]
+    predicate: Option[QLExp]
   ) extends HistoryMessage
 
   case class OneDeletedThing(

@@ -169,6 +169,17 @@ class QLEcot(e: Ecology)
     parserProcessMethodProfiler.profile { parser.processMethodToWikitext }
   }
 
+  def processExp(
+    ci: QLContext,
+    exp: QLExp,
+    invOpt: Option[Invocation] = None,
+    parserOpt: Option[QLParser] = None,
+    initialBindings: Option[Map[String, QValue]] = None
+  ): Future[QLContext] = {
+    val processor = parserCreateProfiler.profile { new QLProcessor(ci, invOpt, parserOpt, initialBindings) }
+    parserProcessMethodProfiler.profile { processor.processExp(exp, ci) }
+  }
+
   def parseMethod(input: String): Option[QLPhrase] = {
     // Since we're just parsing, we shouldn't need a context:
     val parser = parserCreateProfiler.profile { new QLParser(QLText(input), EmptyContext(ecology)) }

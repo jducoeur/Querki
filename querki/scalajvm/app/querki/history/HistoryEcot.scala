@@ -138,13 +138,12 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     override def qlApply(inv: Invocation): QFut = {
       for {
         rawOpt <- inv.rawParam("predicate")
-        qlText = rawOpt.map(raw => QLText(raw.reconstructStandalone))
         DeletedThings(things) <- inv.fut(
           SpaceOps.spaceRegion ?
             SpaceSubsystemRequest(
               inv.context.request.requesterOrAnon,
               inv.state.id,
-              ForAllDeletedThings(inv.context.request, qlText)
+              ForAllDeletedThings(inv.context.request, rawOpt)
             )
         )
         thing <- inv.iter(things)
