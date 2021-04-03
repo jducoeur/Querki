@@ -16,7 +16,7 @@ object MOIDs extends EcotIds(65) {
   val FindAllStompedCmdOID = moid(1)
   val HistoryPermOID = moid(2)
   val UndeleteFunctionOID = moid(3)
-  val ShowDeletedThingsOID = moid(4)
+  val ListDeletedThingsOID = moid(4)
 }
 
 class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.core.MethodDefs {
@@ -69,10 +69,10 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
       Summary("Given the OID of a deleted Thing, restore it"),
       Signature(
         expected = None,
-        reqs = Seq(
-          ("oid", LinkType, "The OID of the Thing to restore")
+        reqs = Seq.empty,
+        opts = Seq(
+          ("oid", LinkType, Core.QNone, "The OID of the Thing to restore")
         ),
-        opts = Seq.empty,
         returns = (LinkType, "The restored Thing")
       ),
       Details(
@@ -108,8 +108,11 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
       val user = inv.context.request.requesterOrAnon
       for {
         expOpt <- inv.rawParam("oid")
-        exp <- inv.opt(expOpt, Some(PublicException("History.undeleteNoOid")))
-        oid <- inv.opt(expToOid(exp), Some(PublicException("History.undeleteNotOid", exp.reconstructString)))
+        oid <- expOpt match {
+          case Some(exp) =>
+            inv.opt(expToOid(exp), Some(PublicException("History.undeleteNotOid", exp.reconstructString)))
+          case _ => inv.contextAllAs(LinkType)
+        }
         ThingFound(id, newState) <- inv.fut(
           SpaceOps.spaceRegion ?
             SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, RestoreDeletedThing(user, oid))
@@ -118,47 +121,63 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     }
   }
 
-  lazy val ShowDeletedThings = new InternalMethod(
-    ShowDeletedThingsOID,
+  lazy val ListDeletedThings = new InternalMethod(
+    ListDeletedThingsOID,
     toProps(
-      setName("_showDeletedThings"),
-      Summary("Shows the Things in this Space that pass the given predicate, that have been deleted."),
+      setName("_listDeletedThings"),
+      Summary("Lists the Things in this Space that pass the given predicate, that have been deleted."),
       Signature(
         expected = None,
         reqs = Seq.empty,
         opts = Seq(
-          ("predicate", AnyType, Core.QNone, "A QL expression returning YesOrNoType, to try on each deleted Thing")
+          ("predicate", AnyType, Core.QNone, "A QL expression returning YesOrNoType, to try on each deleted Thing"),
+          ("render", AnyType, Core.QNone, "A QL expression saying what to return from each deleted Thing")
         ),
-        returns = (TextType, "A List of Text entries for the deleted Things")
+        returns = (AnyType, "A List of resulting values from the deleting Things")
       ),
-      Details("""If no predicate is given, all deleted Things will be returned.""")
+      Details(
+        """
+          |If no predicate is given, all deleted Things will be returned.
+          |
+          |The predicate can be almost anything. For example, this returns all deleted Things that are children of
+          |`My Model`:
+          |[[```
+          |_listDeletedThings(predicate = _model -> _is(My Model))
+          |```]]
+          |
+          |The `render` parameter will be applied to each deleted Thing, in the context of the history right before
+          |that Thing was deleted. You can return any sort of value here, both text and non-text. For example, this
+          |renders all of the instances of `My Model`, showing the name and OID of each with "Restore" button to
+          |undelete it:
+          |[[```
+          |_listDeletedThings(predicate = _model -> _is(My Model), render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing)]]"") -> _bulleted
+          |```]]
+          |
+          |If no `render` parameter is given, the OIDs of the deleted Things will be returned.""".stripMargin
+      )
     )
   ) {
 
     override def qlApply(inv: Invocation): QFut = {
       for {
-        rawOpt <- inv.rawParam("predicate")
-        DeletedThings(things) <- inv.fut(
+        predOpt <- inv.rawParam("predicate")
+        renderOpt <- inv.rawParam("render")
+        DeletedThings(qvs) <- inv.fut(
           SpaceOps.spaceRegion ?
             SpaceSubsystemRequest(
               inv.context.request.requesterOrAnon,
               inv.state.id,
-              ForAllDeletedThings(inv.context.request, rawOpt)
+              ForAllDeletedThings(inv.context.request, predOpt, renderOpt)
             )
         )
-        thing <- inv.iter(things)
-        displayStr =
-          s"""${thing.display.str} (${thing.oid.toThingId})
-             |-- deleted ${thing.when.toString("YYYY-MM-dd hh:mma")}
-             |[[_QLButton(label=""Restore"", ql=_undeleteThing(${thing.oid.toThingId}), noIcon=true)]]""".stripMargin
-        // TODO: create a more useful return display
-      } yield ExactlyOne(TextType(displayStr))
+        qv <- inv.iter(qvs)
+      } yield qv
     }
   }
 
   override lazy val props = Seq(
     HistoryPerm,
     UndeleteFunction,
-    ShowDeletedThings
+    ListDeletedThings
   )
 }

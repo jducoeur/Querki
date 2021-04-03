@@ -4,7 +4,7 @@ import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
+import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
 import querki.values.{QLContext, QValue}
 
 object SignatureMOIDs extends EcotIds(61) {
@@ -27,47 +27,57 @@ object SignatureMOIDs extends EcotIds(61) {
   val AnyTypeOID = moid(18)
 }
 
-private [ql] trait ParamResult {
-  def process(parser:QLParser, context:QLContext):Future[QLContext]
-  def exp:Option[QLExp]
+private[ql] trait ParamResult {
+
+  def process(
+    processor: QLProcessor,
+    context: QLContext
+  ): Future[QLContext]
+  def exp: Option[QLExp]
 }
 
 /**
  * What a signature looks like to InvocationImpl. Hides the grungy details.
  */
-private [ql] trait SignatureMap {
+private[ql] trait SignatureMap {
+
   /**
    * Used by InvocationImpl to fetch the actual value for the named formal parameter.
    */
-  def getParam(nameIn:String):ParamResult
+  def getParam(nameIn: String): ParamResult
 }
 
-private [ql] trait SignatureInternal extends EcologyInterface {
-  def getSignature(t:Thing, state:SpaceState, paramsOpt:Option[Seq[QLParam]]):SignatureMap
+private[ql] trait SignatureInternal extends EcologyInterface {
+
+  def getSignature(
+    t: Thing,
+    state: SpaceState,
+    paramsOpt: Option[Seq[QLParam]]
+  ): SignatureMap
 }
 
 /**
  * Ecot to hold all the properties and types for Signature definitions.
- * 
+ *
  * This is split out into its own Ecot simply because there's a bunch of inter-related stuff
  * here, and no good reason to clog up the general QLEcot with it.
- * 
+ *
  * @author jducoeur
  */
-class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with SignatureInternal with ModelTypeDefiner {
+class SignatureEcot(e: Ecology) extends QuerkiEcot(e) with Signature with SignatureInternal with ModelTypeDefiner {
   import SignatureMOIDs._
-  
+
   val Conventions = initRequires[querki.conventions.Conventions]
   val Basic = initRequires[querki.basic.Basic]
   val Types = initRequires[querki.types.Types]
-  
+
   def apply(
-      expectedOpt:Option[(Seq[PType[_]], String)], 
-      reqs:Seq[(String, PType[_], String)], 
-      opts:Seq[(String, PType[_], QValue, String)], 
-      returns:(PType[_], String),
-      definingOpt:Option[(Boolean, Seq[PType[_]], String)]):(OID, QValue) = 
-  {
+    expectedOpt: Option[(Seq[PType[_]], String)],
+    reqs: Seq[(String, PType[_], String)],
+    opts: Seq[(String, PType[_], QValue, String)],
+    returns: (PType[_], String),
+    definingOpt: Option[(Boolean, Seq[PType[_]], String)]
+  ): (OID, QValue) = {
     val (expected, expPt, expText) =
       expectedOpt.map(exp => (true, exp._1, exp._2)).getOrElse(false, Seq.empty, "")
     val definingClause = definingOpt match {
@@ -77,10 +87,10 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
         DefiningProp(
           SimplePropertyBundle(
             ContextIsRequired(defReq),
-            ExpectedTypesProp(defPt.map(_.id):_*),
+            ExpectedTypesProp(defPt.map(_.id): _*),
             Conventions.PropSummary(defText)
           )
-        )        
+        )
       }
       case None => DefiningProp()
     }
@@ -90,7 +100,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
         ExpectedProp(
           SimplePropertyBundle(
             ContextIsRequired(expected),
-            ExpectedTypesProp(expPt.map(_.id):_*),
+            ExpectedTypesProp(expPt.map(_.id): _*),
             Conventions.PropSummary(expText)
           )
         ),
@@ -102,7 +112,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               Core.TypeProp(tpe),
               Conventions.PropSummary(summary)
             )
-          }:_*
+          }: _*
         ),
         OptParams(
           opts.map { param =>
@@ -113,7 +123,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               Types.DefaultValueProp(default),
               Conventions.PropSummary(summary)
             )
-          }:_*
+          }: _*
         ),
         ReturnTypeProp(
           SimplePropertyBundle(
@@ -126,44 +136,70 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       )
     )
   }
-  
-  def getSignature(t:Thing, state:SpaceState, paramsOpt:Option[Seq[QLParam]]):SignatureMap = SignatureMapImpl(t, state, paramsOpt)
-  
-  case class SignatureMapImpl(t:Thing, state:SpaceState, paramsOpt:Option[Seq[QLParam]]) extends SignatureMap {
+
+  def getSignature(
+    t: Thing,
+    state: SpaceState,
+    paramsOpt: Option[Seq[QLParam]]
+  ): SignatureMap = SignatureMapImpl(t, state, paramsOpt)
+
+  case class SignatureMapImpl(
+    t: Thing,
+    state: SpaceState,
+    paramsOpt: Option[Seq[QLParam]]
+  ) extends SignatureMap {
     implicit val s = state
-    
-    case class ParamResultImpl(expOpt:Option[QLExp], formal:ModeledPropertyBundle) extends ParamResult {
+
+    case class ParamResultImpl(
+      expOpt: Option[QLExp],
+      formal: ModeledPropertyBundle
+    ) extends ParamResult {
       def name = formal.getProp(Core.NameProp).first
       def exp = expOpt
-      
+
       def default = {
         formal.getPropOpt(Types.DefaultValueProp).map(_.v) match {
           case Some(defa) => defa
-          case None => throw new PublicException("Func.missingNamedParam", t.displayName, name)
+          case None       => throw new PublicException("Func.missingNamedParam", t.displayName, name)
         }
       }
-      
-      def process(parser:QLParser, context:QLContext):Future[QLContext] = {
+
+      def process(
+        processor: QLProcessor,
+        context: QLContext
+      ): Future[QLContext] = {
         expOpt match {
-          case Some(exp) => parser.processExpAsScope(exp, context)
-          case _ => Future.successful(context.next(default))
+          case Some(exp) => processor.processExpAsScope(exp, context)
+          case _         => Future.successful(context.next(default))
         }
       }
     }
-    
-    case class SpecialParam(name:String, expActual:QLExp) extends ParamResult {
+
+    case class SpecialParam(
+      name: String,
+      expActual: QLExp
+    ) extends ParamResult {
       def exp = Some(expActual)
-      def process(parser:QLParser, context:QLContext):Future[QLContext] = {
-        parser.processExpAsScope(expActual, context)
+
+      def process(
+        processor: QLProcessor,
+        context: QLContext
+      ): Future[QLContext] = {
+        processor.processExpAsScope(expActual, context)
       }
     }
-    
-    case class EmptyParamResult(name:String) extends ParamResult {
+
+    case class EmptyParamResult(name: String) extends ParamResult {
       def exp = None
-      def process(parser:QLParser, context:QLContext):Future[QLContext] = ???
+
+      def process(
+        processor: QLProcessor,
+        context: QLContext
+      ): Future[QLContext] = ???
     }
-  
+
     lazy val sigOpt = t.getPropOpt(SignatureProp)
+
     // The formal parameters of this function, required then optional
     // TODO: investigate pre-building this, at least for InternalMethods, and storing it as a separate
     // parameter, as an optimization.
@@ -174,11 +210,10 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
         req <- sigBundle.getPropOpt(ReqParams)
         opt <- sigBundle.getPropOpt(OptParams)
         allParams = req.rawList ++ opt.rawList
-      }
-        yield allParams
-    lazy val indexedOpt = formalsOpt map (_.zipWithIndex)
+      } yield allParams
+    lazy val indexedOpt = formalsOpt.map(_.zipWithIndex)
 
-    def getParam(nameIn:String):ParamResult = {
+    def getParam(nameIn: String): ParamResult = {
       val name = nameIn.toLowerCase
       name match {
         // The "universal" parameters. If we wind up with more than two of these, they should get
@@ -187,15 +222,15 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
           val result = for {
             params <- paramsOpt
             param <- params.find(_.name.map(_.toLowerCase == name).getOrElse(false))
-          }
-            yield SpecialParam(name, param.exp)
-            
+          } yield SpecialParam(name, param.exp)
+
           result.getOrElse(EmptyParamResult(name))
         }
         case _ => getNormalParam(name)
       }
     }
-    def getNormalParam(name:String):ParamResult = {
+
+    def getNormalParam(name: String): ParamResult = {
       def notFound = throw new PublicException("Func.unknownParamName", name, t.displayName)
       indexedOpt match {
         case Some(indexed) => {
@@ -205,7 +240,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
           }
           val (formal, index) = formalOpt.getOrElse(notFound)
           lazy val returnDefault = ParamResultImpl(None, formal)
-          
+
           paramsOpt match {
             case Some(params) => {
               // First see if there is a named actual parameter...
@@ -231,11 +266,13 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       }
     }
   }
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * MODELS and THINGS
-   ***********************************************/
-  
+   * *********************************************
+   */
+
   /**
    * A Function Parameter consists of:
    * -- Name
@@ -244,23 +281,36 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
    * -- Summary
    * We might add Collection later, but I'm actually not sure that's even a good idea.
    */
-  lazy val ParameterModel = ThingState(ParamModelOID, systemOID, RootOID, 
+  lazy val ParameterModel = ThingState(
+    ParamModelOID,
+    systemOID,
+    RootOID,
     toProps(
       setName("_Function Parameter Model"),
       setInternal,
       Core.TypeProp(Core.UrType),
       Types.DefaultValueProp(),
-      Conventions.PropSummary()))
-      
-  lazy val ExpectedModel = ThingState(ExpectedModelOID, systemOID, RootOID,
+      Conventions.PropSummary()
+    )
+  )
+
+  lazy val ExpectedModel = ThingState(
+    ExpectedModelOID,
+    systemOID,
+    RootOID,
     toProps(
       setName("_Expected Context Model"),
       setInternal,
       ExpectedTypesProp(),
       ContextIsRequired(),
-      Conventions.PropSummary()))
-      
-  lazy val SignatureModel = ThingState(SignatureModelOID, systemOID, RootOID,
+      Conventions.PropSummary()
+    )
+  )
+
+  lazy val SignatureModel = ThingState(
+    SignatureModelOID,
+    systemOID,
+    RootOID,
     toProps(
       setName("_Function Signature Model"),
       setInternal,
@@ -268,38 +318,52 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       ReqParams(),
       OptParams(),
       ReturnTypeProp(),
-      DefiningProp()))
-      
-  lazy val SignatureDisplay = ThingState(SignatureDisplayOID, systemOID, RootOID,
+      DefiningProp()
+    )
+  )
+
+  lazy val SignatureDisplay = ThingState(
+    SignatureDisplayOID,
+    systemOID,
+    RootOID,
     toProps(
       setName("_Display Function Signature"),
       Basic.ApplyMethod(
-          """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required,
-              |      _if(_isEmpty(_Function Context Types),
-              |        ""Anything -> "",
-              |        ""[[_Function Context Types -> Link Name -> _join("" *or* "")]] -> "")
-              |)]][[_Function Signature -> _Defining Context -> _if(_isNonEmpty,
-              |      ""[[_Function Context Types -> Link Name -> _join("" *or* "")]]."")
-              |  ]][[Link Name]][[
-              |  _Function Signature -> _concat(_Required Parameters, _Optional Parameters) -> 
-              |        *_if(_isNonEmpty, *""([[Link Name -> _join("", "")]])"")]][[
-              |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
-              |      "" -> [[Link Name]]""]]""""".stripMargin)))
-          
-  lazy val ParamsDisplay = ThingState(ParamsDisplayOID, systemOID, RootOID,
+        """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required,
+          |      _if(_isEmpty(_Function Context Types),
+          |        ""Anything -> "",
+          |        ""[[_Function Context Types -> Link Name -> _join("" *or* "")]] -> "")
+          |)]][[_Function Signature -> _Defining Context -> _if(_isNonEmpty,
+          |      ""[[_Function Context Types -> Link Name -> _join("" *or* "")]]."")
+          |  ]][[Link Name]][[
+          |  _Function Signature -> _concat(_Required Parameters, _Optional Parameters) -> 
+          |        *_if(_isNonEmpty, *""([[Link Name -> _join("", "")]])"")]][[
+          |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
+          |      "" -> [[Link Name]]""]]""""".stripMargin
+      )
+    )
+  )
+
+  lazy val ParamsDisplay = ThingState(
+    ParamsDisplayOID,
+    systemOID,
+    RootOID,
     toProps(
       setName("_Display Function Parameters"),
       Basic.ApplyMethod(
-          """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required, "": Receives [[_if(_isNonEmpty(_Function Context Types),
-            |      "" -- [[_Function Context Types -> Link Name -> _join("" *or* "")]]""
-            |     )]] : [[Summary]] "")]][[
-            |    _Function Signature -> _Defining Context -> ""
-            |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
-            |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
-            |    "": [[Link Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
-            |    _Function Signature -> _Function Return Type -> ""
-            |: Produces : [[Summary]]""]]""""".stripMargin)))
-      
+        """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required, "": Receives [[_if(_isNonEmpty(_Function Context Types),
+          |      "" -- [[_Function Context Types -> Link Name -> _join("" *or* "")]]""
+          |     )]] : [[Summary]] "")]][[
+          |    _Function Signature -> _Defining Context -> ""
+          |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
+          |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
+          |    "": [[Link Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
+          |    _Function Signature -> _Function Return Type -> ""
+          |: Produces : [[Summary]]""]]""""".stripMargin
+      )
+    )
+  )
+
   override lazy val things = Seq(
     ParameterModel,
     SignatureModel,
@@ -307,92 +371,165 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     ParamsDisplay,
     ExpectedModel
   )
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * TYPES
-   ***********************************************/
-  
-  lazy val ParameterType = new ModelType(ParamTypeOID, ParamModelOID, 
+   * *********************************************
+   */
+
+  lazy val ParameterType = new ModelType(
+    ParamTypeOID,
+    ParamModelOID,
     toProps(
       setName("_Function Parameter Type"),
-      setInternal))
-  
-  lazy val SignatureType = new ModelType(SignatureTypeOID, SignatureModelOID,
+      setInternal
+    )
+  )
+
+  lazy val SignatureType = new ModelType(
+    SignatureTypeOID,
+    SignatureModelOID,
     toProps(
       setName("_Function Signature Type"),
-      setInternal))
-  
-  lazy val ExpectedType = new ModelType(ExpectedTypeOID, ExpectedModelOID,
+      setInternal
+    )
+  )
+
+  lazy val ExpectedType = new ModelType(
+    ExpectedTypeOID,
+    ExpectedModelOID,
     toProps(
       setName("_Expected Context Type"),
-      setInternal))
-  
-  lazy val AnyType = new PType[Unit](AnyTypeOID, UnknownOID, UnknownOID, 
+      setInternal
+    )
+  )
+
+  lazy val AnyType = new PType[Unit](
+    AnyTypeOID,
+    UnknownOID,
+    UnknownOID,
     toProps(
       setName("The same Type"),
-      setInternal)) 
-  {
-    def doDeserialize(v:String)(implicit state:SpaceState) = ???
-    def doSerialize(v:Unit)(implicit state:SpaceState) = ???
-    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = ???
-    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:querki.values.ElemValue):Future[scala.xml.NodeSeq] = ???
-    def doDefault(implicit state:SpaceState) = ???
-    def doComputeMemSize(v:Unit):Int = ???
+      setInternal
+    )
+  ) {
+    def doDeserialize(v: String)(implicit state: SpaceState) = ???
+    def doSerialize(v: Unit)(implicit state: SpaceState) = ???
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: Unit,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ) = ???
+
+    def renderInputXml(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      v: querki.values.ElemValue
+    ): Future[scala.xml.NodeSeq] = ???
+    def doDefault(implicit state: SpaceState) = ???
+    def doComputeMemSize(v: Unit): Int = ???
   }
-  
+
   override lazy val types = Seq(
     ParameterType,
     SignatureType,
     ExpectedType,
     AnyType
   )
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * PROPERTIES
-   ***********************************************/
-  
-  lazy val OptParams = new SystemProperty(OptParamsOID, ParameterType, QList,
+   * *********************************************
+   */
+
+  lazy val OptParams = new SystemProperty(
+    OptParamsOID,
+    ParameterType,
+    QList,
     toProps(
       setName("_Optional Parameters"),
-      setInternal))
-  
-  lazy val ReqParams = new SystemProperty(ReqParamsOID, ParameterType, QList,
+      setInternal
+    )
+  )
+
+  lazy val ReqParams = new SystemProperty(
+    ReqParamsOID,
+    ParameterType,
+    QList,
     toProps(
       setName("_Required Parameters"),
-      setInternal))
-  
-  lazy val SignatureProp = new SystemProperty(SignaturePropOID, SignatureType, ExactlyOne,
+      setInternal
+    )
+  )
+
+  lazy val SignatureProp = new SystemProperty(
+    SignaturePropOID,
+    SignatureType,
+    ExactlyOne,
     toProps(
       setName("_Function Signature"),
       // Currently internal, but this Property is likely to eventually be visible in the UI,
       // although maybe only through a custom Gadget.
-      setInternal))
-  
-  lazy val ExpectedTypesProp = new SystemProperty(ExpectedTypesOID, LinkType, QList,
+      setInternal
+    )
+  )
+
+  lazy val ExpectedTypesProp = new SystemProperty(
+    ExpectedTypesOID,
+    LinkType,
+    QList,
     toProps(
       setName("_Function Context Types"),
-      setInternal))
-  
-  lazy val ExpectedProp = new SystemProperty(ExpectedPropOID, ExpectedType, ExactlyOne,
+      setInternal
+    )
+  )
+
+  lazy val ExpectedProp = new SystemProperty(
+    ExpectedPropOID,
+    ExpectedType,
+    ExactlyOne,
     toProps(
       setName("_Expected Context"),
-      setInternal))
-  
-  lazy val ReturnTypeProp = new SystemProperty(ReturnTypeOID, ExpectedType, Optional,
+      setInternal
+    )
+  )
+
+  lazy val ReturnTypeProp = new SystemProperty(
+    ReturnTypeOID,
+    ExpectedType,
+    Optional,
     toProps(
       setName("_Function Return Type"),
-      setInternal))
-  
-  lazy val ContextIsRequired = new SystemProperty(ContextIsRequiredOID, YesNoType, Optional,
+      setInternal
+    )
+  )
+
+  lazy val ContextIsRequired = new SystemProperty(
+    ContextIsRequiredOID,
+    YesNoType,
+    Optional,
     toProps(
       setName("_Context Is Required"),
-      setInternal))
-  
-  lazy val DefiningProp = new SystemProperty(DefiningPropOID, ExpectedType, Optional,
+      setInternal
+    )
+  )
+
+  lazy val DefiningProp = new SystemProperty(
+    DefiningPropOID,
+    ExpectedType,
+    Optional,
     toProps(
       setName("_Defining Context"),
-      setInternal))
-  
+      setInternal
+    )
+  )
+
   override lazy val props = Seq(
     OptParams,
     ReqParams,

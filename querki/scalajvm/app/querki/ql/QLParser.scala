@@ -303,7 +303,7 @@ class QLParser(
     exp: QLExp,
     context: QLContext
   ): Future[QLContext] = {
-    processor.withScope(context, processExp(exp, _))
+    processor.processExpAsScope(exp, context)
   }
 
 }

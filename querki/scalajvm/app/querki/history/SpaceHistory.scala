@@ -299,11 +299,12 @@ private[history] class SpaceHistory(
   // TODO: someday, once we have rewritten the stack to use IO, this should be much, much faster:
   def findAllDeleted(
     rc: RequestContext,
-    predicateOpt: Option[QLExp]
-  ): Future[List[OneDeletedThing]] = {
+    predicateOpt: Option[QLExp],
+    renderOpt: Option[QLExp]
+  ): Future[List[QValue]] = {
     readCurrentHistory().flatMap { _ =>
       history
-        .foldLeft(Future.successful((List.empty[OneDeletedThing], emptySpace))) { (requestM, record) =>
+        .foldLeft(Future.successful((List.empty[QValue], emptySpace))) { (requestM, record) =>
           requestM.flatMap { v =>
             val (soFar, prevState) = v
             val HistoryRecord(_, evt, state) = record
@@ -315,21 +316,40 @@ private[history] class SpaceHistory(
                 val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
                 val context = QLContext(ExactlyOne(LinkType(thingId)), Some(rc), endTime)(prevState, ecology)
                 val predicateResultFut: Future[Boolean] = predicateOpt match {
-                  case Some(predicate) => QL.processExp(context, predicate).map(_.value).map(toBoolean(_))
-                  case _               => Future.successful(true)
+                  case Some(predicate) =>
+                    try {
+                      QL.processExp(context, predicate).map(_.value).map(toBoolean(_)).recover {
+                        case ex: Exception => { ex.printStackTrace(); false }
+                      }
+                    } catch {
+                      case ex: Exception => Future.successful(false)
+                    }
+                  case _ => Future.successful(true)
                 }
                 predicateResultFut.flatMap { passes =>
+                  def justTheOID() = {
+                    val deleted = ExactlyOne(LinkType(thingId))
+                    Future.successful((deleted :: soFar, state))
+                  }
+
                   if (passes) {
                     // Passes the predicate, so figure out its name, and add it to the list:
-                    prevState.resolveOpt(thingId)(_.things).map { thing =>
-                      thing.nameOrComputed(rc, prevState).map { name =>
-                        val deleted = OneDeletedThing(thingId, name, evt.modTime)
-                        ((deleted :: soFar, state))
+                    renderOpt.map { render =>
+                      prevState.resolveOpt(thingId)(_.things).map { thing =>
+                        QL.processExp(context, render).map { result =>
+                          ((result.value :: soFar, state))
+                        }.recoverWith {
+                          case ex: Exception => {
+                            ex.printStackTrace()
+                            justTheOID()
+                          }
+                        }
+                      }.getOrElse {
+                        // Oddly, we didn't find that OID in the previous state, so give up and show the raw OID:
+                        justTheOID()
                       }
                     }.getOrElse {
-                      // Oddly, we didn't find that OID in the previous state, so give up and show the raw OID:
-                      val deleted = OneDeletedThing(thingId, DisplayText(thingId.toThingId), evt.modTime)
-                      Future.successful((deleted :: soFar, state))
+                      justTheOID()
                     }
                   } else {
                     // Didn't pass the predicate, so just keep going:
@@ -463,8 +483,8 @@ private[history] class SpaceHistory(
       }
     }
 
-    case ForAllDeletedThings(rc, predicateOpt) => {
-      loopback(findAllDeleted(rc, predicateOpt)).map { deletedList =>
+    case ForAllDeletedThings(rc, predicateOpt, renderOpt) => {
+      loopback(findAllDeleted(rc, predicateOpt, renderOpt)).map { deletedList =>
         sender ! DeletedThings(deletedList)
       }.recover {
         case ex: Exception => spew(s"Got an Exception: $ex")
@@ -543,13 +563,9 @@ object SpaceHistory {
    */
   case class ForAllDeletedThings(
     rc: RequestContext,
-    predicate: Option[QLExp]
+    predicate: Option[QLExp],
+    render: Option[QLExp]
   ) extends HistoryMessage
 
-  case class OneDeletedThing(
-    oid: OID,
-    display: DisplayText,
-    when: DateTime
-  )
-  case class DeletedThings(things: List[OneDeletedThing])
+  case class DeletedThings(things: List[QValue])
 }
