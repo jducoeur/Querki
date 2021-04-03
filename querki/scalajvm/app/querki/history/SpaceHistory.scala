@@ -309,7 +309,8 @@ private[history] class SpaceHistory(
             val (soFar, prevState) = v
             val HistoryRecord(_, evt, state) = record
             evt match {
-              case DHDeleteThing(req, thingId, modTime) => {
+              // Only worry about deletion events for things that have not been subsequently restored:
+              case DHDeleteThing(req, thingId, modTime) if (history.last.state.anything(thingId).isEmpty) => {
                 // Evaluate the predicate on this thing in the context of the *previous* state, when the
                 // Thing still existed:
                 val endTime = ecology.api[querki.time.TimeProvider].qlEndTime

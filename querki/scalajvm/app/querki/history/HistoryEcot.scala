@@ -149,7 +149,9 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
         )
         thing <- inv.iter(things)
         displayStr =
-          s"${thing.display.str} (${thing.oid.toThingId}) -- deleted ${thing.when.toString("YYYY-MM-dd hh:mma")}"
+          s"""${thing.display.str} (${thing.oid.toThingId})
+             |-- deleted ${thing.when.toString("YYYY-MM-dd hh:mma")}
+             |[[_QLButton(label=""Restore"", ql=_undeleteThing(${thing.oid.toThingId}), noIcon=true)]]""".stripMargin
         // TODO: create a more useful return display
       } yield ExactlyOne(TextType(displayStr))
     }
