@@ -33,6 +33,13 @@ class QLProcessor(
   val initialContext =
     ci.copy(scopes = ci.scopes + (this -> initialScopes.push))(ci.state, ecology)
 
+  // *****************************************
+  //
+  // Context Logging
+  //
+  // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
+  //
+
   // A unique ID that we attach to each Stage, for understanding what's going on:
   val stageId = new java.util.concurrent.atomic.AtomicInteger()
   // Turn this to true to produce voluminous output from the QL processing pipeline

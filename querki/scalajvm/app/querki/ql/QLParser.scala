@@ -30,11 +30,6 @@ class QLParser(
 ) extends RegexParsers
      with EcologyMember {
 
-  lazy val initialScopes = initialBindings match {
-    case Some(bindings) => QLScopes(List(QLScope(bindings)))
-    case None           => QLScopes()
-  }
-
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth.
   val parserContext =
@@ -50,64 +45,14 @@ class QLParser(
 
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
 
-  lazy val Basic = interface[querki.basic.Basic]
-  lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
   lazy val QLInternals = interface[QLInternals]
-  lazy val Tags = interface[querki.tags.Tags]
 
   lazy val qlProfilers = QLInternals.qlProfilers
-
-  lazy val ExactlyOne = Core.ExactlyOne
-  lazy val PlainTextType = Basic.PlainTextType
 
   def WarningValue = QL.WarningValue _
 
   lazy val processor = new QLProcessor(parserContext, invOpt, Some(this), initialBindings)
-
-  // *****************************************
-  //
-  // Context Logging
-  //
-  // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
-  //
-
-  // A unique ID that we attach to each Stage, for understanding what's going on:
-  val stageId = new java.util.concurrent.atomic.AtomicInteger()
-  // Turn this to true to produce voluminous output from the QL processing pipeline
-  val doLogContext = Config.getBoolean("querki.test.logContexts", false)
-
-  def logStage(
-    stage: QLStage,
-    context: QLContext
-  )(
-    processor: => Future[QLContext]
-  ): Future[QLContext] = {
-    if (doLogContext) {
-      try {
-        val sid = stageId.getAndIncrement
-        val indent = "  " * context.depth
-        QLog.info(s"$indent$sid: [[${stage.reconstructString}]] on ${context.debugRender}")
-        val result = processor
-        result.onComplete {
-          case scala.util.Success(result) =>
-            QLog.info(s"$indent$sid = ${result.debugRender}")
-          case scala.util.Failure(ex) =>
-            QLog.error(s"$indent$sid returned Failure!", ex)
-        }
-        result
-      } catch {
-        case th: Throwable => {
-          QLog.error(
-            s"Exception while processing stage ${stage.reconstructString} with context ${context.debugRender}",
-            th
-          )
-          throw th
-        }
-      }
-    } else
-      processor
-  }
 
   // *****************************************
 
