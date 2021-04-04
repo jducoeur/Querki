@@ -17,6 +17,8 @@ object MOIDs extends EcotIds(65) {
   val HistoryPermOID = moid(2)
   val UndeleteFunctionOID = moid(3)
   val ListDeletedThingsOID = moid(4)
+  val DeletedThingsPageOID = moid(5)
+  val DeletedThingsDisplayOID = moid(6)
 }
 
 class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.core.MethodDefs {
@@ -25,6 +27,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   val cmds = new HistoryCommands(e)
 
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Basic = initRequires[querki.basic.Basic]
 
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -47,6 +50,44 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   def isViewingHistory(rc: RequestContext): Boolean = {
     rc.rawParam("_historyVersion").map(_.length > 0).getOrElse(false)
   }
+
+  ///////////////////////////////////
+  // THINGS
+  ///////////////////////////////////
+
+  lazy val deletedThingsDisplay = new ThingState(
+    DeletedThingsDisplayOID,
+    systemOID,
+    RootOID,
+    toProps(
+      setName("_deletedThingsDisplay"),
+      Summary("The standard display of the deleted Things in this Space"),
+      Basic.ApplyMethod(
+        """_listDeletedThings(
+          |   render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing -> _Deleted Things -> _navigateTo)]]""
+          |) -> _bulleted""".stripMargin
+      )
+    )
+  )
+
+  lazy val deletedThingsPage = new ThingState(
+    DeletedThingsPageOID,
+    systemOID,
+    RootOID,
+    toProps(
+      setName("_Deleted Things"),
+      Basic.DisplayTextProp("[[_deletedThingsDisplay]]")
+    )
+  )
+
+  override lazy val things = Seq(
+    deletedThingsDisplay,
+    deletedThingsPage
+  )
+
+  ///////////////////////////////////
+  // PROPERTIES
+  ///////////////////////////////////
 
   lazy val HistoryPerm = AccessControl.definePermission(
     HistoryPermOID,
