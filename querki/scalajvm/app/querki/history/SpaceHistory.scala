@@ -334,7 +334,8 @@ private[history] class SpaceHistory(
                 predicateResultFut.flatMap { passes =>
                   def justTheOID(): Future[(List[(QValue, OID)], SpaceState)] = {
                     val deleted = (ExactlyOne(LinkType(thingId)), thingId)
-                    Future.successful((deleted :: soFar, state))
+                    val filtered = soFar.filterNot(_._2 == thingId)
+                    Future.successful((deleted :: filtered, state))
                   }
 
                   if (passes) {
@@ -345,9 +346,9 @@ private[history] class SpaceHistory(
                           // Remove any *previous* deletions of this Thing -- we want to wind up with only the
                           // most recent. This is a little inefficient in Big-O terms, but I'm guessing that won't
                           // matter a lot in reality:
-                          val resultPair = (result.value, thingId)
+                          val deleted = (result.value, thingId)
                           val filtered = soFar.filterNot(_._2 == thingId)
-                          ((resultPair :: filtered, state))
+                          ((deleted :: filtered, state))
                         }.recoverWith {
                           case ex: Exception => {
                             ex.printStackTrace()
