@@ -304,7 +304,12 @@ private[history] class SpaceHistory(
   ): Future[List[QValue]] = {
     readCurrentHistory().flatMap { _ =>
       history
-        .foldLeft(Future.successful((List.empty[QValue], emptySpace))) { (requestM, record) =>
+        // This is a bit complex. Ultimately, we're building up a list of QValues, which are the rendered results
+        // for each deleted item. But we need to track the OID for each of those, so that we can filter out duplicates.
+        // And we need to keep track of the *previous* SpaceState before each deletion event, so that we can render
+        // the deleted item in terms of that previous state.
+        // Down at the bottom, we will throw away everything but the QValues.
+        .foldLeft(Future.successful((List.empty[(QValue, OID)], emptySpace))) { (requestM, record) =>
           requestM.flatMap { v =>
             val (soFar, prevState) = v
             val HistoryRecord(_, evt, state) = record
@@ -327,8 +332,8 @@ private[history] class SpaceHistory(
                   case _ => Future.successful(true)
                 }
                 predicateResultFut.flatMap { passes =>
-                  def justTheOID() = {
-                    val deleted = ExactlyOne(LinkType(thingId))
+                  def justTheOID(): Future[(List[(QValue, OID)], SpaceState)] = {
+                    val deleted = (ExactlyOne(LinkType(thingId)), thingId)
                     Future.successful((deleted :: soFar, state))
                   }
 
@@ -337,7 +342,12 @@ private[history] class SpaceHistory(
                     renderOpt.map { render =>
                       prevState.resolveOpt(thingId)(_.things).map { thing =>
                         QL.processExp(context, render).map { result =>
-                          ((result.value :: soFar, state))
+                          // Remove any *previous* deletions of this Thing -- we want to wind up with only the
+                          // most recent. This is a little inefficient in Big-O terms, but I'm guessing that won't
+                          // matter a lot in reality:
+                          val resultPair = (result.value, thingId)
+                          val filtered = soFar.filterNot(_._2 == thingId)
+                          ((resultPair :: filtered, state))
                         }.recoverWith {
                           case ex: Exception => {
                             ex.printStackTrace()
@@ -363,7 +373,8 @@ private[history] class SpaceHistory(
             }
           }
         }
-        .map(_._1)
+        // Extract just the List of QValues from all of that:
+        .map(_._1.map(_._1))
     }
   }
 

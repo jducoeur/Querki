@@ -64,7 +64,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
       Summary("The standard display of the deleted Things in this Space"),
       Basic.ApplyMethod(
         """_listDeletedThings(
-          |   render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing -> _Deleted Things -> _navigateTo)]]""
+          |   render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing -> System Deleted Things Page -> _navigateTo)]]""
           |) -> _bulleted""".stripMargin
       )
     )
@@ -75,7 +75,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     systemOID,
     RootOID,
     toProps(
-      setName("_Deleted Things"),
+      setName("System Deleted Things Page"),
       Basic.DisplayTextProp("[[_deletedThingsDisplay]]")
     )
   )
