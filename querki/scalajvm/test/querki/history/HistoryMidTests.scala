@@ -10,6 +10,7 @@ import querki.security.SecurityMidFuncs._
 import querki.test.mid.ClientState._
 
 object HistoryMidTests {
+
   /**
    * This tests that undelete results in the expected _creator and create time.
    */
@@ -49,8 +50,7 @@ object HistoryMidTests {
       createTime2 <- evaluateQL(instance, "_createTime")
       _ <- testAssert(creator2 === creator)
       _ <- testAssert(createTime2 === createTime)
-    }
-      yield ()
+    } yield ()
   }
 
   /**
@@ -78,8 +78,62 @@ object HistoryMidTests {
       // ... and check that it looks correct:
       rendered <- evaluateQL(instance, "Name")
       _ <- testAssert(rendered.plaintext === originalRendered.plaintext)
-    }
-      yield ()
+    } yield ()
+  }
+
+  def getOIDFor(tid: TID): TestOp[String] = {
+    for {
+      oidWiki <- evaluateQL(tid, "_oid")
+      oid = oidWiki.plaintext
+    } yield oid
+  }
+
+  lazy val test7w4gerb: TestOp[Unit] = {
+    for {
+      info <- setupStandardRegressionTest("7w4gerb")
+      spaceId = info.spaceId
+
+      model <- makeModel("The Model")
+      first <- makeThing(model, "First")
+      second <- makeThing(model, "Second")
+      secondOID <- getOIDFor(second)
+      third <- makeThing(model, "Third")
+
+      // Initially, the list is empty:
+      result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"")""")
+      _ = assert(result.plaintext.isEmpty)
+
+      // After we delete something, it shows up:
+      _ <- deleteThing(second)
+      result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"")""")
+      _ = assert(secondOID == result.plaintext)
+
+      // After we undelete it, it's empty again:
+      _ <- evaluateQL(spaceId, s"_undeleteThing($secondOID)")
+      result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"")""")
+      _ = assert(result.plaintext.isEmpty)
+
+      // After we re-delete it, it only shows up once, not twice:
+      _ <- deleteThing(second)
+      result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"")""")
+      _ = assert(secondOID == result.plaintext)
+
+      // Create a second model and instance, and delete that:
+      secondModel <- makeModel("Second Model")
+      secondFirst <- makeThing(secondModel, "Second First")
+      _ <- deleteThing(secondFirst)
+      // Now we should see two deleted things:
+      result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"") -> _commas""")
+      _ = assert(result.plaintext.split(',').length == 2)
+
+      // But if we add a predicate on the Model, we only see that one:
+      result <- evaluateQL(
+        spaceId,
+        """_listDeletedThings(predicate = _model -> _is(The Model), render = ""[[_oid]]"") -> _commas"""
+      )
+      _ = assert(result.plaintext.split(',').length == 1)
+      _ = assert(secondOID == result.plaintext)
+    } yield ()
   }
 }
 
@@ -91,6 +145,7 @@ class HistoryMidTests extends MidTestBase {
     "pass" in {
       runTest(testQIbu6oeer)
       runTest(test7w4ger8)
+      runTest(test7w4gerb)
     }
   }
 }
