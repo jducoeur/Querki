@@ -21,50 +21,69 @@ import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLCon
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
   val CodeMethodOID = sysId(77)
-  
+
   val IsBoundFunctionOID = moid(1)
 }
 
-private [ql] trait QLInternals extends EcologyInterface {
-  def qlProfilers:QLProfilers
+private[ql] trait QLInternals extends EcologyInterface {
+  def qlProfilers: QLProfilers
 }
 
 trait QLTestTools extends EcologyInterface {
-  def serializeContextCore(qv:QValue, bindings:Map[String, QValue])(implicit state:SpaceState):String
+
+  def serializeContextCore(
+    qv: QValue,
+    bindings: Map[String, QValue]
+  )(implicit
+    state: SpaceState
+  ): String
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTestTools with querki.core.WithQL
-  with querki.core.CollectionBase
-  with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
-  with querki.basic.PlainTextBaseType
-{
+class QLEcot(e: Ecology)
+  extends QuerkiEcot(e)
+     with QL
+     with QLInternals
+     with QLTestTools
+     with querki.core.WithQL
+     with querki.core.CollectionBase
+     with querki.core.MethodDefs
+     with querki.core.TextTypeBasis
+     with querki.core.NameUtils
+     with querki.core.NameTypeBasis
+     with querki.basic.PlainTextBaseType {
   import MOIDs._
-  
+
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val Profiler = interface[querki.tools.Profiler]
-  
+
   lazy val parserCreateProfiler = Profiler.createHandle("QLEcot.parserCreate")
   lazy val parserProcessProfiler = Profiler.createHandle("QLEcot.parserProcess")
   lazy val parserProcessMethodProfiler = Profiler.createHandle("QLEcot.parserProcessMethod")
-  
+
   // This is provided as a service for the QLParsers:
   lazy val qlProfilers = new QLProfilers
-  
+
   def QL = this
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * PUBLIC API
-   ***********************************************/
-  
-  def qvUnpack(data:IVData[QValue]):QValue = {
+   * *********************************************
+   */
+
+  def qvUnpack(data: IVData[QValue]): QValue = {
     val qvs = data.vs
     val returnType = data.metadata.returnType
     val preferredColl = data.metadata.preferredColl
-    
+
     collectQVs(qvs, returnType, preferredColl)
   }
-  
-  def collectQVs(qvs:Iterable[QValue], returnType:Option[PType[_]], preferredColl:Option[Collection]):QValue = {
+
+  def collectQVs(
+    qvs: Iterable[QValue],
+    returnType: Option[PType[_]],
+    preferredColl: Option[Collection]
+  ): QValue = {
     // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
     // conceptually Iterable[QValue].flatten:
     val pt = {
@@ -91,7 +110,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     // Rationalize the Collection. If the Collection we got from the invocation works with the number of
     // elements, keep it; otherwise, slam it to something sensible.
     // TODO: this mechanism needs to be generalized.
-    val newCT = 
+    val newCT =
       if (raw.isEmpty) {
         if (ct == Core.ExactlyOne)
           Core.Optional
@@ -107,139 +126,190 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
         else
           ct
       }
-    newCT.makePropValue(raw, pt)    
+    newCT.makePropValue(raw, pt)
   }
-  
-  def inv2QValueImpl(invRaw:InvocationValue[QValue]):QFut = {
+
+  def inv2QValueImpl(invRaw: InvocationValue[QValue]): QFut = {
     val inv = invRaw.asInstanceOf[InvocationValueImpl[QValue]]
     inv.fut.map(data => qvUnpack(data))
   }
-  
-  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext] = 
-  {
+
+  def process(
+    input: QLText,
+    ci: QLContext,
+    invOpt: Option[Invocation] = None,
+    lexicalThing: Option[PropertyBundle] = None,
+    lexicalProp: Option[AnyProp] = None
+  ): Future[Wikitext] = {
     val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
     parserProcessProfiler.profile { parser.process }
   }
-  
-  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[QValue] = 
-  {
+
+  def processMethod(
+    input: QLText,
+    ci: QLContext,
+    invOpt: Option[Invocation] = None,
+    lexicalThing: Option[PropertyBundle] = None,
+    lexicalProp: Option[AnyProp] = None
+  ): Future[QValue] = {
     val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
     parserProcessMethodProfiler.profile { parser.processMethod.map(_.value) }
   }
-  
-  def processMethodToWikitext(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None,
-      initialBindings:Option[Map[String, QValue]] = None):Future[Wikitext] = 
-  {
-    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp, initialBindings) }
+
+  def processMethodToWikitext(
+    input: QLText,
+    ci: QLContext,
+    invOpt: Option[Invocation] = None,
+    lexicalThing: Option[PropertyBundle] = None,
+    lexicalProp: Option[AnyProp] = None,
+    initialBindings: Option[Map[String, QValue]] = None
+  ): Future[Wikitext] = {
+    val parser =
+      parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp, initialBindings) }
     parserProcessMethodProfiler.profile { parser.processMethodToWikitext }
   }
-  
-  def parseMethod(input:String):Option[QLPhrase] =
-  {
+
+  def processExp(
+    ci: QLContext,
+    exp: QLExp,
+    invOpt: Option[Invocation] = None,
+    parserOpt: Option[QLParser] = None,
+    initialBindings: Option[Map[String, QValue]] = None
+  ): Future[QLContext] = {
+    val processor = parserCreateProfiler.profile { new QLProcessor(ci, invOpt, parserOpt, initialBindings) }
+    parserProcessMethodProfiler.profile { processor.processExp(exp, ci) }
+  }
+
+  def parseMethod(input: String): Option[QLPhrase] = {
     // Since we're just parsing, we shouldn't need a context:
     val parser = parserCreateProfiler.profile { new QLParser(QLText(input), EmptyContext(ecology)) }
     parser.parsePhrase()
   }
-  
+
   lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
-    override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
+
+    override def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }
-  
+
   lazy val EmptyListCutColl = new QListBase(UnknownOID, emptyProps) {
-    def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing  
+    def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing
   }
   def EmptyListCut() = EmptyListCutColl()
 
-  object ErrorTextType extends PlainTextType(UnknownOID,
-    toProps(
-      setName("Error Text")
-    )) with PTypeBuilder[PlainText,String] with IsErrorType {
-  }
+  object ErrorTextType
+    extends PlainTextType(
+      UnknownOID,
+      toProps(
+        setName("Error Text")
+      )
+    )
+       with PTypeBuilder[PlainText, String]
+       with IsErrorType {}
 
-  def WarningValue(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))
-  
-  def ErrorValue(msg:String) = {
+  def WarningValue(msg: String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))
+
+  def ErrorValue(msg: String) = {
     try {
       throw new Exception("dummy")
     } catch {
-      case e:Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")  
+      case e: Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")
     }
     WarningValue(msg)
   }
-  
-  def WikitextValue(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))
-  
+
+  def WikitextValue(wikitext: Wikitext): QValue = ExactlyOne(ParsedTextType(wikitext))
+
   val QLTag = "QL -- Parsing and Running Expressions"
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * Serialization / Deserialization
-   * 
+   *
    * These functions are used by systems such as _QLButton(), to embed the current state
    * of processing into HTML. They render an Invocation into an opaque String, and back again.
    */
-  
+
   // findBindingsIn() is a collection of functions to traverse a QLExp and find all of the
   // bindings referred to in it, so we know what we need to serialize. Conceptually it's a
   // typeclass, but since we only need it here, I'm not bothering with the TC boilerplate.
-  private def findBindingsInSeq[T](ts:Seq[T])(getter:T => Set[String]):Set[String] = {
+  private def findBindingsInSeq[T](ts: Seq[T])(getter: T => Set[String]): Set[String] = {
     (Set.empty[String] /: ts) { (set, t) =>
       set ++ getter(t)
     }
   }
-  
-  private def findBindingsIn(exp:QLExp):Set[String] = {
+
+  private def findBindingsIn(exp: QLExp): Set[String] = {
     findBindingsInSeq(exp.phrases)(findBindingsIn(_))
   }
-  private def findBindingsIn(phrase:QLPhrase):Set[String] = {
+
+  private def findBindingsIn(phrase: QLPhrase): Set[String] = {
     findBindingsInSeq(phrase.ops)(findBindingsIn(_))
   }
-  private def findBindingsIn(stage:QLStage):Set[String] = {
+
+  private def findBindingsIn(stage: QLStage): Set[String] = {
     stage match {
       case QLCall(name, methodNameOpt, paramsOpt, _) => {
-        findBindingsIn(name) ++ 
+        findBindingsIn(name) ++
           methodNameOpt.map(findBindingsIn(_)).getOrElse(Set.empty) ++
           paramsOpt.map { params =>
             findBindingsInSeq(params)(param => findBindingsIn(param.exp))
           }.getOrElse(Set.empty)
       }
       case QLTextStage(contents, _) => findBindingsIn(contents)
-      case QLExpStage(exp) => findBindingsIn(exp)
-      case QLListLiteral(exps) => findBindingsInSeq(exps)(findBindingsIn(_))
-      case QLNumber(_) => Set.empty
-      case QLTextBlockLiteral(_) => Set.empty
+      case QLExpStage(exp)          => findBindingsIn(exp)
+      case QLListLiteral(exps)      => findBindingsInSeq(exps)(findBindingsIn(_))
+      case QLNumber(_)              => Set.empty
+      case QLTextBlockLiteral(_)    => Set.empty
     }
   }
-  private def findBindingsIn(contents:ParsedQLText):Set[String] = {
+
+  private def findBindingsIn(contents: ParsedQLText): Set[String] = {
     findBindingsInSeq(contents.parts) { part =>
       part match {
-        case UnQLText(_) => Set.empty
+        case UnQLText(_)      => Set.empty
         case QLLink(contents) => findBindingsIn(contents)
-        case QLExp(exp) => findBindingsIn(QLExp(exp))
-      }          
-    }    
+        case QLExp(exp)       => findBindingsIn(QLExp(exp))
+      }
+    }
   }
-  private def findBindingsIn(name:QLName):Set[String] = {
+
+  private def findBindingsIn(name: QLName): Set[String] = {
     // This is where we actually *find* the bindings
     name match {
       case QLSafeName(_) | QLDisplayName(_) | QLBindingDef(_, _, _) | QLThingId(_) => Set.empty
-      case QLBinding(binding) => Set(binding)
+      case QLBinding(binding)                                                      => Set(binding)
     }
   }
-  
-  case class EmbeddedBinding(pTypeId:OID, cTypeId:OID, serialized:String)
-  case class EmbeddableContext(qvpType:OID, qvcType:OID, serializedQV:String, bindingsSerialized:Map[String, EmbeddedBinding])
-  
+
+  case class EmbeddedBinding(
+    pTypeId: OID,
+    cTypeId: OID,
+    serialized: String
+  )
+
+  case class EmbeddableContext(
+    qvpType: OID,
+    qvcType: OID,
+    serializedQV: String,
+    bindingsSerialized: Map[String, EmbeddedBinding]
+  )
+
   // These guts are broken out for testing:
-  def serializeContextCore(qv:QValue, bindings:Map[String, QValue])(implicit state:SpaceState):String = {
+  def serializeContextCore(
+    qv: QValue,
+    bindings: Map[String, QValue]
+  )(implicit
+    state: SpaceState
+  ): String = {
     val serializedQV = qv.serialize(qv.pType)
     // We need to store each binding with its PType and serialized Value:
-    val bindingsSerialized:Map[String, EmbeddedBinding] = bindings.map { case (k, v) =>
+    val bindingsSerialized: Map[String, EmbeddedBinding] = bindings.map { case (k, v) =>
       (k -> EmbeddedBinding(v.pType.id, v.cType.id, v.serialize(v.pType)))
     }
-      
+
     // Now build the structure we're actually going to serialize...
     val embeddable = EmbeddableContext(qv.pType.id, qv.cType.id, serializedQV, bindingsSerialized)
     // ... pickle that...
@@ -247,43 +317,50 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     val arr = Array.ofDim[Byte](buf.remaining())
     buf.get(arr)
     // and turn it into an opaque embeddable String:
-    Base64.Encoder(arr).toBase64    
+    Base64.Encoder(arr).toBase64
   }
-  
-  def serializeContext(inv:Invocation, qlParamNameOpt:Option[String]):InvocationValue[String] = {
+
+  def serializeContext(
+    inv: Invocation,
+    qlParamNameOpt: Option[String]
+  ): InvocationValue[String] = {
     try {
       implicit val state = inv.state
-      // Note: we are explicitly assuming that there is only one implementation of Invocation! 
+      // Note: we are explicitly assuming that there is only one implementation of Invocation!
       val invImpl = inv.asInstanceOf[InvocationImpl]
-      
+
       // First, serialize the received context. That's the easy bit:
       val context = inv.context
       val qv = context.value
-  
+
       // Next, figure out which bindings are actually being *used* by the QL expression we're
       // embedding:
-      def findBindingValue(inv:Invocation, name:String):Option[QValue] = {
+      def findBindingValue(
+        inv: Invocation,
+        name: String
+      ): Option[QValue] = {
         for {
           parser <- inv.context.parser
-          scopes = inv.context.scopes(parser)
+          scopes = inv.context.scopes(parser.processor)
           bound <- scopes.lookup(name)
-        }
-          yield bound
+        } yield bound
       }
-      def bindingValues(inv:Invocation, boundNames:Set[String]):Map[String, QValue] = {
+      def bindingValues(
+        inv: Invocation,
+        boundNames: Set[String]
+      ): Map[String, QValue] = {
         (Map.empty[String, QValue] /: boundNames) { (m, name) =>
           findBindingValue(inv, name).map(v => m + (name -> v)).getOrElse(m)
         }
       }
-      
+
       val bindingsOpt = for {
         qlParamName <- qlParamNameOpt
         exp <- invImpl.sig.getParam(qlParamName).exp
         boundNames = findBindingsIn(exp)
-      }
-        yield bindingValues(inv, boundNames)
+      } yield bindingValues(inv, boundNames)
       val bindings = bindingsOpt.getOrElse(Map.empty)
-      
+
       inv.wrap(serializeContextCore(qv, bindings))
     } catch {
       case SerializationException(tpe) => {
@@ -291,8 +368,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
       }
     }
   }
-  
-  def deserializeContext(str:String)(implicit state:SpaceState):(QValue, Map[String, QValue]) = {
+
+  def deserializeContext(str: String)(implicit state: SpaceState): (QValue, Map[String, QValue]) = {
     val byteArray = Base64.Decoder(str).toByteArray
     val embedded = Unpickle[EmbeddableContext].fromBytes(java.nio.ByteBuffer.wrap(byteArray))
     val pType = state.typ(embedded.qvpType)
@@ -305,21 +382,32 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     }
     (qv, bindings)
   }
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * TYPES
-   ***********************************************/
+   * *********************************************
+   */
 
   /**
    * This is a fake PType, used when we encounter a name we don't know.
    */
-  lazy val UnknownNameType = new NameTypeBase(UnknownOID, 
+  lazy val UnknownNameType = new NameTypeBase(
+    UnknownOID,
     toProps(
       setName("_unknownNameType"),
       Categories(QLTag),
-      Summary("This is an error type produced when your expression contains an unknown name"))) 
-  {
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      Summary("This is an error type produced when your expression contains an unknown name")
+    )
+  ) {
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: String,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ) = {
       Future.successful(Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}"))
     }
   }
@@ -327,56 +415,83 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
   /**
    * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
    */
-  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, 
+  lazy val ParsedTextType = new SystemType[Wikitext](
+    UnknownOID,
     toProps(
       setName("Parsed Text Type"),
       Categories(QLTag),
-      Summary("This is an internal Text Type that results from the system parsing some Text")))
-    with SimplePTypeBuilder[Wikitext] with querki.core.IsTextType
-  {
+      Summary("This is an internal Text Type that results from the system parsing some Text")
+    )
+  ) with SimplePTypeBuilder[Wikitext] with querki.core.IsTextType {
+
     // We didn't originally permit serialization of Wikitext, but do now for Notifications. Since we want to
     // retain the Wikitext's structure properly, we are serializing it using upickle, since that's the
     // well-established way we handle it over the wire. It's a bit inefficient, but should be liveable.
-    def doDeserialize(v:String)(implicit state:SpaceState) = {
+    def doDeserialize(v: String)(implicit state: SpaceState) = {
       import upickle.default._
       read[Wikitext](v)
     }
-    def doSerialize(v:Wikitext)(implicit state:SpaceState) = {
+
+    def doSerialize(v: Wikitext)(implicit state: SpaceState) = {
       import upickle.default._
       write[Wikitext](v)
     }
-    
-    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: Wikitext,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ) =
       Future.successful(v)
-    override def doToUrlParam(v:Wikitext, raw:Boolean)(implicit state:SpaceState):String = {
+
+    override def doToUrlParam(
+      v: Wikitext,
+      raw: Boolean
+    )(implicit
+      state: SpaceState
+    ): String = {
       if (raw)
         s"${v.plaintext}"
       else
         s"""""${v.plaintext}"""""
     }
-  
-    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext.toLowerCase < right.plaintext.toLowerCase }
-    override def doMatches(left:Wikitext, right:Wikitext):Boolean = { left.plaintext == right.plaintext }
-    override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
-  
-    def doDefault(implicit state:SpaceState) = Wikitext("")
-    def wrap(raw:String):valType = Wikitext(raw)
+
+    override def doComp(
+      context: QLContext
+    )(
+      left: Wikitext,
+      right: Wikitext
+    ): Boolean = { left.plaintext.toLowerCase < right.plaintext.toLowerCase }
+
+    override def doMatches(
+      left: Wikitext,
+      right: Wikitext
+    ): Boolean = { left.plaintext == right.plaintext }
+    override def doDebugRender(context: QLContext)(v: Wikitext) = v.contents.map(_.internal).mkString
+
+    def doDefault(implicit state: SpaceState) = Wikitext("")
+    def wrap(raw: String): valType = Wikitext(raw)
     // This is a transient PType, so we don't care:
-    def doComputeMemSize(v:Wikitext):Int = 0
-    
+    def doComputeMemSize(v: Wikitext): Int = 0
+
     // Parsed Text can be coerced to conventional Text types:
-    override def canCoerceTo(other:PType[_]):Boolean = {
+    override def canCoerceTo(other: PType[_]): Boolean = {
       other match {
-        case et:IsErrorType => false
-        case itt:IsTextType => true
-        case _ => false
+        case et: IsErrorType => false
+        case itt: IsTextType => true
+        case _               => false
       }
     }
-    
-    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+
+    override def coerceTo(
+      other: PType[_],
+      elem: ElemValue
+    ): ElemValue = {
       other match {
-        case et:IsErrorType => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
-        case itt:IsTextType => {
+        case et: IsErrorType => throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+        case itt: IsTextType => {
           val wiki = get(elem)
           itt(wiki.strip)
         }
@@ -387,37 +502,51 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
     def rawString(elem: ElemValue): String = {
       elem.elem match {
         case w: Wikitext => w.plaintext
-        case _ => throw new Exception(s"ParsedTextType.rawString() got invalid value $elem!")
+        case _           => throw new Exception(s"ParsedTextType.rawString() got invalid value $elem!")
       }
     }
+
     def apply(raw: String): ElemValue = {
       ElemValue(Wikitext(raw), this)
     }
   }
-  
-  lazy val ClosureType = new SystemType[QLClosure](UnknownOID,
+
+  lazy val ClosureType = new SystemType[QLClosure](
+    UnknownOID,
     toProps(
       setName("_QL Closure"),
-      setInternal)) with SimplePTypeBuilder[QLClosure]
-  {
-    def doDeserialize(v:String)(implicit state:SpaceState) = ???
-    def doSerialize(v:QLClosure)(implicit state:SpaceState) = ???
-    def doWikify(context:QLContext)(v:QLClosure, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = ???
-    def doDefault(implicit state:SpaceState) = ???
+      setInternal
+    )
+  ) with SimplePTypeBuilder[QLClosure] {
+    def doDeserialize(v: String)(implicit state: SpaceState) = ???
+    def doSerialize(v: QLClosure)(implicit state: SpaceState) = ???
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: QLClosure,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ) = ???
+    def doDefault(implicit state: SpaceState) = ???
     // This is a transient PType, so we don't care:
-    def doComputeMemSize(v:QLClosure):Int = 0
+    def doComputeMemSize(v: QLClosure): Int = 0
   }
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * FUNCTIONS
-   ***********************************************/
-  
-  lazy val SelfMethod = new InternalMethod(SelfMethodOID,
+   * *********************************************
+   */
+
+  lazy val SelfMethod = new InternalMethod(
+    SelfMethodOID,
     toProps(
       setName("_self"),
       Categories(QLTag),
       Summary("Get a Link to this Thing"),
-      Details("""*thing*._self simply produces *thing*.
+      Details(
+        """*thing*._self simply produces *thing*.
           |
           |This seems silly, but it is useful for overriding the usual \_apply behavior. In particular,
           |*property*.\_self is the way to get a link to the property itself, instead of fetching the value
@@ -434,17 +563,21 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
           |something else. If you're trying to fetch "everything that points to this" (one of the more common
           |cases), check out [[_refs._self]], which does exactly this. Or, if you are in a QL expression and are
           |looking for a way to say "this Thing that I'm looking at here", you can usually get that as
-          |`$_context`. (Which is technically "the value passed into this QL expression at the beginning".)""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
+          |`$_context`. (Which is technically "the value passed into this QL expression at the beginning".)""".stripMargin
+      )
+    )
+  ) {
+
+    override def qlApply(inv: Invocation): QFut = {
       inv.definingContext match {
         case Some(context) => Future.successful(context.value)
-        case _ => Future.successful(WarningValue("QL.self.notDotted")) 
+        case _             => Future.successful(WarningValue("QL.self.notDotted"))
       }
     }
   }
-  
-  lazy val IsBoundFunction = new InternalMethod(IsBoundFunctionOID,
+
+  lazy val IsBoundFunction = new InternalMethod(
+    IsBoundFunctionOID,
     toProps(
       setName("_isBound"),
       Categories(QLTag),
@@ -456,9 +589,11 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
         ),
         opts = Seq.empty,
         returns = (YesNoType, "True iff the given name is currently bound, false otherwise.")
-      )))
-  {
-    override def qlApply(inv:Invocation):QFut = {
+      )
+    )
+  ) {
+
+    override def qlApply(inv: Invocation): QFut = {
       lazy val errOpt = Some(new PublicException("QL.isBound.notABinding"))
       for {
         param <- inv.rawRequiredParam("name")
@@ -467,7 +602,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
         QLCall(binding, _, _, _) = stage
         QLBinding(name) = binding
         parser <- inv.opt(inv.context.parser)
-        scopes <- inv.opt(inv.context.scopes.get(parser))
+        scopes <- inv.opt(inv.context.scopes.get(parser.processor))
         answer = {
           // Look in the lexical scope first...
           scopes.lookup(name).orElse {
@@ -475,43 +610,48 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
             inv.context.requestOpt.flatMap(_.parsedParams.get(name))
           }.isDefined
         }
-      }
-        yield ExactlyOne(YesNoType(answer))
+      } yield ExactlyOne(YesNoType(answer))
     }
   }
-  
-  lazy val CodeMethod = new InternalMethod(CodeMethodOID,
+
+  lazy val CodeMethod = new InternalMethod(
+    CodeMethodOID,
     toProps(
       setName("_code"),
       Categories(QLTag),
       Summary("Display a block of QL code"),
       Details("""_code() displays the raw code of a value or property, pretty flexibly.
-          |
-          |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
-          |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
-          |
-          |You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
-          |
-          |Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
-          |
-          |If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
-          |
-          |The results are displayed in an inset block, in monospaced type, so that it looks "codish".
-          |
-          |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
-          |considered a work in progress.""".stripMargin)))
-  {
-    def encodeString(str:String):QFut = {
+                |
+                |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
+                |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
+                |
+                |You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
+                |
+                |Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
+                |
+                |If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
+                |
+                |The results are displayed in an inset block, in monospaced type, so that it looks "codish".
+                |
+                |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
+                |considered a work in progress.""".stripMargin)
+    )
+  ) {
+
+    def encodeString(str: String): QFut = {
       val escaped = scala.xml.Utility.escape(str)
-      Future.successful(HtmlUI.HtmlValue(QHtml("<pre>" + escaped + "</pre>")))    
+      Future.successful(HtmlUI.HtmlValue(QHtml("<pre>" + escaped + "</pre>")))
     }
-    
-    def encode(propVal:QValue, pType:PType[_]):QFut = {
+
+    def encode(
+      propVal: QValue,
+      pType: PType[_]
+    ): QFut = {
       if (propVal.isEmpty)
         WarningFut("_code got an empty input")
       else {
         pType match {
-          case codeType:CodeType => {
+          case codeType: CodeType => {
             val str = codeType.code(propVal.first)
             encodeString(str)
           }
@@ -522,17 +662,22 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
         }
       }
     }
-    
-    def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[QFut] = {
+
+    def encodeThingAndProp(
+      thing: Thing,
+      prop: Thing
+    )(implicit
+      space: SpaceState
+    ): Option[QFut] = {
       val propAndValOpt = thing.getPropOpt(prop.id)
-      propAndValOpt.map { propAndVal => 
+      propAndValOpt.map { propAndVal =>
         encode(propAndVal.v, propAndVal.prop.pType)
       }
     }
-    
+
     // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
     // tools in the Scala toolbelt.
-    override def qlApply(inv:Invocation):QFut = {
+    override def qlApply(inv: Invocation): QFut = {
       val partialContext = inv.preferDefiningContext.context
       implicit val space = partialContext.state
       inv.paramsOpt match {
@@ -545,19 +690,18 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
           val stage = param.exp.phrases.head.ops.head
           stage match {
             case QLTextStage(contents, _) => encodeString(contents.reconstructString)
-            case QLNumber(num) => encodeString(stage.reconstructString)
-            case lit:QLListLiteral => encodeString(lit.reconstructString) 
+            case QLNumber(num)            => encodeString(stage.reconstructString)
+            case lit: QLListLiteral       => encodeString(lit.reconstructString)
             case QLCall(name, methodNameOpt, _, _) => {
               val thingName = name.name
               methodNameOpt match {
                 case Some(methodName) => {
-                  val resultOpt = for (
-                    thing <- space.anythingByName(thingName);
-                    propThing <- space.anythingByName(methodName.name);
+                  val resultOpt = for {
+                    thing <- space.anythingByName(thingName)
+                    propThing <- space.anythingByName(methodName.name)
                     encoded <- encodeThingAndProp(thing, propThing)
-                  )
-                    yield encoded
-                    
+                  } yield encoded
+
                   resultOpt.getOrElse(encodeString(param.reconstructString))
                 }
                 case None => {
@@ -566,16 +710,16 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with QLTe
                     case Some(propThing) => {
                       for {
                         thing <- inv.contextAllThings
-                        res <- inv.fut(encodeThingAndProp(thing, propThing).getOrElse(encodeString(param.reconstructString)))
-                      }
-                        yield res
+                        res <-
+                          inv.fut(encodeThingAndProp(thing, propThing).getOrElse(encodeString(param.reconstructString)))
+                      } yield res
                     }
                     case None => encodeString(param.reconstructString)
                   }
                 }
               }
             }
-            case exp:QLExpStage => encodeString(exp.reconstructString)
+            case exp: QLExpStage           => encodeString(exp.reconstructString)
             case block: QLTextBlockLiteral => encodeString(block.reconstructString)
           }
         }
