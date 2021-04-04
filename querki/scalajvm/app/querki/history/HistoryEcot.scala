@@ -6,9 +6,8 @@ import querki.globals._
 import querki.values.RequestContext
 import HistoryFunctions._
 import models.OID
-import querki.core.QLText
 import querki.history.SpaceHistory.{DeletedThings, ForAllDeletedThings, RestoreDeletedThing}
-import querki.ql.{ParsedQLText, QLCall, QLExp, QLThingId}
+import querki.ql.{QLCall, QLExp, QLThingId}
 import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
 import querki.util.{ActorHelpers, PublicException}
 
@@ -166,24 +165,24 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     ListDeletedThingsOID,
     toProps(
       setName("_listDeletedThings"),
-      Summary("Lists the Things in this Space that pass the given predicate, that have been deleted."),
+      Summary("Lists the Things in this Space that pass the given filter, that have been deleted."),
       Signature(
         expected = None,
         reqs = Seq.empty,
         opts = Seq(
-          ("predicate", AnyType, Core.QNone, "A QL expression returning YesOrNoType, to try on each deleted Thing"),
+          ("filter", AnyType, Core.QNone, "A QL expression returning YesOrNoType, to try on each deleted Thing"),
           ("render", AnyType, Core.QNone, "A QL expression saying what to return from each deleted Thing")
         ),
         returns = (AnyType, "A List of resulting values from the deleting Things")
       ),
       Details(
         """
-          |If no predicate is given, all deleted Things will be returned.
+          |If no filter is given, all deleted Things will be returned.
           |
-          |The predicate can be almost anything. For example, this returns all deleted Things that are children of
+          |The filter can be almost anything. For example, this returns all deleted Things that are children of
           |`My Model`:
           |[[```
-          |_listDeletedThings(predicate = _model -> _is(My Model))
+          |_listDeletedThings(filter = _model -> _is(My Model))
           |```]]
           |
           |The `render` parameter will be applied to each deleted Thing, in the context of the history right before
@@ -191,7 +190,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
           |renders all of the instances of `My Model`, showing the name and OID of each with "Restore" button to
           |undelete it:
           |[[```
-          |_listDeletedThings(predicate = _model -> _is(My Model), render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing)]]"") -> _bulleted
+          |_listDeletedThings(filter = _model -> _is(My Model), render=""[[Name]] ([[_oid]]) [[_QLButton(label = ""Restore"", noIcon = true, ql = _undeleteThing)]]"") -> _bulleted
           |```]]
           |
           |If no `render` parameter is given, the OIDs of the deleted Things will be returned.""".stripMargin
@@ -201,7 +200,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
 
     override def qlApply(inv: Invocation): QFut = {
       for {
-        predOpt <- inv.rawParam("predicate")
+        predOpt <- inv.rawParam("filter")
         renderOpt <- inv.rawParam("render")
         DeletedThings(qvs) <- inv.fut(
           SpaceOps.spaceRegion ?

@@ -126,10 +126,10 @@ object HistoryMidTests {
       result <- evaluateQL(spaceId, """_listDeletedThings(render = ""[[_oid]]"") -> _commas""")
       _ = assert(result.plaintext.split(',').length == 2)
 
-      // But if we add a predicate on the Model, we only see that one:
+      // But if we add a filter on the Model, we only see that one:
       result <- evaluateQL(
         spaceId,
-        """_listDeletedThings(predicate = _model -> _is(The Model), render = ""[[_oid]]"") -> _commas"""
+        """_listDeletedThings(filter = _model -> _is(The Model), render = ""[[_oid]]"") -> _commas"""
       )
       _ = assert(result.plaintext.split(',').length == 1)
       _ = assert(secondOID == result.plaintext)
