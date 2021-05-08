@@ -44,7 +44,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
-    "com.lihaoyi" %% "utest" % "0.3.1",
+//    "com.lihaoyi" %% "utest" % "0.3.1",
     "org.querki" %% "requester" % "2.6",
     "com.github.mauricio" %% "mysql-async" % "0.2.16",
 //      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
@@ -56,7 +56,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
     // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
     "com.lihaoyi" %% "pprint" % "0.4.1",
-    "com.lihaoyi" %% "sourcecode" % "0.1.4",
+    "com.lihaoyi" %%% "fastparse" % "2.3.2",
+    "com.lihaoyi" %% "sourcecode" % "0.2.3",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     "ai.x" %% "diff" % "1.2.0" % "test",
     // Only used for debugging at this point:
@@ -169,7 +170,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
     "org.querki" %%% "jstree-facade" % "0.5",
     "org.querki" %%% "squery" % "0.1",
-    "org.querki" %%% "gadgets" % "0.3"
+    "org.querki" %%% "gadgets" % "0.3",
+    "com.lihaoyi" %%% "fastparse" % "0.4.3"
   )
 ).enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
@@ -198,7 +200,6 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.6.5",
-  "com.lihaoyi" %%% "fastparse" % "0.4.3",
   "org.querki" %%% "shocon" % "0.4",
   "com.beachape" %%% "enumeratum" % enumeratumV,
   "com.beachape" %%% "enumeratum-upickle" % enumeratumV

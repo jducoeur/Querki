@@ -24,51 +24,64 @@ import mysql._
 /**
  * This does the actual heavy lifting of importing a data file from the client,
  * and building a Space from it.
- * 
+ *
  * This Actor is created from ImportSpaceFunctions, and is attached to a UserSession.
- * 
+ *
+ * TODO: OMG this code is so, so bad -- it's from relatively early in my Scala days, when I didn't fully
+ * understand typeclasses or FP, and boy it shows. Make this better.
+ *
  * @author jducoeur
  */
-class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalSize:Int) extends Actor with Requester 
-  with UploadActor with Remapper[RequestM] with SpaceCreator with querki.core.NameUtils with EcologyMember 
-{
+class ImportSpaceActor(
+  e: Ecology,
+  importType: ImportDataType,
+  name: String,
+  totalSize: Int
+) extends Actor
+     with Requester
+     with UploadActor
+     with Remapper[RequestM]
+     with SpaceCreator
+     with querki.core.NameUtils
+     with EcologyMember {
   import ImportSpaceActor._
-  
+
   implicit val ecology = e
-  
+
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Cluster = interface[querki.cluster.QuerkiCluster]
   lazy val Core = interface[querki.core.Core]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
-  
+
   implicit def rtc = RealRTCAble
-  def getOIDs(nRequested:Int):RequestM[Seq[OID]] = {
+
+  def getOIDs(nRequested: Int): RequestM[Seq[OID]] = {
     Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids)
   }
   lazy val persister = SpacePersistenceFactory.getSpaceManagerPersister(context)
-  
-  def buildSpaceState(rc:RequestContext):SpaceState = {
+
+  def buildSpaceState(rc: RequestContext): SpaceState = {
     importType match {
       case ImportXML => {
         val xml = uploaded
         new RawXMLImport(rc)(ecology).readXML(xml)
       }
-      
+
       case ImportMySQL => {
         val sql = uploaded
         new MySQLImport(rc, name)(ecology).readDumpfile(sql)
       }
-      
+
       case _ => {
         QLog.error(s"ImportSpaceActor called with unknown ImportDataType $importType")
         throw new Exception("Unknown ImportDataType!")
       }
     }
   }
-  
-  override def receive = handleChunks orElse {
+
+  override def receive = handleChunks.orElse {
     case GetProgress => {
       // The client is asking for an update, so calculate where we are:
       if (!uploadComplete) {
@@ -80,39 +93,42 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
         sender ! ImportProgress("Processing...", processPercent, spaceInfo, failed)
       }
     }
-    
+
     case CompletionAcknowledged => context.stop(self)
   }
-  
-  var importMsg:String = "Uploading"
-  
-  var processPercent:Int = 0
-  
+
+  var importMsg: String = "Uploading"
+
+  var processPercent: Int = 0
+
   // Set when we are complete
-  var spaceInfo:Option[querki.data.SpaceInfo] = None
-  
+  var spaceInfo: Option[querki.data.SpaceInfo] = None
+
   // Set to true iff the upload process fails
   var failed = false
-  
-  def startSpaceActor(spaceId:OID):ActorRef = {
+
+  def startSpaceActor(spaceId: OID): ActorRef = {
     context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
-  
-  def processBuffer(rc:RequestContext) = {
+
+  def processBuffer(rc: RequestContext) = {
     processPercent = 50
-    
+
     if (rc.requester.isEmpty)
       throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
-    
-    def handleError(ex:Throwable) = {
+
+    def handleError(ex: Throwable) = {
       importMsg = ex match {
-        case pex:PublicException => pex.display(Some(rc))
-        case _ => "There was an error trying to upload that Space -- sorry! Please contact us, so we can look into it."
+        case pex: PublicException => pex.display(Some(rc))
+        case _                    => "There was an error trying to upload that Space -- sorry! Please contact us, so we can look into it."
       }
-      
-      failed = true      
+
+      QLog.warn(s"Error during Import Space: $importMsg")
+      QLog.warn(s"Exception while uploading Space: $ex\n${ex.getStackTrace}")
+
+      failed = true
     }
-    
+
     try {
       // Given the XML or MySQL file, build a SpaceState:
       val rawState = buildSpaceState(rc)
@@ -124,10 +140,11 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
           toProps(
             Core.NameProp(canon),
             Basic.DisplayNameProp(name)
-          ))
+          )
+      )
       val user = rc.requesterOrAnon
-      
-      for {
+
+      val result: RequestM[Boolean] = for {
         // Remap all of the OIDs in the SpaceState to use new ones:
         (remappedState, oidMap) <- remapOIDs(renamedState)
         _ = processPercent = 70
@@ -137,32 +154,51 @@ class ImportSpaceActor(e:Ecology, importType:ImportDataType, name:String, totalS
         // Boot the new Space *locally*, so we can throw the State over the wall:
         spaceActor = startSpaceActor(newSpaceId)
         // Slam the State:
-        ThingFound(_, finalState) <- spaceActor.request(SetState(user, newSpaceId, remappedState, SetStateReason.ImportedFromExport, rawState.displayName))
+        ThingFound(_, finalState) <- spaceActor.request(SetState(
+          user,
+          newSpaceId,
+          remappedState,
+          SetStateReason.ImportedFromExport,
+          rawState.displayName
+        ))
         _ = processPercent = 90
         // Finally, once it's all built, shut down this temp Actor:
         _ = context.stop(spaceActor)
         // And tell the SpaceManager that this Space is now ready to be treated normally:
         _ <- SpaceOps.spaceManager.requestFor[StatusChanged.type](ChangeSpaceStatus(newSpaceId, StatusNormal))
-      }
-      {
+      } yield {
         // We don't actually do anything -- we wait for the client to request an update
         // on the situation. So just note that we're done.
         spaceInfo = Some(ClientApi.spaceInfo(remappedState, user))
+
+        true
+      }
+
+      result.onFailure {
+        case ex: Exception => {
+          handleError(ex)
+        }
       }
     } catch {
       // Caught an error while trying to build the SpaceState:
-      case ex:Throwable => handleError(ex)
+      case ex: Throwable => handleError(ex)
     }
-    
+
     sender ! UploadProcessSuccessful("Processing in progress")
   }
 }
 
 object ImportSpaceActor {
-  def actorProps(ecology:Ecology, importType:ImportDataType, name:String, size:Int) = Props(classOf[ImportSpaceActor], ecology, importType, name, size)
-  
+
+  def actorProps(
+    ecology: Ecology,
+    importType: ImportDataType,
+    name: String,
+    size: Int
+  ) = Props(classOf[ImportSpaceActor], ecology, importType, name, size)
+
   case object GetProgress
-  
+
   case object CompletionAcknowledged
 }
 

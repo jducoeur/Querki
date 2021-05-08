@@ -2,7 +2,7 @@ package querki.imexport
 
 import mysql._
 
-import fastparse.all._
+import fastparse._, NoWhitespace._
 
 import models._
 
@@ -14,7 +14,7 @@ import querki.util.QLog
 class AdHocMySQLTests extends QuerkiTests with ParserTests {
   import MySQLParse._
   import MySQLProcess._
-  
+
   "The MySQLParser" should {
     "do an ad hoc test" in {
       // Placeholder, when I need to do experiments
@@ -28,79 +28,124 @@ class AdHocMySQLTests extends QuerkiTests with ParserTests {
 class MySQLTests extends QuerkiTests with ParserTests {
   import MySQLParse._
   import MySQLProcess._
-  
+
   "MySQLParse" should {
     lazy val Core = interface[querki.core.Core]
-    
+
+    import MySQLParse._
+
+    def nlW[_ : P] = Wrap(nlP)
+
     "parse end of line" in {
-      checkParse(MySQLParse.nlP, "\n")
-      checkParse(MySQLParse.nlP, "\r\n")
+      checkParse(nlW(_), "\n")
+      checkParse(nlW(_), "\r\n")
     }
-    
+
+    def blankCommentW[_ : P] = Wrap(blankCommentP)
+    def commentsW[_ : P] = Wrap(commentsP)
+    def hashCommentW[_ : P] = Wrap(hashCommentP)
+
     "parse a couple of blank lines" in {
-      checkParse(MySQLParse.blankCommentP, """
-""")
-      checkParse(MySQLParse.blankCommentP, """   
-""")
-      checkParse(MySQLParse.commentsP, """
+      checkParse(
+        blankCommentW(_),
+        """
+"""
+      )
+      checkParse(
+        blankCommentW(_),
+        """   
+"""
+      )
+
+      checkParse(
+        commentsW(_),
+        """
    
-""")
+"""
+      )
     }
-    
+
     "parse a hash comment" in {
-      checkParse(MySQLParse.hashCommentP, """# ************************************************************
-""")
-      checkParse(MySQLParse.hashCommentP, "# ************************************************************\r\n")
-      checkParse(MySQLParse.commentsP, """
+      checkParse(
+        hashCommentW(_),
+        """# ************************************************************
+"""
+      )
+      checkParse(hashCommentW(_), "# ************************************************************\r\n")
+      checkParse(
+        commentsW(_),
+        """
 # ************************************************************
 # Sequel Pro SQL dump
 # Version 4096
 #
-""")
+"""
+      )
     }
-    
+
     "parse a dash comment" in {
-      checkParse(MySQLParse.commentsP, """-- MySQL dump 10.13  Distrib 5.1.44, for Win64 (unknown)
+      checkParse(
+        commentsW(_),
+        """-- MySQL dump 10.13  Distrib 5.1.44, for Win64 (unknown)
 --
 -- Host: localhost    Database: comics_production
 -- ------------------------------------------------------
 -- Server version 5.1.44-community
-""")
+"""
+      )
     }
-    
+
+    def quotedIdentW[_ : P] = Wrap(quotedIdentP)
+
     "parse a quoted identifier" in {
-      checkParse(MySQLParse.quotedIdentP, "`id`")
+      checkParse(quotedIdentW(_), "`id`")
     }
-    
+
+    def createStatementW[_ : P] = Wrap(createStatementP)
+    def statementW[_ : P] = Wrap(statementP)
+    def insertStatementW[_ : P] = Wrap(insertStatementP)
+
     "parse a create statement" in {
-      checkParse(MySQLParse.createStatementP, """CREATE TABLE `case` (
+      checkParse(
+        createStatementW(_),
+        """CREATE TABLE `case` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `last_updated` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 )
-""")
-      checkParse(MySQLParse.statementP, """CREATE TABLE `case` (
+"""
+      )
+      checkParse(
+        statementW(_),
+        """CREATE TABLE `case` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT
 );
-""")
+"""
+      )
     }
-    
+
+    def oneValueW[_ : P] = Wrap(oneValueP)
+    def rowValuesW[_ : P] = Wrap(rowValuesP)
+
     "parse a quoted value" in {
-      val s = checkParse(MySQLParse.oneValueP, "'2012-06-13'")
+      val s = checkParse(oneValueW(_), "'2012-06-13'")
       assert(s == "2012-06-13")
     }
-    
+
     "parse values in a simple insert row" in {
-      val row:RawRow = checkParse(MySQLParse.rowValuesP, "('2012-06-13','2012-07-13 10:28:37')")
+      val row: RawRow = checkParse(rowValuesW(_), "('2012-06-13','2012-07-13 10:28:37')")
       assert(row.v(0) == "2012-06-13")
     }
-    
+
     "parse an insert statement" in {
-      checkParse(MySQLParse.insertStatementP, """INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
+      checkParse(
+        insertStatementW(_),
+        """INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
 VALUES
   (1,'Howard',290,NULL,'N',15,5,4,NULL,0,0,1,132.5,90,'2011-06-16','2011-03-13 10:28:01',NULL),
-  (5,'US Watch Company',65,NULL,'16',7,5,4,NULL,1,1,2,30.5,27,'2011-06-12','2012-03-20 15:15:01',NULL)""")
+  (5,'US Watch Company',65,NULL,'16',7,5,4,NULL,1,1,2,30.5,27,'2011-06-12','2012-03-20 15:15:01',NULL)"""
+      )
     }
-    
+
     "read in a bit of dumpfile" in {
       // This is not intended to be a valid dumpfile -- it just exercises a bunch of syntax:
       val statements = MySQLParse("""
@@ -124,39 +169,42 @@ VALUES
       assert(statements.size == 3)
       statements.head match {
         case StmtDrop(TableName(table)) => assert(table == "case")
-        case _ => fail("Didn't get the expected drop statement!")
+        case _                          => fail("Didn't get the expected drop statement!")
       }
     }
-    
+
     "parse a quoted value properly" in {
-      val s = checkParse(MySQLParse.oneValueP, "'o\\'clock'")
+      val s = checkParse(oneValueW(_), "'o\\'clock'")
       assert(s == "o'clock")
     }
-    
+
     "read in a full dumpfile" in {
       val statements = MySQLParse(sql)
-      
+
       assert(statements.size == 26)
     }
   }
-  
-  implicit class RichTable(table:MySQLTable) {
+
+  implicit class RichTable(table: MySQLTable) {
     def rows = table.data.get.rows
-    def rowOpt(id:Int):Option[MySQLRow] = rows.find(_.vs.head == IntVal(id))
-    
-    def columnIndex(colName:String):Int = 
+    def rowOpt(id: Int): Option[MySQLRow] = rows.find(_.vs.head == IntVal(id))
+
+    def columnIndex(colName: String): Int =
       table.data.get.columnOrder.indexWhere(_.v == colName)
-    
-    def cell(rowId:Int, colName:String):SQLVal[_] = {
+
+    def cell(
+      rowId: Int,
+      colName: String
+    ): SQLVal[_] = {
       val r = rowOpt(rowId).get
       r.vs(columnIndex(colName))
     }
   }
-  
+
   "MySQLProcess" should {
     "successfully build a complex DB" in {
       val statements = MySQLParse(sql)
-    
+
       val db = MySQLProcess.processStmts(statements)
 
       // Some spot-checks of the resulting Tables:
@@ -171,7 +219,7 @@ VALUES
       assert(movements.primaryKey == Some(ColumnName("id")))
     }
   }
-  
+
   "MySQLImport" should {
     // Stripped-down test, just to check that constraints become Links:
     "construct a constraint correctly" in {
@@ -192,27 +240,29 @@ CREATE TABLE `movement_set_type` (
       val mstModel = state.anythingByDisplayName("Movement Set Type").get
       val sourceProp = state.prop(AsName("Source")).get.confirmType(Core.TextType).get
     }
-    
+
     // This is the serious test -- do we get the right output?
     "produce a correct Space from a complex DB" in {
       val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
       val state = importer.readDumpfile(sql)
-      
-      def pqloaded(text:String) = {
+
+      def pqloaded(text: String) = {
         val rc = getRcs(state)(commonSpace, BasicTestUser)
         val context = state.thisAsContext(rc, state, ecology)
         processQText(context, text)
       }
-      
+
       pqloaded("[[Movement Wind Type._instances -> _sort(Wind Type Name) -> Wind Type Name -> _commas]]") should
         startWith("Key Back, Key Front")
-      
+
       // There is only one Key Front watch, and it's a Howard:
-      pqloaded("""[[Movement._instances -> _filter(_equals(Wind Type -> Wind Type Name, ""Key Front"")) -> Brand]]""") should
+      pqloaded(
+        """[[Movement._instances -> _filter(_equals(Wind Type -> Wind Type Name, ""Key Front"")) -> Brand]]"""
+      ) should
         equal("Howard")
     }
   }
-  
+
   val sql = """
 # ************************************************************
 # Sequel Pro SQL dump
