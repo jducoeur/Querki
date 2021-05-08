@@ -144,9 +144,11 @@ object XMLParser {
   }
   def emptyXmlP[_ : P] = P(xmlHeadP ~ "/>")
 
-  // NOTE: this clumsily throws an exception if there is a name mismatch, mainly because I'm concerned
+  // TODO: this clumsily throws an exception if there is a name mismatch, mainly because I'm concerned
   // about the performance implications of flatMap. This needs more examination:
-  def xmlWithChildrenP[_ : P] = P(xmlHeadP ~ ">" ~/ (xmlTextP | xmlElementP).rep ~ "</" ~ xmlNameP ~ ">").map { elems =>
+  def xmlWithChildrenP[
+    _ : P
+  ] = P(xmlHeadP ~ ">" ~/ (xmlTextP | xmlElementP).rep ~ "</" ~/ xmlNameP ~ ">").map { elems =>
     val (head, children, tail) = elems
     if (head.tagName != tail)
       throw new Exception(s"Mismatched tags in XML: expecting ${head.tagName}, got $tail")
@@ -162,5 +164,5 @@ object XMLParser {
   /**
    * The main entry point. Feed this a complete XML file.
    */
-  def xmlP[_ : P] = P(xmlPreludeP.? ~ xmlElementP)
+  def xmlP[_ : P] = P(xmlPreludeP.? ~/ xmlElementP)
 }
