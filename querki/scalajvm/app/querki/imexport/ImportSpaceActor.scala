@@ -55,6 +55,8 @@ class ImportSpaceActor(
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
 
+  // TODO: replace this silliness with proper typeclass usage, now that I have a better idea what I'm doing than
+  // I did years ago when I wrote this:
   implicit def rtc = RealRTCAble
 
   def getOIDs(nRequested: Int): RequestM[Seq[OID]] = {

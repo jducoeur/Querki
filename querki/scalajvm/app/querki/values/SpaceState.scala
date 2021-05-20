@@ -22,55 +22,58 @@ import querki.util._
  * The keys for the SpaceState's cache. Each element is owned by a specific Ecot, which assigns
  * an arbitrary id.
  */
-case class StateCacheKey(ecotId:Short, id:String)
+case class StateCacheKey(
+  ecotId: Short,
+  id: String
+)
 
 /**
  * A properly-typed version ID for Spaces. This is initialized as SpaceVersion.Unknown, and then set
  * based on the Akka Persistence version ID.
  */
-case class SpaceVersion(v:Long) extends AnyVal
+case class SpaceVersion(v: Long) extends AnyVal
+
 object SpaceVersion {
   val Unknown = SpaceVersion(-1)
-  implicit val versionEqual = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }  
+  implicit val versionEqual = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }
 }
 
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
- * 
+ *
  * Note that, just like everything else, a Space is a special sort of Thing. It can
  * have Properties (including user-defined ones), and can potentially inherit from a
  * Model.
- * 
+ *
  * A SpaceState is a Space at a specific point in time. Operations are usually performed
  * on a SpaceState, to keep them consistent. Changes are sent to the Space, which generates
  * a new SpaceState from them.
  */
 case class SpaceState(
-    s:OID, 
-    m:OID,
-    pf:PropMap,
-    owner:OID,
-    name:String,
-    mt:DateTime,
-    // Any Apps that this inherits from. These will be searched in-order, depth-first:
-    apps:Seq[SpaceState],
-    // The System State, which should be given unless this *is* the System State:
-    system:Option[SpaceState],
-    types:Map[OID, PType[_]],
-    spaceProps:Map[OID, Property[_,_]],
-    things:Map[OID, ThingState],
-    colls:Map[OID, Collection],
-    ownerIdentity:Option[querki.identity.PublicIdentity],
-    version:SpaceVersion = SpaceVersion.Unknown,
-    // This is filled in during rehydration; it is just here to allow us to fill in the
-    // real apps:
-    appInfo:Seq[(OID, SpaceVersion)] = Seq.empty,
-    cache:Map[StateCacheKey, Any] = Map.empty) 
-  extends Thing(s, s, m, Kind.Space, pf, mt)
-{
+  s: OID,
+  m: OID,
+  pf: PropMap,
+  owner: OID,
+  name: String,
+  mt: DateTime,
+  // Any Apps that this inherits from. These will be searched in-order, depth-first:
+  apps: Seq[SpaceState],
+  // The System State, which should be given unless this *is* the System State:
+  system: Option[SpaceState],
+  types: Map[OID, PType[_]],
+  spaceProps: Map[OID, Property[_, _]],
+  things: Map[OID, ThingState],
+  colls: Map[OID, Collection],
+  ownerIdentity: Option[querki.identity.PublicIdentity],
+  version: SpaceVersion = SpaceVersion.Unknown,
+  // This is filled in during rehydration; it is just here to allow us to fill in the
+  // real apps:
+  appInfo: Seq[(OID, SpaceVersion)] = Seq.empty,
+  cache: Map[StateCacheKey, Any] = Map.empty
+) extends Thing(s, s, m, Kind.Space, pf, mt) {
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
-  
+
   // *******************************************
   //
   // App-navigation functions
@@ -78,277 +81,329 @@ case class SpaceState(
   // These are general functions for "do something to this Space and all its Apps". They should, in
   // general, be used instead of working with apps from outside this SpaceState.
   //
-  
+
   /**
    * The core function for looking something up in this Space. This tries
    * the given function in this Space, then recursively on all of the Apps.
    * (In-order, depth-first.) If none of that works, it tries the System Space.
    */
-  def walkTree[R](f:(SpaceState) => Option[R]):Option[R] = {
+  def walkTree[R](f: (SpaceState) => Option[R]): Option[R] = {
     walkTreeRec(f).orElse(system.flatMap(f(_)))
   }
-  
+
   /**
    * Look something up *only* in the Apps, not in this Space. This will include
    * System. You should usually use walkTree() instead.
    */
-  def walkApps[R](f:(SpaceState) => Option[R]):Option[R] = {
-    walkAppsRec(f).orElse(system.flatMap(f(_)))    
+  def walkApps[R](f: (SpaceState) => Option[R]): Option[R] = {
+    walkAppsRec(f).orElse(system.flatMap(f(_)))
   }
-  
-  private def walkTreeRec[R](f: (SpaceState) => Option[R]):Option[R] = {
+
+  private def walkTreeRec[R](f: (SpaceState) => Option[R]): Option[R] = {
     f(this) match {
       case Some(result) => Some(result)
-      case _ => walkAppsRec(f)
+      case _            => walkAppsRec(f)
     }
   }
-  
-  private def walkAppsRec[R](f: (SpaceState) => Option[R]):Option[R] = {
+
+  private def walkAppsRec[R](f: (SpaceState) => Option[R]): Option[R] = {
     // Run through the apps, depth-first, looking for the result:
     (Option.empty[R] /: apps) { (cur, app) =>
       cur.orElse(app.walkTreeRec(f))
-    }    
+    }
   }
-  
+
   /**
    * Collect values from this Space and all of its Apps, including System.
-   * 
+   *
    * This runs f on this State, then the Apps in-order, depth-first, and finally System.
-   * 
+   *
    * NOTE: in a perfect world, we would simply be able to assume that accum is ++ and do
    * that. But I'm having trouble getting the types to line up right for that. I suspect
    * that the answer has something to do with Cats.Foldable.
-   * 
+   *
    * IMPORTANT: this can result in duplication! It is essential that your implementation of
    * accum do any necessary de-duplication! It is often best to use this with Set or Map, which
    * do automatic de-duplication.
-   * 
+   *
    * @tparam R An accumulation of values. Typically a collection, but doesn't have to be.
    * @param f A function that takes a SpaceState and produces an R result.
    * @param accum A fold function that takes two R's and flattens them into one.
-   * 
+   *
    * @return The accumulated values from all of the SpaceStates.
    */
-  def accumulateAll[R](f:SpaceState => R, accum:(R, R) => R):R = 
-  {
+  def accumulateAll[R](
+    f: SpaceState => R,
+    accum: (R, R) => R
+  ): R = {
     val fromTree = accumulateAllRec(f, accum)
     system match {
       case Some(s) => accum(fromTree, f(s))
-      case _ => fromTree
+      case _       => fromTree
     }
   }
-  
-  private def accumulateAllRec[R](f:SpaceState => R, accum:(R, R) => R):R = 
-  {
+
+  private def accumulateAllRec[R](
+    f: SpaceState => R,
+    accum: (R, R) => R
+  ): R = {
     (f(this) /: apps) { (cur, app) =>
       val rest = app.accumulateAllRec(f, accum)
       accum(cur, rest)
     }
   }
-  
+
   /**
    * A version of accumulateAll(), specialized for Maps.
    */
-  def accumulateMaps[K,V](f:SpaceState => Map[K,V]):Map[K,V] = {
+  def accumulateMaps[K, V](f: SpaceState => Map[K, V]): Map[K, V] = {
     // Note that, by the nature of Map, ++ automatically de-duplicates:
-    accumulateAll(f, { (x:Map[K,V], y:Map[K,V]) => x ++ y })
+    accumulateAll(f, { (x: Map[K, V], y: Map[K, V]) => x ++ y })
   }
-  
+
   // *******************************************
-  
+
   // Walks up the App tree, looking for the specified Thing of the implied type:
   // IMPORTANT: note that the OID and ThingId versions of these methods are inconsistent in their
   // return signatures! That is a historical accident.
   // TODO: these OID methods really should return Option[T]. Throwing an exception this deep in the stack
   // is tending to produce pretty damned cryptic exceptions. Instead, just make the higher levels cope
   // with the Nones.
-  def resolve[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):T = {
+  def resolve[T <: Thing](tid: OID)(lookup: (SpaceState) => Map[OID, T]): T = {
     resolveOpt(tid)(lookup).getOrElse(throw new Exception("Couldn't find " + tid))
   }
-  def resolveOpt[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
+
+  def resolveOptBase[T <: Thing](tid: OID)(lookup: (SpaceState) => Map[OID, T]): Option[T] = {
     walkTree { state => lookup(state).get(tid) }
   }
 
-  def typ(ptr:OID) = resolve(ptr) (_.types)
-  def prop(ptr:OID) = resolveOpt(ptr) (_.spaceProps)
-  def thing(ptr:OID) = resolve(ptr) (_.things)
-  def coll(ptr:OID) = resolve(ptr) (_.colls)
-  
-  def resolve[T <: Thing](tid:ThingId)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
+  def resolveOpt[T <: Thing](tid: OID)(lookup: (SpaceState) => Map[OID, T]): Option[T] = {
+    resolveOptBase(tid)(lookup).orElse {
+      // If this OID isn't found, see if we're trying to look up the old imported OID for this Thing:
+      oldOIDMap.get(tid).flatMap { oldOid =>
+        resolveOptBase(oldOid)(lookup)
+      }
+    }
+  }
+
+  def typ(ptr: OID) = resolve(ptr)(_.types)
+  def prop(ptr: OID) = resolveOpt(ptr)(_.spaceProps)
+  def thing(ptr: OID) = resolve(ptr)(_.things)
+  def coll(ptr: OID) = resolve(ptr)(_.colls)
+
+  def resolve[T <: Thing](tid: ThingId)(lookup: (SpaceState) => Map[OID, T]): Option[T] = {
     walkTree { state =>
       val map = lookup(state)
       tid match {
-        case AsOID(id) => map.get(id)
+        case AsOID(id)    => map.get(id)
         case AsName(name) => thingWithName(name, map)
-      }      
+      }
     }
   }
-  def typ(ptr:ThingId) = resolve(ptr) (_.types)
-  def prop(ptr:ThingId) = resolve(ptr) (_.spaceProps)
-  def thing(ptr:ThingId) = resolve(ptr) (_.things)
-  def coll(ptr:ThingId) = resolve(ptr) (_.colls)
-  
-  private def anythingCore(state:SpaceState, oid:OID):Option[Thing] = {
+  def typ(ptr: ThingId) = resolve(ptr)(_.types)
+  def prop(ptr: ThingId) = resolve(ptr)(_.spaceProps)
+  def thing(ptr: ThingId) = resolve(ptr)(_.things)
+  def coll(ptr: ThingId) = resolve(ptr)(_.colls)
+
+  private def anythingCoreBase(
+    state: SpaceState,
+    oid: OID
+  ): Option[Thing] = {
     state.things.get(oid).orElse(
       state.spaceProps.get(oid).orElse(
         state.types.get(oid).orElse(
           state.colls.get(oid).orElse(
-            state.selfByOID(oid)))))    
+            state.selfByOID(oid)
+          )
+        )
+      )
+    )
   }
-  
-  def anything(oid:OID):Option[Thing] = {
+
+  private def anythingCore(
+    state: SpaceState,
+    oid: OID
+  ): Option[Thing] = {
+    anythingCoreBase(state, oid).orElse {
+      // If we didn't find it at all, see if we're looking for an old imported OID for this Thing:
+      oldOIDMap.get(oid).flatMap { oldOID =>
+        anythingCoreBase(state, oldOID)
+      }
+    }
+  }
+
+  def anything(oid: OID): Option[Thing] = {
     walkTree { state => anythingCore(state, oid) }
   }
-  
-  def anythingLocal(oid:OID):Option[Thing] = anythingCore(this, oid)
-  
-  private def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
+
+  def anythingLocal(oid: OID): Option[Thing] = anythingCore(this, oid)
+
+  private def thingWithName[T <: Thing](
+    name: String,
+    things: Map[OID, T]
+  ): Option[T] = {
     things.values.find { thing =>
       val thingNameOpt = thing.canonicalName
       thingNameOpt.isDefined && NameUtils.equalNames(thingNameOpt.get, name)
     }
   }
-  
-  private def thingWithDisplayName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
+
+  private def thingWithDisplayName[T <: Thing](
+    name: String,
+    things: Map[OID, T]
+  ): Option[T] = {
     things.values.find { thing =>
       thing.unsafeDisplayName.toLowerCase() == name
     }
   }
-  
-  def selfByOID(oid:OID):Option[Thing] = {
+
+  def selfByOID(oid: OID): Option[Thing] = {
     if (oid == id) Some(this) else None
   }
-  def spaceByName(tryName:String):Option[Thing] = {
+
+  def spaceByName(tryName: String): Option[Thing] = {
     if (tryName == NameUtils.toInternal(name)) Some(this) else None
   }
-  
-  private def anythingByDisplayNameCore(state:SpaceState, name:String):Option[Thing] = {
+
+  private def anythingByDisplayNameCore(
+    state: SpaceState,
+    name: String
+  ): Option[Thing] = {
     thingWithDisplayName(name, state.things).orElse(
       thingWithDisplayName(name, state.spaceProps).orElse(
         thingWithDisplayName(name, state.types).orElse(
-          thingWithDisplayName(name, state.colls))))
+          thingWithDisplayName(name, state.colls)
+        )
+      )
+    )
   }
-  
-  def anythingByDisplayName(rawName:String):Option[Thing] = {
+
+  def anythingByDisplayName(rawName: String): Option[Thing] = {
     val name = rawName.toLowerCase()
     walkTree { state => anythingByDisplayNameCore(state, name) }
   }
-  
-  def anythingByDisplayNameLocal(rawName:String):Option[Thing] = {
+
+  def anythingByDisplayNameLocal(rawName: String): Option[Thing] = {
     val name = rawName.toLowerCase()
     anythingByDisplayNameCore(this, name)
   }
-  
+
   /**
    * We maintain an internal lazy map of all the Thing in this Space, by their Canonical name.
    * This is specifically to make name lookups decently efficient, since we do that a *lot* when
    * processing QL.
-   * 
+   *
    * Note that, since this is lazy, it will get regenerated every time we version the Space. A
    * tad expensive, but a hell of a lot cheaper than doing a longhand search by name every time.
-   */ 
-  private lazy val byCanonicalName:Map[String,Thing] = {
-    def addTable[T <: Thing](things:Map[OID, T]):Map[String,T] = {
+   */
+  private lazy val byCanonicalName: Map[String, Thing] = {
+    def addTable[T <: Thing](things: Map[OID, T]): Map[String, T] = {
       val pairs = things.values.map { thing =>
         thing.canonicalName.map((NameUtils.canonicalize(_) -> thing))
       }.flatten.toSeq
-      Map(pairs:_*)
+      Map(pairs: _*)
     }
-    
+
     addTable(things) ++
-    addTable(spaceProps) ++
-    addTable(types) ++
-    addTable(colls) ++
-    canonicalName.map { s => (NameUtils.canonicalize(s) -> this) }
+      addTable(spaceProps) ++
+      addTable(types) ++
+      addTable(colls) ++
+      canonicalName.map { s => (NameUtils.canonicalize(s) -> this) }
   }
-  
-  private def anythingByNameCore(state:SpaceState, name:String):Option[Thing] = {
+
+  private def anythingByNameCore(
+    state: SpaceState,
+    name: String
+  ): Option[Thing] = {
     state.byCanonicalName.get(name)
   }
-  
-  def anythingByName(rawName:String):Option[Thing] = {
+
+  def anythingByName(rawName: String): Option[Thing] = {
     val name = NameUtils.canonicalize(rawName)
     walkTree { state =>
       anythingByNameCore(state, name)
     }.orElse(anythingByDisplayName(rawName))
   }
-  
-  def anythingByNameLocal(rawName:String):Option[Thing] = {
+
+  def anythingByNameLocal(rawName: String): Option[Thing] = {
     val name = NameUtils.canonicalize(rawName)
     anythingByNameCore(this, name).orElse(anythingByDisplayNameLocal(rawName))
   }
-  
-  def anything(thingId:ThingId):Option[Thing] = {
+
+  def anything(thingId: ThingId): Option[Thing] = {
     thingId match {
-      case AsOID(oid) => anything(oid)
+      case AsOID(oid)   => anything(oid)
       case AsName(name) => anythingByName(name)
     }
   }
-  
-  def anythingLocal(thingId:ThingId):Option[Thing] = {
+
+  def anythingLocal(thingId: ThingId): Option[Thing] = {
     thingId match {
-      case AsOID(oid) => anythingLocal(oid)
+      case AsOID(oid)   => anythingLocal(oid)
       case AsName(name) => anythingByNameLocal(name)
     }
   }
-  
-  def localFrom[T <: Thing : scala.reflect.ClassTag](thingId:ThingId, table:Map[OID, T]):Option[T] = {
+
+  def localFrom[T <: Thing : scala.reflect.ClassTag](
+    thingId: ThingId,
+    table: Map[OID, T]
+  ): Option[T] = {
     thingId match {
       case AsOID(oid) => table.get(oid)
       case AsName(rawName) => {
         val name = NameUtils.canonicalize(rawName)
         byCanonicalName.get(name) match {
-          case Some(found:T) => Some(found)
-          case _ => None
+          case Some(found: T) => Some(found)
+          case _              => None
         }
       }
     }
   }
-  
+
   /**
    * Returns true iff this Space has any thing with the given ID.
    */
-  def contains(id:OID):Boolean = {
+  def contains(id: OID): Boolean = {
     things.contains(id) ||
     spaceProps.contains(id) ||
     types.contains(id) ||
     colls.contains(id)
   }
-  
+
   /**
    * Returns all of the conventional Things in this Space.
    */
-  def localThings:Iterable[ThingState] = things.values 
-    
+  def localThings: Iterable[ThingState] = things.values
+
   /**
    * Returns all of the conventional Things in this Space *and* its Apps.
    */
   def allThings = accumulateAll[Set[Thing]]((_.things.values.toSet), (_ ++ _))
-  
-  def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
+
+  def everythingLocal: Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   def everything = accumulateAll[Set[Thing]]((_.everythingLocal.toSet), (_ ++ _))
-  
-  def propList:Iterable[Property[_,_]] = spaceProps.values
-  def allProps:Map[OID, Property[_,_]] = accumulateMaps(_.spaceProps)   
-  def allTypes:Map[OID, PType[_]] = accumulateMaps(_.types)
-  
-  def root(t:Thing):OID = {
+
+  def propList: Iterable[Property[_, _]] = spaceProps.values
+  def allProps: Map[OID, Property[_, _]] = accumulateMaps(_.spaceProps)
+  def allTypes: Map[OID, PType[_]] = accumulateMaps(_.types)
+
+  def root(t: Thing): OID = {
     val modelId = t.model
     if (contains(modelId))
       root(t.getModel(this))
     else
       modelId
   }
-  
-  def thingsWithProp(prop:Property[_,_]):Iterable[Thing] = {
+
+  def thingsWithProp(prop: Property[_, _]): Iterable[Thing] = {
     everythingLocal.filter(_.hasProp(prop.id)(this))
   }
-  
-  def propsOfType[VT](pt:PType[VT]):Iterable[Property[VT,_]] = {
+
+  def propsOfType[VT](pt: PType[VT]): Iterable[Property[VT, _]] = {
     spaceProps.values.filter(_.pType == pt).map(_.confirmType(pt).get)
   }
-  
-  def getApp(appId:OID):Option[SpaceState] = {
+
+  def getApp(appId: OID): Option[SpaceState] = {
     walkTree { state =>
       if (appId == state.id)
         Some(state)
@@ -356,60 +411,69 @@ case class SpaceState(
         None
     }
   }
-  
-  def hasApp(appId:OID):Boolean = getApp(appId).isDefined
-  
+
+  def hasApp(appId: OID): Boolean = getApp(appId).isDefined
+
   /**
    * Returns all of the Apps in the entire inheritance hierarchy.
    */
-  def allApps():Map[OID, SpaceState] = {
+  def allApps(): Map[OID, SpaceState] = {
     accumulateAll[Map[OID, SpaceState]](
-      state => Map(state.apps.map(app => (app.id -> app)):_*),
+      state => Map(state.apps.map(app => (app.id -> app)): _*),
       (acc, next) => acc ++ next
     )
   }
-  
-  /***************************************
+
+  /**
+   * *************************************
    * The Dynamic Cache
-   * 
+   *
    * This is a secondary cache, constructed very differently from the one in the main case class
    * values. Whereas the one at the top is built during Space modification, by the Space itself,
    * this one permits the more dangerous but easier to use direct modification by subsystems when
    * needed.
-   * 
+   *
    * The idea here is that we have a lot of things we'd like to cache lazily on-demand, rather than
    * every time the SpaceState is modified. So we allow that here, hedged with some big warnings.
-   * 
+   *
    * All values here *MUST* be managed in a threadsafe way. By and large, we expect this to be
    * populated by subsidiary concurrent.Maps. Keep in mind that any value in here might be modified
    * by multiple UserSpaceSessions simultaneously.
-   * 
+   *
    * Since this is a lazy val, it will not be preserved when the SpaceState is copied. Values in here
    * should be caches of expensive computations on the current SpaceState.
-   * 
+   *
    * DO NOT USE THIS CASUALLY! This is trading memory for speed. Sometimes it is very valuable, but
-   * only use it when there is a high likelihood of a common speedup. 
+   * only use it when there is a high likelihood of a common speedup.
    */
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
-  def fetchOrCreateCache[T](key:StateCacheKey, creator: => T):T = dynCache.getOrElseUpdate(key, creator).asInstanceOf[T]
-  
+
+  def fetchOrCreateCache[T](
+    key: StateCacheKey,
+    creator: => T
+  ): T = dynCache.getOrElseUpdate(key, creator).asInstanceOf[T]
+
   /* ////////////////////////////////////////////////////////////////////////
-   * 
+   *
    * Inheritance Caching
-   * 
+   *
    */
-  
+
   /**
    * This is the pre-ordering that we do on Things at the cache level. This is *not* as good as
    * we do in _sort -- it doesn't take Computed Name into account -- but it is good enough for
    * most simple cases, and is about a zillion times faster.
-   * 
+   *
    * It's a tad more complex than you'd expect at first glance, because multiple Things are allowed
    * to have the same Display Name, and must *not* be equal in compare(). (Because we are using
    * Set semantics -- equals means duplicate means dropped.) So we double-check the OIDs in that case.
    */
   private object SimpleThingOrdering extends Ordering[Thing] {
-    def compare(x:Thing, y:Thing) = {
+
+    def compare(
+      x: Thing,
+      y: Thing
+    ) = {
       val rawComp = x.unsafeDisplayName.toLowerCase.compare(y.unsafeDisplayName.toLowerCase)
       if (rawComp == 0)
         // Names match, so sort by OID. If the OIDs match, then they really are the same.
@@ -418,82 +482,109 @@ case class SpaceState(
         rawComp
     }
   }
-  
+
   /**
    * For each Thing that has children, this describes them.
    */
-  case class ThingChildren(children:TreeSet[Thing])
-  
+  case class ThingChildren(children: TreeSet[Thing])
+
   /**
    * The childrenMap is a lazily-computed map of inheritance within this Space -- for each Thing, what
    * Things inherit from it. We build and cache this for efficiency of looking up children, and for
    * pre-sorting them by name.
    */
-  lazy val childrenMap:Map[OID, ThingChildren] = {
+  lazy val childrenMap: Map[OID, ThingChildren] = {
     (Map.empty[OID, ThingChildren] /: everythingLocal) { (curMap, t) =>
       val model = t.model
       val tc = curMap.get(model) match {
         case Some(thingChildren) => thingChildren.copy(children = thingChildren.children + t)
-        case None => ThingChildren(TreeSet(t)(SimpleThingOrdering))
+        case None                => ThingChildren(TreeSet(t)(SimpleThingOrdering))
       }
       curMap + (model -> tc)
     }
   }
-  
+
   /**
    * Returns all of the immediate children of this Thing.
    */
-  def children(t:OID):SortedSet[Thing] = {
+  def children(t: OID): SortedSet[Thing] = {
     childrenMap.get(t).map(_.children).getOrElse(SortedSet.empty(SimpleThingOrdering))
   }
 
   /**
    * Returns all of the immediate children of this Thing from *any* Space.
    */
-  def allChildren(t:OID):SortedSet[Thing] = {
-    accumulateAll(_.children(t), { (x:SortedSet[Thing], y:SortedSet[Thing]) => x ++ y })
+  def allChildren(t: OID): SortedSet[Thing] = {
+    accumulateAll(_.children(t), { (x: SortedSet[Thing], y: SortedSet[Thing]) => x ++ y })
   }
 
   /* ///////////////////////////////////////////////////////////////////// */
-  
-  def mapsize[T <: Thing](map:Map[OID, T]):Int = {
+
+  def mapsize[T <: Thing](map: Map[OID, T]): Int = {
     map.values.map { v => 8 + v.memsize }.sum
   }
+
   /**
    * The total approximate size of this Space. See Thing.memsize for more info.
    */
-  lazy val spaceSize:Int = {
+  lazy val spaceSize: Int = {
     memsize + mapsize(things) + mapsize(spaceProps) + mapsize(types)
   }
-  
+
   /**
    * This is a map from Things in Apps to their Shadows in this Space, so we can look that up
    * efficiently.
    */
-  lazy val shadowMap:Map[OID,OID] = {
+  lazy val shadowMap: Map[OID, OID] = {
     // HACK: this is assuming that, if ShadowFlag is present, it is true
     val shadows = everythingLocal.filter { t => t.props.contains(querki.apps.MOIDs.ShadowFlagOID) }
     shadows.map { shadow =>
       (shadow.model -> shadow.id)
     }.toMap
   }
-  
-  def spaceStateOps(implicit e:Ecology):SpaceStateOps = new SpaceStateOps()(this, e)
+
+  /* ///////////////////////////////////////////////
+   *
+   * Old-OID mapping.
+   *
+   * In order to properly support Spaces that were exported and then imported, we build up a mapping of the
+   * original OIDs that Things had in their source Spaces. If we get an OID miss, we create this cache and
+   * look here as well.
+   */
+
+  lazy val oldOIDMap: Map[OID, OID] = {
+    everythingLocal.foldLeft(Map.empty[OID, OID]) { (m, thing) =>
+      thing.oldOID match {
+        case Some(oid) => m + (oid -> thing.id)
+        case None      => m
+      }
+    }
+  }
+
+  def spaceStateOps(implicit e: Ecology): SpaceStateOps = new SpaceStateOps()(this, e)
 }
 
-class SpaceStateOps(implicit state:SpaceState, e:Ecology) extends ThingOps(state) {
+class SpaceStateOps(
+  implicit
+  state: SpaceState,
+  e: Ecology
+) extends ThingOps(state) {
   def things = state.things
 
-  def models:Iterable[ThingState] = {
+  def models: Iterable[ThingState] = {
     implicit val s = this
-    things.values.filter(_.first(Core.IsModelProp))    
+    things.values.filter(_.first(Core.IsModelProp))
   }
-  def allModels:Iterable[ThingState] = {
-    state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x.toSet ++ y.toSet })
+
+  def allModels: Iterable[ThingState] = {
+    state.accumulateAll(_.models, { (x: Iterable[ThingState], y: Iterable[ThingState]) => x.toSet ++ y.toSet })
   }
-  
-  def descendantsRec(root:OID, includeApps:Boolean):SortedSet[Thing] = {
-    val candidates = 
+
+  def descendantsRec(
+    root: OID,
+    includeApps: Boolean
+  ): SortedSet[Thing] = {
+    val candidates =
       if (includeApps)
         state.allChildren(root)
       else
@@ -503,43 +594,48 @@ class SpaceStateOps(implicit state:SpaceState, e:Ecology) extends ThingOps(state
       fullSet ++ descendantsRec(child, includeApps)
     }
   }
-  
-  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean, includeApps:Boolean = false):SortedSet[Thing] = {
+
+  def descendants(
+    root: OID,
+    includeModels: Boolean,
+    includeInstances: Boolean,
+    includeApps: Boolean = false
+  ): SortedSet[Thing] = {
     val candidates = descendantsRec(root, includeApps)
-      
+
     val stripModels =
       if (includeModels)
         candidates
       else
         candidates.filterNot(_.isModel)
-        
+
     val stripInstances =
       if (includeInstances)
         stripModels
       else
         stripModels.filter(_.isModel)
-        
-     stripInstances
+
+    stripInstances
   }
 
 }
 
 object SpaceState {
-  
+
   /**
    * Extra functionality that is sometimes useful to consider as part of the state, but isn't
    * really part of the core concept. Factored out to keep the main SpaceState interface and dependencies decently clean.
-   * 
+   *
    * By and large, if you find yourself tempted to add new dependencies to SpaceState, consider putting them
    * here instead.
    */
-  implicit class SpaceStateExtras(state:SpaceState) {
-    def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
-    def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
-    
+  implicit class SpaceStateExtras(state: SpaceState) {
+    def ownerName: String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
+    def ownerHandle: String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
+
     /**
      * Pure syntactic sugar, to make it easy to chain State-changing operations clearly.
      */
-    def and(f:SpaceState => SpaceState):SpaceState = f(state) 
+    def and(f: SpaceState => SpaceState): SpaceState = f(state)
   }
 }
