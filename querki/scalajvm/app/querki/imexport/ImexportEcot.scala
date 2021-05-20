@@ -8,31 +8,42 @@ import querki.values.{RequestContext, SpaceState}
 
 object MOIDs extends EcotIds(33) {
   val JsonifyFunctionOID = moid(1)
+  val OldOIDOID = moid(2)
 }
 
 trait Exporter {
-  def exportInstances(model:Thing, instances:Seq[Thing])(implicit state:SpaceState):ExportedContent
+
+  def exportInstances(
+    model: Thing,
+    instances: Seq[Thing]
+  )(implicit
+    state: SpaceState
+  ): ExportedContent
 }
 
 /**
  * For now, this is just a trivial implementation of the interface. We're separating them mostly on
  * principle.
  */
-case class ExportedContentImpl(content:Array[Byte], name:String, mime:MIMEType.MIMEType) extends ExportedContent
+case class ExportedContentImpl(
+  content: Array[Byte],
+  name: String,
+  mime: MIMEType.MIMEType
+) extends ExportedContent
 
-class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Imexport {
-  
+class ImexportEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with Imexport {
+
   import MOIDs._
-  
+
   val Basic = initRequires[querki.basic.Basic]
   val Logic = initRequires[querki.logic.Logic]
-  
+
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val QL = interface[querki.ql.QL]
   lazy val Session = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
-  
+
   override def postInit() = {
     // ImexportFunctions runs in the context of the UserSpaceSession:
     ApiRegistry.registerApiImplFor[ImexportFunctions, ImexportFunctionsImpl](SpaceOps.spaceRegion)
@@ -41,40 +52,65 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
     // JsonFunctions require the UserSpaceSession:
     ApiRegistry.registerApiImplFor[JsonFunctions, JsonFunctionsImpl](SpaceOps.spaceRegion, requiresLogin = false)
   }
-  
+
   lazy val csv = new CSVImexport
-  
-  def exportInstances(rc:RequestContext, format:Format, model:Thing)(implicit state:SpaceState):ExportedContent = {
+
+  def exportInstances(
+    rc: RequestContext,
+    format: Format,
+    model: Thing
+  )(implicit
+    state: SpaceState
+  ): ExportedContent = {
     if (!AccessControl.canRead(state, rc.requesterOrAnon, model.id))
       throw new PublicException("Imexport.exportNotAllowed", model.displayName)
-    
-    val instances = state.descendants(model.id, false, true).
-              filter(thing => AccessControl.canRead(state, rc.requesterOrAnon, thing.id)).
-              toSeq.
-              sortBy(_.displayName)
-              
-    val exporter:Exporter = format match {
+
+    val instances = state.descendants(model.id, false, true).filter(thing =>
+      AccessControl.canRead(state, rc.requesterOrAnon, thing.id)
+    ).toSeq.sortBy(_.displayName)
+
+    val exporter: Exporter = format match {
       case Format.CSV => csv
-      case _ => throw new Exception("Unknown Exporter specified: " + format)
+      case _          => throw new Exception("Unknown Exporter specified: " + format)
     }
-    
+
     exporter.exportInstances(model, instances)
   }
-  
-  def exportSpace(rc:RequestContext)(implicit state:SpaceState):String = {
+
+  def exportSpace(rc: RequestContext)(implicit state: SpaceState): String = {
     // For now, only the Owner is allowed to Export
     // TODO: this should really be a permission, that Manager and Owner have
     if (!rc.requesterOrAnon.hasIdentity(state.owner))
       throw new PublicException("Imexport.ownerOnly")
-    
+
     (new XMLExporter).exportSpace(state)
   }
 
-  /***********************************************
-   * FUNCTIONS
-   ***********************************************/
+  /**
+   * *********************************************
+   * PROPERTIES
+   * *********************************************
+   */
 
-  lazy val JsonifyFunction = new InternalMethod(JsonifyFunctionOID,
+  lazy val OldOIDProperty = new SystemProperty(
+    OldOIDOID,
+    LinkType,
+    ExactlyOne,
+    toProps(
+      setName("_oldOID"),
+      Core.InternalProp(true),
+      Summary("(Import only) The original OID for this Imported Thing")
+    )
+  )
+
+  /**
+   * *********************************************
+   * FUNCTIONS
+   * *********************************************
+   */
+
+  lazy val JsonifyFunction = new InternalMethod(
+    JsonifyFunctionOID,
     toProps(
       setName("_JSONify"),
       Categories(ImportExportCategory),
@@ -84,7 +120,12 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         expected = Some(Seq.empty, "Anything"),
         reqs = Seq.empty,
         opts = Seq(
-          ("pretty", YesNoType, ExactlyOne(Logic.False), "If set to True, the Json will be pretty-printed. Otherwise, it will be compact.")
+          (
+            "pretty",
+            YesNoType,
+            ExactlyOne(Logic.False),
+            "If set to True, the Json will be pretty-printed. Otherwise, it will be compact."
+          )
         ),
         returns = (Basic.PlainTextType, "The JSON representation of the received values.")
       ),
@@ -100,8 +141,10 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
                 |**Important:** as of this writing, this function is pretty experimental. It doesn't yet deal
                 |with any arbitrary Value (in particular, it intentionally does *not* deal with Thing Properties
                 |yet), and it is subject to change. If you have opinions about it, please write to us. We are
-                |likely to add real JSON APIs down the road, and that might supercede this function.""".stripMargin)))
-  {
+                |likely to add real JSON APIs down the road, and that might supercede this function.""".stripMargin)
+    )
+  ) {
+
     override def qlApply(inv: Invocation): QFut = {
       implicit val state = inv.state
       val exporter = new JsonExport()
@@ -110,13 +153,14 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         pretty <- inv.processAs("pretty", YesNoType)
         jsv = exporter.jsonify(qv, pretty)
       }
-        // TBD: instead of returning Wikitext, this should arguably produce a specialized JSON type that
-        // *renders* as the right Wikitext. But it'll do to start.
-        yield QL.WikitextValue(Wikitext(s"```\n$jsv\n```"))
+      // TBD: instead of returning Wikitext, this should arguably produce a specialized JSON type that
+      // *renders* as the right Wikitext. But it'll do to start.
+      yield QL.WikitextValue(Wikitext(s"```\n$jsv\n```"))
     }
   }
-  
+
   override lazy val props = Seq(
+    OldOIDProperty,
     JsonifyFunction
   )
 }

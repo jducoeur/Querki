@@ -61,7 +61,7 @@ trait UploadActor { self: Actor =>
    */
   lazy val uploadedStream = {
     if (isGZip) {
-//      QLog.spew("Received GZip stream")
+      QLog.spew("Received GZip stream")
       new GZIPInputStream(baseStream)
     } else {
       baseStream
@@ -106,7 +106,7 @@ trait UploadActor { self: Actor =>
         lastIndex = index
         sender ! UploadChunkAck(index, chunkBuffer.size)
       } else {
-//        QLog.spew(s"Received duplicate of chunk #$index")
+        QLog.spew(s"UploadActor: Received duplicate of chunk #$index")
         // Although it's a duplicate, we still need to re-ack, in case our previous ack got
         // lost in transit:
         sender ! UploadChunkAck(index, chunkBuffer.size)
@@ -120,9 +120,10 @@ trait UploadActor { self: Actor =>
     case UploadComplete(rc) => {
       uploadComplete = true
 
-//      QLog.spew(s"Size of the chunkBuffer: ${chunkBuffer.size}")
-//      QLog.spew(s"Size of the chunkArray: ${chunkArray.size}")
-//      QLog.spew(s"Size of uploaded: ${uploaded.length}")
+      QLog.spew(s"Upload complete!")
+      QLog.spew(s"Size of the chunkBuffer: ${chunkBuffer.size}")
+      QLog.spew(s"Size of the chunkArray: ${chunkArray.size}")
+      QLog.spew(s"Size of uploaded String: ${uploaded.length}")
 
       processBuffer(rc)
     }
