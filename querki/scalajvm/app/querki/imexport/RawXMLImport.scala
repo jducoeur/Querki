@@ -1,14 +1,14 @@
 package querki.imexport
 
-import fastparse._, NoWhitespace._
-
+import fastparse._
+import NoWhitespace._
 import XMLParser._
-
 import models._
-
 import querki.core.MOIDs.UrTypeOID
 import querki.time.DateTime
 import querki.globals._
+import querki.identity.IdentityPersistence.UserRef
+import querki.identity.User
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values.{ElemValue, QValue, RequestContext, SpaceState}
 
@@ -68,6 +68,12 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
     def get(implicit element: XmlElement): String = element.attr(attr.name).v
     def opt(implicit element: XmlElement): Option[String] = element.attrOpt(attr.name).map(_.v)
     def oid(implicit element: XmlElement): OID = importOID(get(element))
+
+    def oidOpt(implicit element: XmlElement): Option[OID] =
+      for {
+        attr <- opt(element)
+        oid <- importOIDOpt(attr)
+      } yield oid
     def oidPlus(implicit element: XmlElement): OID = oidAndName(get(element))
     def tid(implicit element: XmlElement): ThingId = parseThingId(get(element))
 
@@ -220,7 +226,8 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
         state.id,
         modelref.oidPlus,
         buildProps,
-        DateTime.now
+        DateTime.now,
+        cr = creatorAttr.oidOpt.map(oid => UserRef(User.Anonymous.id, Some(oid)))
       )
     state.copy(things = state.things + (model.id -> model))
   }
@@ -244,7 +251,8 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
         state.id,
         thingOpt.get,
         buildProps,
-        DateTime.now
+        DateTime.now,
+        cr = creatorAttr.oidOpt.map(oid => UserRef(User.Anonymous.id, Some(oid)))
       )
     state.copy(things = state.things + (model.id -> model))
   }
