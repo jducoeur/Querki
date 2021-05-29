@@ -1,18 +1,16 @@
 package querki.client
 
 import scala.concurrent.Future
-
 import upickle.default._
-
 import querki.globals._
-
 import querki.api._
 import querki.comm._
+import querki.history.HistoryFunctions
 
-class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
-  
+class ClientImpl(e: Ecology) extends ClientEcot(e) with Client {
+
   def implements = Set(classOf[Client])
-  
+
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val History = interface[querki.history.History]
@@ -33,10 +31,14 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         } else if (jqXHR.status == 504) {
           // We got a Gateway Timeout, which basically means that the server took too long to respond, period. So there
           // is no meaningful content here.
-          StatusLine.showUntilChange(s"The page took too long to display, and has failed. It may need simplifying to display in less time.")
+          StatusLine.showUntilChange(
+            s"The page took too long to display, and has failed. It may need simplifying to display in less time."
+          )
           ex
         } else if (jqXHR.status >= 500) {
-          StatusLine.showUntilChange(s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us.")
+          StatusLine.showUntilChange(
+            s"There was an internal error (code ${jqXHR.status})! Sorry; it has been logged. If this persists, please tell us."
+          )
           ex
         } else {
           try {
@@ -62,32 +64,35 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
       }
     }
   }
-  
-  def interceptFailures(caller: => Future[String]):Future[String] = {
+
+  def interceptFailures(caller: => Future[String]): Future[String] = {
     caller.transform(
       { response =>
         val wrapped = read[ResponseWrapper](response)
         UserAccess.setUser(wrapped.currentUser)
-        wrapped.payload 
+        wrapped.payload
       },
       { ex => translateServerException(ex) }
     )
   }
-  
-  def makeCall(req:Request, ajax:PlayAjax):Future[String] = {
+
+  def makeCall(
+    req: Request,
+    ajax: PlayAjax
+  ): Future[String] = {
     if (History.viewingHistory && !History.isLegalDuringHistory(req))
       Future.failed(new Exception("You're not allowed to do that while viewing History"))
     else {
       val params =
         if (History.viewingHistory)
-          PageManager.currentPageParams + ("_historyVersion" -> History.currentHistoryVersion.get.toString)
+          PageManager.currentPageParams + (HistoryFunctions.viewingHistoryParam -> History.currentHistoryVersion.get.toString)
         else
           PageManager.currentPageParams
       val metadata = RequestMetadata(DataAccess.querkiVersion, params)
       interceptFailures(ajax.callAjax("pickledRequest" -> write(req), "pickledMetadata" -> write(metadata)))
     }
   }
-  
+
   override def doCall(req: Request): Future[String] = {
     try {
       if (DataAccess.space.isEmpty) {
@@ -97,29 +102,33 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         // so that we can say "this request requires a Space"? Probably -- figure it out...
         makeCall(req, controllers.ClientController.rawApiRequest())
       } else {
-        makeCall(req, controllers.ClientController.apiRequest(
-          DataAccess.userName, 
-          DataAccess.spaceId.underlying))
+        makeCall(
+          req,
+          controllers.ClientController.apiRequest(
+            DataAccess.userName,
+            DataAccess.spaceId.underlying
+          )
+        )
       }
     } catch {
       // Note that we need to catch and report exceptions here; otherwise, they tend to get
       // lost inside Autowire:
-      case (ex:Exception) => {
+      case (ex: Exception) => {
         println(s"Got exception in doCall: ${ex.getMessage()}")
         throw ex
       }
     }
   }
 
-  def read[Result: upickle.default.Reader](p: String) = {
+  def read[Result : upickle.default.Reader](p: String) = {
     try {
       upickle.default.read[Result](p)
     } catch {
-      case ex:Exception => {
+      case ex: Exception => {
         println(s"Exception while trying to unpickle response $p: $ex")
         throw ex
       }
     }
   }
-  def write[Result: upickle.default.Writer](r: Result) = upickle.default.write(r)
+  def write[Result : upickle.default.Writer](r: Result) = upickle.default.write(r)
 }

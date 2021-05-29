@@ -14,48 +14,54 @@ import AllFuncs._
 import scala.concurrent.ExecutionContext
 
 trait ApiFuncs {
+
   /**
    * Fetch the StandardThings.
-   * 
+   *
    * This is a constant data structure, so we simply have it cached in the TestState.
    */
   val getStd: TestOp[StdThings] = TestOp.fetch(_.client.std)
-  
+
   /**
    * Initialize the TestState.
-   * 
+   *
    * This involves fetching the StandardThings, same as the Client does at startup. It might
    * later involve other operations.
    */
   def initState: IndexedStateT[IO, PreInitialState, TestState, Unit] = IndexedStateT { preState =>
-    val client = new NSClient(preState.harness, new Session())
-    val stateFut = for {
-      stdThingMap <- client[CommonFunctions].getStandardThings().call()
-    }
-      yield TestState(
+    val client = new NSClient(preState.harness, new Session(), Map.empty)
+    val stateFut =
+      for {
+        stdThingMap <- client[CommonFunctions].getStandardThings().call()
+      } yield TestState(
         preState.harness,
-        ClientState(StdThings(stdThingMap), TestUser.Anonymous, None, Session(client.resultFut.value.get.get.sess.data), None),
+        ClientState(
+          StdThings(stdThingMap),
+          TestUser.Anonymous,
+          None,
+          Session(client.resultFut.value.get.get.sess.data),
+          None
+        ),
         WorldState.empty,
         Map.empty
       )
 
     // In the cats-effect 2 world, we need this:
     implicit val cs: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
-    IO.fromFuture { IO { stateFut zip fut(()) } }
+    IO.fromFuture { IO { stateFut.zip(fut(())) } }
   }
-  
+
   def fetchStd[T](f: StdThings => T): TestOp[T] = {
     for {
       std <- getStd
-    }
-      yield f(std)
+    } yield f(std)
   }
 }
 
 object ApiFuncs extends ApiFuncs
 
 case class TestPassthroughHandler(raw: Map[String, ThingInfo]) extends PassthroughHandlerBase {
-  def pass(name:String):ThingInfo = raw(name)
+  def pass(name: String): ThingInfo = raw(name)
 }
 
 case class StdThings(raw: Map[String, ThingInfo]) extends StandardThings(TestPassthroughHandler(raw))

@@ -1,7 +1,7 @@
 package querki.test.mid
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.{Success, Failure}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 import cats._
 import cats.data._
 import cats.effect.{ContextShift, IO}
@@ -15,7 +15,7 @@ import play.api.mvc.{Result, Session}
 import play.api.test._
 import play.api.test.Helpers._
 import controllers.LoginController
-import querki.data.{TID, SpaceInfo, UserInfo}
+import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.globals._
 import querki.session.UserFunctions
 import querki.util.SafeUrl
@@ -34,7 +34,7 @@ trait TestUser {
 case class NormalTestUser(base: String) extends TestUser {
   // "Safe" version of the name, suitable for email and display:
   lazy val safe = base.toLowerCase().filter(_.isLetter)
-  
+
   lazy val email = s"$safe@querkitest.com"
   lazy val password = s"Passw0rd$base"
   lazy val handle = safe
@@ -60,7 +60,11 @@ object TestUser {
   val Anonymous = TestUser("")
 }
 
-case class LoginResults(result: Future[Result], userInfo: UserInfo, session: Session)
+case class LoginResults(
+  result: Future[Result],
+  userInfo: UserInfo,
+  session: Session
+)
 
 /**
  * Functions that wrap the LoginController with a higher-level API.
@@ -70,15 +74,22 @@ trait LoginFuncs {
   private def mat(implicit app: Application) = app.materializer
 
   implicit lazy val cs: ContextShift[IO] = IO.contextShift(implicitly[ExecutionContext])
-    
-  def trySignup(email: String, password: String, handle: String, display: String)(implicit app: Application): Future[Result] = {
+
+  def trySignup(
+    email: String,
+    password: String,
+    handle: String,
+    display: String
+  )(implicit
+    app: Application
+  ): Future[Result] = {
     val request = formRequest(
       "email" -> email,
       "password" -> password,
       "handle" -> handle,
       "display" -> display
     )
-    
+
     implicit val m = mat
     call(controller.signupStart(), request)
   }
@@ -99,49 +110,52 @@ trait LoginFuncs {
     val resultFut = trySignup(user.email, user.password, user.handle, user.display)
     val loginResultsFut = for {
       result <- resultFut
-      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
+      _ <-
+        if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
       userInfo = read[UserInfo](pickledUserInfo)
-    }
-      yield LoginResults(fut(result), userInfo, result.sess)
-      
-    state.plus(resultFut) zip loginResultsFut
+    } yield LoginResults(fut(result), userInfo, result.sess)
+
+    state.plus(resultFut).zip(loginResultsFut)
   }
 
   def signup: TestOp[LoginResults] = {
     for {
       loginResults <- doSignup
       _ <- storeLoginResults(loginResults)
-    }
-      yield loginResults
+    } yield loginResults
   }
-  
+
   def validateSignup: TestOp[Unit] = StateT { state =>
     implicit val ecology = state.harness.ecology
     val user = state.testUser
     // Needed for cats-effect 2:
     for {
-      validateHashRaw <- IO { EmailTesting.extractValidateHash()}
+      validateHashRaw <- IO { EmailTesting.extractValidateHash() }
       validateHash = SafeUrl.decode(validateHashRaw)
       results <- IO.fromFuture(IO {
-        val clnt = new NSClient(state.harness, state.session)
+        val clnt = new NSClient(state.harness, state.session, Map.empty)
         val f = clnt[UserFunctions].validateActivationHash(validateHash).call()
         val fChecked = f.map { success =>
           if (!success)
-            throw new Exception(s"Failed to validate user $user with hash $validateHash")          
+            throw new Exception(s"Failed to validate user $user with hash $validateHash")
         }
-        state.plus(clnt.resultFut) zip fChecked
+        state.plus(clnt.resultFut).zip(fChecked)
       })
-    }
-      yield results
+    } yield results
   }
-  
-  def tryLogin(name: String, password: String)(implicit app: Application): Future[Result] = {
+
+  def tryLogin(
+    name: String,
+    password: String
+  )(implicit
+    app: Application
+  ): Future[Result] = {
     val request = formRequest(
       "name" -> name,
       "password" -> password
     )
-    
+
     controller.clientlogin()(request)
   }
 
@@ -154,10 +168,9 @@ trait LoginFuncs {
         IO.pure((state.withUser(user), ()))
       }
       _ <- ClientState.cache
-    }
-      yield ()
+    } yield ()
   }
-  
+
   /**
    * Creates a new User, and initializes the ClientState for it. Usually the beginning of a test.
    */
@@ -169,14 +182,13 @@ trait LoginFuncs {
       _ <- signup
       _ <- validateSignup
       loginResults <- login
-      _ = loginResults.session("username") should be (user.handle)
-    }
-      yield loginResults
+      _ = loginResults.session("username") should be(user.handle)
+    } yield loginResults
   }
-  
+
   /**
    * Log in with the given credentials. Note that "name" may be either handle or email.
-   */  
+   */
   def doLogin: TestOp[LoginResults] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val m = mat
@@ -184,54 +196,60 @@ trait LoginFuncs {
     val resultFut = tryLogin(user.handle, user.password)
     val loginResultsFut = for {
       result <- resultFut
-      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"loginF got status ${result.status}!")
+      _ <-
+        if (result.status == OK) Future.successful(()) else throw new Exception(s"loginF got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
       userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
-      _ = if (userInfoOpt.isEmpty) throw new Exception(s"loginF didn't get userInfo when trying to log in ${user.handle}!")
-    }
-      yield LoginResults(resultFut, userInfoOpt.get, result.sess)
-      
-    state.plus(resultFut) zip loginResultsFut
+      _ = if (userInfoOpt.isEmpty)
+        throw new Exception(s"loginF didn't get userInfo when trying to log in ${user.handle}!")
+    } yield LoginResults(resultFut, userInfoOpt.get, result.sess)
+
+    state.plus(resultFut).zip(loginResultsFut)
   }
 
   def login: TestOp[LoginResults] = {
     for {
       loginResults <- doLogin
       _ <- storeLoginResults(loginResults)
-    }
-      yield loginResults
+    } yield loginResults
   }
-  
+
   def logout: TestOp[Session] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val session = state.session
     val resultFut = controller.logout()(sessionRequest)
     val checkFut = resultFut.andThen {
       // SEE_OTHER is the official name of the Redirect function:
-      case Success(result) => result.status should be (SEE_OTHER)
-      case Failure(ex) => throw ex
+      case Success(result) => result.status should be(SEE_OTHER)
+      case Failure(ex)     => throw ex
     }
     val sessionFut = checkFut.map(_.sess)
-    state.plus(resultFut) zip sessionFut
+    state.plus(resultFut).zip(sessionFut)
   }
-  
+
   /**
    * Process the given invitation (which should be for the current user) to join the specified Space.
    */
-  def acceptInvite(inviteRaw: String, spaceInfo: SpaceInfo, expectFailure: Boolean = false): TestOp[(Result, Option[UserInfo])] = TestOp.fut { state =>
+  def acceptInvite(
+    inviteRaw: String,
+    spaceInfo: SpaceInfo,
+    expectFailure: Boolean = false
+  ): TestOp[(Result, Option[UserInfo])] = TestOp.fut { state =>
     implicit val app = state.harness.app
     implicit val session = state.session
     implicit val m = mat
-    
+
     val invite = SafeUrl.decode(inviteRaw)
-    
+
     val request = formRequest(
       "invite" -> invite
     )
     val resultFut = call(controller.handleInvite2(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request)
     val inviteResultFut = for {
       result <- resultFut
-      _ <- if (result.status == OK) Future.successful(()) else throw new Exception(s"acceptInvite got status ${result.status}!")
+      _ <-
+        if (result.status == OK) Future.successful(())
+        else throw new Exception(s"acceptInvite got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
       userInfo =
         if (expectFailure) {
@@ -239,16 +257,18 @@ trait LoginFuncs {
           None
         } else {
           // Normally, make sure there is a legal user info here:
-          assert (!pickledUserInfo.isEmpty, s"acceptInvite got an empty return value!")
+          assert(!pickledUserInfo.isEmpty, s"acceptInvite got an empty return value!")
           Some(read[UserInfo](pickledUserInfo))
         }
-    }
-      yield userInfo
+    } yield userInfo
 
-    (resultFut zip inviteResultFut).map((state, _))
+    (resultFut.zip(inviteResultFut)).map((state, _))
   }
 
-  def addGuest(hash: String, spaceInfo: SpaceInfo): TestOp[GuestTestUser] = {
+  def addGuest(
+    hash: String,
+    spaceInfo: SpaceInfo
+  ): TestOp[GuestTestUser] = {
     for {
       resultAndUserFut <- acceptInvite(hash, spaceInfo)
       (result, guest1Opt) = resultAndUserFut
@@ -262,8 +282,7 @@ trait LoginFuncs {
         )
       }
       _ <- setUser(guest1)
-    }
-      yield guest1
+    } yield guest1
   }
 }
 

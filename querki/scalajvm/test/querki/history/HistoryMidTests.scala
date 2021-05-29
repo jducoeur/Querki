@@ -7,6 +7,7 @@ import querki.test.mid._
 import AllFuncs._
 import HistoryMidFuncs._
 import org.scalactic.source.Position
+import querki.history.HistoryFunctions.DeleteSummary
 import querki.security.SecurityMidFuncs._
 import querki.test.mid.ClientState._
 
@@ -178,6 +179,57 @@ object HistoryMidTests {
 
     } yield ()
   }
+
+  lazy val testHistoryWalking: TestOp[Unit] = {
+    for {
+      info <- setupStandardRegressionTest("HistoryWalking")
+      spaceId = info.spaceId
+
+      // Make some Things:
+      model <- makeModel("The Model")
+      first <- makeThing(model, "First")
+      second <- makeThing(model, "Second")
+      third <- makeThing(model, "Third")
+      count <- evaluateQL(spaceId, "The Model._instances -> _count").map(_.plaintext).map(_.toInt)
+      _ = assert(count == 3)
+
+      // Delete them all:
+      _ <- deleteThing(first)
+      _ <- deleteThing(third)
+      _ <- deleteThing(second)
+
+      // Show that they are all deleted:
+      _ <- assertNumDeletedThingsIs(3)
+      count <- evaluateQL(spaceId, "The Model._instances -> _count").map(_.plaintext).map(_.toInt)
+      _ = assert(count == 0)
+
+      // Fetch the history:
+      fullHistory <- getHistorySummary()
+      // The last thing that happened should have been deleting the second Thing:
+      lastEvent = fullHistory.events.last
+      _ = assert(lastEvent.isInstanceOf[DeleteSummary])
+      DeleteSummary(lastEventIdx, who, time, id) = lastEvent
+      _ = assert(id == second)
+
+      // Look back a couple of steps, and check that things looked as expected:
+      afterFirstDeleted = lastEventIdx - 2
+      _ <- withHistoryVersion(afterFirstDeleted) {
+        for {
+          instanceNames <- evaluateQL(spaceId, "The Model._instances -> Name -> _commas").map(_.plaintext)
+          _ = assert(instanceNames == "Second, Third")
+        } yield ()
+      }
+
+      // At the moment, there's nothing:
+      instanceNames <- evaluateQL(spaceId, "The Model._instances -> Name -> _commas").map(_.plaintext)
+      _ = assert(instanceNames == "")
+
+      // Now actually roll back to that point, and check that the world has changed:
+      _ <- rollbackTo(afterFirstDeleted)
+      instanceNames <- evaluateQL(spaceId, "The Model._instances -> Name -> _commas").map(_.plaintext)
+      _ = assert(instanceNames == "Second, Third")
+    } yield ()
+  }
 }
 
 @Slow
@@ -190,6 +242,7 @@ class HistoryMidTests extends MidTestBase {
       runTest(test7w4ger8)
       runTest(test7w4gerb)
       runTest(test7w4geta)
+      runTest(testHistoryWalking)
     }
   }
 }

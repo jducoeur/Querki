@@ -39,7 +39,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   }
 
   def viewingHistoryVersion(rc: RequestContext): Option[HistoryVersion] = {
-    rc.rawParam("_historyVersion") match {
+    rc.rawParam(HistoryFunctions.viewingHistoryParam) match {
       case Some(vStr) =>
         Some(vStr.toLong)
       case _ => None
@@ -47,7 +47,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   }
 
   def isViewingHistory(rc: RequestContext): Boolean = {
-    rc.rawParam("_historyVersion").map(_.length > 0).getOrElse(false)
+    rc.rawParam(HistoryFunctions.viewingHistoryParam).map(_.length > 0).getOrElse(false)
   }
 
   ///////////////////////////////////
