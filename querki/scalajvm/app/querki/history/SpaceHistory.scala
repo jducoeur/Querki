@@ -1,6 +1,6 @@
 package querki.history
 
-import scala.collection.immutable.VectorBuilder
+import scala.collection.immutable.{Queue, VectorBuilder}
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
 import akka.persistence._
@@ -448,29 +448,59 @@ private[history] class SpaceHistory(
       }
   }
 
+  case class HistoryScanState(
+    evts: Queue[EvtSummary],
+    identityIds: Set[OID],
+    thingsIds: Set[OID],
+    state: SpaceState
+  )
+
+  def scanHistory(
+    endOpt: Option[HistoryVersion],
+    maxRecords: Int
+  ): Future[HistoryScanState] = {
+    val end = endOpt.getOrElse(Long.MaxValue)
+    foldOverPartialHistory(1, end)(HistoryScanState(Queue.empty, Set.empty, Set.empty, emptySpace)) {
+      (scanState, historyEvt) =>
+        val HistoryScanState(evtsIn, identities, thingIds, prevState) = scanState
+        val evts =
+          if (evtsIn.size == maxRecords) {
+            evtsIn.dequeue._2
+          } else {
+            evtsIn
+          }
+        val evt = historyEvt.evt
+        val state = evolveState(Some(prevState))(evt)
+        val (summary, newIdentities, newThingIds) =
+          toSummary(evt, historyEvt.sequenceNr, identities, thingIds)(state)
+        Future.successful(HistoryScanState(evts.enqueue(summary), newIdentities, newThingIds, state))
+    }
+  }
+
+  def getHistorySummary(
+    end: Option[HistoryVersion],
+    maxRecords: Int,
+    rc: RequestContext
+  ): RequestM[HistorySummary] = {
+    val resultFut = for {
+      HistoryScanState(evts, identityIds, thingIds, state) <- scanHistory(end, maxRecords)
+      thingNames <- mapNames(thingIds)(rc, latestState)
+      identities <- IdentityAccess.getIdentities(identityIds.toSeq)
+      identityMap = identities.map {
+        case (id, publicIdentity) =>
+          (id.toThingId.toString -> ClientApi.identityInfo(publicIdentity))
+      }
+    } yield HistorySummary(evts, EvtContext(identityMap, thingNames))
+
+    loopback(resultFut)
+  }
+
   def doReceive = {
     case GetHistorySummary(rc) => {
       tracing.trace(s"GetHistorySummary")
-      readCurrentHistory().map { _ =>
-        val (evtsBuilder, identityIds, thingIds) =
-          ((new VectorBuilder[EvtSummary], Set.empty[OID], Set.empty[OID]) /: history) { (current, historyRec) =>
-            val (builder, identities, thingIds) = current
-            val (summary, newIdentities, newThingIds) =
-              toSummary(historyRec.evt, historyRec.sequenceNr, identities, thingIds)(historyRec.state)
-            (builder += summary, newIdentities, newThingIds)
-          }
-
-        val namesFut: Future[ThingNames] = mapNames(thingIds)(rc, latestState)
-        val identityFut = IdentityAccess.getIdentities(identityIds.toSeq)
-
-        for {
-          thingNames <- loopback(namesFut)
-          identities <- loopback(identityFut)
-          identityMap = identities.map {
-            case (id, publicIdentity) =>
-              (id.toThingId.toString -> ClientApi.identityInfo(publicIdentity))
-          }
-        } sender ! HistorySummary(evtsBuilder.result, EvtContext(identityMap, thingNames))
+      // TODO: get the end and maxRecords from the front end:
+      getHistorySummary(None, 1000, rc).map { summary =>
+        sender ! summary
       }
     }
 
