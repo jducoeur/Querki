@@ -312,40 +312,6 @@ private[history] class SpaceHistory(
     }))
   }
 
-  /**
-   * This finds and returns all of the "stomped" records due to the damned duplicate-OID bug.
-   * It simply runs through the History, looking for Create events for which there is already
-   * a record in the Space.
-   */
-  def findAllStomped(): RequestM[List[OneStompedThing]] = {
-    // TODO: this is utterly *profligate* with RAM. Think about how we might want to restructure this in
-    // order to not hold the entire thing in memory all the time, while still providing reasonably
-    // responsive access. Should we instead rebuild stuff on-demand? Should the client signal what
-    // range of events it is looking at, and we load those in?
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, 0, Int.MaxValue)
-    implicit val mat = ActorMaterializer()
-    loopback {
-      // Note that we construct the history using VectorBuilder, for efficiency:
-      source.runFold((emptySpace, List.empty[OneStompedThing])) {
-        // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
-        case (((curState, stomped), EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent))) => {
-          val nextStomped = evt match {
-            case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored)
-                if (curState.anything(thingId).isDefined) =>
-              OneStompedThing(sequenceNr, thingId, curState.anything(thingId).get.displayName) :: stomped
-            case _ => stomped
-          }
-          val nextState = evolveState(Some(curState))(evt)
-          (nextState, nextStomped)
-        }
-      }
-    }.map {
-      case (finalState, stompedList) =>
-        mat.shutdown()
-        stompedList.reverse
-    }
-  }
-
   // Copied from YesNoUtils
   // TODO: refactor YesNoUtils so that it doesn't require being mixed in with an Ecot. The challenge is
   // that the Ecot definition of Core isn't precisely the same as the definition here, because it is an
@@ -575,13 +541,6 @@ private[history] class SpaceHistory(
       }
     }
 
-    case FindAllStomped() => {
-      tracing.trace(s"FindAllStomped")
-      findAllStomped().map { stompedList =>
-        sender ! StompedThings(stompedList)
-      }
-    }
-
     case GetCurrentState(rc) => {
       // This is only legal for admins:
       if (rc.requesterOrAnon.isAdmin) {
@@ -646,15 +605,6 @@ object SpaceHistory {
     user: User,
     thingId: OID
   ) extends HistoryMessage
-
-  case class FindAllStomped() extends HistoryMessage
-
-  case class OneStompedThing(
-    event: Long,
-    oid: OID,
-    display: String
-  )
-  case class StompedThings(things: List[OneStompedThing])
 
   /**
    * Return the current State.

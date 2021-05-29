@@ -12,7 +12,8 @@ import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
 import querki.util.{ActorHelpers, PublicException}
 
 object MOIDs extends EcotIds(65) {
-  val FindAllStompedCmdOID = moid(1)
+  // Dead -- we've removed this command, since we haven't used it in years:
+//  val FindAllStompedCmdOID = moid(1)
   val HistoryPermOID = moid(2)
   val UndeleteFunctionOID = moid(3)
   val ListDeletedThingsOID = moid(4)
