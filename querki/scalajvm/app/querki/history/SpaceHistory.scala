@@ -104,6 +104,7 @@ private[history] class SpaceHistory(
   // TODO: if we start to cope with extracting slices of the history, we'll need to maintain the
   // base index. Note that we can count on sequenceNr increasing monotonically (per discussion in
   // akka-persistence-cassandra Gitter, 9/13/16), so using a Vector makes sense here.
+  // TODO: once we switch to fully dynamic, delete this.
   var history = StateHistory.empty[HistoryRecord]
 
   def latestState = history.lastOption.map(_.state).getOrElse(emptySpace)
@@ -185,6 +186,8 @@ private[history] class SpaceHistory(
   /**
    * This reads all of the history since the last time it was called. It is designed so that we can
    * reload the client page and get any new events since it was last shown.
+   *
+   * TODO: once everything has been switched to running dynamically, delete this.
    */
   def readCurrentHistory(): RequestM[Unit] = {
     tracing.trace("readCurrentHistory")
@@ -213,6 +216,67 @@ private[history] class SpaceHistory(
       history = history ++ fullHist._2.result
       mat.shutdown()
     }
+  }
+
+  /**
+   * The interesting bits from a single history record.
+   *
+   * Note that this is a subset of the underlying [[EventEnvelope]], mostly to hide the fields that I don't think we
+   * should ever care about.
+   */
+  case class HistoryEvent(
+    sequenceNr: Long,
+    evt: SpaceEvent
+  )
+
+  /**
+   * Run the given evolution operation over a range of history records.
+   *
+   * @param start the sequence number of the record to start with
+   * @param end the sequence number to end at
+   * @param zero the initial state of the fold
+   * @param evolve the actual function to fold over
+   * @tparam T the type of the fold
+   * @return a Future of the result of the fold
+   */
+  def foldOverPartialHistory[T](
+    start: Long,
+    end: Long
+  )(
+    zero: T
+  )(
+    evolve: (T, HistoryEvent) => Future[T]
+  ): Future[T] = {
+    tracing.trace("foldOverHistory")
+    val source = readJournal.currentEventsByPersistenceId(persistenceId, start, end)
+    implicit val mat = ActorMaterializer()
+    source.runFoldAsync(zero) {
+      // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
+      case (current, EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent)) => {
+        evolve(current, HistoryEvent(sequenceNr, evt))
+      }
+      case (current, _) => Future.successful(current)
+    }.map { result =>
+      mat.shutdown()
+      result
+    }
+  }
+
+  /**
+   * Run the given evolution operation over the entire history of this Space.
+   *
+   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
+   *
+   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
+   * wrap the result in Future.successful().
+   *
+   * @param zero the initial state of the fold
+   * @param evolve the actual function to fold over
+   * @tparam T the type of the fold
+   * @return a Future of the result of the fold
+   */
+  def foldOverHistory[T](zero: T)(evolve: (T, HistoryEvent) => Future[T]): Future[T] = {
+    foldOverPartialHistory(1, Long.MaxValue)(zero)(evolve)
   }
 
   /**
@@ -295,88 +359,93 @@ private[history] class SpaceHistory(
       false
   }
 
-  // No reason to get RequestM involved here, since it's all local processing -- just use Future.
-  // TODO: someday, once we have rewritten the stack to use IO, this should be much, much faster:
   def findAllDeleted(
     rc: RequestContext,
     predicateOpt: Option[QLExp],
     renderOpt: Option[QLExp]
   ): Future[List[QValue]] = {
-    readCurrentHistory().flatMap { _ =>
-      history
-        // This is a bit complex. Ultimately, we're building up a list of QValues, which are the rendered results
-        // for each deleted item. But we need to track the OID for each of those, so that we can filter out duplicates.
-        // And we need to keep track of the *previous* SpaceState before each deletion event, so that we can render
-        // the deleted item in terms of that previous state.
-        // Down at the bottom, we will throw away everything but the QValues.
-        .foldLeft(Future.successful((List.empty[(QValue, OID)], emptySpace))) { (requestM, record) =>
-          requestM.flatMap { v =>
-            val (soFar, prevState) = v
-            val HistoryRecord(_, evt, state) = record
-            evt match {
-              // Only worry about deletion events for things that have not been subsequently restored:
-              case DHDeleteThing(req, thingId, modTime) if (history.last.state.anything(thingId).isEmpty) => {
-                // Evaluate the predicate on this thing in the context of the *previous* state, when the
-                // Thing still existed:
-                val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
-                val context = QLContext(ExactlyOne(LinkType(thingId)), Some(rc), endTime)(prevState, ecology)
-                val predicateResultFut: Future[Boolean] = predicateOpt match {
-                  case Some(predicate) =>
-                    try {
-                      QL.processExp(context, predicate).map(_.value).map(toBoolean(_)).recover {
-                        case ex: Exception => { ex.printStackTrace(); false }
-                      }
-                    } catch {
-                      case ex: Exception => Future.successful(false)
-                    }
-                  case _ => Future.successful(true)
+    // This is a bit complex. Ultimately, we're building up a list of QValues, which are the rendered results
+    // for each deleted item. But we need to track the OID for each of those, so that we can filter out duplicates.
+    // And we need to keep track of the *previous* SpaceState before each deletion event, so that we can render
+    // the deleted item in terms of that previous state.
+    // Down at the bottom, we will throw away everything but the QValues.
+    foldOverHistory((List.empty[(QValue, OID)], emptySpace)) { (v, record) =>
+      val (soFar, prevState) = v
+      val HistoryEvent(sequenceNr, evt) = record
+      val state = evolveState(Some(prevState))(evt)
+      evt match {
+        case DHDeleteThing(req, thingId, modTime) => {
+          // Evaluate the predicate on this thing in the context of the *previous* state, when the
+          // Thing still existed:
+          val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
+          val context = QLContext(ExactlyOne(LinkType(thingId)), Some(rc), endTime)(prevState, ecology)
+          val predicateResultFut: Future[Boolean] = predicateOpt match {
+            case Some(predicate) =>
+              try {
+                QL.processExp(context, predicate).map(_.value).map(toBoolean(_)).recover {
+                  case ex: Exception => { ex.printStackTrace(); false }
                 }
-                predicateResultFut.flatMap { passes =>
-                  def justTheOID(): Future[(List[(QValue, OID)], SpaceState)] = {
-                    val deleted = (ExactlyOne(LinkType(thingId)), thingId)
-                    val filtered = soFar.filterNot(_._2 == thingId)
-                    Future.successful((deleted :: filtered, state))
-                  }
+              } catch {
+                case ex: Exception => Future.successful(false)
+              }
+            case _ => Future.successful(true)
+          }
+          predicateResultFut.flatMap { passes =>
+            def justTheOID(): Future[(List[(QValue, OID)], SpaceState)] = {
+              val deleted = (ExactlyOne(LinkType(thingId)), thingId)
+              val filtered = soFar.filterNot(_._2 == thingId)
+              Future.successful((deleted :: filtered, state))
+            }
 
-                  if (passes) {
-                    // Passes the predicate, so figure out its name, and add it to the list:
-                    renderOpt.map { render =>
-                      prevState.resolveOpt(thingId)(_.things).map { thing =>
-                        QL.processExp(context, render).map { result =>
-                          // Remove any *previous* deletions of this Thing -- we want to wind up with only the
-                          // most recent. This is a little inefficient in Big-O terms, but I'm guessing that won't
-                          // matter a lot in reality:
-                          val deleted = (result.value, thingId)
-                          val filtered = soFar.filterNot(_._2 == thingId)
-                          ((deleted :: filtered, state))
-                        }.recoverWith {
-                          case ex: Exception => {
-                            ex.printStackTrace()
-                            justTheOID()
-                          }
-                        }
-                      }.getOrElse {
-                        // Oddly, we didn't find that OID in the previous state, so give up and show the raw OID:
-                        justTheOID()
-                      }
-                    }.getOrElse {
+            if (passes) {
+              // Passes the predicate, so figure out its name, and add it to the list:
+              renderOpt.map { render =>
+                prevState.anything(thingId).map { thing =>
+                  QL.processExp(context, render).map { result =>
+                    // Remove any *previous* deletions of this Thing -- we want to wind up with only the
+                    // most recent. This is a little inefficient in Big-O terms, but I'm guessing that won't
+                    // matter a lot in reality:
+                    val deleted = (result.value, thingId)
+                    val filtered = soFar.filterNot(_._2 == thingId)
+                    (deleted :: filtered, state)
+                  }.recoverWith {
+                    case ex: Exception => {
+                      ex.printStackTrace()
                       justTheOID()
                     }
-                  } else {
-                    // Didn't pass the predicate, so just keep going:
-                    Future.successful((soFar, state))
                   }
+                }.getOrElse {
+                  // Oddly, we didn't find that OID in the previous state, so give up and show the raw OID:
+                  justTheOID()
                 }
+              }.getOrElse {
+                justTheOID()
               }
-
-              // Anything other than deletions is ignored -- move along...
-              case _ => Future.successful((soFar, state))
+            } else {
+              // Didn't pass the predicate, so just keep going:
+              Future.successful((soFar, state))
             }
           }
         }
-        // Extract just the List of QValues from all of that:
-        .map(_._1.map(_._1))
+
+        // Anything other than deletions is ignored -- move along...
+        case _ => Future.successful((soFar, state))
+      }
     }
+      .map { result =>
+        val (deletedPairs, state) = result
+
+        // Filter out all restored items
+        val finalDeletedPairs =
+          deletedPairs
+            .filterNot { pair =>
+              val (qv, oid) = pair
+              state.anything(oid).isDefined
+            }
+
+        // Extract just the List of QValues from all of that:
+        finalDeletedPairs.map(_._1)
+      }
   }
 
   def doReceive = {
