@@ -300,17 +300,16 @@ private[history] class SpaceHistory(
   }
 
   def getHistoryRecord(v: HistoryVersion): RequestM[HistoryRecord] = {
-    readCurrentHistory().map { _ =>
-      if (history.size < v)
-        // TODO: ugly, but this *is* conceptually an internal error. Is there anything smarter
-        // we can/should do here?
-        throw new Exception(s"Space $id got a request for unknown History Version $v!")
-      else {
-        // Adjust for the 1-indexed version numbers
-        val idx = (v - 1).toInt
-        history(idx)
-      }
+    val resultFut = foldOverPartialHistory(1, v)(Option.empty[HistoryRecord]) { (prevOpt, historyEvt) =>
+      val prevState = prevOpt.map(_.state).getOrElse(emptySpace)
+      val state = evolveState(Some(prevState))(historyEvt.evt)
+      Future.successful(Some(HistoryRecord(historyEvt.sequenceNr, historyEvt.evt, state)))
     }
+
+    loopback(resultFut.map(_.getOrElse {
+      // This is rather weird -- we didn't get any events:
+      HistoryRecord(0, DHInitState(UserRef(User.Anonymous.id, None), ""), emptySpace)
+    }))
   }
 
   /**
