@@ -460,6 +460,15 @@ private[history] class SpaceHistory(
     loopback(resultFut)
   }
 
+  def getCurrentState(): RequestM[SpaceState] = {
+    val resultFut =
+      foldOverHistory(emptySpace) { (prevState, historyEvt) =>
+        Future.successful(evolveState(Some(prevState))(historyEvt.evt))
+      }
+
+    loopback(resultFut)
+  }
+
   def doReceive = {
     case GetHistorySummary(rc) => {
       tracing.trace(s"GetHistorySummary")
@@ -544,8 +553,8 @@ private[history] class SpaceHistory(
     case GetCurrentState(rc) => {
       // This is only legal for admins:
       if (rc.requesterOrAnon.isAdmin) {
-        readCurrentHistory().map { _ =>
-          sender ! CurrentState(latestState)
+        getCurrentState().map { curState =>
+          sender ! CurrentState(curState)
         }
       } else {
         sender ! SpaceBlocked(PublicException("Space.blocked"))
