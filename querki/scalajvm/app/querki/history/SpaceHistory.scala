@@ -58,7 +58,7 @@ private[history] class SpaceHistory(
      with ModelPersistence
      with ReceivePipeline
      with TimeoutChild
-     with HistoryFolding
+     with HistoryFoldingImpl
      with RestoreDeleted
      with HistorySummaryBuilder
      with FindDeleted {
@@ -71,21 +71,6 @@ private[history] class SpaceHistory(
   def persistenceId = id.toThingId.toString
 
   lazy val tracing = TracingSpace(id, "SpaceHistory: ")
-
-  // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
-  // likely with machinery to override Ecology members. But it'll do for now.
-  lazy val test =
-    Config.getString("akka.persistence.journal.plugin") == "inmemory-journal"
-
-  lazy val readJournal: ReadJournal with CurrentEventsByPersistenceIdQuery =
-    if (test)
-      // During tests, we are using the in-memory journal. Yes, this is the documented way to do it:
-      //   https://github.com/dnvriend/akka-persistence-inmemory
-      PersistenceQuery(context.system)
-        .readJournalFor("inmemory-read-journal")
-        .asInstanceOf[ReadJournal with CurrentEventsByPersistenceIdQuery]
-    else
-      PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
 
   case class HistoryRecord(
     sequenceNr: Long,
@@ -138,56 +123,6 @@ private[history] class SpaceHistory(
       history = history ++ fullHist._2.result
       mat.shutdown()
     }
-  }
-
-  /**
-   * Run the given evolution operation over a range of history records.
-   *
-   * @param start the sequence number of the record to start with
-   * @param end the sequence number to end at
-   * @param zero the initial state of the fold
-   * @param evolve the actual function to fold over
-   * @tparam T the type of the fold
-   * @return a Future of the result of the fold
-   */
-  def foldOverPartialHistory[T](
-    start: Long,
-    end: Long
-  )(
-    zero: T
-  )(
-    evolve: (T, HistoryEvent) => Future[T]
-  ): Future[T] = {
-    tracing.trace("foldOverHistory")
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, start, end)
-    implicit val mat = ActorMaterializer()
-    source.runFoldAsync(zero) {
-      // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
-      case (current, EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent)) => {
-        evolve(current, HistoryEvent(sequenceNr, evt))
-      }
-      case (current, _) => Future.successful(current)
-    }.map { result =>
-      mat.shutdown()
-      result
-    }
-  }
-
-  /**
-   * Run the given evolution operation over the entire history of this Space.
-   *
-   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
-   *
-   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
-   * wrap the result in Future.successful().
-   *
-   * @param zero the initial state of the fold
-   * @param evolve the actual function to fold over
-   * @tparam T the type of the fold
-   * @return a Future of the result of the fold
-   */
-  def foldOverHistory[T](zero: T)(evolve: (T, HistoryEvent) => Future[T]): Future[T] = {
-    foldOverPartialHistory(1, Long.MaxValue)(zero)(evolve)
   }
 
   def getHistoryRecord(v: HistoryVersion): RequestM[HistoryRecord] = {
