@@ -6,7 +6,7 @@ import querki.globals._
 import querki.values.RequestContext
 import HistoryFunctions._
 import models.OID
-import querki.history.SpaceHistory.{DeletedThings, ForAllDeletedThings, RestoreDeletedThing}
+import querki.history.SpaceHistory._
 import querki.ql.{QLCall, QLExp, QLThingId}
 import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
 import querki.util.{ActorHelpers, PublicException}
@@ -154,11 +154,11 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
             inv.opt(expToOid(exp), Some(PublicException("History.undeleteNotOid", exp.reconstructString)))
           case _ => inv.contextAllAs(LinkType)
         }
-        ThingFound(id, newState) <- inv.fut(
+        Restored(ids, state) <- inv.fut(
           SpaceOps.spaceRegion ?
             SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, RestoreDeletedThing(user, oid))
         )
-      } yield ExactlyOne(LinkType(id))
+      } yield QList.makePropValue(ids.map(LinkType(_)), LinkType)
     }
   }
 
