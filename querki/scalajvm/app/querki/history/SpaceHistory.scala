@@ -57,11 +57,12 @@ private[history] class SpaceHistory(
      with SpacePure
      with ModelPersistence
      with ReceivePipeline
-     with TimeoutChild {
+     with TimeoutChild
+     with HistoryFolding
+     with RestoreDeleted
+     with HistorySummaryBuilder {
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Core = interface[querki.core.Core]
-  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   lazy val QL = interface[querki.ql.QL]
   lazy val SystemState = interface[querki.system.System].State
@@ -109,80 +110,6 @@ private[history] class SpaceHistory(
 
   def latestState = history.lastOption.map(_.state).getOrElse(emptySpace)
 
-  implicit def OID2TID(oid: OID): TID = ClientApi.OID2TID(oid)
-
-  def toSummary(
-    evt: SpaceEvent,
-    sequenceNr: Long,
-    identities: Set[OID],
-    allThingIds: Set[OID]
-  )(implicit
-    state: SpaceState
-  ): (EvtSummary, Set[OID], Set[OID]) = {
-    def fill(
-      userRef: UserRef,
-      thingIds: Seq[OID],
-      f: String => EvtSummary
-    ): (EvtSummary, Set[OID], Set[OID]) = {
-      val summary = f(userRef.identityIdOpt.map(_.toThingId.toString).getOrElse(""))
-
-      val newIdentities = userRef.identityIdOpt match {
-        case Some(identityId) => identities + identityId
-        case None             => identities
-      }
-
-      val namePairs = for {
-        thingId <- thingIds
-        thing <- state.anything(thingId)
-      } yield (thingId, thing.displayName)
-
-      val newThingIds =
-        (allThingIds /: namePairs) { (tn, pair) =>
-          val (id, name) = pair
-          tn + id
-        }
-
-      (summary, newIdentities, newThingIds)
-    }
-
-    evt match {
-      case DHSetState(dh, modTime, reason, details) =>
-        (
-          SetStateSummary(
-            sequenceNr,
-            "",
-            modTime.toTimestamp,
-            SetStateReason.withValue(reason.getOrElse(0)),
-            details.getOrElse("")
-          ),
-          identities,
-          allThingIds
-        )
-
-      case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
-
-      case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) =>
-        fill(
-          req,
-          dhProps.keys.toSeq :+ thingId,
-          CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId, restored.getOrElse(false))
-        )
-
-      case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) =>
-        fill(
-          req,
-          propChanges.keys.toSeq :+ thingId,
-          ModifySummary(sequenceNr, _, modTime.toTimestamp, thingId, propChanges.keys.toSeq.map(OID2TID))
-        )
-
-      case DHDeleteThing(req, thingId, modTime) =>
-        fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
-
-      case DHAddApp(req, modTime, app, appParents, shadowMapping, _) =>
-        fill(req, Seq(app.id), AddAppSummary(sequenceNr, _, modTime.toTimestamp, app.id))
-    }
-  }
-
   /**
    * This reads all of the history since the last time it was called. It is designed so that we can
    * reload the client page and get any new events since it was last shown.
@@ -217,17 +144,6 @@ private[history] class SpaceHistory(
       mat.shutdown()
     }
   }
-
-  /**
-   * The interesting bits from a single history record.
-   *
-   * Note that this is a subset of the underlying [[EventEnvelope]], mostly to hide the fields that I don't think we
-   * should ever care about.
-   */
-  case class HistoryEvent(
-    sequenceNr: Long,
-    evt: SpaceEvent
-  )
 
   /**
    * Run the given evolution operation over a range of history records.
@@ -277,26 +193,6 @@ private[history] class SpaceHistory(
    */
   def foldOverHistory[T](zero: T)(evolve: (T, HistoryEvent) => Future[T]): Future[T] = {
     foldOverPartialHistory(1, Long.MaxValue)(zero)(evolve)
-  }
-
-  /**
-   * Run through the OIDs needed for the History, and get their Names. We have to do this in a
-   * second pass because, in order to cope with Computed Names, this needs to be done with Future.
-   */
-  def mapNames(
-    ids: Set[OID]
-  )(implicit
-    rc: RequestContext,
-    state: SpaceState
-  ): Future[ThingNames] = {
-    (Future.successful(Map.empty[TID, String]) /: ids) { (fut, id) =>
-      fut.flatMap { m =>
-        state.anything(id) match {
-          case Some(t) => t.nameOrComputed.map(name => m + (OID2TID(id) -> name))
-          case _       => Future.successful(m)
-        }
-      }
-    }
   }
 
   def getHistoryRecord(v: HistoryVersion): RequestM[HistoryRecord] = {
@@ -413,53 +309,6 @@ private[history] class SpaceHistory(
       }
   }
 
-  case class HistoryScanState(
-    evts: Queue[EvtSummary],
-    identityIds: Set[OID],
-    thingsIds: Set[OID],
-    state: SpaceState
-  )
-
-  def scanHistory(
-    endOpt: Option[HistoryVersion],
-    maxRecords: Int
-  ): Future[HistoryScanState] = {
-    val end = endOpt.getOrElse(Long.MaxValue)
-    foldOverPartialHistory(1, end)(HistoryScanState(Queue.empty, Set.empty, Set.empty, emptySpace)) {
-      (scanState, historyEvt) =>
-        val HistoryScanState(evtsIn, identities, thingIds, prevState) = scanState
-        val evts =
-          if (evtsIn.size == maxRecords) {
-            evtsIn.dequeue._2
-          } else {
-            evtsIn
-          }
-        val evt = historyEvt.evt
-        val state = evolveState(Some(prevState))(evt)
-        val (summary, newIdentities, newThingIds) =
-          toSummary(evt, historyEvt.sequenceNr, identities, thingIds)(state)
-        Future.successful(HistoryScanState(evts.enqueue(summary), newIdentities, newThingIds, state))
-    }
-  }
-
-  def getHistorySummary(
-    end: Option[HistoryVersion],
-    maxRecords: Int,
-    rc: RequestContext
-  ): RequestM[HistorySummary] = {
-    val resultFut = for {
-      HistoryScanState(evts, identityIds, thingIds, state) <- scanHistory(end, maxRecords)
-      thingNames <- mapNames(thingIds)(rc, latestState)
-      identities <- IdentityAccess.getIdentities(identityIds.toSeq)
-      identityMap = identities.map {
-        case (id, publicIdentity) =>
-          (id.toThingId.toString -> ClientApi.identityInfo(publicIdentity))
-      }
-    } yield HistorySummary(evts, EvtContext(identityMap, thingNames))
-
-    loopback(resultFut)
-  }
-
   def getCurrentState(): RequestM[SpaceState] = {
     val resultFut =
       foldOverHistory(emptySpace) { (prevState, historyEvt) =>
@@ -467,78 +316,6 @@ private[history] class SpaceHistory(
       }
 
     loopback(resultFut)
-  }
-
-  case class RestoreScanState(
-    prevState: SpaceState,
-    lastKnownVersions: Map[OID, Thing]
-  )
-
-  /**
-   * Scan through the history, and find the last version of each specified Thing before it was deleted.
-   */
-  def findLastKnownVersions(thingIds: Set[OID]): Future[Map[OID, Thing]] = {
-    foldOverHistory(RestoreScanState(emptySpace, Map.empty)) { (scanState, historyEvt) =>
-      val lastKnownVersions =
-        historyEvt.evt match {
-          case DHDeleteThing(req, id, modTime) if (thingIds.contains(id)) => {
-            // This is one of the Things we want to restore, so grab its previous state:
-            scanState.prevState.anything(id) match {
-              case Some(thing) => scanState.lastKnownVersions + (id -> thing)
-              case None        => scanState.lastKnownVersions
-            }
-          }
-          case _ => scanState.lastKnownVersions
-        }
-      val state = evolveState(Some(scanState.prevState))(historyEvt.evt)
-      Future.successful(RestoreScanState(state, lastKnownVersions))
-    }.map(_.lastKnownVersions)
-  }
-
-  def restoreOneFromLastKnown(
-    user: User,
-    thing: Thing
-  ): RequestM[ThingFound] = {
-    val createMsg =
-      CreateThing(
-        user,
-        id,
-        thing.kind,
-        thing.model,
-        thing.props,
-        Some(thing.id),
-        creatorOpt = thing.creatorOpt,
-        createTimeOpt = thing.createTimeOpt
-      )
-
-    spaceRouter.request(createMsg).map {
-      case found: ThingFound => found
-      case other => {
-        val msg = s"Got $other when trying to recreate thing $thing"
-        QLog.error(msg)
-        throw new Exception(msg)
-      }
-    }
-  }
-
-  def restoreFromLastKnowns(
-    user: User,
-    lastKnownVersions: Map[OID, Thing]
-  ): RequestM[SpaceState] = {
-    lastKnownVersions.foldLeft(RequestM.successful(emptySpace)) { (prevReq, pair) =>
-      val (oid, thing) = pair
-      prevReq.flatMap(_ => restoreOneFromLastKnown(user, thing).map(_.state))
-    }
-  }
-
-  def restoreDeletedThings(
-    user: User,
-    thingIds: Set[OID]
-  ): RequestM[SpaceState] = {
-    for {
-      lastKnownVersions <- loopback(findLastKnownVersions(thingIds))
-      resultingState <- restoreFromLastKnowns(user, lastKnownVersions)
-    } yield resultingState
   }
 
   def doReceive = {
