@@ -1,28 +1,19 @@
 package querki.history
 
-import scala.collection.immutable.{Queue, VectorBuilder}
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
-import akka.persistence._
-import akka.persistence.cassandra.query.scaladsl._
-import akka.persistence.query._
-import akka.stream.ActorMaterializer
 import org.querki.requester._
 import models._
-import querki.data.TID
 import querki.globals._
-import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.{SpacePure, TracingSpace}
 import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
-import querki.time._
 import querki.util.{PublicException, QuerkiActor, SingleRoutingParent, TimeoutChild}
-import querki.values.{QLContext, QValue, RequestContext, SpaceState}
+import querki.values.{QValue, RequestContext, SpaceState}
 import HistoryFunctions._
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
 import querki.ql.QLExp
 
 /**
@@ -62,9 +53,6 @@ private[history] class SpaceHistory(
      with RestoreDeleted
      with HistorySummaryBuilder
      with FindDeleted {
-  lazy val Basic = interface[querki.basic.Basic]
-  lazy val Person = interface[querki.identity.Person]
-  lazy val SystemState = interface[querki.system.System].State
 
   def timeoutConfig: String = "querki.history.timeout"
 
@@ -77,53 +65,6 @@ private[history] class SpaceHistory(
     evt: SpaceEvent,
     state: SpaceState
   )
-  type StateHistory = Vector[HistoryRecord]
-  val StateHistory = Vector
-
-  // The full history of this Space, *one*-indexed. (That seems to be the way Akka Persistence works.)
-  // Be careful using this: the 1-indexing isn't at all obvious.
-  // TODO: if we start to cope with extracting slices of the history, we'll need to maintain the
-  // base index. Note that we can count on sequenceNr increasing monotonically (per discussion in
-  // akka-persistence-cassandra Gitter, 9/13/16), so using a Vector makes sense here.
-  // TODO: once we switch to fully dynamic, delete this.
-  var history = StateHistory.empty[HistoryRecord]
-
-  def latestState = history.lastOption.map(_.state).getOrElse(emptySpace)
-
-  /**
-   * This reads all of the history since the last time it was called. It is designed so that we can
-   * reload the client page and get any new events since it was last shown.
-   *
-   * TODO: once everything has been switched to running dynamically, delete this.
-   */
-  def readCurrentHistory(): RequestM[Unit] = {
-    tracing.trace("readCurrentHistory")
-    // TODO: this is utterly *profligate* with RAM. Think about how we might want to restructure this in
-    // order to not hold the entire thing in memory all the time, while still providing reasonably
-    // responsive access. Should we instead rebuild stuff on-demand? Should the client signal what
-    // range of events it is looking at, and we load those in?
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, history.size + 1, Int.MaxValue)
-    implicit val mat = ActorMaterializer()
-    val initialState =
-      if (history.isEmpty)
-        emptySpace
-      else
-        history.last.state
-    loopback {
-      // Note that we construct the history using VectorBuilder, for efficiency:
-      source.runFold((initialState, new VectorBuilder[HistoryRecord])) {
-        // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
-        case (((curState, history), EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent))) => {
-          val nextState = evolveState(Some(curState))(evt)
-          history += HistoryRecord(sequenceNr, evt, nextState)
-          (nextState, history)
-        }
-      }
-    }.map { fullHist =>
-      history = history ++ fullHist._2.result
-      mat.shutdown()
-    }
-  }
 
   def getHistoryRecord(v: HistoryVersion): RequestM[HistoryRecord] = {
     val resultFut = foldOverPartialHistory(1, v)(Option.empty[HistoryRecord]) { (prevOpt, historyEvt) =>
