@@ -117,10 +117,10 @@ private[history] class SpaceHistory(
       }
     }
 
-    case RestoreDeletedThing(user, thingId) => {
-      tracing.trace(s"RestoreDeletedThing($thingId)")
-      restoreDeletedThings(user, Set(thingId)).map { resultingState =>
-        sender ! Restored(Seq(thingId), resultingState)
+    case RestoreDeletedThing(user, thingIds) => {
+      tracing.trace(s"RestoreDeletedThing($thingIds)")
+      restoreDeletedThings(user, thingIds.toSet).map { resultingState =>
+        sender ! Restored(thingIds, resultingState)
       }
     }
 
@@ -186,7 +186,7 @@ object SpaceHistory {
    */
   case class RestoreDeletedThing(
     user: User,
-    thingId: OID
+    thingIds: Seq[OID]
   ) extends HistoryMessage
 
   /**

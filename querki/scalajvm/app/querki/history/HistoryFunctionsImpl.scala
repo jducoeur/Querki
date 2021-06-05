@@ -48,7 +48,7 @@ class HistoryFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
     ThingId(tid.underlying) match {
       case AsOID(oid) => {
         for {
-          Restored(ids, newState) <- spaceRouter.request(RestoreDeletedThing(user, oid))
+          Restored(ids, newState) <- spaceRouter.request(RestoreDeletedThing(user, List(oid)))
           restored = newState.anything(oid).getOrElse(throw new Exception(s"Couldn't find Thing $tid!"))
           result <- ClientApi.thingInfo(restored, rc)(newState)
         } yield result
