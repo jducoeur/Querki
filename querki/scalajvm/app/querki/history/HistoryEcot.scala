@@ -6,13 +6,14 @@ import querki.globals._
 import querki.values.RequestContext
 import HistoryFunctions._
 import models.OID
-import querki.history.SpaceHistory.{DeletedThings, ForAllDeletedThings, RestoreDeletedThing}
+import querki.history.SpaceHistory._
 import querki.ql.{QLCall, QLExp, QLThingId}
 import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
 import querki.util.{ActorHelpers, PublicException}
 
 object MOIDs extends EcotIds(65) {
-  val FindAllStompedCmdOID = moid(1)
+  // Dead -- we've removed this command, since we haven't used it in years:
+//  val FindAllStompedCmdOID = moid(1)
   val HistoryPermOID = moid(2)
   val UndeleteFunctionOID = moid(3)
   val ListDeletedThingsOID = moid(4)
@@ -39,7 +40,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   }
 
   def viewingHistoryVersion(rc: RequestContext): Option[HistoryVersion] = {
-    rc.rawParam("_historyVersion") match {
+    rc.rawParam(HistoryFunctions.viewingHistoryParam) match {
       case Some(vStr) =>
         Some(vStr.toLong)
       case _ => None
@@ -47,7 +48,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   }
 
   def isViewingHistory(rc: RequestContext): Boolean = {
-    rc.rawParam("_historyVersion").map(_.length > 0).getOrElse(false)
+    rc.rawParam(HistoryFunctions.viewingHistoryParam).map(_.length > 0).getOrElse(false)
   }
 
   ///////////////////////////////////
@@ -107,6 +108,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
     toProps(
       setName("_undeleteThing"),
       Summary("Given the OID of a deleted Thing, restore it"),
+      SkillLevel(SkillLevelAdvanced),
       Signature(
         expected = None,
         reqs = Seq.empty,
@@ -116,10 +118,28 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
         returns = (LinkType, "The restored Thing")
       ),
       Details(
-        """Note that the OID is a parameter rather than a received value, and it has to be a literal OID.
-          |That's necessarily true (you can't pass in the OID, since the Thing doesn't exist any more).
+        """You can use this in one of two ways. On the one hand, you can pass a *single* literal OID as the
+          |parameter to this function:
+          |```
+          |_undeleteThing(.2j39s9d)
+          |```
+          |This will look through the History, and restore the Thing with that OID to its state just before
+          |it was last deleted.
           |
-          |This is primarily intended for internal use, from the Deleted Things page.
+          |On the other hand, you can pass in a list of OIDs to restore, which you will usually get from a call to
+          |`_listDeletedThings` with the criteria you are looking for:
+          |```
+          |_listDeletedThings(filter = _model -> _is(My Model)) -> _undeleteThing
+          |```
+          |Be careful: this second version can restore a lot of things at once, so don't use it casually! This is a
+          |power feature, to be used with a lot of care. You should probably use `_listDeletedThings` to display the
+          |Things first, to make sure you'll be restoring what you want.
+          |
+          |In large Spaces with a great deal of history, this can be pretty slow, since it has to talk the entire
+          |history. (Twice if you are using both `_listDeletedThings` and `_undeleteThing`.)
+          |It is possible for the page to time
+          |out before it completes, but it ought to eventually finish. Please tell us if it seems to be failing to do
+          |so.
           |""".stripMargin
       )
     )
@@ -148,16 +168,16 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
       val user = inv.context.request.requesterOrAnon
       for {
         expOpt <- inv.rawParam("oid")
-        oid <- expOpt match {
-          case Some(exp) =>
-            inv.opt(expToOid(exp), Some(PublicException("History.undeleteNotOid", exp.reconstructString)))
-          case _ => inv.contextAllAs(LinkType)
+        oids <- expOpt match {
+          case Some(exp) => inv.wrap(expToOid(exp).toList)
+          case _         => inv.contextAllAsList(LinkType)
         }
-        ThingFound(id, newState) <- inv.fut(
+        checkOids: List[OID] = oids
+        Restored(ids, state) <- inv.fut(
           SpaceOps.spaceRegion ?
-            SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, RestoreDeletedThing(user, oid))
+            SpaceSubsystemRequest(inv.context.request.requesterOrAnon, inv.state.id, RestoreDeletedThing(user, oids))
         )
-      } yield ExactlyOne(LinkType(id))
+      } yield QList.makePropValue(ids.map(LinkType(_)), LinkType)
     }
   }
 

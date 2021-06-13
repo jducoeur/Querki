@@ -109,7 +109,7 @@ class AdvancedPage(params: ParamMap)(implicit val ecology: Ecology) extends Page
             //
             p("""Press this button to view the history of this Space"""),
             new ButtonGadget(ButtonGadget.Info, "View History", id := "_historyButton")({ () =>
-              History.historySummaryFactory.showPage()
+              History.historySummaryFactory.showPage("nRecords" -> "100")
             }),
             //
             p("""Press this button to export this *entire* Space as XML. (NOTE: photographs are not exported.)

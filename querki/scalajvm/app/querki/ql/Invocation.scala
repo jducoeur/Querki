@@ -263,6 +263,15 @@ private[ql] case class InvocationImpl(
     }
   }
 
+  def contextAllAsList[VT](pt: PType[VT]): InvocationValue[List[VT]] = {
+    if (!context.value.matchesType(pt))
+      error("Func.notThing", displayName)
+    else {
+      val vs = Some(context.value.rawList(pt)) //context.value.flatMap(pt)(Some(_))
+      InvocationValueImpl(vs)
+    }
+  }
+
   def contextFirstThing: InvocationValue[Thing] = {
     contextFirstAs(Core.LinkType).flatMap { oid =>
       state.anything(oid) match {

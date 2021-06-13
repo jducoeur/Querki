@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
-import models.{Kind, Thing, OID, ThingId}
+import models.{Kind, OID, Thing, ThingId}
 import play.api.mvc.{AnyContent, BodyParser, BodyParsers, EssentialAction, Result}
 import play.twirl.api.Html
 import querki.data.TID
@@ -19,7 +19,7 @@ import querki.history.{HistoryFunctions, SpaceHistory}
 import querki.spaces.messages.CurrentState
 import querki.util.QLog
 
-class AdminController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase {
+class AdminController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
 
   lazy val System = interface[querki.system.System]
 
@@ -75,116 +75,116 @@ class AdminController @Inject() (val appProv:Provider[play.api.Application]) ext
    * Note that this requires the OID of the Space.
    */
   def dumpSpaceReadable(spaceIdStr: String): EssentialAction =
-    fromSpaceHistory(spaceIdStr, SpaceHistory.GetCurrentState(_))
-  {
-    case CurrentState(state, _) => {
-      // Okay, we now have the SpaceState. Now we iterate over it, and print it all out.
-      implicit val s = state
+    fromSpaceHistory(spaceIdStr, SpaceHistory.GetCurrentState(_)) {
+      case CurrentState(state, _) => {
+        // Okay, we now have the SpaceState. Now we iterate over it, and print it all out.
+        implicit val s = state
 
-      def render(t: Thing): String = QLog.renderThing(t)
+        def render(t: Thing): String = QLog.renderThing(t)
 
-      def renderMap[T <: Thing](m: Map[OID, T]): String = {
-        m.values.map(render(_)).mkString("\n\n")
-      }
-
-      val page =
-        s"""
-           |# Dump of ${state.displayName}, version ${state.version.v}
-           |
-           |## Space Info
-           |
-           |${QLog.renderThing(state)}
-           |
-           |**Owner:** ${state.ownerIdentity}
-           |
-           |## Types
-           |
-           |${renderMap(state.types)}
-           |
-           |## Properties
-           |
-           |${renderMap(state.spaceProps)}
-           |
-           |Things
-           |
-           |${renderMap(state.things)}
-           |""".stripMargin
-
-      Ok(page)
-    }
-  }
-
-  def dumpSpaceSummary(spaceIdStr: String): EssentialAction =
-    fromSpaceHistory(spaceIdStr, SpaceHistory.GetHistorySummary(_))
-  {
-    case HistorySummary(events, context) => {
-      val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
-
-      def identities: String = {
-        context.whoMap.map { case (oid, identityInfo) =>
-          s"* $oid -> $identityInfo"
-        }.mkString("\n")
-      }
-
-      def thingNames: String = {
-        context.thingNames.map { case (tid, name) =>
-          s"* $tid -> $name"
-        }.mkString("\n")
-      }
-
-      def name(id: TID): String = {
-        context
-          .thingNames
-          .get(id)
-          .orElse {
-            val oid = ThingId(id.underlying)
-            System.State.thing(oid).map(_.displayName)
-          }
-          .getOrElse(id.toString)
-      }
-
-      def displayEvent(evt: EvtSummary): String = {
-        val who = context.whoMap.get(evt.who).map(_.name).getOrElse(s"Unknown Person ${evt.who}")
-        val when = formatter.format(java.time.Instant.ofEpochMilli(evt.time))
-        val what = evt match {
-          case SetStateSummary(idx, who, time, reason, details) =>
-            s"SetState($reason, $details)"
-          case ImportSummary(idx, who, time) =>
-            s"Import()"
-          case CreateSummary(idx, who, time, kind, id, model, restored) =>
-            s"Create(${Kind.getName(kind).getOrElse("UNKNOWN KIND")}, model=${name(model)}, id=${name(id)}, restored=$restored)"
-          case ModifySummary(idx, who, time, id, props) =>
-            s"Modify(${name(id)}, props=${props.map(name(_)).mkString("(", ", ", ")")})"
-          case DeleteSummary(idx, who, time, id) =>
-            s"Delete(${name(id)})"
-          case AddAppSummary(idx, who, time, appId) =>
-            s"AddApp($appId)"
+        def renderMap[T <: Thing](m: Map[OID, T]): String = {
+          m.values.map(render(_)).mkString("\n\n")
         }
 
-        s"$who ($when): $what"
+        val page =
+          s"""
+             |# Dump of ${state.displayName}, version ${state.version.v}
+             |
+             |## Space Info
+             |
+             |${QLog.renderThing(state)}
+             |
+             |**Owner:** ${state.ownerIdentity}
+             |
+             |## Types
+             |
+             |${renderMap(state.types)}
+             |
+             |## Properties
+             |
+             |${renderMap(state.spaceProps)}
+             |
+             |Things
+             |
+             |${renderMap(state.things)}
+             |""".stripMargin
+
+        Ok(page)
       }
-
-      val page =
-        s"""
-          |# Event History for $spaceIdStr
-          |
-          |## Events, in order
-          |
-          |${events.map(displayEvent(_)).mkString("\n")}
-          |
-          |## Context
-          |
-          |### IdentityMap
-          |
-          |$identities
-          |
-          |### ThingNames
-          |
-          |$thingNames
-          |
-          |""".stripMargin
-
-      Ok(page)
     }
-  }
+
+  // This dumps much of the history, but we do still need to cap it in order to avoid OOMage:
+  def dumpSpaceSummary(spaceIdStr: String): EssentialAction =
+    fromSpaceHistory(spaceIdStr, SpaceHistory.GetHistorySummary(_, None, 10000)) {
+      case HistorySummary(events, context) => {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+
+        def identities: String = {
+          context.whoMap.map { case (oid, identityInfo) =>
+            s"* $oid -> $identityInfo"
+          }.mkString("\n")
+        }
+
+        def thingNames: String = {
+          context.thingNames.map { case (tid, name) =>
+            s"* $tid -> $name"
+          }.mkString("\n")
+        }
+
+        def name(id: TID): String = {
+          context
+            .thingNames
+            .get(id)
+            .orElse {
+              val oid = ThingId(id.underlying)
+              System.State.thing(oid).map(_.displayName)
+            }
+            .getOrElse(id.toString)
+        }
+
+        def displayEvent(evt: EvtSummary): String = {
+          val version = evt.idx
+          val who = context.whoMap.get(evt.who).map(_.name).getOrElse(s"Unknown Person ${evt.who}")
+          val when = formatter.format(java.time.Instant.ofEpochMilli(evt.time))
+          val what = evt match {
+            case SetStateSummary(idx, who, time, reason, details) =>
+              s"SetState($reason, $details)"
+            case ImportSummary(idx, who, time) =>
+              s"Import()"
+            case CreateSummary(idx, who, time, kind, id, model, restored) =>
+              s"Create(${Kind.getName(kind).getOrElse("UNKNOWN KIND")}, model=${name(model)}, id=${name(id)}, restored=$restored)"
+            case ModifySummary(idx, who, time, id, props) =>
+              s"Modify(${name(id)}, props=${props.map(name(_)).mkString("(", ", ", ")")})"
+            case DeleteSummary(idx, who, time, id) =>
+              s"Delete(${name(id)})"
+            case AddAppSummary(idx, who, time, appId) =>
+              s"AddApp($appId)"
+          }
+
+          f"$version%6d $who ($when): $what"
+        }
+
+        val page =
+          s"""
+             |# Event History for $spaceIdStr
+             |
+             |## Events, in order
+             |
+             |${events.map(displayEvent(_)).mkString("\n")}
+             |
+             |## Context
+             |
+             |### IdentityMap
+             |
+             |$identities
+             |
+             |### ThingNames
+             |
+             |$thingNames
+             |
+             |""".stripMargin
+
+        Ok(page)
+      }
+    }
 }

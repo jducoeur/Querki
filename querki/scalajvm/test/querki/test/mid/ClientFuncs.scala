@@ -21,14 +21,12 @@ trait ClientFuncs {
   implicit lazy val clientFuncs = this
 
   lazy val querkiVersion: String = querki.BuildInfo.version
-  // TODO: we eventually want to be able to let tests populate this map, which becomes the metadata
-  // sent in API calls. That is probably another variant of ClientBase?
-  val currentPageParams: Map[String, String] = Map.empty
 
   trait ClientBase extends autowire.Client[String, upickle.default.Reader, upickle.default.Writer] {
     implicit def session: Session
     def harness: HarnessInfo
     def callApi(req: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result]
+    def currentPageParams: Map[String, String]
 
     implicit lazy val materializer = harness.app.materializer
     def controller = harness.controller[ClientController]
@@ -113,7 +111,8 @@ trait ClientFuncs {
 
   class NSClient(
     val harness: HarnessInfo,
-    val session: Session
+    val session: Session,
+    val currentPageParams: Map[String, String]
   ) extends ClientBase {
 
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
@@ -124,7 +123,8 @@ trait ClientFuncs {
   class Client(
     val harness: HarnessInfo,
     spaceInfo: SpaceInfo,
-    val session: Session
+    val session: Session,
+    val currentPageParams: Map[String, String]
   ) extends ClientBase {
 
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {

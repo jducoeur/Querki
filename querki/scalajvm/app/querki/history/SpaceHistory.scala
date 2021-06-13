@@ -1,28 +1,19 @@
 package querki.history
 
-import scala.collection.immutable.VectorBuilder
 import akka.actor._
 import akka.contrib.pattern.ReceivePipeline
-import akka.persistence._
-import akka.persistence.cassandra.query.scaladsl._
-import akka.persistence.query._
-import akka.stream.ActorMaterializer
 import org.querki.requester._
 import models._
-import querki.data.TID
 import querki.globals._
-import querki.history.HistoryFunctions._
 import querki.history.SpaceHistory._
 import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.spaces.{SpacePure, TracingSpace}
 import querki.spaces.messages._
 import querki.spaces.SpaceMessagePersistence._
-import querki.time._
 import querki.util.{PublicException, QuerkiActor, SingleRoutingParent, TimeoutChild}
-import querki.values.{QLContext, QValue, RequestContext, SpaceState}
+import querki.values.{QValue, RequestContext, SpaceState}
 import HistoryFunctions._
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
 import querki.ql.QLExp
 
 /**
@@ -57,18 +48,11 @@ private[history] class SpaceHistory(
      with SpacePure
      with ModelPersistence
      with ReceivePipeline
-     with TimeoutChild {
-  lazy val Basic = interface[querki.basic.Basic]
-  lazy val ClientApi = interface[querki.api.ClientApi]
-  lazy val Core = interface[querki.core.Core]
-  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
-  lazy val Person = interface[querki.identity.Person]
-  lazy val QL = interface[querki.ql.QL]
-  lazy val SystemState = interface[querki.system.System].State
-
-  lazy val ExactlyOne = Core.ExactlyOne
-  lazy val LinkType = Core.LinkType
-  lazy val YesNoType = Core.YesNoType
+     with TimeoutChild
+     with HistoryFoldingImpl
+     with RestoreDeleted
+     with HistorySummaryBuilder
+     with FindDeleted {
 
   def timeoutConfig: String = "querki.history.timeout"
 
@@ -76,332 +60,39 @@ private[history] class SpaceHistory(
 
   lazy val tracing = TracingSpace(id, "SpaceHistory: ")
 
-  // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
-  // likely with machinery to override Ecology members. But it'll do for now.
-  lazy val test =
-    Config.getString("akka.persistence.journal.plugin") == "inmemory-journal"
-
-  lazy val readJournal: ReadJournal with CurrentEventsByPersistenceIdQuery =
-    if (test)
-      // During tests, we are using the in-memory journal. Yes, this is the documented way to do it:
-      //   https://github.com/dnvriend/akka-persistence-inmemory
-      PersistenceQuery(context.system)
-        .readJournalFor("inmemory-read-journal")
-        .asInstanceOf[ReadJournal with CurrentEventsByPersistenceIdQuery]
-    else
-      PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
-
   case class HistoryRecord(
     sequenceNr: Long,
     evt: SpaceEvent,
     state: SpaceState
   )
-  type StateHistory = Vector[HistoryRecord]
-  val StateHistory = Vector
-
-  // The full history of this Space, *one*-indexed. (That seems to be the way Akka Persistence works.)
-  // Be careful using this: the 1-indexing isn't at all obvious.
-  // TODO: if we start to cope with extracting slices of the history, we'll need to maintain the
-  // base index. Note that we can count on sequenceNr increasing monotonically (per discussion in
-  // akka-persistence-cassandra Gitter, 9/13/16), so using a Vector makes sense here.
-  var history = StateHistory.empty[HistoryRecord]
-
-  def latestState = history.lastOption.map(_.state).getOrElse(emptySpace)
-
-  implicit def OID2TID(oid: OID): TID = ClientApi.OID2TID(oid)
-
-  def toSummary(
-    evt: SpaceEvent,
-    sequenceNr: Long,
-    identities: Set[OID],
-    allThingIds: Set[OID]
-  )(implicit
-    state: SpaceState
-  ): (EvtSummary, Set[OID], Set[OID]) = {
-    def fill(
-      userRef: UserRef,
-      thingIds: Seq[OID],
-      f: String => EvtSummary
-    ): (EvtSummary, Set[OID], Set[OID]) = {
-      val summary = f(userRef.identityIdOpt.map(_.toThingId.toString).getOrElse(""))
-
-      val newIdentities = userRef.identityIdOpt match {
-        case Some(identityId) => identities + identityId
-        case None             => identities
-      }
-
-      val namePairs = for {
-        thingId <- thingIds
-        thing <- state.anything(thingId)
-      } yield (thingId, thing.displayName)
-
-      val newThingIds =
-        (allThingIds /: namePairs) { (tn, pair) =>
-          val (id, name) = pair
-          tn + id
-        }
-
-      (summary, newIdentities, newThingIds)
-    }
-
-    evt match {
-      case DHSetState(dh, modTime, reason, details) =>
-        (
-          SetStateSummary(
-            sequenceNr,
-            "",
-            modTime.toTimestamp,
-            SetStateReason.withValue(reason.getOrElse(0)),
-            details.getOrElse("")
-          ),
-          identities,
-          allThingIds
-        )
-
-      case DHInitState(userRef, display) => fill(userRef, Seq.empty, ImportSummary(sequenceNr, _, 0))
-
-      case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored) =>
-        fill(
-          req,
-          dhProps.keys.toSeq :+ thingId,
-          CreateSummary(sequenceNr, _, modTime.toTimestamp, kind, thingId, modelId, restored.getOrElse(false))
-        )
-
-      case DHModifyThing(req, thingId, modelIdOpt, propChanges, replaceAllProps, modTime) =>
-        fill(
-          req,
-          propChanges.keys.toSeq :+ thingId,
-          ModifySummary(sequenceNr, _, modTime.toTimestamp, thingId, propChanges.keys.toSeq.map(OID2TID))
-        )
-
-      case DHDeleteThing(req, thingId, modTime) =>
-        fill(req, Seq(thingId), DeleteSummary(sequenceNr, _, modTime.toTimestamp, thingId))
-
-      case DHAddApp(req, modTime, app, appParents, shadowMapping, _) =>
-        fill(req, Seq(app.id), AddAppSummary(sequenceNr, _, modTime.toTimestamp, app.id))
-    }
-  }
-
-  /**
-   * This reads all of the history since the last time it was called. It is designed so that we can
-   * reload the client page and get any new events since it was last shown.
-   */
-  def readCurrentHistory(): RequestM[Unit] = {
-    tracing.trace("readCurrentHistory")
-    // TODO: this is utterly *profligate* with RAM. Think about how we might want to restructure this in
-    // order to not hold the entire thing in memory all the time, while still providing reasonably
-    // responsive access. Should we instead rebuild stuff on-demand? Should the client signal what
-    // range of events it is looking at, and we load those in?
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, history.size + 1, Int.MaxValue)
-    implicit val mat = ActorMaterializer()
-    val initialState =
-      if (history.isEmpty)
-        emptySpace
-      else
-        history.last.state
-    loopback {
-      // Note that we construct the history using VectorBuilder, for efficiency:
-      source.runFold((initialState, new VectorBuilder[HistoryRecord])) {
-        // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
-        case (((curState, history), EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent))) => {
-          val nextState = evolveState(Some(curState))(evt)
-          history += HistoryRecord(sequenceNr, evt, nextState)
-          (nextState, history)
-        }
-      }
-    }.map { fullHist =>
-      history = history ++ fullHist._2.result
-      mat.shutdown()
-    }
-  }
-
-  /**
-   * Run through the OIDs needed for the History, and get their Names. We have to do this in a
-   * second pass because, in order to cope with Computed Names, this needs to be done with Future.
-   */
-  def mapNames(
-    ids: Set[OID]
-  )(implicit
-    rc: RequestContext,
-    state: SpaceState
-  ): Future[ThingNames] = {
-    (Future.successful(Map.empty[TID, String]) /: ids) { (fut, id) =>
-      fut.flatMap { m =>
-        state.anything(id) match {
-          case Some(t) => t.nameOrComputed.map(name => m + (OID2TID(id) -> name))
-          case _       => Future.successful(m)
-        }
-      }
-    }
-  }
 
   def getHistoryRecord(v: HistoryVersion): RequestM[HistoryRecord] = {
-    readCurrentHistory().map { _ =>
-      if (history.size < v)
-        // TODO: ugly, but this *is* conceptually an internal error. Is there anything smarter
-        // we can/should do here?
-        throw new Exception(s"Space $id got a request for unknown History Version $v!")
-      else {
-        // Adjust for the 1-indexed version numbers
-        val idx = (v - 1).toInt
-        history(idx)
+    val resultFut = foldOverPartialHistory(1, v)(Option.empty[HistoryRecord]) { (prevOpt, historyEvt) =>
+      val prevState = prevOpt.map(_.state).getOrElse(emptySpace)
+      val state = evolveState(Some(prevState))(historyEvt.evt)
+      Future.successful(Some(HistoryRecord(historyEvt.sequenceNr, historyEvt.evt, state)))
+    }
+
+    loopback(resultFut.map(_.getOrElse {
+      // This is rather weird -- we didn't get any events:
+      HistoryRecord(0, DHInitState(UserRef(User.Anonymous.id, None), ""), emptySpace)
+    }))
+  }
+
+  def getCurrentState(): RequestM[SpaceState] = {
+    val resultFut =
+      foldOverHistory(emptySpace) { (prevState, historyEvt) =>
+        Future.successful(evolveState(Some(prevState))(historyEvt.evt))
       }
-    }
-  }
 
-  /**
-   * This finds and returns all of the "stomped" records due to the damned duplicate-OID bug.
-   * It simply runs through the History, looking for Create events for which there is already
-   * a record in the Space.
-   */
-  def findAllStomped(): RequestM[List[OneStompedThing]] = {
-    // TODO: this is utterly *profligate* with RAM. Think about how we might want to restructure this in
-    // order to not hold the entire thing in memory all the time, while still providing reasonably
-    // responsive access. Should we instead rebuild stuff on-demand? Should the client signal what
-    // range of events it is looking at, and we load those in?
-    val source = readJournal.currentEventsByPersistenceId(persistenceId, 0, Int.MaxValue)
-    implicit val mat = ActorMaterializer()
-    loopback {
-      // Note that we construct the history using VectorBuilder, for efficiency:
-      source.runFold((emptySpace, List.empty[OneStompedThing])) {
-        // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
-        case (((curState, stomped), EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent))) => {
-          val nextStomped = evt match {
-            case DHCreateThing(req, thingId, kind, modelId, dhProps, modTime, restored)
-                if (curState.anything(thingId).isDefined) =>
-              OneStompedThing(sequenceNr, thingId, curState.anything(thingId).get.displayName) :: stomped
-            case _ => stomped
-          }
-          val nextState = evolveState(Some(curState))(evt)
-          (nextState, nextStomped)
-        }
-      }
-    }.map {
-      case (finalState, stompedList) =>
-        mat.shutdown()
-        stompedList.reverse
-    }
-  }
-
-  // Copied from YesNoUtils
-  // TODO: refactor YesNoUtils so that it doesn't require being mixed in with an Ecot. The challenge is
-  // that the Ecot definition of Core isn't precisely the same as the definition here, because it is an
-  // initRequires -- it *acts* the same, but it's a different type. We we need a concept of "a way to get
-  // at Core".
-  def toBoolean(typed: QValue): Boolean = {
-    if (typed.pType == YesNoType)
-      typed.firstAs(YesNoType).getOrElse(false)
-    else
-      false
-  }
-
-  // No reason to get RequestM involved here, since it's all local processing -- just use Future.
-  // TODO: someday, once we have rewritten the stack to use IO, this should be much, much faster:
-  def findAllDeleted(
-    rc: RequestContext,
-    predicateOpt: Option[QLExp],
-    renderOpt: Option[QLExp]
-  ): Future[List[QValue]] = {
-    readCurrentHistory().flatMap { _ =>
-      history
-        // This is a bit complex. Ultimately, we're building up a list of QValues, which are the rendered results
-        // for each deleted item. But we need to track the OID for each of those, so that we can filter out duplicates.
-        // And we need to keep track of the *previous* SpaceState before each deletion event, so that we can render
-        // the deleted item in terms of that previous state.
-        // Down at the bottom, we will throw away everything but the QValues.
-        .foldLeft(Future.successful((List.empty[(QValue, OID)], emptySpace))) { (requestM, record) =>
-          requestM.flatMap { v =>
-            val (soFar, prevState) = v
-            val HistoryRecord(_, evt, state) = record
-            evt match {
-              // Only worry about deletion events for things that have not been subsequently restored:
-              case DHDeleteThing(req, thingId, modTime) if (history.last.state.anything(thingId).isEmpty) => {
-                // Evaluate the predicate on this thing in the context of the *previous* state, when the
-                // Thing still existed:
-                val endTime = ecology.api[querki.time.TimeProvider].qlEndTime
-                val context = QLContext(ExactlyOne(LinkType(thingId)), Some(rc), endTime)(prevState, ecology)
-                val predicateResultFut: Future[Boolean] = predicateOpt match {
-                  case Some(predicate) =>
-                    try {
-                      QL.processExp(context, predicate).map(_.value).map(toBoolean(_)).recover {
-                        case ex: Exception => { ex.printStackTrace(); false }
-                      }
-                    } catch {
-                      case ex: Exception => Future.successful(false)
-                    }
-                  case _ => Future.successful(true)
-                }
-                predicateResultFut.flatMap { passes =>
-                  def justTheOID(): Future[(List[(QValue, OID)], SpaceState)] = {
-                    val deleted = (ExactlyOne(LinkType(thingId)), thingId)
-                    val filtered = soFar.filterNot(_._2 == thingId)
-                    Future.successful((deleted :: filtered, state))
-                  }
-
-                  if (passes) {
-                    // Passes the predicate, so figure out its name, and add it to the list:
-                    renderOpt.map { render =>
-                      prevState.resolveOpt(thingId)(_.things).map { thing =>
-                        QL.processExp(context, render).map { result =>
-                          // Remove any *previous* deletions of this Thing -- we want to wind up with only the
-                          // most recent. This is a little inefficient in Big-O terms, but I'm guessing that won't
-                          // matter a lot in reality:
-                          val deleted = (result.value, thingId)
-                          val filtered = soFar.filterNot(_._2 == thingId)
-                          ((deleted :: filtered, state))
-                        }.recoverWith {
-                          case ex: Exception => {
-                            ex.printStackTrace()
-                            justTheOID()
-                          }
-                        }
-                      }.getOrElse {
-                        // Oddly, we didn't find that OID in the previous state, so give up and show the raw OID:
-                        justTheOID()
-                      }
-                    }.getOrElse {
-                      justTheOID()
-                    }
-                  } else {
-                    // Didn't pass the predicate, so just keep going:
-                    Future.successful((soFar, state))
-                  }
-                }
-              }
-
-              // Anything other than deletions is ignored -- move along...
-              case _ => Future.successful((soFar, state))
-            }
-          }
-        }
-        // Extract just the List of QValues from all of that:
-        .map(_._1.map(_._1))
-    }
+    loopback(resultFut)
   }
 
   def doReceive = {
-    case GetHistorySummary(rc) => {
+    case GetHistorySummary(rc, end, nRecords) => {
       tracing.trace(s"GetHistorySummary")
-      readCurrentHistory().map { _ =>
-        val (evtsBuilder, identityIds, thingIds) =
-          ((new VectorBuilder[EvtSummary], Set.empty[OID], Set.empty[OID]) /: history) { (current, historyRec) =>
-            val (builder, identities, thingIds) = current
-            val (summary, newIdentities, newThingIds) =
-              toSummary(historyRec.evt, historyRec.sequenceNr, identities, thingIds)(historyRec.state)
-            (builder += summary, newIdentities, newThingIds)
-          }
-
-        val namesFut: Future[ThingNames] = mapNames(thingIds)(rc, latestState)
-        val identityFut = IdentityAccess.getIdentities(identityIds.toSeq)
-
-        for {
-          thingNames <- loopback(namesFut)
-          identities <- loopback(identityFut)
-          identityMap = identities.map {
-            case (id, publicIdentity) =>
-              (id.toThingId.toString -> ClientApi.identityInfo(publicIdentity))
-          }
-        } sender ! HistorySummary(evtsBuilder.result, EvtContext(identityMap, thingNames))
+      getHistorySummary(end, nRecords, rc).map { summary =>
+        sender ! summary
       }
     }
 
@@ -425,70 +116,18 @@ private[history] class SpaceHistory(
       }
     }
 
-    case RestoreDeletedThing(user, thingId) => {
-      tracing.trace(s"RestoreDeletedThing($thingId)")
-      readCurrentHistory().map { _ =>
-        // Sanity-check: don't try to recreate the Thing if it currently exists!
-        history.last.state.anything(thingId) match {
-          case Some(thing) => {
-            // We don't need to do anything, because it's not currently deleted
-            sender ! ThingFound(thingId, history.last.state)
-          }
-
-          case None => {
-            // The normal case: it's not there
-            // Seek backwards through the History until we find this Thing.
-            // There might be an abstraction fighting to break out here: keep an eye open for
-            // other functions that want this "look backwards until" behavior.
-            @annotation.tailrec
-            def findThingRec(index: Int): Option[Thing] = {
-              if (index < 0)
-                None
-              else
-                history(index).state.anything(thingId) match {
-                  case Some(thing) => Some(thing)
-                  case None        => findThingRec(index - 1)
-                }
-            }
-
-            findThingRec(history.size - 1) match {
-              case Some(thing) => {
-                val createMsg =
-                  CreateThing(
-                    user,
-                    id,
-                    thing.kind,
-                    thing.model,
-                    thing.props,
-                    Some(thingId),
-                    creatorOpt = thing.creatorOpt,
-                    createTimeOpt = thing.createTimeOpt
-                  )
-                spaceRouter.request(createMsg).foreach {
-                  case resp: ThingFound => sender ! resp
-                  case other =>
-                    throw new Exception(s"RestoreDeletedThing, in Space $id, for Thing $thingId, got response $other!")
-                }
-              }
-              case None => throw new Exception(s"RestoreDeletedThing couldn't find Thing $thingId!")
-            }
-          }
-        }
-      }
-    }
-
-    case FindAllStomped() => {
-      tracing.trace(s"FindAllStomped")
-      findAllStomped().map { stompedList =>
-        sender ! StompedThings(stompedList)
+    case RestoreDeletedThing(user, thingIds) => {
+      tracing.trace(s"RestoreDeletedThing($thingIds)")
+      restoreDeletedThings(user, thingIds.toSet).map { resultingState =>
+        sender ! Restored(thingIds, resultingState)
       }
     }
 
     case GetCurrentState(rc) => {
       // This is only legal for admins:
       if (rc.requesterOrAnon.isAdmin) {
-        readCurrentHistory().map { _ =>
-          sender ! CurrentState(latestState)
+        getCurrentState().map { curState =>
+          sender ! CurrentState(curState)
         }
       } else {
         sender ! SpaceBlocked(PublicException("Space.blocked"))
@@ -523,7 +162,11 @@ object SpaceHistory {
   /**
    * Fetches the HistorySummary (as described in the public API).
    */
-  case class GetHistorySummary(rc: RequestContext) extends HistoryMessage
+  case class GetHistorySummary(
+    rc: RequestContext,
+    end: Option[HistoryVersion],
+    nRecords: Int
+  ) extends HistoryMessage
 
   /**
    * Fetch a specific version of the history of this Space. Returns a CurrentState().
@@ -546,17 +189,16 @@ object SpaceHistory {
    */
   case class RestoreDeletedThing(
     user: User,
-    thingId: OID
+    thingIds: Seq[OID]
   ) extends HistoryMessage
 
-  case class FindAllStomped() extends HistoryMessage
-
-  case class OneStompedThing(
-    event: Long,
-    oid: OID,
-    display: String
+  /**
+   * Response from [[RestoreDeletedThing]].
+   */
+  case class Restored(
+    thingIds: Seq[OID],
+    state: SpaceState
   )
-  case class StompedThings(things: List[OneStompedThing])
 
   /**
    * Return the current State.

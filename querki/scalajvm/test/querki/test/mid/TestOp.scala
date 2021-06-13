@@ -1,6 +1,6 @@
 package querki.test.mid
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats._
 import cats.data._
@@ -9,12 +9,15 @@ import cats.implicits._
 
 import scala.reflect.ClassTag
 
-case class UnexpectedSuccessError[R](result: R) extends Exception(s"TestOp expected failure, but instead got result $result")
+case class UnexpectedSuccessError[R](result: R)
+  extends Exception(s"TestOp expected failure, but instead got result $result")
 case class WrongExceptionException(actual: Throwable) extends Exception(s"TestOp got the wrong error $actual")
 
 object TestOp {
-  def apply[A](f: TestState => IO[(TestState, A)])(implicit F: Applicative[IO]): TestOp[A] = StateT[IO, TestState, A] { f }
-  
+
+  def apply[A](f: TestState => IO[(TestState, A)])(implicit F: Applicative[IO]): TestOp[A] =
+    StateT[IO, TestState, A] { f }
+
   def pure[T](f: => T): TestOp[T] = StateT.pure[IO, TestState, T] { f }
   def unit: TestOp[Unit] = StateT.pure[IO, TestState, Unit] { () }
 
@@ -24,7 +27,7 @@ object TestOp {
   def update(f: TestState => TestState): TestOp[Unit] = TestOp { state =>
     IO.pure(f(state), ())
   }
-  
+
   /**
    * For functions that do *not* update the TestState, but need to access it.
    */
@@ -48,24 +51,25 @@ object TestOp {
    * Declare an error.
    */
   def error(ex: => Exception): TestOp[Nothing] = StateT.liftF(IO.raiseError(ex))
-  
+
   /**
    * This wraps the common pattern where we want a test operation that is simply an Autowire call.
    */
   def client[T](f: ClientFuncs#ClientBase => Future[T])(implicit cf: ClientFuncs): TestOp[T] = fut { state =>
     val clnt = state.client.spaceOpt match {
-      case Some(spaceInfo) => new cf.Client(state.harness, spaceInfo, state.client.session)
-      case None => new cf.NSClient(state.harness, state.client.session)
+      case Some(spaceInfo) =>
+        new cf.Client(state.harness, spaceInfo, state.client.session, state.client.currentPageParams)
+      case None => new cf.NSClient(state.harness, state.client.session, state.client.currentPageParams)
     }
     val resultFut: Future[T] = f(clnt)
-    state.plus(clnt.resultFut) zip resultFut
+    state.plus(clnt.resultFut).zip(resultFut)
   }
-  
+
   /**
    * Pulls values from the current TestState.
    */
   def fetch[T](f: TestState => T): TestOp[T] = StateT { state =>
-    val result = f(state) 
+    val result = f(state)
     IO.pure((state, result))
   }
 
