@@ -89,10 +89,9 @@ private[history] class SpaceHistory(
   }
 
   def doReceive = {
-    case GetHistorySummary(rc) => {
+    case GetHistorySummary(rc, end, nRecords) => {
       tracing.trace(s"GetHistorySummary")
-      // TODO: get the end and maxRecords from the front end:
-      getHistorySummary(None, 1000, rc).map { summary =>
+      getHistorySummary(end, nRecords, rc).map { summary =>
         sender ! summary
       }
     }
@@ -163,7 +162,11 @@ object SpaceHistory {
   /**
    * Fetches the HistorySummary (as described in the public API).
    */
-  case class GetHistorySummary(rc: RequestContext) extends HistoryMessage
+  case class GetHistorySummary(
+    rc: RequestContext,
+    end: Option[HistoryVersion],
+    nRecords: Int
+  ) extends HistoryMessage
 
   /**
    * Fetch a specific version of the history of this Space. Returns a CurrentState().

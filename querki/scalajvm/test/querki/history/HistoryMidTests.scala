@@ -7,7 +7,7 @@ import querki.test.mid._
 import AllFuncs._
 import HistoryMidFuncs._
 import org.scalactic.source.Position
-import querki.history.HistoryFunctions.DeleteSummary
+import querki.history.HistoryFunctions.{CreateSummary, DeleteSummary}
 import querki.security.SecurityMidFuncs._
 import querki.test.mid.ClientState._
 
@@ -204,7 +204,7 @@ object HistoryMidTests {
       _ = assert(count == 0)
 
       // Fetch the history:
-      fullHistory <- getHistorySummary()
+      fullHistory <- getHistorySummary(None, 100)
       // The last thing that happened should have been deleting the second Thing:
       lastEvent = fullHistory.events.last
       _ = assert(lastEvent.isInstanceOf[DeleteSummary])
@@ -230,6 +230,45 @@ object HistoryMidTests {
       _ = assert(instanceNames == "Second, Third")
     } yield ()
   }
+
+  def instanceName(i: Int): String = s"Instance $i"
+
+  def makeLotsOfInstances(
+    model: TID,
+    start: Int,
+    nInstances: Int
+  ): TestOp[Unit] = {
+    (start until (start + nInstances)).foldLeft(TestOp.unit) { (to, i) =>
+      to.flatMap { _ =>
+        makeThing(model, instanceName(i)).map(_ => ())
+      }
+    }
+  }
+
+  lazy val testHistorySummaries: TestOp[Unit] = {
+    for {
+      info <- setupStandardRegressionTest("HistorySummaries")
+
+      // Create some history:
+      model <- makeModel("The Model")
+      _ <- makeLotsOfInstances(model, 0, 100)
+
+      // Okay, let's start at the most recent version. There are two history records per created Thing.
+      blockSize = 10
+      summary <- getHistorySummary(None, blockSize)
+      first = summary.events.head
+      CreateSummary(idx, who, time, kind, firstId, model, restored) = first
+      firstInfo <- getThingInfo(firstId)
+      _ = assert(firstInfo.linkName == Some(instanceName(95)))
+
+      // Step back another set.
+      summary <- getHistorySummary(Some(first.idx - 1), blockSize)
+      first = summary.events.head
+      CreateSummary(idx, who, time, kind, firstId, model, restored) = first
+      firstInfo <- getThingInfo(firstId)
+      _ = assert(firstInfo.linkName == Some(instanceName(90)))
+    } yield ()
+  }
 }
 
 @Slow
@@ -243,6 +282,7 @@ class HistoryMidTests extends MidTestBase {
       runTest(test7w4gerb)
       runTest(test7w4geta)
       runTest(testHistoryWalking)
+      runTest(testHistorySummaries)
     }
   }
 }

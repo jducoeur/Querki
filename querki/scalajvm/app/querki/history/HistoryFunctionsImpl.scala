@@ -1,11 +1,12 @@
 package querki.history
 
 import models.{AsOID, ThingId}
-
 import querki.api._
 import querki.data.{SpaceInfo, TID, ThingInfo}
 import querki.globals._
 import querki.spaces.messages.ThingFound
+
+import scala.concurrent.Future
 
 class HistoryFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   extends SpaceApiImpl(info, e)
@@ -23,13 +24,23 @@ class HistoryFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   // should always be able to do it.
   lazy val canManageHistory = AccessControl.hasPermission(AccessControl.CanManageDataPerm, state, user, state)
 
-  def getHistorySummary(): Future[HistorySummary] = {
+  def getHistorySummary(
+    end: Option[HistoryVersion],
+    nRecords: Int
+  ): Future[HistorySummary] = {
     // Only Managers can call this:
     if (!canManageHistory)
       throw new Exception(s"Only the owner of the Space is allowed to view its history!")
 
+    // We allow a maximum of 1000 records at a time, to prevent abuse:
+    val nRecordsCapped =
+      if (rc.requesterOrAnon.isAdmin)
+        // Admins are allowed more latitude, but use this with extreme care!
+        nRecords
+      else
+        Math.min(nRecords, 1000)
     for {
-      summary <- spaceRouter.requestFor[HistorySummary](GetHistorySummary(rc))
+      summary <- spaceRouter.requestFor[HistorySummary](GetHistorySummary(rc, end, nRecordsCapped))
     } yield summary
   }
 

@@ -13,9 +13,15 @@ trait HistoryFunctions {
   import HistoryFunctions._
 
   /**
-   * Fetch the complete history of this Space.
+   * Fetch some of the history of this Space.
+   *
+   * @param end the record to finish at, or None to end at the most recent version
+   * @param nRecords how many records to fetch (capped at the server end, to prevent abuse)
    */
-  def getHistorySummary(): Future[HistorySummary]
+  def getHistorySummary(
+    end: Option[HistoryVersion],
+    nRecords: Int
+  ): Future[HistorySummary]
 
   /**
    * Rolls this Space back to the specified version. The UI should do confirmation first!

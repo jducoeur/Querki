@@ -1,7 +1,6 @@
 package querki.history
 
 import autowire._
-
 import querki.data.{SpaceInfo, TID, ThingInfo}
 import querki.globals._
 import querki.history.HistoryFunctions.{HistorySummary, HistoryVersion}
@@ -17,8 +16,11 @@ trait HistoryMidFuncs {
   /**
    * Fetch the complete history of this Space.
    */
-  def getHistorySummary(): TestOp[HistorySummary] =
-    TestOp.client { _[HistoryFunctions].getHistorySummary().call() }
+  def getHistorySummary(
+    end: Option[HistoryVersion],
+    nRecords: Int
+  ): TestOp[HistorySummary] =
+    TestOp.client { _[HistoryFunctions].getHistorySummary(end, nRecords).call() }
 
   /**
    * Rolls this Space back to the specified version. The UI should do confirmation first!
