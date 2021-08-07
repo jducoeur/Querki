@@ -8,48 +8,59 @@ import rx._
 
 import querki.globals._
 
-case class RadioButton(v:String, label:String, checked:Boolean, mods:Modifier*)
+case class RadioButton(
+  v: String,
+  label: String,
+  checked: Boolean,
+  mods: Modifier*
+)
 
-class RxRadio(groupName:String, buttons:RadioButton*)(implicit e:Ecology, ctx:Ctx.Owner) extends Gadget[dom.html.Form] {
+class RxRadio(
+  groupName: String,
+  buttons: RadioButton*
+)(implicit
+  e: Ecology,
+  ctx: Ctx.Owner
+) extends Gadget[dom.html.Form] {
   val ecology = e
-  
+
   private def curSelected = {
     elemOpt.map(e => $(e).find(s"input[name=$groupName]:checked"))
   }
-  
+
   lazy val selectedOption = Var[Option[JQuery]](None)
   lazy val selectedValOpt = Rx { selectedOption().map(_.valueString).filter(_.length > 0) }
   lazy val selectedVal = selectedValOpt.map(_.getOrElse(""))
-  
+
   private def updateSelected() = { selectedOption() = curSelected }
-  
-  private class OneButton(btn:RadioButton) extends Gadget[dom.html.Input] {
+
+  private class OneButton(btn: RadioButton) extends Gadget[dom.html.Input] {
     def ecology = RxRadio.this.ecology
-    
+
     def doRender =
       input(
-        tpe:="radio", 
-        name:=s"$groupName", 
-        id:=s"$groupName-${btn.v}", 
-        value:=btn.v,
-        if (btn.checked) checked := "checked")
-      
-    override def onCreate(e:dom.html.Input) = {
-      $(e).change({ e:dom.Element => updateSelected() })
+        tpe := "radio",
+        name := s"$groupName",
+        id := s"$groupName-${btn.v}",
+        value := btn.v,
+        if (btn.checked) checked := "checked"
+      )
+
+    override def onCreate(e: dom.html.Input) = {
+      $(e).change({ e: dom.Element => updateSelected() })
     }
   }
 
-  def doRender = 
+  def doRender =
     form(
-      cls:="radio",
-      for {btn <- buttons}
-        yield 
-          div(cls:="form-group",
-            label(
-              new OneButton(btn),
-              btn.label
-            ),
-            btn.mods
-          )
+      cls := "radio",
+      for { btn <- buttons } yield div(
+        cls := "form-group",
+        label(
+          new OneButton(btn),
+          btn.label
+        ),
+        btn.mods
+      )
     )
 }

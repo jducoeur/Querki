@@ -12,27 +12,37 @@ import querki.ecology._
 import querki.session.UserSessionMessages
 import querki.util.{Config, QLog}
 
-class CollaboratorCache(val e:Ecology, val userId:UserId) extends Actor with Requester with EcologyMember  {
-  
+class CollaboratorCache(
+  val e: Ecology,
+  val userId: UserId
+) extends Actor
+     with Requester
+     with EcologyMember {
+
   implicit val ecology = e
-  
+
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
+
   // Flag telling us to clear our cache:
   object ClearCache
-  
+
   lazy val cacheTimeout = Config.getDuration("querki.userSession.collaborators.timeout")
-  
-  var _allCollaborators:Option[Iterable[PublicIdentity]] = None
+
+  var _allCollaborators: Option[Iterable[PublicIdentity]] = None
   // Are we in the middle of loading the Collaborators?
   var fetching = false
   // If we are in the middle of a load, build up a list of other outstanding requests:
-  var currentRequests:Seq[(ActorRef, String)] = Seq.empty
-  
-  def sendResults(collabs:Iterable[PublicIdentity], termRaw:String, requester:ActorRef) = {
+  var currentRequests: Seq[(ActorRef, String)] = Seq.empty
+
+  def sendResults(
+    collabs: Iterable[PublicIdentity],
+    termRaw: String,
+    requester: ActorRef
+  ) = {
     val term = termRaw.toLowerCase()
-    val results = collabs.filter(collab => collab.handle.toLowerCase().contains(term) || collab.name.toLowerCase().contains(term))
+    val results =
+      collabs.filter(collab => collab.handle.toLowerCase().contains(term) || collab.name.toLowerCase().contains(term))
     requester ! UserSessionMessages.Collaborators(results)
   }
 
@@ -52,37 +62,41 @@ class CollaboratorCache(val e:Ecology, val userId:UserId) extends Actor with Req
             // Time to go fetch the full collaborator list:
             fetching = true
             // Get the IdentityIds of everyone I share a Space with:
-  	        val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
-  	        // Get their Identities from the IdentityCache:
-            loopback(IdentityAccess.getIdentities(acquaintanceIds)) foreach { identities =>
-	            import context.dispatcher
-	            val collabs = identities.values
-	            _allCollaborators = Some(collabs)
-	            sendResults(collabs, term, sender)
-	            // If other requests have come in the meantime, dispatch them as well:
-	            currentRequests.map { request =>
-	              val (requester, otherTerm) = request
-	              sendResults(collabs, otherTerm, requester) 
-	            }
-	            currentRequests = Seq.empty
-	            // We need to recheck this cache periodically, to make sure we stay decently up to date.
-  	          // Ideally we would just tweak it as changes come in, but that's a pain; for now, just
-	            // do a simple cache flush every now and then.
-	            context.system.scheduler.scheduleOnce(cacheTimeout, self, ClearCache)
-	            fetching = false
-	          }
+            val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
+            // Get their Identities from the IdentityCache:
+            loopback(IdentityAccess.getIdentities(acquaintanceIds)).foreach { identities =>
+              import context.dispatcher
+              val collabs = identities.values
+              _allCollaborators = Some(collabs)
+              sendResults(collabs, term, sender)
+              // If other requests have come in the meantime, dispatch them as well:
+              currentRequests.map { request =>
+                val (requester, otherTerm) = request
+                sendResults(collabs, otherTerm, requester)
+              }
+              currentRequests = Seq.empty
+              // We need to recheck this cache periodically, to make sure we stay decently up to date.
+              // Ideally we would just tweak it as changes come in, but that's a pain; for now, just
+              // do a simple cache flush every now and then.
+              context.system.scheduler.scheduleOnce(cacheTimeout, self, ClearCache)
+              fetching = false
+            }
           }
         }
       }
     }
-    
+
     case ClearCache => _allCollaborators = None
   }
 }
 
 object CollaboratorCache {
+
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, id:UserId):Props = Props(new CollaboratorCache(ecology, id)) 
+  def actorProps(
+    ecology: Ecology,
+    id: UserId
+  ): Props = Props(new CollaboratorCache(ecology, id))
 }

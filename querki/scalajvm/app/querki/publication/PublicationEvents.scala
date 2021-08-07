@@ -10,31 +10,35 @@ import querki.time.DateTime
  * The Events that actually get evolved and persisted in the Publication system.
  */
 object PublicationEvents {
-  
+
   case class PublishedThingInfo(
-    @KryoTag(1) thingId:OID, 
-    @KryoTag(2) display:String, 
-    @KryoTag(3) strip:String,
-    @KryoTag(4) title:AddedField[String]) extends UseKryo
-  
+    @KryoTag(1) thingId: OID,
+    @KryoTag(2) display: String,
+    @KryoTag(3) strip: String,
+    @KryoTag(4) title: AddedField[String]
+  ) extends UseKryo
+
   sealed trait PublicationEvent
-  
+
   /**
    * Note that this covers both Publish and Update commands -- in most respects, they're
    * identical.
    */
   case class PublishEvent(
-    @KryoTag(1) who:IdentityId, 
-    @KryoTag(2) things:Seq[PublishedThingInfo], 
-    @KryoTag(3) meta:DHPropMap,
-    @KryoTag(4) when:DateTime) extends UseKryo with PublicationEvent
-    
+    @KryoTag(1) who: IdentityId,
+    @KryoTag(2) things: Seq[PublishedThingInfo],
+    @KryoTag(3) meta: DHPropMap,
+    @KryoTag(4) when: DateTime
+  ) extends UseKryo
+       with PublicationEvent
+
   /**
    * Edge-trigger saying that this Space is going to begin publishing an RSS feed.
    */
   case class StartPublishingRSS(
-    @KryoTag(1) who:IdentityId,
-    @KryoTag(2) url:String,
-    @KryoTag(3) when:DateTime
-  ) extends UseKryo with PublicationEvent
+    @KryoTag(1) who: IdentityId,
+    @KryoTag(2) url: String,
+    @KryoTag(3) when: DateTime
+  ) extends UseKryo
+       with PublicationEvent
 }

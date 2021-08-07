@@ -9,31 +9,58 @@ import models.{OID, ThingId}
  * Optimized Serializer for OIDs.
  */
 class OIDSerializer extends Serializer[OID] {
-  override def read(kryo:Kryo, input:Input, typ:Class[OID]):OID = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[OID]
+  ): OID = {
     OID(input.readLong())
   }
-  
-  override def write(kryo:Kryo, output:Output, obj:OID) = {
+
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    obj: OID
+  ) = {
     output.writeLong(obj.raw)
   }
 }
 
 class ThingIdSerializer extends Serializer[ThingId] {
-  override def read(kryo:Kryo, input:Input, typ:Class[ThingId]):ThingId = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[ThingId]
+  ): ThingId = {
     ThingId(input.readString())
   }
-  
-  override def write(kryo:Kryo, output:Output, obj:ThingId) = {
+
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    obj: ThingId
+  ) = {
     output.writeString(obj.toString)
-  }  
+  }
 }
 
 class AddedFieldSerializer() extends Serializer[AddedField[_]] {
-  override def read(kryo: Kryo, input: Input, typ: Class[AddedField[_]]): AddedField[_] = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[AddedField[_]]
+  ): AddedField[_] = {
     AddedFieldImpl(kryo.readClassAndObject(input))
   }
 
-  override def write(kryo: Kryo, output: Output, af: AddedField[_]) = {
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    af: AddedField[_]
+  ) = {
     af.map(kryo.writeClassAndObject(output, _))
   }
 }

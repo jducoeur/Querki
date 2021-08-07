@@ -23,48 +23,64 @@ import querki.globals._
 import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
 import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
-import querki.spaces.messages.{SpaceSubsystemRequest, SpaceMgrMsg, ThingError}
+import querki.spaces.messages.{SpaceMgrMsg, SpaceSubsystemRequest, ThingError}
 import querki.spaces.messages.SpaceError._
 import querki.streaming.UploadMessages._
 import querki.util.PublicException
 
-class ClientController @Inject() (val appProv:Provider[play.api.Application]) extends ApplicationBase with StreamController {
-  
+class ClientController @Inject() (val appProv: Provider[play.api.Application])
+  extends ApplicationBase
+     with StreamController {
+
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val NotifyInvitations = interface[querki.identity.NotifyInvitations]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val Unsubscribe = interface[querki.email.Unsubscribe]
-  
+
   def apiTrace = ApiInvocation.apiTrace _
-  
+
   def environment = PlayEcology.playApi[play.api.Environment]
   def mode = environment.mode
-  
-  case class ApiRequest(pickledRequest:String, pickledMetadata:String)
-  
+
+  case class ApiRequest(
+    pickledRequest: String,
+    pickledMetadata: String
+  )
+
   val requestForm = Form(
     mapping(
       "pickledRequest" -> nonEmptyText,
       "pickledMetadata" -> nonEmptyText
-    )((pickledRequest, pickledMetadata) => ApiRequest(pickledRequest, pickledMetadata))
-     (apiRequest => Some((apiRequest.pickledRequest, apiRequest.pickledMetadata)))
-  )  
-  
+    )((pickledRequest, pickledMetadata) => ApiRequest(pickledRequest, pickledMetadata))(apiRequest =>
+      Some((apiRequest.pickledRequest, apiRequest.pickledMetadata))
+    )
+  )
+
   /**
    * Send the given request to the UserSpaceSession, and do the given callback when it responds.
    */
-  def askUserSpaceSession[B](rc:PlayRequestContext, msg:SessionMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+  def askUserSpaceSession[B](
+    rc: PlayRequestContext,
+    msg: SessionMessage
+  )(
+    cb: PartialFunction[Any, Future[B]]
+  ): Future[B] = {
     val spaceId = ThingId(rc.spaceIdOpt.get) match {
-      case AsOID(id) => id
+      case AsOID(id)    => id
       case AsName(name) => throw new Exception(s"Trying to send message $msg, but only have Space name $name!")
-    } 
+    }
     SpaceOps.askSpace2(SpaceSubsystemRequest(rc.requesterOrAnon, spaceId, msg))(cb)
   }
-  
-  def askUserSession[B](rc:PlayRequestContext, msg:ClientRequest)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+
+  def askUserSession[B](
+    rc: PlayRequestContext,
+    msg: ClientRequest
+  )(
+    cb: PartialFunction[Any, Future[B]]
+  ): Future[B] = {
     akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
   }
-  
+
   def index = withUser(false) { rc =>
     rc.requester match {
       case Some(requester) => {
@@ -76,7 +92,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       case _ => Ok(views.html.index(this, rc))
     }
   }
-  
+
   /**
    * The common way to display the Client at the root level. Used for various root-level pages.
    */
@@ -85,7 +101,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       Ok(views.html.client(rc, write(requestInfo), "", mode))
     }
   }
-  
+
   def signup = withUser(false) { rc =>
     rc.requester match {
       case Some(requester) => {
@@ -100,8 +116,11 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       }
     }
   }
-  
-  def space(ownerId:String, spaceIdStr:String) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
+
+  def space(
+    ownerId: String,
+    spaceIdStr: String
+  ) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
     implicit val r = rc
     client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
       if (requestInfo.forbidden) {
@@ -116,36 +135,47 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
           Ok(views.html.client(rc, write(requestInfo), requestInfo.space.map(" " + _.displayName).getOrElse(""), mode))
         }
       }
-    } recoverWith {
-      case pex:PublicException => doError(indexRoute, pex) 
+    }.recoverWith {
+      case pex: PublicException => doError(indexRoute, pex)
     }
   }
-  
-  def spaceNoSlash(ownerId:String, spaceId:String) = Action {
+
+  def spaceNoSlash(
+    ownerId: String,
+    spaceId: String
+  ) = Action {
     Redirect(routes.ClientController.space(ownerId, spaceId))
   }
-  
-  def thingRedirect(ownerId:String, spaceId:String, thingId:String) = Action {
-    val spaceCall = routes.ClientController.space(ownerId, spaceId) 
+
+  def thingRedirect(
+    ownerId: String,
+    spaceId: String,
+    thingId: String
+  ) = Action {
+    val spaceCall = routes.ClientController.space(ownerId, spaceId)
     Redirect(new Call(spaceCall.method, spaceCall.url + s"#!$thingId"))
   }
-  
-  def unpickleRequest(rc:PlayRequestContext):(autowire.Core.Request[String], RequestMetadata) = {
+
+  def unpickleRequest(rc: PlayRequestContext): (autowire.Core.Request[String], RequestMetadata) = {
     implicit val request = rc.request
     requestForm.bindFromRequest.fold(
       errors => throw new Exception("API got badly-defined request!"),
-      apiRequest => (read[autowire.Core.Request[String]](apiRequest.pickledRequest), read[RequestMetadata](apiRequest.pickledMetadata))
+      apiRequest =>
+        (
+          read[autowire.Core.Request[String]](apiRequest.pickledRequest),
+          read[RequestMetadata](apiRequest.pickledMetadata)
+        )
     )
   }
-  
+
   // NOTE: this generates a spurious error in Eclipse, because it's generated code.
   // Theoretically, we could get rid of this error as described in:
   //   https://github.com/sbt/sbt-buildinfo
   // But in practice that seems to screw up the client/server shared code.
   // TODO: figure out a way to suppress this error.
-  def querkiVersion:String = querki.BuildInfo.version
-  
-  def apiRequestBase(prc:PlayRequestContext):Future[Result] = {
+  def querkiVersion: String = querki.BuildInfo.version
+
+  def apiRequestBase(prc: PlayRequestContext): Future[Result] = {
     val (req, metadata) = unpickleRequest(prc)
     if (metadata.version != querkiVersion) {
       apiTrace(s"apiRequest call to ${req.path}, but version is old")
@@ -175,32 +205,35 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       }
     }
   }
-  
-  def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
+
+  def apiRequest(
+    ownerId: String,
+    spaceId: String
+  ) = withRouting(ownerId, spaceId) { rc =>
     apiRequestBase(rc)
   }
-  
+
   // Entry point for the Client to use when it isn't under a Space, or is just starting up:
   def rawApiRequest = withUser(false) { rc =>
     apiRequestBase(rc)
   }
-  
+
   /**
    * This isn't an entry point, it's the BodyParser for upload(). It expects to receive the path
-   * to an UploadActor; it finds that Actor, then sends it the chunks as they come in. 
+   * to an UploadActor; it finds that Actor, then sends it the chunks as they come in.
    */
-  private def uploadReceiver(targetActorPath:String)(rh:RequestHeader) = {
-    def produceUploadLocation:Future[ActorRef] = {
+  private def uploadReceiver(targetActorPath: String)(rh: RequestHeader) = {
+    def produceUploadLocation: Future[ActorRef] = {
       // Fairly short timeout for the identification procedure:
       implicit val timeout = Timeout(5 seconds)
       val selection = SystemManagement.actorSystem.actorSelection(targetActorPath)
       for {
         ActorIdentity(_, refOpt) <- selection ? Identify("dummy")
       }
-        // TODO: return a decent error to the client if the Actor isn't found:
-        yield refOpt.get
+      // TODO: return a decent error to the client if the Actor isn't found:
+      yield refOpt.get
     }
-    
+
     Streams.iterateeToAccumulator(uploadBodyChunks(produceUploadLocation)(rh))
   }
 
@@ -210,33 +243,38 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
    * into here to upload the actual data, and the UploadActor should process the data once it receives
    * the UploadComplete signal.
    */
-  def upload(targetActorPath:String) = 
-    withUser(true, parser = BodyParser(uploadReceiver(targetActorPath) _)) 
-  { rc =>
-    for {
-      uploadRef <- rc.request.body.asInstanceOf[Future[ActorRef]]
-      // We ask the UploadActor how much time it's going to need to process this upload:
-      // TODO: this mechanism is now obsolete; the architecture is more interactive, and
-      // UploadComplete responds quickly:
-      UploadTimeout(uploadDuration) <- uploadRef.ask(GetUploadTimeout)(5 seconds)
-      uploadTimeout = Timeout(uploadDuration)
-      result <- uploadRef.ask(UploadComplete(rc))(uploadTimeout)
-    }
-      yield {
+  def upload(targetActorPath: String) =
+    withUser(true, parser = BodyParser(uploadReceiver(targetActorPath) _)) { rc =>
+      for {
+        uploadRef <- rc.request.body.asInstanceOf[Future[ActorRef]]
+        // We ask the UploadActor how much time it's going to need to process this upload:
+        // TODO: this mechanism is now obsolete; the architecture is more interactive, and
+        // UploadComplete responds quickly:
+        UploadTimeout(uploadDuration) <- uploadRef.ask(GetUploadTimeout)(5 seconds)
+        uploadTimeout = Timeout(uploadDuration)
+        result <- uploadRef.ask(UploadComplete(rc))(uploadTimeout)
+      } yield {
         result match {
           case UploadProcessSuccessful(response) => Ok(response)
-          case UploadProcessFailed(ex) => BadRequest(ex)
-          case _ => { QLog.error(s"upload() entry point got unknown response $result"); InternalServerError("upload() got a bad response internally") }
+          case UploadProcessFailed(ex)           => BadRequest(ex)
+          case _ => {
+            QLog.error(s"upload() entry point got unknown response $result");
+            InternalServerError("upload() got a bad response internally")
+          }
         }
       }
-  }  
+    }
 
   /**
    * Serves out requests from MarcoPolo on the client side.
-   * 
+   *
    * @param propId (ThingId) The Property that the user is trying to add new values to.
    */
-  def marcoPolo(ownerId:String, spaceId:String, propIdStr:String) = withRouting(ownerId, spaceId) { implicit rc =>
+  def marcoPolo(
+    ownerId: String,
+    spaceId: String,
+    propIdStr: String
+  ) = withRouting(ownerId, spaceId) { implicit rc =>
     // Note that q is intentionally *not* in the signature above. This is so that we can hand Manifest a URL that it can
     // then tack &q= on to.
     val q = rc.queryParam("q").head
@@ -252,18 +290,21 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       case _ => BadRequest("Couldn't parse items.")
     }
   }
-  
-  def exportSpace(ownerId:String, spaceId:String) = withLocalClient(ownerId, spaceId) { (rc, client) =>
+
+  def exportSpace(
+    ownerId: String,
+    spaceId: String
+  ) = withLocalClient(ownerId, spaceId) { (rc, client) =>
     implicit val r = rc
-    client[ImexportFunctions].exportSpace().call() map { exported =>
+    client[ImexportFunctions].exportSpace().call().map { exported =>
       Ok(exported).as(MIMEType.XML)
-    } recoverWith {
-      case pex:PublicException => doError(indexRoute, pex) 
+    }.recoverWith {
+      case pex: PublicException => doError(indexRoute, pex)
     }
   }
-  
-  def unsub(unsubInfoStr:String) = withUser(false) { rc =>
-    Unsubscribe.parseUnsub(unsubInfoStr).map { unsubInfo => 
+
+  def unsub(unsubInfoStr: String) = withUser(false) { rc =>
+    Unsubscribe.parseUnsub(unsubInfoStr).map { unsubInfo =>
       val updatedRc =
         if (rc.requester.isDefined && rc.requester.get.hasIdentity(unsubInfo.user.mainIdentity.id))
           rc
@@ -272,7 +313,7 @@ class ClientController @Inject() (val appProv:Provider[play.api.Application]) ex
       ClientApi.rootRequestInfo(rc).map { requestInfo =>
         val fullRequestInfo = requestInfo.copy(navigateToOpt = Some(s"_doUnsub"), payloadOpt = Some(unsubInfoStr))
         Ok(views.html.client(rc, write(fullRequestInfo), "", mode))
-          .withSession(updatedRc.requester.get.toSession:_*)
+          .withSession(updatedRc.requester.get.toSession: _*)
       }
     // TODO: do something more polite if we get an illegal link:
     }.getOrElse(throw new Exception("That isn't a legal unsubscribe link!"))

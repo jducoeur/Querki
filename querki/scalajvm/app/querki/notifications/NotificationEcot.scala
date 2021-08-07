@@ -17,82 +17,97 @@ import querki.values.{QLRequestContext, RequestContext, SpaceState}
 
 private object MOIDs extends EcotIds(48)
 
-class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry with Notifications {
-  
+class NotificationEcot(e: Ecology) extends QuerkiEcot(e) with NotifierRegistry with Notifications {
+
   import NotificationActor._
-  
+
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val System = interface[querki.system.System]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
-  
+
   /**
    * The one true handle to the Notifications Actor.
    */
-  var _ref:Option[ActorRef] = None
+  var _ref: Option[ActorRef] = None
   lazy val noteActor = _ref.get
-  
+
   /**
    * The one true handle to the UserNotifications region.
    */
-  var _userNotifications:Option[ActorRef] = None
+  var _userNotifications: Option[ActorRef] = None
   lazy val userNotifications = _userNotifications.get
-  
+
   // These two functions tell ClusterSharding the ID and shard for a given UserSessionMsg.
-  val idExtractor:ShardRegion.ExtractEntityId = {
-    case msg:UserRouteableMessage => (msg.userId.toString(), msg)
+  val idExtractor: ShardRegion.ExtractEntityId = {
+    case msg: UserRouteableMessage    => (msg.userId.toString(), msg)
     case msg @ ClientRequest(req, rc) => (rc.requesterOrAnon.id.toString(), msg)
   }
-  
-  val shardResolver:ShardRegion.ExtractShardId = msg => msg match {
-    case msg:UserRouteableMessage => msg.userId.shard
-    case msg @ ClientRequest(req, rc) => rc.requesterOrAnon.id.shard
-  }
-  
-  override def createActors(createActorCb:CreateActorFunc):Unit = {
+
+  val shardResolver: ShardRegion.ExtractShardId = msg =>
+    msg match {
+      case msg: UserRouteableMessage    => msg.userId.shard
+      case msg @ ClientRequest(req, rc) => rc.requesterOrAnon.id.shard
+    }
+
+  override def createActors(createActorCb: CreateActorFunc): Unit = {
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     _ref = createActorCb(Props(new NotificationActor(ecology)), "Notifications")
-    
-    _userNotifications = SystemManagement.createShardRegion("UserNotifications", UserNotificationActor.actorProps(ecology), 
-        idExtractor, shardResolver)
-  }
-  
-  override def postInit() = {
-    ApiRegistry.registerApiImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)    
+
+    _userNotifications = SystemManagement.createShardRegion(
+      "UserNotifications",
+      UserNotificationActor.actorProps(ecology),
+      idExtractor,
+      shardResolver
+    )
   }
 
-  /***********************************************
+  override def postInit() = {
+    ApiRegistry.registerApiImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)
+  }
+
+  /**
+   * *********************************************
    * NotifierRegister IMPLEMENTATION
-   * 
+   *
    * Yes, this is mutable. The (not currently enforced) intent is that all Notifiers should be
    * registered during postInit().
-   ***********************************************/
-  
+   * *********************************************
+   */
+
   var notifiers = Map.empty[NotifierId, Notifier]
 
-  def register(notifier:Notifier) = {
+  def register(notifier: Notifier) = {
     notifiers += (notifier.id -> notifier)
   }
-  
-  def unregister(notifier:Notifier) = {
+
+  def unregister(notifier: Notifier) = {
     notifiers -= notifier.id
   }
-  
 
-  /***********************************************
+  /**
+   * *********************************************
    * Notifications IMPLEMENTATION
-   ***********************************************/
-  
-  def notifier(id:NotifierId):Notifier = notifiers(id)
-  
-  def notifierFor(note:Notification):Notifier = notifiers(note.notifier)
-  
-  def send(req:User, recipients:Recipients, note:Notification) = {
+   * *********************************************
+   */
+
+  def notifier(id: NotifierId): Notifier = notifiers(id)
+
+  def notifierFor(note: Notification): Notifier = notifiers(note.notifier)
+
+  def send(
+    req: User,
+    recipients: Recipients,
+    note: Notification
+  ) = {
     noteActor ! SendNotification(req, recipients, note)
   }
-  
-  def render(rc:RequestContext, note:Notification):Future[RenderedNotification] = {
+
+  def render(
+    rc: RequestContext,
+    note: Notification
+  ): Future[RenderedNotification] = {
     val notifier = notifierFor(note)
     // Note that notifications, necessarily, render against SystemState. That has to be the case,
     // because the Notifications page displays notes from many different Spaces.

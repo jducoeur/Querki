@@ -9,15 +9,15 @@ import querki.globals._
 
 import querki.display.HookedGadget
 
-class AdvancedEditButton(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) with querki.display.QuerkiUIUtils {
-  
+class AdvancedEditButton(implicit e: Ecology) extends HookedGadget[dom.html.Span](e) with querki.display.QuerkiUIUtils {
+
   lazy val Editing = interface[Editing]
-  
+
   lazy val editor = $(elem).parents("._instanceEditor")
   lazy val tid = editor.tidString("thingid")
-  
-  def doRender() = span(cls:="_advancedCommentButton", "x")
-  
+
+  def doRender() = span(cls := "_advancedCommentButton", "x")
+
   def hook() = {
     $(elem).click { () => Editing.advancedEditorFactory.showPage(tid) }
   }

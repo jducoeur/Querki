@@ -19,10 +19,17 @@ object PageMOIDs extends EcotIds(31)
 /**
  * An event saying that a particular kind of Page is about to be displayed.
  */
-case class HtmlEvent(rc:PlayRequestContext, template:QuerkiTemplate)
+case class HtmlEvent(
+  rc: PlayRequestContext,
+  template: QuerkiTemplate
+)
 
-trait PageAggregation extends Aggregator[HtmlEvent,String] {
-  def apply(rc:PlayRequestContext, template:QuerkiTemplate):Html
+trait PageAggregation extends Aggregator[HtmlEvent, String] {
+
+  def apply(
+    rc: PlayRequestContext,
+    template: QuerkiTemplate
+  ): Html
 }
 
 /**
@@ -31,8 +38,8 @@ trait PageAggregation extends Aggregator[HtmlEvent,String] {
  * contributions, which is kind of the point.
  */
 trait PageEventManager extends EcologyInterface {
-  def addHeaders:PageAggregation
-  def requestReceived:Sequencer[PlayRequestContext]
+  def addHeaders: PageAggregation
+  def requestReceived: Sequencer[PlayRequestContext]
 }
 
 /////////////////////////////////
@@ -40,7 +47,7 @@ trait PageEventManager extends EcologyInterface {
 // IMPLEMENTATION
 //
 
-class PageEventManagerEcot(e:Ecology) extends QuerkiEcot(e) with PageEventManager {
+class PageEventManagerEcot(e: Ecology) extends QuerkiEcot(e) with PageEventManager {
   lazy val addHeaders = new PageAggregator
   lazy val requestReceived = new RequestUpdater
 }
@@ -49,14 +56,18 @@ class PageEventManagerEcot(e:Ecology) extends QuerkiEcot(e) with PageEventManage
  * A Publisher of page-display events.
  */
 class PageAggregator extends PageAggregation {
-  def apply(rc:PlayRequestContext, template:QuerkiTemplate):Html = {
-    Html(collect(HtmlEvent(rc, template)) mkString("\n"))
+
+  def apply(
+    rc: PlayRequestContext,
+    template: QuerkiTemplate
+  ): Html = {
+    Html(collect(HtmlEvent(rc, template)).mkString("\n"))
   }
 }
 
 /**
  * A Publisher of request-received events.
- * 
+ *
  * This allows Modules to annotate the request, and is how we can decouple Modules properly.
  * However, note that there are some fairly serious inversion-of-control issues here, so use
  * this with caution, lest horribly hard-to-debug problems enter in!

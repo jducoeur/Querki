@@ -9,52 +9,63 @@ import querki.time.DateTime
 import querki.types.ModelTypeBase
 import querki.values.SpaceState
 
-private [apps] case class Extractees(state:SpaceState, typeModels:Set[OID], extractState:Boolean)
+private[apps] case class Extractees(
+  state: SpaceState,
+  typeModels: Set[OID],
+  extractState: Boolean
+)
 
 /**
  * The part of ExtractApp that computes what we're actually extracting from this Space. It's
  * basically just one complex function that takes a list of elements to extract and produces
  * the extracted App Space.
- * 
+ *
  * This is pulled out solely for separation of concerns -- it is fundamentally part of the Extract App
  * process.
  */
-private [apps] trait ExtracteeComputer { self:EcologyMember =>
-  
+private[apps] trait ExtracteeComputer { self: EcologyMember =>
+
   private lazy val AccessControl = interface[querki.security.AccessControl]
   private lazy val Apps = interface[Apps]
   private lazy val Basic = interface[querki.basic.Basic]
   private lazy val Core = interface[querki.core.Core]
   private lazy val System = interface[querki.system.System]
-  
+
   private lazy val SystemSpace = System.State
   private lazy val systemId = SystemSpace.id
-  
+
   // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
   // multi-level Apps. One step at a time, though.
   private lazy val appPerm = Apps.CanUseAsAppPerm(AccessControl.PublicTag)
-  
+
   /**
    * Creates the complete Extractees structure, with all the stuff we expect to pull out.
-   * 
+   *
    * Note that this explicitly assumes there are no loops involved in the Model Types. That's a
    * fair assumption -- a lot of things will break if there are -- but do we need to sanity-check
    * for that?
    */
-  def computeExtractees(elements:Seq[TID], name:String, canon:String, owner:User)(implicit state:SpaceState):Extractees = {
+  def computeExtractees(
+    elements: Seq[TID],
+    name: String,
+    canon: String,
+    owner: User
+  )(implicit
+    state: SpaceState
+  ): Extractees = {
     val oids = elements
       .map(tid => ThingId(tid.underlying))
       .collect { case AsOID(oid) => oid }
       .toSet
-    
+
     val (things, extractState) =
       if (oids.contains(state.id)) {
         (oids - state.id, true)
       } else {
         (oids, false)
       }
-      
-    val initState = 
+
+    val initState =
       SpaceState(
         state.id,
         systemId,
@@ -72,31 +83,44 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
         Map.empty,
         Map.empty,
         Map.empty,
-        None            
+        None
       )
-      
+
     val init = Extractees(initState, Set.empty, extractState)
     val withRoot = extractStateRoot(init, name, canon)
     (withRoot /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
   }
-  
-  private def extractStateRoot(in:Extractees, name:String, canon:String)(implicit state:SpaceState):Extractees = {
+
+  private def extractStateRoot(
+    in: Extractees,
+    name: String,
+    canon: String
+  )(implicit
+    state: SpaceState
+  ): Extractees = {
     if (in.extractState) {
       // If the Space depends on local Properties, make sure to include those, too:
       val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
       val s = withProps.state
       // Actually copy in the Space's Properties, *except* for the Name.
-      withProps.copy(state = 
+      withProps.copy(state =
         s.copy(
-          pf = (state.pf - Core.NameProp.id - Basic.DisplayNameProp.id) 
-            + Core.NameProp(canon) 
+          pf = (state.pf - Core.NameProp.id - Basic.DisplayNameProp.id)
+            + Core.NameProp(canon)
             + Basic.DisplayNameProp(name)
-            + appPerm))
+            + appPerm
+        )
+      )
     } else
       in
   }
-  
-  private def addThingToExtract(id:OID, in:Extractees)(implicit state:SpaceState):Extractees = {
+
+  private def addThingToExtract(
+    id: OID,
+    in: Extractees
+  )(implicit
+    state: SpaceState
+  ): Extractees = {
     if (in.state.things.contains(id))
       // Already done
       in
@@ -117,8 +141,13 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       }
     }
   }
-  
-  private def addPropToExtract(id:OID, in:Extractees)(implicit state:SpaceState):Extractees = {
+
+  private def addPropToExtract(
+    id: OID,
+    in: Extractees
+  )(implicit
+    state: SpaceState
+  ): Extractees = {
     if (in.state.spaceProps.contains(id))
       in
     else {
@@ -140,15 +169,20 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
       }
     }
   }
-  
-  private def addTypeToExtract(pt:PType[_], in:Extractees)(implicit state:SpaceState):Extractees = {
+
+  private def addTypeToExtract(
+    pt: PType[_],
+    in: Extractees
+  )(implicit
+    state: SpaceState
+  ): Extractees = {
     if (in.state.types.contains(pt.id))
       in
     else {
       if (pt.spaceId == state.id) {
         // If this is a model type, we need to dive in and add that:
         pt match {
-          case mt:ModelTypeBase => {
+          case mt: ModelTypeBase => {
             // We specifically note that this is a Model Type, because those do *not* get shadow copies
             // in the new Space:
             val withMT = in.copy(typeModels = in.typeModels + mt.basedOn)

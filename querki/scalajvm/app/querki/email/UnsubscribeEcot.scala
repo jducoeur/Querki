@@ -8,36 +8,40 @@ import querki.persistence._
 import querki.util.{Hasher, SafeUrl, SignedHash}
 
 case class UnsubscribeEvent(
-  @KryoTag(1) notifierId:String,
-  @KryoTag(2) details:UnsubEvent with UseKryo
+  @KryoTag(1) notifierId: String,
+  @KryoTag(2) details: UnsubEvent with UseKryo
 ) extends UseKryo
 
-class UnsubscribeEcot(e:Ecology) extends QuerkiEcot(e) with Unsubscribe {
-  
-  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
-  
-  override def persistentMessages = persist(67,
-    (classOf[UnsubscribeEvent] -> 100)
-  )
+class UnsubscribeEcot(e: Ecology) extends QuerkiEcot(e) with Unsubscribe {
 
-  // TODO: this is duplicated in multiple Ecots. It really should be defined in one, and used in the rest:  
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+
+  override def persistentMessages = persist(67, (classOf[UnsubscribeEvent] -> 100))
+
+  // TODO: this is duplicated in multiple Ecots. It really should be defined in one, and used in the rest:
   lazy val urlBase = Config.getString("querki.app.urlRoot")
   val unsubParam = "unsubInfo"
-  
-  def generateUnsubLink(notifier:EmailNotifier, identityId:IdentityId, email:EmailAddress, rest:String*):String = {
+
+  def generateUnsubLink(
+    notifier: EmailNotifier,
+    identityId: IdentityId,
+    email: EmailAddress,
+    rest: String*
+  ): String = {
     val idString = (List(
       notifier.id.toString,
       email.addr,
-      identityId.toString) 
+      identityId.toString
+    )
       ++ rest).mkString(":")
     val signed = Hasher.sign(idString, emailSepChar)
     val encoded = SafeUrl(signed.toString)
-    urlBase + 
+    urlBase +
       "unsub" +
-      "?" + unsubParam + "=" + encoded    
+      "?" + unsubParam + "=" + encoded
   }
-  
-  def parseUnsub(encodedUnsub:String):Option[UnsubInfo] = {
+
+  def parseUnsub(encodedUnsub: String): Option[UnsubInfo] = {
     val hash = SignedHash(encodedUnsub, emailSepChar)
     if (!Hasher.checkSignature(hash))
       None
@@ -55,7 +59,9 @@ class UnsubscribeEcot(e:Ecology) extends QuerkiEcot(e) with Unsubscribe {
           NotifierId(notifierIdStr),
           user,
           EmailAddress(emailAddrStr),
-          rest))
+          rest
+        )
+      )
     }
   }
 }

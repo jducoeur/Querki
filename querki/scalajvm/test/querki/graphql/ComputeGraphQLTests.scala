@@ -4,27 +4,47 @@ import cats.effect._
 import cats.implicits._
 import org.scalactic.source.Position
 import play.api.libs.json._
-import querki.test.{TestSpace, CDSpace, QuerkiTests}
+import querki.test.{CDSpace, QuerkiTests, TestSpace}
 import querki.util.QLog
 
 class ComputeGraphQLTests extends QuerkiTests {
-  def runQueryAndCheck[S <: TestSpace](query: String)(check: JsValue => Unit)(implicit space: S, p: Position): Unit = {
+
+  def runQueryAndCheck[S <: TestSpace](
+    query: String
+  )(
+    check: JsValue => Unit
+  )(implicit
+    space: S,
+    p: Position
+  ): Unit = {
     val computer = new FPComputeGraphQL()(getRc, space.state, ecology)
     val jsv = computer.handle(query).unsafeRunSync()
     check(jsv)
   }
 
-  def runQueryAndCheckData[S <: TestSpace](query: String)(check: JsObject => Unit)(implicit space: S, p: Position): Unit = {
+  def runQueryAndCheckData[S <: TestSpace](
+    query: String
+  )(
+    check: JsObject => Unit
+  )(implicit
+    space: S,
+    p: Position
+  ): Unit = {
     runQueryAndCheck(query) { jsv =>
       val data = (jsv \ "data").getOrElse(fail(s"Query result didn't have a data field: $jsv"))
       data match {
         case jso: JsObject => check(jso)
-        case other => fail(s"Resulting data field wasn't a JsObject: $other")
+        case other         => fail(s"Resulting data field wasn't a JsObject: $other")
       }
     }
   }
 
-  def runQueryAndPrettyPrint[S <: TestSpace](query: String)(implicit space: S, p: Position): Unit = {
+  def runQueryAndPrettyPrint[S <: TestSpace](
+    query: String
+  )(implicit
+    space: S,
+    p: Position
+  ): Unit = {
     runQueryAndCheck(query)(jsv => println(Json.prettyPrint(jsv)))
   }
 
@@ -113,8 +133,8 @@ class ComputeGraphQLTests extends QuerkiTests {
           val artist = album.array("Artists").find(_.string("Name") == "They Might Be Giants").get
           val genres = artist.array("Genres")
           genres.length shouldBe (2)
-          genres should contain (JsString("Rock"))
-          genres should contain (JsString("Weird"))
+          genres should contain(JsString("Rock"))
+          genres should contain(JsString("Weird"))
         }
       }
     }
@@ -178,8 +198,7 @@ class ComputeGraphQLTests extends QuerkiTests {
         |  }
         |}
       """.stripMargin
-    )
-    { data =>
+    ) { data =>
       val favesString = data
         .obj("_thing")
         .string("Show_Favorites")
@@ -194,7 +213,8 @@ class ComputeGraphQLTests extends QuerkiTests {
           |<p><a href="Blackmores-Night">Blackmores Night</a></p>
           |</li>
           |</ul>
-          |""".stripMargin)
+          |""".stripMargin
+      )
     }
   }
 
@@ -203,7 +223,8 @@ class ComputeGraphQLTests extends QuerkiTests {
       val complexArtists =
         new SimpleTestThing(
           "Complex Artists",
-          Basic.ApplyMethod("Artist._instances -> _filter(Genres -> _count -> _greaterThan(1))"))
+          Basic.ApplyMethod("Artist._instances -> _filter(Genres -> _count -> _greaterThan(1))")
+        )
     }
 
     runQueryAndCheckData(

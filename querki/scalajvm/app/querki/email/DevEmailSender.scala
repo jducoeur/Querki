@@ -2,11 +2,11 @@ package querki.email
 
 import akka.actor.Scheduler
 import models.Wikitext
-import querki.globals.{QuerkiEcot, Ecology}
+import querki.globals.{Ecology, QuerkiEcot}
 import querki.identity.Identity
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.{Try, Success}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Success, Try}
 
 /**
  * Dev-only variant of the email session.
@@ -17,17 +17,22 @@ import scala.util.{Try, Success}
  * Obviously, this doesn't suffice for testing the real email stack. But it is adequate for testing things
  * like invitations *without* needing to send real emails.
  */
-private [email] class DevEmailSender(e:Ecology) extends QuerkiEcot(e) with EmailSender {
+private[email] class DevEmailSender(e: Ecology) extends QuerkiEcot(e) with EmailSender {
   case class DevSession() extends EmailSession
   val theSession = DevSession()
   type TSession = DevSession
 
-  def createSession():TSession = theSession
+  def createSession(): TSession = theSession
 
-  def sendInternal(session:TSession, from:String,
-    recipientEmail:EmailAddress, recipientName:String, requester:Identity,
-    subject:Wikitext, bodyMain:Wikitext): Try[Unit] =
-  {
+  def sendInternal(
+    session: TSession,
+    from: String,
+    recipientEmail: EmailAddress,
+    recipientName: String,
+    requester: Identity,
+    subject: Wikitext,
+    bodyMain: Wikitext
+  ): Try[Unit] = {
     val printout =
       s"""Email would be sent:
          |from $from
@@ -40,7 +45,12 @@ private [email] class DevEmailSender(e:Ecology) extends QuerkiEcot(e) with Email
     Success(())
   }
 
-  def sendEmail(msg:EmailMsg)(implicit scheduler: Scheduler, ex: ExecutionContext): Future[Int] = {
+  def sendEmail(
+    msg: EmailMsg
+  )(implicit
+    scheduler: Scheduler,
+    ex: ExecutionContext
+  ): Future[Int] = {
     sendInternal(
       theSession,
       msg.from.addr,

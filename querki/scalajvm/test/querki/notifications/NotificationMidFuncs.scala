@@ -8,6 +8,7 @@ import querki.test.mid.ClientState.withUser
 import querki.test.mid._
 
 trait NotificationMidFuncs {
+
   def getRecentNotifications(): TestOp[Seq[NotificationInfo]] =
     TestOp.client { _[NotificationFunctions].getRecentNotifications().call() }
 
@@ -27,17 +28,20 @@ trait NotificationMidFuncs {
         scala.math.max(max, notify.id)
       }
       _ <- readThrough(highestId)
-    }
-      yield ()
+    } yield ()
   }
 
-  def assertNumNotifications(who: TestUser, num: Int)(implicit pos: Position): TestOp[Unit] = {
+  def assertNumNotifications(
+    who: TestUser,
+    num: Int
+  )(implicit
+    pos: Position
+  ): TestOp[Unit] = {
     withUser(who) {
       for {
         nNotifies <- numNewNotifications()
-        _ = nNotifies should be (num)
-      }
-        yield ()
+        _ = nNotifies should be(num)
+      } yield ()
     }
   }
 }

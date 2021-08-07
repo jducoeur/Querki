@@ -10,7 +10,7 @@ import utest._
  */
 object FutureCrashTest extends TestSuite {
 
-  def wrapping[T](f: => T):T = {
+  def wrapping[T](f: => T): T = {
     f
   }
   implicit val queue = scala.concurrent.ExecutionContext.Implicits.global

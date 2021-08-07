@@ -16,23 +16,23 @@ import querki.globals._
  * an InputGadget, saying that it is dependent on another one. When the other one changes, this one
  * gets reloaded.
  */
-class DependentInputGadget(implicit e:Ecology) extends HookedGadget[Element](e) with ServerHtmlHolder {
-  
+class DependentInputGadget(implicit e: Ecology) extends HookedGadget[Element](e) with ServerHtmlHolder {
+
   lazy val Client = interface[querki.client.Client]
   lazy val Pages = interface[querki.pages.Pages]
-  
+
   // data-dependson is required for _depends objects:
   lazy val dependsOnPath = $(elem).dataString("dependson")
   lazy val thing = $(elem).dataString("thing")
   lazy val prop = $(elem).dataString("prop")
-    
+
   def dependencyUpdated(): Unit = {
     // The element we depend on has changed. Therefore, reload this element, re-process it, and stick it here:
     Client[EditFunctions].getOnePropertyEditor(TID(thing), TID(prop)).call().map { editInfo =>
       Pages.findPageFor(this).foreach { page =>
         page.inputDependencies.unregister(this, dependsOnPath)
       }
-      
+
       // Use JQuery to build the new node, and add it in place:
       val newJQ = $(editInfo.editor)
       val newElem = newJQ.get(0).get.asInstanceOf[Element]
@@ -46,15 +46,15 @@ class DependentInputGadget(implicit e:Ecology) extends HookedGadget[Element](e) 
       Gadgets.hookPendingGadgets()
     }
   }
-    
+
   def hook() = {
     // Find the page, and register ourself as a listener for the target path:
     Pages.findPageFor(this).foreach { page =>
       page.inputDependencies.register(this, dependsOnPath)
-      // No, we're not detecting removal. This turns out to be hard-to-impossible in the
-      // standard DOM, so we're breaking cycles in InputDependencies itself.
+    // No, we're not detecting removal. This turns out to be hard-to-impossible in the
+    // standard DOM, so we're breaking cycles in InputDependencies itself.
     }
   }
-  
+
   def doRender = ???
 }

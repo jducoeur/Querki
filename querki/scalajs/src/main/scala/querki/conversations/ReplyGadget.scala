@@ -12,32 +12,46 @@ import querki.globals._
 
 import messages._
 
-class ReplyGadget(replyTo:Option[CommentId], ph:String, thingId:TID, onPosted:ConvNode => Unit)(implicit val ecology:Ecology) 
-  extends Gadget[dom.HTMLDivElement] with EcologyMember 
-{
+class ReplyGadget(
+  replyTo: Option[CommentId],
+  ph: String,
+  thingId: TID,
+  onPosted: ConvNode => Unit
+)(implicit
+  val ecology: Ecology
+) extends Gadget[dom.HTMLDivElement]
+     with EcologyMember {
   lazy val Client = interface[querki.client.Client]
-  
-  override def onCreate(e:dom.HTMLDivElement) = {
+
+  override def onCreate(e: dom.HTMLDivElement) = {
     $(commentInput.elem).autosize()
   }
-  
-  def postComment():Unit = {
-    Client[ConversationFunctions].addComment(thingId, $(commentInput.elem).value().asInstanceOf[String], replyTo).call().foreach { node =>
+
+  def postComment(): Unit = {
+    Client[ConversationFunctions].addComment(
+      thingId,
+      $(commentInput.elem).value().asInstanceOf[String],
+      replyTo
+    ).call().foreach { node =>
       $(commentInput.elem).value("")
       onPosted(node)
     }
   }
 
-  lazy val commentInput = Gadget(textarea(cls:="_commentInput form-control", placeholder:=ph))
-  
+  lazy val commentInput = Gadget(textarea(cls := "_commentInput form-control", placeholder := ph))
+
   def doRender() =
-    div(cls:="_addComment row",
-      div(cls:="col-md-11",
+    div(
+      cls := "_addComment row",
+      div(
+        cls := "col-md-11",
         commentInput,
-        inp(cls:="_postCommentButton btn btn-info btn-sm", 
-          tpe:="button", 
-          value:="Post Comment",
-          onclick:={ () => postComment() })
+        inp(
+          cls := "_postCommentButton btn btn-info btn-sm",
+          tpe := "button",
+          value := "Post Comment",
+          onclick := { () => postComment() }
+        )
       )
     )
 }

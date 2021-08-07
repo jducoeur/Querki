@@ -1,6 +1,6 @@
 package querki.notifications
 
-import models.{HtmlWikitext, emptyProps, OID, Wikitext}
+import models.{emptyProps, HtmlWikitext, OID, Wikitext}
 import querki.ecology._
 import querki.email._
 import EmailFunctions.UnsubOption
@@ -9,9 +9,9 @@ import querki.identity.FullIdentity
 import querki.persistence._
 import querki.time.DateTime
 import querki.util.SafeUrl
-import querki.values.{ShowLinksAsFullAnchors, QLContext}
+import querki.values.{QLContext, ShowLinksAsFullAnchors}
 
-private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
+private[notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
   val NotifyMethodOID = moid(1)
   val NotifyURLOID = moid(2)
   val NotifySubjectOID = moid(3)
@@ -21,7 +21,7 @@ private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
   val NotifyThingOID = moid(7)
   val NotifyTopicOID = moid(8)
   val NotifySpaceDisplayNameOID = moid(9)
-  
+
   val UnsubUserlandTopicOID = moid(10)
   val UnsubUserlandSpaceOID = moid(11)
 }
@@ -29,18 +29,24 @@ private [notifications] object UserlandNotifierMOIDs extends EcotIds(74) {
 case class DHUnsubUserlandTopic(
   @KryoTag(1) topic: String,
   @KryoTag(2) spaceId: OID
-) extends UnsubEvent with UseKryo
+) extends UnsubEvent
+     with UseKryo
 
 case class DHUnsubUserlandSpace(
   @KryoTag(1) spaceId: OID
-) extends UnsubEvent with UseKryo
+) extends UnsubEvent
+     with UseKryo
 
-class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with EmailNotifier with querki.core.MethodDefs {
+class UserlandNotifierEcot(e: Ecology)
+  extends QuerkiEcot(e)
+     with Notifier
+     with EmailNotifier
+     with querki.core.MethodDefs {
   import UserlandNotifierMOIDs._
 
   val Basic = initRequires[querki.basic.Basic]
   val QL = initRequires[querki.ql.QL]
-  
+
   lazy val Email = interface[querki.email.Email]
   lazy val Links = interface[querki.links.Links]
   lazy val Notifications = interface[querki.notifications.Notifications]
@@ -49,56 +55,68 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
   lazy val Unsubscribe = interface[querki.email.Unsubscribe]
-  
+
   lazy val ParsedTextType = QL.ParsedTextType
   lazy val PlainTextType = Basic.PlainTextType
   lazy val SystemState = System.State
-  
+
   lazy val urlBase = Config.getString("querki.app.urlRoot")
 
   override def postInit() = {
     NotifierRegistry.register(this)
   }
-  
+
   override def term() = {
     NotifierRegistry.unregister(this)
   }
-  
-  override def persistentMessages = persist(74,
-    (classOf[DHUnsubUserlandTopic] -> 100),
-    (classOf[DHUnsubUserlandSpace] -> 101)
-  )
+
+  override def persistentMessages =
+    persist(74, (classOf[DHUnsubUserlandTopic] -> 100), (classOf[DHUnsubUserlandSpace] -> 101))
 
   object Notifiers {
-    val UserlandNotifierId:Short = 1
+    val UserlandNotifierId: Short = 1
   }
-  
+
   val userlandNotifierId = NotifierId(UserlandNotifierMOIDs.ecotId, Notifiers.UserlandNotifierId)
   def id = userlandNotifierId
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * Implementation of Notifier
-   ***********************************************/
+   * *********************************************
+   */
 
   // TBD: in theory, we should probably summarize based on the "topic" provided in the _notify() function.
   // But I'm not sure there is a good way to do that.
-  def summarizeAt:SummarizeAt.SummarizeAt = SummarizeAt.None
-  
-  def summarizeNew(context:QLContext, notes:Seq[Notification]):Future[SummarizedNotifications] = {
+  def summarizeAt: SummarizeAt.SummarizeAt = SummarizeAt.None
+
+  def summarizeNew(
+    context: QLContext,
+    notes: Seq[Notification]
+  ): Future[SummarizedNotifications] = {
     if (notes.length != 1)
       throw new Exception("UserlandNotifier.summarizeNew current expects exactly one notification at a time!")
-      
+
     val note = notes.head
-    render(context, note) map { rendered =>
-      SummarizedNotifications(rendered.headline, rendered.content, notes)      
+    render(context, note).map { rendered =>
+      SummarizedNotifications(rendered.headline, rendered.content, notes)
     }
   }
-  
-  case class UserlandPayload(subject: String, body: Wikitext, spaceName: String, spaceDisplayName: String, spaceOwner: String, thing: Option[OID], topic: Option[String])
+
+  case class UserlandPayload(
+    subject: String,
+    body: Wikitext,
+    spaceName: String,
+    spaceDisplayName: String,
+    spaceOwner: String,
+    thing: Option[OID],
+    topic: Option[String]
+  )
+
   def parsePayload(note: Notification): UserlandPayload = {
     val rawPayload = note.payload
     val payload = SpacePersistence.deserProps(rawPayload, SystemState)
-    
+
     UserlandPayload(
       payload.getFirst(NotifySubjectProp).text,
       payload.getFirst(NotifyBodyProp),
@@ -109,71 +127,88 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       payload.getFirstOpt(NotifyTopicProp).map(_.text)
     )
   }
-  
+
   def noteUrl(payload: UserlandPayload): String = {
     val thingId = payload.thing.map(_.toThingId).getOrElse("")
-    
-    urlBase + 
-      "u/" + payload.spaceOwner + 
+
+    urlBase +
+      "u/" + payload.spaceOwner +
       "/" + SafeUrl.apply(payload.spaceName) +
       "/" + thingId
   }
-  
-  def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
+
+  def render(
+    context: QLContext,
+    note: Notification
+  ): Future[RenderedNotification] = {
     val payload = parsePayload(note)
-    
+
     fut(RenderedNotification(
       // Use a raw HtmlWikitext, so that it doesn't open a new window:
       HtmlWikitext(s"""<a href="${noteUrl(payload)}">${payload.subject}</a>"""),
       payload.body
     ))
   }
-  
+
   def emailNotifier = Some(this)
-  
-  /***********************************************
+
+  /**
+   * *********************************************
    * Implementation of EmailNotifier
-   ***********************************************/
-  
-  def shouldSendEmail(note:Notification, unsubs:List[UnsubEvent]): Boolean = {
+   * *********************************************
+   */
+
+  def shouldSendEmail(
+    note: Notification,
+    unsubs: List[UnsubEvent]
+  ): Boolean = {
     val payload = parsePayload(note)
-    
+
     def violation(unsub: UnsubEvent): Boolean = {
       unsub match {
         case DHUnsubUserlandSpace(spaceId) => (Some(spaceId) == note.spaceId)
-        
+
         case DHUnsubUserlandTopic(unsubTopic, spaceId) => {
           payload.topic match {
             case Some(topic) => (Some(spaceId) == note.spaceId) && (topic == unsubTopic)
-            case None => false
+            case None        => false
           }
         }
-        
+
         case _ => throw new Exception(s"UserlandNotifierEcot.shouldSendEmail() got unexpected UnsubEvent $unsub")
       }
     }
-    
+
     !unsubs.exists(violation)
   }
-  
+
   val wikibreak = Wikitext("\n\n")
-  
-  def toEmail(note:Notification, recipient:FullIdentity): Future[EmailMsg] = {
+
+  def toEmail(
+    note: Notification,
+    recipient: FullIdentity
+  ): Future[EmailMsg] = {
     val Notification(id, sender, toIdentityIdOpt, _, sentTime, spaceIdOpt, _, _, _, _) = note
     val payload = parsePayload(note)
     val UserlandPayload(subject, body, spaceName, spaceDisplayName, spaceOwner, thing, topic) = payload
     val spaceId = spaceIdOpt.getOrElse(throw new Exception(s"Somehow got UserlandNotification with no spaceId: $note"))
-    
+
     val fullBody =
       body +
-      HtmlWikitext("<hr/>") +
-      Wikitext(s"""<a href="${noteUrl(payload)}"><i>Click here to go to $spaceDisplayName.</i></a>""")
-      
-    val unsubLink = Unsubscribe.generateUnsubLink(this, recipient.id, recipient.email, 
-      spaceId.toString, spaceDisplayName, topic.getOrElse(""))
+        HtmlWikitext("<hr/>") +
+        Wikitext(s"""<a href="${noteUrl(payload)}"><i>Click here to go to $spaceDisplayName.</i></a>""")
+
+    val unsubLink = Unsubscribe.generateUnsubLink(
+      this,
+      recipient.id,
+      recipient.email,
+      spaceId.toString,
+      spaceDisplayName,
+      topic.getOrElse("")
+    )
     val footer = s"""You received this email as a member of $spaceDisplayName.
                     |If you don't want to receive emails like these, click [Unsubscribe]($unsubLink)""".stripMargin
-      
+
     val emailMsg = EmailMsg(
       EmailAddress(Email.from),
       recipient.email,
@@ -183,19 +218,18 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
       fullBody,
       Wikitext(footer)
     )
-    
+
     fut(emailMsg)
   }
-  
-  def unsubOptions(unsubInfo:UnsubInfo): Future[(Wikitext, Seq[UnsubOption])] = {
+
+  def unsubOptions(unsubInfo: UnsubInfo): Future[(Wikitext, Seq[UnsubOption])] = {
     val spaceIdStr :: spaceName :: topicOrEmpty :: Nil = unsubInfo.rest
     val spaceId = OID(spaceIdStr)
     val topicOpt = if (topicOrEmpty.isEmpty) None else Some(topicOrEmpty)
-    
+
     fut((
       Wikitext(s"""You received this email from $spaceName.
                   |${topicOpt.map(t => s" It is a $t email.").getOrElse("")}""".stripMargin),
-                  
       topicOpt.map { topic =>
         Seq(
           UnsubOption(
@@ -209,21 +243,24 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
           )
         )
       }.getOrElse(Seq.empty) ++
-      Seq(
-        UnsubOption(
-          userlandNotifierId.toString,
-          UnsubUserlandSpaceOID.toTOID,
-          Some(spaceIdStr),
-          s"Block all emails defined in $spaceName",
-          s"""Pressing this button will prevent messages from $spaceName being sent to you in email.
-             |You will still be able to see them by going into Querki and pressing the bell-shaped
-             |icon in the menu bar.""".stripMargin
+        Seq(
+          UnsubOption(
+            userlandNotifierId.toString,
+            UnsubUserlandSpaceOID.toTOID,
+            Some(spaceIdStr),
+            s"Block all emails defined in $spaceName",
+            s"""Pressing this button will prevent messages from $spaceName being sent to you in email.
+               |You will still be able to see them by going into Querki and pressing the bell-shaped
+               |icon in the menu bar.""".stripMargin
+          )
         )
-      )
     ))
   }
-  
-  def getUnsubEvent(unsubId:OID, contextOpt:Option[String]): (Wikitext, UnsubEvent with UseKryo) = {
+
+  def getUnsubEvent(
+    unsubId: OID,
+    contextOpt: Option[String]
+  ): (Wikitext, UnsubEvent with UseKryo) = {
     unsubId match {
       case UnsubUserlandTopicOID => {
         val context = contextOpt.get
@@ -233,7 +270,7 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
         val topic = context.drop(splitAt + 1)
         (Wikitext(s"Saved - you will no longer get emails about $topic"), DHUnsubUserlandTopic(topic, spaceId))
       }
-      
+
       case UnsubUserlandSpaceOID => {
         val context = contextOpt.get
         val spaceId = OID(context)
@@ -242,11 +279,14 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
     }
   }
 
-  /***********************************************
+  /**
+   * *********************************************
    * FUNCTIONS
-   ***********************************************/
+   * *********************************************
+   */
 
-  lazy val NotifyMethod = new InternalMethod(NotifyMethodOID,
+  lazy val NotifyMethod = new InternalMethod(
+    NotifyMethodOID,
     toProps(
       setName("_notify"),
       Summary("Sends a notification to one or more Members of this Space"),
@@ -259,8 +299,18 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
           ("body", ParsedTextType, "The body of the notification. Can be arbitrary QL.")
         ),
         opts = Seq(
-          ("thing", LinkType, Core.QNone, "If specified, the Notification will link directly to this Thing. If not, it will link to the Space root."),
-          ("topic", ParsedTextType, Core.QNone, "If specified, noifications with the same topic are grouped conceptually, letting recipients manage them better.")
+          (
+            "thing",
+            LinkType,
+            Core.QNone,
+            "If specified, the Notification will link directly to this Thing. If not, it will link to the Space root."
+          ),
+          (
+            "topic",
+            ParsedTextType,
+            Core.QNone,
+            "If specified, noifications with the same topic are grouped conceptually, letting recipients manage them better."
+          )
         ),
         returns = (IntType, "The number of people this was sent to.")
       ),
@@ -281,12 +331,14 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
                 |
                 |**Important:** this is likely to become a paid-only feature in the future, and the number of emails that can
                 |be sent this way *will* be limited for most Spaces. (Sending email costs actual money, so we will have to
-                |pass that on.)""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
+                |pass that on.)""".stripMargin)
+    )
+  ) {
+
+    override def qlApply(inv: Invocation): QFut = {
       implicit val state = inv.state
       val sender = inv.context.request.requesterOrAnon.mainIdentity
-      
+
       for {
         recipientPersonIds <- inv.processAsList("recipients", LinkType)
         recipientPersons = recipientPersonIds.map(state.anything(_)).flatten
@@ -297,85 +349,121 @@ class UserlandNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with E
         body <- inv.processAs("body", ParsedTextType, inv.context.withFlag(ShowLinksAsFullAnchors))
         thing <- inv.processAsOpt("thing", LinkType)
         topic <- inv.processAsOpt("topic", ParsedTextType)
-        
+
         payload = toProps(
           NotifySubjectProp(subject.strip),
           NotifyBodyProp(body),
           NotifySpaceNameProp(state.name),
           NotifySpaceDisplayNameProp(state.displayName),
           NotifySpaceOwnerProp(state.ownerHandle)
-        ) ++ 
-          thing.map(t => toProps(NotifyThingProp(t))).getOrElse(emptyProps) ++ 
-          topic.map(tp => toProps(NotifyTopicProp(tp.strip))).getOrElse(emptyProps) 
-          
+        ) ++
+          thing.map(t => toProps(NotifyThingProp(t))).getOrElse(emptyProps) ++
+          topic.map(tp => toProps(NotifyTopicProp(tp.strip))).getOrElse(emptyProps)
+
         note = Notification(
           EmptyNotificationId,
-          sender.id, 
+          sender.id,
           None,
           userlandNotifierId,
           DateTime.now,
-          Some(state.id), 
-          thing, 
+          Some(state.id),
+          thing,
           SpacePersistence.serProps(payload, state),
           true,
-          false)
-          
+          false
+        )
+
         _ = Notifications.send(inv.context.request.requesterOrAnon, ExplicitRecipients(recipientIdentities), note)
-      }
-        yield ExactlyOne(IntType(recipientIdentities.length))
+      } yield ExactlyOne(IntType(recipientIdentities.length))
     }
   }
-  
-  /***********************************************
-   * PROPERTIES
-   ***********************************************/
 
-  lazy val NotifySubjectProp = new SystemProperty(NotifySubjectOID, PlainTextType, ExactlyOne,
+  /**
+   * *********************************************
+   * PROPERTIES
+   * *********************************************
+   */
+
+  lazy val NotifySubjectProp = new SystemProperty(
+    NotifySubjectOID,
+    PlainTextType,
+    ExactlyOne,
     toProps(
       setName("_notifyRecordSubject"),
       setInternal,
-      Summary("The Subject of this userland _notify()")))
+      Summary("The Subject of this userland _notify()")
+    )
+  )
 
   // We actually store the body as wikitext, since it is potentially long and complex:
-  lazy val NotifyBodyProp = new SystemProperty(NotifyBodyOID, ParsedTextType, ExactlyOne,
+  lazy val NotifyBodyProp = new SystemProperty(
+    NotifyBodyOID,
+    ParsedTextType,
+    ExactlyOne,
     toProps(
       setName("_notifyRecordBody"),
       setInternal,
-      Summary("The Body of this userland _notify()")))
+      Summary("The Body of this userland _notify()")
+    )
+  )
 
-  lazy val NotifySpaceNameProp = new SystemProperty(NotifySpaceNameOID, PlainTextType, ExactlyOne,
+  lazy val NotifySpaceNameProp = new SystemProperty(
+    NotifySpaceNameOID,
+    PlainTextType,
+    ExactlyOne,
     toProps(
       setName("_notifyRecordSpaceName"),
       setInternal,
-      Summary("The Link Name of the Space of this userland _notify()")))
+      Summary("The Link Name of the Space of this userland _notify()")
+    )
+  )
 
-  lazy val NotifySpaceOwnerProp = new SystemProperty(NotifySpaceOwnerOID, PlainTextType, ExactlyOne,
+  lazy val NotifySpaceOwnerProp = new SystemProperty(
+    NotifySpaceOwnerOID,
+    PlainTextType,
+    ExactlyOne,
     toProps(
       setName("_notifyRecordSpaceOwner"),
       setInternal,
-      Summary("The Identity of the Space Owner of this userland _notify()")))
+      Summary("The Identity of the Space Owner of this userland _notify()")
+    )
+  )
 
-  lazy val NotifyThingProp = new SystemProperty(NotifyThingOID, LinkType, Optional,
+  lazy val NotifyThingProp = new SystemProperty(
+    NotifyThingOID,
+    LinkType,
+    Optional,
     toProps(
       setName("_notifyRecordThing"),
       setInternal,
-      Summary("The optional Thing from this userland _notify()")))
+      Summary("The optional Thing from this userland _notify()")
+    )
+  )
 
-  lazy val NotifyTopicProp = new SystemProperty(NotifyTopicOID, PlainTextType, Optional,
+  lazy val NotifyTopicProp = new SystemProperty(
+    NotifyTopicOID,
+    PlainTextType,
+    Optional,
     toProps(
       setName("_notifyRecordTopic"),
       setInternal,
-      Summary("The optional Topic of this userland _notify()")))
+      Summary("The optional Topic of this userland _notify()")
+    )
+  )
 
-  lazy val NotifySpaceDisplayNameProp = new SystemProperty(NotifySpaceDisplayNameOID, PlainTextType, ExactlyOne,
+  lazy val NotifySpaceDisplayNameProp = new SystemProperty(
+    NotifySpaceDisplayNameOID,
+    PlainTextType,
+    ExactlyOne,
     toProps(
       setName("_notifyRecordSpaceDisplayName"),
       setInternal,
-      Summary("The Name of the Space of this userland _notify()")))
-  
+      Summary("The Name of the Space of this userland _notify()")
+    )
+  )
+
   override lazy val props = Seq(
     NotifyMethod,
-    
     NotifySubjectProp,
     NotifyBodyProp,
     NotifySpaceNameProp,

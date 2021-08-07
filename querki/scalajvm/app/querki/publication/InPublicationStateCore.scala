@@ -14,12 +14,12 @@ import querki.time.DateTime
 /**
  * Message published to the troupe when there is new information in the Publication State. It
  * is the responsibility of the UserSpaceSessions to incorporate this.
- * 
+ *
  * Note that this is persistable, since it is effectively the snapshot state for the
  * InPublicationStateActor.
  */
 case class CurrentPublicationState(
-  @KryoTag(1) changes:Map[OID, Vector[SpaceEvent]]
+  @KryoTag(1) changes: Map[OID, Vector[SpaceEvent]]
 ) extends UseKryo
 
 /**
@@ -28,20 +28,24 @@ case class CurrentPublicationState(
  * get Published. It maintains a secondary "SpaceState", which is just the sum of those Events, so that
  * Users who have Publication access can overlay it onto the public Space.
  */
-trait InPublicationStateCore extends SpacePure with PersistentActorCore with SpaceMessagePersistenceBase with EcologyMember {
-  
+trait InPublicationStateCore
+  extends SpacePure
+     with PersistentActorCore
+     with SpaceMessagePersistenceBase
+     with EcologyMember {
+
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val System = interface[querki.system.System]
-  
+
   lazy val SystemState = System.State
-  
+
   /**
    * We're just going to reuse the interval from SpaceState.
    */
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
-  
+
   //////////////////////////////////////////////////
   //
   // Abstract members
@@ -53,50 +57,58 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
   /**
    * Tell the rest of the troupe about this.
    */
-  def notifyChanges(curState:CurrentPublicationState):Unit
-  
-  def respondWithState(curState:CurrentPublicationState):Unit
-  
-  def respondPublished():Unit
-  
+  def notifyChanges(curState: CurrentPublicationState): Unit
+
+  def respondWithState(curState: CurrentPublicationState): Unit
+
+  def respondPublished(): Unit
+
   /////////////////////////////////////////////////
-  
-  def toPersistenceId(id:OID) = "inpubstate-" + id.toThingId.toString
+
+  def toPersistenceId(id: OID) = "inpubstate-" + id.toThingId.toString
   def persistenceId = toPersistenceId(id)
 
   lazy val tracing = TracingSpace(id, "InPublicationStateCore: ")
-  
+
   // TODO: this snapshot code is roughly copied from SpaceCore. It should, perhaps, be lifted
   // to PersistentActorCore.
   var snapshotCounter = 0
+
   def doSaveSnapshot() = {
     saveSnapshot(pState)
     snapshotCounter = 0
   }
+
   def checkSnapshot() = {
     if (snapshotCounter > snapshotInterval)
       doSaveSnapshot()
     else
       incrementSnapshot()
   }
+
   def incrementSnapshot() = {
     snapshotCounter += 1
   }
-  
-  var _pState:Option[CurrentPublicationState] = None
+
+  var _pState: Option[CurrentPublicationState] = None
   def pState = _pState.getOrElse(CurrentPublicationState(Map.empty))
-  def setState(s:CurrentPublicationState) = {
+
+  def setState(s: CurrentPublicationState) = {
     _pState = Some(s)
     notifyChanges(s)
   }
-  def addEvent(curState:CurrentPublicationState, evt:SpaceEvent):CurrentPublicationState = {
+
+  def addEvent(
+    curState: CurrentPublicationState,
+    evt: SpaceEvent
+  ): CurrentPublicationState = {
     tracing.trace(s"addEvent(${evt.getClass.getSimpleName})")
     // TODO: I *really* should be using a lens library here...
     val (isDelete, oid) = evt match {
-      case e:DHCreateThing => (false, e.id)
-      case e:DHModifyThing => (false, e.id)
-      case e:DHDeleteThing => (true, e.id)
-      case _ => throw new Exception(s"InPublicationStateCore received unexpected event $evt")
+      case e: DHCreateThing => (false, e.id)
+      case e: DHModifyThing => (false, e.id)
+      case e: DHDeleteThing => (true, e.id)
+      case _                => throw new Exception(s"InPublicationStateCore received unexpected event $evt")
     }
     if (isDelete) {
       curState.copy(changes = curState.changes - oid)
@@ -105,15 +117,15 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
       curState.copy(changes = curState.changes + (oid -> (existing :+ evt)))
     }
   }
-  
-  def receiveCommand:Receive = {
-    case evt:SpaceEvent => {
+
+  def receiveCommand: Receive = {
+    case evt: SpaceEvent => {
       persistAnd(evt).map { _ =>
         setState(addEvent(pState, evt))
         checkSnapshot()
       }
     }
-    
+
     case AddPublicationEvents(evts) => {
       tracing.trace(s"AddPublicationEvents")
       persistAllAnd(evts).map { _ =>
@@ -125,7 +137,7 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
         respondWithState(pState)
       }
     }
-    
+
     // This Thing has been Published, which means we can delete it from our local state:
     case ThingPublished(who, oid) => {
       tracing.trace(s"ThingPublished($oid)")
@@ -138,19 +150,19 @@ trait InPublicationStateCore extends SpacePure with PersistentActorCore with Spa
       }
     }
   }
-  
-  def receiveRecover:Receive = {
-    case SnapshotOffer(metadata, state:CurrentPublicationState) => {
+
+  def receiveRecover: Receive = {
+    case SnapshotOffer(metadata, state: CurrentPublicationState) => {
       tracing.trace(s"SnapshotOffer")
       _pState = Some(state)
     }
-    
-    case evt:SpaceEvent => {
+
+    case evt: SpaceEvent => {
       // IMPORTANT: we don't call setState(), because we don't want to send out the notifies yet:
       _pState = Some(addEvent(pState, evt))
       incrementSnapshot()
     }
-    
+
     case RecoveryCompleted => {
       tracing.trace(s"RecoveryCompleted")
       // We always fire this, even if it's empty, because UserSpaceSessions relies on it:

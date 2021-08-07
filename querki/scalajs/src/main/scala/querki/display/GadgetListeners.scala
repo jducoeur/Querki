@@ -9,6 +9,7 @@ import org.querki.jquery._
  * to hook itself to another, by DOM id. Requires cooperation of both sides, at least in the current design.
  */
 trait GadgetListeners {
+
   /**
    * Registers the given Gadget based on its DOM id. This should be called *after* the Gadget is created.
    */

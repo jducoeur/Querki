@@ -1,3 +1,3 @@
 package querki.pages
 
-case class MissingPageParameterException(paramName:String) extends Exception
+case class MissingPageParameterException(paramName: String) extends Exception

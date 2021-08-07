@@ -19,57 +19,57 @@ import querki.util.InputUtils
 /**
  * @author jducoeur
  */
-class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
+class AppsEcot(e: Ecology) extends ClientEcot(e) with Apps {
   def implements = Set(classOf[Apps])
-  
+
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
+
   lazy val appMgmtFactory = Pages.registerStandardFactory("_appMgmt", { (params) => new AppManagementPage(params) })
   lazy val extractAppFactory = Pages.registerStandardFactory("_extractApp", { (params) => new ExtractAppPage(params) })
-  
+
   override def postInit() = {
     appMgmtFactory
     extractAppFactory
-    
+
     Gadgets.registerSimpleGadget("._instantiateAppButton", { new UseAppGadget })
   }
-    
+
   lazy val spaceInfo = DataAccess.space.get
   lazy val isApp = spaceInfo.isApp
-  
+
   /**
    * A simple hook, so that anything with the class "_instantiateAppButton" becomes a button to pop the dialog.
    */
   class UseAppGadget extends HookedGadget[dom.html.Element](ecology) {
     def doRender = ???
-    
+
     def hook() = {
-      $(elem).click { evt:JQueryEventObject =>
+      $(elem).click { evt: JQueryEventObject =>
         // We need the Scala.Rx Owner Context in order to call useApp():
         implicit val ctx = PageManager.currentOwner
         useApp()
       }
     }
   }
-  
+
   /**
    * The guts of useApp(), which expect that we have a logged-in user.
    */
-  private def doUseApp()(implicit ctx:Ctx.Owner) = {
+  private def doUseApp()(implicit ctx: Ctx.Owner) = {
     val spaceName = GadgetRef[RxInput]
-    spaceName.whenSet { g => 
+    spaceName.whenSet { g =>
       g.onEnter { text =>
         if (text.length() > 0) {
           createSpace()
         }
       }
     }
-    
+
     def createSpace() = {
       val newName = spaceName.get.text.now.trim
       if (newName.length > 0) {
@@ -78,28 +78,44 @@ class AppsEcot(e:Ecology) extends ClientEcot(e) with Apps {
         }
       }
     }
-    
+
     val confirmDialog = new Dialog(
       s"Create a Space using ${spaceInfo.displayName}",
       div(
-        p(s"This will create a new Space, owned by you, using ${spaceInfo.displayName}. What should the Space be named?"),
+        p(
+          s"This will create a new Space, owned by you, using ${spaceInfo.displayName}. What should the Space be named?"
+        ),
         spaceName <= new RxInput(
-            Some(InputUtils.spaceNameFilter _), "text", value := spaceInfo.displayName,
-            id:="_newSpaceName", cls:="form-control", maxlength:=254, tabindex:=200)
+          Some(InputUtils.spaceNameFilter _),
+          "text",
+          value := spaceInfo.displayName,
+          id := "_newSpaceName",
+          cls := "form-control",
+          maxlength := 254,
+          tabindex := 200
+        )
       ),
-      (ButtonGadget.Primary, Seq("Create", id := "_modelSelected"), { dialog =>
-        createSpace
-        dialog.done()
-      }),
-      (ButtonGadget.Normal, Seq("Cancel", id := "_modelCancel"), { dialog => 
-        dialog.done() 
-      })
+      (
+        ButtonGadget.Primary,
+        Seq("Create", id := "_modelSelected"),
+        { dialog =>
+          createSpace
+          dialog.done()
+        }
+      ),
+      (
+        ButtonGadget.Normal,
+        Seq("Cancel", id := "_modelCancel"),
+        { dialog =>
+          dialog.done()
+        }
+      )
     )
-    
+
     confirmDialog.show()
   }
-  
-  def useApp()(implicit ctx:Ctx.Owner) = {
+
+  def useApp()(implicit ctx: Ctx.Owner) = {
     // Belt-and-suspenders check:
     if (isApp) {
       if (UserAccess.loggedIn)

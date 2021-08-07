@@ -8,21 +8,21 @@ import models._
 import models.system._
 
 class SpaceImportExport(state:SpaceState, spaceIdOpt:Option[OID]) {
-  
+
   // Only valid during Import:
   def spaceId = spaceIdOpt.get
-  
+
   implicit object OIDFormat extends Format[OID] {
     def writes(oid:OID):JsValue = JsString(oid.toString)
     def reads(json:JsValue):OID = OID(json.as[String])
   }
-  
+
   import Kind.Kind
   implicit object KindFormat extends Format[Kind] {
     def writes(kind:Kind):JsValue = JsNumber(kind)
     def reads(json:JsValue):Kind = json.as[Long].toInt
   }
-  
+
   import Thing.PropMap
   implicit object PropsFormat extends Format[PropMap] {
     def writes(props:PropMap):JsValue = {
@@ -41,11 +41,11 @@ class SpaceImportExport(state:SpaceState, spaceIdOpt:Option[OID]) {
         // TODO: this is only looking up props against the App, not the Space:
         val prop = state.prop(pid)
         val v = prop.deserialize(serialized)
-        (pid -> v)        
+        (pid -> v)
       }
     }
   }
-  
+
   // TODO: all the OIDs contained in here need to be remapped, as a second pass!
   implicit object ThingFormat extends Format[ThingState] {
     def writes(thing:ThingState):JsValue = JsObject(List(
@@ -62,7 +62,7 @@ class SpaceImportExport(state:SpaceState, spaceIdOpt:Option[OID]) {
       (json \ "kind").as[Kind]
     )
   }
-  
+
   implicit object SpaceFormat extends Format[SpaceState] {
     def writes(state:SpaceState):JsValue = JsObject(List(
       "id" -> toJson(state.id),
@@ -71,7 +71,7 @@ class SpaceImportExport(state:SpaceState, spaceIdOpt:Option[OID]) {
       "owner" -> toJson(state.owner),
       "name" -> JsString(state.name),
       "app" -> toJson(state.app map (_.id)),
-      "things" -> toJson(state.things map { entry => 
+      "things" -> toJson(state.things map { entry =>
         val (oid, thing) = entry
         (oid.toString, thing)
       })
@@ -88,10 +88,10 @@ class SpaceImportExport(state:SpaceState, spaceIdOpt:Option[OID]) {
       (json \ "things").as[Map[String, ThingState]] map { entry =>
         (OID(entry._1), entry._2)
       },
-      Map.empty[OID, Collection[_]] // LATER: Collections      
+      Map.empty[OID, Collection[_]] // LATER: Collections
     )
   }
-  
+
   def export:JsValue = toJson(state)
   def importSpace(json:JsValue):SpaceState = json.as[SpaceState]
 }
@@ -101,10 +101,10 @@ object SpaceImportExport {
     val exporter = new SpaceImportExport(state, None)
     exporter.export
   }
-  
+
   def importSpace(spaceId:OID, json:JsValue):SpaceState = {
     val importer = new SpaceImportExport(SystemSpace.State, Some(spaceId))
     importer.importSpace(json)
   }
 }
-*/
+ */

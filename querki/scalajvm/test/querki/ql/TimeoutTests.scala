@@ -17,18 +17,19 @@ class TimeoutTests extends QuerkiTests {
   class TimeHookEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
     import TimeoutMOIDs._
 
-    lazy val setTimeMethod = new InternalMethod(SetTimeOID,
+    lazy val setTimeMethod = new InternalMethod(
+      SetTimeOID,
       toProps(
         setName("_setTime")
-      ))
-    {
+      )
+    ) {
+
       override def qlApply(inv: Invocation): QFut = {
         for {
           dateLong <- inv.contextAllAs(LongType)
           dateTime = new DateTime(dateLong)
           _ = setTime(dateTime)
-        }
-          yield ExactlyOne(LongType(dateLong))
+        } yield ExactlyOne(LongType(dateLong))
       }
     }
 
@@ -37,7 +38,7 @@ class TimeoutTests extends QuerkiTests {
     )
   }
 
-  override def createEcots(e:Ecology): Unit = {
+  override def createEcots(e: Ecology): Unit = {
     super.createEcots(e)
 
     new TimeHookEcot(e)
@@ -52,7 +53,7 @@ class TimeoutTests extends QuerkiTests {
       setTime(new DateTime(1560980782000L))
 
       pql("""[[Trivial Thing -> 1560980788000 -> _setTime -> ""hello"" -> _textLength]]""") should
-        equal (expectedWarning("QL.timeout"))
+        equal(expectedWarning("QL.timeout"))
     }
   }
 }

@@ -7,7 +7,8 @@ import org.querki.facades.bootstrap.datepicker._
 
 import querki.globals._
 
-class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {  
+class DateGadget(implicit e: Ecology) extends InputGadget[html.Input](e) {
+
   def values = {
     val date = $(elem).getDate()
     if (date == null) {
@@ -17,27 +18,27 @@ class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {
       List(timestamp.toString)
     }
   }
-  
+
   def hook() = {
-    val baseOpts = BootstrapDatepickerOptions.
-      autoclose(true).
-      todayHighlight(true).
-      todayBtnLinked().
-      disableTouchKeyboard(true).
-      orientation(Orientation.Auto)
+    val baseOpts = BootstrapDatepickerOptions.autoclose(true).todayHighlight(
+      true
+    ).todayBtnLinked().disableTouchKeyboard(true).orientation(Orientation.Auto)
     // Iff this Date is Optional, show the Clear button:
-    val opts = 
+    val opts =
       if (isOptional)
         baseOpts.clearBtn(true)
       else
         baseOpts
-        
+
     $(elem).datepicker(opts)
-    
-    $(elem).on("changeDate", { rawEvt:JQueryEventObject =>
-      save()
-    })
+
+    $(elem).on(
+      "changeDate",
+      { rawEvt: JQueryEventObject =>
+        save()
+      }
+    )
   }
-  
+
   def doRender() = ???
 }

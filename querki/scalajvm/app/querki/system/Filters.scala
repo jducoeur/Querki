@@ -12,37 +12,44 @@ import play.filters.gzip.GzipFilter
 
 import querki.globals._
 
-class Filters @Inject() (gzip:GzipFilter, log:LoggingFilter) 
-  extends HttpFilters 
-{
+class Filters @Inject() (
+  gzip: GzipFilter,
+  log: LoggingFilter
+) extends HttpFilters {
   val filters = Seq(log, gzip)
 }
 
 /**
  * General filter that permits extensive logging of all requests. Adapted from example found in
  * Play documentation:
- * 
+ *
  *   http://www.playframework.com/documentation/2.1.1/ScalaHttpFilters
- *   
+ *
  * Basically, when querki.test.logAllRequests is set to true, we show the requests, the results,
  * and how long they took.
- * 
+ *
  * TODO: this probably must be modified for production use before GA, simply for security reasons:
  * it leaks too much user info into the logs. The request side *may* be okay, but the result side
  * certainly is not.
  */
-class LoggingFilter @Inject() (implicit val mat:Materializer, ec:ExecutionContext, ecoProv:EcologyProvider) extends Filter with EcologyMember {
-  
+class LoggingFilter @Inject() (
+  implicit
+  val mat: Materializer,
+  ec: ExecutionContext,
+  ecoProv: EcologyProvider
+) extends Filter
+     with EcologyMember {
+
   implicit lazy val ecology = ecoProv.ecology
-  
+
   lazy val logAllRequests = Config.getBoolean("querki.test.logAllRequests", false)
-  
+
   // TODO: this is, obviously, insufficient even to a loaded server, much less a full cluster.
   // Come up with a better mechanism for deriving a consistent ID that threads through the
   // whole logic of a request!
-  var nextRequestId:Int = 0
-  
-  def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader):Future[Result] = {
+  var nextRequestId: Int = 0
+
+  def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader): Future[Result] = {
     if (logAllRequests) {
       // TODO: this isn't sufficiently atomic. See above comment: we need a proper mechanism for
       // this eventually.
@@ -64,7 +71,7 @@ class LoggingFilter @Inject() (implicit val mat:Materializer, ec:ExecutionContex
           logTime(res)
         }
       } catch {
-        case ex:Exception => {
+        case ex: Exception => {
           QLog.error(s"!!! $reqId -- threw Exception", ex)
           throw ex
         }

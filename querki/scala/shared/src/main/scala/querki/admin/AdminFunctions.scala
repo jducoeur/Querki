@@ -11,73 +11,89 @@ import AdminFunctions.QuerkiStats
  */
 trait AdminFunctions {
   import AdminFunctions._
-  
+
   /**
    * Fetch the current system statistics. This may eventually grow into a proper Dashboard, but let's
    * not over-complicate it yet.
    */
-  def statistics():Future[QuerkiStats]
-  
+  def statistics(): Future[QuerkiStats]
+
   /**
    * Fetch the Invitees, who still need to be upgraded to full-user status.
    */
-  def pendingUsers():Future[Seq[AdminUserView]]
-  
+  def pendingUsers(): Future[Seq[AdminUserView]]
+
   /**
    * Fetch *all* the users in the system.
    *
    * Do *not* get too attached to this! In principle, it's obviously a bad idea, and will eventually have
    * to be replaced by a search function instead.
    */
-  def allUsers():Future[Seq[AdminUserView]]
-  
+  def allUsers(): Future[Seq[AdminUserView]]
+
   /**
    * Upgrade the specified User to full-User status. Presumed to succeed unless it returns an Exception.
    */
-  def upgradePendingUser(id:TID):Future[AdminUserView]
-  
+  def upgradePendingUser(id: TID): Future[AdminUserView]
+
   /**
    * Change the given user to the given level. Note that only Superadmin can make an Admin, and nobody can make a Superadmin.
    */
-  def changeUserLevel(id:TID, level:UserLevel):Future[AdminUserView]
-  
+  def changeUserLevel(
+    id: TID,
+    level: UserLevel
+  ): Future[AdminUserView]
+
   /**
    * Get the current state of system monitoring. This is basically the very beginnings of the
    * system dashboard.
    */
-  def monitor():Future[MonitorCurrent]
-  
+  def monitor(): Future[MonitorCurrent]
+
   /**
    * Starts doing some profiling on the specified Space.
    */
-  def beginSpaceTiming(spaceId:TOID):Future[Unit]
-  
+  def beginSpaceTiming(spaceId: TOID): Future[Unit]
+
   /**
    * Gets the currently collection of Timed Spaces. This is *usually* empty. Note that for now it
    * is super-primitive -- just a set of OIDs. We might decide to make it fancier later, but this
    * is a rare edge-case admin feature, and I don't want to overbuild it prematurely.
    */
-  def getTimedSpaces():Future[Set[TOID]]
-  
+  def getTimedSpaces(): Future[Set[TOID]]
+
   /**
    * Stop profiling this Space.
    */
-  def stopSpaceTiming(spaceId:TOID):Future[Unit]
-  
+  def stopSpaceTiming(spaceId: TOID): Future[Unit]
+
   /**
    * Update the timing messages we've gotten from this Space.
    */
-  def getSpaceTimingsSince(since:Int, spaceId:TOID):Future[TimingMsgs]
+  def getSpaceTimingsSince(
+    since: Int,
+    spaceId: TOID
+  ): Future[TimingMsgs]
 }
 
 object AdminFunctions {
-  case class QuerkiStats(userCountsByLevel:Map[UserLevel, Int], nSpaces:Long)
-  case class AdminUserView(userId:TID, mainHandle:String, email:String, level:UserLevel)
-  
+
+  case class QuerkiStats(
+    userCountsByLevel: Map[UserLevel, Int],
+    nSpaces: Long
+  )
+
+  case class AdminUserView(
+    userId: TID,
+    mainHandle: String,
+    email: String,
+    level: UserLevel
+  )
+
   /*
    * The following are mostly lifted directly from akka.cluster, so that we can pass the cluster's
    * state to the client without the client needing to be dependent on the Akka library.
-   * 
+   *
    * TODO: is there a better way to do this?
    */
   sealed trait QMemberStatus
@@ -88,12 +104,35 @@ object AdminFunctions {
   case object QRemoved extends QMemberStatus
   case object QUp extends QMemberStatus
   case object QWeaklyUp extends QMemberStatus
-  
-  case class QMember(address:String, status:QMemberStatus)
-  case class QCurrentClusterState(members:Seq[QMember], unreachable:Seq[QMember], leader:String)
-  
-  case class RunningSpace(name:String, cluster:String, nUsers:Int, size:Int, timestamp:Long)
-  case class MonitorCurrent(monitorNode:String, state:QCurrentClusterState, spaces:Seq[RunningSpace])
-  
-  case class TimingMsgs(error:Boolean, nowAt:Int, msgs:Seq[String])
+
+  case class QMember(
+    address: String,
+    status: QMemberStatus
+  )
+
+  case class QCurrentClusterState(
+    members: Seq[QMember],
+    unreachable: Seq[QMember],
+    leader: String
+  )
+
+  case class RunningSpace(
+    name: String,
+    cluster: String,
+    nUsers: Int,
+    size: Int,
+    timestamp: Long
+  )
+
+  case class MonitorCurrent(
+    monitorNode: String,
+    state: QCurrentClusterState,
+    spaces: Seq[RunningSpace]
+  )
+
+  case class TimingMsgs(
+    error: Boolean,
+    nowAt: Int,
+    msgs: Seq[String]
+  )
 }

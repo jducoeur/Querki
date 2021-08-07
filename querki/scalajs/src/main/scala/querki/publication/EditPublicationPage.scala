@@ -16,16 +16,14 @@ import querki.display.rx._
 import querki.security.{LevelMap, OnePerm, SecurityFunctions}
 import SecurityFunctions._
 
-class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology) 
-  extends Page("editPublish") with LevelMap
-{
+class EditPublicationPage(params: ParamMap)(implicit val ecology: Ecology) extends Page("editPublish") with LevelMap {
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
-  
+
   val modelId = TID(params.requiredParam("modelId"))
-  
+
   lazy val publishPermId = std.publication.canPublishPerm.oid
-  
+
   def pageContent = {
     for {
       model <- DataAccess.getThing(modelId)
@@ -44,30 +42,32 @@ class EditPublicationPage(params:ParamMap)(implicit val ecology:Ecology)
           Client[PublicationFunctions].changePublishedModels().call()
         }
       }
-       guts = 
+      guts =
         div(
           h1(
             s"Publication Info for ${model.displayName}",
-            querkiButton("Done")( 
-              id:="_publishDone",
-              href:=Editing.modelDesignerFactory.pageUrl(model)
+            querkiButton("Done")(
+              id := "_publishDone",
+              href := Editing.modelDesignerFactory.pageUrl(model)
             )
           ),
           p(new RxCheckbox(publishable, s" Instances of ${model.displayName} should be Publishable")),
-          div(cls:="col-md-12", display:=Rx { if (publishable()) "block" else "none" },
-            h3(cls:="col-md-12", "Who Can Publish"),
+          div(
+            cls := "col-md-12",
+            display := Rx { if (publishable()) "block" else "none" },
+            h3(cls := "col-md-12", "Who Can Publish"),
             QText("""These people currently can *both* read Instances before they are Published, and can Publish/Update Instances to
                     |make them more publicly visible. (These will probably be broken into separate permissions sometime later.) Note
                     |that this Permission is Space-wide, and applies to all Publishable Models.""".stripMargin),
             new OnePerm(
-              DataAccess.space.get, 
-              publishPerm, 
+              DataAccess.space.get,
+              publishPerm,
               instancePublishVar,
               true,
-              this)
+              this
+            )
           )
         )
-    }
-      yield PageContents(guts)
+    } yield PageContents(guts)
   }
 }

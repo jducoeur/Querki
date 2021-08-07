@@ -13,26 +13,36 @@ class DataModelTests extends QuerkiTests {
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val Tags = interface[querki.tags.Tags]
-  
+
   // === Copy Into Instances ===
   "Copy Into Instances" should {
     "work normally" in {
       class TSpace extends CommonSpace {
         val myProp = new TestProperty(TextType, Optional, "My Text Prop", DataModelAccess.CopyIntoInstances(true))
         val otherProp = new TestProperty(TextType, Optional, "Other Text Prop")
-        
+
         val myModel = new SimpleTestThing("My Model", myProp("Hello"), otherProp("Yay!"))
-        
+
         val myInstance = new TestThing("My Instance", myModel)
       }
       implicit val s = new TSpace
-      
+
       assert(!s.myInstance.props.contains(s.myProp.id))
       assert(!s.myInstance.props.contains(s.otherProp.id))
-      
+
       // TODO: this is a pretty low-level test. Once we actually have unit testing working for the Space Actor,
       // we should test that way, to get a more realistic functional test:
-      val tcr = ThingChangeRequest(s.owner, null, s.state, null, Some(s.myModel.id), None, Kind.Thing, s.myInstance.props, s.myInstance.props.keys.toSeq)
+      val tcr = ThingChangeRequest(
+        s.owner,
+        null,
+        s.state,
+        null,
+        Some(s.myModel.id),
+        None,
+        Kind.Thing,
+        s.myInstance.props,
+        s.myInstance.props.keys.toSeq
+      )
       SpaceChangeManager.thingChanges(RequestM.successful(tcr)).foreach { newTcr =>
         val actualProps = newTcr.newProps
 
@@ -42,17 +52,17 @@ class DataModelTests extends QuerkiTests {
       }
     }
   }
-  
+
   // === _allRefs ===
   "_allRefs" should {
     "work normally" in {
       implicit val s = new CDSpace
-      
+
       pql("""[[Weird Al -> _allRefs -> _sort]]""") should
         equal(listOfLinkText(s.mandatoryFun, s.faves, s.runningWithScissors))
     }
   }
-  
+
   // === _asType ===
   "_asType" should {
     "convert one PlainText OID to a Link" in {
@@ -62,47 +72,50 @@ class DataModelTests extends QuerkiTests {
         val myThing = new SimpleTestThing("Test Thing", textProp(plaintext))
       }
       implicit val s = new TSpace
-      
+
       pql("""[[Test Thing -> My Text Prop -> _asType(Thing Type)]]""") should
-        equal (linkText(s.sandbox))
+        equal(linkText(s.sandbox))
     }
   }
-  
+
   // === _currentSpace ===
   "_currentSpace" should {
     "return the current Space" in {
       implicit val s = commonSpace
-      pql("""[[_currentSpace]]""") should equal (linkText(commonState))
+      pql("""[[_currentSpace]]""") should equal(linkText(commonState))
     }
   }
-  
+
   // === _hasProperty ===
   "_hasProperty" should {
     "produce true iff the Thing has the Property" in {
-      processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text._self)]]""") should 
-        equal ("""true""")      
+      processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text._self)]]""") should
+        equal("""true""")
     }
-    
+
     "produce false iff the Thing doesn't have the Property" in {
-      processQText(commonThingAsContext(_.withDisplayName), """[[_hasProperty(My Optional Text._self)]]""") should 
-        equal ("""false""")      
+      processQText(commonThingAsContext(_.withDisplayName), """[[_hasProperty(My Optional Text._self)]]""") should
+        equal("""false""")
     }
-    
+
     "error if there are no parameters" in {
-      processQText(commonThingAsContext(_.withDisplayName), """[[_hasProperty]]""") should 
-        equal (expectedWarning("Func.missingParam"))      
+      processQText(commonThingAsContext(_.withDisplayName), """[[_hasProperty]]""") should
+        equal(expectedWarning("Func.missingParam"))
     }
-    
+
     "error if it receives a non-Thing" in {
-      processQText(commonThingAsContext(_.instance), """[[My Optional Text -> _hasProperty(My Optional Text._self)]]""") should 
-        equal (expectedWarning("Func.notThing"))      
+      processQText(
+        commonThingAsContext(_.instance),
+        """[[My Optional Text -> _hasProperty(My Optional Text._self)]]"""
+      ) should
+        equal(expectedWarning("Func.notThing"))
     }
-    
+
     "error if the parameter isn't a Thing" in {
-      processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text)]]""") should 
-        equal (expectedWarning("Func.paramWrongType"))      
+      processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text)]]""") should
+        equal(expectedWarning("Func.paramWrongType"))
     }
-    
+
     "process a List of Things, saying whether they all have the Property" in {
       class TSpace extends CommonSpace {
         val myProp = new TestProperty(TextType, ExactlyOne, "My Text Prop")
@@ -113,19 +126,22 @@ class DataModelTests extends QuerkiTests {
         val linker = new SimpleTestThing("Linker", listLinksProp(linkee1, linkee2, linkee3, linkee4))
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _hasProperty(My Text Prop._self) -> _commas]]""") should
-        equal ("""true, false, true, false""")      
+
+      processQText(
+        thingAsContext[TSpace](space, (_.linker)),
+        """[[My List of Links -> _hasProperty(My Text Prop._self) -> _commas]]"""
+      ) should
+        equal("""true, false, true, false""")
     }
   }
-  
+
   // === _instances ===
   "_instances" should {
     "list the single instance of a Model" in {
-      processQText(commonThingAsContext(_.testModel), """[[_instances -> _commas]]""") should 
-        equal ("""[My Instance](My-Instance)""")
+      processQText(commonThingAsContext(_.testModel), """[[_instances -> _commas]]""") should
+        equal("""[My Instance](My-Instance)""")
     }
-    
+
     "list several instances of a Model" in {
       class TSpace extends CommonSpace {
         val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
@@ -134,21 +150,21 @@ class DataModelTests extends QuerkiTests {
         val instance3 = new TestThing("Instance 3", instancesModel)
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
-        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should
+        equal(listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
-    
+
     "list no instances of an empty Model" in {
       class TSpace extends CommonSpace {
         val instancesModel = new SimpleTestThing("Model with no Instances", Core.IsModelProp(true))
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
-        equal ("""""")
+
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should
+        equal("""""")
     }
-    
+
     "list instances through SubModels" in {
       class TSpace extends CommonSpace {
         val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
@@ -158,38 +174,38 @@ class DataModelTests extends QuerkiTests {
         val instance3 = new TestThing("Instance 3", instancesModel)
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
-        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should
+        equal(listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
-    
+
     "work in dotted position" in {
-      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> _commas]]""") should 
-        equal ("""[My Instance](My-Instance)""")
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> _commas]]""") should
+        equal("""[My Instance](My-Instance)""")
     }
-    
+
     "cope with multiple received Models" in {
       class TSpace extends CommonSpace {
         val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
         val model2 = new SimpleTestThing("Model 2", Core.IsModelProp(true))
-        
+
         val instance1 = new TestThing("Instance 1", instancesModel)
         val instance2 = new TestThing("Instance 2", model2)
         val instance3 = new TestThing("Instance 3", instancesModel)
-        
+
         val linker = new SimpleTestThing("Linker", listLinksProp(instancesModel, model2))
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances]]""") should 
-        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+
+      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances]]""") should
+        equal(listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
 
     "produce an appropriate error when used on a non-Link Property" in {
       implicit val s = commonSpace
 
       pql("""[[Single Text -> _instances -> _sort]]""") should
-        equal (expectedWarning("Func.notThing"))
+        equal(expectedWarning("Func.notThing"))
     }
 
     "produce an appropriate error if it does not receive any links" in {
@@ -199,7 +215,7 @@ class DataModelTests extends QuerkiTests {
       implicit val s = new TSpace
 
       pql("""[[Thing Without Links -> Optional Link -> _instances]]""") should
-        equal (expectedWarning("Func.missingReceivedValue"))
+        equal(expectedWarning("Func.missingReceivedValue"))
     }
 
     "work with non-Models" in {
@@ -208,22 +224,22 @@ class DataModelTests extends QuerkiTests {
       pql("""[[My Instance -> _instances]]""") should equal("")
     }
   }
-  
+
   // === _is ===
   "_is" should {
     "successfully check an incoming Thing" in {
-      processQText(commonThingAsContext(_.instance), """[[_is(My Instance)]]""") should 
-        equal ("""true""")
+      processQText(commonThingAsContext(_.instance), """[[_is(My Instance)]]""") should
+        equal("""true""")
     }
-    
+
     "work inside _if" in {
-      processQText(commonThingAsContext(_.instance), """[[_if(_is(My Instance), ""hello"")]]""") should 
-        equal ("""hello""")      
+      processQText(commonThingAsContext(_.instance), """[[_if(_is(My Instance), ""hello"")]]""") should
+        equal("""hello""")
     }
-    
+
     "correctly fail the wrong Thing" in {
-      processQText(commonThingAsContext(_.sandbox), """[[_is(My Instance)]]""") should 
-        equal ("""false""")
+      processQText(commonThingAsContext(_.sandbox), """[[_is(My Instance)]]""") should
+        equal("""false""")
     }
 
     "work on a Link Property" in {
@@ -233,14 +249,20 @@ class DataModelTests extends QuerkiTests {
         val other = new SimpleTestThing("Other")
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[_if(Single Link -> _is(Linkee), ""Yes"", ""No"")]]""") should
-        equal ("""Yes""")
-      
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[_if(Single Link -> _is(Other), ""Yes"", ""No"")]]""") should
-        equal ("""No""")
+
+      processQText(
+        thingAsContext[TSpace](space, (_.linker)),
+        """[[_if(Single Link -> _is(Linkee), ""Yes"", ""No"")]]"""
+      ) should
+        equal("""Yes""")
+
+      processQText(
+        thingAsContext[TSpace](space, (_.linker)),
+        """[[_if(Single Link -> _is(Other), ""Yes"", ""No"")]]"""
+      ) should
+        equal("""No""")
     }
-    
+
     // Edge case, but this ought to work:
     "work with a received List" in {
       class TSpace extends CommonSpace {
@@ -250,12 +272,15 @@ class DataModelTests extends QuerkiTests {
         val linker = new SimpleTestThing("Linker", listLinksProp(linkee1, linkee2, linkee3, linkee2))
       }
       val space = new TSpace
-      
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _is(Linkee 2) -> _commas]]""") should
-        equal ("""false, true, false, true""")
+
+      processQText(
+        thingAsContext[TSpace](space, (_.linker)),
+        """[[My List of Links -> _is(Linkee 2) -> _commas]]"""
+      ) should
+        equal("""false, true, false, true""")
     }
   }
-  
+
   // === _isA
   "_isA" should {
     class TSpace extends CommonSpace {
@@ -265,158 +290,173 @@ class DataModelTests extends QuerkiTests {
       val thing2 = new TestThing("Thing 2", middleModel)
       val bottomModel = new TestThing("Bottom Model", middleModel)
       val thing3 = new TestThing("Thing 3", bottomModel)
-      
+
       val otherModel = new SimpleTestThing("Other Model")
       val thing4 = new TestThing("Thing 4", otherModel)
-      
+
       val thing5 = new SimpleTestThing("Thing Without Model")
     }
-    
+
     "work normally" in {
       implicit val s = new TSpace
-      
-      pql("""[[Thing 3 -> _isA(Bottom Model)]]""") should equal ("true")
-      pql("""[[Thing 3 -> _isA(Middle Model)]]""") should equal ("true")
-      pql("""[[Thing 3 -> _isA(Top Model)]]""") should equal ("true")
-      pql("""[[Thing 3 -> _isA(Other Model)]]""") should equal ("false")
-      
-      pql("""[[Thing 4 -> _isA(Top Model)]]""") should equal ("false")
-      
-      pql("""[[Thing Without Model -> _isA(Top Model)]]""") should equal ("false")
-      
-      pql("""[[Bottom Model -> _isA(Top Model)]]""") should equal ("true")
-      pql("""[[Top Model -> _isA(Bottom Model)]]""") should equal ("false")
+
+      pql("""[[Thing 3 -> _isA(Bottom Model)]]""") should equal("true")
+      pql("""[[Thing 3 -> _isA(Middle Model)]]""") should equal("true")
+      pql("""[[Thing 3 -> _isA(Top Model)]]""") should equal("true")
+      pql("""[[Thing 3 -> _isA(Other Model)]]""") should equal("false")
+
+      pql("""[[Thing 4 -> _isA(Top Model)]]""") should equal("false")
+
+      pql("""[[Thing Without Model -> _isA(Top Model)]]""") should equal("false")
+
+      pql("""[[Bottom Model -> _isA(Top Model)]]""") should equal("true")
+      pql("""[[Top Model -> _isA(Bottom Model)]]""") should equal("false")
     }
   }
-  
+
   // === _isDefined
   "_isDefined" should {
     "work in dotted position with something that does exist" in {
       implicit val s = commonSpace
-      pql("""[[My Optional URL._isDefined]]""") should equal ("true")
+      pql("""[[My Optional URL._isDefined]]""") should equal("true")
     }
-    
+
     // Note that QL syntax only allows dotting of names that actually exist; otherwise, the rest of
     // the stage gets ignored. This *might* change, but for now let's test the actual behaviour:
     "can not work in dotted position with something that doesn't exist" in {
       implicit val s = commonSpace
-      pql("""[[`Floob`._isDefined]]""") should equal (unknownName("Floob"))
+      pql("""[[`Floob`._isDefined]]""") should equal(unknownName("Floob"))
     }
-    
+
     "work in received position with something that does exist" in {
       implicit val s = commonSpace
-      pql("""[[My Optional URL._self -> _isDefined]]""") should equal ("true")
+      pql("""[[My Optional URL._self -> _isDefined]]""") should equal("true")
     }
-    
+
     "work in received position with something that doesn't exist" in {
       implicit val s = commonSpace
-      pql("""[[`Floob` -> _isDefined]]""") should equal ("false")
+      pql("""[[`Floob` -> _isDefined]]""") should equal("false")
     }
-    
+
     "work on a Tag Set" in {
       class TSpace extends CommonSpace {
         val tagSetProp = new TestProperty(Tags.TagSetType, Core.QSet, "My Tag Set")
-        
+
         val myThing = new SimpleTestThing("My Test Thing", tagSetProp("My Instance", "floobity", "Trivial"))
       }
       implicit val s = new TSpace
-      pql("""[[My Tag Set._tagsForProperty -> _filter(_isDefined)]]""") should equal(listOfLinkText(s.instance, s.trivialThing))
+      pql("""[[My Tag Set._tagsForProperty -> _filter(_isDefined)]]""") should equal(listOfLinkText(
+        s.instance,
+        s.trivialThing
+      ))
     }
   }
-  
+
   // === _kind ===
   "_kind" should {
     "work with the common Types" in {
       implicit val s = commonSpace
-      
-      pql("[[My Model -> _kind]]") should equal ("0")
-      pql("[[Text Type -> _kind]]") should equal ("1")
-      pql("[[My List of Links._self -> _kind]]") should equal ("2")
-      pql("[[Test Space -> _kind]]") should equal ("3")
-      pql("[[Optional -> _kind]]") should equal ("4")
+
+      pql("[[My Model -> _kind]]") should equal("0")
+      pql("[[Text Type -> _kind]]") should equal("1")
+      pql("[[My List of Links._self -> _kind]]") should equal("2")
+      pql("[[Test Space -> _kind]]") should equal("3")
+      pql("[[Optional -> _kind]]") should equal("4")
     }
   }
-  
+
   "_model" should {
     "work for an Instance" in {
       implicit val s = commonSpace
       pql("""[[My Instance -> _model]]""") should equal(linkText(s.testModel))
     }
-    
+
     "work for a Model" in {
       implicit val s = commonSpace
       pql("""[[My Model -> _model]]""") should equal(linkText(Basic.SimpleThing))
     }
-    
+
     "work for a list of Things" in {
       class TSpace extends CommonSpace {
         val thingWithList = new SimpleTestThing("Thing With List", listLinksProp(instance, testModel))
       }
       implicit val s = new TSpace
-      pql("""[[Thing With List -> My List of Links -> _model]]""") should equal(listOfLinkText(s.testModel, Basic.SimpleThing))
+      pql("""[[Thing With List -> My List of Links -> _model]]""") should equal(listOfLinkText(
+        s.testModel,
+        Basic.SimpleThing
+      ))
     }
   }
-  
+
   // === _refs ===
   "_refs" should {
     "find a bunch of ordinary Links" in {
       implicit val space = new CDSpace
-      
+
       pql("""[[They Might Be Giants -> Artists._refs -> _sort]]""") should
-        equal (listOfLinkText(space.factoryShowroom, space.flood))        
+        equal(listOfLinkText(space.factoryShowroom, space.flood))
     }
-    
+
     "cope with an empty received list" in {
       implicit val space = new CDSpace
-      
+
       pql("""[[Whitney Houston -> Artists._refs -> _sort]]""") should
-        equal (listOfLinkText())        
+        equal(listOfLinkText())
     }
-    
+
     "cope with a list of inputs" in {
       implicit val space = new CDSpace
-      
+
       pql("""[[My Favorites -> Favorite Artists -> Artists._refs -> _sort]]""") should
-        equal (listOfLinkText(space.factoryShowroom, space.firesAtMight, space.flood, space.ghostOfARose, space.shadowOfTheMoon))        
+        equal(listOfLinkText(
+          space.factoryShowroom,
+          space.firesAtMight,
+          space.flood,
+          space.ghostOfARose,
+          space.shadowOfTheMoon
+        ))
     }
-    
+
     "cope without a specific Property" in {
       implicit val space = new CDSpace
-      
+
       pql("""[[They Might Be Giants -> _refs -> _sort]]""") should
-        equal (listOfLinkText(space.factoryShowroom, space.flood, space.faves))      
+        equal(listOfLinkText(space.factoryShowroom, space.flood, space.faves))
     }
-    
+
     // Test for Issue .3y285gi
     "find references from inside Model Types" in {
       class TSpace extends CommonSpace with ModelTypeDefiner {
         val linkModel = new SimpleTestThing("Link Model")
         val link1 = new TestThing("Link 1", linkModel)
         val link2 = new TestThing("Link 2", linkModel)
-        
+
         val linkProp = new TestProperty(LinkType, QSet, "My Link Prop")
-        
+
         val subModel = new SimpleTestThing("SubModel", linkProp())
         val propOfModelType = TestModelProperty("Complex Prop", subModel, Optional)
-        
+
         val midModel = new SimpleTestThing("MidModel", propOfModelType())
         val propOfMidModelType = TestModelProperty("Deep Prop", midModel, Optional)
-        
+
         val topModel = new SimpleTestThing("My Model", propOfModelType(), propOfMidModelType(), linkProp())
         val instance1 = new TestThing("Thing 1", topModel, linkProp(link1))
         val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(linkProp(link2))))
-        val instance3 = new TestThing("Thing 3", topModel,
-            propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(linkProp(link2))))))
+        val instance3 = new TestThing(
+          "Thing 3",
+          topModel,
+          propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(linkProp(link2)))))
+        )
       }
       implicit val s = new TSpace
-      
+
       pql("""[[Link 1 -> My Link Prop._refs]]""") should
         equal(listOfLinkText(s.instance1))
       pql("""[[Link 2 -> My Link Prop._refs -> _sort]]""") should
         equal(listOfLinkText(s.instance2, s.instance3))
     }
   }
-  
+
   // === _usingSpace ===
   "_usingSpace" should {
     "affect _tagRefs" in {
@@ -424,10 +464,10 @@ class DataModelTests extends QuerkiTests {
         val childThing = new SimpleTestThing("Child Thing", singleTagProp("Child Tag"))
       }
       implicit val s = new TSpace
-      
-      pql("""[[Child Tag -> _tagRefs]]""") should equal (listOfLinkText(s.childThing))
+
+      pql("""[[Child Tag -> _tagRefs]]""") should equal(listOfLinkText(s.childThing))
       // Note that this behavior is likely to change in the future:
-      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal ("")
+      pql("""[[_usingSpace(System) -> Child Tag -> _tagRefs]]""") should equal("")
     }
   }
 
@@ -436,13 +476,13 @@ class DataModelTests extends QuerkiTests {
     "work for the basic OID case" in {
       implicit val s = new CDSpace
 
-      pql("""[[Blackmores Night -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+      pql("""[[Blackmores Night -> Album._withValueIn(Artists)]]""") should equal(listOfLinkText(
         s.firesAtMight,
         s.ghostOfARose,
         s.shadowOfTheMoon
       ))
 
-      pql("""[[They Might Be Giants -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+      pql("""[[They Might Be Giants -> Album._withValueIn(Artists)]]""") should equal(listOfLinkText(
         s.factoryShowroom,
         s.flood
       ))
@@ -451,7 +491,7 @@ class DataModelTests extends QuerkiTests {
     "work indirectly" in {
       implicit val s = new CDSpace
 
-      pql("""[[My Favorites -> Favorite Artists -> Album._withValueIn(Artists)]]""") should equal (listOfLinkText(
+      pql("""[[My Favorites -> Favorite Artists -> Album._withValueIn(Artists)]]""") should equal(listOfLinkText(
         s.factoryShowroom,
         s.flood,
         s.firesAtMight,

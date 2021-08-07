@@ -11,7 +11,12 @@ import querki.util.{Config, QLog}
  * liberally. The trace spews will be turned on by setting `querki.debug.space.[spaceId].trace` to true.
  * This call is cheap unless the flag is turned on, so go wild.
  */
-case class TracingSpace(spaceId: OID, prefix: String = "")(implicit ecology: Ecology) {
+case class TracingSpace(
+  spaceId: OID,
+  prefix: String = ""
+)(implicit
+  ecology: Ecology
+) {
   lazy val tracing: Boolean = Config.getBoolean(s"querki.debug.space.${spaceId.toString}.trace", false)
 
   def trace(msg: => String): Unit = {

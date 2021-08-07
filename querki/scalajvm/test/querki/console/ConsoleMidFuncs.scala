@@ -10,6 +10,7 @@ import AllFuncs._
 import ConsoleFunctions._
 
 trait ConsoleMidFuncs {
+
   def consoleCommand(cmd: String): TestOp[CommandResult] =
     TestOp.client { _[ConsoleFunctions].consoleCommand(cmd).call() }
 
@@ -19,7 +20,7 @@ trait ConsoleMidFuncs {
     consoleCommand(cmd).map { result =>
       result match {
         case DisplayTextResult(text) => text
-        case _ => throw new Exception(s"Got unexpected result $result from command $cmd")
+        case _                       => throw new Exception(s"Got unexpected result $result from command $cmd")
       }
     }
   }

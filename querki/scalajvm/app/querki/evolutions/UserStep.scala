@@ -14,20 +14,26 @@ import querki.identity.UserId
 import querki.util.SqlHelpers._
 
 trait UserStep extends EcologyMember {
+
   /**
    * Each Step must specify this version stamp, which must be unique!
    */
-  def version:Int
-  
-  implicit def ecology:Ecology
-  
+  def version: Int
+
+  implicit def ecology: Ecology
+
   lazy val NotificationPersistence = interface[querki.notifications.NotificationPersistence]
-  def UserSQL(userId:OID, query:String, version:Int = 0):SqlQuery = NotificationPersistence.UserSQL(userId, query, version)
-  
+
+  def UserSQL(
+    userId: OID,
+    query: String,
+    version: Int = 0
+  ): SqlQuery = NotificationPersistence.UserSQL(userId, query, version)
+
   val parseRow =
-    oid("id") ~ int("userVersion") map { case i ~ v => UserInfo(i, v) }
-  
-  def evolveUp(userId:UserId) = {
+    (oid("id") ~ int("userVersion")).map { case i ~ v => UserInfo(i, v) }
+
+  def evolveUp(userId: UserId) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
     // quite likely not, but as it stands this is a tad riskier than I like:
     val info = QDB(System) { implicit conn =>
@@ -39,7 +45,7 @@ trait UserStep extends EcologyMember {
     }
     QDB(User) { implicit spaceConn =>
 //      backupTables(info)(spaceConn)
-      doEvolve(info)(spaceConn)        
+      doEvolve(info)(spaceConn)
     }
     QDB(System) { implicit conn =>
       SQL("""
@@ -47,7 +53,7 @@ trait UserStep extends EcologyMember {
           """).on("version" -> version, "id" -> userId.raw).executeUpdate
     }
   }
-  
+
   /**
    * For the time being at least, we back up the current state of the Space before we
    * evolve it. Eventually, we'll want to get rid of these, but better safe than sorry
@@ -63,13 +69,17 @@ trait UserStep extends EcologyMember {
 //        INSERT {bname} SELECT * FROM {tname}
 //        """, info.version).executeUpdate
 //  }
-  
+
   /**
    * Individual Steps need to fill this in. Note that it happens within an existing transaction, and
    * the higher levels deal with altering the version number in the Spaces table.
    */
-  def doEvolve(info:UserInfo)(implicit conn:Connection):Unit
+  def doEvolve(info: UserInfo)(implicit conn: Connection): Unit
 }
-  
-case class UserInfo(id:UserId, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
-}
+
+case class UserInfo(
+  id: UserId,
+  version: Int
+)(implicit
+  val ecology: Ecology
+) extends EcologyMember {}

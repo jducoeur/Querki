@@ -4,8 +4,8 @@ import scala.concurrent.duration._
 import akka.pattern._
 import akka.util.Timeout
 import querki.console.CommandEffectArgs
-import querki.console.ConsoleFunctions.{ErrorResult, DisplayTextResult}
-import querki.ecology.{QuerkiEcot, EcotIds}
+import querki.console.ConsoleFunctions.{DisplayTextResult, ErrorResult}
+import querki.ecology.{EcotIds, QuerkiEcot}
 import querki.globals._
 import querki.session.messages._
 import querki.spaces.messages.SpaceSubsystemRequest
@@ -16,7 +16,7 @@ object MOIDs extends EcotIds(77) {
   val ClearDebugLogCommandOID = moid(3)
 }
 
-class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+class DebuggingEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
 
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -24,11 +24,14 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
 
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  /***********************************************
-    * FUNCTIONS
-    ***********************************************/
+  /**
+   * *********************************************
+   * FUNCTIONS
+   * *********************************************
+   */
 
-  lazy val DebugLogMethod = new InternalMethod(DebugLogMethodOID,
+  lazy val DebugLogMethod = new InternalMethod(
+    DebugLogMethodOID,
     toProps(
       setName("_debugLog"),
       Categories(DebuggingTag),
@@ -50,7 +53,8 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
           |
           |This only works for logged-in users, by the nature of how this command works. If the current viewer
           |isn't logged in, this will just silently pass through and not do anything.
-        """.stripMargin),
+        """.stripMargin
+      ),
       Signature(
         expected = Some(Seq(AnyType), "Anything"),
         reqs = Seq(
@@ -59,8 +63,9 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
         opts = Seq.empty,
         returns = (AnyType, "The value that was originally received")
       )
-    ))
-  {
+    )
+  ) {
+
     override def qlApply(inv: Invocation): QFut = {
       val isRealUser = inv.context.request.requester.isDefined
       if (isRealUser) {
@@ -72,8 +77,7 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
           request = SpaceSubsystemRequest(requester, inv.state.id, AddToDebugLog(rendered))
           // Note that this one is intentionally fire-and-forget:
           _ = SpaceOps.spaceRegion ! request
-        }
-          yield inv.context.value
+        } yield inv.context.value
         result
       } else {
         // Only logged-in users will show up here:
@@ -82,9 +86,11 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
     }
   }
 
-  /***********************************************
-    * COMMANDS
-    ***********************************************/
+  /**
+   * *********************************************
+   * COMMANDS
+   * *********************************************
+   */
 
   lazy val GetDebugLogCommand = Console.defineSpaceCommand(
     GetDebugLogCommandOID,
@@ -129,7 +135,7 @@ class DebuggingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs
           implicit val timeout = Timeout(2 seconds)
           (SpaceOps.spaceRegion ? request).map {
             case DebugLogCleared => DisplayTextResult("Debug log cleared.")
-            case _ => ErrorResult("Got an expected result!")
+            case _               => ErrorResult("Got an expected result!")
           }
         }
         case None => fut(ErrorResult("The `Show Debug Log` command is only available when you are logged in."))

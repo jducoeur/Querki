@@ -9,37 +9,42 @@ import org.querki.facades.bootstrap._
 import querki.display.HookedGadget
 import querki.globals._
 
-class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) {
-  def doRender() = span(cls:="_deleteCommentButton", "x")
-  
+class DeleteButton(doDelete: () => Unit)(implicit e: Ecology) extends HookedGadget[dom.html.Span](e) {
+  def doRender() = span(cls := "_deleteCommentButton", "x")
+
   def hook() = {
     $(elem).on("click", confirmDelete)
   }
 
-  lazy val confirmDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
+  lazy val confirmDelete: Function1[JQueryEventObject, js.Any] = { (evt: JQueryEventObject) =>
     val deleteButton = $(elem)
-    deleteButton.popover(PopoverOptions.
-      content("Click again to delete"). 
-      placement(Position.left). 
-      trigger(Trigger.manual)
+    deleteButton.popover(
+      PopoverOptions.content("Click again to delete").placement(Position.left).trigger(Trigger.manual)
     )
     deleteButton.popover(PopoverCommand.show)
     deleteButton.off("click")
     deleteButton.on("click", reallyDelete)
-    dom.window.setTimeout({ () =>
-      deleteButton.popover(PopoverCommand.hide)
-      deleteButton.off("click")
-      deleteButton.on("click", confirmDelete)
-    }, 2000)
+    dom.window.setTimeout(
+      { () =>
+        deleteButton.popover(PopoverCommand.hide)
+        deleteButton.off("click")
+        deleteButton.on("click", confirmDelete)
+      },
+      2000
+    )
   }
-  
-  lazy val reallyDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
+
+  lazy val reallyDelete: Function1[JQueryEventObject, js.Any] = { (evt: JQueryEventObject) =>
     doDelete()
   }
 }
 
-class DeleteInstanceButton(doDelete:() => Unit)(implicit e:Ecology) extends DeleteButton(doDelete)(e) {
-  override def doRender() = span(cls:="_deleteInstanceButton", i(title:="Click to delete this", cls:="glyphicon glyphicon-trash _withTooltip"))  
+class DeleteInstanceButton(doDelete: () => Unit)(implicit e: Ecology) extends DeleteButton(doDelete)(e) {
+
+  override def doRender() = span(
+    cls := "_deleteInstanceButton",
+    i(title := "Click to delete this", cls := "glyphicon glyphicon-trash _withTooltip")
+  )
 }
 
 /**
@@ -50,12 +55,15 @@ class DeleteInstanceButton(doDelete:() => Unit)(implicit e:Ecology) extends Dele
 object DeleteInstanceButton extends querki.display.QuerkiUIUtils {
   import autowire._
   import querki.api.ThingFunctions
-  
-  def apply(rawElement:dom.html.Span)(implicit e:Ecology) = {
+
+  def apply(rawElement: dom.html.Span)(implicit e: Ecology) = {
     (new DeleteInstanceButton(deleteFunc(rawElement, e))).setElem(rawElement)
   }
-  
-  def deleteFunc(button:dom.Element, e:Ecology) = { () =>
+
+  def deleteFunc(
+    button: dom.Element,
+    e: Ecology
+  ) = { () =>
     val editor = $(button).parents("._instanceEditor")
     val thingId = editor.tidString("thingid")
     val Client = e.api[querki.client.Client]

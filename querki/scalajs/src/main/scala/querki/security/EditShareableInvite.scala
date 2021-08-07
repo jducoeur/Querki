@@ -12,7 +12,7 @@ import org.querki.jquery._
 
 import querki.api.ThingFunctions
 import querki.api.ThingFunctions._
-import querki.data.{PropValInfo, ThingInfo, TOID}
+import querki.data.{PropValInfo, TOID, ThingInfo}
 import querki.display.{ButtonGadget, Dialog, QuerkiUIUtils}
 import querki.display.input._
 import querki.display.rx.RxCheckbox
@@ -23,11 +23,13 @@ import querki.globals._
 import SecurityFunctions._
 
 class ShareableInviteUrlButton(invite: SharedLinkInfo)(implicit val ecology: Ecology)
-  extends Gadget[html.Element] with QuerkiUIUtils with EcologyMember
-{
+  extends Gadget[html.Element]
+     with QuerkiUIUtils
+     with EcologyMember {
   lazy val Client = interface[querki.client.Client]
-  
+
   val urlDisplay = GadgetRef.of[html.Input]
+
   def copyUrlToClipboard() = {
     urlDisplay.mapElemNow { e =>
       $(e).focus()
@@ -36,24 +38,23 @@ class ShareableInviteUrlButton(invite: SharedLinkInfo)(implicit val ecology: Eco
       dom.window.document.execCommand("copy")
     }
   }
-  
+
   def showDialogForUrl(url: String) = {
-    val d = 
+    val d =
       new Dialog(
         s"Share Invitation ${invite.thingInfo.displayName}",
         div(
           p("Press the Copy button to copy the Link to your clipboard"),
-          div(cls := "input-group",
+          div(
+            cls := "input-group",
             urlDisplay <= input(
               tpe := "text",
               cls := "form-control",
-              value := url),
-            span(cls := "input-group-btn",
-              button(cls := "btn btn-default",
-                tpe := "button",
-                "Copy",
-                onclick := { () => copyUrlToClipboard() } 
-              )
+              value := url
+            ),
+            span(
+              cls := "input-group-btn",
+              button(cls := "btn btn-default", tpe := "button", "Copy", onclick := { () => copyUrlToClipboard() })
             )
           )
         ),
@@ -61,44 +62,60 @@ class ShareableInviteUrlButton(invite: SharedLinkInfo)(implicit val ecology: Eco
       )
     d.show()
   }
-  
+
   override def onCreate(e: html.Element) = {
     $(e).click { evt: JQueryEventObject =>
       for {
         url <- Client[SecurityFunctions].getSharedLinkURL(invite.thingInfo.oid2).call()
-      }
-        showDialogForUrl(url)
+      } showDialogForUrl(url)
     }
   }
-  
+
   def doRender() = faIconButton("share-alt", Seq("btn-xs"))
 }
-  
-class OneInviteGadget(inviteIn: SharedLinkInfo, role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner) 
-  extends OneItemGadget[SharedLinkInfo](inviteIn)
-{
+
+class OneInviteGadget(
+  inviteIn: SharedLinkInfo,
+  role: ThingInfo
+)(implicit
+  e: Ecology,
+  ctx: Ctx.Owner
+) extends OneItemGadget[SharedLinkInfo](inviteIn) {
   def displayName(invite: SharedLinkInfo): String = invite.thingInfo.displayName
-  override def listingButtons(current: SharedLinkInfo) = 
+
+  override def listingButtons(current: SharedLinkInfo) =
     if (current.enabled)
       Some(span(" ", new ShareableInviteUrlButton(current)))
     else
       Some(span(" (closed)"))
-  def prepToEdit(invite: SharedLinkInfo, completer: EditCompleter[SharedLinkInfo]): Future[EditShareableInvite] =
+
+  def prepToEdit(
+    invite: SharedLinkInfo,
+    completer: EditCompleter[SharedLinkInfo]
+  ): Future[EditShareableInvite] =
     EditShareableInvite.prepToEdit(invite, role, completer)
 }
 
-class RoleInvitesList(invites: Seq[SharedLinkInfo], role: ThingInfo)(implicit e: Ecology, ctx: Ctx.Owner)
-  extends ItemListManager(
-    invites, 
-    "Shareable Invitations", 
+class RoleInvitesList(
+  invites: Seq[SharedLinkInfo],
+  role: ThingInfo
+)(implicit
+  e: Ecology,
+  ctx: Ctx.Owner
+) extends ItemListManager(
+    invites,
+    "Shareable Invitations",
     "Create a new Invitation",
     div(
-      p("""A Shareable Invitation is a link that you can share with whoever you like -- by email, webpage, or however.
+      p(
+        """A Shareable Invitation is a link that you can share with whoever you like -- by email, webpage, or however.
           |Anyone who clicks on that link will be able to join the Space, with this Role. Click on the name of an
           |Invitation to edit it, or its """.stripMargin,
         a(cls := "btn btn-default btn-xs querki-icon-button", i(cls := "fa fa-share-alt fa-lg")),
-        " button to get the shareable link. If an invitation has been closed, it will be labeled as such.")))
-{
+        " button to get the shareable link. If an invitation has been closed, it will be labeled as such."
+      )
+    )
+  ) {
   def showItem(invite: SharedLinkInfo) = new OneInviteGadget(invite, role)
   def prepToCreate(completer: EditCompleter[SharedLinkInfo]) = EditShareableInvite.create(role, completer)
 }
@@ -107,33 +124,35 @@ import SaveablePropertyValue._
 
 /**
  * This is the actual editor for Shareable Invitations.
- * 
+ *
  * TODO: this is sufficiently similar to the EditRolePanel that they likely can/should be refactored.
  */
 class EditShareableInvite(
-    inviteOpt: Option[SharedLinkInfo],
-    forRole: ThingInfo,
-    completer: EditCompleter[SharedLinkInfo]
-  )(implicit val ecology: Ecology, ctx: Ctx.Owner) 
-  extends Gadget[html.Div] with EcologyMember 
-{
+  inviteOpt: Option[SharedLinkInfo],
+  forRole: ThingInfo,
+  completer: EditCompleter[SharedLinkInfo]
+)(implicit
+  val ecology: Ecology,
+  ctx: Ctx.Owner
+) extends Gadget[html.Div]
+     with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
-  
+
   lazy val std = DataAccess.std
-  
+
   val requiresMembership: Var[Boolean] = Var(inviteOpt.map(_.requiresMembership).getOrElse(false))
   val enabled: Var[Boolean] = Var(inviteOpt.map(_.enabled).getOrElse(true))
-  
+
   type InputGadgetRef = GadgetRef[InputGadget[_]]
-  
+
   val nameInput = GadgetRef[InputGadget[_]]
-  
+
   val creating = inviteOpt.isEmpty
   def initialName = inviteOpt.map(_.thingInfo.displayName).getOrElse("")
-  
+
   def changeMsgs(): List[PropertyChange] = {
-    def s[T: SaveablePropertyValue](t: T) = t.getSaveable
+    def s[T : SaveablePropertyValue](t: T) = t.getSaveable
     List(
       s(nameInput),
       s(HardcodedSaveable(std.security.inviteRoleLink, List(forRole.oid2.underlying))),
@@ -145,15 +164,18 @@ class EditShareableInvite(
         None
     ).flatten
   }
+
   def saveMsg(): PropertyChange = {
     MultiplePropertyChanges(changeMsgs())
   }
-  
+
   def spacer = p(" ")
-  
-  def doRender() = 
-    div(cls := "panel panel-default",
-      div(cls := "panel-heading",
+
+  def doRender() =
+    div(
+      cls := "panel panel-default",
+      div(
+        cls := "panel-heading",
         div(
           if (creating)
             "Create new Shared Invitation"
@@ -161,41 +183,41 @@ class EditShareableInvite(
             span(b(initialName))
         )
       ),
-      div(cls := "panel-body",
+      div(
+        cls := "panel-body",
         form(
           // Edit the name of the Invite:
-          div(cls := "form-group",
+          div(
+            cls := "form-group",
             label("Invitation Name"),
-            nameInput <= 
-              new TextInputGadget(Seq("form-control", "col-md-3"), value := initialName)
-                with NoAutoSave
-                with ForProp { val prop = std.basic.displayNameProp }
+            nameInput <=
+              new TextInputGadget(Seq("form-control", "col-md-3"), value := initialName) with NoAutoSave with ForProp {
+                val prop = std.basic.displayNameProp
+              }
           ),
-          
-          div(cls := "form-group",
+          div(
+            cls := "form-group",
             label("Does this Invitation require login?"),
             p("""If you check this, people who use this Invitation will be required to sign up; they
                 |cannot participate as anonymous guests.""".stripMargin),
             new RxCheckbox(requiresMembership, "Login required")
           ),
-          
-          div(cls := "form-group",
+          div(
+            cls := "form-group",
             label("Is this Invitation currently open?"),
             p("""If you uncheck this, the invitation will be closed; anyone trying to use it will be
                 |turned away. You should uncheck this if the invitation has become available to people
                 |who you don't want to be able to join.""".stripMargin),
             new RxCheckbox(enabled, "Invitation currently open")
           ),
-          
           div(
-            new ButtonGadget(ButtonGadget.Primary, "Save")({() => 
+            new ButtonGadget(ButtonGadget.Primary, "Save")({ () =>
               inviteOpt match {
                 case Some(invite) => {
                   for {
                     result <- InputGadget.doSaveChange(invite.thingInfo.oid, saveMsg())
                     newInvite <- Client[SecurityFunctions].getOneSharedLink(invite.thingInfo.oid2).call()
-                  }
-                    completer.editComplete(Some(newInvite))
+                  } completer.editComplete(Some(newInvite))
                 }
                 case None => {
                   for {
@@ -203,14 +225,12 @@ class EditShareableInvite(
                     // MultiplePropertyChanges:
                     newInviteThing <- Client[EditFunctions].create(std.security.sharedInviteModel, changeMsgs()).call()
                     newInvite <- Client[SecurityFunctions].getOneSharedLink(newInviteThing.oid2).call()
-                  }
-                    completer.editComplete(Some(newInvite))
+                  } completer.editComplete(Some(newInvite))
                 }
               }
             }),
-            
             " ",
-            new ButtonGadget(ButtonGadget.Normal, "Cancel")({() =>
+            new ButtonGadget(ButtonGadget.Normal, "Cancel")({ () =>
               completer.editComplete(None)
             })
           )
@@ -220,17 +240,29 @@ class EditShareableInvite(
 }
 
 object EditShareableInvite {
-  def prepToEdit(invite: SharedLinkInfo, forRole: ThingInfo, completer: EditCompleter[SharedLinkInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
+
+  def prepToEdit(
+    invite: SharedLinkInfo,
+    forRole: ThingInfo,
+    completer: EditCompleter[SharedLinkInfo]
+  )(implicit
+    ecology: Ecology,
+    ctx: Ctx.Owner
+  ): Future[EditShareableInvite] = {
     for {
       dummy <- Future.successful(())
-    }
-      yield new EditShareableInvite(Some(invite), forRole, completer)
+    } yield new EditShareableInvite(Some(invite), forRole, completer)
   }
-  
-  def create(forRole: ThingInfo, completer: EditCompleter[SharedLinkInfo])(implicit ecology: Ecology, ctx: Ctx.Owner): Future[EditShareableInvite] = {
+
+  def create(
+    forRole: ThingInfo,
+    completer: EditCompleter[SharedLinkInfo]
+  )(implicit
+    ecology: Ecology,
+    ctx: Ctx.Owner
+  ): Future[EditShareableInvite] = {
     for {
       dummy <- Future.successful(())
-    }
-      yield new EditShareableInvite(None, forRole, completer)
+    } yield new EditShareableInvite(None, forRole, completer)
   }
 }

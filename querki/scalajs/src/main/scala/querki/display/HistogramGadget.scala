@@ -10,14 +10,14 @@ import querki.globals._
  * This receives a DList from the server, describing the histogram data, and transforms
  * it into a graphical histogram.
  */
-class HistogramGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLTableElement](e) {
+class HistogramGadget(implicit e: Ecology) extends HookedGadget[dom.HTMLTableElement](e) {
   def doRender() = ???
-  
+
   def hook() = {
     // The original DList, which we are going to replace:
     val dl = $(elem)
-    val maxWidth:Float = 100  // TODO: can we take this from the width or something?
-    
+    val maxWidth: Float = 100 // TODO: can we take this from the width or something?
+
     val labels = dl.find("dt").mapElems($(_).text())
     val scores = dl.find("dd").mapElems(e => Integer.parseInt($(e).text()))
     val maxScore =
@@ -32,21 +32,22 @@ class HistogramGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLTableElem
         0
       else
         maxWidth / maxScore
-        
+
     val pairs = labels.zip(scores)
     val indexedPairs = pairs.zipWithIndex
     val tbl =
-      table(cls:="generatedHistogram",
+      table(
+        cls := "generatedHistogram",
         indexedPairs.map { indexedPair =>
           val (pair, index) = indexedPair
           tr(
-            td(cls:="histoName", pair._1),
-            td(cls:="histoScore", pair._2),
-            td(div(cls:=s"histoBar histoBar-$index", width:=s"${pair._2 * scale}px"))
+            td(cls := "histoName", pair._1),
+            td(cls := "histoScore", pair._2),
+            td(div(cls := s"histoBar histoBar-$index", width := s"${pair._2 * scale}px"))
           )
         }
       ).render
-      
+
     dl.after(tbl)
     setElem(tbl)
     dl.hide()

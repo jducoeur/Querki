@@ -32,56 +32,72 @@ object Collections {
   val collSerialOpen = '\u0002'
   val collSerialClose = '\u0003'
   val collSerialDelimit = '\u001e'
-  
+
   val collSerialOpenStr = s"$collSerialOpen"
   val collSerialCloseStr = s"$collSerialClose"
   val collSerialDelimitStr = s"$collSerialDelimit"
-  
+
   /*
    * Marker for an empty Text field. Placed here simply to keep these special characters in one place.
    */
-  val emptyTextMarker = '\u001f'  
+  val emptyTextMarker = '\u001f'
   val emptyTextMarkerStr = s"$emptyTextMarker"
 }
 
-trait CollectionBase { self:CoreEcot =>
-  def UnknownType:PType[Unit]
-  
-  abstract class SystemCollection(cid:OID, pf:PropMap)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
-  {
+trait CollectionBase { self: CoreEcot =>
+  def UnknownType: PType[Unit]
+
+  abstract class SystemCollection(
+    cid: OID,
+    pf: PropMap
+  )(implicit
+    e: Ecology
+  ) extends Collection(cid, systemOID, UrCollectionOID, pf) {
     import Collections._
-    
+
     type implType = List[ElemValue]
-    
+
     // This is loosely adapted from SpacePersistence.escape()/unescape(). Can we come up with a unified approach?
     // TODO: I *think* this is good enough to cope with truly nested data structures, but we need to test that.
     val collEscape = '\u0005'
     val collEscapeStr = s"$collEscape"
     val escDelimit = s"$collEscape$collSerialDelimit"
-    def escape(str:String) = {
+
+    def escape(str: String) = {
       str.replace(collSerialDelimitStr, escDelimit)
     }
-    def unescape(str:String) = {
+
+    def unescape(str: String) = {
       str.replace(escDelimit, collSerialDelimitStr)
     }
+
     def showDelimiters(str: String): String = {
-      str.
-        replace(collEscapeStr, "ESC").
-        replace(collSerialDelimitStr, "DELIMIT").
-        replace(collSerialCloseStr, "CLOSE").
-        replace(collSerialOpenStr, "OPEN")
+      str.replace(collEscapeStr, "ESC").replace(collSerialDelimitStr, "DELIMIT").replace(
+        collSerialCloseStr,
+        "CLOSE"
+      ).replace(collSerialOpenStr, "OPEN")
     }
-  
+
     /**
      * Concrete Collections should override this if they previously stored their data in a different
      * format. We fall back to that when deserializing a record that doesn't fit the current format.
      */
-    def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = ???
-    
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+    def oldDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = ???
+
+    def doDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = {
       if (ser.isEmpty || ser.head != collSerialOpen) {
         oldDeserialize(ser, elemT)
-      } else { 
+      } else {
         val guts = ser.slice(1, ser.length() - 1)
 
         if (guts.isEmpty())
@@ -89,7 +105,11 @@ trait CollectionBase { self:CoreEcot =>
         else {
           // This walks through the String, splitting it on delimiters:
           @tailrec
-          def splitElems(elemStart: Int, checkFrom: Int, soFar: Vector[String]): Vector[String] = {
+          def splitElems(
+            elemStart: Int,
+            checkFrom: Int,
+            soFar: Vector[String]
+          ): Vector[String] = {
             val nextDelimit = guts.indexOf(collSerialDelimit, checkFrom)
             if (nextDelimit == -1)
               // We're done:
@@ -108,34 +128,49 @@ trait CollectionBase { self:CoreEcot =>
         }
       }
     }
-    
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      v.map(elem => escape(elemT.serialize(elem))).
-        mkString(collSerialOpenStr, collSerialDelimitStr, collSerialCloseStr)
+
+    def doSerialize(
+      v: implType,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): String = {
+      v.map(elem => escape(elemT.serialize(elem))).mkString(collSerialOpenStr, collSerialDelimitStr, collSerialCloseStr)
     }
   }
 
-  abstract private[core] class SingleElementBase(cid:OID, pf:PropMap)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
-  {
+  private[core] abstract class SingleElementBase(
+    cid: OID,
+    pf: PropMap
+  )(implicit
+    e: Ecology
+  ) extends SystemCollection(cid, pf)(e) {
+
     // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
     // stuff out from the core concepts.
     // TODO: this will need refactoring, to get more complex on a per-Collection basis
-    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo = {
+    def fromUser(
+      on: Option[Thing],
+      form: Form[_],
+      prop: Property[_, _],
+      elemT: pType,
+      containers: Option[FieldIds],
+      state: SpaceState
+    ): FormFieldInfo = {
       implicit val s = state
       val fieldIds = new FieldIds(on, prop, containers)
-      val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
+      val empty = form(fieldIds.emptyControlId).value.map(_.toBoolean).getOrElse(false)
       if (empty) {
         FormFieldInfo(prop, None, true, true)
       } else {
         val formV = form(fieldIds.inputControlId).value
         formV match {
-        // Normal case: pass it to the PType for parsing the value out:
+          // Normal case: pass it to the PType for parsing the value out:
           case Some(v) => {
             rawInterpretation(v, prop, elemT).getOrElse {
-              TryTrans { elemT.validate(v, prop, state) }.
-                onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
-                onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
-                result
+              TryTrans { elemT.validate(v, prop, state) }.onSucc { _ =>
+                FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v))
+              }.onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.result
             }
           }
           // There was no field value found. In this case, we take the default. That
@@ -146,20 +181,32 @@ trait CollectionBase { self:CoreEcot =>
         }
       }
     }
-  
-    def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
-    
-    def fromUserString(prop:AnyProp, v:String, elemT:pType, state:SpaceState):FormFieldInfo = {
+
+    def rawInterpretation(
+      v: String,
+      prop: Property[_, _],
+      elemT: pType
+    ): Option[FormFieldInfo] = None
+
+    def fromUserString(
+      prop: AnyProp,
+      v: String,
+      elemT: pType,
+      state: SpaceState
+    ): FormFieldInfo = {
       implicit val s = state
       rawInterpretation(v, prop, elemT).getOrElse {
-          TryTrans { elemT.validate(v, prop, state) }.
-            onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
-            onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
-            result
+        TryTrans { elemT.validate(v, prop, state) }.onSucc { _ =>
+          FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v))
+        }.onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.result
       }
     }
-    
-    def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = {
+
+    def fromUser(
+      info: FieldIds,
+      vs: List[String],
+      state: SpaceState
+    ): FormFieldInfo = {
       val prop = info.p
       val elemT = prop.pType
       vs.headOption match {
@@ -171,49 +218,91 @@ trait CollectionBase { self:CoreEcot =>
       }
     }
   }
-  
+
   /**
    * ExactlyOne is essentially Some -- it is quite intentionally Optional without the choice of None.
-   * 
+   *
    * Sadly, though, Option isn't actually an Iterable, and trying to use type views to do this
    * was making me nuts.
-   * 
+   *
    * TODO: rewrite ExactlyOne and Optional to be based on an actual Iterable with the right semantics.
    */
-  class ExactlyOneBase(oid:OID) extends SingleElementBase(oid, 
+  class ExactlyOneBase(oid: OID)
+    extends SingleElementBase(
+      oid,
       toProps(
-        setName(commonName(_.core.exactlyOneColl)))) 
-  {
-    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+        setName(commonName(_.core.exactlyOneColl))
+      )
+    ) {
+
+    override def oldDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = {
       List(elemT.deserialize(ser))
     }
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] = {
       elemT.wikify(context)(v.headOption.getOrElse(elemT.default(context.state)), displayOpt, lexicalThing)
     }
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType = {
       List(elemT.default)
     }
-    def wrap(elem:ElemValue):implType = List(elem)
-    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+    def wrap(elem: ElemValue): implType = List(elem)
+
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] = {
       implicit val s = context.state
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, context, currentValue, v)
     }
 
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
-    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOneBase, pType:PType[_]) extends QValue
-    
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = ExactlyOnePropValue(cv.toList, this, elemT)
+
+    protected case class ExactlyOnePropValue(
+      cv: implType,
+      cType: ExactlyOneBase,
+      pType: PType[_]
+    ) extends QValue
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = {
       val old = v.headOption
       (makePropValue(List(elem), elem.pType), old)
     }
   }
-  
-  abstract class QListBase(cid:OID, pf:PropMap) extends SystemCollection(cid, pf) 
-  {
-    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
-      val guts = 
+
+  abstract class QListBase(
+    cid: OID,
+    pf: PropMap
+  ) extends SystemCollection(cid, pf) {
+
+    override def oldDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = {
+      val guts =
         // Note: this is a bit of a hack. We've had at least one Issue (.3y28amy) where we accidentally
         // stored Set data as ExactlyOne. As a result, the storage format was wrong. We don't want to
         // lose data, so for now we're making this a bit forgiving. This is kind of awful, but given
@@ -230,35 +319,46 @@ trait CollectionBase { self:CoreEcot =>
         elemStrs.map(elemT.deserialize(_))
       }
     }
-    
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
-      Future.sequence(v.map(elem => elemT.wikify(context)(elem, displayOpt, lexicalThing))) map { renderedElems =>
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] = {
+      Future.sequence(v.map(elem => elemT.wikify(context)(elem, displayOpt, lexicalThing))).map { renderedElems =>
         // Concatenate the rendered elements, with newlines in-between:
-        (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))        
+        (Wikitext.empty /: renderedElems)((soFar, next) => soFar.+(next, true))
       }
     }
-    
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = List.empty
-    
-    def wrap(elem:ElemValue):implType = List(elem)
-    
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType = List.empty
+
+    def wrap(elem: ElemValue): implType = List(elem)
+
     val empty = makePropValue(List.empty[ElemValue], UnknownType)
-    def empty(elemT:pType):QValue = makePropValue(List.empty[ElemValue], elemT)   
+    def empty(elemT: pType): QValue = makePropValue(List.empty[ElemValue], elemT)
 
     // TODO: this stuff is QList-specific. We'll want something different for QSet, but much of that is
     // already in HtmlRenderer.
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] = {
       implicit val state = context.state
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
       for {
         defaultElem <- elemT.renderInput(prop, context, currentValue.copy(i = Some(-1)), elemT.default)
         defaulted = HtmlRenderer.addClasses(defaultElem, "inputTemplate list-input-element")
-        inputTemplate = XmlHelpers.mapElems(defaulted) ( _ %      
-          Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
-          Null))
+        inputTemplate = XmlHelpers.mapElems(defaulted)(_ %
+          Attribute("data-basename", Text(currentValue.collectionControlId + "-item"), Null))
         addButtonId = currentValue.collectionControlId + "-addButton"
         gutsses =
           currentValue.effectiveV.map { v =>
@@ -268,37 +368,49 @@ trait CollectionBase { self:CoreEcot =>
               val elemCurrentValue = currentValue.copy(i = Some(i))
               elemT.renderInput(prop, context, elemCurrentValue, elemV).map { simplyRendered =>
                 val withClasses = HtmlRenderer.addClasses(simplyRendered, "list-input-element")
-                val itemRendered:NodeSeq = XmlHelpers.mapElems(withClasses) { elem =>
+                val itemRendered: NodeSeq = XmlHelpers.mapElems(withClasses) { elem =>
                   elem %
-                    Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
-                    Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+                    Attribute(
+                      "id",
+                      Text(currentValue.collectionControlId + "-item[" + i + "]"),
+                      Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null)
+                    )
                 }
-                <li class="list-input-item">{itemRendered}</li>                
+                <li class="list-input-item">{itemRendered}</li>
               }
             }
           }.getOrElse(Seq(fut(NodeSeq.Empty)))
         guts <- Future.sequence(gutsses)
-      }
-      yield 
-        <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
+      } yield <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
           {
-            currentValue.thingId match {
-              case Some(thingId) => <ul id={currentValue.collectionControlId} class="sortableList" data-thing={thingId}>{guts}</ul>
-              case None => <ul id={currentValue.collectionControlId} class="sortableList">{guts}</ul>
-            }
-          }
+        currentValue.thingId match {
+          case Some(thingId) =>
+            <ul id={currentValue.collectionControlId} class="sortableList" data-thing={thingId}>{guts}</ul>
+          case None => <ul id={currentValue.collectionControlId} class="sortableList">{guts}</ul>
+        }
+      }
           <button class="add-item-button btn-xs" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
-          <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
+          <input type="hidden" id={currentValue.collectionControlId + "-size"} value={
+        currentValue.v.map(_.cv.size).getOrElse(0).toString
+      }/>
           {inputTemplate}
         </div>
     }
-    
+
     import play.api.data.Form
+
     // TODO: this will want to be refactored with the default version in Collection.scala
-    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo = {
+    override def fromUser(
+      on: Option[Thing],
+      form: Form[_],
+      prop: Property[_, _],
+      elemT: pType,
+      containers: Option[FieldIds],
+      state: SpaceState
+    ): FormFieldInfo = {
       implicit val s = state
       val fieldIds = new FieldIds(on, prop, containers)
-      val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
+      val empty = form(fieldIds.emptyControlId).value.map(_.toBoolean).getOrElse(false)
       if (empty) {
         FormFieldInfo(prop, None, true, true)
       } else {
@@ -306,21 +418,35 @@ trait CollectionBase { self:CoreEcot =>
         val oldList = form(oldListName)
         val oldIndexes = oldList.indexes
         val oldRaw =
-          for (i <- oldIndexes;
-               v <- oldList("[" + i + "]").value)
-            yield v
+          for {
+            i <- oldIndexes
+            v <- oldList("[" + i + "]").value
+          } yield v
         val oldVals = oldRaw.map(elemT.fromUser(_)).toList
         FormFieldInfo(prop, Some(makePropValue(oldVals, elemT)), false, true)
       }
     }
-    protected case class QListPropValue(cv:implType, cType:QListBase, pType:PType[_]) extends QValue    
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
-    
-    def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = {
+
+    protected case class QListPropValue(
+      cv: implType,
+      cType: QListBase,
+      pType: PType[_]
+    ) extends QValue
+
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = QListPropValue(cv.toList, this, elemT)
+
+    def fromUser(
+      info: FieldIds,
+      vs: List[String],
+      state: SpaceState
+    ): FormFieldInfo = {
       val prop = info.p
       val elemT = prop.pType
       implicit val s = state
-      
+
       val elems = info.listIndex match {
         case Some(i) => {
           // This should be replacing a single element, so we need to splice it into the existing list:
@@ -330,66 +456,127 @@ trait CollectionBase { self:CoreEcot =>
             oldPV <- t.getPropOpt(prop)
             oldList = oldPV.v.cv.toList
             newElem = elemT.fromUser(v)
-          }
-            yield oldList.updated(i, newElem)
-            
+          } yield oldList.updated(i, newElem)
+
           result.getOrElse(throw new Exception(s"QList.fromUser got inconsistent fieldIds $info with values $vs"))
         }
         case None => vs.map(elemT.fromUser(_)).toList
-      } 
-        
+      }
+
       FormFieldInfo(prop, Some(makePropValue(elems, elemT)), false, true)
     }
-    
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = {
       (makePropValue(v :+ elem, elem.pType), None)
     }
   }
 
 }
 
-trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
+trait CollectionCreation { self: CoreEcot with CollectionBase with CoreExtra =>
 
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case
    * we want to be able to write new collections.
    */
-  class UrCollection extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
+  class UrCollection
+    extends Collection(
+      UrCollectionOID,
+      systemOID,
+      querki.core.MOIDs.RootOID,
       toProps(
         setName("Collection"),
         setInternal
-        ))
-  {
+      )
+    ) {
     type implType = List[ElemValue]
-  
-    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = 
-      throw new Error("Trying to deserialize root collection!")
-    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = 
-      throw new Error("Trying to serialize root collection!")
-    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
-      throw new Error("Trying to render root collection!")
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = 
-      throw new Error("Trying to default root collection!")    
-    def wrap(elem:ElemValue):implType =
-      throw new Error("Trying to wrap root collection!")    
-    def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
-      throw new Error("Trying to makePropValue root collection!")    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] =
-      throw new Error("Trying to render input on root collection!")
-    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
-      throw new Error("Trying to fromUser on root collection!")
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
-    def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
-  }
-  
-  class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
 
-  class Optional extends SingleElementBase(OptionalOID,
+    def doDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType =
+      throw new Error("Trying to deserialize root collection!")
+
+    def doSerialize(
+      v: implType,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): String =
+      throw new Error("Trying to serialize root collection!")
+
+    def doWikify(
+      context: QLContext
+    )(
+      ser: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] =
+      throw new Error("Trying to render root collection!")
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType =
+      throw new Error("Trying to default root collection!")
+
+    def wrap(elem: ElemValue): implType =
+      throw new Error("Trying to wrap root collection!")
+
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      pType: PType[_]
+    ): QValue =
+      throw new Error("Trying to makePropValue root collection!")
+
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] =
+      throw new Error("Trying to render input on root collection!")
+
+    def fromUser(
+      on: Option[Thing],
+      form: Form[_],
+      prop: Property[_, _],
+      elemT: pType,
+      containers: Option[FieldIds],
+      state: SpaceState
+    ): FormFieldInfo =
+      throw new Error("Trying to fromUser on root collection!")
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = ???
+
+    def fromUser(
+      info: FieldIds,
+      vs: List[String],
+      state: SpaceState
+    ): FormFieldInfo = ???
+  }
+
+  class ExactlyOne(implicit e: Ecology) extends ExactlyOneBase(ExactlyOneOID)
+
+  class Optional
+    extends SingleElementBase(
+      OptionalOID,
       toProps(
         setName(commonName(_.core.optionalColl))
-        )) 
-  {
-    override def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = {
+      )
+    ) {
+
+    override def rawInterpretation(
+      v: String,
+      prop: Property[_, _],
+      elemT: pType
+    ): Option[FormFieldInfo] = {
       // If the input was empty, that's QNone.
       // TODO: this isn't good enough for the long run -- we'll have to do something more
       // sophisticated when we get to complex Types. But it's a start.
@@ -398,31 +585,57 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       else
         None
     }
-    
-    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
+
+    override def oldDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = {
       ser match {
         case "!" => Nil
-        case s:String => {
+        case s: String => {
           val elemStr = s.slice(1, s.length() - 1)
           List(elemT.deserialize(elemStr))
         }
       }
     }
-    
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] = {
       v match {
         case elem :: rest => elemT.wikify(context)(elem, displayOpt, lexicalThing)
-        case Nil => fut(Wikitext(""))
+        case Nil          => fut(Wikitext(""))
       }
     }
-    
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
-    
-    def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
-    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
-    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType = Nil
+
+    def wrap(elem: ElemValue): implType = List(elem)
+
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = OptionalPropValue(cv.toList, this, elemT)
+
+    private case class OptionalPropValue(
+      cv: implType,
+      cType: Optional,
+      pType: PType[_]
+    ) extends QValue
+
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] = {
       implicit val state = context.state
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
@@ -430,50 +643,71 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       elemT.renderInput(prop, context, currentValue, v)
     }
 
-    val QNone:QValue = makePropValue(Nil, UnknownType)
-    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT)
-        
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+    val QNone: QValue = makePropValue(Nil, UnknownType)
+    def Empty(elemT: pType): QValue = makePropValue(Nil, elemT)
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = {
       val old = v.headOption
       (makePropValue(List(elem), elem.pType), old)
     }
-    
-    override def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = {
+
+    override def fromUser(
+      info: FieldIds,
+      vs: List[String],
+      state: SpaceState
+    ): FormFieldInfo = {
       val prop = info.p
       val elemT = prop.pType
       vs.headOption match {
         case Some(v) if (v == EmptyOptionValue) => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
-        case Some(v) => fromUserString(prop, v, elemT, state)
-        case None => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
+        case Some(v)                            => fromUserString(prop, v, elemT, state)
+        case None                               => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
       }
     }
   }
-  
-  class QList extends QListBase(QListOID,
+
+  class QList
+    extends QListBase(
+      QListOID,
       toProps(
         setName(commonName(_.core.listColl))
-        ))
-  {
+      )
+    ) {
+
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
      * This should simplify a lot of the Scala-level code.
      */
-    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = {
+    def from[RT, VT](
+      in: Iterable[RT],
+      builder: PTypeBuilderBase[VT, RT]
+    ): QValue = {
       val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
       makePropValue(rawList, builder.pType)
     }
   }
-  
-  class QSet extends QListBase(QSetOID,
+
+  class QSet
+    extends QListBase(
+      QSetOID,
       toProps(
-        setName(commonName(_.core.setColl))))
-  {
+        setName(commonName(_.core.setColl))
+      )
+    ) {
+
     // TODO: this *really* should be makePropValue -- it is Very Very Bad that it isn't. But
     // that doesn't yet have a way of getting at the PType, which we need for comp() and matches().
     // This may become less critical once ElemValue carries the PType.
-    def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = {
+    def makeSetValue(
+      rawList: Seq[ElemValue],
+      pt: PType[_],
+      context: QLContext
+    ): QValue = {
       val sorted = rawList.sortWith(pt.comp(context))
-      val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted){ (state, next) =>
+      val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted) { (state, next) =>
         val (list, prevOpt) = state
         prevOpt match {
           case Some(prev) =>
@@ -487,75 +721,162 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 
       QSetPropValue(deduped._1, this, pt)
     }
-    override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QSetPropValue(cv.toList, this, elemT)
-    private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends QValue    
+
+    override def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = QSetPropValue(cv.toList, this, elemT)
+
+    private case class QSetPropValue(
+      cv: implType,
+      cType: QSet,
+      pType: PType[_]
+    ) extends QValue
   }
-  
+
   /**
    * This is a special marker collection that is Unit -- that is, it is by definition empty.
    * It should only be used for "marker" Properties, where the existence or non-existence of the
    * Property is the significant part. Action-only side-effecting Methods are the most likely
    * usage.
    */
-  class QUnit extends SystemCollection(QUnitOID,
-    toProps(
-      setName("Always Empty"),
-      setInternal
-    )) 
-  {
-    override def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = Nil
-    
-    override def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
-    
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
+  class QUnit
+    extends SystemCollection(
+      QUnitOID,
+      toProps(
+        setName("Always Empty"),
+        setInternal
+      )
+    ) {
+
+    override def doDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = Nil
+
+    override def doSerialize(
+      v: implType,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): String = ""
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] =
       fut(Wikitext(""))
-    
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
-    
-    def wrap(elem:ElemValue):implType = Nil
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
-    private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
-    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType = Nil
+
+    def wrap(elem: ElemValue): implType = Nil
+
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = UnitPropValue(cv.toList, this, elemT)
+
+    private case class UnitPropValue(
+      cv: implType,
+      cType: QUnit,
+      pType: PType[_]
+    ) extends QValue
+
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] = {
       fut(<i>Defined</i>)
     }
 
-    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
-    throw new Error("Trying to fromUser on Unit!")
-    
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
-    
-    def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
+    def fromUser(
+      on: Option[Thing],
+      form: Form[_],
+      prop: Property[_, _],
+      elemT: pType,
+      containers: Option[FieldIds],
+      state: SpaceState
+    ): FormFieldInfo =
+      throw new Error("Trying to fromUser on Unit!")
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = ???
+
+    def fromUser(
+      info: FieldIds,
+      vs: List[String],
+      state: SpaceState
+    ): FormFieldInfo = ???
   }
 
   /**
    * A boot-time singleton collection, which exists in order to hold the first few key Properties.
-   * 
+   *
    * This should not be used outside of Core, and not even heavily used in Core. It cannot be serialized; moreover,
    * nothing that *uses* it can be serialized, so it is strictly for system objects. It basically exists so that
    * we can get the real Collections booted up.
    */
   class bootCollection extends SingleElementBase(UnknownOID, emptyProps) {
-    override def oldDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))
 
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+    override def oldDeserialize(
+      ser: String,
+      elemT: pType
+    )(implicit
+      state: SpaceState
+    ): implType = List(elemT.deserialize(ser))
+
+    def doWikify(
+      context: QLContext
+    )(
+      v: implType,
+      elemT: pType,
+      displayOpt: Option[Wikitext] = None,
+      lexicalThing: Option[PropertyBundle] = None
+    ): Future[Wikitext] = {
       elemT.wikify(context)(v.head, displayOpt, lexicalThing)
     }
-    def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
+
+    def doDefault(elemT: pType)(implicit state: SpaceState): implType = {
       List(elemT.default)
     }
-    def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
-    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+    def wrap(elem: ElemValue): implType = List(elem)
+
+    def makePropValue(
+      cv: Iterable[ElemValue],
+      elemT: PType[_]
+    ): QValue = bootPropValue(cv.toList, this, elemT)
+
+    def doRenderInput(
+      prop: Property[_, _],
+      context: QLContext,
+      currentValue: DisplayPropVal,
+      elemT: PType[_]
+    ): Future[NodeSeq] = {
       implicit val s = context.state
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, context, currentValue, v)
     }
 
-    private case class bootPropValue(cv:implType, cType:bootCollection, pType:PType[_]) extends QValue {}  
-       
-    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+    private case class bootPropValue(
+      cv: implType,
+      cType: bootCollection,
+      pType: PType[_]
+    ) extends QValue {}
+
+    def append(
+      v: implType,
+      elem: ElemValue
+    ): (QValue, Option[ElemValue]) = {
       val old = v.headOption
       (makePropValue(List(elem), elem.pType), old)
     }

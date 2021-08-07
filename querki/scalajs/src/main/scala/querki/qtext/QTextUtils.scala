@@ -4,19 +4,19 @@ import scala.scalajs.js
 
 import querki.globals._
 
-class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
-  
+class QTextUtilsEcot(e: Ecology) extends ClientEcot(e) with QTextUtils {
+
   def implements = Set(classOf[QTextUtils])
-  
+
   lazy val DataAccess = interface[querki.data.DataAccess]
-  
+
   /**
    * RegExp for old-fashioned paths into Querki Spaces.
    */
   val spacePathRegExp = js.RegExp("/u/([\\.\\w\\-]+)/([\\.\\w\\-]+)/([^#].+)")
-  
+
   // HORRIBLE HACK: this is so *very* awful. When can we get rid of it with confidence?
-  def adjustUrl(urlIn:String):String = {
+  def adjustUrl(urlIn: String): String = {
     if (spacePathRegExp.test(urlIn)) {
       // This is a server-generated URL that is pointing into user space. We may need to tweak it,
       // but first we need to deconstruct it.
@@ -35,7 +35,10 @@ class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
         val (userId, spaceId) = DataAccess.space match {
           case Some(space) => {
             val u = if (userIdIn.isDefined && userIdIn.get == space.ownerId) space.ownerHandle else userIdIn.get
-            val s = if (spaceIdIn.isDefined && spaceIdIn.get == space.oid.underlying && space.linkName.isDefined) space.linkName.get else spaceIdIn.get
+            val s =
+              if (spaceIdIn.isDefined && spaceIdIn.get == space.oid.underlying && space.linkName.isDefined)
+                space.linkName.get
+              else spaceIdIn.get
             (u, s)
           }
           case None => { (userIdIn.getOrElse(""), spaceIdIn.getOrElse("")) }

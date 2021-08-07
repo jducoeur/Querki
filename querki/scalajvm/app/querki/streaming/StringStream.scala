@@ -13,7 +13,7 @@ import querki.util.QuerkiActor
  * between cooperating Actors that may be on different nodes. It is liberally adapted from
  * StreamSendActor and UploadActor, and we should probably see about lifting some abstractions
  * from all of this, but they are just different enough to not make that trivial.
- * 
+ *
  * Note that this is *not* a particularly smart or efficient protocol -- it's reasonably reliable,
  * but since it's purely pull-based it's going to be high-latency. I am actively hoping that
  * Lightbend adds a decent back-pressured stream abstraction into the standard Akka library,
@@ -21,62 +21,73 @@ import querki.util.QuerkiActor
  * into place here, to speed things up.
  */
 object StringStream {
-  
-  def receiverProps(sender:ActorRef) = Props(classOf[StringStreamReceiver], sender)
-  def senderProps(str:String)(implicit e:Ecology) = Props(classOf[StringStreamSender], str, e)
-  
+
+  def receiverProps(sender: ActorRef) = Props(classOf[StringStreamReceiver], sender)
+  def senderProps(str: String)(implicit e: Ecology) = Props(classOf[StringStreamSender], str, e)
+
   case object Start
-  case class ReceivedString(str:String)
-  
+  case class ReceivedString(str: String)
+
   case object Ready
-  
-  case class StringChunk(str:String, index:Int)
-  case class Ack(index:Int)
-  case class ChunkTimeout(index:Int, attempt:Int)
-  
-  case class Complete(index:Int)
+
+  case class StringChunk(
+    str: String,
+    index: Int
+  )
+  case class Ack(index: Int)
+
+  case class ChunkTimeout(
+    index: Int,
+    attempt: Int
+  )
+
+  case class Complete(index: Int)
   case object SendComplete
 }
 import StringStream._
 
-private [streaming] class StringStreamSender(str:String, e:Ecology) extends Actor with EcologyMember {
-  
+private[streaming] class StringStreamSender(
+  str: String,
+  e: Ecology
+) extends Actor
+     with EcologyMember {
+
   implicit val ecology = e
-  
+
   val chunkSize = Config.getInt("querki.stream.stringChunkSize", 10000)
-  
+
   var remainingChunks = str.grouped(chunkSize).toSeq.zipWithIndex
-  
-  var currentTimeout:Option[Cancellable] = None
-  
-  var currentIndex:Int = -1
-  
-  var originator:Option[ActorRef] = None
-  
-  var _recipient:Option[ActorRef] = None
+
+  var currentTimeout: Option[Cancellable] = None
+
+  var currentIndex: Int = -1
+
+  var originator: Option[ActorRef] = None
+
+  var _recipient: Option[ActorRef] = None
   def recipient = _recipient.get
-  
-  def sendCurrentChunk(attempt:Int) = {
+
+  def sendCurrentChunk(attempt: Int) = {
     val (chunk, index) = remainingChunks.head
     currentIndex = index
     recipient ! StringChunk(chunk, index)
     currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
-  
-  def sendComplete(attempt:Int) = {
+
+  def sendComplete(attempt: Int) = {
     recipient ! Complete(currentIndex)
     currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
-  
+
   def receive = LoggingReceive {
-    
+
     /**
      * This just exists to tell us who to send the ack to when we are finished:
      */
     case Start => {
       originator = Some(sender)
     }
-    
+
     /**
      * This comes from the StringStreamReceiver at the other end. Time to start sending:
      */
@@ -84,7 +95,7 @@ private [streaming] class StringStreamSender(str:String, e:Ecology) extends Acto
       _recipient = Some(sender)
       sendCurrentChunk(0)
     }
-    
+
     /**
      * The receiver has gotten a block...
      */
@@ -118,7 +129,7 @@ private [streaming] class StringStreamSender(str:String, e:Ecology) extends Acto
         // It's an obsolete Ack, so ignore it. This can happen when things get delayed and resent.
       }
     }
-    
+
     // We've sent a block, but haven't gotten an Ack in sufficient time...
     case ChunkTimeout(index, attempt) => {
       if (index == currentIndex) {
@@ -148,18 +159,18 @@ private [streaming] class StringStreamSender(str:String, e:Ecology) extends Acto
   }
 }
 
-private [streaming] class StringStreamReceiver(stringSender:ActorRef) extends Actor {
-  
+private[streaming] class StringStreamReceiver(stringSender: ActorRef) extends Actor {
+
   /**
    * This is the Actor (typically an ask pseudo-Actor) to which we will be returning the string
    * once it is reconstructed.
    */
-  var receiver:Option[ActorRef] = None
-  
+  var receiver: Option[ActorRef] = None
+
   var builder = StringBuilder.newBuilder
-  
-  var latestIndex:Int = -1
-  
+
+  var latestIndex: Int = -1
+
   def receive = {
     // This is the "boot" message, which tells us who to report the eventual results to.
     case Start => {
@@ -179,7 +190,7 @@ private [streaming] class StringStreamReceiver(stringSender:ActorRef) extends Ac
       }
       sender ! Ack(index)
     }
-    
+
     // Sender says we are done:
     case Complete(index) => {
       sender ! Ack(index)

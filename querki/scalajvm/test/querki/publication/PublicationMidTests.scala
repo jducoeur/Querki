@@ -10,6 +10,7 @@ import PublicationMidFuncs._
 import querki.security.SecurityMidFuncs._
 
 object PublicationMidTests {
+
   lazy val basicPublicationTests: TestOp[Unit] = {
     val ownerName = "BasicPub Owner"
     val owner = TestUser(ownerName)
@@ -57,8 +58,7 @@ object PublicationMidTests {
       _ <- checkNameIsMissingFor(instance3Name, member)
       _ <- withUser(member) { evaluateQL(instance3, "_publish") }
       _ <- checkNameIsMissingFor(instance3Name, member)
-    }
-      yield ()
+    } yield ()
   }
 }
 

@@ -11,9 +11,14 @@ import querki.globals._
  * it to describe things to do to the Page after it loads.
  */
 trait PageImplicits {
-  implicit class PageFutureOps(fut:Future[Page]) {
-    def flashing(isError:Boolean, msg:Modifier*):Future[Page] = {
-      fut.foreach(_.flash(isError, msg:_*))
+
+  implicit class PageFutureOps(fut: Future[Page]) {
+
+    def flashing(
+      isError: Boolean,
+      msg: Modifier*
+    ): Future[Page] = {
+      fut.foreach(_.flash(isError, msg: _*))
       fut
     }
   }

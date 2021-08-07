@@ -8,7 +8,7 @@ import autowire._
 import models.{AsOID, OID, ThingId, Wikitext}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
-import querki.data.{TID, SpaceInfo, UserInfo}
+import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.globals._
 import querki.identity.UserLevel
 import querki.spaces.messages._
@@ -16,12 +16,12 @@ import querki.spaces.messages._
 /**
  * Implementation of the UserFunctions API. This basically covers most of the non-Space
  * stuff, that you can do without being *in* a Space.
- * 
+ *
  * @author jducoeur
  */
-class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with UserFunctions {
+class UserFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends AutowireApiImpl(info, e) with UserFunctions {
   import UserFunctions._
-  
+
   lazy val Apps = interface[querki.apps.Apps]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Core = interface[querki.core.Core]
@@ -30,40 +30,53 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val System = interface[querki.system.System]
   lazy val TermsOfService = interface[querki.system.TermsOfService]
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
+
   lazy val spaceManager = SpaceOps.spaceManager
-  
-  def doRoute(req:Request):Future[String] = route[UserFunctions](this)(req)
-  
+
+  def doRoute(req: Request): Future[String] = route[UserFunctions](this)(req)
+
   lazy val sessionActorRef = info.actor.self
-  
-  implicit def spaceDetails2Info(details:SpaceDetails):SpaceInfo = {
+
+  implicit def spaceDetails2Info(details: SpaceDetails): SpaceInfo = {
     // TODO: this should probably include the Apps:
-    SpaceInfo(TID(details.id.toThingId), Some(details.handle), details.display, "", details.ownerHandle, Seq.empty, Set.empty, false)
+    SpaceInfo(
+      TID(details.id.toThingId),
+      Some(details.handle),
+      details.display,
+      "",
+      details.ownerHandle,
+      Seq.empty,
+      Set.empty,
+      false
+    )
   }
-  
-  def listSpaces():Future[AllSpaces] = {
-    spaceManager.requestFor[MySpaces](ListMySpaces(user.id)) map { mySpaces =>
+
+  def listSpaces(): Future[AllSpaces] = {
+    spaceManager.requestFor[MySpaces](ListMySpaces(user.id)).map { mySpaces =>
       AllSpaces(mySpaces.ownedByMe.map(spaceDetails2Info), mySpaces.memberOf.map(spaceDetails2Info))
     }
   }
-  
-  def accountInfo():Future[AccountInfo] = {
+
+  def accountInfo(): Future[AccountInfo] = {
     // TODO: this is doing a direct DB access, which is by definition ugly.
     val pairOpt = UserAccess.getIdentity(ThingId(user.mainIdentity.handle))
     pairOpt match {
       case Some((identity, level)) => {
         Future.successful(AccountInfo(identity.handle, identity.name, identity.email.addr, level))
       }
-      case None => throw new Exception(s"Somehow tried to get the accountInfo for unknown user ${user.mainIdentity.handle}!")
-    }    
+      case None =>
+        throw new Exception(s"Somehow tried to get the accountInfo for unknown user ${user.mainIdentity.handle}!")
+    }
   }
-  
-  def changePassword(oldPassword:String, newPassword:String):Future[Unit] = {
+
+  def changePassword(
+    oldPassword: String,
+    newPassword: String
+  ): Future[Unit] = {
     // TODO: also currently icky and blocking:
     if (newPassword.length() < 8)
       throw new MiscException("New password is too short!")
-    
+
     val handle = user.mainIdentity.handle
     val checkedLogin = UserAccess.checkQuerkiLogin(handle, oldPassword)
     checkedLogin match {
@@ -72,41 +85,44 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         val newUser = UserAccess.changePassword(rc.requesterOrAnon, identity, newPassword)
         Future.successful(())
       }
-      
+
       case _ => throw new BadPasswordException()
-    }    
+    }
   }
-  
-  def changeDisplayName(newDisplayName:String):Future[UserInfo] = {
+
+  def changeDisplayName(newDisplayName: String): Future[UserInfo] = {
     if (newDisplayName.length() == 0)
       throw new MiscException("Trying to set an empty Name!")
 
-    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) flatMap { newUser =>
-      ClientApi.userInfo(Some(newUser)).map (_.get)
+    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName).flatMap { newUser =>
+      ClientApi.userInfo(Some(newUser)).map(_.get)
     }
   }
-  
-  def createSpace(name:String, appTIDOpt:Option[TID]):Future[SpaceInfo] = {
+
+  def createSpace(
+    name: String,
+    appTIDOpt: Option[TID]
+  ): Future[SpaceInfo] = {
     if (name.length() == 0)
       throw new MiscException("Trying to create a Space with an empty name!")
-    
+
     if (!user.canOwnSpaces)
       throw new MiscException("You aren't allowed to create Spaces!")
-    
+
     // This will throw an exception if the name isn't legal. The UI *should* be screening this,
     // so just let the exception happen:
     Core.NameProp.validate(name, System.State)
-    
+
     val appIdOpt = appTIDOpt.map { appTID =>
       val thingId = ThingId(appTID.underlying)
       thingId match {
         case AsOID(oid) => oid
-        case _ => throw new Exception(s"createSpace apparently called with a non-OID TID!")
+        case _          => throw new Exception(s"createSpace apparently called with a non-OID TID!")
       }
     }
-    
+
     (SpaceOps.spaceManager ? CreateSpace(user, name)).flatMap {
-      case info:querki.spaces.messages.SpaceInfo => {
+      case info: querki.spaces.messages.SpaceInfo => {
         val result = ClientApi.spaceInfo(info)
         appIdOpt match {
           case Some(appId) => {
@@ -114,8 +130,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
               _ <- Apps.addAppToSpace(user, info.id, appId)
               // The new Space should have the App as its Model:
               ThingAck(_) <- SpaceOps.spaceRegion ? ChangeModel(user, info.id, info.id, appId, false)
-            }
-              yield result
+            } yield result
           }
           case _ => fut(result)
         }
@@ -123,26 +138,26 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       case ThingError(ex, _) => throw ex
     }
   }
-  
-  def resendActivationEmail():Future[Unit] = {
+
+  def resendActivationEmail(): Future[Unit] = {
     Person.sendValidationEmail(rc, user.mainIdentity.email, user)
   }
-  
-  def validateActivationHash(validationStr:String):Future[Boolean] = {
+
+  def validateActivationHash(validationStr: String): Future[Boolean] = {
     Person.validateEmail(user, validationStr)
   }
-  
-  def setComplexity(level:TID):Future[TID] = {
-    sessionActorRef ? UserSessionMessages.SetSkillLevel(OID(level.underlying)) map { 
+
+  def setComplexity(level: TID): Future[TID] = {
+    (sessionActorRef ? UserSessionMessages.SetSkillLevel(OID(level.underlying))).map {
       case UserSessionMessages.SkillLevelAck => level
     }
   }
-  
-  def checkTOS():Future[TOSState] = {
+
+  def checkTOS(): Future[TOSState] = {
     fut(TermsOfService.checkTOS(user))
   }
-  
-  def agreeToTOS(version:Int):Future[Unit] = {
+
+  def agreeToTOS(version: Int): Future[Unit] = {
     TermsOfService.recordAccept(user, version).map(_ => ())
   }
 }

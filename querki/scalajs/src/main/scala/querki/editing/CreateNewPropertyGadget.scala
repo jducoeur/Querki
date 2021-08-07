@@ -16,45 +16,52 @@ import QuerkiEmptyable._
 import querki.globals._
 import querki.identity.skilllevel.SkillLevelsNeeded
 import querki.util.InputUtils
-  
-class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)
-  (implicit val ecology:Ecology, ctx:Ctx.Owner) 
-  extends Gadget[dom.HTMLDivElement] with querki.display.QuerkiUIUtils with SkillLevelsNeeded with EcologyMember 
-{
+
+class CreateNewPropertyGadget(
+  page: ModelDesignerPage,
+  typeInfo: AllTypeInfo,
+  apg: AddPropertyGadget
+)(implicit
+  val ecology: Ecology,
+  ctx: Ctx.Owner
+) extends Gadget[dom.HTMLDivElement]
+     with querki.display.QuerkiUIUtils
+     with SkillLevelsNeeded
+     with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[Editing]
-  
+
   val std = DataAccess.std
-  
+
   def isAdvanced = userSkillLevel == Advanced
-  
-  lazy val preferredCollectionsByType:Map[TID, TID] = {
+
+  lazy val preferredCollectionsByType: Map[TID, TID] = {
     val allTypes = typeInfo.standardTypes ++ typeInfo.advancedTypes
     val pairs = allTypes.map { typeInfo =>
       typeInfo.preferredCollection.map(collId => (typeInfo.oid, collId))
     }.flatten
-    Map(pairs:_*)
+    Map(pairs: _*)
   }
-  
+
   def reset() = {
     nameInput.foreachNow(_.setValue(""))
     typeSelector.foreachNow(_.setValue(""))
     modelSelector.foreachNow(_.setValue(""))
     collSelector.foreachNow(_.choose(collButtons.head))
   }
-  
+
   override def onInserted() = { nameInput.mapElemNow($(_).focus()) }
-  
-  val nameInput = GadgetRef[RxInput].
-    whenSet { g =>
-      g.elemOptRx.trigger {
-        g.elemOpt.map { e => $(e).blur { evt:JQueryEventObject => fixNameInput(g.text.now) } }
-      }
+
+  val nameInput = GadgetRef[RxInput].whenSet { g =>
+    g.elemOptRx.trigger {
+      g.elemOpt.map { e => $(e).blur { evt: JQueryEventObject => fixNameInput(g.text.now) } }
     }
+  }
+
   // When we blur out of the Name field, fix it up if necessary:
-  def fixNameInput(init:String):Unit = {
-    def fixRec(current:String):String = {
+  def fixNameInput(init: String): Unit = {
+    def fixRec(current: String): String = {
       if (current.length == 0)
         current
       else {
@@ -66,105 +73,110 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
           current
       }
     }
-    
+
     val fixed = fixRec(init)
     if (fixed != init)
       nameInput.get.setValue(fixed)
   }
-  
+
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
-  def collBtn(coll:CollectionInfo, selected:Boolean):ButtonInfo = {
-    ButtonInfo(coll.oid.underlying, coll.displayName, selected, id:=s"_coll${coll.oid.underlying}")
+  def collBtn(
+    coll: CollectionInfo,
+    selected: Boolean
+  ): ButtonInfo = {
+    ButtonInfo(coll.oid.underlying, coll.displayName, selected, id := s"_coll${coll.oid.underlying}")
   }
+
   lazy val collButtons =
     typeInfo.collections.headOption.map { collBtn(_, true) } ++
-    typeInfo.collections.tail.map { collBtn(_, false) }
+      typeInfo.collections.tail.map { collBtn(_, false) }
   lazy val collSelector = GadgetRef[RxButtonGroup]
-  
-  def collButton(collection:TID):ButtonInfo = {
+
+  def collButton(collection: TID): ButtonInfo = {
     collButtons.find(_.value == collection.underlying).get
   }
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
-  val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
-    whenSet { g => 
-      g.selectedValOpt.trigger {
-        g.selectedValOpt.now.map{ selectedType =>
-          // They've selected a Type, so reset the Model...
-          modelSelector.foreachNow(_.setValue("")) 
-          // ... and set the Collection to best suit this Type:
-          collSelector.foreachNow { sel =>
-            val selectedTID = TID(selectedType)
-            preferredCollectionsByType.get(selectedTID) match {
-              // There's a preferred option:
-              case Some(collId) => sel.choose(collButton(collId))
-              // If there is nothing preferred, use Optional:
-              case _ => sel.choose(collButton(std.core.optionalColl))
-            }
+  val typeSelector: GadgetRef[RxSelect] = GadgetRef[RxSelect].whenSet { g =>
+    g.selectedValOpt.trigger {
+      g.selectedValOpt.now.map { selectedType =>
+        // They've selected a Type, so reset the Model...
+        modelSelector.foreachNow(_.setValue(""))
+        // ... and set the Collection to best suit this Type:
+        collSelector.foreachNow { sel =>
+          val selectedTID = TID(selectedType)
+          preferredCollectionsByType.get(selectedTID) match {
+            // There's a preferred option:
+            case Some(collId) => sel.choose(collButton(collId))
+            // If there is nothing preferred, use Optional:
+            case _ => sel.choose(collButton(std.core.optionalColl))
           }
-        }
-      } 
-    }
-  val modelSelector = GadgetRef[RxSelect].
-    whenSet { g => 
-      g.selectedValOpt.trigger {
-        g.selectedValOpt.now.map { _ =>
-          // They've selected a Model, so reset the Type...
-          typeSelector.foreachNow(_.setValue("")) 
-          // ... and set the Collection to List. Yes, this is hardcoded. So far,
-          // I have yet to see an example where you want any Collection *other*
-          // than List when you're incorporating a Model value.
-          // TODO: this isn't very Rx-ish. Can/should we make this more properly
-          // declarative and reactive?
-          collSelector.foreachNow { _.choose(collButton(std.core.listColl)) }
         }
       }
     }
-  
+  }
+
+  val modelSelector = GadgetRef[RxSelect].whenSet { g =>
+    g.selectedValOpt.trigger {
+      g.selectedValOpt.now.map { _ =>
+        // They've selected a Model, so reset the Type...
+        typeSelector.foreachNow(_.setValue(""))
+        // ... and set the Collection to List. Yes, this is hardcoded. So far,
+        // I have yet to see an example where you want any Collection *other*
+        // than List when you're incorporating a Model value.
+        // TODO: this isn't very Rx-ish. Can/should we make this more properly
+        // declarative and reactive?
+        collSelector.foreachNow { _.choose(collButton(std.core.listColl)) }
+      }
+    }
+  }
+
   // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
   // RxSelect:
-  lazy val modelSelectorBasis:Rx[Option[(RxSelect, TID)]] = modelSelector.flatMapRx(_.selectedWithTID).map(_.flatten)
-  lazy val typeSelectorBasis:Rx[Option[(RxSelect, TID)]] = typeSelector.flatMapRx(_.selectedWithTID).map(_.flatten)
-  lazy val selectionBases:Rx[(Option[(RxSelect, TID)], Option[(RxSelect, TID)])] = 
+  lazy val modelSelectorBasis: Rx[Option[(RxSelect, TID)]] = modelSelector.flatMapRx(_.selectedWithTID).map(_.flatten)
+  lazy val typeSelectorBasis: Rx[Option[(RxSelect, TID)]] = typeSelector.flatMapRx(_.selectedWithTID).map(_.flatten)
+
+  lazy val selectionBases: Rx[(Option[(RxSelect, TID)], Option[(RxSelect, TID)])] =
     Rx { (modelSelectorBasis(), typeSelectorBasis()) }
-  lazy val selectedBasis:Rx[Option[(RxSelect, TID)]] = selectionBases.map { 
-    case (modelOpt, typeOpt) => modelOpt orElse typeOpt
+
+  lazy val selectedBasis: Rx[Option[(RxSelect, TID)]] = selectionBases.map {
+    case (modelOpt, typeOpt) => modelOpt.orElse(typeOpt)
   }
-    //Rx { modelSelector.flatMap(_.selectedWithTID()) orElse typeSelector.flatMap(_.selectedWithTID()) }
-  
+  //Rx { modelSelector.flatMap(_.selectedWithTID()) orElse typeSelector.flatMap(_.selectedWithTID()) }
+
   // True iff the selected type is a "pointer" type.
   // For the time being, since we only have two "pointer" types, we're just going to hardcode this.
   // If we develop more of them, this "pointerness" should probably become a meta-Property on the
   // Type instead:
-  lazy val isPointerType = Rx { selectedBasis().map 
-    { case ((_, tid)) =>
+  lazy val isPointerType = Rx {
+    selectedBasis().map { case ((_, tid)) =>
       (tid == std.core.linkType.oid) || (tid == std.core.tagType.oid)
-    }.getOrElse(false) 
+    }.getOrElse(false)
   }
-  
+
   final val PointsToAny = "Any"
   final val PointsToExisting = "Existing"
   final val PointsToNew = "New"
-  
+
   val pointerModelChoice = GadgetRef[RxRadio]
   val pointerModelSelector = GadgetRef[RxSelect]
   val pointerModelName = GadgetRef[RxInput]
-  
-  lazy val pointerModelMode:Rx[String] =
+
+  lazy val pointerModelMode: Rx[String] =
     pointerModelChoice.flatMapRx(_.selectedValOpt).map(_.flatten).map(_.getOrElse(""))
-      
-  lazy val pointerModelIsLegal:Rx[Boolean] = 
+
+  lazy val pointerModelIsLegal: Rx[Boolean] =
     pointerModelMode.flatMap(_ match {
       case PointsToAny => Var(true)
-      case PointsToExisting => 
+      case PointsToExisting =>
         pointerModelSelector.flatMapRx(_.selectedValOpt).map(_.flatten.isDefined)
-      case PointsToNew => 
+      case PointsToNew =>
         pointerModelName.flatMapRx { name =>
           name.rxEmpty.map(empty => !empty)
         }.map(_.getOrElse(false))
-      case _ => Var(false)        
+      case _ => Var(false)
     })
-    
+
 //    (pointerModelChoice.flatMapRxOrElse(_.selectedValOpt)(_ match {
 //      case Some(PointsToAny) => true
 //      case Some(PointsToExisting) => pointerModelSelector.mapNow { sel =>
@@ -177,22 +189,24 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
 //      }.getOrElse(false)
 //      case _ => false
 //    }}, false))
-  lazy val pointerIsLegal:Rx[Boolean] = Rx {
+  lazy val pointerIsLegal: Rx[Boolean] = Rx {
     !isPointerType() || pointerModelIsLegal()
   }
-  
+
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
-  lazy val addButton = 
-    new ButtonGadget(Info, 
-        disabled := Rx { 
-          nameInput.get.textOpt().isEmpty || 
-          collSelector.get.selectedTIDOpt().isEmpty || 
-          selectedBasis().isEmpty ||
-          !pointerIsLegal() 
-        }, 
-        "Create",
-        id:="_doCreatePropertyButton")({ () =>
+  lazy val addButton =
+    new ButtonGadget(
+      Info,
+      disabled := Rx {
+        nameInput.get.textOpt().isEmpty ||
+        collSelector.get.selectedTIDOpt().isEmpty ||
+        selectedBasis().isEmpty ||
+        !pointerIsLegal()
+      },
+      "Create",
+      id := "_doCreatePropertyButton"
+    )({ () =>
       val name = nameInput.get.textOpt.now.get
       val coll = collSelector.get.selectedTIDOpt.now.get
       val (selector, oid) = selectedBasis.now.get
@@ -204,9 +218,16 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         createProperty(name, coll, oid)
       }
     })
-    
-  def createProperty(name:String, collId:TID, typeId:TID) = {
-    def mkPV(oid:BasicThingInfo, v:String) = {
+
+  def createProperty(
+    name: String,
+    collId: TID,
+    typeId: TID
+  ) = {
+    def mkPV(
+      oid: BasicThingInfo,
+      v: String
+    ) = {
       val path = Editing.propPath(oid)
       ChangePropertyValue(path, Seq(v))
     }
@@ -217,7 +238,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
       mkPV(std.core.typeProp, typeId.underlying)
     )
     // The complex problem comes iff it's a pointer Type:
-    val fullPropsFut:Future[Seq[ChangePropertyValue]] =
+    val fullPropsFut: Future[Seq[ChangePropertyValue]] =
       if (isPointerType.now) {
         pointerModelChoice.get.selectedVal.now match {
           // Don't need to do anything
@@ -235,8 +256,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
               mkPV(std.core.nameProp, pointerModelName.get.text.now),
               mkPV(std.core.isModelProp, "true")
             )
-            Client[EditFunctions].create(std.basic.simpleThing, modelPVs).call().map 
-            { modelInfo =>
+            Client[EditFunctions].create(std.basic.simpleThing, modelPVs).call().map { modelInfo =>
               initProps :+ mkPV(std.links.linkModelProp, modelInfo.oid.underlying)
             }
           }
@@ -249,67 +269,91 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     for {
       fullProps <- fullPropsFut
       propInfo <- Client[EditFunctions].create(std.core.urProp, fullProps).call()
-    }
-    {
+    } {
       page.addProperty(propInfo.oid, true)
       reset()
-      apg.reset() 
+      apg.reset()
     }
   }
-  
+
   def doRender() =
-    div(cls:="well container col-md-12",
+    div(
+      cls := "well container col-md-12",
       p("""Describe the new property to create, or press "Add an Existing Property" to use one that already exists."""),
-      div(cls:="row",
-        div(cls:="col-md-6",
-          div(cls:="row",
-            div(cls:="col-md-12",
-              nameInput <= new RxInput(Some(InputUtils.nameFilter(true, false) _), "text", cls:="col-md-6 form-control", id:="_createPropName", placeholder:="Name (required)...")
+      div(
+        cls := "row",
+        div(
+          cls := "col-md-6",
+          div(
+            cls := "row",
+            div(
+              cls := "col-md-12",
+              nameInput <= new RxInput(
+                Some(InputUtils.nameFilter(true, false) _),
+                "text",
+                cls := "col-md-6 form-control",
+                id := "_createPropName",
+                placeholder := "Name (required)..."
+              )
             )
           ),
-          div(cls:="row",
-            div(cls:="col-md-5", 
+          div(
+            cls := "row",
+            div(
+              cls := "col-md-5",
               typeSelector <= RxSelect(
-                Var({typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))}), 
-                "Choose a Type...", 
-                id:="_typeSelector",
-                cls:="form-control")), 
+                Var({ typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value := typ, typ.displayName)) }),
+                "Choose a Type...",
+                id := "_typeSelector",
+                cls := "form-control"
+              )
+            ),
             if (isAdvanced)
-              span(cls:="col-md-1", " or "), 
-            div(cls:="col-md-5", 
-              display:={if (isAdvanced) "inline" else "none"},
+              span(cls := "col-md-1", " or "),
+            div(
+              cls := "col-md-5",
+              display := { if (isAdvanced) "inline" else "none" },
               modelSelector <= RxSelect(
-                Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}), 
+                Var({ typeInfo.models.sortBy(_.displayName).map(model => option(value := model, model.displayName)) }),
                 "Make it a List of...",
-                id:="_modelSelector",
-                cls:="form-control"))
+                id := "_modelSelector",
+                cls := "form-control"
+              )
+            )
           ),
-          div(cls:="row well-small",
+          div(
+            cls := "row well-small",
             // This section only shows if the selected Type is a "pointer" -- Link or Tag
-            hidden:= Rx { !isPointerType() },
-            div(cls:="col-md-12 container",
+            hidden := Rx { !isPointerType() },
+            div(
+              cls := "col-md-12 container",
               "What model (if any) should this use?",
-              pointerModelChoice <= new RxRadio("_pointerKind",
+              pointerModelChoice <= new RxRadio(
+                "_pointerKind",
                 RadioButton(
                   PointsToExisting,
                   "It should use existing Model ",
                   false,
                   pointerModelSelector <= RxSelect(
-                    Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}),
+                    Var({
+                      typeInfo.models.sortBy(_.displayName).map(model => option(value := model, model.displayName))
+                    }),
                     "Choose a Model...",
-                    id:="_pointerModelSelector",
-                    cls:="form-control")
+                    id := "_pointerModelSelector",
+                    cls := "form-control"
+                  )
                 ),
                 RadioButton(
                   PointsToNew,
                   "Create a new Model named ",
                   false,
                   pointerModelName <= new RxInput(
-                    Some(InputUtils.nameFilter(true, false) _), 
-                    "text", 
-                    cls:="col-md-6 form-control", 
-                    id:="_createModelName", 
-                    placeholder:="Name (required)...")
+                    Some(InputUtils.nameFilter(true, false) _),
+                    "text",
+                    cls := "col-md-6 form-control",
+                    id := "_createModelName",
+                    placeholder := "Name (required)..."
+                  )
                 ),
                 RadioButton(
                   PointsToAny,
@@ -319,22 +363,20 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
               )
             )
           ),
-          div(cls:="row",
-            div(cls:="col-md-12",
-              collSelector <= new RxButtonGroup(Var(collButtons.toSeq), id:="_collSelector")
-            )
+          div(
+            cls := "row",
+            div(cls := "col-md-12", collSelector <= new RxButtonGroup(Var(collButtons.toSeq), id := "_collSelector"))
           ),
-          p(cls:="col-md-offset1",
-            addButton
-          )
+          p(cls := "col-md-offset1", addButton)
         ),
-        div(cls:="col-md-6 _typeDescription", 
-          new DescriptionDiv(page, selectedBasis)
-        )
+        div(cls := "col-md-6 _typeDescription", new DescriptionDiv(page, selectedBasis))
       ),
       hr,
-      p(new ButtonGadget(Info, id:="_addExistingInstead", "Add an Existing Property")({ () =>
-        apg.showAddExisting()
-      }), apg.cancelButton)
+      p(
+        new ButtonGadget(Info, id := "_addExistingInstead", "Add an Existing Property")({ () =>
+          apg.showAddExisting()
+        }),
+        apg.cancelButton
+      )
     )
 }

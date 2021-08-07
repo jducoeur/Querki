@@ -2,7 +2,7 @@ package querki.notifications
 
 import akka.actor._
 
-import anorm.{Success=>AnormSuccess,_}
+import anorm.{Success => AnormSuccess, _}
 
 import play.api.db._
 import play.api.Play.current
@@ -20,12 +20,17 @@ import querki.values.QValue
 /**
  * The Actor that manages the DB side of persisting Notifications for a single User. Created
  * as part of this User's Session troupe.
- * 
+ *
  * TODO: this currently has more than just Notifications. Should it get split?
  */
-class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) extends Actor with EcologyMember {
+class NotificationPersister(
+  val userId: UserId,
+  implicit
+  val ecology: Ecology
+) extends Actor
+     with EcologyMember {
   import NotificationPersister._
-  
+
   lazy val NotificationPersistence = interface[NotificationPersistence]
 
   def receive = {
@@ -33,19 +38,19 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     case LoadInfo => {
       NotificationPersistence.loadUserInfo(userId) match {
         case Some(userInfo) => sender ! userInfo
-        case None => throw new Exception("Couldn't load info for user " + userId + "!")
+        case None           => throw new Exception("Couldn't load info for user " + userId + "!")
       }
     }
-    
+
     case Load => {
       val current = NotificationPersistence.loadCurrent(userId)
       sender ! current
     }
-    
+
     case UserNotificationActor.NewNotification(_, note) => {
       NotificationPersistence.createNotification(userId, note)
     }
-    
+
     case UpdateLastChecked(lastChecked) => {
       NotificationPersistence.updateLastChecked(userId, lastChecked)
     }
@@ -54,9 +59,12 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
 
 object NotificationPersister {
   case object Load
-  
+
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, id:UserId):Props = Props(new NotificationPersister(id, ecology))
+  def actorProps(
+    ecology: Ecology,
+    id: UserId
+  ): Props = Props(new NotificationPersister(id, ecology))
 }

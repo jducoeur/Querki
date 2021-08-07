@@ -15,20 +15,24 @@ import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
 
-class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
-  
+class ManageUsersPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
+
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
-  
-  implicit class CallExt[T](fut:Future[T]) {
-    def checkForeach[U](cb:(T) => U) = {
+
+  implicit class CallExt[T](fut: Future[T]) {
+
+    def checkForeach[U](cb: (T) => U) = {
       fut.onFailure {
-        case NotAnAdminException() => Pages.showSpacePage(DataAccess.space.get).flashing(true, "Manage Users is for Querki Administrators only. Sorry.")
+        case NotAnAdminException() => Pages.showSpacePage(DataAccess.space.get).flashing(
+            true,
+            "Manage Users is for Querki Administrators only. Sorry."
+          )
       }
       fut.foreach(cb)
     }
   }
-  
+
   // TODO: add the ability for Superadmin to create Admins
   lazy val levels = Seq(
     PendingUser,
@@ -37,19 +41,21 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
     PermanentUser,
     TestUser
   ) ++ (if (myLevel == SuperadminUser) Seq(AdminUser) else Seq.empty)
-  
+
   lazy val myLevel = DataAccess.request.userLevel
-    
-  class UserView(user:AdminUserView) extends Gadget[dom.html.TableRow] {
-    lazy val levelOptions = 
+
+  class UserView(user: AdminUserView) extends Gadget[dom.html.TableRow] {
+
+    lazy val levelOptions =
       Var(levels.map { level =>
         option(
-          value:=level,
-          if (level == user.level) selected:="selected",
-          levelName(level).capitalize)
+          value := level,
+          if (level == user.level) selected := "selected",
+          levelName(level).capitalize
+        )
       })
-      
-    val levelSelector = GadgetRef[RxSelect].whenSet { g => 
+
+    val levelSelector = GadgetRef[RxSelect].whenSet { g =>
       g.selectedOption.triggerLater {
         g.selectedOption.now.map { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
@@ -62,25 +68,26 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
         }
       }
     }
-    
+
     def colorClass = {
       user.level match {
         case PendingUser => "warning"
-          
+
         case FreeUser | PaidUser | PermanentUser => ""
-          
+
         case TestUser => "active"
-          
+
         case AdminUser | SuperadminUser => "success"
-          
+
         case _ => "danger"
       }
     }
-    
+
     def doRender() = {
-      tr(cls:=colorClass,
-        td(user.mainHandle), 
-        td(user.email), 
+      tr(
+        cls := colorClass,
+        td(user.mainHandle),
+        td(user.email),
         if (user.level == SuperadminUser)
           td("Superadmin")
         else if (user.level == AdminUser && myLevel != SuperadminUser)
@@ -90,19 +97,22 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
       )
     }
   }
-  
+
   lazy val allUsersButton =
     new RunButton(ButtonGadget.Normal, "Fetch all users", "Fetching...")({ btn =>
       Client[AdminFunctions].allUsers().call.checkForeach { userList =>
         allUsersSection <=
           div(
             h3("All Users"),
-            table(cls:="table table-hover",
+            table(
+              cls := "table table-hover",
               thead(
-                td(b("Handle")), td(b("Email")), td(b())
+                td(b("Handle")),
+                td(b("Email")),
+                td(b())
               ),
               tbody(
-              for (user <- userList)
+                for (user <- userList)
                   yield new UserView(user)
               )
             )
@@ -111,7 +121,7 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
       }
     })
   val allUsersSection = GadgetRef.of[dom.html.Div]
-  
+
   def pageContent =
     for {
       pendingUsers <- Client[AdminFunctions].pendingUsers().call()
@@ -119,26 +129,31 @@ class ManageUsersPage(params:ParamMap)(implicit val ecology:Ecology) extends Pag
         div(
           h1("Manage Users"),
           h3("Pending Users"),
-          table(cls:="table table-hover",
+          table(
+            cls := "table table-hover",
             thead(
-              td(b("Handle")), td(b("Email")), td(b())
+              td(b("Handle")),
+              td(b("Email")),
+              td(b())
             ),
             tbody(
-            for (user <- pendingUsers)
-              yield 
-                tr(cls:="warning", td(user.mainHandle), td(user.email), 
+              for (user <- pendingUsers)
+                yield tr(
+                  cls := "warning",
+                  td(user.mainHandle),
+                  td(user.email),
                   td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
                     Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
                       PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
                     }
-                  })))
+                  }))
+                )
             )
           ),
           hr,
           allUsersButton,
-          allUsersSection <= div(display:="none")
+          allUsersSection <= div(display := "none")
         )
-    }
-      yield PageContents("Manage Users", guts)
+    } yield PageContents("Manage Users", guts)
 
 }

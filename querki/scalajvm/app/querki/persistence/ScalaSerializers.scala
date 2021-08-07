@@ -10,33 +10,65 @@ import querki.time.DateTime
  * serialize differently, we don't bother with SubclassSerializer for them.
  */
 class NoneSerializer extends Serializer[None.type] {
-  override def read(kryo:Kryo, input:Input, typ:Class[None.type]):None.type = None
-  
-  override def write(kryo:Kryo, output:Output, obj:None.type) = {}
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[None.type]
+  ): None.type = None
+
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    obj: None.type
+  ) = {}
 }
 
 class SomeSerializer extends Serializer[Some[_]] {
-  override def read(kryo:Kryo, input:Input, typ:Class[Some[_]]):Some[_] = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[Some[_]]
+  ): Some[_] = {
     Some(kryo.readClassAndObject(input))
   }
-  
-  override def write(kryo:Kryo, output:Output, obj:Some[_]) = {
+
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    obj: Some[_]
+  ) = {
     kryo.writeClassAndObject(output, obj.get)
-  }  
+  }
 }
 
 class DateTimeSerializer extends Serializer[DateTime] {
-  override def read(kryo:Kryo, input:Input, typ:Class[DateTime]):DateTime = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[DateTime]
+  ): DateTime = {
     new DateTime(input.readLong())
   }
-  
-  override def write(kryo:Kryo, output:Output, obj:DateTime) = {
+
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    obj: DateTime
+  ) = {
     output.writeLong(obj.getMillis)
   }
 }
 
 class ScalaListSerializer() extends Serializer[List[_]] {
-  override def read(kryo: Kryo, input: Input, typ: Class[List[_]]): List[_] = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[List[_]]
+  ): List[_] = {
     val len = input.readInt(true)
     val coll = List.newBuilder[Any]
 
@@ -48,7 +80,11 @@ class ScalaListSerializer() extends Serializer[List[_]] {
     coll.result
   }
 
-  override def write(kryo: Kryo, output: Output, collection: List[_]) = {
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    collection: List[_]
+  ) = {
     val len = collection.size
     output.writeInt(len, true)
     collection.foreach { e: Any => kryo.writeClassAndObject(output, e) }
@@ -56,7 +92,12 @@ class ScalaListSerializer() extends Serializer[List[_]] {
 }
 
 class ScalaStreamSerializer() extends Serializer[Stream[_]] {
-  override def read(kryo: Kryo, input: Input, typ: Class[Stream[_]]): Stream[_] = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[Stream[_]]
+  ): Stream[_] = {
     val len = input.readInt(true)
     val coll = Stream.newBuilder[Any]
 
@@ -68,15 +109,24 @@ class ScalaStreamSerializer() extends Serializer[Stream[_]] {
     coll.result
   }
 
-  override def write(kryo: Kryo, output: Output, collection: Stream[_]) = {
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    collection: Stream[_]
+  ) = {
     val len = collection.size
     output.writeInt(len, true)
     collection.foreach { e: Any => kryo.writeClassAndObject(output, e) }
   }
 }
-  
+
 class ScalaVectorSerializer() extends Serializer[Vector[_]] {
-  override def read(kryo: Kryo, input: Input, typ: Class[Vector[_]]): Vector[_] = {
+
+  override def read(
+    kryo: Kryo,
+    input: Input,
+    typ: Class[Vector[_]]
+  ): Vector[_] = {
     val len = input.readInt(true)
     val coll = Vector.newBuilder[Any]
 
@@ -88,7 +138,11 @@ class ScalaVectorSerializer() extends Serializer[Vector[_]] {
     coll.result
   }
 
-  override def write(kryo: Kryo, output: Output, collection: Vector[_]) = {
+  override def write(
+    kryo: Kryo,
+    output: Output,
+    collection: Vector[_]
+  ) = {
     val len = collection.size
     output.writeInt(len, true)
     collection.foreach { e: Any => kryo.writeClassAndObject(output, e) }

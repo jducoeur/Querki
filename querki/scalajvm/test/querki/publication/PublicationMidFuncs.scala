@@ -19,16 +19,19 @@ trait PublicationMidFuncs {
   // Wrappers around the PublicationFunctions API.
   //
 
-  def publish(thingId:TID): TestOp[ThingInfo] =
+  def publish(thingId: TID): TestOp[ThingInfo] =
     TestOp.client { _[PublicationFunctions].publish(thingId).call() }
 
-  def update(thingId:TID, minor:Boolean): TestOp[ThingInfo] =
+  def update(
+    thingId: TID,
+    minor: Boolean
+  ): TestOp[ThingInfo] =
     TestOp.client { _[PublicationFunctions].update(thingId, minor).call() }
 
   def changePublishedModels(): TestOp[Unit] =
     TestOp.client { _[PublicationFunctions].changePublishedModels().call() }
 
-  def discardChanges(thingId:TID): TestOp[Unit] =
+  def discardChanges(thingId: TID): TestOp[Unit] =
     TestOp.client { _[PublicationFunctions].discardChanges(thingId).call() }
 }
 

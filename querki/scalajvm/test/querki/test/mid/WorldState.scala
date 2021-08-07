@@ -8,11 +8,14 @@ import querki.data._
 /**
  * The state of the world -- the Spaces and Things in them -- from the test harness' point of view.
  */
-case class WorldState(spaces: Map[TID, SpaceTestState], system: SystemStuff)
+case class WorldState(
+  spaces: Map[TID, SpaceTestState],
+  system: SystemStuff
+)
 
 object WorldState {
   val empty = WorldState(Map.empty, SystemStuff(None))
-  
+
   def updateCurrentSpace(f: SpaceTestState => SpaceTestState): TestOp[Unit] = TestOp.update { state =>
     require(state.client.spaceOpt.isDefined)
     val curSpaceId = state.client.spaceOpt.get.oid
@@ -23,23 +26,21 @@ object WorldState {
     }
     fUpdatedSpaces(state)
   }
-  
+
   def currentSpace: TestOp[SpaceTestState] = {
     for {
       curSpaceId <- TestOp.fetch(_.client.spaceOpt.get.oid)
       curSpace <- TestOp.fetch(_.world.spaces(curSpaceId))
-    }
-      yield curSpace
+    } yield curSpace
   }
-  
+
   /**
    * Fetches the specified Thing from the *current* Space.
    */
   def fetchThing(thingId: TID): TestOp[ThingTestState] = {
     for {
       space <- currentSpace
-    }
-      yield space.things(thingId)
+    } yield space.things(thingId)
   }
 }
 

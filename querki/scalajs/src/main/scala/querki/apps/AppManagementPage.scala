@@ -13,36 +13,37 @@ import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 /**
  * @author jducoeur
  */
-class AppManagementPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
-  
+class AppManagementPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
+
   lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]
-  
+
   val appInput = GadgetRef[RxText]
-  
+
   def pageContent = {
     val content = DataAccess.space match {
       case Some(space) => {
         val apps = space.apps
         div(
           h1("App Management"),
-          p("This page lets you add Apps to your Space. ", 
-            b("Important:"), 
-            " This feature is highly experimental, and not yet intended for general use!"),
-            
+          p(
+            "This page lets you add Apps to your Space. ",
+            b("Important:"),
+            " This feature is highly experimental, and not yet intended for general use!"
+          ),
           h3("Current Apps"),
           for (app <- apps)
             yield p(b(IndexPage.spaceLink(app))),
-          
           h3("Add an App"),
           p("Specify the OID of the App here, and press the button"),
-          appInput <= new RxText(cls:="form-control col-md-3"),
-          " ", 
-          new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := appInput.mapRxOrElse(_.length == 0, true)) ({ () =>
-            Client[AppsFunctions].addApp(appInput.get.text.now).call() foreach { success =>
-              // Things may have changed a *lot*, so do a complete reload:
-              PageManager.fullReload()
-            }
+          appInput <= new RxText(cls := "form-control col-md-3"),
+          " ",
+          new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := appInput.mapRxOrElse(_.length == 0, true))({
+            () =>
+              Client[AppsFunctions].addApp(appInput.get.text.now).call().foreach { success =>
+                // Things may have changed a *lot*, so do a complete reload:
+                PageManager.fullReload()
+              }
           })
         )
       }

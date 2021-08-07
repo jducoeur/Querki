@@ -2,7 +2,7 @@ package querki.spaces
 
 import akka.actor._
 
-import anorm.{Success=>AnormSuccess,_}
+import anorm.{Success => AnormSuccess, _}
 import anorm.SqlParser._
 
 import play.api.db._
@@ -32,35 +32,41 @@ import PersistMessages._
  * This actor manages the actual persisting of a Space to and from the database. This code
  * was originally contained in the Space itself, but has been pulled out into its own Actor
  * so as to reduce blocking in the main Space Actor, and to abstract things away for testing.
- * 
+ *
  * *All* Space-specific code that talks to the database should go through here! That way,
  * we can unit-test Space itself without any DB dependencies, and we have a nice bottleneck
  * to replace if and when we change the persistence model.
- * 
+ *
  * Note the implication: this sucker does a *lot* of blocking, and asks to here are likely to
  * be bottlenecks. So use ask with caution, preferably using the Requester pattern. There is
  * one SpacePersister per Space, so they don't interfere with each other.
- * 
+ *
  * The Persister does not maintain its own State. Instead, it works hand-in-glove with the
  * Space itself to manage that.
- * 
+ *
  * Write requests are, by and large, best-effort.
- * 
+ *
  * TODO: The medium-term plan is that, if this throws any exceptions, it should result in
  * killing the Space. This should be mediated through the SpaceManager, probably, or there
  * might be a mid-level Actor between the SpaceManager and Space/SpacePersister, which
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
- * 
+ *
  * TODO: This class should have guards against loading a Space that isn't in the correct State.
  * Normally, you should only be able to load a Space with StatusNormal. If it *isn't* in
  * StatusNormal, you shouldn't be able to load it through the "back door" by using its OID,
  * which is currently possible! (QI.7w4g7xl)
  */
-private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember 
-  with Requester with SpaceLoader with ModelTypeDefiner 
-{
-  
+private[spaces] class SpacePersister(
+  val id: OID,
+  implicit
+  val ecology: Ecology
+) extends Actor
+     with EcologyMember
+     with Requester
+     with SpaceLoader
+     with ModelTypeDefiner {
+
   lazy val Core = interface[querki.core.Core]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
@@ -68,42 +74,53 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Types = interface[querki.types.Types]
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
+
   // For the moment, new-style object creation is only turned on if it says so in config. This is
   // so that we can conduct lower-risk experiments in production before turning it on.
   lazy val newObjCreate = Config.getBoolean("querki.cluster.newObjCreate", false)
 
   // The OID of the Space, based on the sid
-  def oid(sid:String) = OID(sid)
+  def oid(sid: String) = OID(sid)
   // The name of the Space's History Table
-  def historyTable(id:OID) = "h" + sid(id)
-  
-  def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(id, query)
-  
+  def historyTable(id: OID) = "h" + sid(id)
+
+  def SpaceSQL(query: String): SqlQuery = SpacePersistence.SpaceSQL(id, query)
+
   // Necessary in order to serialize attachments properly below:
   implicit object byteArrayToStatement extends ToStatement[Array[Byte]] {
-    def set(s: java.sql.PreparedStatement, i: Int, array: Array[Byte]): Unit = {
+
+    def set(
+      s: java.sql.PreparedStatement,
+      i: Int,
+      array: Array[Byte]
+    ): Unit = {
       s.setBlob(i, new javax.sql.rowset.serial.SerialBlob(array))
     }
   }
-  
-  case class SpaceInfoInternal(name:String, owner:OID, version:Int)
-  
+
+  case class SpaceInfoInternal(
+    name: String,
+    owner: OID,
+    version: Int
+  )
+
   private val spaceInfoParser =
-    str("name") ~ oidParser("owner") ~ int("version") map
-      { case name ~ owner ~ version => SpaceInfoInternal(name, owner, version) }
-  
+    (str("name") ~ oidParser("owner") ~ int("version")).map {
+      case name ~ owner ~ version => SpaceInfoInternal(name, owner, version)
+    }
+
   /**
    * This is a var instead of a lazy val, because the name can change at runtime.
-   * 
+   *
    * TODO: bundle this into the overall state parameter, as described in _currentState.
    * Is there any info here that isn't part of the SpaceState?
    */
-  var _currentSpaceInfo:Option[SpaceInfoInternal] = None
+  var _currentSpaceInfo: Option[SpaceInfoInternal] = None
+
   /**
    * Fetch the high-level information about this Space. Note that this will throw
    * an exception if for some reason we can't load the record. Re-run this if you
-   * have reason to believe the Spaces record has been changed. 
+   * have reason to believe the Spaces record has been changed.
    */
   def fetchSpaceInfo() = {
     _currentSpaceInfo = Some(QDB(System) { implicit conn =>
@@ -114,42 +131,53 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
         .as(spaceInfoParser.single)
     })
   }
-  def spaceInfo:SpaceInfoInternal = {
+
+  def spaceInfo: SpaceInfoInternal = {
     if (_currentSpaceInfo.isEmpty) fetchSpaceInfo()
     _currentSpaceInfo.get
   }
   def name = spaceInfo.name
   def owner = spaceInfo.owner
   def version = spaceInfo.version
-  
+
   /**
    * The literal contents of a row in a Space's table.
    */
-  private case class RawSpaceRow(kind:Int, propStr:String, modified:DateTime, id:OID, model:OID)
+  private case class RawSpaceRow(
+    kind: Int,
+    propStr: String,
+    modified: DateTime,
+    id: OID,
+    model: OID
+  )
+
   private val rawSpaceParser =
-    int("kind") ~ str("props") ~ dateTime("modified") ~ oidParser("id") ~ oidParser("model") map
+    (int("kind") ~ str("props") ~ dateTime("modified") ~ oidParser("id") ~ oidParser("model")).map(
       to(RawSpaceRow)
+    )
 
   def receive = {
-    
-    /***************************/
-    
+
+    /**
+     * ************************
+     */
+
     case Evolve => {
       // NOTE: this can take a long time! This is the point where we evolve the Space to the
       // current version:
       Evolutions.checkEvolution(id, version)
-      
+
       sender ! Evolved
     }
-    
+
     case GetOwner => {
       sender ! SpaceOwner(owner)
     }
-    
+
     case Clear => {
       _currentSpaceInfo = None
     }
-    
+
     case Load(apps) => {
       // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
       QDB(ShardKind.User) { implicit conn =>
@@ -179,37 +207,45 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
             // Old-style Space:
             // Split the stream, dividing it by Kind:
             val rawsByKind = raws.groupBy(_.kind)
-            
+
             val loader = new ThingStreamLoader {
               // Now load each kind. We do this in order, although in practice it shouldn't
               // matter too much so long as Space comes last:
-              def getThingList[T <: Thing](kind:Int)(state:SpaceState)(builder:(OID, OID, PropMap, DateTime) => T):List[T] = {
+              def getThingList[T <: Thing](
+                kind: Int
+              )(
+                state: SpaceState
+              )(
+                builder: (OID, OID, PropMap, DateTime) => T
+              ): List[T] = {
                 rawsByKind.get(kind).getOrElse(List.empty).map({ raw =>
                   // This is a critical catch, where we log load-time errors. But we don't want to
                   // raise them to the user, so objects that fail to load are (for the moment) quietly
                   // suppressed.
                   // TBD: we should get more refined about these errors, and expose them a bit
-                  // more -- as it is, errors can propagate widely, so objects just vanish. 
+                  // more -- as it is, errors can propagate widely, so objects just vanish.
                   // But they should generally be considered internal errors.
                   try {
                     Some(
                       builder(
-                        raw.id, 
-                        raw.model, 
+                        raw.id,
+                        raw.model,
                         SpacePersistence.deserializeProps(raw.propStr, state),
-                        raw.modified))
+                        raw.modified
+                      )
+                    )
                   } catch {
-                    case error:Exception => {
+                    case error: Exception => {
                       // TODO: this should go to a more serious error log, that we pay attention to. It
                       // indicates an internal DB inconsistency that we should have ways to clean up.
                       QLog.error("Error while trying to load ThingStream " + id, error)
                       None
-                    }            
+                    }
                   }
                 }).flatten
               }
             }
-    
+
             val state = doLoad(loader, apps)
             sender ! Loaded(state)
           }
@@ -218,92 +254,97 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
         }
       }
     }
-    
-    /***************************/
-    
+
+    /**
+     * ************************
+     */
+
     case Delete(thingId) => {
       QDB(ShardKind.User) { implicit conn =>
-      // TODO: add a history record
-      SpaceSQL("""
+        // TODO: add a history record
+        SpaceSQL("""
         UPDATE {tname}
         SET deleted = TRUE
         WHERE id = {thingId}
-        """
-      ).on("thingId" -> thingId.raw).executeUpdate()
-      }      
+        """).on("thingId" -> thingId.raw).executeUpdate()
+      }
     }
-    
-    /***************************/
-    
+
+    /**
+     * ************************
+     */
+
     case Change(state, thingId, modelId, modTime, props, spaceChangeOpt) => {
       QDB(ShardKind.User) { implicit conn =>
         SpaceSQL("""
           UPDATE {tname}
           SET model = {modelId}, modified = {modified}, props = {props}
           WHERE id = {thingId}
-          """
-          ).on("thingId" -> thingId.raw,
-               "modelId" -> modelId.raw,
-               "modified" -> modTime,
-               "props" -> SpacePersistence.serializeProps(props, state)).executeUpdate()
+          """).on(
+          "thingId" -> thingId.raw,
+          "modelId" -> modelId.raw,
+          "modified" -> modTime,
+          "props" -> SpacePersistence.serializeProps(props, state)
+        ).executeUpdate()
       }
-      
-      spaceChangeOpt map { spaceChange =>
+
+      spaceChangeOpt.map { spaceChange =>
         // In principle, this ought to be in the same transaction, but we
         // don't currently have a mechanism for cross-DB transactions:
-        QDB(System) {implicit conn =>
+        QDB(System) { implicit conn =>
           SQL("""
             UPDATE Spaces
             SET name = {newName}, display = {displayName}
             WHERE id = {thingId}
-            """
-          ).on("newName" -> spaceChange.newName, 
-               "thingId" -> thingId.raw,
-               "displayName" -> spaceChange.newDisplay).executeUpdate()          
+            """).on(
+            "newName" -> spaceChange.newName,
+            "thingId" -> thingId.raw,
+            "displayName" -> spaceChange.newDisplay
+          ).executeUpdate()
         }
       }
-               
+
       sender ! Changed(thingId, modTime)
     }
-    
-    /***************************/
-    
+
+    /**
+     * ************************
+     */
+
     /**
      * This used to be part of Change. It has been broken out, and is now the only non-vestigial part
      * of this Actor.
-     * 
+     *
      * For the moment, this is purely fire-and-forget, and doesn't respond. Possibly it should do so.
      */
     case SpaceChange(newName, newDisplay) => {
-        QDB(System) {implicit conn =>
-          SQL("""
+      QDB(System) { implicit conn =>
+        SQL("""
             UPDATE Spaces
             SET name = {newName}, display = {displayName}
             WHERE id = {thingId}
-            """
-          ).on("newName" -> newName, 
-               "thingId" -> id.raw,
-               "displayName" -> newDisplay).executeUpdate()          
-        }
+            """).on("newName" -> newName, "thingId" -> id.raw, "displayName" -> newDisplay).executeUpdate()
+      }
     }
-    
-    /***************************/
-    
-    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      allocThingId() map { thingId =>
+
+    /**
+     * ************************
+     */
+
+    case Create(state: SpaceState, modelId: OID, kind: Kind, props: PropMap, modTime: DateTime) => {
+      allocThingId().map { thingId =>
         QDB(ShardKind.User) { implicit conn =>
           // TODO: add a history record
           SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
-        }          
+        }
         sender ! Changed(thingId, modTime)
       }
     }
   }
-  
-  def allocThingId():RequestM[OID] = {
+
+  def allocThingId(): RequestM[OID] = {
     QuerkiCluster.oidAllocator.request(NextOID).map { case NewOID(thingId) => thingId }
   }
 }
 
-object SpacePersister {
-}
+object SpacePersister {}

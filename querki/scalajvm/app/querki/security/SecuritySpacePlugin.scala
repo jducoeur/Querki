@@ -15,23 +15,32 @@ import SecurityFunctions._
 /**
  * This code runs *inside* the Space Actor, as a plugin. It has important constraints, as described in
  * SpaceAPI.
- * 
+ *
  * @author jducoeur
  */
-class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val ecology:Ecology) 
-  extends SpacePlugin(api, rtc) with EcologyMember
-{
+class SecuritySpacePlugin[RM[_]](
+  api: SpaceAPI[RM],
+  rtc: RTCAble[RM],
+  implicit
+  val ecology: Ecology
+) extends SpacePlugin(api, rtc)
+     with EcologyMember {
   lazy val AccessControl = interface[AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
-  
-  implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
-  
+
+  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+
   /**
    * Fetches the Instance Permissions for the specified Thing, if that makes sense and creating
    * it if necessary.
    */
-  def getInstancePermissionsThing(req:User, thing:Thing)(state:SpaceState):RM[ChangeResult] = {
+  def getInstancePermissionsThing(
+    req: User,
+    thing: Thing
+  )(
+    state: SpaceState
+  ): RM[ChangeResult] = {
     val thingId = thing.id
     val hasInstancePerms = (thing.kind == Kind.Space || thing.isModel(state))
     if (hasInstancePerms) {
@@ -40,9 +49,8 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
         // Thing from the parent model. See QI.bu6oeej -- this is the fix for that.
         oid <- thing.localFirst(AccessControl.InstancePermissionsProp)(state)
         t <- state.anything(oid)
-      }
-        yield t
-  
+      } yield t
+
       // Either we have the Instance Permissions Thing, or we create it:
       // Note that the actual creation happens in the wrapping code -- this just describes the changes to be
       // made. It's *almost* good FP code, aside from the horrible wart of doCreate() allocating an OID.
@@ -57,27 +65,33 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
             permThingId = permThingIdOpt.get
             permThing = newState.anything(permThingId).get
             // And point the main Thing to it:
-            modifyResult <- api.modifyThing(req, thing.id, None, Map(AccessControl.InstancePermissionsProp(permThingId)), false)(newState)
+            modifyResult <- api.modifyThing(
+              req,
+              thing.id,
+              None,
+              Map(AccessControl.InstancePermissionsProp(permThingId)),
+              false
+            )(newState)
             ChangeResult(modifyEvents, _, fullState) = modifyResult
-          }
-            yield ChangeResult(createEvents ++ modifyEvents, Some(permThingId), fullState) 
+          } yield ChangeResult(createEvents ++ modifyEvents, Some(permThingId), fullState)
         }
       }
     } else {
       // This doesn't have Instance Permissions, so just toss it right back:
       rtc.successful(ChangeResult(List.empty, Some(thingId), state))
-    }    
+    }
   }
-  
+
   /**
    * This will be called during the Actor's receive loop, and provides supplementary
    * handlers particular to Apps.
    */
-  def receive:Actor.Receive = {
+  def receive: Actor.Receive = {
     case SpacePluginMsg(req, _, GetInstancePermissionsObject(thingId)) => {
       val state = api.currentState
       state.anything(thingId) match {
-        case Some(thing) => api.runAndSendResponse("getInstancePermissions", true, getInstancePermissionsThing(req, thing), false)(state)
+        case Some(thing) =>
+          api.runAndSendResponse("getInstancePermissions", true, getInstancePermissionsThing(req, thing), false)(state)
         case _ => api.respond(ThingError(PublicException("Thing.find.noSuch")))
       }
     }
@@ -88,4 +102,4 @@ class SecuritySpacePlugin[RM[_]](api:SpaceAPI[RM], rtc:RTCAble[RM], implicit val
  * Fetches the ThingPermissions object for the specified Thing, creating them if need be.
  * Expects a ThingFound for the permissions object.
  */
-private [security] case class GetInstancePermissionsObject(thingId:OID)
+private[security] case class GetInstancePermissionsObject(thingId: OID)

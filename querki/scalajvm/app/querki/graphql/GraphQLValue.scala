@@ -1,6 +1,6 @@
 package querki.graphql
 
-import sangria.ast.{StringValue, Value, BooleanValue, EnumValue}
+import sangria.ast.{BooleanValue, EnumValue, StringValue, Value}
 
 trait GraphQLValue[T <: Value, R] {
   def name: String
@@ -9,13 +9,14 @@ trait GraphQLValue[T <: Value, R] {
 }
 
 object GraphQLValue {
+
   implicit val BooleanV = new GraphQLValue[BooleanValue, Boolean] {
     val name = "Boolean"
 
     def fromValue(v: Value): Option[BooleanValue] = {
       v match {
         case b: BooleanValue => Some(b)
-        case _ => None
+        case _               => None
       }
     }
 
@@ -28,7 +29,7 @@ object GraphQLValue {
     def fromValue(v: Value): Option[StringValue] = {
       v match {
         case b: StringValue => Some(b)
-        case _ => None
+        case _              => None
       }
     }
 
@@ -41,7 +42,7 @@ object GraphQLValue {
     def fromValue(v: Value): Option[EnumValue] = {
       v match {
         case b: EnumValue => Some(b)
-        case _ => None
+        case _            => None
       }
     }
 

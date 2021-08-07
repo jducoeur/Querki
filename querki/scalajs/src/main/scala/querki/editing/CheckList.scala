@@ -14,12 +14,12 @@ import querki.display.rx.RxInput
 
 /**
  * The client side of the _checkList function.
- * 
+ *
  * Note that this replaces the old PickListGadget. We've deconstructed that, so this is much simpler.
- * 
+ *
  * @author jducoeur
  */
-class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with QuerkiUIUtils {
+class CheckList(implicit e: Ecology) extends InputGadget[html.UList](e) with QuerkiUIUtils {
 
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[querki.display.PageManager]
@@ -51,12 +51,12 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
   }
 
   var filterHook: Option[Obs] = None
-  
-  def saveCheckbox(checkbox:html.Element) = {
+
+  def saveCheckbox(checkbox: html.Element) = {
     val v = $(checkbox).valueString
     val checked = $(checkbox).prop("checked").asInstanceOf[Boolean]
     val path = Editing.propPath(propId, Some(thingId))
-    val msg = 
+    val msg =
       if (checked)
         AddToSet(path, v)
       else
@@ -76,12 +76,11 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
       // TODO: it would be better to just reload this list, a la _updateableSection, but that's not modular
       // enough yet:
       reloadedPage <- PageManager.reload()
-    }
-      StatusLine.showBriefly("Saved")
+    } StatusLine.showBriefly("Saved")
   }
 
   def hook() = {
-    $(elem).find("._checkOption").change({ (evt:JQueryEventObject) =>
+    $(elem).find("._checkOption").change({ (evt: JQueryEventObject) =>
       val checkbox = evt.target.asInstanceOf[html.Element]
       saveCheckbox(checkbox)
     })
@@ -120,5 +119,5 @@ class CheckList(implicit e:Ecology) extends InputGadget[html.UList](e) with Quer
         }
       }
     }
-  }  
+  }
 }

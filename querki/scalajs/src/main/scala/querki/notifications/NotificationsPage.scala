@@ -14,19 +14,19 @@ import querki.globals._
 import querki.display.QText
 import querki.pages.{Page, PageContents, ParamMap}
 
-class NotificationsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
+class NotificationsPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
   lazy val Notifications = interface[Notifications]
-  
+
   /**
    * HORRIBLE HACK: the comment, as rendered by the server's CommentNotifier, includes a terrible
    * hard-coded link. The link's format has an embedded # to go to the actual comment. That, of course,
    * breaks in the new client. So we rewrite it to be something we understand.
-   * 
+   *
    * For now, this is assuming that we only have comment notifications. That's not quite right, but
    * should do for the very short term.
-   * 
+   *
    * TODO: this whole approach is fundamentally wrong. Redo comment rendering so that the information
    * sent to the client includes all the necessaries (remembering that Notifications can be in other
    * Spaces), and construct the link Client-side.
@@ -37,7 +37,7 @@ class NotificationsPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     // see above.
     renderedContentFuture.foreach { thisPage =>
       // WTF? Why is this JQExt conversion needed? For some reason, the usual implicit isn't working?
-      $(elem).find(".noteHeadline a").foreach({ rawElem:dom.Element =>
+      $(elem).find(".noteHeadline a").foreach({ rawElem: dom.Element =>
         val anchor = rawElem.asInstanceOf[dom.HTMLAnchorElement]
         val href = $(anchor).attr("href").get
         val adjusted = href.replace("#comment", "?showComment=comment")
@@ -46,7 +46,7 @@ class NotificationsPage(params:ParamMap)(implicit val ecology:Ecology) extends P
     }
     Future.successful(())
   }
-  
+
   def pageContent = {
     Client[NotificationFunctions].getRecentNotifications().call().map { notifications =>
       if (notifications.length > 0) {
@@ -57,20 +57,27 @@ class NotificationsPage(params:ParamMap)(implicit val ecology:Ecology) extends P
           Notifications.checkNotifications()
         }
       }
-      val guts = 
+      val guts =
         div(
           h1("Recent Messages"),
           p("""NOTE: yes, we will be replacing this page with a fancy popup notifications pane, a la Facebook and Google+, 
               |when we have time to do so. Please bear with us for the time being.""".stripMargin),
-          div(cls:="notePage",
-          for (note <- notifications)
-            yield MSeq(
-              hr,
-              p("From ", span(cls:="noteSender", note.sender.name), " ", span(cls:="noteTime", Moment(note.sentTime).calendar())),
-              new QText(note.rendered.headline, cls:="noteHeadline"),
-              new QText(note.rendered.content, cls:="noteContent")
-            )
-        ))
+          div(
+            cls := "notePage",
+            for (note <- notifications)
+              yield MSeq(
+                hr,
+                p(
+                  "From ",
+                  span(cls := "noteSender", note.sender.name),
+                  " ",
+                  span(cls := "noteTime", Moment(note.sentTime).calendar())
+                ),
+                new QText(note.rendered.headline, cls := "noteHeadline"),
+                new QText(note.rendered.content, cls := "noteContent")
+              )
+          )
+        )
       PageContents(s"Recent Messages", guts)
     }
   }

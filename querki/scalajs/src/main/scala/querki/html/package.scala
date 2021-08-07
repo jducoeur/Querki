@@ -1,4 +1,3 @@
 package querki
 
-package object html {
-}
+package object html {}

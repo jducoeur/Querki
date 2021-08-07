@@ -8,5 +8,4 @@ import org.querki.jquery._
 /**
  * @author jducoeur
  */
-package object rx {
-}
+package object rx {}

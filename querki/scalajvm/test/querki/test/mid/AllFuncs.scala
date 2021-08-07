@@ -8,15 +8,15 @@ import querki.conversations.ConvMidFuncs
  */
 trait AllFuncs
   extends ApiFuncs
-    with ClientFuncs
-    with ConvMidFuncs
-    with CoreFuncs
-    with EditFuncs
-    with FormFuncs
-    with LoginFuncs
-    with PropFuncs
-    with SetupFuncs
-    with SpaceFuncs
-    with ThingFuncs
+     with ClientFuncs
+     with ConvMidFuncs
+     with CoreFuncs
+     with EditFuncs
+     with FormFuncs
+     with LoginFuncs
+     with PropFuncs
+     with SetupFuncs
+     with SpaceFuncs
+     with ThingFuncs
 
 object AllFuncs extends AllFuncs

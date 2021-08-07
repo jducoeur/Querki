@@ -8,7 +8,7 @@ import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
 
 /**
  * This single-function trait deals with computing the OIDs for a newly extracted App.
- * 
+ *
  * IMPORTANT: this function is *not* general! It only remaps the Models, not anything else.
  * Instances that have been lifted into the App will be deleted; Properties get *duplicated*
  * with the same OID in the App as in the child Space (to avoid the chaos of trying to deal
@@ -18,66 +18,81 @@ import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
  */
 trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   private lazy val Core = interface[querki.core.Core]
-  
+
   private lazy val LinkType = Core.LinkType
-  
-  implicit def rtc:RTCAble[RM]
-  private implicit def rm2rtc[A](rm:RM[A]) = rtc.toRTC(rm)
-  
-  def extractorSupport:AppExtractorSupport[RM]
-  
+
+  implicit def rtc: RTCAble[RM]
+  private implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+
+  def extractorSupport: AppExtractorSupport[RM]
+
   /**
    * Given a proto-App, this returns that State with all of the OIDs replaced by new ones.
    * Note that this already only contains the Things that are being extracted to the App.
    */
-  def remapOIDs(state:SpaceState, includeSpace:Boolean):RM[(SpaceState, Map[OID, OID])] = 
-  {
+  def remapOIDs(
+    state: SpaceState,
+    includeSpace: Boolean
+  ): RM[(SpaceState, Map[OID, OID])] = {
     val allThings = state.everythingLocal.toSeq
-      
+
     // First, fetch new OIDs for the Models:
     val (models, instances) = state.things.values.partition(_.isModel(state))
     val (pages, plainInstances) = instances.partition(_.model == querki.basic.MOIDs.SimpleThingOID)
     val oidsToMap = (models.toSeq ++ pages :+ state).map(_.id)
     extractorSupport.getOIDs(oidsToMap.size).map { oids =>
       val pairs = oidsToMap.zip(oids)
-       // This is now a Map from old to new OIDs:
-      implicit val oidMap = Map(pairs:_*)
+      // This is now a Map from old to new OIDs:
+      implicit val oidMap = Map(pairs: _*)
 //      QLog.spew(s"Remappings:")
 //      oidMap.foreach { case (k, v) => QLog.spew(s"  $k -> $v") }
       // IMPORTANT NOTE: the way this works, we're implicitly assuming that Types and Props don't
       // themselves have meta-Props whose *values* are pointing to other Things in this Space. That
       // may or may not be a safe assumption -- keep an eye on it! (The issue is that, until the
       // Props have been remapped, we're going to tend to fail to fetch Prop values.)
-      
+
       // Note that "and" is magic syntax sugar on SpaceState that lets me chain without creating lots
       // of intermediate names:
       val transformed =
-        remapTypes(state) and
-        remapProps and
-        remapThings and
-        { _.copy(s = oidMap(state.id)) } and
-        { withOwnID =>
-          if (includeSpace)
-            withOwnID.copy(pf = remapPropMap(withOwnID, withOwnID))
-          else
-            withOwnID          
+        remapTypes(state).and(
+          remapProps
+        ).and(
+          remapThings
+        ).and {
+          _.copy(s = oidMap(state.id))
+        }.and {
+          withOwnID =>
+            if (includeSpace)
+              withOwnID.copy(pf = remapPropMap(withOwnID, withOwnID))
+            else
+              withOwnID
         }
       (transformed, oidMap)
     }
   }
-  
-  private def mappedOID(oid:OID)(implicit oidMap:Map[OID, OID]):OID = {
+
+  private def mappedOID(oid: OID)(implicit oidMap: Map[OID, OID]): OID = {
     oidMap.get(oid).getOrElse(oid)
   }
-  
+
   /**
    * Remap any Links in this PropMap, if appropriate.
    */
-  private def remapPropMap(t:Thing, state:SpaceState)(implicit oidMap:Map[OID, OID]):PropMap = {
+  private def remapPropMap(
+    t: Thing,
+    state: SpaceState
+  )(implicit
+    oidMap: Map[OID, OID]
+  ): PropMap = {
     remapPropMap(t.props, state)
   }
-  
-  private def remapPropMap(propsIn:PropMap, state:SpaceState)(implicit oidMap:Map[OID, OID]):PropMap = {
+
+  private def remapPropMap(
+    propsIn: PropMap,
+    state: SpaceState
+  )(implicit
+    oidMap: Map[OID, OID]
+  ): PropMap = {
     (propsIn /: propsIn) { case (props, (propId, propVal)) =>
       val propOpt = state.prop(propId)
       propOpt match {
@@ -91,7 +106,7 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
           val mtIn = prop.pType.asInstanceOf[ModelTypeDefiner#ModelType]
           val rawVals = propVal.rawList(mtIn)
           val mtOut = state.typ(mappedOID(mtIn.id)).asInstanceOf[ModelTypeDefiner#ModelType]
-          val mappedVals = rawVals.map { bundle => 
+          val mappedVals = rawVals.map { bundle =>
             mtOut(SimplePropertyBundle(remapPropMap(bundle.props, state)))
           }
           val newVal = prop.cType.makePropValue(mappedVals, mtOut)
@@ -101,11 +116,11 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
       }
     }
   }
-  
-  private def remapTypes(stateIn:SpaceState)(implicit oidMap:Map[OID, OID]):SpaceState = {
+
+  private def remapTypes(stateIn: SpaceState)(implicit oidMap: Map[OID, OID]): SpaceState = {
     (stateIn /: stateIn.types.values) { (curState, typ) =>
       typ match {
-        case mt:ModelTypeDefiner#ModelType => {
+        case mt: ModelTypeDefiner#ModelType => {
           val newType = ModelType(
             mt.id,
             mappedOID(curState.id),
@@ -120,8 +135,8 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
       }
     }
   }
-  
-  private def remapProps(stateIn:SpaceState)(implicit oidMap:Map[OID, OID]):SpaceState = {
+
+  private def remapProps(stateIn: SpaceState)(implicit oidMap: Map[OID, OID]): SpaceState = {
     (stateIn /: stateIn.spaceProps.values) { (curState, prop) =>
       val newProp = prop.copy(
         s = mappedOID(curState.id),
@@ -132,15 +147,16 @@ trait AppRemapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
       curState.copy(spaceProps = newProps)
     }
   }
-  
-  private def remapThings(stateIn:SpaceState)(implicit oidMap:Map[OID, OID]):SpaceState = {
+
+  private def remapThings(stateIn: SpaceState)(implicit oidMap: Map[OID, OID]): SpaceState = {
     (stateIn /: stateIn.things.values) { (curState, t) =>
       val newId = mappedOID(t.id)
       val newThing = t.copy(
         i = newId,
-        s = mappedOID(curState.id), 
-        m = mappedOID(t.model), 
-        pf = remapPropMap(t, curState))
+        s = mappedOID(curState.id),
+        m = mappedOID(t.model),
+        pf = remapPropMap(t, curState)
+      )
       // Note that we've got a new OID, so we can't just use curState.things.updated():
       val newThings = (curState.things - t.id) + (newId -> newThing)
       curState.copy(things = newThings)

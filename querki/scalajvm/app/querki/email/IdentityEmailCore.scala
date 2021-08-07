@@ -16,52 +16,61 @@ import IdentityEmailPersistence._
 /**
  * This is the core of the IdentityEmailActor, separated out as usual for testability.
  */
-abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecology:Ecology) 
-  extends PersistentActorCore with PersistentRMCore[RM] with IdentityEmailPure with EcologyMember
-{
+abstract class IdentityEmailCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecology)
+  extends PersistentActorCore
+     with PersistentRMCore[RM]
+     with IdentityEmailPure
+     with EcologyMember {
   lazy val Email = interface[querki.email.Email]
   lazy val Unsubscribe = interface[Unsubscribe]
   lazy val Notifications = interface[querki.notifications.Notifications]
-  
+
   /////////////////////////////////////////////////////////
   //
   // External requirements
   //
   // These are the calls that currently need to be implemented in the actual Actor or test framework.
   //
-  
-  def identityId:OID
-  
-  def fetchIdentity(identityId:IdentityId):RM[Option[FullIdentity]]
-  
-  def toEmail(note:Notification, recipient:FullIdentity):RM[EmailMsg]
-  
+
+  def identityId: OID
+
+  def fetchIdentity(identityId: IdentityId): RM[Option[FullIdentity]]
+
+  def toEmail(
+    note: Notification,
+    recipient: FullIdentity
+  ): RM[EmailMsg]
+
   /////////////////////////////////////////////////////////
-  
-  def persistenceId:String = s"email$identityId"
-  
+
+  def persistenceId: String = s"email$identityId"
+
   var _initializing = true
-  
-  var _identity:Option[FullIdentity] = None
+
+  var _identity: Option[FullIdentity] = None
   def identity = _identity.get
-  
-  var unsubsByNotifier:Map[NotifierId, List[UnsubEvent]] = Map.empty
-  def addUnsub(notifierStr:String, evt:UnsubEvent) = {
+
+  var unsubsByNotifier: Map[NotifierId, List[UnsubEvent]] = Map.empty
+
+  def addUnsub(
+    notifierStr: String,
+    evt: UnsubEvent
+  ) = {
     val notifierId = NotifierId(notifierStr)
     val allEvts = unsubsByNotifier.get(notifierId) match {
       case Some(evts) => evt :: evts
-      case _ => List(evt)
+      case _          => List(evt)
     }
     unsubsByNotifier += (notifierId -> allEvts)
   }
-  
-  def receiveRecover:Receive = {
+
+  def receiveRecover: Receive = {
     case UnsubscribeEvent(notifierStr, unsubEvt) => {
       addUnsub(notifierStr, unsubEvt)
     }
-    
+
     case RecoveryCompleted => {
-      fetchIdentity(identityId) map { identityOpt =>
+      fetchIdentity(identityId).map { identityOpt =>
         identityOpt match {
           case Some(identity) => {
             _identity = Some(identity)
@@ -77,11 +86,11 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
       }
     }
   }
-  
-  def receiveCommand:Receive = handleRequestResponse orElse {
+
+  def receiveCommand: Receive = handleRequestResponse.orElse {
     // While we are initializing, just save everything away:
     case _ if (_initializing) => stash()
-    
+
     case NotificationToEmail(note) => {
       Notifications.notifierFor(note).emailNotifier match {
         case Some(notifier) => {
@@ -96,8 +105,8 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
               // on a per-recipient basis. If we come up with a reason to care about this, we might
               // actually turn this on later...
 //              doPersist(dh(msg)) { _ =>
-                // ... and send it out.
-                Email.sendEmail(msg)
+              // ... and send it out.
+              Email.sendEmail(msg)
 //              }
             }
           } else {
@@ -109,7 +118,7 @@ abstract class IdentityEmailCore[RM[_]](val rtc:RTCAble[RM])(implicit val ecolog
         case None => QLog.error(s"IdentityEmailCore somehow received notification without an EmailNotifier: $note")
       }
     }
-    
+
     case DoUnsubscribe(to, notifierStr, unsubId, context) => {
       val notifier = Email.emailNotifier(NotifierId(notifierStr))
       val (message, unsubEvt) = notifier.getUnsubEvent(unsubId, context)

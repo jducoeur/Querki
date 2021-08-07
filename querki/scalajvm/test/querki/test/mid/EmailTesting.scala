@@ -8,18 +8,19 @@ import querki.globals._
  */
 object EmailTesting {
   final val validateLinkRegex = """\[([^\"]*)\]""".r.unanchored
-  final val inviteLinkRegex = 
+
+  final val inviteLinkRegex =
     """<div class="bottomlinkdiv"><a href="([^\"]*)" class="btn btn-primary">Join Space""".r.unanchored
 
   def emailInspector(implicit ecology: Ecology) = ecology.api[querki.email.TestEmailInspector]
-  
+
   /**
    * A notionally-opaque token that represents the next email to be sent.
-   * 
+   *
    * This can then be used to handle the email once it goes out.
    */
-  case class EmailListenerToken(private [EmailTesting] fut: Future[TestEmailMessageDetails])
-  
+  case class EmailListenerToken(private[EmailTesting] fut: Future[TestEmailMessageDetails])
+
   /**
    * Prep to handle the next email that gets sent. You must call this *before* calling the
    * function that will send the email!!!
@@ -55,10 +56,10 @@ object EmailTesting {
     val body = fetchLatestEmailBody()
     body match {
       case validateLinkRegex(url) => url
-      case _ => throw new Exception(s"Didn't find validation link in $body")
+      case _                      => throw new Exception(s"Didn't find validation link in $body")
     }
   }
-  
+
   /**
    * This fetches the validation hash out of the validation link in the most recently-sent email.
    */
@@ -68,16 +69,17 @@ object EmailTesting {
     val hashPos = link.indexOf(hashPre) + hashPre.length
     link.substring(hashPos)
   }
-  
+
   def extractInviteLink(token: EmailListenerToken): TestOp[String] = withNextEmail(token) { msg =>
     val body = msg.bodyMain.plaintext
     body match {
       case inviteLinkRegex(url) => url
-      case _ => throw new Exception(s"Didn't find invitation link in $body")
+      case _                    => throw new Exception(s"Didn't find invitation link in $body")
     }
   }
-  
+
   final val inviteHashPre = "invite="
+
   /**
    * This fetches the invitation hash out of the invite link in the email indicated by the token.
    */
@@ -85,7 +87,6 @@ object EmailTesting {
     for {
       link <- extractInviteLink(token)
       hashPos = link.indexOf(inviteHashPre) + inviteHashPre.length
-    }
-      yield link.substring(hashPos)
+    } yield link.substring(hashPos)
   }
 }

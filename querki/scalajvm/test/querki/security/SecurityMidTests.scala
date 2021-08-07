@@ -10,11 +10,11 @@ import SecurityMidFuncs._
 import org.scalactic.source.Position
 
 object SecurityMidTests {
+
   val securityTests: TestOp[Unit] = {
     for {
       _ <- regressionTestQIbu6oeej
-    }
-      yield ()
+    } yield ()
   }
 
   lazy val regressionTestQIbu6oeej: TestOp[Unit] = {
@@ -23,13 +23,13 @@ object SecurityMidTests {
     val memberName = "bu6oeej Member"
     val member = TestUser(memberName)
     val spaceName = "bu6oeej Space"
-    
+
     for {
       _ <- step("Regression test for QI.bu6oeej")
       std <- getStd
       _ <- newUser(owner)
       space <- createSpace(spaceName)
-      
+
       _ <- newUser(member)
 
       // Set up the Space and members:
@@ -47,9 +47,9 @@ object SecurityMidTests {
       // Check that the Things are okay -- if isTag is false, that means it is a real Thing:
       _ <- ClientState.switchToUser(member)
       parentCheck1 <- getThingInfo(TID(parentInstanceName))
-      _ = parentCheck1.isTag should be (false)
+      _ = parentCheck1.isTag should be(false)
       childCheck1 <- getThingInfo(TID(childInstanceName))
-      _ = childCheck1.isTag should be (false)
+      _ = childCheck1.isTag should be(false)
 
       // Change the security on the *child*. This is the heart of the bug: it was actually fetching the Parent's
       // Instance Permissions Thing:
@@ -64,12 +64,11 @@ object SecurityMidTests {
       // Now, the member should still be able to see the parent, but not the child:
       _ <- ClientState.switchToUser(member)
       childCheck2 <- getThingInfo(TID(childInstanceName))
-      _ = childCheck2.isTag should be (true)
+      _ = childCheck2.isTag should be(true)
       // The bug resulted in the *parent's* instances not being visible:
       parentCheck2 <- getThingInfo(TID(parentInstanceName))
-      _ = parentCheck2.isTag should be (false)
-    }
-      yield ()
+      _ = parentCheck2.isTag should be(false)
+    } yield ()
   }
 
   lazy val regressionTestQIbu6of67: TestOp[Unit] = {
@@ -117,8 +116,7 @@ object SecurityMidTests {
       // And for good measure, let's make sure the reverse works as expected:
       _ <- revokeRoleFrom(member, role)
       _ <- checkNameIsMissingFor(instanceName, member)
-    }
-      yield ()
+    } yield ()
   }
 
   def qi7w4gbn6RemoveMembers: TestOp[Unit] = {
@@ -156,8 +154,7 @@ object SecurityMidTests {
       personInfo <- getPersonInfoFor(member)
       _ <- removeFromSpace(personInfo.person.oid)
       _ <- checkNameIsMissingFor(instanceName, member)
-    }
-      yield ()
+    } yield ()
 
   }
 
@@ -202,15 +199,14 @@ object SecurityMidTests {
       // This was where the bug showed up: only one of these two guests would actually be removed:
       _ <- checkNameIsMissingFor(instanceName, guest1)
       _ <- checkNameIsMissingFor(instanceName, guest2)
-    }
-      yield ()
+    } yield ()
   }
 }
 
 @Slow
 class SecurityMidTests extends MidTestBase {
   import SecurityMidTests._
-  
+
   "Regression tests" should {
     "pass" in {
       runTest(regressionTestQIbu6oeej)

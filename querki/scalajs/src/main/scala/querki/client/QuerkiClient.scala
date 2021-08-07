@@ -14,23 +14,23 @@ import querki.ecology._
  * and possibly some tuned apps
  */
 object QuerkiClient extends JSApp with EcologyMember {
-  
+
   /**
    * The top-level initializer for the application. This will be called first, when the page loads,
    * and should do all necessary setup.
-   * 
+   *
    * Note that the actual page rendering happens when the outer page calls setRoot().
    */
   def main(): Unit = {
     setupEcology()
   }
-  
+
   /**
    * The One True Pointer to the Ecology. NOTHING should use this pointer outside this class! Everything
    * else should receive their own Ecology pointers, and use that!
    */
-  var ecology:EcologyImpl = null
-  
+  var ecology: EcologyImpl = null
+
   /**
    * Build and initialize the Ecology. Once this is complete, the world is running.
    */
@@ -39,11 +39,11 @@ object QuerkiClient extends JSApp with EcologyMember {
     createEcots(ecology)
     ecology.init(ClientState()) { state => state }
   }
-  
+
   /**
    * Creates the Ecots that are used straightforwardly by most tests, as well as the running code.
    */
-  def createCommonEcots(ecology:Ecology) = {
+  def createCommonEcots(ecology: Ecology) = {
     new querki.admin.AdminEcot(ecology)
     new querki.apps.AppsEcot(ecology)
     new querki.client.ClientImpl(ecology)
@@ -52,7 +52,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.display.GadgetsEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
     new querki.display.ProgressDialogEcot(ecology)
-    new querki.display.StatusLineEcot(ecology)    
+    new querki.display.StatusLineEcot(ecology)
     new querki.display.input.InputGadgetsEcot(ecology)
     new querki.editing.EditingEcot(ecology)
     new querki.identity.IdentityEcot(ecology)
@@ -74,13 +74,13 @@ object QuerkiClient extends JSApp with EcologyMember {
   /**
    * Create all of the Ecots. Every time a new one is created, it should be placed here.
    */
-  def createEcots(ecology:Ecology) = {
+  def createEcots(ecology: Ecology) = {
     createCommonEcots(ecology)
-    
+
     // List here any Ecots that usually need to be stubbed out for testing:
     new querki.comm.ApiCommEcot(ecology)
   }
-  
+
   // Entry points, exposed for the Javascript layer:
   // TODO: not all of this is probably needed any more:
   @JSExport def dataSetting = interface[querki.data.DataSetting]

@@ -14,15 +14,15 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
     "roundtrip properly" in {
       val s = new CDSpace
       implicit val state = s.state
-      
+
       val original = s.blackmores.props + (s.singleLinkProp.id -> DataModelAccess.getDeletedValue(s.singleLinkProp))
-      val dh:DHPropMap = original
-      val copy:PropMap = dh
-      
-      def checkProp(prop:AnyProp) = {
+      val dh: DHPropMap = original
+      val copy: PropMap = dh
+
+      def checkProp(prop: AnyProp) = {
         assert(prop.from(copy).matches(prop.from(original)))
       }
-      
+
       checkProp(Core.NameProp)
       checkProp(s.genres)
       assert(s.singleLinkProp.from(copy).isDeleted)
@@ -30,18 +30,21 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
   }
 }
 
-class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env) 
-  with ModelPersistence with querki.types.ModelTypeDefiner with ModelDiff 
-{
+class ModelPersistenceTests(env: PersistEnv)
+  extends PersistTest(env)
+     with ModelPersistence
+     with querki.types.ModelTypeDefiner
+     with ModelDiff {
+
   def runTests() = {
     implicit val state = env.cdSpace.state
-    
+
     checkSerialization(dh(env.cdSpace.eurythmics))
     checkSerialization(dh(env.cdSpace.genres))
-    
+
     val complexSpace = new querki.types.ComplexSpace()(ecology)
     checkSerialization(dh(complexSpace.metaType))
-    
+
     // Roundtrip a dehydrated SpaceState. Ignore the cache, which isn't expected to be right:
     val complexState = complexSpace.state.copy(cache = Map.empty)
     val spacedh = dh(complexState)
@@ -50,17 +53,16 @@ class ModelPersistenceTests(env:PersistEnv) extends PersistTest(env)
     val rehydrated = rehydrate(spaceCopy)
     testRehydratedComplexState(rehydrated)
   }
-  
-  def testRehydratedComplexState(state:SpaceState) = {
+
+  def testRehydratedComplexState(state: SpaceState) = {
     implicit val s = new DynamicSpace(state)(ecology)
-    
+
     // These tests are intentionally lifted from ModelTypeTests. Arguably, we should
     // refactor them out:
-    env.pqlEquals("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""",
-             "Top Text 1")
+    env.pqlEquals("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""", "Top Text 1")
     env.pqlEquals("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Referencing]]""", "From the Top")
     env.pqlEquals("""[[My Tree -> Left -> Right -> Node Id]]""", "3")
   }
-  
+
   runTests()
 }

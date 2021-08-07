@@ -1,12 +1,12 @@
 package querki.spaces
 
 import models.Kind.Kind
-import models.{Kind, OID, ModelPersistence, ThingState}
+import models.{Kind, ModelPersistence, OID, ThingState}
 import querki.basic.Basic
 import querki.ecology.{EcologyInterface, QuerkiEcot}
-import querki.globals.{SpaceState, Ecology, spew}
-import querki.identity.{User, Person}
-import querki.publication.{Publication, CurrentPublicationState}
+import querki.globals.{spew, Ecology, SpaceState}
+import querki.identity.{Person, User}
+import querki.publication.{CurrentPublicationState, Publication}
 import querki.security.AccessControl
 import querki.spaces.SpaceMessagePersistence._
 import querki.spaces.messages.CurrentState
@@ -15,30 +15,34 @@ import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
 
 /**
-  * This is a home for pure functions that take a Space and some sort of events, and return an updated Space.
-  */
+ * This is a home for pure functions that take a Space and some sort of events, and return an updated Space.
+ */
 trait SpaceEvolution extends SpacePure with ModelPersistence {
+
   /**
-    * This combines the various streams of information about a Space, and figures out how to handle it for this
-    * specific user.
-    *
-    * TODO: update more efficiently, based on the given changes. Only do a full recompute for edge cases!
-    *
-    * @param oldState the previous filtered state for this User
-    * @param user who we are filtering for
-    * @param userValues the UserValues for this User
-    * @param pubState the current state of Publications, if any
-    * @param changes a new event that is changing the state of this Space
-    *
-    * @return the new state, appropriately filtered for this user
-    */
+   * This combines the various streams of information about a Space, and figures out how to handle it for this
+   * specific user.
+   *
+   * TODO: update more efficiently, based on the given changes. Only do a full recompute for edge cases!
+   *
+   * @param oldState the previous filtered state for this User
+   * @param user who we are filtering for
+   * @param userValues the UserValues for this User
+   * @param pubState the current state of Publications, if any
+   * @param changes a new event that is changing the state of this Space
+   *
+   * @return the new state, appropriately filtered for this user
+   */
   def updateForUser(
     oldState: Option[SpaceState]
   )(
     user: User
   )(
-    fullState: SpaceState, events: List[SpaceEvent]
-  )(implicit ecology: Ecology): SpaceState = {
+    fullState: SpaceState,
+    events: List[SpaceEvent]
+  )(implicit
+    ecology: Ecology
+  ): SpaceState = {
     val AccessControl = ecology.api[AccessControl]
 
     // Managers act as Owners for purposes of being able to read everything:
@@ -64,17 +68,23 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
   }
 
   /**
-    * If we can evolve the given state changes intelligently, do so.
-    *
-    * This is basically how we avoid having to do the fairly evil [[filterFully()]] every time there is a change.
-    * Most world changes are simple, and require only tiny tweaks to the existing filtered state.
-    *
-    * TODO: in principle, we can make this even more efficient by scanning the events and pre-computing whether or not
-    * efficient evolution will be possible before we bother doing it. (Because sometimes we're going to evolve for a
-    * while and then hit an event that foils us and forces a full filter.) But in practice, getting this right is
-    * tricky (since later events depend on earlier ones), so we're not going to worry about that yet.
-    */
-  private def evolveForEvents(oldState: SpaceState, user: User, fullState: SpaceState, events: List[SpaceEvent], AccessControl: AccessControl): Option[SpaceState] = {
+   * If we can evolve the given state changes intelligently, do so.
+   *
+   * This is basically how we avoid having to do the fairly evil [[filterFully()]] every time there is a change.
+   * Most world changes are simple, and require only tiny tweaks to the existing filtered state.
+   *
+   * TODO: in principle, we can make this even more efficient by scanning the events and pre-computing whether or not
+   * efficient evolution will be possible before we bother doing it. (Because sometimes we're going to evolve for a
+   * while and then hit an event that foils us and forces a full filter.) But in practice, getting this right is
+   * tricky (since later events depend on earlier ones), so we're not going to worry about that yet.
+   */
+  private def evolveForEvents(
+    oldState: SpaceState,
+    user: User,
+    fullState: SpaceState,
+    events: List[SpaceEvent],
+    AccessControl: AccessControl
+  ): Option[SpaceState] = {
     // Run through all of the events in changes. If all of the evolutions produce Some, we win:
     (Option(oldState) /: events) { (curStateOpt, event) =>
       curStateOpt.flatMap(curState => evolveForEvent(curState, user, fullState, event, AccessControl))
@@ -82,9 +92,15 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
   }
 
   /**
-    * Given a single event, evolve for that if possible.
-    */
-  private def evolveForEvent(prevState: SpaceState, user: User, fullState: SpaceState, event: SpaceEvent, AccessControl: AccessControl): Option[SpaceState] = {
+   * Given a single event, evolve for that if possible.
+   */
+  private def evolveForEvent(
+    prevState: SpaceState,
+    user: User,
+    fullState: SpaceState,
+    event: SpaceEvent,
+    AccessControl: AccessControl
+  ): Option[SpaceState] = {
     // Needed for some implicit conversions:
     implicit val s = fullState
     event match {
@@ -151,8 +167,8 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
                 None
               } else if (
                 (thing.model == querki.identity.MOIDs.PersonOID) &&
-                  (ecology.api[querki.identity.Person].localPerson(user).map(_.id == thing.id).getOrElse(false)))
-              {
+                (ecology.api[querki.identity.Person].localPerson(user).map(_.id == thing.id).getOrElse(false))
+              ) {
                 // We modified this User's local Person record, which might mean we've changed their Roles, so do a
                 // full reload:
                 None
@@ -177,7 +193,9 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
               None
           }
           case None => {
-            QLog.error(s"Found a DHModifyThing for unknown Thing $id in Space ${fullState.displayName} (${fullState.id})!")
+            QLog.error(
+              s"Found a DHModifyThing for unknown Thing $id in Space ${fullState.displayName} (${fullState.id})!"
+            )
             None
           }
         }
@@ -187,7 +205,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
         // This one's easy: if we could see it before, delete it:
         prevState.anything(id) match {
           case Some(thing) => Some(deletePure(id, thing)(prevState))
-          case None => None
+          case None        => None
         }
       }
 
@@ -203,9 +221,15 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
   }
 
   /**
-    * When we can't do a smart evolution based on the event, filter the entire Space the hard way.
-    */
-  private def filterFully(user: User, rs: SpaceState, AccessControl: AccessControl)(implicit ecology: Ecology): SpaceState = {
+   * When we can't do a smart evolution based on the event, filter the entire Space the hard way.
+   */
+  private def filterFully(
+    user: User,
+    rs: SpaceState,
+    AccessControl: AccessControl
+  )(implicit
+    ecology: Ecology
+  ): SpaceState = {
     // If we are unit-testing, notify the tests that we are doing a full evolution:
     ecology.api[querki.spaces.SpaceOps].notifyFullEvolution()
     // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
@@ -231,14 +255,16 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     }
   }
 
-  def enhanceWithUserValues(state: SpaceState, userValues: Seq[OneUserValue]): SpaceState = {
+  def enhanceWithUserValues(
+    state: SpaceState,
+    userValues: Seq[OneUserValue]
+  ): SpaceState = {
     (state /: userValues) { (curState, uv) =>
       if (uv.thingId == curState.id) {
         // We're enhancing the Space itself:
         curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
-      }
-      else curState.anything(uv.thingId) match {
-        case Some(thing:ThingState) => {
+      } else curState.anything(uv.thingId) match {
+        case Some(thing: ThingState) => {
           val newThing = thing.copy(pf = thing.props + (uv.propId -> uv.v))
           curState.copy(things = curState.things + (newThing.id -> newThing))
         }
@@ -249,17 +275,28 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     }
   }
 
-  def enhanceWithPublication(state: SpaceState, pubState: Option[CurrentPublicationState])(implicit ecology: Ecology): SpaceState = {
+  def enhanceWithPublication(
+    state: SpaceState,
+    pubState: Option[CurrentPublicationState]
+  )(implicit
+    ecology: Ecology
+  ): SpaceState = {
     pubState.map { ps =>
       ecology.api[Publication].enhanceState(state, ps)
     }.getOrElse(state)
   }
 
   /**
-    * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
-    * read. There should *not* be many of these.
-    */
-  def isReadException(thingId:OID, user: User)(implicit state:SpaceState, ecology: Ecology):Boolean = {
+   * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
+   * read. There should *not* be many of these.
+   */
+  def isReadException(
+    thingId: OID,
+    user: User
+  )(implicit
+    state: SpaceState,
+    ecology: Ecology
+  ): Boolean = {
     // I always have access to my own Person record, so that _me always works:
     ecology.api[Person].hasPerson(user, thingId)
   }

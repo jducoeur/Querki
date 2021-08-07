@@ -10,9 +10,10 @@ import querki.test._
  */
 class SearchTests extends QuerkiTests {
   lazy val Search = interface[Search]
-  
-  implicit class resultChecker(resOpt:Option[SearchResultsInternal]) {
-    def shouldHave(f:SearchResultInternal => Boolean) = {
+
+  implicit class resultChecker(resOpt: Option[SearchResultsInternal]) {
+
+    def shouldHave(f: SearchResultInternal => Boolean) = {
       resOpt match {
         case Some(res) => {
           val answer = res.results.find(f)
@@ -21,8 +22,8 @@ class SearchTests extends QuerkiTests {
         case _ => fail("Got None from search()!")
       }
     }
-    
-    def shouldntHave(f:SearchResultInternal => Boolean) = {
+
+    def shouldntHave(f: SearchResultInternal => Boolean) = {
       resOpt match {
         case Some(res) => {
           val answer = res.results.find(f)
@@ -32,7 +33,7 @@ class SearchTests extends QuerkiTests {
       }
     }
   }
-  
+
   "search()" should {
     "find display names" in {
       class TSpace extends CommonSpace {
@@ -40,76 +41,83 @@ class SearchTests extends QuerkiTests {
         val cello = new SimpleTestThing("b3", Basic.DisplayNameProp("Cello"))
       }
       implicit val s = new TSpace
-      
+
       val results = Search.search("box")(s.state)
       results.shouldHave(_.thing == s.sandbox)
       results.shouldHave(res => res.thing == s.bluebox && res.elements(0).positions.contains(5))
       results.shouldntHave(_.thing == s.cello)
     }
-    
+
     "find text values" in {
       class TSpace extends CommonSpace {
         val t1 = new SimpleTestThing("t1", optTextProp("Now is the winter of our discontent"))
         val t2 = new SimpleTestThing("t2", optTextProp("made glorious summer"))
       }
       implicit val s = new TSpace
-      
+
       val results = Search.search("glorious")(s.state)
       results.shouldHave(res => res.thing == s.t2 && res.elements(0).positions.contains(5))
       results.shouldntHave(_.thing == s.t1)
     }
-    
+
     "find tags" in {
       class TSpace extends CommonSpace {
         val tagThing = new SimpleTestThing("tagThing", listTagsProp("This is a tag", "another tag", "But this is not"))
       }
       implicit val s = new TSpace
-      
+
       val results = Search.search("tag")(s.state)
-      results.shouldHave(res => res.thing.id == UnknownOID && res.elements(0).text == "another tag" && res.elements(0).positions.contains(8))
+      results.shouldHave(res =>
+        res.thing.id == UnknownOID && res.elements(0).text == "another tag" && res.elements(0).positions.contains(8)
+      )
       results.shouldntHave(res => res.elements(0).text == "But this is not")
     }
   }
-  
+
   "_search" should {
     class TSpace extends CommonSpace {
       val model1 = new SimpleTestThing("Model 1")
       val model2 = new SimpleTestThing("Model 2")
-      
+
       val myTagProp = new TestProperty(TagType, ExactlyOne, "Modeled Tag", Links.LinkModelProp(model2))
       val myTextProp = new TestProperty(TextType, ExactlyOne, "My Text")
-      
+
       val thing1 = new TestThing("Thing 1", model1, singleTextProp("Some random text"), optTextProp("Something else"))
       val thing2 = new TestThing("Thing 2", model1, singleTextProp("Blurdy-blurdy-blur"))
       val thing3 = new TestThing("Thing 3", model2, singleTextProp("Also random!"))
-      val thing6 = new TestThing("Thing 6", model1, optTextProp("My randomness knows no bounds"), myTextProp("Also random"))
-      
+      val thing6 =
+        new TestThing("Thing 6", model1, optTextProp("My randomness knows no bounds"), myTextProp("Also random"))
+
       val thing4 = new SimpleTestThing("Thing 4", myTagProp("And I too am random"))
       val thing5 = new SimpleTestThing("Thing 5", singleTagProp("Abounding in randomness"))
     }
-    
+
     "find all results" in {
       implicit val s = new TSpace
-      
+
       pql("""[[_search(query=""random"", searchTags=false) -> _foreach(_searchResultThing) -> _sort]]""") should
         equal(listOfLinkText(s.thing1, s.thing3, s.thing6))
     }
-    
+
     "use the models parameter" in {
       implicit val s = new TSpace
-      
+
       pql("""[[_search(query=""random"", searchThings=false, models=Model 2) -> _searchResultTag]]""") should
         equal(oneTag("And I too am random"))
-      
-      pql("""[[_search(query=""random"", searchTags=false, models=Model 2) -> _searchResultThing -> Link Name]]""") should
+
+      pql(
+        """[[_search(query=""random"", searchTags=false, models=Model 2) -> _searchResultThing -> Link Name]]"""
+      ) should
         equal("Thing 3")
-      pql("""[[_search(query=""random"", searchTags=false, models=<Model 1, Model 2>) -> _foreach(_searchResultThing) -> _sort]]""") should
+      pql(
+        """[[_search(query=""random"", searchTags=false, models=<Model 1, Model 2>) -> _foreach(_searchResultThing) -> _sort]]"""
+      ) should
         equal(listOfLinkText(s.thing1, s.thing3, s.thing6))
     }
-    
+
     "use the properties parameter" in {
       implicit val s = new TSpace
-      
+
       pql("""[[_search(query=""random"", searchTags=false, properties=My Text._self) -> +$result
               | $result -> _count
               | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
@@ -118,9 +126,11 @@ class SearchTests extends QuerkiTests {
               | $result -> _count
               | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
         equal("1Thing 6")
-      pql("""[[_search(query=""random"", searchTags=false, properties=<My Text._self, My Optional Text._self>) -> +$result
+      pql(
+        """[[_search(query=""random"", searchTags=false, properties=<My Text._self, My Optional Text._self>) -> +$result
               | $result -> _count
-              | $result -> _searchResultThing -> Link Name]]""".stripReturns) should
+              | $result -> _searchResultThing -> Link Name]]""".stripReturns
+      ) should
         equal("1Thing 6")
     }
   }

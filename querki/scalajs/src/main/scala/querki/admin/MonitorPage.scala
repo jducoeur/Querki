@@ -8,25 +8,24 @@ import org.widok.moment._
 import querki.api._
 import querki.globals._
 import querki.pages._
-  
+
 import AdminFunctions._
 
 /**
  * @author jducoeur
  */
-class MonitorPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
+class MonitorPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
-  
-  def showMember(mem:QMember) = p(mem.address, ": ", mem.status.toString)
 
-  def pageContent = 
+  def showMember(mem: QMember) = p(mem.address, ": ", mem.status.toString)
+
+  def pageContent =
     for {
       update <- Client[AdminFunctions].monitor.call()
       guts =
         div(
           h1("Currently Active in Querki"),
-          
           h3("Cluster State"),
           p(b("Admin Monitor is running on ", update.monitorNode)),
           p(b("Leader: ", update.state.leader)),
@@ -36,17 +35,23 @@ class MonitorPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() 
           h4("Unreachable"),
           for (unreach <- update.state.unreachable)
             yield showMember(unreach),
-          
           h3("Active Spaces with User Counts"),
           for {
             space <- update.spaces
-          }
-            yield p(
-              b(space.name), 
-              " (on ", space.cluster, ")", 
-              ": ", space.nUsers, " users and roughly ", space.size, " bytes",
-              " (last updated ", Moment(space.timestamp).calendar(),  ")")
+          } yield p(
+            b(space.name),
+            " (on ",
+            space.cluster,
+            ")",
+            ": ",
+            space.nUsers,
+            " users and roughly ",
+            space.size,
+            " bytes",
+            " (last updated ",
+            Moment(space.timestamp).calendar(),
+            ")"
+          )
         )
-    }
-      yield PageContents("Currently Active", guts)
+    } yield PageContents("Currently Active", guts)
 }

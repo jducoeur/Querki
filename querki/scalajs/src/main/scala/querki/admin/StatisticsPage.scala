@@ -8,10 +8,10 @@ import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
 
-class StatisticsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page() {
+class StatisticsPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
 
   lazy val Client = interface[querki.client.Client]
-  
+
   def pageContent =
     for {
       stats <- Client[AdminFunctions].statistics().call()
@@ -25,6 +25,5 @@ class StatisticsPage(params:ParamMap)(implicit val ecology:Ecology) extends Page
           h3("Spaces"),
           p(b("Total spaces: "), stats.nSpaces)
         )
-    }
-      yield PageContents("Current Querki Statistics", guts)
+    } yield PageContents("Current Querki Statistics", guts)
 }

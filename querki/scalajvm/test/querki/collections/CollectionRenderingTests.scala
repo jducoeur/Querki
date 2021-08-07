@@ -12,20 +12,20 @@ class CollectionRenderingTests extends QuerkiTests {
         val thing3 = new SimpleTestThing("Thing 3", myProp(5, 10, 15, 20))
       }
       implicit val s = new TSpace
-      
-      pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+
+      pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |</ul>""".stripReturns)
-      pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |<li class="_bullet">
             |42
             |</li>
             |</ul>""".stripReturns)
-      pql("""The result is: [[Thing 3 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 3 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |<li class="_bullet">
             |5
@@ -41,7 +41,7 @@ class CollectionRenderingTests extends QuerkiTests {
             |</li>
             |</ul>""".stripReturns)
     }
-    
+
     "render text correctly" in {
       class TSpace extends CommonSpace {
         val myProp = new TestProperty(Core.TextType, QList, "My List")
@@ -50,21 +50,21 @@ class CollectionRenderingTests extends QuerkiTests {
         val thing3 = new SimpleTestThing("Thing 3", myProp("5", "10", "15", "20"))
       }
       implicit val s = new TSpace
-      
-      pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+
+      pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |</ul>""".stripReturns)
       // This line is the unit test for bug .3y2852x:
-      pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |<li class="_bullet">
             |42
             |</li>
             |</ul>""".stripReturns)
-      pql("""The result is: [[Thing 3 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 3 -> My List -> _bulleted]]""") should
+        equal("""The result is: 
             |<ul>
             |<li class="_bullet">
             |5
@@ -80,7 +80,7 @@ class CollectionRenderingTests extends QuerkiTests {
             |</li>
             |</ul>""".stripReturns)
     }
-    
+
     "render in collection-accepting text correctly" in {
       class TSpace extends CommonSpace {
         val myProp = new TestProperty(Core.TextType, QList, "My List")
@@ -89,18 +89,18 @@ class CollectionRenderingTests extends QuerkiTests {
         val thing3 = new SimpleTestThing("Thing 3", myProp("5", "10", "15", "20"))
       }
       implicit val s = new TSpace
-      
+
       // Unit test for QI.bu6ocol:
-      pql("""The result is: [[Thing 1 -> My List -> *""____""]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 1 -> My List -> *""____""]]""") should
+        equal("""The result is: 
           |""".stripReturns)
       // This line is the unit test for bug .3y2852x:
-      pql("""The result is: [[Thing 2 -> My List -> *""____""]]""") should 
-        equal ("""The result is: 
+      pql("""The result is: [[Thing 2 -> My List -> *""____""]]""") should
+        equal("""The result is: 
           |
           |42""".stripReturns)
       pql("""The result is: [[Thing 3 -> My List -> *""____""]]""") should
-        equal ("""The result is: 
+        equal("""The result is: 
           |
           |5
           |10

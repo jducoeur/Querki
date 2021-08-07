@@ -10,17 +10,17 @@ import querki.time.DateTime
 
 import SpaceMessagePersistence._
 
-class SpaceMessagePersistenceTests(env:PersistEnv) extends PersistTest(env) with SpaceMessagePersistenceBase {
-  
+class SpaceMessagePersistenceTests(env: PersistEnv) extends PersistTest(env) with SpaceMessagePersistenceBase {
+
   val s = env.commonSpace
   implicit val state = s.state
-  
+
   checkSerialization(querki.identity.IdentityPersistence.UserRef(s.owner.id, Some(s.owner.mainIdentity.id)))
-  
+
   def checkDH[T <: UseKryo](builder: => T) = {
     checkSerialization(builder)
-  }  
-  
+  }
+
   /**
    * Check the raw serialization of the persisted Space messages.
    */

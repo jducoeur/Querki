@@ -5,14 +5,20 @@ import querki.identity.IdentityId
 import querki.notifications.Notification
 
 object IdentityEmailMessages {
+
   sealed trait IdentityEmailMsg {
-    def to:IdentityId
+    def to: IdentityId
   }
-  
-  case class NotificationToEmail(note:Notification) extends IdentityEmailMsg {
+
+  case class NotificationToEmail(note: Notification) extends IdentityEmailMsg {
     def to = note.toIdentity.get
   }
-  
-  case class DoUnsubscribe(to:IdentityId, notifier:String, unsubId:OID, context:Option[String]) extends IdentityEmailMsg
-  case class Unsubscribed(message:Wikitext)
+
+  case class DoUnsubscribe(
+    to: IdentityId,
+    notifier: String,
+    unsubId: OID,
+    context: Option[String]
+  ) extends IdentityEmailMsg
+  case class Unsubscribed(message: Wikitext)
 }

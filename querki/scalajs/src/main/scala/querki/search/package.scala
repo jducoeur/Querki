@@ -8,7 +8,8 @@ import querki.pages.PageFactory
  * @author jducoeur
  */
 package object search {
+
   trait Search extends EcologyInterface {
-    def searchResultsFactory:PageFactory
+    def searchResultsFactory: PageFactory
   }
 }

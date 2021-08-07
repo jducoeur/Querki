@@ -12,30 +12,36 @@ import querki.globals._
  * mostly works through the Client API.
  */
 trait FormFuncs {
-  def getRequest = 
+
+  def getRequest =
     FakeRequest()
       .copyFakeRequest(method = "GET")
-  
+
   def sessionRequest(implicit session: Session) =
     FakeRequest()
       .copyFakeRequest(method = "GET")
-      .withSession(session.data.toSeq:_*)
-  
+      .withSession(session.data.toSeq: _*)
+
   def formRequest(formData: (String, String)*) = {
     FakeRequest()
       .copyFakeRequest(method = "POST")
-      .withFormUrlEncodedBody(formData:_*)
+      .withFormUrlEncodedBody(formData: _*)
   }
-   
+
   def sessionFormRequest(formData: (String, String)*)(implicit session: Session) = {
     FakeRequest()
       .copyFakeRequest(method = "POST")
-      .withSession(session.data.toSeq:_*)
-      .withFormUrlEncodedBody(formData:_*)
+      .withSession(session.data.toSeq: _*)
+      .withFormUrlEncodedBody(formData: _*)
   }
-  
-  def callByUrl(app: Application, url: String): Future[Result] = {
-    route(app, FakeRequest(GET, url).withHeaders("Host" -> "localhost")).getOrElse(throw new Exception(s"Unable to route to $url"))
+
+  def callByUrl(
+    app: Application,
+    url: String
+  ): Future[Result] = {
+    route(app, FakeRequest(GET, url).withHeaders("Host" -> "localhost")).getOrElse(throw new Exception(
+      s"Unable to route to $url"
+    ))
   }
 }
 

@@ -2,8 +2,8 @@ package querki.graphql
 
 import play.api.libs.json.Json
 import querki.console.CommandEffectArgs
-import querki.console.ConsoleFunctions.{ErrorResult, DisplayTextResult}
-import querki.ecology.{QuerkiEcot, EcotIds}
+import querki.console.ConsoleFunctions.{DisplayTextResult, ErrorResult}
+import querki.ecology.{EcotIds, QuerkiEcot}
 import querki.globals._
 import querki.ql.{QLExp, QLTextStage, UnQLText}
 
@@ -11,7 +11,7 @@ object MOIDs extends EcotIds(76) {
   val GraphQLCommandOID = moid(1)
 }
 
-class GraphQLEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+class GraphQLEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
 
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -45,10 +45,9 @@ class GraphQLEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           stage <- phrase.ops.headOption
           textStage <- stage match {
             case ts: QLTextStage => Some(ts)
-            case _ => None
+            case _               => None
           }
-        }
-          yield textStage.contents.reconstructString
+        } yield textStage.contents.reconstructString
       }
 
       val result = for {
@@ -60,8 +59,7 @@ class GraphQLEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
         built = computer.handle(query)
         jsv <- inv.fut(built.unsafeToFuture())
         out = Json.prettyPrint(jsv)
-      }
-        yield DisplayTextResult(out)
+      } yield DisplayTextResult(out)
 
       result.get.map(_.headOption.getOrElse(ErrorResult(s"You need to specify the GraphQL as a parameter")))
   }

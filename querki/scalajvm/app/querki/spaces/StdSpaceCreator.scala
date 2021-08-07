@@ -12,34 +12,51 @@ import querki.spaces.messages._
 /**
  * This special Actor is designed to be booted up as a System Singleton at startup. It does nothing
  * but ensure that the specified "system" Space exists.
- * 
+ *
  * TODO: This is a fairly stupid way of dealing with this: it leaves System Singletons sitting around, and will
  * get re-run every time the Singleton gets rebalanced, and it is at least theoretically susceptible to startup
- * race conditions, since system init doesn't wait for a result here. Come up with a better approach. 
+ * race conditions, since system init doesn't wait for a result here. Come up with a better approach.
  */
-private [spaces] class StdSpaceCreator(val spaceId:OID, val name:String, val display:String, val ecology:Ecology) 
-  extends Actor with Requester with EcologyMember 
-{
+private[spaces] class StdSpaceCreator(
+  val spaceId: OID,
+  val name: String,
+  val display: String,
+  val ecology: Ecology
+) extends Actor
+     with Requester
+     with EcologyMember {
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
-  lazy val SpaceOps = interface[SpaceOps]  
+  lazy val SpaceOps = interface[SpaceOps]
   lazy val SpacePersistenceFactory = interface[SpacePersistenceFactory]
-  
+
   lazy val persister = SpacePersistenceFactory.getSpaceManagerPersister
-  
+
   private case class Boot()
-  
+
   override def preStart() = {
     self ! Boot()
     super.preStart()
   }
-  
+
   def receive = {
     case Boot() => {
-      (persister ? CreateSpaceIfMissing(querki.identity.MOIDs.SystemIdentityOID, spaceId, 10000, name, display, StatusNormal)) foreach {
+      (persister ? CreateSpaceIfMissing(
+        querki.identity.MOIDs.SystemIdentityOID,
+        spaceId,
+        10000,
+        name,
+        display,
+        StatusNormal
+      )).foreach {
         case Changed(_, _) => {
           // Okay, we actually needed to create the Space, so now we should initialize it. This apes code in SpaceManager.
           // Note that we're just doing a tell, though -- we don't need to do anything with the response:
-          SpaceOps.spaceRegion ! InitialState(IdentityAccess.SystemUser, spaceId, display, querki.identity.MOIDs.SystemIdentityOID)
+          SpaceOps.spaceRegion ! InitialState(
+            IdentityAccess.SystemUser,
+            spaceId,
+            display,
+            querki.identity.MOIDs.SystemIdentityOID
+          )
         }
         case NoChangeNeeded(_) => // Normal case -- we're all set
       }
@@ -48,5 +65,11 @@ private [spaces] class StdSpaceCreator(val spaceId:OID, val name:String, val dis
 }
 
 object StdSpaceCreator {
-  def actorProps(spaceId:OID, name:String, display:String, ecology:Ecology) = Props(classOf[StdSpaceCreator], spaceId, name, display, ecology)
+
+  def actorProps(
+    spaceId: OID,
+    name: String,
+    display: String,
+    ecology: Ecology
+  ) = Props(classOf[StdSpaceCreator], spaceId, name, display, ecology)
 }

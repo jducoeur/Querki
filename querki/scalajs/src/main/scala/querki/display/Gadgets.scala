@@ -15,19 +15,20 @@ import querki.util.{Contributor, Publisher}
 /**
  * Private interface for hooking Gadgets up.
  */
-private [display] trait GadgetsInternal extends EcologyInterface {
+private[display] trait GadgetsInternal extends EcologyInterface {
+
   /**
    * Each HookedGadget should register itself here, to ensure that it gets hooked.
    */
-  def gadgetCreated(gadget:HookedGadget[_]):Unit
+  def gadgetCreated(gadget: HookedGadget[_]): Unit
 }
 
-class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInternal {
-  
+class GadgetsEcot(e: Ecology) extends ClientEcot(e) with Gadgets with GadgetsInternal {
+
   def implements = Set(classOf[Gadgets], classOf[GadgetsInternal])
-  
+
   lazy val PageManager = interface[querki.display.PageManager]
-  
+
   override def postInit() = {
     registerSimpleGadget("._withTooltip", { new WithTooltip(span()) })
     registerSimpleGadget("._qlInvoke", { new QLButtonGadget(span()) })
@@ -36,14 +37,17 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
     registerSimpleGadget("._qlTree", { new QLTree })
     registerSimpleGadget("._menuButton", { new MenuButton })
     registerSimpleGadget("._navigateImmediately", { new NavigateGadget })
-    
-    PageManager.beforePageLoads += new Contributor[Page,Unit] {
-      def notify(evt:Page, sender:Publisher[Page, Unit]) = {
+
+    PageManager.beforePageLoads += new Contributor[Page, Unit] {
+      def notify(
+        evt: Page,
+        sender: Publisher[Page, Unit]
+      ) = {
         registry = mainRegistry
       }
-    }    
+    }
   }
-  
+
   // Pay careful attention to this -- it first gets hit during the first page load, at which
   // point it gets initialized to the registry as it was from postInit(). It is then used to
   // refresh the registry each page load, so that pages can add their own registrations.
@@ -54,26 +58,35 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
   // But that will require that the entire Gadget chain be able to trace back to its containing Page:
   // a good change, but a big one.
   lazy val mainRegistry = registry
-  
+
   /**
    * The actual registry of all of the Gadgets. This is a map from a Selector to the constructors
    * of the Gadgets looking for that Selector.
    */
   var registry = Map.empty[String, Seq[GadgetsConstr[_]]]
-  
-  def registerGadgets[Output <: Element](hookClass:String, constr:GadgetsConstr[Output]) = {
+
+  def registerGadgets[Output <: Element](
+    hookClass: String,
+    constr: GadgetsConstr[Output]
+  ) = {
     registry += (registry.get(hookClass) match {
       case Some(entry) => (hookClass -> (entry :+ constr))
-      case None => (hookClass -> Seq(constr))
+      case None        => (hookClass -> Seq(constr))
     })
   }
-  
-  def registerGadget[Output <: Element](hookClass:String, constr:GadgetConstr[Output]):Unit = {
-    registerGadgets(hookClass, { elem:Element => Seq(constr(elem)) })
+
+  def registerGadget[Output <: Element](
+    hookClass: String,
+    constr: GadgetConstr[Output]
+  ): Unit = {
+    registerGadgets(hookClass, { elem: Element => Seq(constr(elem)) })
   }
-  
-  def registerSimpleGadgets[Output <: Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit = {
-    val fullConstr = { e:Element =>
+
+  def registerSimpleGadgets[Output <: Element](
+    hookClass: String,
+    constr: => Seq[Gadget[Output]]
+  ): Unit = {
+    val fullConstr = { e: Element =>
       val gadgets = constr
       // TODO: this is a clear bad smell. Really, this anonymous function should be
       // taking an Output, not an Element. But that requires rewriting the GadgetsConstr()
@@ -83,29 +96,32 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
     }
     registerGadgets(hookClass, fullConstr)
   }
-  
-  def registerSimpleGadget[Output <: Element](hookClass:String, constr: => Gadget[Output]):Unit =
+
+  def registerSimpleGadget[Output <: Element](
+    hookClass: String,
+    constr: => Gadget[Output]
+  ): Unit =
     registerSimpleGadgets(hookClass, { Seq(constr) })
-  
-  def registerHook(selector:String)(hook:Element => Unit) = {
+
+  def registerHook(selector: String)(hook: Element => Unit) = {
     registerSimpleGadgets(selector, { Seq(new HookGadget(hook)) })
   }
-  
-  def createGadgets(root:Element) = {
+
+  def createGadgets(root: Element) = {
     registry.foreach { pair =>
       val (className, constrs) = pair
       if ($(root).is(s"$className")) { constrs.map(_(root)) }
-      $(root).find(s"$className").each({ (elem:dom.Element) =>
+      $(root).find(s"$className").each({ (elem: dom.Element) =>
         constrs.map(_(elem.asInstanceOf[Element]))
-      }:js.ThisFunction0[dom.Element, Any])
+      }: js.ThisFunction0[dom.Element, Any])
     }
   }
-  
+
   var unhookedGadgets = Set.empty[HookedGadget[_]]
-  
-  def gadgetCreated(gadget:HookedGadget[_]) =
+
+  def gadgetCreated(gadget: HookedGadget[_]) =
     unhookedGadgets += gadget
-  
+
   def hookPendingGadgets() = {
     // Only hook gadgets that have actually been created!
     val (pending, unready) = unhookedGadgets.partition { g => g.elemOpt.isDefined }

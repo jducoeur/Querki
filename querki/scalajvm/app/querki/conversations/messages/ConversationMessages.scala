@@ -15,7 +15,7 @@ case object GetActiveThings
 /**
  * Response to GetActiveThings -- for now, simply the number of Things that are loaded with Conversations.
  */
-case class ActiveThings(n:Int)
+case class ActiveThings(n: Int)
 
 /**
  * Note that ConversationMessages are never sent directly on their own; instead, they are wrapped in a
@@ -27,22 +27,28 @@ sealed trait ConversationMessage extends SpaceMessagePayload
 /**
  * This should get a ThingConversations as its response.
  */
-case class GetConversations(thing:OID) extends ConversationMessage
+case class GetConversations(thing: OID) extends ConversationMessage
 
 /**
  * Someone has submitted a new Comment for this Space. This should get an AddedNode in response.
  */
-case class NewComment(comment:Comment) extends ConversationMessage
+case class NewComment(comment: Comment) extends ConversationMessage
 
 /**
  * Message informing us about a newly-added Comment.
  */
-case class AddedNode(parentId:Option[CommentId], node:ConversationNode)
+case class AddedNode(
+  parentId: Option[CommentId],
+  node: ConversationNode
+)
 
 /**
  * Request to delete an existing Comment.
  */
-case class DeleteComment(thingId:OID, commentId:CommentId) extends ConversationMessage
+case class DeleteComment(
+  thingId: OID,
+  commentId: CommentId
+) extends ConversationMessage
 case object CommentDeleted
 case object CommentNotDeleted
 
@@ -52,5 +58,5 @@ case object CommentNotDeleted
  * go away once that is completely done. Note that it is intentionally impossible to send this from
  * outside the Conversations system.
  */
-case class SetConversations(convs:ThingConversations)
+case class SetConversations(convs: ThingConversations)
 case class ConvsSet()

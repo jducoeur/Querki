@@ -7,19 +7,19 @@ package querki.db
  */
 object ShardKind extends Enumeration {
   type ShardKind = Value
-  
+
   val System, Test, User, Template = Value
-  
+
   /**
    * Fetch the configuration-system name of this shard. Pass the result of this into
    * DB.withConnection().
    */
-  def dbName(kind:ShardKind):String = {
+  def dbName(kind: ShardKind): String = {
     kind match {
-      case System => "system"
+      case System   => "system"
       case Template => "template"
-      case Test => "test"
-      case User => "user"
+      case Test     => "test"
+      case User     => "user"
     }
   }
 }

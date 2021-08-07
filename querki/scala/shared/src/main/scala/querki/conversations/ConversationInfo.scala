@@ -11,9 +11,9 @@ import querki.time.Common.Timestamp
  * The information about the Conversations for a Thing, as seen by this User.
  */
 case class ConversationInfo(
-  canComment:Boolean,
-  canReadComments:Boolean,
-  convs:Seq[ConvNode]
+  canComment: Boolean,
+  canReadComments: Boolean,
+  convs: Seq[ConvNode]
 )
 
 /**
@@ -21,18 +21,19 @@ case class ConversationInfo(
  * under it. The "primary" response (usually but not necessarily the first) is displayed differently, directly underneath.
  */
 case class ConvNode(
-  comment:CommentInfo,
-  responses:Seq[ConvNode]
+  comment: CommentInfo,
+  responses: Seq[ConvNode]
 )
 
 /**
  * The API description of a single Comment.
  */
 case class CommentInfo(
-  id:CommentId,
-  author:IdentityInfo,
-  content:Wikitext,
-  primaryResponse:Boolean,
-  createTime:Timestamp,
-  canDelete:Boolean,
-  isDeleted:Boolean)
+  id: CommentId,
+  author: IdentityInfo,
+  content: Wikitext,
+  primaryResponse: Boolean,
+  createTime: Timestamp,
+  canDelete: Boolean,
+  isDeleted: Boolean
+)

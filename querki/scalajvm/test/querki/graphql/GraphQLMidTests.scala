@@ -13,6 +13,7 @@ import play.api.test.Helpers._
 import querki.console.ConsoleMidFuncs._
 
 object GraphQLMidTests {
+
   // This is just testing the Run GraphQL command in the Console; actually testing GraphQL features happens in
   // ComputeGraphQL tests. So we set up an extremely simple Space for testing:
   lazy val basicGraphQLTest: TestOp[Unit] = {
@@ -55,18 +56,17 @@ object GraphQLMidTests {
       responseBody <- TestOp.fut { state =>
         import state.harness._
         for {
-          result <- call(controller[GraphQLController].graphQL(basicUser.handle, mainSpace.underlying.toString), request)
+          result <-
+            call(controller[GraphQLController].graphQL(basicUser.handle, mainSpace.underlying.toString), request)
           byteString <- result.body.consumeData
           json = byteString.decodeString(StandardCharsets.UTF_8)
-        }
-          yield (state, json)
+        } yield (state, json)
       }
       plumbingJson = Json.parse(responseBody)
       plumbingInstance = ((plumbingJson \\ "data").head \ "_instances").head
       _ = (plumbingInstance \ "_name").as[String] shouldBe "First-Instance"
       _ = (plumbingInstance \ "First_Property").as[String] shouldBe "Instance value"
-    }
-      yield ()
+    } yield ()
   }
 }
 

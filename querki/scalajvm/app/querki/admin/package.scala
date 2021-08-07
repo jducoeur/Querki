@@ -10,37 +10,42 @@ import querki.ecology._
 import querki.identity.{User, UserId}
 
 package object admin {
-  
+
   trait AdminOps extends EcologyInterface {
+
     /**
      * The AdminMonitor. Various systems send MonitorEvents to this, to update the state of things.
      */
-    def monitor:ActorRef
-    
+    def monitor: ActorRef
+
     /**
      * Fetches the current list of Spaces that are live in the system, and a little info about them.
      */
-    def getSpacesStatus[B](req:User)(cb: SystemStatus => B):Future[B]
-    
+    def getSpacesStatus[B](req: User)(cb: SystemStatus => B): Future[B]
+
     /**
      * Publishes a System Message to all users.
-     * 
+     *
      * This is fire-and-forget!
      */
-    def sendSystemMessage(req:User, header:String, body:String):Unit
-    
+    def sendSystemMessage(
+      req: User,
+      header: String,
+      body: String
+    ): Unit
+
     /**
      * Fetch all the UserIds registered.
-     * 
+     *
      * TODO: this method is stupid and deprecated. It will be replaced by something stream-oriented
      * as soon as I have a chance.
      */
-    def getAllUserIds(req:User):Future[Seq[UserId]]
-    
+    def getAllUserIds(req: User): Future[Seq[UserId]]
+
     /**
      * Returns true iff Admin is currently giving special scrutiny to this Space, in which case the Space
      * should activate its SpaceTimingActor. Really only exists for realtime profiling.
      */
-    def isTimedSpace(spaceId:OID):Boolean
+    def isTimedSpace(spaceId: OID): Boolean
   }
 }

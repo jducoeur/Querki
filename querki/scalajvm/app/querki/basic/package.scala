@@ -2,7 +2,7 @@ package querki
 
 import scala.concurrent.Future
 
-import models.{Property, PropertyBundle, PType, PTypeBuilder, Thing, ThingOps, Wikitext}
+import models.{PType, PTypeBuilder, Property, PropertyBundle, Thing, ThingOps, Wikitext}
 
 import querki.ecology._
 
@@ -15,6 +15,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * operations of the system), but which all users will probably want to make use of.
  */
 package object basic {
+
   object MOIDs extends EcotIds(17) {
     val DisplayTextOID = sysId(7)
     val PageOID = sysId(8)
@@ -30,7 +31,7 @@ package object basic {
     val CommasMethodOID = sysId(80)
     val AllPropsThingOID = sysId(84)
     val DeprecatedOID = sysId(101)
-    
+
     val ExplicitPropOID = moid(1)
     val SystemOnlyPropOID = moid(2)
     val ModelViewOID = moid(3)
@@ -41,40 +42,46 @@ package object basic {
     val ShowModelTreeOID = moid(8)
     val KilledThingOID = moid(9)
   }
-  
+
   /**
    * PlainText is essentially a simple String -- it represents a String field that does *not* contain
    * QL or Wikitext. It is used for a few Properties like Display Name, that are more flexible than NameType
    * but still can't go hog-wild.
-   * 
+   *
    * Note that, while PlainText is mostly rendered literally, it still has to be HTML-neutered before display.
    */
-  case class PlainText(text:String) {
-    def raw:String = {
+  case class PlainText(text: String) {
+
+    def raw: String = {
       text.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
     }
   }
-  
-  trait Basic extends EcologyInterface {  
-    
-    def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState):Future[Wikitext]
-    
-    def PlainTextType:PType[PlainText] with PTypeBuilder[PlainText, String]
-    def QLType:PType[QLText] with PTypeBuilder[QLText,String]
-    
-    def ApplyMethod:Property[QLText,String]    
-    def DeprecatedProp:Property[Boolean,Boolean]
-    def DisplayNameProp:Property[PlainText,String]
-    def ComputedNameProp:Property[QLText,String]
-    def DisplayTextProp:Property[QLText,String]
-    def ExplicitProp:Property[Boolean,Boolean]
-    def SystemOnlyProp:Property[Boolean,Boolean]
-    def ModelViewProp:Property[QLText,String]
-    def SystemHiddenProp:Property[Boolean,Boolean]
-    
-    def Page:Thing
-    def SimpleThing:Thing
-    
-    def TextValue(msg:String):QValue
+
+  trait Basic extends EcologyInterface {
+
+    def nameOrComputedCore(
+      tops: ThingOps
+    )(implicit
+      request: RequestContext,
+      state: SpaceState
+    ): Future[Wikitext]
+
+    def PlainTextType: PType[PlainText] with PTypeBuilder[PlainText, String]
+    def QLType: PType[QLText] with PTypeBuilder[QLText, String]
+
+    def ApplyMethod: Property[QLText, String]
+    def DeprecatedProp: Property[Boolean, Boolean]
+    def DisplayNameProp: Property[PlainText, String]
+    def ComputedNameProp: Property[QLText, String]
+    def DisplayTextProp: Property[QLText, String]
+    def ExplicitProp: Property[Boolean, Boolean]
+    def SystemOnlyProp: Property[Boolean, Boolean]
+    def ModelViewProp: Property[QLText, String]
+    def SystemHiddenProp: Property[Boolean, Boolean]
+
+    def Page: Thing
+    def SimpleThing: Thing
+
+    def TextValue(msg: String): QValue
   }
 }

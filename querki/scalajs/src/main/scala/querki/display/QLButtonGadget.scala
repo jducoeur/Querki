@@ -10,21 +10,23 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 
-class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) 
-  extends HookedGadget[Output](e) with QuerkiUIUtils with EcologyMember 
-{
-  
+class QLButtonGadget[Output <: dom.html.Element](tag: scalatags.JsDom.TypedTag[Output])(implicit e: Ecology)
+  extends HookedGadget[Output](e)
+     with QuerkiUIUtils
+     with EcologyMember {
+
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val Pages = interface[querki.pages.Pages]
-  
+
   def doRender() = tag
-  
+
   def updatePage() = Pages.updatePage(this)
-  
+
   def hook() = {
     val jq = $(elem)
-    val isTextInput:Boolean = (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
+    val isTextInput: Boolean =
+      (jq.prop("tagName").toOption == Some("INPUT")) && (jq.prop("type").toOption == Some("text"))
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
     val append = jq.data("append").map(_.asInstanceOf[Boolean]).getOrElse(false)
@@ -37,31 +39,37 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
         (false, "", "", "")
       else
         (true, "glyphicon glyphicon-chevron-down", "glyphicon glyphicon-chevron-up", "fa fa-spinner fa-pulse")
-    
+
     if ($(elem).hasClass("btn"))
       $(elem).addClass("btn-sm")
-      
+
     if (useIcons) {
       $(elem).text($(elem).text() + " ")
       $(elem).append(i(cls := "_openaffordance").render)
     }
-    
-    def setIcon(icon:String) = {
+
+    def setIcon(icon: String) = {
       if (useIcons) {
         val afford = $(elem).find("._openaffordance")
-        
+
         afford.removeClass(openicon)
         afford.removeClass(closeicon)
         afford.removeClass(thinkingicon)
-        
+
         afford.addClass(icon)
       }
     }
-    
+
     setIcon(openicon)
-    
-    def runQL(targetJQ: JQuery, jq: JQuery, actualQL:String, actualNoDiv: Boolean, recurseUpwards: Boolean): Unit = {
-      def tidOpt(name:String) = jq.data(name).toOption.map(v => TID(v.asInstanceOf[String]))
+
+    def runQL(
+      targetJQ: JQuery,
+      jq: JQuery,
+      actualQL: String,
+      actualNoDiv: Boolean,
+      recurseUpwards: Boolean
+    ): Unit = {
+      def tidOpt(name: String) = jq.data(name).toOption.map(v => TID(v.asInstanceOf[String]))
       val thingIdOpt = tidOpt("thingid")
       val lexicalOpt = tidOpt("lexical")
       val (typeIdOpt, contextOpt) =
@@ -75,8 +83,8 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
       $(elem).addClass("running")
       setIcon(thinkingicon)
       $(elem).attr("disabled", true)
-      
-      def handleResult(result:models.Wikitext) = {
+
+      def handleResult(result: models.Wikitext) = {
         if (recurseUpwards) {
           // Find the enclosing section, and runQL on *that* now:
           val sectionJQ = targetJQ.closest("updateable")
@@ -87,7 +95,7 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
             runQL(sectionJQ, sectionJQ, sectionQL, true, false)
           }
         } else {
-          val qtext:dom.html.Element =
+          val qtext: dom.html.Element =
             if (actualNoDiv) {
               // Render this raw, with no ScalaTags wrapper. Do we have a better way to do this?
               //$(result.raw.html.toString).get(0).asInstanceOf[dom.html.Element]
@@ -108,14 +116,22 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
           updatePage()
         }
       }
-      
+
       thingIdOpt match {
         case Some(thingId) => Client[ThingFunctions].evaluateQL(thingId, actualQL).call().foreach(handleResult)
-        case None => Client[ThingFunctions].evaluateQLWithContext(typeIdOpt.get, contextOpt.get, lexicalOpt, actualQL).call().foreach(handleResult)
-      }   
+        case None => Client[ThingFunctions].evaluateQLWithContext(
+            typeIdOpt.get,
+            contextOpt.get,
+            lexicalOpt,
+            actualQL
+          ).call().foreach(handleResult)
+      }
     }
-    
-    def activate(evt:JQueryEventObject, actualQL:String) = {
+
+    def activate(
+      evt: JQueryEventObject,
+      actualQL: String
+    ) = {
       val targetJQ = $(s"#$target")
 
       if ($(elem).hasClass("open")) {
@@ -132,13 +148,13 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
       } else {
         runQL(targetJQ, jq, actualQL, noDiv, updateSectionAfter)
       }
-      
+
       evt.preventDefault()
     }
-    
+
     if (isTextInput)
       // If it's a text input, we're listening for the Enter key:
-      jq.keydown { (evt:JQueryEventObject) =>
+      jq.keydown { (evt: JQueryEventObject) =>
         val which = evt.which
         if (which == 13 && jq.valueString.length() > 0) {
           // They pressed Enter
@@ -147,7 +163,7 @@ class QLButtonGadget[Output <: dom.html.Element](tag:scalatags.JsDom.TypedTag[Ou
           // tweaking the QL.
           // First, make sure there are no internal ""s, which could allow for code injection:
           val escaped = input.replaceAll("\"\"", "\\\"\"")
-          val actualQL = 
+          val actualQL =
             s"""""$escaped"" -> +$$input
 $$_context -> $ql"""
           activate(evt, actualQL)
@@ -155,7 +171,7 @@ $$_context -> $ql"""
       }
     else
       // Normal button or link -- we're listening for a click:
-      jq.click { (evt:JQueryEventObject) =>
+      jq.click { (evt: JQueryEventObject) =>
         activate(evt, ql)
       }
   }

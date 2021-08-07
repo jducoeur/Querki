@@ -15,60 +15,74 @@ import querki.streaming._
 /**
  * @author jducoeur
  */
-class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
-  
+class ApiManagement(e: Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
+
   lazy val History = interface[querki.history.History]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val actorSystem = SystemManagement.actorSystem
-  
+
   implicit val timeout = Timeout(Config.getDuration("querki.api.timeout", 60 seconds))
-  
-  case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
-  
-  case class HandlerInfo(constr:Constructor[AutowireApiImpl], allowedDuringHistory:Boolean)
-  
+
+  case class RouterInfo(
+    router: ActorRef,
+    requiresLogin: Boolean
+  )
+
+  case class HandlerInfo(
+    constr: Constructor[AutowireApiImpl],
+    allowedDuringHistory: Boolean
+  )
+
   /**
    * Turn this config flag on to trace the path of API calls through some of the system.
-   * 
+   *
    * WARNING: this produces *voluminous* output. It should never be turned on in production!
    */
   lazy val traceApi = Config.getBoolean("querki.test.traceApiCalls", false)
-  
+
   /**
    * Map from API classes to the constructors for their handlers.
    */
   var sessionHandlers = Map.empty[String, HandlerInfo]
   var apiRouters = Map.empty[String, RouterInfo]
-  
-  // NOTE: we explicitly presume that the function is simply named under the API class. Is this always true?
-  def apiName(req:autowire.Core.Request[String]) = req.path.dropRight(1).mkString(".")
 
-  def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean, allowedDuringHistory:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
+  // NOTE: we explicitly presume that the function is simply named under the API class. Is this always true?
+  def apiName(req: autowire.Core.Request[String]) = req.path.dropRight(1).mkString(".")
+
+  def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](
+    router: ActorRef,
+    requiresLogin: Boolean,
+    allowedDuringHistory: Boolean
+  )(implicit
+    apiTag: ClassTag[API],
+    implTag: ClassTag[IMPL]
+  ) = {
     val api = apiTag.runtimeClass
     val apiName = api.getName
     val impl = implTag.runtimeClass
     // This asInstanceOf is sad, but for some reason it seems to be losing the constructed type otherwise.
     // (Some odd erasure behavior?)
-    val constr = impl.getConstructor(classOf[AutowireParams], classOf[Ecology]).asInstanceOf[Constructor[AutowireApiImpl]]
+    val constr =
+      impl.getConstructor(classOf[AutowireParams], classOf[Ecology]).asInstanceOf[Constructor[AutowireApiImpl]]
     sessionHandlers += (apiName -> HandlerInfo(constr, allowedDuringHistory))
     apiRouters += (apiName -> RouterInfo(router, requiresLogin))
   }
-  
-  def requiresLogin(req:ClientRequest):Boolean = {
+
+  def requiresLogin(req: ClientRequest): Boolean = {
     val name = apiName(req.req)
     apiRouters.get(name).map(_.requiresLogin).getOrElse(throw new Exception(s"requiresLogin got unknown API $name"))
   }
-  
-  def routeRequest[R](req:ClientRequest)(cb: PartialFunction[Any, Future[R]]):Future[R] = {
+
+  def routeRequest[R](req: ClientRequest)(cb: PartialFunction[Any, Future[R]]): Future[R] = {
     val name = apiName(req.req)
     apiRouters.get(name) match {
       case Some(router) => {
         apiTrace(s"  Sending call to ${req.req.path} to $router")
         ask(router.router, req)(timeout).flatMap {
-          case msg:ClientResponse => cb(msg)
-          case err:ClientError => cb(err)
+          case msg: ClientResponse => cb(msg)
+          case err: ClientError    => cb(err)
           // Handle the unfortunate case where we have had to shut down this Space:
-          case SpaceBlocked(err) => cb(err)
+          case SpaceBlocked(err)    => cb(err)
           case pex: PublicException => cb(ClientError(pex.display(Some(req.rc))))
           // This is essentially ClientResponse, but the contents are too large to send safely as a single
           // block. (Because of Akka message-size limits.) So we instead need to establish a channel to
@@ -82,8 +96,8 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
               case StringStream.ReceivedString(str) => {
                 cb(ClientResponse(str))
               }
-              
-              case ex:AskTimeoutException => {
+
+              case ex: AskTimeoutException => {
                 cb(ClientError("Failed to get response!"))
               }
             }
@@ -93,8 +107,12 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
       case None => throw new Exception(s"handleSessionRequest got request for unknown API $name")
     }
   }
-  
-  def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams, completeCb: Any => Unit = { dummy => }) = {
+
+  def handleSessionRequest(
+    req: autowire.Core.Request[String],
+    params: AutowireParams,
+    completeCb: Any => Unit = { dummy => }
+  ) = {
     sessionHandlers.get(apiName(req)) match {
       case Some(info) => {
         apiTrace(s"  Handling request for ${req.path.mkString(".")}(${req.args.values.mkString(", ")})")
@@ -108,8 +126,8 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
       case None => throw new Exception(s"handleSessionRequest got request for unknown API ${apiName(req)}")
     }
   }
-  
-  def apiTrace(msg: => String):Unit = {
+
+  def apiTrace(msg: => String): Unit = {
     if (traceApi)
       QLog.spew(msg)
   }

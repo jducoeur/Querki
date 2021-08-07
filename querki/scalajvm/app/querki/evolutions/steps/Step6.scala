@@ -12,12 +12,12 @@ import querki.identity.MembershipState
 import querki.util.QLog
 import querki.util.SqlHelpers._
 
-class Step6(implicit val ecology:Ecology) extends Step {
+class Step6(implicit val ecology: Ecology) extends Step {
   val version = 6
-  
+
   lazy val UserAccess = ecology.api[querki.identity.UserAccess]
-  
-  def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {
+
+  def doEvolve(info: SpaceInfo)(implicit conn: java.sql.Connection): Unit = {
     val ownerOpt = QDB(ShardKind.System) { implicit conn =>
       SQL("""
           SELECT owner
@@ -29,7 +29,7 @@ class Step6(implicit val ecology:Ecology) extends Step {
     }
     ownerOpt match {
       case Some(ownerId) => UserAccess.addSpaceMembership(ownerId, info.id, MembershipState.owner)
-      case None => QLog.error("Step6 unable to find the Owner for Space " + info.id.toThingId) 
+      case None          => QLog.error("Step6 unable to find the Owner for Space " + info.id.toThingId)
     }
   }
 }

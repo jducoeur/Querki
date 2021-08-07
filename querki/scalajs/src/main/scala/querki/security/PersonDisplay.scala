@@ -12,21 +12,25 @@ import querki.pages.Page
 import querki.util.ScalatagUtils
 
 class PersonDisplay(
-    showCls:String,
-    val person:PersonInfo,
-    roleInfo:RoleInfo, 
-    customInfo:RoleInfo,
-    std: StandardThings,
-    page: Page)(implicit val ecology: Ecology, ctx:Ctx.Owner)
-  extends Gadget[html.TableRow] with QuerkiUIUtils
-{
+  showCls: String,
+  val person: PersonInfo,
+  roleInfo: RoleInfo,
+  customInfo: RoleInfo,
+  std: StandardThings,
+  page: Page
+)(implicit
+  val ecology: Ecology,
+  ctx: Ctx.Owner
+) extends Gadget[html.TableRow]
+     with QuerkiUIUtils {
   val customDisplay = GadgetRef.of[html.Div]
 
   val selected = Var(false)
+
   val cell = GadgetRef.of[html.TableCell]
     .whenRendered { g =>
       g.elemOpt.map { e =>
-        $(e).click { evt:JQueryEventObject =>
+        $(e).click { evt: JQueryEventObject =>
           if (selected.now) {
             $(e).removeClass("warning")
             $(e).addClass(showCls)
@@ -42,7 +46,7 @@ class PersonDisplay(
             }
             selected.update(true)
           }
-        }.children().click { evt:JQueryEventObject =>
+        }.children().click { evt: JQueryEventObject =>
           // Don't let child clicks propagate to the row itself:
           evt.stopImmediatePropagation()
         }
@@ -53,13 +57,13 @@ class PersonDisplay(
 
   def doRender() = {
     val personUrl = page.PageManager.pageUrl(person.person.urlName.underlying)
-    tr(cls:=showCls,
+    tr(
+      cls := showCls,
       cell <= td(
         check <= span(visibility := "hidden", icon("ok")),
         " ",
         MSeq(
-          a(href := personUrl,
-            person.person.displayName),
+          a(href := personUrl, person.person.displayName),
           s" (${person.person.oid2.underlying}) -- ",
           new RolesDisplay(person.roles, person.person.oid, roleInfo, customInfo, customDisplay, std)
         ),
@@ -68,4 +72,3 @@ class PersonDisplay(
     )
   }
 }
-  

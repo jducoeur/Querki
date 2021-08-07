@@ -2,7 +2,7 @@ package models
 
 object MIMEType {
   type MIMEType = String
-  
+
   val CSS = "text/css"
   val JPEG = "image/jpeg"
   val PNG = "image/png"

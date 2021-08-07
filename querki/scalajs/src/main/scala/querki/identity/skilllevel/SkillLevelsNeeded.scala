@@ -7,7 +7,7 @@ import querki.globals._
  */
 trait SkillLevelsNeeded extends EcologyMember {
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
-  
+
   def userSkillLevel = SkillLevel.current
   lazy val Easy = SkillLevel.EasyComplexity
   lazy val Standard = SkillLevel.StandardComplexity

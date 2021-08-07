@@ -17,37 +17,41 @@ package querki.test
 // We can and arguably should just use the version of Monad in Scalaz or Cats in real code. This is mainly to prove
 // that I kind of understand how this stuff works.
 import scala.language.higherKinds
+
 trait MonadLike[F[_]] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
   def map[A, B](fa: F[A])(f: A => B): F[B]
   def pure[A](a: A): F[A]
-  
+
   val monadSyntax = new MonadLikeSyntax[F] { def F = MonadLike.this }
 }
 
 // We define this as AnyVal (a value class) for efficiency, since these functions will be invoked a *lot*.
 // Note that this is more efficient than Cats (or scalaz) currently is, but they have plans to elide the allocations
 // eventually. The value class trick is lovely, but only works in simple situations.
-class MonadLikeOps[F[_], A](val self:F[A]) extends AnyVal {
-  def flatMap[B](f: A => F[B])(implicit monad:MonadLike[F]): F[B] = {
+class MonadLikeOps[F[_], A](val self: F[A]) extends AnyVal {
+
+  def flatMap[B](f: A => F[B])(implicit monad: MonadLike[F]): F[B] = {
     monad.flatMap(self)(f)
   }
-  def map[B](f: A => B)(implicit monad:MonadLike[F]): F[B] = {
+
+  def map[B](f: A => B)(implicit monad: MonadLike[F]): F[B] = {
     monad.map(self)(f)
   }
 }
 
 trait MonadLikeSyntax[F[_]] {
-  implicit def ml2Ops[A](v:F[A]):MonadLikeOps[F,A] = new MonadLikeOps[F,A](v)
-  def F:MonadLike[F]
+  implicit def ml2Ops[A](v: F[A]): MonadLikeOps[F, A] = new MonadLikeOps[F, A](v)
+  def F: MonadLike[F]
 }
 
 object MonadLike {
-  implicit def ml2Syntax[F[_]](ml:MonadLike[F]):MonadLikeSyntax[F] = ml.monadSyntax
-  implicit def f2Ops[A, F[_]: MonadLike](v:F[A]):MonadLikeOps[F,A] = {
+  implicit def ml2Syntax[F[_]](ml: MonadLike[F]): MonadLikeSyntax[F] = ml.monadSyntax
+
+  implicit def f2Ops[A, F[_] : MonadLike](v: F[A]): MonadLikeOps[F, A] = {
     val monad = implicitly[MonadLike[F]]
     monad.monadSyntax.ml2Ops(v)
-  }  
+  }
 }
 
 object TestMonadLike {
@@ -79,27 +83,26 @@ import TestMonadLike._
 class MonadTests extends QuerkiTests {
   "A Monad abstraction" should {
     "work as expected" in {
-      class TestClass[F[_]:MonadLike] {
+      class TestClass[F[_] : MonadLike] {
         val monad = implicitly[MonadLike[F]]
-        
-        def doubler(i:Int):F[Int] = {
+
+        def doubler(i: Int): F[Int] = {
           monad.pure(i * 2)
         }
-        
-        def intToString(i:Int):F[String] = {
+
+        def intToString(i: Int): F[String] = {
           monad.pure(i.toString)
         }
-    
-        def combiner(i:Int): F[String] = {
+
+        def combiner(i: Int): F[String] = {
           for {
             first <- doubler(i)
             second <- intToString(first)
-          }
-            yield second
+          } yield second
         }
       }
-  
-      new TestClass[Id].combiner(4) should equal ("8")      
+
+      new TestClass[Id].combiner(4) should equal("8")
     }
   }
 }

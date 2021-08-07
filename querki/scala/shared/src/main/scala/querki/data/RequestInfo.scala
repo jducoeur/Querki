@@ -7,13 +7,13 @@ import querki.identity.UserLevel.UserLevel
  * is needed client-side.
  */
 case class RequestInfo(
-  user:Option[UserInfo], 
-  space:Option[SpaceInfo],
-  isOwner:Boolean,
-  userLevel:UserLevel,
+  user: Option[UserInfo],
+  space: Option[SpaceInfo],
+  isOwner: Boolean,
+  userLevel: UserLevel,
   // If specified, the PageManager will go to this page immediately after load:
-  navigateToOpt:Option[String] = None,
+  navigateToOpt: Option[String] = None,
   // An opaque payload, intended to go with navigateToOpt:
-  payloadOpt:Option[String] = None,
-  forbidden:Boolean = false
-  )
+  payloadOpt: Option[String] = None,
+  forbidden: Boolean = false
+)

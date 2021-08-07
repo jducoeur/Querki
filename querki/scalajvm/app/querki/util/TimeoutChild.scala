@@ -13,26 +13,26 @@ import querki.globals._
  * The child of a RoutingParent, which has a built-in inactivity timeout. Concrete classes must
  * also extend ReceivePipeline. Note that ReceivePipeline must be extended *after* PersistentActor
  * and *before* this trait!
- * 
+ *
  * Note that ClusterTimeoutChild is quite similar, but designed specifically to work with
  * ClusterSharding.
  */
-trait TimeoutChild extends Actor { pipe:ReceivePipeline =>
-  
+trait TimeoutChild extends Actor { pipe: ReceivePipeline =>
+
   /**
    * Instances must define this -- it is the name of the config string that defines how long
    * the timeout interval is.
    */
-  def timeoutConfig:String
-  
+  def timeoutConfig: String
+
   override def preStart() = {
     val timeout = context.system.settings.config.getDuration(timeoutConfig, java.util.concurrent.TimeUnit.MILLISECONDS)
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()
   }
-  
+
   pipelineInner {
-    case resp:ReceiveTimeout => {
+    case resp: ReceiveTimeout => {
       context.parent ! KillMe
       HandledCompletely
     }
@@ -48,64 +48,76 @@ object RoutingStates {
  * This encapsulates the concept of a parent that has TimeoutChildren. You don't use this directly,
  * you use its subtraits, depending on how many children you're looking for.
  */
-trait RoutingParentBase[K] extends Actor { pipe:ReceivePipeline =>
+trait RoutingParentBase[K] extends Actor { pipe: ReceivePipeline =>
 
-  class ManagedChild(val id:K, val ref:ActorRef) {
+  class ManagedChild(
+    val id: K,
+    val ref: ActorRef
+  ) {
     import RoutingStates._
     var state = StateNormal
     var buffer = Queue.empty[Any]
-    
+
     def beginShutdown = {
       state = StateDying
       ref ! PoisonPill
     }
-    
-    def forward(msg:Any) = {
+
+    def forward(msg: Any) = {
       state match {
         case StateNormal => ref.forward(msg)
-        case StateDying => buffer.enqueue(msg)
+        case StateDying  => buffer.enqueue(msg)
       }
     }
   }
-  
-  def findChild(ref:ActorRef):Option[ManagedChild]
-  
+
+  def findChild(ref: ActorRef): Option[ManagedChild]
+
   /**
    * Instances of RoutingParent must implement this. Given the child's key, create it.
    */
-  def createChild(key:K):ActorRef
-  
+  def createChild(key: K): ActorRef
+
   def childrenUpdated() = {}
-  
+
   /**
    * Instances of RoutingParent *may* override this. It is called immediately after creating a
    * new Child.
    */
-  def initChild(key:K, child:ActorRef) = {}
-  
-  def updateCache(key:K, newChild:ManagedChild):Unit
-  
-  protected def createManagedChild(key:K):ManagedChild = {
+  def initChild(
+    key: K,
+    child: ActorRef
+  ) = {}
+
+  def updateCache(
+    key: K,
+    newChild: ManagedChild
+  ): Unit
+
+  protected def createManagedChild(key: K): ManagedChild = {
     val c = new ManagedChild(key, createChild(key))
     context.watch(c.ref)
     initChild(key, c.ref)
     childrenUpdated()
     updateCache(key, c)
-    c    
+    c
   }
-  
-  def routeToChild(key:K, msg:Any)
-  def removeChild(key:K)
-  
+
+  def routeToChild(
+    key: K,
+    msg: Any
+  )
+  def removeChild(key: K)
+
   pipelineInner {
     case KillMe => {
       findChild(sender) match {
         case Some(child) => child.beginShutdown
-        case _ => QLog.warn(s"RouterParent got KillMe from unknown child $sender")
+        case _           => QLog.warn(s"RouterParent got KillMe from unknown child $sender")
       }
       HandledCompletely
     }
-    
+
     case msg @ Terminated(other) => {
       findChild(other) match {
         case Some(child) => {
@@ -130,83 +142,96 @@ trait RoutingParentBase[K] extends Actor { pipe:ReceivePipeline =>
  * This is a simple parent, that may have *one* optional child. This is useful when the
  * child's state is big and complicated, and we don't want to keep it in memory all the
  * time.
- * 
+ *
  * TODO: we should figure out a way to parameterize this so that a single parent can have
  * multiple distinct children of different types. I suspect that requires a rethink to
  * be typeclass-based.
  */
-trait SingleRoutingParent extends RoutingParentBase[Unit] { pipe:ReceivePipeline =>
-  private var _child:Option[ManagedChild] = None
-  
-  def findChild(ref:ActorRef):Option[ManagedChild] = {
+trait SingleRoutingParent extends RoutingParentBase[Unit] { pipe: ReceivePipeline =>
+  private var _child: Option[ManagedChild] = None
+
+  def findChild(ref: ActorRef): Option[ManagedChild] = {
     if (_child.map(_.ref.path.name == ref.path.name).getOrElse(false))
       _child
     else
       None
   }
-  
-  def createChild():ActorRef
-  def createChild(key:Unit):ActorRef = createChild()
-  def updateCache(key:Unit, c:ManagedChild) = _child = Some(c)
-  
-  def routeToChild(key:Unit, msg:Any):Unit = {
+
+  def createChild(): ActorRef
+  def createChild(key: Unit): ActorRef = createChild()
+
+  def updateCache(
+    key: Unit,
+    c: ManagedChild
+  ) = _child = Some(c)
+
+  def routeToChild(
+    key: Unit,
+    msg: Any
+  ): Unit = {
     val child = _child match {
       case Some(c) => c
-      case None => createManagedChild(())
+      case None    => createManagedChild(())
     }
     child.forward(msg)
   }
-  def routeToChild(msg:Any):Unit = routeToChild((), msg)
-  
-  def removeChild(key:Unit) = _child = None
+  def routeToChild(msg: Any): Unit = routeToChild((), msg)
+
+  def removeChild(key: Unit) = _child = None
 }
 
 /**
  * This trait encapsulates the idea of a Parent/Router that owns a bunch of distinct children,
  * each of which has a clear ID. When it receives a message for a child, it routes it there,
  * creating the child if it doesn't already exist.
- * 
+ *
  * Concrete classes must also extend ReceivePipeline.
- * 
+ *
  * As currently constructed, a given Actor can only be the RoutingParent for a single kind of
  * child.
- * 
+ *
  * Yes, this is quite similar to Cluster Sharding. But it is local-only, lighter-weight, and
  * has timeout built in. We generally use it *under* our top-level Cluster Sharded entities,
  * to manage particular Troupes.
  */
-trait RoutingParent[K] extends RoutingParentBase[K] { pipe:ReceivePipeline =>
-  
+trait RoutingParent[K] extends RoutingParentBase[K] { pipe: ReceivePipeline =>
+
   /**
    * All of the current children we are routing to.
    */
   private var _children = Map.empty[K, ManagedChild]
-  
-  def findChild(ref:ActorRef):Option[ManagedChild] = _children.find(_._2.ref.path.name == ref.path.name).map(_._2)
-  
+
+  def findChild(ref: ActorRef): Option[ManagedChild] = _children.find(_._2.ref.path.name == ref.path.name).map(_._2)
+
   def children = _children.values.map(_.ref)
   def childPairs = _children.toSeq
-  def child(id:K) = _children.get(id).map(_.ref)
+  def child(id: K) = _children.get(id).map(_.ref)
   def nChildren = _children.size
-  def removeChild(key:K) = _children = _children - key
-  
-  def updateCache(key:K, c:ManagedChild) = _children = _children + (key -> c)
-  
+  def removeChild(key: K) = _children = _children - key
+
+  def updateCache(
+    key: K,
+    c: ManagedChild
+  ) = _children = _children + (key -> c)
+
   /**
    * This should be called inside the receive() clause for a message that is intended for a child.
    * It will deal with creating the child if necessary.
    */
-  def routeToChild(key:K, msg:Any) = {
+  def routeToChild(
+    key: K,
+    msg: Any
+  ) = {
     val child = _children.get(key) match {
       case Some(c) => c
-      case None => createManagedChild(key)
+      case None    => createManagedChild(key)
     }
     child.forward(msg)
   }
-  
+
   /**
    * This should be called inside the receive() clause for a message; it forwards this message
    * to *all* currently-active children.
    */
-  def routeToAll(msg:Any) = children.foreach { _.forward(msg) }
+  def routeToAll(msg: Any) = children.foreach { _.forward(msg) }
 }

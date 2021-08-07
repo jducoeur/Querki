@@ -17,11 +17,10 @@ class LoginTests extends MidTestBase {
       runTest {
         for {
           loginResults <- newUser(user)
-          _ = loginResults.session("username") must be (user.handle)
+          _ = loginResults.session("username") must be(user.handle)
           sess <- logout
-          _ = sess.get("username") must be (None)          
-        }
-          yield ()
+          _ = sess.get("username") must be(None)
+        } yield ()
       }
     }
   }

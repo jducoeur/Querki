@@ -23,18 +23,18 @@ case object Reload
  * Some standard boilerplate around the timeout-y bits of a ClusterSharding Entity. Entities
  * should usually mix this in -- it allows them to simply set a config flag for their timeout
  * interval, and otherwise not worry about it.
- * 
+ *
  * @author jducoeur
  */
 trait ClusterTimeoutChild extends Actor {
   import ShardRegion.Passivate
-  
+
   /**
    * Instances must define this -- it is the name of the config string that defines how long
    * the timeout interval is.
    */
-  def timeoutConfig:String
-  
+  def timeoutConfig: String
+
   /**
    * IMPORTANT: instances must call super.preStart()!!!
    */
@@ -44,10 +44,10 @@ trait ClusterTimeoutChild extends Actor {
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()
   }
-  
-  abstract override def unhandled(message: Any): Unit = {
+
+  override abstract def unhandled(message: Any): Unit = {
     message match {
-      case resp:ReceiveTimeout => {
+      case resp: ReceiveTimeout => {
 //        QLog.spew(s"Passivating (timeout) ClusterTimeoutChild ${self.path}")
         context.parent ! Passivate(KillMe)
       }
@@ -65,5 +65,5 @@ trait ClusterTimeoutChild extends Actor {
       }
       case other => super.unhandled(other)
     }
-  }  
+  }
 }

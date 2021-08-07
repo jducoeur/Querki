@@ -6,7 +6,7 @@ package querki.pages
  */
 object PageIDs {
   type PageID = Int
-  
+
   val ThingPage = 1
   val SearchResultsPage = 2
 }

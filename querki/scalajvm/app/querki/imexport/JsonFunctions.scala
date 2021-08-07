@@ -10,8 +10,12 @@ import querki.data.TID
  * this declaration to shared.
  */
 trait JsonFunctions {
+
   /**
    * Produces the JSON for the specified Thing and Property.
    */
-  def getJsonFor(thingId: TID, propId: Option[TID]): Future[String]
+  def getJsonFor(
+    thingId: TID,
+    propId: Option[TID]
+  ): Future[String]
 }

@@ -7,6 +7,7 @@ import querki.test.mid._
 import AllFuncs._
 
 object SpaceMidTests {
+
   /**
    * Test the ability to clone a Thing.
    */
@@ -26,8 +27,7 @@ object SpaceMidTests {
       clone2Text <- evaluateQL(instance, """_copyThing(The Property(""Different Value"")) -> _oid""")
       clone2 = TID(clone2Text.plaintext)
       _ <- checkPropValue(clone2, propId, "Different Value")
-    }
-      yield ()
+    } yield ()
   }
 }
 

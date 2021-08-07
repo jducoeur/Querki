@@ -6,11 +6,13 @@ import querki.ecology._
 
 import querki.evolutions._
 
-class Step5(implicit val ecology:Ecology) extends Step {
+class Step5(implicit val ecology: Ecology) extends Step {
   val version = 5
-  
-  def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {
-    SpaceSQL(info.id, """
+
+  def doEvolve(info: SpaceInfo)(implicit conn: java.sql.Connection): Unit = {
+    SpaceSQL(
+      info.id,
+      """
         |CREATE TABLE {uvname} (
         |  thingId bigint NOT NULL,
         |  propertyId bigint NOT NULL,
@@ -19,6 +21,7 @@ class Step5(implicit val ecology:Ecology) extends Step {
         |  modTime datetime NOT NULL,
         |  PRIMARY KEY (identityId, thingId, propertyId)
         |) DEFAULT CHARSET=utf8;
-        |""".stripMargin).execute
+        |""".stripMargin
+    ).execute
   }
 }

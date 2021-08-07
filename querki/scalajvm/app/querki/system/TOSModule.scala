@@ -16,30 +16,35 @@ object MOIDs extends EcotIds(8)
 /**
  * Terms of Service manager. This is a Module mostly for lifecycle management, to plug into the
  * PageEventManager, but it doesn't expose anything to the System Space.
- * 
+ *
  * Note that this works hand-in-glove with controllers.TOSController. Really, I would just do the
  * control stuff here, but wound up having strange problems with imports.
  */
-class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
-  
+class TOSModule(e: Ecology) extends QuerkiEcot(e) with TermsOfService {
+
   import TOSModule._
-  
+
   lazy val UserAccess = interface[querki.identity.UserAccess]
-  
-  def currentTOS:TOSVersion = TOSModule.currentVersion
-  
-  def checkTOS(user:User):TOSState = {
-    if (user.tosVersion == currentVersion.version
-     || user.tosVersion == noTOSUserVersion)
+
+  def currentTOS: TOSVersion = TOSModule.currentVersion
+
+  def checkTOS(user: User): TOSState = {
+    if (
+      user.tosVersion == currentVersion.version
+      || user.tosVersion == noTOSUserVersion
+    )
       TOSOkay
     else
       TOSOld
   }
-  
+
   /**
    * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!
    */
-  def recordAccept(user:User, version:Int):Future[User] =  {
+  def recordAccept(
+    user: User,
+    version: Int
+  ): Future[User] = {
     UserAccess.setTOSVersion(user.id, version).map(_.get)
   }
 }
@@ -50,16 +55,22 @@ object TOSModule {
   val currentVersion = TOS1
   // Marker for Users who don't need to sign the TOS -- pseudo-users, generally:
   val noTOSUserVersion = -1
-  
+
   /**
    * The current Terms of Service, rendered as HTML.
    */
-  def current:DisplayText = Wikitext(currentVersion.text).display
+  def current: DisplayText = Wikitext(currentVersion.text).display
 }
 
-case class TOSVersion(version:Int, text:String)
+case class TOSVersion(
+  version: Int,
+  text: String
+)
 
-object TOS1 extends TOSVersion(1, """
+object TOS1
+  extends TOSVersion(
+    1,
+    """
 Terms of Service for Querki
 ===========================
 
@@ -175,4 +186,5 @@ BE DISCLOSED.
 TO THE EXTENT PERMITTED BY LAW, THE TOTAL LIABILITY OF QUERKI, FOR ANY CLAIMS UNDER
 THESE TERMS, IS LIMITED TO THE AMOUNT YOU PAID US TO USE THE SERVICE. IN ALL CASES,
 QUERKI WILL NOT BE LIABLE FOR ANY LOSS OR DAMAGE THAT IS NOT REASONABLY FORESEEABLE.
-""")
+"""
+  )

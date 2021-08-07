@@ -10,23 +10,23 @@ import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.values.{SpaceState, SpaceVersion}
 
-trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =>
-  
+trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner =>
+
   import ModelPersistence._
-  
+
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
-  
-  def recordUnresolvedProp(valStr:String) = interface[querki.spaces.SpacePersistence].recordUnresolvedProp(valStr)
+
+  def recordUnresolvedProp(valStr: String) = interface[querki.spaces.SpacePersistence].recordUnresolvedProp(valStr)
   lazy val systemState = interface[querki.system.System].State
   lazy val UnresolvedPropType = interface[querki.spaces.SpacePersistence].UnresolvedPropType
-  
+
   /**
    * This is the "magic string" that means that this Property value has been deleted.
    */
   final val DeletedValueSignal = "\uFFFD"
-  
-  implicit def propMap2DH(pm:PropMap)(implicit state:SpaceState):DHPropMap = {
-    val props = pm.map { case (k,v) =>
+
+  implicit def propMap2DH(pm: PropMap)(implicit state: SpaceState): DHPropMap = {
+    val props = pm.map { case (k, v) =>
       if (v.isDeleted)
         (k, DeletedValueSignal)
       else state.prop(k) match {
@@ -41,9 +41,9 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
     }
     DHPropMap(props)
   }
-  
-  implicit def DH2PropMap(dh:DHPropMap)(implicit state:SpaceState):PropMap = {
-    dh.props.map { case(k,v) =>
+
+  implicit def DH2PropMap(dh: DHPropMap)(implicit state: SpaceState): PropMap = {
+    dh.props.map { case (k, v) =>
       state.prop(k) match {
         case Some(prop) => {
           if (v == DeletedValueSignal)
@@ -56,18 +56,23 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
       }
     }
   }
-  
-  def dh(ts:ThingState)(implicit state:SpaceState):DHThingState = DHThingState(ts.id, ts.model, ts.props, ts.modTime, ts.creatorOpt, ts.createTimeOpt)
-  def dh(prop:AnyProp)(implicit state:SpaceState):DHProperty = DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
-  def dh(tpe:PType[_])(implicit state:SpaceState):DHModelType = {
+
+  def dh(ts: ThingState)(implicit state: SpaceState): DHThingState =
+    DHThingState(ts.id, ts.model, ts.props, ts.modTime, ts.creatorOpt, ts.createTimeOpt)
+
+  def dh(prop: AnyProp)(implicit state: SpaceState): DHProperty =
+    DHProperty(prop.id, prop.model, prop.props, prop.modTime, prop.pType.id, prop.cType.id)
+
+  def dh(tpe: PType[_])(implicit state: SpaceState): DHModelType = {
     tpe match {
-      case mt:ModelTypeDefiner#ModelType => DHModelType(mt.id, mt.model, mt.props, mt.modTime, mt.basedOn)
-      case _ => throw new Exception(s"Trying to dehydrate PType $tpe, which isn't a ModelType!")
+      case mt: ModelTypeDefiner#ModelType => DHModelType(mt.id, mt.model, mt.props, mt.modTime, mt.basedOn)
+      case _                              => throw new Exception(s"Trying to dehydrate PType $tpe, which isn't a ModelType!")
     }
   }
-  def dh(state:SpaceState):DHSpaceState = {
+
+  def dh(state: SpaceState): DHSpaceState = {
     implicit val s = state
-    
+
     DHSpaceState(
       state.id,
       state.model,
@@ -82,16 +87,16 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
       state.apps.map(dh(_)).toList
     )
   }
-  
+
   /**
    * This deals with the synchronous bits of "rehydrating" a SpaceState. Note that the end result is still
    * missing a few bits that require Actor communication: the apps and the ownerIdentity.
-   * 
+   *
    * Note that this code is intentionally adapted from SpaceLoader, which it will eventually replace.
    */
-  def rehydrate(dh:DHSpaceState):SpaceState = {
+  def rehydrate(dh: DHSpaceState): SpaceState = {
     // First, create the framework of the SpaceState itself:
-    val baseState = 
+    val baseState =
       SpaceState(
         dh.id,
         dh.model,
@@ -101,14 +106,14 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
         dh.modTime,
         dh.apps.getOrElse(List.empty).map(rehydrate(_)),
         Some(systemState),
-        Map.empty,  // Types -- filled in below
-        Map.empty,  // SpaceProps -- filled in below
-        Map.empty,  // Things -- filled in below
-        Map.empty,  // Collections -- ignored for now
-        None,       // ownerIdentity needs to be filled in async
+        Map.empty, // Types -- filled in below
+        Map.empty, // SpaceProps -- filled in below
+        Map.empty, // Things -- filled in below
+        Map.empty, // Collections -- ignored for now
+        None, // ownerIdentity needs to be filled in async
         appInfo = dh.appsIds.map { case (id, l) => (id, SpaceVersion(l)) }
       )
-      
+
     // Next, add the Types. Note that we can build the Type before we build the
     // Model it is based on.
     val typeMap = (Map.empty[OID, PType[_]] /: dh.types) { (map, tpe) =>
@@ -118,9 +123,9 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
       map + (tpe.id -> mt)
     }
     val withTypes = baseState.copy(types = typeMap)
-    
+
     // Next, add the Properties.
-    val props = (Map.empty[OID, Property[_,_]] /: dh.spaceProps) { (map, propdh) =>
+    val props = (Map.empty[OID, Property[_, _]] /: dh.spaceProps) { (map, propdh) =>
       implicit val s = withTypes
       val typ = withTypes.typ(propdh.pType)
       // This sad cast is necessary in order to pass the PType into the Property. It's reasonably
@@ -132,34 +137,35 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
       map + (propdh.id -> prop)
     }
     val withProps = withTypes.copy(spaceProps = props)
-    
+
     // Now add the Things.
     val ts = (Map.empty[OID, ThingState] /: dh.things) { (map, thingdh) =>
       implicit val s = withProps
-      val thing = 
+      val thing =
         ThingState(
-          thingdh.id, 
-          dh.id, 
-          thingdh.model, 
-          thingdh.props, 
-          thingdh.modTime, 
-          Kind.Thing, 
+          thingdh.id,
+          dh.id,
+          thingdh.model,
+          thingdh.props,
+          thingdh.modTime,
+          Kind.Thing,
           thingdh.creatorOpt.toOption.flatten,
-          thingdh.createTimeOpt.toOption.flatten)
+          thingdh.createTimeOpt.toOption.flatten
+        )
       map + (thingdh.id -> thing)
     }
     val withThings = withProps.copy(things = ts)
-    
+
     // Now we do a second pass, to resolve anything left unresolved:
-    def secondPassProps[T <: Thing](thing:T)(copier:(T, PropMap) => T):T = {
+    def secondPassProps[T <: Thing](thing: T)(copier: (T, PropMap) => T): T = {
       val fixedProps = thing.props.map { propPair =>
         val (id, value) = propPair
         value match {
-          case unres:UnresolvedPropValue => {
+          case unres: UnresolvedPropValue => {
             val propOpt = withThings.prop(id)
             val v = propOpt match {
               case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)(withThings)
-              case None => value
+              case None       => value
             }
             (id, v)
           }
@@ -179,69 +185,71 @@ trait ModelPersistence { self:EcologyMember with querki.types.ModelTypeDefiner =
 }
 
 object ModelPersistence {
+
   /**
    * A "dehydrated" PropMap. This is the pre-serialized form. We have to do this in a separate step,
    * because dehydrate/hydrate require a SpaceState, which isn't available at deserialization time.
    */
-  case class DHPropMap(@KryoTag(1) props:Map[OID,String]) extends UseKryo
-  
+  case class DHPropMap(@KryoTag(1) props: Map[OID, String]) extends UseKryo
+
   /**
    * A dehydrated ThingState.
    */
   case class DHThingState(
-    @KryoTag(1) id:OID, 
-    @KryoTag(2) model:OID, 
-    @KryoTag(3) props:DHPropMap, 
-    @KryoTag(4) modTime:DateTime,
-    @KryoTag(5) creatorOpt:AddedField[Option[UserRef]],
-    @KryoTag(6) createTimeOpt:AddedField[Option[DateTime]]) extends UseKryo
-  
+    @KryoTag(1) id: OID,
+    @KryoTag(2) model: OID,
+    @KryoTag(3) props: DHPropMap,
+    @KryoTag(4) modTime: DateTime,
+    @KryoTag(5) creatorOpt: AddedField[Option[UserRef]],
+    @KryoTag(6) createTimeOpt: AddedField[Option[DateTime]]
+  ) extends UseKryo
+
   /**
    * A dehydrated Property. Strictly speaking we don't need to pType and cType -- they should be in the
    * props -- but it's convenient to keep them handy.
    */
   case class DHProperty(
-    @KryoTag(1) id:OID, 
-    @KryoTag(2) model:OID, 
-    @KryoTag(3) props:DHPropMap, 
-    @KryoTag(4) modTime:DateTime,
-    @KryoTag(5) pType:OID,
-    @KryoTag(6) cType:OID
+    @KryoTag(1) id: OID,
+    @KryoTag(2) model: OID,
+    @KryoTag(3) props: DHPropMap,
+    @KryoTag(4) modTime: DateTime,
+    @KryoTag(5) pType: OID,
+    @KryoTag(6) cType: OID
   ) extends UseKryo
-  
+
   /**
    * A dehydrated ModelType. (Which so far are the only user-createable PTypes, and might always be.)
    * The basedOn field is redundant -- it should be in the props -- but it's convenient to have it out.
-   * 
+   *
    * This arguably doesn't belong here, but it's convenient.
    */
   case class DHModelType(
-    @KryoTag(1) id:OID, 
-    @KryoTag(2) model:OID, 
-    @KryoTag(3) props:DHPropMap, 
-    @KryoTag(4) modTime:DateTime,
-    @KryoTag(5) basedOn:OID
+    @KryoTag(1) id: OID,
+    @KryoTag(2) model: OID,
+    @KryoTag(3) props: DHPropMap,
+    @KryoTag(4) modTime: DateTime,
+    @KryoTag(5) basedOn: OID
   ) extends UseKryo
-  
+
   /**
    * A dehydrated SpaceState.
-   * 
+   *
    * Note that we aren't even bothering to dehydrate Collection yet, since there is no concept of
    * user-defined ones yet.
    */
   case class DHSpaceState(
-    @KryoTag(1) id:OID, 
-    @KryoTag(2) model:OID, 
-    @KryoTag(3) props:DHPropMap, 
-    @KryoTag(4) modTime:DateTime,
-    @KryoTag(5) ownerId:IdentityId,
-    @KryoTag(6) name:String,
+    @KryoTag(1) id: OID,
+    @KryoTag(2) model: OID,
+    @KryoTag(3) props: DHPropMap,
+    @KryoTag(4) modTime: DateTime,
+    @KryoTag(5) ownerId: IdentityId,
+    @KryoTag(6) name: String,
     // TODO: this field is now deprecated. Think about how to safely remove it without damaging
     // the ability to read old records.
-    @KryoTag(7) appsIds:List[(OID, Long)],
-    @KryoTag(8) types:List[DHModelType],
-    @KryoTag(9) spaceProps:List[DHProperty],
-    @KryoTag(10) things:List[DHThingState],
-    @KryoTag(11) apps:AddedField[List[DHSpaceState]]
+    @KryoTag(7) appsIds: List[(OID, Long)],
+    @KryoTag(8) types: List[DHModelType],
+    @KryoTag(9) spaceProps: List[DHProperty],
+    @KryoTag(10) things: List[DHThingState],
+    @KryoTag(11) apps: AddedField[List[DHSpaceState]]
   ) extends UseKryo
 }

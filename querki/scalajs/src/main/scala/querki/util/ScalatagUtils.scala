@@ -10,36 +10,41 @@ import querki.globals._
  * companion object.
  */
 trait ScalatagUtils {
-  
+
   /**
    * Utility, to make it easier to define data attributes.
    */
-  def data(name:String):Attr = scalatags.generic.Attr(s"data-$name")
+  def data(name: String): Attr = scalatags.generic.Attr(s"data-$name")
 
   /**
    * Utility function; this is often useful for wrapping complex expressions that produce Modifiers, which
    * often otherwise don't trigger the implicits properly. Often needed around if statements, in particular.
    */
-  def MSeq(xs:Modifier*) = Vector[Modifier](xs)
-  
+  def MSeq(xs: Modifier*) = Vector[Modifier](xs)
+
   /**
    * Utility function; this is often useful for wrapping complex expressions that produce Frags, which
    * often otherwise don't trigger the implicits properly. Often needed around if statements, in particular.
    */
-  def FSeq(xs:Frag*) = Vector[Frag](xs)  
-  
+  def FSeq(xs: Frag*) = Vector[Frag](xs)
+
   /**
    * Convenience function for composing classes in Gadgets and functions.
    */
-  def classes(cs:Seq[String]) = cls:=cs.mkString(" ")
-  
+  def classes(cs: Seq[String]) = cls := cs.mkString(" ")
+
   /**
    * Base class for teaching Scalatags how to use a BasicThingInfo as an Attribute Value. We need one
    * of these for each subclass of BasicThingInfo. This automatically uses the TID of the Thing as
    * the actual value.
    */
   class BasicThingAttr[T <: querki.data.BasicThingInfo] extends scalatags.JsDom.AttrValue[T] {
-    override def apply(t:dom.Element, a:Attr, v:T) = {
+
+    override def apply(
+      t: dom.Element,
+      a: Attr,
+      v: T
+    ) = {
       t.setAttribute(a.name, v.oid.underlying)
     }
   }

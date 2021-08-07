@@ -20,45 +20,48 @@ sealed trait ApiException extends Exception
  * but which we don't expect to arise. (Generally cases where we expect the UI to prevent this
  * situation from arising.)
  */
-case class MiscException(msg:String) extends ApiException
+case class MiscException(msg: String) extends ApiException
 
 /**
  * An unknown Thing was requested, and it doesn't make sense to interpret as a Tag.
  */
-case class UnknownThingException(thingId:String) extends ApiException
-
+case class UnknownThingException(thingId: String) extends ApiException
 
 /**
  * Expected exceptions that can be returned from EditFunctions.
  */
 sealed trait EditException extends ApiException
-case class GeneralChangeFailure(msg:String) extends EditException
+case class GeneralChangeFailure(msg: String) extends EditException
+
 /**
  * A value that was sent for saving didn't pass validation for its type.
  *
  * When you hit this exception, it generally suggests that we should be doing stronger validation
  * in the Client. But this serves as a decent belt-and-suspenders check.
  */
-case class ValidationException(msg:String) extends EditException
+case class ValidationException(msg: String) extends EditException
+
 /**
  * Indicates that we hit an inheritance loop. This is propagated to the client
  * so that the Editor can allow you to fix it.
  */
 case class ModelLoopException() extends EditException
 
-
 /**
  * Expected exceptions that can be returned from SecurityFunctions.
  */
 sealed trait SecurityException extends ApiException
+
 /**
  * This invitation would exceed the maximum members per Space.
  */
-case class MaxMembersPerSpaceException(curMax:Int) extends SecurityException
+case class MaxMembersPerSpaceException(curMax: Int) extends SecurityException
+
 /**
  * Failed to archive this Space.
  */
 case class CanNotArchiveException() extends SecurityException
+
 /**
  * You aren't allowed to do that.
  */
@@ -68,31 +71,31 @@ case class NotAllowedException() extends SecurityException {
   // have specific client-side complicity?
   override def toString() = "You aren't allowed to do that"
 }
+
 /**
  * You didn't give your password correctly.
  */
 case class BadPasswordException() extends SecurityException
 
-
 /**
  * Expected exceptions that can be returned from AdminFunctions.
  */
 sealed trait AdminException extends ApiException
+
 /**
  * You tried to perform an Admin function from a non-Admin account.
  */
 case class NotAnAdminException() extends AdminException
 
-
 /**
  * Expected exceptions from the Import / Export functions.
  */
 sealed trait ImportException extends ApiException
+
 /**
  * Tried to create a Space using a name that you already have in use.
  */
-case class SpaceExistsException(name:String) extends ImportException
-
+case class SpaceExistsException(name: String) extends ImportException
 
 /**
  * Expected exceptions from User/Identity functions.

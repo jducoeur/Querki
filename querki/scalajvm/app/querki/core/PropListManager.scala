@@ -13,15 +13,19 @@ import querki.values.SpaceState
 
 object PropListMOIDs extends EcotIds(20)
 
-class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager {
-  
+class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager {
+
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val Editor = interface[querki.editing.Editor]
   lazy val NotInheritedProp = Core.NotInheritedProp
   lazy val NameProp = Core.NameProp
-  
-  implicit object PropNameOrdering extends Ordering[Property[_,_]] {
-    def compare(a:Property[_,_], b:Property[_,_]) = {
+
+  implicit object PropNameOrdering extends Ordering[Property[_, _]] {
+
+    def compare(
+      a: Property[_, _],
+      b: Property[_, _]
+    ) = {
       if (a eq DisplayNameProp) {
         if (b eq DisplayNameProp)
           0
@@ -39,92 +43,111 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
       } else if (b eq NameProp)
         1
       else
-        a.displayName compare b.displayName
+        a.displayName.compare(b.displayName)
     }
   }
 
-  
-    def apply(pairs:(Property[_,_], DisplayPropVal)*):PropList = {
-      (TreeMap.empty[Property[_,_], DisplayPropVal] /: pairs)((m, pair) => m + pair)
+  def apply(pairs: (Property[_, _], DisplayPropVal)*): PropList = {
+    (TreeMap.empty[Property[_, _], DisplayPropVal] /: pairs)((m, pair) => m + pair)
+  }
+
+  private def isProperty(bundleOpt: Option[PropertyBundle])(implicit state: SpaceState): Boolean = {
+    val resultOpt = for {
+      bundle <- bundleOpt
+      thing <- bundle.asThing
+    } yield thing.isAncestor(UrPropOID)
+
+    resultOpt.getOrElse(false)
+  }
+
+  def inheritedProps(
+    thing: Option[PropertyBundle],
+    model: Thing
+  )(implicit
+    state: SpaceState
+  ): PropList = {
+    // Get the Model's PropList, and push its values into the inherited slots:
+    val raw = fromRec(model, thing)
+    (TreeMap.empty[Property[_, _], DisplayPropVal] /: raw) { (result, fromModel) =>
+      val (prop, v) = fromModel
+      if (prop == NameProp && !isProperty(thing)) {
+        // We don't inherit even the existence of NameProp, *except* for Properties.
+        // TBD: we might generalize this concept of "use the Name Property primarily" into a
+        // meta-Property, but let's see if we care first.
+        result
+      } else if (prop.ifSet(Core.ModelOnlyProp))
+        // This is a Property whose *existence* is specifically not inherited:
+        result
+      else if (prop.first(NotInheritedProp))
+        // This is a Property whose *value* is not inherited:
+        result + (prop -> DisplayPropVal(thing, prop, None))
+      else if (v.v.isDefined)
+        result + (prop -> DisplayPropVal(thing, prop, None, v.v, Some(model)))
+      else
+        result + fromModel
     }
-    
-    private def isProperty(bundleOpt:Option[PropertyBundle])(implicit state:SpaceState):Boolean = {
-      val resultOpt = for (
-        bundle <- bundleOpt;
-        thing <- bundle.asThing
-      )
-        yield thing.isAncestor(UrPropOID)
-        
-      resultOpt.getOrElse(false)
-    }
-    
-    def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList = {
-      // Get the Model's PropList, and push its values into the inherited slots:
-      val raw = fromRec(model, thing)   
-      (TreeMap.empty[Property[_,_], DisplayPropVal] /: raw) { (result, fromModel) =>
-        val (prop, v) = fromModel
-        if (prop == NameProp && !isProperty(thing)) {
-          // We don't inherit even the existence of NameProp, *except* for Properties.
-          // TBD: we might generalize this concept of "use the Name Property primarily" into a
-          // meta-Property, but let's see if we care first.
-          result
-        } else if (prop.ifSet(Core.ModelOnlyProp))
-          // This is a Property whose *existence* is specifically not inherited:
-          result
-        else if (prop.first(NotInheritedProp))
-          // This is a Property whose *value* is not inherited:
-          result + (prop -> DisplayPropVal(thing, prop, None))
-        else if (v.v.isDefined)
-          result + (prop -> DisplayPropVal(thing, prop, None, v.v, Some(model)))
-        else
-          result + fromModel        
-      }   
-    }
-    
-    // TODO: this is all pretty inefficient. We should be caching the PropLists,
-    // especially for common models.
-    private def fromRec(thing:PropertyBundle, root:Option[PropertyBundle])(implicit state:SpaceState):PropList = {
-      val inherited =
-        if (thing.hasModel)
-          inheritedProps(root, thing.getModel)
-        else
-          TreeMap.empty[Property[_,_], DisplayPropVal]
-      
-      (inherited /: thing.props.keys) { (m, propId) =>
-        val propOpt = state.prop(propId)
-        propOpt match {
-          case Some(prop) => {
-            val value = prop.from(thing.props)
-            val disp =
-              if (m.contains(prop))
-                m(prop).copy(v = Some(value))
-              else
-                DisplayPropVal(root, prop, Some(value))
-            m + (prop -> disp)
-          }
-          case None => m
+  }
+
+  // TODO: this is all pretty inefficient. We should be caching the PropLists,
+  // especially for common models.
+  private def fromRec(
+    thing: PropertyBundle,
+    root: Option[PropertyBundle]
+  )(implicit
+    state: SpaceState
+  ): PropList = {
+    val inherited =
+      if (thing.hasModel)
+        inheritedProps(root, thing.getModel)
+      else
+        TreeMap.empty[Property[_, _], DisplayPropVal]
+
+    (inherited /: thing.props.keys) { (m, propId) =>
+      val propOpt = state.prop(propId)
+      propOpt match {
+        case Some(prop) => {
+          val value = prop.from(thing.props)
+          val disp =
+            if (m.contains(prop))
+              m(prop).copy(v = Some(value))
+            else
+              DisplayPropVal(root, prop, Some(value))
+          m + (prop -> disp)
         }
+        case None => m
       }
     }
-    
-    def from(thing:PropertyBundle, ensureName:Boolean)(implicit state:SpaceState):PropList = {
-      val raw = fromRec(thing, Some(thing))
-      if (ensureName) {
-        // The semantic-level calling code has asked us to make sure the NameProp is there.
-        // This is ugly coupling: we should look for a better way for EditFunctionsImpl to be
-        // able to ensure Name is there when it needs it.
-        if (raw.contains(Core.NameProp)) {
-          raw
-        } else {
-          raw + (Core.NameProp -> DisplayPropVal(Some(thing), Core.NameProp, None))
-        }
-      } else
+  }
+
+  def from(
+    thing: PropertyBundle,
+    ensureName: Boolean
+  )(implicit
+    state: SpaceState
+  ): PropList = {
+    val raw = fromRec(thing, Some(thing))
+    if (ensureName) {
+      // The semantic-level calling code has asked us to make sure the NameProp is there.
+      // This is ugly coupling: we should look for a better way for EditFunctionsImpl to be
+      // able to ensure Name is there when it needs it.
+      if (raw.contains(Core.NameProp)) {
         raw
-    }
+      } else {
+        raw + (Core.NameProp -> DisplayPropVal(Some(thing), Core.NameProp, None))
+      }
+    } else
+      raw
+  }
 
   // TODO: this overlaps horribly with code in EditorModel. This determines the Properties in the Advanced Editor; that has the ones
   // in the Instance Editor. Merge them together!
-  def prepPropList(propList:PropList, thingOpt:Option[PropertyBundle], model:Thing, state:SpaceState, forceName:Boolean = false):Seq[(Property[_,_], DisplayPropVal)] = {
+  def prepPropList(
+    propList: PropList,
+    thingOpt: Option[PropertyBundle],
+    model: Thing,
+    state: SpaceState,
+    forceName: Boolean = false
+  ): Seq[(Property[_, _], DisplayPropVal)] = {
     val isModel = thingOpt.flatMap(_.asThing).map(_.isModel(state)).getOrElse(false)
     val propsToEdit =
       if (isModel)
@@ -133,18 +156,18 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
       else
         // Not a Model, so fetch the InstanceProps iff they are defined:
         model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
-        
+
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(rawEditList) => {
         val editList = Editor.translatePropertiesToShadows(rawEditList, state)
         val fullEditList = thingOpt match {
-          case Some(thing) => 
-            editList ++ 
-            Editor.propsNotInModel(thing, editList, state)
+          case Some(thing) =>
+            editList ++
+              Editor.propsNotInModel(thing, editList, state)
           case None => editList
         }
-        val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>
+        val withOpts = (Seq.empty[(Property[_, _], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>
           val propOpt = state.prop(oid)
           propOpt match {
             case Some(prop) => {

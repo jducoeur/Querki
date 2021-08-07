@@ -8,11 +8,12 @@ import querki.ql.Invocation
 import querki.values.{ElemValue, QFut, QValue}
 
 package object logic {
+
   trait Logic extends EcologyInterface {
-    def PlusMethod:querki.core.MethodDefs#AbstractFunction
+    def PlusMethod: querki.core.MethodDefs#AbstractFunction
     def MinusMethod: querki.core.MethodDefs#AbstractFunction
-    
-    def True:ElemValue
-    def False:ElemValue
+
+    def True: ElemValue
+    def False: ElemValue
   }
 }

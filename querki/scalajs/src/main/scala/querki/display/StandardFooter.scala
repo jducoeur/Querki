@@ -9,20 +9,24 @@ import querki.globals._
 
 import querki.comm._
 
-class StandardFooter(implicit val ecology:Ecology) extends Gadget[dom.HTMLElement] with EcologyMember {
+class StandardFooter(implicit val ecology: Ecology) extends Gadget[dom.HTMLElement] with EcologyMember {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Identity = interface[querki.identity.Identity]
-  
+
   def doRender() =
-    footer(cls:="_mainFooter _noPrint",
+    footer(
+      cls := "_mainFooter _noPrint",
       hr,
-      "Querki ", raw("&copy;"), " Querki Inc 2013-2019 | ",
-      a(href:=controllers.ClientController.space("systemUser", "documentation").url, "Help", tabindex:=100000),
+      "Querki ",
+      raw("&copy;"),
+      " Querki Inc 2013-2019 | ",
+      a(href := controllers.ClientController.space("systemUser", "documentation").url, "Help", tabindex := 100000),
       " | ",
-      a(href:=Identity.tosFactory.pageUrl(), "Terms of Service", tabindex:=100010),
+      a(href := Identity.tosFactory.pageUrl(), "Terms of Service", tabindex := 100010),
       " | ",
-      "v", DataAccess.querkiVersion
+      "v",
+      DataAccess.querkiVersion
     )
 }
