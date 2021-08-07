@@ -2,9 +2,7 @@ package controllers
 
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
 import javax.inject.{Inject, Provider}
-
 import scala.concurrent.duration._
 import akka.actor.ActorRef
 import akka.pattern._
@@ -18,6 +16,8 @@ import querki.history.HistoryFunctions._
 import querki.history.{HistoryFunctions, SpaceHistory}
 import querki.spaces.messages.CurrentState
 import querki.util.QLog
+
+import scala.util.Random
 
 class AdminController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
 
@@ -52,7 +52,10 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
       val app = appProv.get()
       val system = app.actorSystem
       val props = SpaceHistory.actorProps(ecology, spaceId, ActorRef.noSender)
-      val historyRef = system.actorOf(props, s"spacereadable-$spaceIdStr")
+      // Add a random kicker, just in case of name collisions -- we've had problems with these not always shutting
+      // down properly:
+      val rnd = Random.nextInt()
+      val historyRef = system.actorOf(props, s"spacereadable-$spaceIdStr-$rnd")
       implicit val ec = system.dispatcher
 
       implicit val timeout = Timeout(60.seconds)
@@ -64,6 +67,13 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
           f(response)
         } else {
           BadRequest
+        }
+      }.recover {
+        case ex: Throwable => {
+          QLog.error(s"Unable to generate full space history for $spaceIdStr", ex)
+          // If something goes wrong, like a timeout, make sure we still stop the actor:
+          system.stop(historyRef)
+          InternalServerError
         }
       }
     }.getOrElse(Future.successful(BadRequest))
@@ -114,8 +124,17 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
     }
 
   // This dumps much of the history, but we do still need to cap it in order to avoid OOMage:
-  def dumpSpaceSummary(spaceIdStr: String): EssentialAction =
-    fromSpaceHistory(spaceIdStr, SpaceHistory.GetHistorySummary(_, None, 10000)) {
+  def dumpSpaceSummary(
+    spaceIdStr: String,
+    nRecords: Int = 1000,
+    endAt: Long = 0
+  ): EssentialAction = {
+    val end: Option[Long] =
+      if (endAt <= 0)
+        None
+      else
+        Some(endAt)
+    fromSpaceHistory(spaceIdStr, SpaceHistory.GetHistorySummary(_, end, nRecords)) {
       case HistorySummary(events, context) => {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
 
@@ -187,4 +206,5 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
         Ok(page)
       }
     }
+  }
 }
