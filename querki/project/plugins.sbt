@@ -1,20 +1,20 @@
 // Comment to get more information during initialization
 logLevel := Level.Warn
 
-// The Typesafe repository 
-resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+// The Typesafe repository
+resolvers += "Typesafe repository".at("http://repo.typesafe.com/typesafe/releases/")
 
 // Needed for ConductR, according to https://github.com/typesafehub/conductr-lib
 //resolvers += bintrayRepo("typesafe", "maven-releases")
 
 // Needed for Actuarius
-resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+resolvers += "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repositories/snapshots/")
 
 // Needed for Li Haoyi's stuff
-resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+resolvers += "bintray/non".at("http://dl.bintray.com/non/maven")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.16")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.19")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.19")
 addSbtPlugin("com.vmunier" % "sbt-play-scalajs" % "0.3.0")
