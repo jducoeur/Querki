@@ -51,7 +51,15 @@ private[spaces] class SpaceRouter(e: Ecology) extends Actor with EcologyMember w
   val isBeingTimed = AdminOps.isTimedSpace(spaceId)
 
   // How long we can be inactive before timing out this entire hive:
-  def timeoutConfig: String = "querki.space.timeout"
+  def timeoutConfig: String = {
+    // QI.7w4gfs3: to temporarily ameliorate the headache of how long it is taking for the Playtest Space to load,
+    // we are allowing it to have a much-longer-than-usual timeout:
+    val spaceSpecificConfig = s"querki.debug.space.${spaceId.toString}.timeout"
+    if (context.system.settings.config.hasPath(spaceSpecificConfig))
+      spaceSpecificConfig
+    else
+      "querki.space.timeout"
+  }
 
   // The components of the troupe. All are started when needed, but several deliberately reference space, because
   // they can't fully start until they receive the initial CurrentState message.

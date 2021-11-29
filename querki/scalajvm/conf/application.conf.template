@@ -146,6 +146,8 @@ querki {
 #        trace : true
 # Block prevents that Space's Actors from being loaded
 #        block : false
+# timeout overrides the standard timeout, for just this Space
+#        timeout : 60 minutes
 #      }
     }
   }
