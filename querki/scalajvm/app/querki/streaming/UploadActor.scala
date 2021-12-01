@@ -1,6 +1,6 @@
 package querki.streaming
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.zip.GZIPInputStream
 import scala.concurrent.duration._
 import scala.io.Source
@@ -19,37 +19,47 @@ import scala.collection.mutable.ArrayBuffer
  * This expects that it is receiving messages from a StreamSendActor; the two work together
  * to implement a simplistic but reliable byte-oriented streaming protocol.
  *
+ * All of this is deeply horrible -- it and its subclasses should be properly stream-oriented,
+ * instead of doing all this in-memory buffering.
+ *
  * @author jducoeur
  */
 trait UploadActor { self: Actor =>
-
-  /**
-   * The raw buffer, which is mutated as the stream uploads.
-   */
-  var chunkBuffer: ArrayBuffer[Byte] = new ArrayBuffer()
 
   /**
    * The index of the chunk we most recently received. This is for deduping retries.
    */
   var lastIndex: Int = -1
 
+  /**
+   * How many bytes have we received so far?
+   */
+  var bytesSoFar: Int = 0
+
   var uploadComplete: Boolean = false
 
-  // The 16-bit header, which may indicate zippiness:
-  private lazy val magicHead = {
-    if (chunkBuffer.length < 2)
-      0
-    else
-      (chunkBuffer(0).toInt & 0xff | (chunkBuffer(1).toInt << 8) & 0xff00)
+  /**
+   * Returns true iff the stream appears to be gzip'ped.
+   *
+   * We determine this based on the first 16 bits of the stream.
+   */
+  private def isGZip(stream: ByteArrayInputStream): Boolean = {
+    // Peek at the first two bytes:
+    val twoBytes = new Array[Byte](2)
+    if (stream.read(twoBytes, 0, 2) == -1) {
+      // We didn't even get two bytes, so it's not GZip
+      false
+    } else {
+      stream.reset()
+      val magicHead = (twoBytes(0).toInt & 0xff | (twoBytes(1).toInt << 8) & 0xff00)
+      GZIPInputStream.GZIP_MAGIC == magicHead
+    }
   }
 
   /**
-   * Returns true iff the chunkBuffer appears to be gzip'ped.
+   * We write our chunks into here as they arrive.
    */
-  private lazy val isGZip = (GZIPInputStream.GZIP_MAGIC == magicHead)
-
-  private lazy val chunkArray = chunkBuffer.toArray
-  private lazy val baseStream = new ByteArrayInputStream(chunkArray)
+  private val outputStream = new ByteArrayOutputStream()
 
   /**
    * The uploaded data, as a stream.
@@ -60,7 +70,8 @@ trait UploadActor { self: Actor =>
    * support progressive loading yet.
    */
   lazy val uploadedStream = {
-    if (isGZip) {
+    val baseStream = new ByteArrayInputStream(outputStream.toByteArray)
+    if (isGZip(baseStream)) {
       QLog.spew("Received GZip stream")
       new GZIPInputStream(baseStream)
     } else {
@@ -73,7 +84,11 @@ trait UploadActor { self: Actor =>
    *
    * This is typically the easiest way to handle the input.
    */
-  lazy val uploaded = Source.fromInputStream(uploadedStream).mkString
+  lazy val uploaded = {
+    val str = Source.fromInputStream(uploadedStream).mkString
+    QLog.spew(s"Size of uploaded String: ${str.length}")
+    str
+  }
 
   /**
    * This will be called once the upload is finished. The UploadActor must define this function,
@@ -99,17 +114,18 @@ trait UploadActor { self: Actor =>
   def handleChunks: Receive = {
     case UploadChunk(index, chunk) => {
       if (index > lastIndex) {
-        chunkBuffer ++= chunk
+        outputStream.write(chunk.toArray)
+        bytesSoFar += chunk.size
 //        QLog.spew(
 //          s"Actor got block $index, ${chunk.length} bytes: length ${chunk.size} ${spewChunks(chunk)}"
 //        )
         lastIndex = index
-        sender ! UploadChunkAck(index, chunkBuffer.size)
+        sender ! UploadChunkAck(index, bytesSoFar)
       } else {
         QLog.spew(s"UploadActor: Received duplicate of chunk #$index")
         // Although it's a duplicate, we still need to re-ack, in case our previous ack got
         // lost in transit:
-        sender ! UploadChunkAck(index, chunkBuffer.size)
+        sender ! UploadChunkAck(index, bytesSoFar)
       }
     }
 
@@ -121,9 +137,8 @@ trait UploadActor { self: Actor =>
       uploadComplete = true
 
       QLog.spew(s"Upload complete!")
-      QLog.spew(s"Size of the chunkBuffer: ${chunkBuffer.size}")
-      QLog.spew(s"Size of the chunkArray: ${chunkArray.size}")
-      QLog.spew(s"Size of uploaded String: ${uploaded.length}")
+      QLog.spew(s"Bytes received: $bytesSoFar")
+      QLog.spew(s"Allocated size of the outputStream: ${outputStream.size()}")
 
       processBuffer(rc)
     }

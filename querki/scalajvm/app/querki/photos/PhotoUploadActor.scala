@@ -65,23 +65,23 @@ class PhotoUploadActor(
   // TODO: restructure this Actor to be more conventional
   def processBuffer(rc: RequestContext): Unit = {}
 
-  def printBuffer() = {
-    QLog.spew(s"Dumping photo to photodump.txt for debugging")
-    val file = File.home / "photodump.txt"
-    file.clear()
-
-    def printBytes(start: Int): String = {
-      val end = scala.math.min(start + 16, chunkBuffer.size - 1)
-      (start until end).map { i =>
-        val byte = chunkBuffer(i)
-        f"$byte%2x"
-      }.mkString(" ")
-    }
-
-    for (i <- 0 until chunkBuffer.size by 16) {
-      file.appendLine(f"$i%8x: ${printBytes(i)}")
-    }
-  }
+//  def printBuffer() = {
+//    QLog.spew(s"Dumping photo to photodump.txt for debugging")
+//    val file = File.home / "photodump.txt"
+//    file.clear()
+//
+//    def printBytes(start: Int): String = {
+//      val end = scala.math.min(start + 16, chunkBuffer.size - 1)
+//      (start until end).map { i =>
+//        val byte = chunkBuffer(i)
+//        f"$byte%2x"
+//      }.mkString(" ")
+//    }
+//
+//    for (i <- 0 until chunkBuffer.size by 16) {
+//      file.appendLine(f"$i%8x: ${printBytes(i)}")
+//    }
+//  }
 
   override def receive = LoggingReceive(handleChunks.orElse {
 
