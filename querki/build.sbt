@@ -7,7 +7,7 @@ lazy val clients = Seq(querkiClient)
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.4.18"
 lazy val enumeratumV = "1.5.3"
-lazy val appV = "2.10.3.4"
+lazy val appV = "2.10.3.5"
 
 lazy val sharedSrcDir = "scala"
 
@@ -86,8 +86,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // ConductR params
   BundleKeys.nrOfCpus := 1.0,
   // We have 4GB nodes. This allows for 2 simultaneous bundles per node during release, plus
-  // overhead for ConductR and system. Might be able to increase it to 1.5GB per bundle.
-  BundleKeys.memory := 1.GiB,
+  // overhead for ConductR and system. 1.5 GB seems safe in practice; we might be able to raise this to 2GB?
+  BundleKeys.memory := 1536.MB,
   BundleKeys.diskSpace := 5.MB,
   BundleKeys.startCommand ++= Seq(
     "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
