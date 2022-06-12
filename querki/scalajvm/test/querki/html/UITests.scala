@@ -336,7 +336,7 @@ class UITests extends QuerkiTests {
       processQText(commonThingAsContext(_.withUrl), """[[My List of URLs -> _showLink(""hello"")]]""") should
         equal("""
           |<a href="http://www.google.com/" target="_blank">hello</a>
-          |<a href="http://www.querki.net/" target="_blank">hello</a>""".stripReturns)
+          |<a href="http://querki.net/" target="_blank">hello</a>""".stripReturns)
     }
     "work with a list of Links" in {
       class testSpace extends CommonSpace {

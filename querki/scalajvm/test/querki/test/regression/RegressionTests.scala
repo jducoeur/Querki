@@ -10,7 +10,7 @@ import querki.test._
  * @author jducoeur
  */
 class RegressionTests extends QuerkiTests {
-  // See https://www.querki.net/u/jducoeur/alpha-issue-tracking/#.3y28a3r
+  // See https://querki.net/u/jducoeur/alpha-issue-tracking/#.3y28a3r
   ".3y28a3r" should {
     "be fixed" in {
       class TSpace extends CommonSpace {

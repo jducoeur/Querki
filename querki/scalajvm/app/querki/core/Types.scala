@@ -1019,7 +1019,7 @@ trait TypeCreation {
                      |Large Text Properties are mainly composed of QText -- an easy-to-use "markup" format, that lets you
                      |describe concepts like boldface, paragraphs, links, bullet lists and so on in fairly intuitive ways, without
                      |needing to use HTML. For details on all the different things you can do with QText, see
-                     |the [QText Reference](http://www.querki.net/u/systemUser/documentation/QText-Reference).
+                     |the [QText Reference](http://querki.net/u/systemUser/documentation/QText-Reference).
                      |
                      |#### QL
                      |

@@ -84,7 +84,7 @@ class CommonSpace(implicit ecologyIn: Ecology) extends TestSpace {
     withUrlOID,
     "With URL",
     optURLProp("http://www.google.com/"),
-    listURLProp("http://www.google.com/", "http://www.querki.net/")
+    listURLProp("http://www.google.com/", "http://querki.net/")
   )
 
   val withoutUrl = new SimpleTestThing("Without URL", optURLProp())
