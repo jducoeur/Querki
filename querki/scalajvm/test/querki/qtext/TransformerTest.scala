@@ -413,14 +413,14 @@ And now to something completely different.
   }
 
   it should "allow HTTP URLs" in {
-    apply("[Querki](http://www.querki.net/)") should equal(
-      "<p><a href=\"http://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Querki</a></p>\n"
+    apply("[Querki](http://querki.net/)") should equal(
+      "<p><a href=\"http://querki.net/\" rel=\"nofollow\" target=\"_blank\">Querki</a></p>\n"
     )
   }
 
   it should "allow HTTPS URLs" in {
-    apply("[Querki](https://www.querki.net/)") should equal(
-      "<p><a href=\"https://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Querki</a></p>\n"
+    apply("[Querki](https://querki.net/)") should equal(
+      "<p><a href=\"https://querki.net/\" rel=\"nofollow\" target=\"_blank\">Querki</a></p>\n"
     )
   }
 
@@ -429,17 +429,17 @@ And now to something completely different.
   }
 
   it should "prevent all forms of Javascript injection" in {
-    apply("[Evil](javascript://www.querki.net/)") should equal(
-      "<p><a href=\"./javascript://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
+    apply("[Evil](javascript://querki.net/)") should equal(
+      "<p><a href=\"./javascript://querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
     )
-    apply("[Evil](javascript+://www.querki.net/)") should equal(
-      "<p><a href=\"./javascript+://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
+    apply("[Evil](javascript+://querki.net/)") should equal(
+      "<p><a href=\"./javascript+://querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
     )
-    apply("[Evil](javascript-://www.querki.net/)") should equal(
-      "<p><a href=\"./javascript-://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
+    apply("[Evil](javascript-://querki.net/)") should equal(
+      "<p><a href=\"./javascript-://querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
     )
-    apply("[Evil](javascript.://www.querki.net/)") should equal(
-      "<p><a href=\"./javascript.://www.querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
+    apply("[Evil](javascript.://querki.net/)") should equal(
+      "<p><a href=\"./javascript.://querki.net/\" rel=\"nofollow\" target=\"_blank\">Evil</a></p>\n"
     )
   }
 

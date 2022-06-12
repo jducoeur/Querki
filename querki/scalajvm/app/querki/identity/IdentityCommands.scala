@@ -21,7 +21,7 @@ class IdentityCommands(e: Ecology) extends QuerkiEcot(e) {
   lazy val MakeAllPersonsPublicCommand = Console.defineSpaceCommand(
     MakeAllPersonsPublicCommandOID,
     "Make All Persons Public",
-    "This is a one-off command to fix [this bug](https://www.querki.net/u/jducoeur/alpha-issue-tracking/#!.7w4g99b) in your Space",
+    "This is a one-off command to fix [this bug](https://querki.net/u/jducoeur/alpha-issue-tracking/#!.7w4g99b) in your Space",
     Seq(AccessControl.CanEditProp)
   ) { args =>
     val inv = args.inv

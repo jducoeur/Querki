@@ -144,7 +144,7 @@ class BasicModule(e: Ecology) extends QuerkiEcot(e) with Basic with WithQL with 
       Categories(BasicTag),
       Summary("A short text that does not contain any QL"),
       Details("""Plain Text is a special, restricted sort of Text. It can contains all of the
-                |formatting described in the [QText Reference](http://www.querki.net/u/systemUser/documentation/QText-Reference),
+                |formatting described in the [QText Reference](http://querki.net/u/systemUser/documentation/QText-Reference),
                 |but it can *not* contain any QL expressions. This means that it can not have simply Links to other Things, and can
                 |not use Properties at all.
                 |

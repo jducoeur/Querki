@@ -42,7 +42,12 @@ querki {
     # semblance of recording of Space ups and downs.
     logMonitor : false
   }
-  
+
+  redirect {
+    from : "www.querki.net"
+    to : "https://querki.net"
+  }
+
   session {
     # Time before a UserSpaceSession times out for inactivity
     timeout : 5 minutes

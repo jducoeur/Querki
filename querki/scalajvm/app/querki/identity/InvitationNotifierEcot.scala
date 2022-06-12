@@ -345,7 +345,7 @@ class InvitationNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier wit
         senderOpt.getOrElse(throw new Exception(s"Somehow got Invitation Unsub from unknown sender $senderId!"))
       (
         Wikitext(s"""**${sender.name}** invited you to join the Querki Space *$spaceName*. 
-                    |[Click here for more information about Querki.](https://www.querki.net/help/#!What-is-Querki) 
+                    |[Click here for more information about Querki.](https://querki.net/help/#!What-is-Querki) 
                     |
                     |Use the buttons below to keep ${sender.name} from inviting you to this or any other Space,
                     |or to suppress Querki invitations entirely.""".stripMargin),
