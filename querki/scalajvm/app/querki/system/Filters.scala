@@ -1,22 +1,20 @@
 package querki.system
 
 import javax.inject.Inject
-
 import scala.concurrent.{ExecutionContext, Future}
-
 import akka.stream.Materializer
-
 import play.api.mvc._
+import play.api.mvc.Results._
 import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter
-
 import querki.globals._
 
 class Filters @Inject() (
   gzip: GzipFilter,
-  log: LoggingFilter
+  log: LoggingFilter,
+  redirect: RedirectFilter
 ) extends HttpFilters {
-  val filters = Seq(log, gzip)
+  val filters = Seq(redirect, log, gzip)
 }
 
 /**
@@ -80,5 +78,51 @@ class LoggingFilter @Inject() (
       // Normal pathway, if the config flag is turned off:
       next(rh)
     }
+  }
+}
+
+class RedirectFilter @Inject() (
+  implicit
+  val mat: Materializer,
+  ec: ExecutionContext,
+  ecoProv: EcologyProvider
+) extends Filter
+     with EcologyMember {
+
+  implicit lazy val ecology = ecoProv.ecology
+
+  // Define a "bad" host and a "good" one, so we can redirect www.querki.net to just querki.net.
+  // TODO: this is all kind of wretchedly typed. Config should return None, not empty String, if it is missing.
+  // And redirectFrom should, in principle, return a List of Strings, not a single one. (But I don't care much
+  // about the latter.)
+  /**
+   * The domain that we are intercepting and redirecting, eg "www.querki.net".
+   */
+  lazy val redirectFrom = Config.getString("querki.redirect.from", "")
+
+  /**
+   * The full protocol and host we are redirecting to, eg "https://querki.net".
+   */
+  lazy val redirectTo = Config.getString("querki.redirect.to", "")
+  lazy val redirecting = (redirectTo != "")
+
+  def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader): Future[Result] = {
+    if (redirecting) {
+      if (rh.domain == redirectFrom) {
+        val newUri = rewriteUri(rh)
+        QLog.info(s"Redirecting ${rh.host}${rh.uri} to ${newUri}")
+        // Note that this is *extremely* crude -- it only deals with GETs correctly. But that should suffice for the
+        // realistic use cases we are dealing with, and pushes the user over to the right pathway quickly.
+        Future.successful(SeeOther(newUri))
+      } else {
+        next(rh)
+      }
+    } else {
+      next(rh)
+    }
+  }
+
+  def rewriteUri(rh: RequestHeader): String = {
+    s"$redirectTo${rh.uri}"
   }
 }
