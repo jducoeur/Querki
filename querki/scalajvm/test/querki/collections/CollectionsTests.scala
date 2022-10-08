@@ -747,4 +747,32 @@ Wild!, 19, """.stripReturns)
         equal("")
     }
   }
+
+  // === _toSet ===
+  "_toSet" should {
+    "work with a plain QList" in {
+      implicit val s = new CDSpace
+
+      pql("""[[<Blackmores Night, Weird Al, Blackmores Night> -> _toSet]]""") should equal(listOfLinkText(
+        s.blackmores,
+        s.weirdAl
+      ))
+    }
+
+    // Regression test for QI.7w4ghfr: if you have duplicate inputs to _withValueIn(), and a complex matrix
+    // of the relationships between those and the Model instances, you can wind up with duplicates in the output.
+    // Make sure we can handle that. This was the motivating use case for _toSet.
+    "work with a more complex output" in {
+      implicit val s = new CDSpace
+
+      pql("""[[<Blackmores Night, Weird Al, Blackmores Night> -> Album._withValueIn(Artists) -> _toSet]]""") should
+        equal(listOfLinkText(
+          s.firesAtMight,
+          s.ghostOfARose,
+          s.mandatoryFun,
+          s.runningWithScissors,
+          s.shadowOfTheMoon
+        ))
+    }
+  }
 }

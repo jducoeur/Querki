@@ -30,6 +30,7 @@ object MOIDs extends EcotIds(6) {
   val IsContainedInMethodOID = moid(9)
   val FoldFunctionOID = moid(10)
   val PositionsMethodOID = moid(11)
+  val ToSetOID = moid(12)
 }
 
 class CollectionsModule(e: Ecology)
@@ -1071,6 +1072,35 @@ class CollectionsModule(e: Ecology)
     )
   )
 
+  lazy val ToSetMethod = new InternalMethod(
+    ToSetOID,
+    toProps(
+      setName("_toSet"),
+      Summary("Turns the received List into a Set, with no duplicates"),
+      Signature(
+        expected = Some(Seq(AnyType), "Any List"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (AnyType, "The same values, as a Set")
+      ),
+      Details(
+        """Note that the order of elements is not necessarily preserved.
+          |""".stripMargin
+      )
+    )
+  ) {
+
+    override def qlApply(inv: Invocation): QFut = {
+      val context = inv.receivedContext
+      val qv = context.value
+      val rawElems = qv.elems.toList
+      val pt = qv.pType
+
+      val setQV = Core.makeSetValue(rawElems, pt, context)
+      Future.successful(setQV)
+    }
+  }
+
   override lazy val props = Seq(
     FirstMethod,
     RestMethod,
@@ -1091,7 +1121,8 @@ class CollectionsModule(e: Ecology)
     foreachMethod,
     containsMethod,
     isContainedInMethod,
-    PositionsMethod
+    PositionsMethod,
+    ToSetMethod
   )
 
 }
