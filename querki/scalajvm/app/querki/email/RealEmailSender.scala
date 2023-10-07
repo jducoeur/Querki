@@ -51,6 +51,8 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
       // We're opening an authenticated session
       props.setProperty("mail.smtp.auth", "true")
       props.setProperty("mail.smtp.starttls.enable", "true")
+      // AWS now requires TLS 1.2
+      props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2")
       props.setProperty("mail.smtp.starttls.required", "true")
     }
 
