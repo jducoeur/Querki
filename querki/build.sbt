@@ -218,3 +218,6 @@ EclipseKeys.skipParents in ThisBuild := false
 EclipseKeys.preTasks := Seq(compile in (querkiServer, Compile))
 
 fork in run := true
+
+// let us know about deprecation and feature warnings
+scalacOptions ++= Seq("-deprecation", "-feature")
