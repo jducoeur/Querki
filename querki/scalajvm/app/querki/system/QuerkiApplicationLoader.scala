@@ -6,8 +6,6 @@ import scala.concurrent.duration._
 
 import com.google.inject.AbstractModule
 
-import com.typesafe.conductr.bundlelib.akka.{Env => AkkaEnv}
-import com.typesafe.conductr.bundlelib.play.api.{Env => PlayEnv}
 import com.typesafe.config.ConfigFactory
 import play.api.inject.guice._
 import play.api.{Application, ApplicationLoader, Configuration}
@@ -36,10 +34,8 @@ class QuerkiApplicationLoader extends ApplicationLoader {
   implicit val initTermTimeout = Timeout(initTermDuration)
 
   def load(context: ApplicationLoader.Context): Application = {
-    // Configure ConductR. This is taken directly from the ConductR docs:
-    //   http://conductr.lightbend.com/docs/1.1.x/AkkaAndPlay
-    val conductRConfig = Configuration(AkkaEnv.asConfig) ++ Configuration(PlayEnv.asConfig)
-    val newConfig = context.initialConfiguration ++ conductRConfig
+    // In the wake of ConductR being removed, can/should all of this be simplified?
+    val newConfig = context.initialConfiguration
     val newContext = context.copy(initialConfiguration = newConfig)
 
     // HACK: see the comments on initConfigHack:
@@ -52,8 +48,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     val app = (new GuiceApplicationLoader(builder)).load(newContext)
     QLog.spew(s"GuiceApplicationLoader started")
 
-    // Prep ConductR, if it's present:
-    val config = AkkaEnv.asConfig
+    // TODO: all of this still reeks of ConductR, and can likely be stripped down:
     // I suspect this fallback shouldn't be "application", but if I set to it anything else I
     // get errors. It really feels like there are internals that are looking for "application".
     val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "")
@@ -67,8 +62,8 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     _appSystem =
       ActorSystem(
         name = fullSystemName,
-        config = Some(config.withFallback(ConfigFactory.load())),
-        classLoader = Some(app.classloader)
+        config = ConfigFactory.load(),
+        classLoader = app.classloader
       )
     QLog.spew(s"ActorSystem started")
 
@@ -79,6 +74,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     // TEMP: some startup debugging, to see what I can do:
     QLog.spew(s"Querki starting...")
     def env(name: String) = sys.env.getOrElse(name, "(none)")
+    // TODO: was this all ConductR-specific? Likely, so it's all likely irrelevant now:
     QLog.spew(s"WEB_BIND_IP: ${env("WEB_BIND_IP")}; WEB_BIND_PORT: ${env("WEB_BIND_PORT")}")
     QLog.spew(s"WEB_HOST: ${env("WEB_HOST")}")
     QLog.spew(s"WEB_OTHER_PORTS: ${env("WEB_OTHER_PORTS")}")

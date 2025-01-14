@@ -33,6 +33,3 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
 
 // So that the Play application can access the version and build date:
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")
-
-// To support building with ConductR:
-addSbtPlugin("com.lightbend.conductr" % "sbt-conductr" % "2.1.2")

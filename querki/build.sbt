@@ -1,13 +1,11 @@
 import sbt.Project.projectToRef
 
-import ByteConversions._
-
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.4.18"
 lazy val enumeratumV = "1.5.3"
-lazy val appV = "2.10.4.1"
+lazy val appV = "3.0.0.0"
 
 lazy val sharedSrcDir = "scala"
 
@@ -83,21 +81,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.sangria-graphql" %% "sangria" % "1.4.2",
     "com.chuusai" %% "shapeless" % "2.3.3"
   ),
-  // ConductR params
-  BundleKeys.nrOfCpus := 1.0,
-  // We have 4GB nodes. This allows for 2 simultaneous bundles per node during release, plus
-  // overhead for ConductR and system. 1.5 GB seems safe in practice; we might be able to raise this to 2GB?
-  BundleKeys.memory := 1536.MB,
-  BundleKeys.diskSpace := 5.MB,
-  BundleKeys.startCommand ++= Seq(
-    "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
-    "-java-home /apps/java"
-  ),
-  BundleKeys.system := "querki-server",
-  BundleKeys.endpoints := Map(
-    "akka-remote" -> Endpoint("tcp"),
-    "web" -> Endpoint("http", services = Set(URI("http://:9000")))
-  ),
   // When running server tests, use this alternate config file, which uses the in-memory persistence
   // instead of on-disk:
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
@@ -107,7 +90,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   EclipseKeys.skipParents in ThisBuild := false
-).enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin). //, ConductRPlugin).
+).enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin).
   // TODO: this aggregate is how we pull in the client and get it to compile, but it's too broad:
   // it causes the system to run the Client during unit testing, which we don't want. We need to
   // figure out how to restructure such that the client gets *built* but not *tested*, at least
