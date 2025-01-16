@@ -1,9 +1,11 @@
 import sbt.Project.projectToRef
 
+import com.typesafe.sbt.packager.docker._
+
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
-lazy val akkaV = "2.4.18"
+lazy val akkaV = "2.4.20"
 lazy val enumeratumV = "1.5.3"
 lazy val appV = "3.0.0.0"
 
@@ -40,7 +42,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
     "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
-    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
+//    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
+    "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
 //    "com.lihaoyi" %% "utest" % "0.3.1",
     "org.querki" %% "requester" % "2.6",
@@ -81,6 +84,16 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.sangria-graphql" %% "sangria" % "1.4.2",
     "com.chuusai" %% "shapeless" % "2.3.3"
   ),
+  // Docker configuration
+  // For now, we're using the full OpenJDK image. That's a bit fatty -- is there a leaner one for us to start with?
+  dockerBaseImage := "openjdk:8-jre-alpine",
+  dockerExposedPorts := Seq(9000),
+  // We need bash to be present in the Docker image; otherwise, it won't boot. So this installs that as part of
+  // setup:
+  dockerCommands := dockerCommands.value.flatMap {
+    case cmd @ Cmd("FROM", _) => List(cmd, Cmd("RUN", "apk update && apk add bash"))
+    case other                => List(other)
+  },
   // When running server tests, use this alternate config file, which uses the in-memory persistence
   // instead of on-disk:
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
@@ -90,12 +103,17 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   EclipseKeys.skipParents in ThisBuild := false
-).enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin).
+)
+// NOTE: we need to turn on akka-http and turn off Netty, because the version of Netty built into
+// Play 2.5 conflicts with the version in the AWS SDK:
+  .enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, PlayAkkaHttpServer, DockerPlugin)
+  .disablePlugins(PlayNettyServer)
+
   // TODO: this aggregate is how we pull in the client and get it to compile, but it's too broad:
   // it causes the system to run the Client during unit testing, which we don't want. We need to
   // figure out how to restructure such that the client gets *built* but not *tested*, at least
   // for now.
-  aggregate(clients.map(projectToRef): _*).dependsOn(querkiSharedJvm)
+  .aggregate(clients.map(projectToRef): _*).dependsOn(querkiSharedJvm)
 
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
