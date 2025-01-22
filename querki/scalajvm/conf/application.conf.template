@@ -104,9 +104,9 @@ querki {
   }
   
   aws {
+    region : "AWS REGION"
+    secretsName : "FULL NAME OF HOCON FILE IN AWS SECRETS MANAGER"
     username : "AWS USER NAME"
-    accessKeyId : "IMA ACCESS KEY ID"
-    secretAccessKey : "IMA SECRET KEY"
     bucket : "S3 BUCKET"
     bucketUrl : "BASE URL, NO TRAILING SLASH"
   }
