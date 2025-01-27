@@ -36,20 +36,19 @@ class QuerkiApplicationLoader extends ApplicationLoader {
   implicit val initTermTimeout = Timeout(initTermDuration)
 
   def load(context: ApplicationLoader.Context): Application = {
-    // TODO (probably high priority): for the moment, we only have a single application.conf. But we're moving
-    // towards that being checked-in, and we need *some* different values for local vs test vs prod.
-    // So we probably need to introduce a layer of indirection, possibly with all the non-secret values in
-    // different files, sub-namespaced, with an env var (or something) telling us which environment we're in,
-    // and we then promote whichever env is appropriate up to the top level here.
+    // The environment that we're running in, based on the QUERKI_ENV environment variable. This will throw (and
+    // intentionally prevent startup) if not set!
+    val querkiEnv = QuerkiEnv.load()
+    val configWithEnv = configurationWithEnv(context.initialConfiguration, querkiEnv)
 
     // Step one: fetch the secrets, and merge them into the runtime configuration
     // TODO: it would be better to keep the secrets completely separate from config, so that
     // we could do things like edit configuration at runtime.
     // TODO: split all of this secrets-management login out into its own module (but not an Ecot, probably)
-    val secretsEndpoint = context.initialConfiguration.getString("querki.aws.secretsEndpoint")
-    val region = context.initialConfiguration.getString("querki.aws.region").get
+    val secretsEndpoint = configWithEnv.getString("querki.aws.secretsEndpoint")
+    val region = configWithEnv.getString("querki.aws.region").get
     // The name of the HOCON file containing the secrets, from Secrets Manager:
-    val secretName = context.initialConfiguration.getString("querki.aws.secretsName").get
+    val secretName = configWithEnv.getString("querki.aws.secretsName").get
     val secretsManagerBase =
       AWSSecretsManagerClientBuilder
         .standard()
@@ -73,11 +72,11 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     val secretsConfig = ConfigFactory.parseString(hoconStr)
     val secretsConfiguration = Configuration(secretsConfig)
 
-    val newConfig = context.initialConfiguration ++ secretsConfiguration
-    val newContext = context.copy(initialConfiguration = newConfig)
+    val fullConfig = configWithEnv ++ secretsConfiguration
+    val newContext = context.copy(initialConfiguration = fullConfig)
 
     // HACK: see the comments on initConfigHack:
-    Config.initConfigHack = Some(newContext.initialConfiguration)
+    Config.initConfigHack = Some(fullConfig)
 
     // Boot the core of the application from the Play POV:
     QLog.spew(s"About to start GuiceApplicationLoader")
@@ -100,7 +99,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     _appSystem =
       ActorSystem(
         name = fullSystemName,
-        config = ConfigFactory.load(),
+        config = fullConfig.underlying,
         classLoader = app.classloader
       )
     QLog.spew(s"ActorSystem started")
@@ -144,6 +143,16 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     QLog.info("Querki has started")
 
     app
+  }
+
+  def configurationWithEnv(
+    configuration: Configuration,
+    querkiEnv: QuerkiEnv
+  ): Configuration = {
+    val subConfig = configuration.getConfig(querkiEnv.name)
+    subConfig.map { sc =>
+      configuration ++ sc
+    }.getOrElse(throw new RuntimeException(s"No sub-configuration found for environment ${querkiEnv.name}!"))
   }
 }
 
