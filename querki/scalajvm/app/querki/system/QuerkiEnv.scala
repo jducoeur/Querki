@@ -6,11 +6,20 @@ package querki.system
 sealed trait QuerkiEnv { def name: String }
 
 object QuerkiEnv {
-  /** Local development machine */
+
+  /**
+   * Local development machine
+   */
   object Local extends QuerkiEnv { val name = "local" }
-  /** Test environment (eg, CI) -- not yet in use */
+
+  /**
+   * Test environment (eg, CI and AWS test)
+   */
   object Test extends QuerkiEnv { val name = "test" }
-  /** Production environment */
+
+  /**
+   * Production environment
+   */
   object Prod extends QuerkiEnv { val name = "prod" }
 
   /**
@@ -22,10 +31,11 @@ object QuerkiEnv {
     val envName = sys.env.get("QUERKI_ENV")
     envName match {
       case Some(Local.name) => Local
-      case Some(Test.name) => Test
-      case Some(Prod.name) => Prod
+      case Some(Test.name)  => Test
+      case Some(Prod.name)  => Prod
 
-      case other => throw new RuntimeException(s"QUERKI_ENV is '$other' -- it must be one of 'local', 'test', or 'prod'!")
+      case other =>
+        throw new RuntimeException(s"QUERKI_ENV is '$other' -- it must be one of 'local', 'test', or 'prod'!")
     }
   }
 }

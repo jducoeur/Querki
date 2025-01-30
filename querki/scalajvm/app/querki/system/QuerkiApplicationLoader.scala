@@ -39,6 +39,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     // The environment that we're running in, based on the QUERKI_ENV environment variable. This will throw (and
     // intentionally prevent startup) if not set!
     val querkiEnv = QuerkiEnv.load()
+    QLog.info(s"Querki starting up for the ${querkiEnv.name} environment")
     val configWithEnv = configurationWithEnv(context.initialConfiguration, querkiEnv)
 
     // Step one: fetch the secrets, and merge them into the runtime configuration
