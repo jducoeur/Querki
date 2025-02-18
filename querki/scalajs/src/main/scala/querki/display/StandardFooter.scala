@@ -21,7 +21,7 @@ class StandardFooter(implicit val ecology: Ecology) extends Gadget[dom.HTMLEleme
       hr,
       "Querki ",
       raw("&copy;"),
-      " Querki Inc 2013-2019 | ",
+      " Querki Inc 2013-2025 | ",
       a(href := controllers.ClientController.space("systemUser", "documentation").url, "Help", tabindex := 100000),
       " | ",
       a(href := Identity.tosFactory.pageUrl(), "Terms of Service", tabindex := 100010),
