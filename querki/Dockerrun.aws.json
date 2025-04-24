@@ -1,0 +1,12 @@
+{
+    "AWSEBDockerrunVersion": "1",
+    "Image": {
+        "Name": "929919491297.dkr.ecr.us-east-1.amazonaws.com/querki/querki:3.0.0.0-2"
+    },
+    "Ports": [ 
+        {
+            "ContainerPort" : 9000,
+            "HostPort" : 80
+        }
+    ]
+}

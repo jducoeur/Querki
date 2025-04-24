@@ -83,18 +83,26 @@ class PhotoUploadActor(
 //    }
 //  }
 
+  /**
+   * Quick and dirty method for grouping the spews in here.
+   */
+  def spewIfEnabled(msg: String): Unit = {
+    QLog.spew(msg)
+  }
+
   override def receive = LoggingReceive(handleChunks.orElse {
 
     case BeginProcessingPhoto(_, spaceId, tpe) => {
+      spewIfEnabled(s"Starting to process photo of type $tpe")
       _mimeType = tpe
     }
 
     case UploadDone(rc, propId, thingId) => {
-//      QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
+      spewIfEnabled(s"UploadDone; type is $mimeType")
 //      printBuffer()
       val originalImage = ImageIO.read(uploadedStream)
 
-//      QLog.spew(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
+      spewIfEnabled(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
 
       implicit val s = state
 
@@ -147,6 +155,7 @@ class PhotoUploadActor(
       val credentials = new BasicAWSCredentials(AWS.accessKeyId, AWS.secretAccessKey)
       val s3client = new AmazonS3Client(credentials)
       s3client.setRegion(Region.getRegion(Regions.US_WEST_2))
+      spewIfEnabled(s"Got the s3client stood up")
       // TODO: EEEEVIL! This is currently synchronous, and presumably takes A Long Time. We need to either
       // find an async version of these entry points, or do these operations in an Actor that uses a
       // different Dispatcher, to avoid blocking the world! See whether TransferManager can help:
@@ -154,30 +163,37 @@ class PhotoUploadActor(
       def uploadToS3(
         stream: ByteArrayOutputStream,
         name: String
-      ) = {
-        val metadata = new ObjectMetadata()
-        metadata.setContentType(mimeType)
-        // Our photographs deliberately have nigh-infinite expiration. 1 year is the max, per HTTP spec:
-        metadata.setExpirationTime(DateTime.now.plusYears(1).toDate())
-        // For the time being, all photos are world-readable; we only have security-through-obscurity
-        // for now.
-        // TODO: if the Thing is private, use Amazon's Secure Token Service to grant permission at read time.
-        // Note, however, that this will make some accesses *MUCH* slower, since it will require roundtrips
-        // to Amazon!
-        val acl = new AccessControlList()
-        acl.grantPermission(GroupGrantee.AllUsers, Permission.Read)
-        val putRequest = new PutObjectRequest(
-          AWS.bucket,
-          name,
-          new ByteArrayInputStream(stream.toByteArray()),
-          metadata
-        )
-        putRequest.setAccessControlList(acl)
-        val putResult = s3client.putObject(putRequest)
-      }
+      ) =
+        try {
+          val metadata = new ObjectMetadata()
+          metadata.setContentType(mimeType)
+          // Our photographs deliberately have nigh-infinite expiration. 1 year is the max, per HTTP spec:
+          metadata.setExpirationTime(DateTime.now.plusYears(1).toDate())
+          // For the time being, all photos are world-readable; we only have security-through-obscurity
+          // for now.
+          // TODO: if the Thing is private, use Amazon's Secure Token Service to grant permission at read time.
+          // Note, however, that this will make some accesses *MUCH* slower, since it will require roundtrips
+          // to Amazon!
+          val acl = new AccessControlList()
+          acl.grantPermission(GroupGrantee.AllUsers, Permission.Read)
+          val putRequest = new PutObjectRequest(
+            AWS.bucket,
+            name,
+            new ByteArrayInputStream(stream.toByteArray()),
+            metadata
+          )
+          putRequest.setAccessControlList(acl)
+          val putResult = s3client.putObject(putRequest)
+        } catch {
+          case e: Throwable => {
+            QLog.error(s"Error while trying to upload $name", e)
+            throw e
+          }
+        }
       uploadToS3(outputStream, filename)
+      spewIfEnabled(s"Uploaded the main image")
       uploadToS3(thumbnailOutputStream, thumbnailFilename)
-//      QLog.spew("Uploaded!")
+      spewIfEnabled(s"Uploaded the thumbnail")
 
       // Okay -- now, rebuild the actual QValue
       val rawBundle = SimplePropertyBundle(
