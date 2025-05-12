@@ -36,21 +36,7 @@ trait MidTestBase extends PlaySpec with OneAppPerTest with EcologyMember {
     val context = ApplicationLoader.createContext(
       Environment.simple(),
       Map(
-        // Flag to allow system code to check whether we are in this mode:
-        "querki.test.inmemory" -> "true",
-        // For these tests, use the in-memory H2 SQL DB:
-        "db.system.driver" -> "org.h2.Driver",
-        "db.system.url" -> "jdbc:h2:mem:system;MODE=MYSQL",
-        "db.user.driver" -> "org.h2.Driver",
-        "db.user.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
-//        "db.template.driver" -> "org.h2.Driver",
-//        "db.template.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
-
-        // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
-        // mail, but instead lets us inspect what has been "sent":
-        "querki.mail.test" -> "true",
-        // Don't bother to throttle emails significantly:
-        "querki.mail.throttle" -> "10ms"
+        // See scenario.conf instead of here
       )
     )
 

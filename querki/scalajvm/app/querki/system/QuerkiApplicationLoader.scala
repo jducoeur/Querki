@@ -2,13 +2,9 @@ package querki.system
 
 import akka.actor._
 import akka.util.Timeout
-import com.amazonaws.client.builder.AwsClientBuilder
-import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder
-import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest
 
 import scala.concurrent.duration._
 import com.google.inject.AbstractModule
-import com.typesafe.config.ConfigFactory
 import play.api.inject.guice._
 import play.api.{Application, ApplicationLoader, Configuration}
 
@@ -43,37 +39,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     val configWithEnv = configurationWithEnv(context.initialConfiguration, querkiEnv)
 
     // Step one: fetch the secrets, and merge them into the runtime configuration
-    // TODO: it would be better to keep the secrets completely separate from config, so that
-    // we could do things like edit configuration at runtime.
-    // TODO: split all of this secrets-management login out into its own module (but not an Ecot, probably)
-    val secretsEndpoint = configWithEnv.getString("querki.aws.secretsEndpoint")
-    val region = configWithEnv.getString("querki.aws.region").get
-    // The name of the HOCON file containing the secrets, from Secrets Manager:
-    val secretName = configWithEnv.getString("querki.aws.secretsName").get
-    val secretsManagerBase =
-      AWSSecretsManagerClientBuilder
-        .standard()
-    val secretsManager =
-      secretsEndpoint.map { endpoint =>
-        // If there is a configured endpoint, we're in local development, and need to point to that:
-        secretsManagerBase.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-          endpoint,
-          region
-        ))
-      }.getOrElse {
-        secretsManagerBase.withRegion(region)
-      }
-        .build()
-    val secretRequest = new GetSecretValueRequest()
-    // Yes, horrible and mutable, but it's a Java API.
-    // TODO: see if there is a decent Scala wrapper for the AWS API
-    secretRequest.setSecretId(secretName)
-    val secretResult = secretsManager.getSecretValue(secretRequest)
-    val hoconStr = secretResult.getSecretString()
-    val secretsConfig = ConfigFactory.parseString(hoconStr)
-    val secretsConfiguration = Configuration(secretsConfig)
-
-    val fullConfig = configWithEnv ++ secretsConfiguration
+    val fullConfig = SecretsLoader.addToConfiguration(configWithEnv, querkiEnv)
     val newContext = context.copy(initialConfiguration = fullConfig)
 
     // HACK: see the comments on initConfigHack:

@@ -98,6 +98,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // instead of on-disk:
   javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
   fork in Test := true,
+  // So that the FullMidTests can run:
+  envVars in Test := Map("QUERKI_ENV" -> "scenario"),
   // For cats:
   scalacOptions += "-Ypartial-unification",
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),

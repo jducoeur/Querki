@@ -13,6 +13,11 @@ object QuerkiEnv {
   object Local extends QuerkiEnv { val name = "local" }
 
   /**
+   * Scenario-test (in-memory), AKA "MidTests"
+   */
+  object Scenario extends QuerkiEnv { val name = "scenario" }
+
+  /**
    * Test environment (eg, CI and AWS test)
    */
   object Test extends QuerkiEnv { val name = "test" }
@@ -30,9 +35,10 @@ object QuerkiEnv {
   def load(): QuerkiEnv = {
     val envName = sys.env.get("QUERKI_ENV")
     envName match {
-      case Some(Local.name) => Local
-      case Some(Test.name)  => Test
-      case Some(Prod.name)  => Prod
+      case Some(Local.name)    => Local
+      case Some(Scenario.name) => Scenario
+      case Some(Test.name)     => Test
+      case Some(Prod.name)     => Prod
 
       case other =>
         throw new RuntimeException(s"QUERKI_ENV is '$other' -- it must be one of 'local', 'test', or 'prod'!")
