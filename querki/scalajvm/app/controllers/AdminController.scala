@@ -24,7 +24,7 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
   lazy val System = interface[querki.system.System]
 
   /**
-   * Extended version of [[withUser()]], enforcing that this entry point may only be called by a logged-in Admin.
+   * Extended version of withUser(), enforcing that this entry point may only be called by a logged-in Admin.
    */
   def withAdmin(
     f: PlayRequestContextFull[AnyContent] => Future[Result]

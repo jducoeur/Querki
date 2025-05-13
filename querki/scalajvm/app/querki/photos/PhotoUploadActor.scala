@@ -9,18 +9,13 @@ import org.imgscalr.Scalr
 
 import java.security.MessageDigest
 import java.math.BigInteger
-
-import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
-
 import better.files._
-
 import org.querki.requester.Requester
-
 import models.{MIMEType, OID, Wikitext}
-
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
@@ -153,8 +148,11 @@ class PhotoUploadActor(
 
       // Send it off to Amazon...
       val credentials = new BasicAWSCredentials(AWS.accessKeyId, AWS.secretAccessKey)
-      val s3client = new AmazonS3Client(credentials)
-      s3client.setRegion(Region.getRegion(Regions.US_WEST_2))
+      val s3client =
+        AmazonS3Client.builder()
+          .withCredentials(new AWSStaticCredentialsProvider(credentials))
+          .withRegion(Regions.US_WEST_2)
+          .build()
       spewIfEnabled(s"Got the s3client stood up")
       // TODO: EEEEVIL! This is currently synchronous, and presumably takes A Long Time. We need to either
       // find an async version of these entry points, or do these operations in an Actor that uses a

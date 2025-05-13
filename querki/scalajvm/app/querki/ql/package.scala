@@ -193,7 +193,7 @@ package object ql {
     /**
      * Fetches all the elements in the received context as a List.
      *
-     * This is *not* usually the right thing to do -- usually you should favor [[contextAllAs()]] -- but is
+     * This is *not* usually the right thing to do -- usually you should favor contextAllAs() -- but is
      * occasionally correct when you really do want to deal with the entire received collection at once.
      */
     def contextAllAsList[VT](pt: PType[VT]): InvocationValue[List[VT]]
@@ -486,7 +486,7 @@ package object ql {
     /**
      * Process an already-parsed QLExp and get the result.
      *
-     * This is closely related to [[processMethod()]], but is available for cases where you have previously parsed
+     * This is closely related to processMethod(), but is available for cases where you have previously parsed
      * the expression, and want to get on with it from there.
      */
     def processExp(

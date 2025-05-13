@@ -23,7 +23,7 @@ import querki.globals._
  * reflects on that, and generates the client-side glue code.
  */
 @js.native
-@js.annotation.JSName("clientRoutes")
+@js.annotation.JSGlobal("clientRoutes")
 private[comm] object ClientRoutes extends js.Object {
   def controllers: js.Dynamic = js.native
 }

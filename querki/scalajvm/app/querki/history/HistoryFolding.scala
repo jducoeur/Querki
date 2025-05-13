@@ -12,7 +12,7 @@ import querki.spaces.{SpacePure, TracingSpace}
 /**
  * The interesting bits from a single history record.
  *
- * Note that this is a subset of the underlying [[EventEnvelope]], mostly to hide the fields that I don't think we
+ * Note that this is a subset of the underlying EventEnvelope, mostly to hide the fields that I don't think we
  * should ever care about.
  */
 case class HistoryEvent(
@@ -50,9 +50,9 @@ trait HistoryFolding extends SpacePure {
   /**
    * Run the given evolution operation over the entire history of this Space.
    *
-   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
+   * Note that foldOverPartialHistory() is more general, but less often useful.
    *
-   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
+   * The evolve function is async because we often need that. If the algorithm you need is synchronous, just
    * wrap the result in Future.successful().
    *
    * @param zero the initial state of the fold
@@ -119,9 +119,9 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   /**
    * Run the given evolution operation over the entire history of this Space.
    *
-   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
+   * Note that foldOverPartialHistory() is more general, but less often useful.
    *
-   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
+   * The evolve function is async because we often need that. If the algorithm you need is synchronous, just
    * wrap the result in Future.successful().
    *
    * @param zero the initial state of the fold

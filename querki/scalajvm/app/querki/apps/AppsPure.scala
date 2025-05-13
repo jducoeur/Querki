@@ -109,7 +109,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
    * @param addedApps Any other raw Apps that were serialized with it (which should be new parents)
    * @param existingApps Fully-fleshed out Apps that already have their parents
    * @param state The SpaceState that we are adding this App to.
-   * @returns The state, with the fleshed-out App added, and the new version of existingApps.
+   * @return The state, with the fleshed-out App added, and the new version of existingApps.
    */
   def addAppPure(
     rawApp: SpaceState,
@@ -135,7 +135,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
    * @param rawSpace The Space that we're filling in the Apps for.
    * @param addedApps The list of *raw* App states we have available.
    * @param existingApps The *complete* App states we have available.
-   * @returns The Space, with the fleshed-out Apps added, and the new version of existingApps.
+   * @return The Space, with the fleshed-out Apps added, and the new version of existingApps.
    */
   def fillInApps(
     rawSpace: SpaceState,
