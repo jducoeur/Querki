@@ -187,7 +187,7 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
   def formatData(v: js.ThisFunction1[JQuery, js.Array[js.Object], js.Array[js.Object]]) = jsOpt("formatData", v)
   def formatData(v: js.Function1[js.Array[js.Object], js.Array[js.Object]]) = jsOpt("formatData", v)
 
-  /**
+  /*
    * Format the text that's displayed when the ajax request fails. The message is displayed in a list item with the class mp_error:
    *
    * <li class="mp_error">
@@ -211,7 +211,7 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
    */
   def formatError(v: js.ThisFunction4[JQuery, JQuery, js.Dynamic, String, String, js.Any]) = jsOpt("formatError", v)
 
-  /**
+  /*
    * Format the display of each item in the results list. By default, the title or name value of the data object is
    * displayed. The returned value is added to a list item with the class mp_item:
    *
@@ -233,7 +233,7 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
   def formatItem(v: js.ThisFunction1[JQuery, js.Dynamic, js.Any]) = jsOpt("formatItem", v)
   def formatItem(v: js.Function1[js.Dynamic, js.Any]) = jsOpt("formatItem", v)
 
-  /**
+  /*
    * Format the text that's displayed when the minimum number of characters (specified with the minChars option)
    * hasn't been reached. The message is displayed in a list item with the class mp_min_chars:
    *
@@ -258,7 +258,7 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
    */
   def formatMinChars(v: js.ThisFunction2[JQuery, Int, JQuery, js.Any]) = jsOpt("formatMinChars", v)
 
-  /**
+  /*
    * Format the text that's displayed when there are no results returned for the requested input value. The
    * message is displayed in a list item with the class mp_no_results:
    *
@@ -290,7 +290,7 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
   // TODO: finish filling these in
   //
 
-  /**
+  /*
    * Called when an item is selected from the results list or an initial value (see Setting an Initial Value).
    * By default, the title or name value of the data object is used to populate the input value.
    *
@@ -307,7 +307,9 @@ class MarcoPoloOptionBuilder(val dict: OptMap)
    *
    * Event: You can also bind to the marcopoloselect event:
    *
+   * {{{
    * $(selector).on('marcopoloselect', function (event, data, $item, initial) { ... });
+   * }}}
    */
   def onSelect(v: js.ThisFunction3[JQuery, js.Any, JQuery, Boolean, Any]) = jsOpt("onSelect", v)
   def onSelect(v: js.Function1[js.Any, Any]) = jsOpt("onSelect", v)

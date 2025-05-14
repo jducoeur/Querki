@@ -158,7 +158,7 @@ class ManifestOptionBuilder(val dict: OptMap)
   // Callbacks
   //
 
-  /**
+  /*
    * Format the display of an item. The returned value is added to $item with the class mf_item:
    *
    * <li class="mf_item">
@@ -188,7 +188,7 @@ class ManifestOptionBuilder(val dict: OptMap)
   def formatDisplay(v: js.Function1[js.Any, js.Any]) = jsOpt("formatDisplay", v)
   def formatDisplay(v: js.ThisFunction3[JQuery, js.Any, JQuery, UndefOr[JQuery], js.Any]) = jsOpt("formatDisplay", v)
 
-  /**
+  /*
    * Format the display of the remove link included with each item. The returned value is added to $remove with the class mf_remove:
    *
    * <li class="mf_item">
@@ -212,8 +212,8 @@ class ManifestOptionBuilder(val dict: OptMap)
    */
   def formatRemove(v: js.ThisFunction2[JQuery, JQuery, JQuery, js.Any]) = jsOpt("formatRemove", v)
 
-  /**
-   * Format the hidden value to be submitted for the item. The returned value is set as the value of $value with the class mf_value:
+  /*
+   * Format the hidden value to be submitted for the item. The returned value is set as the value of `$value` with the class mf_value:
    *
    * <li class="mf_item">
    *   ...
@@ -222,12 +222,14 @@ class ManifestOptionBuilder(val dict: OptMap)
    *
    * Default:
    *
+   * {{{
    * if ($mpItem) {
    *   return $mpItem.text();
    * }
    * else {
    *   return data;
    * }
+   * }}}
    *
    * Parameters:
    *

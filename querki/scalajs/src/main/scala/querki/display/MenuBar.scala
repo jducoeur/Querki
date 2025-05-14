@@ -111,7 +111,7 @@ class MenuBar(
   /**
    * Definition of the Menu Bar's data
    *
-   * @TODO: this is way the bloody heck too hard-coded. Can we come up with a decent way to
+   * TODO: this is way the bloody heck too hard-coded. Can we come up with a decent way to
    * construct this based on the routes file, and reference it in a strongly-typed way, along the
    * lines of the old Server-side NavSection?
    */
