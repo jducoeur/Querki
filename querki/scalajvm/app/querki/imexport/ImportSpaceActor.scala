@@ -39,7 +39,7 @@ class ImportSpaceActor(
   totalSize: Int
 ) extends Actor
      with Requester
-     with UploadActor
+     with UploadActor[RequestContext]
      with Remapper[RequestM]
      with SpaceCreator
      with querki.core.NameUtils
@@ -198,8 +198,6 @@ class ImportSpaceActor(
         handleError(ex)
       }
     }
-
-    sender ! UploadProcessSuccessful("Processing in progress")
   }
 }
 

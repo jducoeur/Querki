@@ -6,7 +6,7 @@ import querki.values.RequestContext
 
 object PhotoUploadMessages {
 
-  case class UploadDone(
+  case class PhotoUploadMetadata(
     rc: RequestContext,
     propId: OID,
     thingId: OID
