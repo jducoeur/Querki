@@ -194,7 +194,7 @@ class IdentityEcot(e: Ecology)
    * TODO: cache the full record in the cookie! Note that this is closely related to User.toSession().
    */
   def userFromSession(request: RequestHeader): Future[Option[User]] = {
-    request.session.get(Security.username) match {
+    request.session.get(usernameSessionKey) match {
       case Some(username) => {
         val fut = userCache.askRetry(GetUserByHandle(username))
         fut.map {

@@ -8,6 +8,7 @@ import play.api.mvc.Results._
 import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter
 import querki.globals._
+import querki.identity.usernameSessionKey
 
 class Filters @Inject() (
   gzip: GzipFilter,
@@ -54,7 +55,7 @@ class LoggingFilter @Inject() (
       nextRequestId += 1
       val reqId = nextRequestId
       // Log the beginning of the request...
-      QLog.info(s"+++ $reqId -- ${rh.method} ${rh.uri} from ${rh.session.get(Security.username)}...")
+      QLog.info(s"+++ $reqId -- ${rh.method} ${rh.uri} from ${rh.session.get(usernameSessionKey)}...")
       val start = System.currentTimeMillis
 
       def logTime(result: Result): Result = {

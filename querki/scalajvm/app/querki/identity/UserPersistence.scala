@@ -145,7 +145,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
    * TODO: remove this -- it is moving into Session instead.
    */
   def get(request: RequestHeader) = {
-    val username = request.session.get(Security.username)
+    val username = request.session.get(usernameSessionKey)
     username.flatMap(loadByHandle(_, None))
   }
 

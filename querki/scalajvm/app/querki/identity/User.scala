@@ -63,7 +63,7 @@ trait User {
 
   def toSession: Seq[(String, String)] = {
     Seq(
-      (Security.username -> handle),
+      (usernameSessionKey -> handle),
       (User.userIdSessionParam -> id.toString),
       (User.levelSessionParam -> level.toString)
     )
