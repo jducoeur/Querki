@@ -106,7 +106,7 @@ trait ApplicationBase extends BaseController with EcologyMember {
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
   def withAuth(f: => User => Request[AnyContent] => Future[Result]): EssentialAction = {
-    withAuth(BodyParsers.parse.anyContent)(f)
+    withAuth(parse.anyContent)(f)
   }
 
   def withAuth[B](parser: BodyParser[B])(f: => User => Request[B] => Future[Result]): EssentialAction = {
@@ -133,7 +133,7 @@ trait ApplicationBase extends BaseController with EcologyMember {
   // be set iff requireLogin is true.
   def withUser[B](
     requireLogin: Boolean,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     f: PlayRequestContextFull[B] => Future[Result]
   ) = withAuth(parser) { user => implicit request =>
@@ -203,7 +203,7 @@ trait ApplicationBase extends BaseController with EcologyMember {
   def withRouting[B](
     ownerIdStr: String,
     spaceId: String,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     f: (PlayRequestContextFull[B] => Future[Result])
   ): EssentialAction =
@@ -252,7 +252,7 @@ trait ApplicationBase extends BaseController with EcologyMember {
   def withLocalClient[B](
     ownerId: String,
     spaceIdStr: String,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     cb: (PlayRequestContextFull[B], LocalClient) => Future[Result]
   ) =
