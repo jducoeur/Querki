@@ -1,23 +1,19 @@
 package controllers
 
 import language.existentials
-
 import javax.inject._
-
-import scala.concurrent.Future
-
-import play.api._
+import scala.concurrent.ExecutionContext
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc._
+import play.api.http.FileMimeTypes
 
-import models.AsName
-
-import querki.spaces.messages._
-
-import querki.util.TryTrans
-
-class Application @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class Application @Inject() (
+  implicit
+  val appProv: Provider[play.api.Application],
+  ec: ExecutionContext,
+  fileMimeTypes: FileMimeTypes
+) extends ApplicationBase {
 
   val newSpaceForm = Form(
     mapping(

@@ -1,23 +1,14 @@
 package controllers
 
 import javax.inject._
-
 import scala.concurrent.duration._
-import scala.util._
-
 import akka.pattern._
 import akka.util.Timeout
-
 import play.api.data._
 import play.api.data.Forms._
-import play.api.data.format.Formats._
 import play.api.data.validation.Constraints._
+import play.api.i18n._
 import play.api.mvc._
-
-// Provide an implicit Messages object, which is needed to pass into some of the templates.
-// TODO: this is a temporary hack -- we'll need to switch to the injected version of Messages
-// before too long.
-import play.api.i18n.Messages.Implicits._
 
 import upickle.default._
 
@@ -25,15 +16,11 @@ import models._
 
 import querki.api.ApiException
 import querki.cluster.OIDAllocator._
-import querki.data.UserInfo
-import querki.db.ShardKind
-import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
 import querki.time.DateTime
-import querki.values.QLRequestContext
 
 case class PasswordChangeInfo(
   password: String,
@@ -41,7 +28,11 @@ case class PasswordChangeInfo(
   newPasswordAgain: String
 )
 
-class LoginController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class LoginController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val messagesApi: MessagesApi
+) extends ApplicationBase
+     with I18nSupport {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Email = interface[querki.email.Email]
@@ -302,7 +293,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
               // skip the signup process and just give them login!
               // Nope. Let them sign up for Querki. This will loop through to signup, below:
               val startForm = SignupInfo(email, "", "", "")
-              Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info))
+              Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info)(request2Messages(rc.request)))
             }
           }
         }
@@ -365,15 +356,19 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     spaceId: String
   ) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
+    // Disentangle the implicits:
+    val messages = request2Messages(request)
     val rawForm = signupForm.bindFromRequest
     rawForm.fold(
       errorForm => {
-        withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc, errorForm, info)) }
+        withSpaceInfo { (info, ownerIdentity) =>
+          BadRequest(views.html.handleInvite(this, rc, errorForm, info)(messages))
+        }
       },
       info => {
         passwordValidationError(info.password) match {
           case Some(err) => withSpaceInfo { (info, ownerIdentity) =>
-              BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info))
+              BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info)(messages))
             }
           case None => {
             // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
@@ -406,7 +401,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
                         QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
                     }
                     withSpaceInfo { (info, ownerIdentity) =>
-                      BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info))
+                      BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)(messages))
                     }
                   }
                 }
@@ -552,7 +547,9 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     hash: String
   ) = withUser(false) { rc =>
     val initialPasswordForm = PasswordChangeInfo(hash, "", "")
-    Ok(views.html.resetPassword(this, rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm)))
+    Ok(views.html.resetPassword(this, rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm))(
+      request2Messages(rc.request)
+    ))
   }
 
   def doResetPassword(
