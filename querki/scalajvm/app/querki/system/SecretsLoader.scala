@@ -21,9 +21,9 @@ object SecretsLoader {
     configWithEnv: Configuration,
     querkiEnv: QuerkiEnv
   ): Configuration = {
-    configWithEnv.getString("querki.aws.secretsName").map { secretName =>
-      val secretsEndpoint = configWithEnv.getString("querki.aws.secretsEndpoint")
-      val region = configWithEnv.getString("querki.aws.region").get
+    configWithEnv.getOptional[String]("querki.aws.secretsName").map { secretName =>
+      val secretsEndpoint = configWithEnv.getOptional[String]("querki.aws.secretsEndpoint")
+      val region = configWithEnv.get[String]("querki.aws.region")
       // The name of the HOCON file containing the secrets, from Secrets Manager:
       val secretsManagerBase =
         AWSSecretsManagerClientBuilder

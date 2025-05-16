@@ -116,7 +116,7 @@ class QuerkiApplicationLoader extends ApplicationLoader {
     configuration: Configuration,
     querkiEnv: QuerkiEnv
   ): Configuration = {
-    val subConfig = configuration.getConfig(querkiEnv.name)
+    val subConfig = configuration.getOptional[Configuration](querkiEnv.name)
     subConfig.map { sc =>
       configuration ++ sc
     }.getOrElse(throw new RuntimeException(s"No sub-configuration found for environment ${querkiEnv.name}!"))
