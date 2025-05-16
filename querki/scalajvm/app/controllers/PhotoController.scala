@@ -19,7 +19,8 @@ import querki.util.QLog
 class PhotoController @Inject() (
   implicit
   val appProv: Provider[play.api.Application],
-  mat: Materializer
+  mat: Materializer,
+  val controllerComponents: ControllerComponents
 ) extends ApplicationBase
      with StreamController {
 

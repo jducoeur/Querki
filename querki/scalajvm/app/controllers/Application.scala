@@ -12,7 +12,8 @@ class Application @Inject() (
   implicit
   val appProv: Provider[play.api.Application],
   ec: ExecutionContext,
-  fileMimeTypes: FileMimeTypes
+  fileMimeTypes: FileMimeTypes,
+  val controllerComponents: ControllerComponents
 ) extends ApplicationBase {
 
   val newSpaceForm = Form(

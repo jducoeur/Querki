@@ -8,7 +8,7 @@ import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
 import models.{Kind, OID, Thing, ThingId}
-import play.api.mvc.{AnyContent, BodyParser, BodyParsers, EssentialAction, Result}
+import play.api.mvc.{AnyContent, BodyParser, BodyParsers, ControllerComponents, EssentialAction, Result}
 import play.twirl.api.Html
 import querki.data.TID
 import querki.globals.Future
@@ -19,7 +19,10 @@ import querki.util.QLog
 
 import scala.util.Random
 
-class AdminController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class AdminController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase {
 
   lazy val System = interface[querki.system.System]
 

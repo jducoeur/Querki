@@ -13,9 +13,8 @@ import querki.api._
 import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
-import querki.util._
 
-trait ApplicationBase extends Controller with EcologyMember {
+trait ApplicationBase extends BaseController with EcologyMember {
 
   // Concrete Controllers must inject this in their constructor signatures:
   val appProv: Provider[play.api.Application]

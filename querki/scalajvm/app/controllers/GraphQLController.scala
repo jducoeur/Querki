@@ -1,15 +1,19 @@
 package controllers
 
 import java.nio.charset.StandardCharsets
-
 import autowire._
+import play.api.mvc.ControllerComponents
+
 import javax.inject.{Inject, Provider}
 import querki.globals._
 import querki.graphql.GraphQLFunctions
 
 import scala.concurrent.Future
 
-class GraphQLController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class GraphQLController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase {
 
   def graphQL(
     ownerId: String,

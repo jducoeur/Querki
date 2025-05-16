@@ -30,7 +30,7 @@ case class PasswordChangeInfo(
 
 class LoginController @Inject() (
   val appProv: Provider[play.api.Application],
-  val messagesApi: MessagesApi
+  val controllerComponents: ControllerComponents
 ) extends ApplicationBase
      with I18nSupport {
 

@@ -1,14 +1,9 @@
 package controllers
 
 import javax.inject._
-
-import upickle._
 import autowire._
-
 import models._
-
-import play.api.mvc.Call
-
+import play.api.mvc.{Call, ControllerComponents}
 import querki.api._
 import querki.data._
 import querki.globals._
@@ -19,7 +14,10 @@ import querki.globals._
  *
  * @author jducoeur
  */
-class RawController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class RawController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase {
 
   def thing(
     ownerId: String,

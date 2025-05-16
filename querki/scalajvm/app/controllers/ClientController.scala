@@ -25,7 +25,8 @@ import querki.util.PublicException
 class ClientController @Inject() (
   implicit
   val appProv: Provider[play.api.Application],
-  mat: Materializer
+  mat: Materializer,
+  val controllerComponents: ControllerComponents
 ) extends ApplicationBase
      with StreamController {
 
