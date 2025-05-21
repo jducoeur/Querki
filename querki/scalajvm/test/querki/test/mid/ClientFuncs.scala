@@ -116,7 +116,7 @@ trait ClientFuncs {
   ) extends ClientBase {
 
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
-      call(controller.rawApiRequest(), request)
+      call(controller.rawApiRequest(), request).map(_.bakeCookies())
     }
   }
 
@@ -128,7 +128,7 @@ trait ClientFuncs {
   ) extends ClientBase {
 
     def callApi(request: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result] = {
-      call(controller.apiRequest(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request)
+      call(controller.apiRequest(spaceInfo.ownerHandle, spaceInfo.oid.underlying), request).map(_.bakeCookies())
     }
   }
 }

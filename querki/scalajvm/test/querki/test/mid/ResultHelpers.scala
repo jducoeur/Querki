@@ -16,7 +16,10 @@ class ResultHelpers(result: Result) {
   def headers: Map[String, String] = result.header.headers
   def header(name: String): Option[String] = headers.get(name)
   def cookies: Cookies = Cookies.fromSetCookieHeader(header(SET_COOKIE))
-  def sess: Session = Session.decodeFromCookie(cookies.get(Session.COOKIE_NAME))
+  // Used to be Session.COOKIE_NAME -- that's now deprecated in favor of injection, but for purposes of testing
+  // it's probably fine to just hardcode it:
+  final val playSessionCookieName = "PLAY_SESSION"
+  def sess: Session = Session.decodeFromCookie(cookies.get(playSessionCookieName))
   def status: Int = result.header.status
 
   def charset: Option[String] =
