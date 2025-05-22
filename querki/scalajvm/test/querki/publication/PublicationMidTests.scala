@@ -56,6 +56,8 @@ object PublicationMidTests {
       instance3Name = "Third Instance"
       instance3 <- makeThing(model, instance3Name)
       _ <- checkNameIsMissingFor(instance3Name, member)
+      // TODO: the following is producing a PublicException (I know, because I had to debug that for Play 2.6).
+      // Check that Exception!
       _ <- withUser(member) { evaluateQL(instance3, "_publish") }
       _ <- checkNameIsMissingFor(instance3Name, member)
     } yield ()

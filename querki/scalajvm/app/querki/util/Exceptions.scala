@@ -1,11 +1,9 @@
 package querki.util
 
-import play.api.i18n.{Messages, MessagesProvider}
+import play.api.i18n.{Lang, Langs, MessagesApi}
 
 import scala.util._
-
 import play.api.mvc.RequestHeader
-
 import controllers.PlayRequestContext
 import querki.ecology.PlayEcology
 import querki.globals._
@@ -24,8 +22,9 @@ case class PublicException(
     PlayEcology.maybeApplication match {
       case Some(app) => {
         implicit val a = app
-        implicit val messagesProvider: MessagesProvider = PlayEcology.playApi[MessagesProvider]
-        Messages(msgName, params: _*)
+        val messagesApi: MessagesApi = PlayEcology.playApi[MessagesApi]
+        implicit val lang: Lang = PlayEcology.playApi[Langs].availables.head
+        messagesApi(msgName, params: _*)
       }
       // There's no Application, which implies that we're probably running under unit tests:
       case _ => s"$msgName"
