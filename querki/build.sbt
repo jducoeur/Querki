@@ -5,7 +5,7 @@ import com.typesafe.sbt.packager.docker._
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
-lazy val akkaV = "2.4.20"
+lazy val akkaV = "2.5.3"
 lazy val enumeratumV = "1.5.3"
 lazy val appV = "3.0.0.2"
 
@@ -41,7 +41,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
     "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
-    "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaV,
+    "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
+    "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
 //    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
@@ -53,7 +54,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
     "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
-    "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
 //      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
     // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
