@@ -1,9 +1,7 @@
 package querki.test.functional
 
 import scala.io.Source
-
-import play.api.Application
-
+import play.api.{Application, Environment}
 import org.querki.shocon._
 
 /**
@@ -44,11 +42,11 @@ case class Messages(
  *
  * @author jducoeur
  */
-class FuncMessages(app: Application) {
+class FuncMessages() {
 
   private val text = {
     val source = Source.createBufferedSource(
-      app.resourceAsStream("public/messages/default/clientStrings").getOrElse(
+      Environment.simple().resourceAsStream("public/messages/default/clientStrings").getOrElse(
         throw new Exception("Couldn't find clientStrings!")
       )
     )

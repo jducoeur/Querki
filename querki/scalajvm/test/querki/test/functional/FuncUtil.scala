@@ -72,7 +72,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
   /**
    * This loads the clientStrings and parses them, so we can compare against what we expect.
    */
-  lazy val messages = new FuncMessages(app).messages
+  lazy val messages = new FuncMessages().messages
 
   /**
    * Access the messages for a specific page.
