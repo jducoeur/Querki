@@ -84,10 +84,9 @@ trait ClientFuncs {
         }
         response = byteString.decodeString(charset.getOrElse("utf-8"))
         wrapped =
-          try {
-            read[ResponseWrapper](response)
-          } catch {
-            case t: Throwable => translateException(response, req)
+          readIfMatches[ResponseWrapper](response, "currentUser", "payload") match {
+            case Some(result) => result
+            case None         => translateException(response, req)
           }
         // TODO: we need to do something akin to this. How do we do so from inside here, without being
         // all horribly mutable? Maybe we should be taking the current User as a parameter, and asserting
@@ -96,7 +95,13 @@ trait ClientFuncs {
       } yield wrapped.payload
     }
 
-    def read[Result : upickle.default.Reader](p: String) = {
+    /**
+     * Read the specified type from the given String.
+     *
+     * This will throw an Exception *and print an error message* if the value isn't valid. So if you're
+     * not sure, use readOptional() instead.
+     */
+    def read[Result : upickle.default.Reader](p: String): Result = {
       try {
         upickle.default.read[Result](p)
       } catch {
@@ -106,6 +111,34 @@ trait ClientFuncs {
         }
       }
     }
+
+    /**
+     * A tolerant version of read(), that lets you specify a set of required fields and simply returns None if
+     * they aren't present, instead of throwing.
+     *
+     * Really, we want a better "validate" function here instead. If later versions of upickle add that, switch
+     * to using that instead. But we want *something* so that doCall() doesn't print errors every time we
+     * receive an ApiException.
+     */
+    def readIfMatches[Result : upickle.default.Reader](
+      p: String,
+      expectedFields: String*
+    ): Option[Result] = {
+      val js = upickle.json.read(p)
+      val fieldMap = js.obj
+      if (expectedFields.forall(fieldMap.contains)) {
+        try {
+          Some(upickle.default.readJs[Result](js))
+        } catch {
+          case ex: Exception => {
+            println(s"Exception while trying to unpickle response $p: $ex")
+            throw ex
+          }
+        }
+      } else
+        None
+    }
+
     def write[Result : upickle.default.Writer](r: Result) = upickle.default.write(r)
   }
 
