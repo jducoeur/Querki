@@ -1,17 +1,12 @@
 package querki.persistence
 
 import akka.serialization.Serializer
-
 import org.objenesis.strategy.StdInstantiatorStrategy
-
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.ListReferenceResolver
-
-import com.romix.akka.serialization.kryo.KryoSerializer
-import com.romix.scala.serialization.kryo.SubclassResolver
-
+import _root_.io.altoo.akka.serialization.kryo.serializer.scala.SubclassResolver
 import akka.actor.{ActorSystem, ExtendedActorSystem}
-
+import io.altoo.akka.serialization.kryo.KryoSerializer
 import querki.globals._
 import querki.identity.User
 import querki.test._

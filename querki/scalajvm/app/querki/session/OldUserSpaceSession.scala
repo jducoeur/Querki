@@ -1,12 +1,8 @@
 package querki.session
 
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
 import akka.event.LoggingReceive
 import upickle.default._
-import autowire._
 import org.querki.requester._
 import models._
 import querki.globals._
@@ -46,7 +42,6 @@ private[session] class OldUserSpaceSession(
      with Stash
      with Requester
      with EcologyMember
-     with ReceivePipeline
      with TimeoutChild
      with SpaceEvolution
      with autowire.Server[String, Reader, Writer] {

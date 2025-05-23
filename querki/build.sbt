@@ -32,7 +32,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.sun.mail" % "javax.mail" % "1.6.2",
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.6.2",
-    "com.github.nscala-time" %% "nscala-time" % "1.6.0",
+    "com.github.nscala-time" %% "nscala-time" % "2.18.0",
     "com.typesafe.akka" %% "akka-testkit" % akkaV,
     "com.typesafe.akka" %% "akka-contrib" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-tools" % akkaV,
@@ -40,7 +40,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
-    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
+    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.54",
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
@@ -52,7 +52,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.github.mauricio" %% "mysql-async" % "0.2.16",
 //      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
-    "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2",
+    // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
+    "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
 //      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
 //      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
@@ -77,8 +78,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "io.suzaku" %% "boopickle" % "1.2.6",
     // We use JSoup for HTML cleaning:
     "org.jsoup" % "jsoup" % "1.11.2",
-    // In-memory Akka Persistence driver, used for tests. Note that this is for Akka 2.4!
-    "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.9" % "test",
+    // In-memory Akka Persistence driver, used for tests. This will need switching to a fork after Scala 2.12!
+    "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test",
     // In-memory H2 database, used for tests:
     "com.h2database" % "h2" % "1.4.192" % "test",
     // For graphql processing:

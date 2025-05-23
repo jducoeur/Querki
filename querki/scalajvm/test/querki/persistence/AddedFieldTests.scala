@@ -5,9 +5,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy
 import com.esotericsoftware.kryo._
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.util._
-import com.romix.akka.serialization.kryo._
-import com.romix.scala.serialization.kryo._
-
+import _root_.io.altoo.akka.serialization.kryo.serializer.scala.{ScalaKryo, SubclassResolver}
 import querki.test._
 
 /**

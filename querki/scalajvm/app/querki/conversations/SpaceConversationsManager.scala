@@ -1,7 +1,6 @@
 package querki.conversations
 
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
 
 import querki.conversations.messages._
 import querki.globals._
@@ -23,7 +22,6 @@ private[conversations] class SpaceConversationsManager(
   e: Ecology,
   router: ActorRef
 ) extends QuerkiBootableActor(e)
-     with ReceivePipeline
      with RoutingParent[OID] {
   var _state: Option[SpaceState] = None
   def state = _state.get

@@ -1,7 +1,6 @@
 package querki.history
 
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
 import org.querki.requester._
 import models._
 import querki.globals._
@@ -27,7 +26,6 @@ class SpaceHistoryParent(
   val id: OID,
   val spaceRouter: ActorRef
 ) extends Actor
-     with ReceivePipeline
      with SingleRoutingParent {
   def createChild(): ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id, spaceRouter))
 
@@ -47,7 +45,6 @@ private[history] class SpaceHistory(
 ) extends QuerkiActor(e)
      with SpacePure
      with ModelPersistence
-     with ReceivePipeline
      with TimeoutChild
      with HistoryFoldingImpl
      with RestoreDeleted

@@ -1,8 +1,6 @@
 package querki.time
 
 import scala.xml.NodeSeq
-import com.github.nscala_time.time.Imports._
-import com.github.nscala_time.time.StaticDateTime
 import org.querki.requester.RequestM
 import models._
 import querki.ecology._
