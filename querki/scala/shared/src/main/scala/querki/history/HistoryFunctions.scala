@@ -2,12 +2,10 @@ package querki.history
 
 import scala.concurrent.Future
 
-import enumeratum.EnumEntry._
-import enumeratum.values._
-
 import models._
 import querki.data._
 import querki.time.Common.Timestamp
+import upickle.Js
 
 trait HistoryFunctions {
   import HistoryFunctions._
@@ -50,17 +48,29 @@ object HistoryFunctions {
   sealed abstract class SetStateReason(
     val value: Int,
     val msgName: String
-  ) extends IntEnumEntry
+  )
 
-  case object SetStateReason extends IntEnum[SetStateReason] with IntUPickleEnum[SetStateReason] {
-    val values = findValues
-
+  case object SetStateReason {
     case object Unknown extends SetStateReason(value = 0, msgName = "unknown")
     case object ImportedFromMySQL extends SetStateReason(value = 1, msgName = "importFromOld")
     case object ExtractedAppFromHere extends SetStateReason(value = 2, msgName = "extractedApp")
     case object InitialAppState extends SetStateReason(value = 3, msgName = "initialAppState")
     case object RolledBack extends SetStateReason(value = 4, msgName = "rolledBack")
     case object ImportedFromExport extends SetStateReason(value = 5, msgName = "importFromExport")
+
+    val items = List(Unknown, ImportedFromMySQL, ExtractedAppFromHere, InitialAppState, RolledBack, ImportedFromExport)
+
+    lazy val itemsByValue: Map[Int, SetStateReason] =
+      items.map(i => (i.value -> i)).toMap
+
+    // TODO: this will want updating fairly soon, as we evolve upickle:
+    implicit val reader = upickle.default.Reader[SetStateReason] {
+      case Js.Num(value) => itemsByValue(value.toInt)
+    }
+
+    implicit val writer = upickle.default.Writer[SetStateReason] {
+      case item => Js.Num(item.value)
+    }
   }
 
   /**

@@ -6,7 +6,6 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val enumeratumV = "1.5.3"
 lazy val appV = "3.0.0.4-1"
 
 lazy val sharedSrcDir = "scala"
@@ -207,11 +206,9 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.6.5",
-  "com.lihaoyi" %%% "fastparse" % "2.1.2",
+  "com.lihaoyi" %%% "fastparse" % "2.1.2"
   // TODO: pull this back out into a library again after we're done with upgrades:
 //  "org.querki" %%% "shocon" % "0.4",
-  "com.beachape" %%% "enumeratum" % enumeratumV,
-  "com.beachape" %%% "enumeratum-upickle" % enumeratumV
 ))
 
 // utst -- run the Unit Tests:

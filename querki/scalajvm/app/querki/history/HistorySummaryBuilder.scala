@@ -82,7 +82,7 @@ trait HistorySummaryBuilder extends EcologyMember with Requester with HistoryFol
             sequenceNr,
             "",
             modTime.toTimestamp,
-            SetStateReason.withValue(reason.getOrElse(0)),
+            SetStateReason.itemsByValue(reason.getOrElse(0)),
             details.getOrElse("")
           ),
           identities,
