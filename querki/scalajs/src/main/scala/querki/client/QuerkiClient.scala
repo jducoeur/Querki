@@ -1,10 +1,6 @@
 package querki.client
 
-import scala.scalajs.js.annotation.JSExport
-import scala.scalajs.js.JSApp
-
-import org.scalajs.dom
-
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import querki.ecology._
 
 /**
@@ -13,15 +9,25 @@ import querki.ecology._
  * of Querki rendering -- we're likely to have a highly dumbed-down version for older browsers,
  * and possibly some tuned apps
  */
-object QuerkiClient extends JSApp with EcologyMember {
+@JSExportTopLevel("querki.client.QuerkiClient")
+object QuerkiClient extends EcologyMember {
 
   /**
-   * The top-level initializer for the application. This will be called first, when the page loads,
-   * and should do all necessary setup.
+   * The top-level initializer for the application. This will be called first, when the page loads.
+   * Note that the rest of the page's scripts have not necessarily run yet at this point, so do *not*
+   * casually initialize yet!
    *
    * Note that the actual page rendering happens when the outer page calls setRoot().
    */
-  def main(): Unit = {
+  def main(args: Array[String]): Unit = {
+    // This space intentionally left blank, because the page we're embedded in may not be ready yet.
+  }
+
+  /**
+   * Called by client.scala.html once we're ready to start running.
+   */
+  @JSExport
+  def start(): Unit = {
     setupEcology()
   }
 

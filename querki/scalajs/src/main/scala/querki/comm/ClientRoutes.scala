@@ -22,12 +22,6 @@ import querki.globals._
  * probably at compile time, to build something that gets at the routing information *before* Scala.js,
  * reflects on that, and generates the client-side glue code.
  */
-@js.native
-@js.annotation.JSGlobal("clientRoutes")
-private[comm] object ClientRoutes extends js.Object {
-  def controllers: js.Dynamic = js.native
-}
-
 class ApiCommEcot(e: Ecology) extends ClientEcot(e) with ApiComm {
 
   def implements = Set(classOf[ApiComm])
@@ -35,7 +29,9 @@ class ApiCommEcot(e: Ecology) extends ClientEcot(e) with ApiComm {
   /**
    * This Ecot exists primarily to expose this accessor in a managed (and stubbable) way.
    */
-  lazy val controllers = ClientRoutes.controllers
+  lazy val controllers = {
+    js.Dynamic.global.clientRoutes.controllers
+  }
 }
 
 /**
