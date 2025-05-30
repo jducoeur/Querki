@@ -48,7 +48,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
 //    "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "2.6",
+    // TODO: pull back out into a library after upgrades:
+//    "org.querki" %% "requester" % "2.6",
     "com.github.mauricio" %% "mysql-async" % "0.2.16",
 //      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
