@@ -6,7 +6,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-2"
+lazy val appV = "3.0.0.4-3"
 
 lazy val sharedSrcDir = "scala"
 
@@ -43,10 +43,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
-//    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
-//    "com.lihaoyi" %% "utest" % "0.3.1",
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
     "com.github.mauricio" %% "mysql-async" % "0.2.16",
@@ -54,10 +52,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
     "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
-//      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
-//      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-    // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
     "com.lihaoyi" %% "pprint" % "0.5.4",
     "com.lihaoyi" %% "sourcecode" % "0.2.3",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
@@ -205,7 +200,7 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.7.4",
   "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
-  "com.lihaoyi" %%% "scalatags" % "0.6.5",
+  "com.lihaoyi" %%% "scalatags" % "0.6.8",
   "com.lihaoyi" %%% "fastparse" % "2.1.2"
   // TODO: pull this back out into a library again after we're done with upgrades:
 //  "org.querki" %%% "shocon" % "0.4",
