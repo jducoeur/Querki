@@ -1,6 +1,6 @@
 package querki.api
 
-import querki.history.HistoryFunctions.HistoryVersion
+import upickle.default.{macroRW, ReadWriter => RW}
 
 /**
  * Additional information that goes with *all* API requests.
@@ -15,3 +15,7 @@ case class RequestMetadata(
   version: String,
   pageParams: Map[String, String]
 )
+
+object RequestMetadata {
+  implicit val rw: RW[RequestMetadata] = macroRW
+}

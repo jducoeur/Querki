@@ -1,5 +1,7 @@
 package querki.pages
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import models.Wikitext
 
 import querki.search.SearchFunctions.SearchResults
@@ -15,4 +17,9 @@ case class ThingPageDetails(
   stylesheets: Seq[String],
   headers: Seq[String]
 ) extends PageDetails
+
+object ThingPageDetails {
+  implicit val rw: RW[ThingPageDetails] = macroRW
+}
+
 case class SearchPageDetails(results: Option[SearchResults]) extends PageDetails

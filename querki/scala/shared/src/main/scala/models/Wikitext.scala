@@ -2,6 +2,8 @@ package models
 
 import language.implicitConversions
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.qtext.{MainDecorator, Transformer}
 import querki.html.QHtml
 import querki.util.DebugRenderable
@@ -139,6 +141,10 @@ case class QWikitext(wiki: String) extends Wikitext {
   def toComposite() = CompositeWikitext(Vector(this))
 }
 
+object QWikitext {
+  implicit val rw: RW[QWikitext] = macroRW
+}
+
 /**
  * Internal systems can inject HTML into the stream by creating an HtmlWikitext. This will not be
  * processed any further, just inserted directly.
@@ -164,6 +170,10 @@ case class HtmlWikitextImpl(str: String) extends Wikitext {
   val keepRaw = true
   def contents = Vector(this)
   def toComposite() = CompositeWikitext(Vector(this))
+}
+
+object HtmlWikitextImpl {
+  implicit val rw: RW[HtmlWikitextImpl] = macroRW
 }
 
 object HtmlWikitext {
@@ -272,10 +282,16 @@ case class CompositeWikitext(contents: Vector[Wikitext]) extends Wikitext {
   def toComposite() = this
 }
 
+object CompositeWikitext {
+  implicit val rw: RW[CompositeWikitext] = macroRW
+}
+
 object Wikitext {
   def apply(str: String): Wikitext = new QWikitext(str)
   val empty = Wikitext("")
   val nl = Wikitext("\n")
+
+  implicit val rw: RW[Wikitext] = macroRW
 }
 
 trait TransformWrapper {

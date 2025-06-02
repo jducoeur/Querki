@@ -6,7 +6,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-1"
+lazy val appV = "3.0.0.4-2"
 
 lazy val sharedSrcDir = "scala"
 
@@ -58,7 +58,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 //      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
     // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
-    "com.lihaoyi" %% "pprint" % "0.4.1",
+    "com.lihaoyi" %% "pprint" % "0.5.4",
     "com.lihaoyi" %% "sourcecode" % "0.2.3",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     "ai.x" %% "diff" % "1.2.0" % "test",
@@ -202,7 +202,7 @@ lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.4.3",
+  "com.lihaoyi" %%% "upickle" % "0.7.4",
   "com.lihaoyi" %%% "scalarx" % "0.3.2",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.6.5",

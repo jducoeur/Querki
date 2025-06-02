@@ -2,6 +2,8 @@ package querki.security
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data._
 import querki.editing.EditFunctions.PropertyChange
 
@@ -96,6 +98,10 @@ case class PersonInfo(
   roles: Seq[TID]
 )
 
+object PersonInfo {
+  implicit val rw: RW[PersonInfo] = macroRW
+}
+
 /**
  * Catch-all for information about security.
  *
@@ -108,12 +114,20 @@ case class SpaceSecurityInfo(
   defaultRoles: Seq[TID]
 )
 
+object SpaceSecurityInfo {
+  implicit val rw: RW[SpaceSecurityInfo] = macroRW
+}
+
 object SecurityFunctions {
 
   case class InviteResponse(
     newInvites: Seq[String],
     resends: Seq[String]
   )
+
+  object InviteResponse {
+    implicit val rw: RW[InviteResponse] = macroRW
+  }
 
   sealed trait SecurityLevel
   case object SecurityPublic extends SecurityLevel
@@ -124,16 +138,28 @@ object SecurityFunctions {
   // used in the client:
   case object SecurityInherited extends SecurityLevel
 
+  object SecurityLevel {
+    implicit val rw: RW[SecurityLevel] = macroRW
+  }
+
   case class ThingPerm(
     permId: TID,
     currently: SecurityLevel
   )
+
+  object ThingPerm {
+    implicit val rw: RW[ThingPerm] = macroRW
+  }
 
   case class ThingPermissions(
     perms: Seq[ThingPerm],
     instancePermThing: Option[ThingInfo],
     instancePerms: Seq[ThingPerm]
   )
+
+  object ThingPermissions {
+    implicit val rw: RW[ThingPermissions] = macroRW
+  }
 
   case class PermInfo(
     id: TID,
@@ -144,6 +170,10 @@ object SecurityFunctions {
     default: SecurityLevel,
     appliesTo: Seq[TID]
   )
+
+  object PermInfo {
+    implicit val rw: RW[PermInfo] = macroRW
+  }
 
   case class LinkPermsChoice(
     name: String,
@@ -156,4 +186,8 @@ object SecurityFunctions {
     requiresMembership: Boolean,
     enabled: Boolean
   )
+
+  object SharedLinkInfo {
+    implicit val rw: RW[SharedLinkInfo] = macroRW
+  }
 }

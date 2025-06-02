@@ -10,7 +10,7 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
-import upickle.default._
+import upickle.default.{ReadWriter => RW, _}
 import autowire._
 import models.{AsName, AsOID, MIMEType, ThingId}
 import querki.api._
@@ -153,6 +153,8 @@ class ClientController @Inject() (
     val spaceCall = routes.ClientController.space(ownerId, spaceId)
     Redirect(new Call(spaceCall.method, spaceCall.url + s"#!$thingId"))
   }
+
+  implicit val requestRW: RW[autowire.Core.Request[String]] = macroRW
 
   def unpickleRequest(rc: PlayRequestContext): (autowire.Core.Request[String], RequestMetadata) = {
     implicit val request = rc.request

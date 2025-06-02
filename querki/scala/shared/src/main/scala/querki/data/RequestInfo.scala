@@ -1,5 +1,7 @@
 package querki.data
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.identity.UserLevel.UserLevel
 
 /**
@@ -17,3 +19,7 @@ case class RequestInfo(
   payloadOpt: Option[String] = None,
   forbidden: Boolean = false
 )
+
+object RequestInfo {
+  implicit val rw: RW[RequestInfo] = macroRW
+}

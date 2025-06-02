@@ -2,6 +2,8 @@ package querki.search
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data.ThingInfo
 
 trait SearchFunctions {
@@ -22,6 +24,10 @@ object SearchFunctions {
     positions: List[Int]
   )
 
+  object SearchResultElement {
+    implicit val rw: RW[SearchResultElement] = macroRW
+  }
+
   /**
    * A single result from searching. The text is *not* HTML-neutered, so it must be escaped
    * before rendering!
@@ -32,8 +38,16 @@ object SearchFunctions {
     elements: List[SearchResultElement]
   )
 
+  object SearchResult {
+    implicit val rw: RW[SearchResult] = macroRW
+  }
+
   case class SearchResults(
     request: String,
     results: Seq[SearchResult]
   )
+
+  object SearchResults {
+    implicit val rw: RW[SearchResults] = macroRW
+  }
 }

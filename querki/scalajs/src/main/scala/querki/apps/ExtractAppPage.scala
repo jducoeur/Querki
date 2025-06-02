@@ -3,24 +3,20 @@ package querki.apps
 import scala.scalajs.js
 import js.JSConverters._
 import org.scalajs.dom
-
 import scalatags.JsDom.all._
 import autowire._
 import rx._
-
 import org.querki.gadgets._
 import org.querki.jquery._
 import org.querki.facades.jstree._
-
 import querki.api.ThingFunctions
-import querki.data.{PropValInfo, ThingInfo}
-import querki.display.{ButtonGadget, QText}
+import querki.data.{PropValInfo, ThingInfo, ExtractableModelInfo}
+import querki.display.{QText, ButtonGadget}
 import querki.display.rx._
 import QuerkiEmptyable._
 import querki.globals._
-import querki.pages.{IndexPage, Page, PageContents, ParamMap}
+import querki.pages.{ParamMap, PageContents, Page, IndexPage}
 import querki.util.InputUtils
-
 import AppsFunctions._
 
 /**

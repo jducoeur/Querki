@@ -1,5 +1,7 @@
 package querki.api
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 /**
  * The base class for "semantic API exceptions" -- that is, well-behaved Exceptions that
  * are considered to be part of the Querki API. The entry points that can throw these should
@@ -47,6 +49,13 @@ case class ValidationException(msg: String) extends EditException
  */
 case class ModelLoopException() extends EditException
 
+object EditException {
+  implicit val gcfrw: RW[GeneralChangeFailure] = macroRW
+  implicit val verw: RW[ValidationException] = macroRW
+  implicit val mlerw: RW[ModelLoopException] = macroRW
+  implicit val rw: RW[EditException] = macroRW
+}
+
 /**
  * Expected exceptions that can be returned from SecurityFunctions.
  */
@@ -77,6 +86,14 @@ case class NotAllowedException() extends SecurityException {
  */
 case class BadPasswordException() extends SecurityException
 
+object SecurityException {
+  implicit val mmpserw: RW[MaxMembersPerSpaceException] = macroRW
+  implicit val cnaerw: RW[CanNotArchiveException] = macroRW
+  implicit val nawrw: RW[NotAllowedException] = macroRW
+  implicit val bperw: RW[BadPasswordException] = macroRW
+  implicit val rw: RW[SecurityException] = macroRW
+}
+
 /**
  * Expected exceptions that can be returned from AdminFunctions.
  */
@@ -86,6 +103,11 @@ sealed trait AdminException extends ApiException
  * You tried to perform an Admin function from a non-Admin account.
  */
 case class NotAnAdminException() extends AdminException
+
+object AdminException {
+  implicit val naaerw: RW[NotAnAdminException] = macroRW
+  implicit val rw: RW[AdminException] = macroRW
+}
 
 /**
  * Expected exceptions from the Import / Export functions.
@@ -97,9 +119,26 @@ sealed trait ImportException extends ApiException
  */
 case class SpaceExistsException(name: String) extends ImportException
 
+object ImportException {
+  implicit val seerw: RW[SpaceExistsException] = macroRW
+  implicit val rw: RW[ImportException] = macroRW
+}
+
 /**
  * Expected exceptions from User/Identity functions.
  */
 sealed trait UserException extends ApiException
 case class HandleAlreadyTakenException(handle: String) extends UserException
 case class EmailAlreadyTakenException(email: String) extends UserException
+
+object UserException {
+  implicit val haterw: RW[HandleAlreadyTakenException] = macroRW
+  implicit val eaterw: RW[EmailAlreadyTakenException] = macroRW
+  implicit val rw: RW[UserException] = macroRW
+}
+
+object ApiException {
+  implicit val merw: RW[MiscException] = macroRW
+  implicit val uterw: RW[UnknownThingException] = macroRW
+  implicit val rw: RW[ApiException] = macroRW
+}
