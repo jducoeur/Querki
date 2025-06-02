@@ -44,7 +44,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
-    "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
     "com.github.mauricio" %% "mysql-async" % "0.2.16",
