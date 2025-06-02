@@ -199,7 +199,7 @@ lazy val querkiSharedJs = querkiShared.js
 lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.7.4",
   "com.lihaoyi" %%% "scalarx" % "0.3.2",
-  "com.lihaoyi" %%% "autowire" % "0.2.5",
+  "com.lihaoyi" %%% "autowire" % "0.2.6",
   "com.lihaoyi" %%% "scalatags" % "0.6.8",
   "com.lihaoyi" %%% "fastparse" % "2.1.2"
   // TODO: pull this back out into a library again after we're done with upgrades:
