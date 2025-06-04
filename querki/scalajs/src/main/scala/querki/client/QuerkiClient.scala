@@ -9,7 +9,7 @@ import querki.ecology._
  * of Querki rendering -- we're likely to have a highly dumbed-down version for older browsers,
  * and possibly some tuned apps
  */
-@JSExportTopLevel("querki.client.QuerkiClient")
+@JSExportTopLevel("QuerkiClient")
 object QuerkiClient extends EcologyMember {
 
   /**
