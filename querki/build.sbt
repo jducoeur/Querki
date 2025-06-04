@@ -6,7 +6,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-4"
+lazy val appV = "3.0.0.4-5"
 
 lazy val sharedSrcDir = "scala"
 
@@ -115,14 +115,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
   version := appV,
-  // These...
-  // persistLauncher := true,
-  // persistLauncher in Test := false,
-  // ... have been superceded by:
   scalaJSUseMainModuleInitializer := true,
 //  sourceMapsDirectories += file(sharedSrcDir),
-  jsDependencies += RuntimeDOM,
-//  postLinkJSEnv := PhantomJSEnv(autoExit = false).value,
 
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
