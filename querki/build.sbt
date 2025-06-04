@@ -1,6 +1,8 @@
 import sbt.Project.projectToRef
 
 import com.typesafe.sbt.packager.docker._
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
@@ -169,23 +171,29 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   )
 ).enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
-lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")).settings(
-  scalaVersion := scalaV,
-  version := appV
-).
+// See https://github.com/portable-scala/sbt-crossproject/tree/v0.5.0?tab=readme-ov-file#migration-from-scalajs-default-crossproject
+lazy val querkiShared =
+  crossProject(JSPlatform, JVMPlatform)
+    .withoutSuffixFor(JVMPlatform)
+    .crossType(CrossType.Full)
+    .in(file("scala"))
+    .settings(
+      scalaVersion := scalaV,
+      version := appV
+    ).
 // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
-jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
-  libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-  )
-).jsConfigure(_.enablePlugins(ScalaJSPlay)).jsSettings(
+    jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
+      libraryDependencies ++= sharedDependencies.value ++ Seq(
+        "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+      )
+    ).jsConfigure(_.enablePlugins(ScalaJSPlay)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
-  libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
-  ),
-  test := {},
-  EclipseKeys.useProjectId := true
-)
+      libraryDependencies ++= sharedDependencies.value ++ Seq(
+        "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
+      ),
+      test := {},
+      EclipseKeys.useProjectId := true
+    )
 lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 

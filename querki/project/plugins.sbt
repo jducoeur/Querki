@@ -16,7 +16,8 @@ resolvers += "bintray/non".at("http://dl.bintray.com/non/maven")
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.25")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.20")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.5.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
 addSbtPlugin("com.vmunier" % "sbt-play-scalajs" % "0.3.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
