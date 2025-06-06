@@ -20,7 +20,8 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.33")
 addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.0.11-0.6")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
+// Do we actually care about sbt-rjs?
+addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.9")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
 
