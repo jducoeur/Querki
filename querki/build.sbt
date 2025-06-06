@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-5"
+lazy val appV = "3.0.0.4-6"
 
 lazy val sharedSrcDir = "scala"
 
@@ -16,7 +16,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   scalaVersion := scalaV,
   version := appV,
   scalaJSProjects := clients,
-  pipelineStages := Seq(scalaJSProd, digest, gzip),
+  pipelineStages := Seq(digest, gzip),
+  pipelineStages in Assets := Seq(scalaJSPipeline),
   // Needed for the in-memory Cassandra driver, used during tests:
   resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
   // To prevent duplicate-artifact errors in Stage:
@@ -169,7 +170,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "squery" % "0.1",
     "org.querki" %%% "gadgets" % "0.3"
   )
-).enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).dependsOn(querkiSharedJs)
+).enablePlugins(ScalaJSPlugin, ScalaJSWeb, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
 // See https://github.com/portable-scala/sbt-crossproject/tree/v0.5.0?tab=readme-ov-file#migration-from-scalajs-default-crossproject
 lazy val querkiShared =
@@ -186,7 +187,7 @@ lazy val querkiShared =
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
       )
-    ).jsConfigure(_.enablePlugins(ScalaJSPlay)).jsSettings(
+    ).jsConfigure(_.enablePlugins(ScalaJSWeb)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"

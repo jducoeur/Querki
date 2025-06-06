@@ -109,7 +109,7 @@ class PlayAjax(call: PlayCall) {
 
     // Change this line to print all API calls.
     // TODO: this should come from config!
-    val spewAPICalls = true
+    val spewAPICalls = false
 
     // Note that this is *not* the literal dataStr,
     // mainly because that is fairly hard to read!
