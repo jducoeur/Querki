@@ -101,8 +101,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // For cats:
   scalacOptions += "-Ypartial-unification",
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-  buildInfoPackage := "querki",
-  EclipseKeys.skipParents in ThisBuild := false
+  buildInfoPackage := "querki"
 )
 // NOTE: we need to turn on akka-http and turn off Netty, because the version of Netty built into
 // Play 2.5 conflicts with the version in the AWS SDK:
@@ -192,8 +191,7 @@ lazy val querkiShared =
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
       ),
-      test := {},
-      EclipseKeys.useProjectId := true
+      test := {}
     )
 lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
@@ -214,10 +212,5 @@ addCommandAlias("utst", """querkiServer/test-only -- -l "org.scalatest.tags.Slow
 addCommandAlias("ftst", """querkiServer/test-only -- -n "org.scalatest.tags.Slow"""")
 
 onLoad in Global := (Command.process("project querkiServer", _: State)).compose((onLoad in Global).value)
-
-// for Eclipse users
-EclipseKeys.skipParents in ThisBuild := false
-// Compile the project before generating Eclipse files, so that generated .scala or .class files for views and routes are present
-EclipseKeys.preTasks := Seq(compile in (querkiServer, Compile))
 
 fork in run := true

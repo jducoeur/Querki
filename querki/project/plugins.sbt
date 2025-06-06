@@ -28,8 +28,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 // Adds the stats command -- see https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "5.1.0")
-
 // For the JVM side of the shared code:
 addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
 
