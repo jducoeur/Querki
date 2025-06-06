@@ -28,8 +28,5 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 // Adds the stats command -- see https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 
-// For the JVM side of the shared code:
-addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
-
 // So that the Play application can access the version and build date:
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")
