@@ -23,7 +23,7 @@ addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.0.11-0.6")
 // Do we actually care about sbt-rjs?
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.9")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
-addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 
 // Adds the stats command -- see https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")
