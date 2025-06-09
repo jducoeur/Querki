@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-7"
+lazy val appV = "3.0.0.4-8"
 
 lazy val sharedSrcDir = "scala"
 
@@ -48,10 +48,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
+    // TODO: need to migrate this to 2.x before EOY 2025!
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
-    "com.github.mauricio" %% "mysql-async" % "0.2.16",
 //      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
