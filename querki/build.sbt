@@ -28,7 +28,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // anorm,
     filters,
     guice,
-    "org.playframework.anorm" %% "anorm" % "2.6.0",
+    "org.playframework.anorm" %% "anorm" % "2.7.0",
     // Add your project dependencies here,
     "mysql" % "mysql-connector-java" % "5.1.36",
     "com.sun.mail" % "javax.mail" % "1.6.2",
