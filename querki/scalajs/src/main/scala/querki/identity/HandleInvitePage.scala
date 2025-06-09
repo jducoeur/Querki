@@ -95,7 +95,7 @@ class HandleInvitePage(params: ParamMap)(implicit val ecology: Ecology) extends 
     }
 
     for {
-      _ <- Future.successful()
+      _ <- Future.successful(())
       guts =
         div(
           displayDiv <= div(

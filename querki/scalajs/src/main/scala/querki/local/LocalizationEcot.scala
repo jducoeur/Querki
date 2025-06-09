@@ -55,7 +55,7 @@ class LocalizationEcot(e: Ecology) extends ClientEcot(e) with Localization {
     ajaxCall.callAjax().map { messageText =>
       val hoconTable = HoconParse(messageText)
       _messages = Some(MessagesImpl("", hoconTable))
-      _readyPromise.complete(Success())
+      _readyPromise.complete(Success(()))
     }
   }
 }
