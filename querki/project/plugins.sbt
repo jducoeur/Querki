@@ -29,4 +29,4 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")
 
 // So that the Play application can access the version and build date:
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.7.0")
