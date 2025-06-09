@@ -29,12 +29,14 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     filters,
     guice,
     "org.playframework.anorm" %% "anorm" % "2.7.0",
-    // Add your project dependencies here,
+    // TODO: this was later renamed mysql-connector-j and has been maintained as such. Upgrade in due course:
     "mysql" % "mysql-connector-java" % "5.1.36",
+    // TODO: this has apparently become jakarta.mail-api and moved on to a new major version. Also needs upgrading:
     "com.sun.mail" % "javax.mail" % "1.6.2",
+    // TODO: currently up to 2.0.1 -- do the major bump eventually:
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.6.2",
-    "com.github.nscala-time" %% "nscala-time" % "2.18.0",
+    "com.github.nscala-time" %% "nscala-time" % "3.0.0",
     "com.typesafe.akka" %% "akka-testkit" % akkaV,
     "com.typesafe.akka" %% "akka-contrib" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-tools" % akkaV,
@@ -117,6 +119,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
   version := appV,
+  scalacOptions ++= Seq("-deprecation"),
   scalaJSUseMainModuleInitializer := true,
 //  sourceMapsDirectories += file(sharedSrcDir),
 
