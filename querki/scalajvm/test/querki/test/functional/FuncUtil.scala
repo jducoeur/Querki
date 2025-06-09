@@ -45,6 +45,10 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
 
   /**
    * Note that this implicit is available pretty much throughout the mixins.
+   *
+   * TODO: this kicks out a deprecation warning because WebBrowser has moved. But scalatestplus-play is internally
+   * inconsistent: it uses the old version in its definition of OneBrowserPerTest, so we're kind of stuck for now.
+   * When we *can* upgrade past this inconsistency, we should.
    */
   implicit val browser: org.scalatest.selenium.WebBrowser = this
 

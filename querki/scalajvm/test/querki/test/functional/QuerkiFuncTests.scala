@@ -1,14 +1,12 @@
 package querki.test.functional
 
 import play.api.{Application, ApplicationLoader, Environment}
-
 import org.scalatest._
 import org.scalatest.tags.Slow
-import org.scalatest.selenium._
 import play.api.test._
 import play.api.test.Helpers._
 import org.scalatestplus.play._
-
+import org.scalatestplus.play.guice.GuiceOneServerPerTest
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 
@@ -22,9 +20,8 @@ trait FuncMixin
   extends WordSpec
      with Matchers
      with org.scalatest.concurrent.Eventually
-     with WebBrowser
-     with OneBrowserPerTest
-     with OneServerPerTest
+     with OneBrowserPerTest // includes WebBrowser
+     with GuiceOneServerPerTest
      with FuncDB
      with FuncInterfaces
      with FuncUtil
@@ -46,12 +43,11 @@ class QuerkiFuncTests
   extends WordSpec
      with Matchers
      with BeforeAndAfterAll
-     with OneServerPerTest
+     with GuiceOneServerPerTest
      with OneBrowserPerTest
      // For now, we're just going to target Chrome. Eventually, obviously, we should
      // test this stuff cross-browser:
      with ChromeFactory
-     with WebBrowser
      with concurrent.IntegrationPatience
 
      // Structural mix-ins for the tests:

@@ -2,16 +2,14 @@ package querki.test.mid
 
 import org.scalatest._
 import org.scalatestplus.play._
-
 import play.api.{Application, ApplicationLoader, Environment}
 import play.api.db.Databases
 import play.api.inject.guice._
-
 import querki.db.ShardKind
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
-
 import AllFuncs._
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
 /**
  * Primary base trait for all "mid-level" tests. These are semi-functional tests: testing the more or less
@@ -22,7 +20,7 @@ import AllFuncs._
  * This intentionally uses OneAppPerTest, not OneAppPerSuite, because the latter creates the app even if
  * we aren't running any actual tests due to -l filtering.
  */
-trait MidTestBase extends PlaySpec with OneAppPerTest with EcologyMember {
+trait MidTestBase extends PlaySpec with GuiceOneAppPerTest with EcologyMember {
   lazy val dbManager = new MidFuncDB
 
   /**

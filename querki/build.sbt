@@ -53,7 +53,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
 //      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
+    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
     "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
