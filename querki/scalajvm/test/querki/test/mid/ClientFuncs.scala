@@ -1,7 +1,8 @@
 package querki.test.mid
 
 import scala.concurrent.Promise
-import upickle._
+import upickle.default.{ReadWriter => RW, _}
+import ujson._
 import autowire._
 import play.api.mvc.{AnyContentAsFormUrlEncoded, Result, Session}
 import play.api.test._
@@ -21,6 +22,8 @@ trait ClientFuncs {
   implicit lazy val clientFuncs = this
 
   lazy val querkiVersion: String = querki.BuildInfo.version
+
+  implicit val requestRW: RW[autowire.Core.Request[String]] = macroRW
 
   trait ClientBase extends autowire.Client[String, upickle.default.Reader, upickle.default.Writer] {
     implicit def session: Session
@@ -124,11 +127,11 @@ trait ClientFuncs {
       p: String,
       expectedFields: String*
     ): Option[Result] = {
-      val js = upickle.json.read(p)
+      val js = ujson.read(p)
       val fieldMap = js.obj
       if (expectedFields.forall(fieldMap.contains)) {
         try {
-          Some(upickle.default.readJs[Result](js))
+          Some(upickle.default.read[Result](js))
         } catch {
           case ex: Exception => {
             println(s"Exception while trying to unpickle response $p: $ex")
