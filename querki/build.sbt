@@ -28,7 +28,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // anorm,
     filters,
     guice,
-    "com.typesafe.play" %% "anorm" % "2.5.0",
+    "org.playframework.anorm" %% "anorm" % "2.6.0",
     // Add your project dependencies here,
     "mysql" % "mysql-connector-java" % "5.1.36",
     "com.sun.mail" % "javax.mail" % "1.6.2",
@@ -99,7 +99,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // So that the FullMidTests can run:
   envVars in Test := Map("QUERKI_ENV" -> "scenario"),
   // For cats:
-  scalacOptions += "-Ypartial-unification",
+  scalacOptions ++= Seq("-Ypartial-unification", "-deprecation"),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki"
 )
