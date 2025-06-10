@@ -57,8 +57,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // TODO: upgrade after we're on sbt 1.x:
     "com.lihaoyi" %% "pprint" % "0.8.1",
     "com.lihaoyi" %% "sourcecode" % "0.3.1",
-    // Only used for debugging at this point:
-    "com.github.pathikrit" %% "better-files" % "2.17.1",
+    // Only used for debugging at this point; uncomment when needed:
+    // "com.github.pathikrit" %% "better-files" % "3.9.2",
     "org.typelevel" %% "cats-core" % "2.0.0",
     "org.typelevel" %% "cats-effect" % "2.0.0",
     "co.fs2" %% "fs2-core" % "2.1.0",
