@@ -66,13 +66,15 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.github.julien-truffaut" %% "monocle-macro" % "1.5.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.3.1",
     // A simple Base64 library, for embedding stuff into HTML:
+    // TODO: can/should we replace this with upickle? I don't think base64 is gaining us anything interesting:
     "com.github.marklister" %% "base64" % "0.2.9",
     // We are also using BooPickle for embedding:
+    // TODO: at this point, we probably should replace this with upickle, using one of the compact encodings:
     "io.suzaku" %% "boopickle" % "1.3.1",
     // We use JSoup for HTML cleaning:
     "org.jsoup" % "jsoup" % "1.11.2",
     // For graphql processing:
-    "org.sangria-graphql" %% "sangria" % "1.4.2",
+    "org.sangria-graphql" %% "sangria" % "2.0.1",
     "com.chuusai" %% "shapeless" % "2.3.3",
     //
     // TEST-ONLY DEPENDENCIES:
