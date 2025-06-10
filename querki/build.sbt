@@ -52,16 +52,11 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
-//      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
     "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
     // TODO: upgrade after we're on sbt 1.x:
-    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
     "com.lihaoyi" %% "pprint" % "0.8.1",
     "com.lihaoyi" %% "sourcecode" % "0.3.1",
-    // Powerful structural-diffing library: https://github.com/xdotai/diff
-    "ai.x" %% "diff" % "1.2.0" % "test",
     // Only used for debugging at this point:
     "com.github.pathikrit" %% "better-files" % "2.17.1",
     "org.typelevel" %% "cats-core" % "2.0.0",
@@ -77,13 +72,20 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "io.suzaku" %% "boopickle" % "1.2.6",
     // We use JSoup for HTML cleaning:
     "org.jsoup" % "jsoup" % "1.11.2",
-    // In-memory Akka Persistence driver, used for tests. This will need switching to a fork after Scala 2.12!
-    "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test",
-    // In-memory H2 database, used for tests:
-    "com.h2database" % "h2" % "1.4.192" % "test",
     // For graphql processing:
     "org.sangria-graphql" %% "sangria" % "1.4.2",
-    "com.chuusai" %% "shapeless" % "2.3.3"
+    "com.chuusai" %% "shapeless" % "2.3.3",
+    //
+    // TEST-ONLY DEPENDENCIES:
+    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
+    // Powerful structural-diffing library: https://github.com/xdotai/diff
+    // This will need replacing with a different library after Scala 2.12!
+    "ai.x" %% "diff" % "2.0.1" % "test",
+    // In-memory H2 database, for simulating MySQL:
+    "com.h2database" % "h2" % "1.4.192" % "test",
+    // In-memory Akka Persistence driver, used for tests. This will need switching to a fork after Scala 2.12!
+    "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test"
   ),
   // Docker configuration
   // For now, we're using the full OpenJDK image. That's a bit fatty -- is there a leaner one for us to start with?
