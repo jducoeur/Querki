@@ -56,8 +56,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
     "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
+    // TODO: upgrade after we're on sbt 1.x:
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-    "com.lihaoyi" %% "pprint" % "0.5.4",
+    "com.lihaoyi" %% "pprint" % "0.8.1",
     "com.lihaoyi" %% "sourcecode" % "0.2.3",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     "ai.x" %% "diff" % "1.2.0" % "test",
