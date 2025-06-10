@@ -75,7 +75,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.jsoup" % "jsoup" % "1.11.2",
     // For graphql processing:
     "org.sangria-graphql" %% "sangria" % "2.0.1",
-    "com.chuusai" %% "shapeless" % "2.3.3",
+    "com.chuusai" %% "shapeless" % "2.3.11",
     //
     // TEST-ONLY DEPENDENCIES:
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
