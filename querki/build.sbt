@@ -59,7 +59,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // TODO: upgrade after we're on sbt 1.x:
     "org.scalatest" %% "scalatest" % "3.0.3" % "test",
     "com.lihaoyi" %% "pprint" % "0.8.1",
-    "com.lihaoyi" %% "sourcecode" % "0.2.3",
+    "com.lihaoyi" %% "sourcecode" % "0.3.1",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     "ai.x" %% "diff" % "1.2.0" % "test",
     // Only used for debugging at this point:
