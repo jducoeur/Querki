@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-8"
+lazy val appV = "3.0.0.4-9"
 
 lazy val sharedSrcDir = "scala"
 
@@ -64,8 +64,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "co.fs2" %% "fs2-core" % "2.1.0",
     "com.github.julien-truffaut" %% "monocle-core" % "1.5.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "1.5.0",
-    // Updated version of the XML library:
-    "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+    "org.scala-lang.modules" %% "scala-xml" % "1.3.1",
     // A simple Base64 library, for embedding stuff into HTML:
     "com.github.marklister" %% "base64" % "0.2.3",
     // We are also using BooPickle for embedding:

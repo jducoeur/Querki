@@ -13,7 +13,8 @@ import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
-import better.files._
+// When needed, uncomment better-files in build.sbt:
+// import better.files._
 import org.querki.requester.Requester
 import models.{MIMEType, OID, Wikitext}
 import querki.core.QLText
