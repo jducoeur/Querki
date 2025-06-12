@@ -2,7 +2,7 @@ package querki.notifications
 
 import autowire._
 import rx._
-import org.widok.moment._
+import moment._
 
 import querki.globals._
 

@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-11"
+lazy val appV = "3.0.0.4-13"
 
 lazy val sharedSrcDir = "scala"
 
@@ -162,14 +162,20 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += (ProvidedJS / "jquery.fileupload-image.js").minified("jquery.fileupload-image.min.js").dependsOn(
     "jquery.fileupload.js"
   ),
+  // This currently has dependency issues, so we're instead making it ProvidedJS for now. At some point, see if we
+  // can iron those out and do this properly:
+  // jsDependencies += ("org.webjars.npm" % "moment" % "2.22.2" / "moment.js").minified("moment.min.js"),
+  // jsDependencies += ("org.webjars.npm" % "moment-timezone" % "0.5.25" / "moment-timezone.js"),
+  jsDependencies += (ProvidedJS / "moment.js").minified("moment.min.js"),
+  jsDependencies += (ProvidedJS / "moment-timezone.js").dependsOn("moment.js"),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
+    "ru.pavkin" %%% "scala-js-momentjs" % "0.10.0",
     "org.querki" %%% "querki-jsext" % "0.8",
     "org.querki" %%% "jquery-facade" % "1.2",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.8",
-    "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
     "org.querki" %%% "jstree-facade" % "0.5",
     "org.querki" %%% "squery" % "0.1",
     "org.querki" %%% "gadgets" % "0.3"

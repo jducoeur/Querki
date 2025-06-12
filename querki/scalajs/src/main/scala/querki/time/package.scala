@@ -2,7 +2,7 @@ package querki
 
 import scala.scalajs.js
 
-import org.widok.moment._
+import moment._
 
 import querki.globals._
 

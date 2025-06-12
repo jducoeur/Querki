@@ -7,7 +7,7 @@ import scalatags.JsDom.all.{input => inp, _}
 
 import autowire._
 
-import org.widok.moment._
+import moment._
 
 import querki.globals._
 

@@ -3,7 +3,7 @@ package querki.admin
 import scalatags.JsDom.all._
 import autowire._
 
-import org.widok.moment._
+import moment._
 
 import querki.api._
 import querki.globals._
