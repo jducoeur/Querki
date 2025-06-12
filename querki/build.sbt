@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-10"
+lazy val appV = "3.0.0.4-11"
 
 lazy val sharedSrcDir = "scala"
 
@@ -189,12 +189,12 @@ lazy val querkiShared =
 // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
     jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
       libraryDependencies ++= sharedDependencies.value ++ Seq(
-        "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+        "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
       )
     ).jsConfigure(_.enablePlugins(ScalaJSWeb)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
       libraryDependencies ++= sharedDependencies.value ++ Seq(
-        "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
+        "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
       ),
       test := {}
     )
