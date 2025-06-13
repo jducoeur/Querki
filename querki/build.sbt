@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-17"
+lazy val appV = "3.0.0.4-19"
 
 lazy val sharedSrcDir = "scala"
 
@@ -171,7 +171,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "com.lihaoyi" %%% "scalarx" % "0.3.2",
+    "com.lihaoyi" %%% "scalarx" % "0.4.0",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "ru.pavkin" %%% "scala-js-momentjs" % "0.10.0",
     "org.querki" %%% "querki-jsext" % "0.9",

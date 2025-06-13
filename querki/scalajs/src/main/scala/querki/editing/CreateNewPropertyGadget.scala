@@ -55,7 +55,7 @@ class CreateNewPropertyGadget(
 
   val nameInput = GadgetRef[RxInput].whenSet { g =>
     g.elemOptRx.trigger {
-      g.elemOpt.map { e => $(e).blur { evt: JQueryEventObject => fixNameInput(g.text.now) } }
+      g.elemOpt.foreach { e => $(e).blur { evt: JQueryEventObject => fixNameInput(g.text.now) } }
     }
   }
 
@@ -99,7 +99,7 @@ class CreateNewPropertyGadget(
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
   val typeSelector: GadgetRef[RxSelect] = GadgetRef[RxSelect].whenSet { g =>
     g.selectedValOpt.trigger {
-      g.selectedValOpt.now.map { selectedType =>
+      g.selectedValOpt.now.foreach { selectedType =>
         // They've selected a Type, so reset the Model...
         modelSelector.foreachNow(_.setValue(""))
         // ... and set the Collection to best suit this Type:
@@ -118,7 +118,7 @@ class CreateNewPropertyGadget(
 
   val modelSelector = GadgetRef[RxSelect].whenSet { g =>
     g.selectedValOpt.trigger {
-      g.selectedValOpt.now.map { _ =>
+      g.selectedValOpt.now.foreach { _ =>
         // They've selected a Model, so reset the Type...
         typeSelector.foreachNow(_.setValue(""))
         // ... and set the Collection to List. Yes, this is hardcoded. So far,

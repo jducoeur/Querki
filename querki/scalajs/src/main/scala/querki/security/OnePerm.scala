@@ -111,7 +111,7 @@ class OnePerm(
     val box = GadgetRef.of[html.Input]
 
     val watcher = currently.trigger {
-      box.mapElemNow { e =>
+      box.foreachElemNow { e =>
         $(e).prop("checked", (currently.now == page.levelMap(level).underlying))
       }
     }

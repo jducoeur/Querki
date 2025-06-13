@@ -49,7 +49,7 @@ class RxButtonGroup(
     div(cls := "btn-group", data("toggle") := "buttons", mods, renderButtons)
 
   def updateSelected() = {
-    buttons.now.find(_.initiallyActive).map(select(_))
+    buttons.now.find(_.initiallyActive).foreach(select(_))
   }
 
   // This is private because it doesn't actually change *to* this button, which is what outside

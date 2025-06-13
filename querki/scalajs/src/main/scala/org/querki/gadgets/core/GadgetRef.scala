@@ -80,7 +80,7 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * should be renamed or scrapped.
    */
   def flatMapNow[T](f: G => Option[T]) = opt.now.flatMap(f)
-  def foreachNow(f: G => Unit): Unit = opt.now.map(f)
+  def foreachNow(f: G => Unit): Unit = opt.now.foreach(f)
 
   /**
    * Shorthand for this extremely common case.
@@ -94,6 +94,8 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * Convenience wrapper for getting at the underlying element, if it's been set up yet.
    */
   def mapElemNow[T](f: Element => T): Option[T] = flatMapNow(_.asInstanceOf[Gadget[Element]].elemOpt.map(f))
+
+  def foreachElemNow[T](f: Element => T): Unit = opt.now.foreach(_.asInstanceOf[Gadget[Element]].elemOpt.foreach(f))
 
   /**
    * This maps the given function over the underlying Gadget, when it exists. This

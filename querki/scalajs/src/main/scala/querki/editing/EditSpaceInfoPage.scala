@@ -57,8 +57,8 @@ class EditSpaceInfoPage(params: ParamMap)(implicit val ecology: Ecology)
     .whenRendered { g =>
       g.selectedValOpt.triggerLater {
         // Whenever the selection changes, save both objects:
-        spaceSaver.foreachNow(_.save())
-        spacePermsSaver.foreachNow(_.save())
+        spaceSaver.foreachNow(_.saveDiscarding())
+        spacePermsSaver.foreachNow(_.saveDiscarding())
       }
     }
 

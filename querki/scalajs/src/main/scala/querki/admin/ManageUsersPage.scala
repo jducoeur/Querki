@@ -57,7 +57,7 @@ class ManageUsersPage(params: ParamMap)(implicit val ecology: Ecology) extends P
 
     val levelSelector = GadgetRef[RxSelect].whenSet { g =>
       g.selectedOption.triggerLater {
-        g.selectedOption.now.map { opt =>
+        g.selectedOption.now.foreach { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
           if (newLevel != user.level) {
             Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>

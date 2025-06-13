@@ -129,6 +129,16 @@ abstract class InputGadget[T <: Element](e: Ecology) extends HookedGadget[T](e) 
   }
 
   /**
+   * Variant of save() that disregards the resulting Future.
+   *
+   * This is a little evil, but occasionally necessary when Scala.Rx chokes on a Future.
+   */
+  def saveDiscarding(): Unit = {
+    save()
+    ()
+  }
+
+  /**
    * InputGadgets should call this iff they have a complex edit cycle -- that is, if you begin to
    * edit and later save those changes. Use this to make sure that changes get saved before we navigate.
    *

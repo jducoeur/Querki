@@ -41,6 +41,7 @@ class EditPublicationPage(params: ParamMap)(implicit val ecology: Ecology) exten
         InputGadget.doSaveChange(model.oid, msg).flatMap { response =>
           Client[PublicationFunctions].changePublishedModels().call()
         }
+        ()
       }
       guts =
         div(
