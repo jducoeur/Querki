@@ -16,7 +16,7 @@ import querki.globals._
  * calls, and exposes them to the global namespace as "clientRoutes". This, in turn, picks those up
  * and provides them to the Client code as needed.
  *
- * @TODO: this isn't bad, but it's still mediocre -- since it's js.Dynamic, there's no static checking
+ * TODO: this isn't bad, but it's still mediocre -- since it's js.Dynamic, there's no static checking
  * of the calls at all. We'd like to do something that's truly strongly typed, but Autowire isn't the
  * solution to this particular problem, since it's fundamentally Play-based. The right solution is
  * probably at compile time, to build something that gets at the routing information *before* Scala.js,
