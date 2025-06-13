@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.12"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4-16"
+lazy val appV = "3.0.0.4-17"
 
 lazy val sharedSrcDir = "scala"
 
@@ -178,8 +178,9 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "jquery-facade" % "1.2",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.9",
     "org.querki" %%% "jstree-facade" % "0.5",
-    "org.querki" %%% "squery" % "0.1",
-    "org.querki" %%% "gadgets" % "0.3"
+    "org.querki" %%% "squery" % "0.1"
+    // TODO: after evolving everything, pull this back out to a library:
+    // "org.querki" %%% "gadgets" % "0.3"
   )
 ).enablePlugins(ScalaJSPlugin, ScalaJSWeb, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
