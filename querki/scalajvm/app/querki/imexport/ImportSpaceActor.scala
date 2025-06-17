@@ -193,11 +193,7 @@ class ImportSpaceActor(
       true
     }
 
-    result.onFailure {
-      case ex: Exception => {
-        handleError(ex)
-      }
-    }
+    result.failed.foreach { ex => handleError(ex) }
   }
 }
 

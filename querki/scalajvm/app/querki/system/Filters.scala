@@ -7,7 +7,7 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter
-import querki.globals._
+import querki.globals.{execContext => _, _}
 import querki.identity.usernameSessionKey
 
 class Filters @Inject() (

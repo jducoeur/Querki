@@ -16,7 +16,8 @@ import akka.pattern.after
 import models.Wikitext
 
 import querki.ecology._
-import querki.globals._
+// We specificially *don't* want the global EC below -- we handle that explicitly:
+import querki.globals.{execContext => _, _}
 import querki.identity.Identity
 
 /**
@@ -128,7 +129,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
     retries: Int = 3
   )(implicit
     scheduler: Scheduler,
-    ex: ExecutionContext
+    ec: ExecutionContext
   ): Future[R] = {
     val future = Future { f }
     if (retries > 0) {
@@ -260,7 +261,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
 
       returnCodeFut.andThen {
         // When the whole thing finishes, regardless of what happens, make sure we release the Transport:
-        case _ => transportFut.onSuccess { case transport => transport.close() }
+        case _ => transportFut.foreach { transport => transport.close() }
       }
     } else {
       // Non-TLS -- running on a test server, so just do it the easy way:

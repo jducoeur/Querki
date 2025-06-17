@@ -19,7 +19,7 @@ import querki.spaces.messages._
  * @author jducoeur
  */
 class RemovePropertyActor(
-  requester: User,
+  who: User,
   propId: OID,
   val ecology: Ecology,
   state: SpaceState,
@@ -69,7 +69,7 @@ class RemovePropertyActor(
       dummy1 <- removeFrom(instances)
       dummy2 <- removeFrom(models)
       dummy3 = phaseDescription = s"Deleting Property $propName"
-      dummy4 <- router.request(DeleteThing(requester, state.id, propId))
+      dummy4 <- router.request(DeleteThing(who, state.id, propId))
     } finished = true
   }
 
@@ -88,7 +88,7 @@ class RemovePropertyActor(
             case None => Map.empty
           }
         router.request(ChangeProps(
-          requester,
+          who,
           state.id,
           thing.id,
           instancePropsMap ++ Map((propId -> DataModelAccess.getDeletedValue(prop)))

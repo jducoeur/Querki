@@ -33,7 +33,7 @@ private[conversations] class CommentGadget(
       id := s"_comment$cid",
       a(cls := "_commentLink", name := s"comment$cid"),
       if (comment.canDelete) {
-        new DeleteButton(doDelete)
+        new DeleteButton(doDelete _)
       },
       div(
         cls := "_commentHeader",

@@ -1,5 +1,7 @@
 package querki
 
+import scala.util.{Failure, Success}
+
 /**
  * Standard includes for Server-side Querki. The intent here is that most files should say:
  * {{{
@@ -54,11 +56,9 @@ package object globals {
 
   def spewingFut[T](msg: String)(f: => Future[T]): Future[T] = {
     QLog.spew(s"Will be trying $msg")
-    f.onSuccess {
-      case result => QLog.spew(s"  $msg succeeded, produces $result")
-    }
-    f.onFailure {
-      case th: Throwable => QLog.error(s"  $msg failed", th)
+    f.onComplete {
+      case Success(result) => QLog.spew(s"  $msg succeeded, produces $result")
+      case Failure(th)     => QLog.error(s"  $msg failed", th)
     }
     f
   }

@@ -36,7 +36,7 @@ class RunButton(
       disabled := active,
       new RxTextFrag(Rx { if (active()) activeLabel else inactiveLabel }),
       mods
-    )(doClick)
+    )(doClick _)
 
   private def doClick(): Unit = {
     active() = true

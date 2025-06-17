@@ -47,10 +47,6 @@ sealed trait BasicThingInfo {
   def is(other: BasicThingInfo) = oid == other.oid
 }
 
-object BasicThingInfo {
-  implicit val rw: RW[BasicThingInfo] = macroRW
-}
-
 /**
  * This is the API view of a Thing -- what it looks like on the wire, and in the Client.
  * Note that it is intentionally much less elaborate than the Server-side Thing.
@@ -193,4 +189,8 @@ case class ExtractableModelInfo(
 
 object ExtractableModelInfo {
   implicit val rw: RW[ExtractableModelInfo] = macroRW
+}
+
+object BasicThingInfo {
+  implicit val rw: RW[BasicThingInfo] = macroRW
 }

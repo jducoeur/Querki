@@ -58,7 +58,7 @@ class ThingPage(
     }
 
     val pageFut = Client[ThingFunctions].getThingPage(name, propOpt).call()
-    pageFut.onFailure {
+    pageFut.failed.foreach {
       case ModelLoopException() => StatusLine.showUntilChange(
           "It appears you have a Model loop. Please go into the Advanced Editor and change models there."
         )

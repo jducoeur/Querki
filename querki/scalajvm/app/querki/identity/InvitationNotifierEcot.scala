@@ -382,6 +382,7 @@ class InvitationNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier wit
       }
       case UnsubAllInvitesOID =>
         (Wikitext("Saved -- you will no longer receive invitations to Querki."), DHUnsubAllInvites())
+      case other => throw new Exception(s"Unexpected oid in InvitationNotifierEcot.getUnsubEvent: $other")
     }
   }
 

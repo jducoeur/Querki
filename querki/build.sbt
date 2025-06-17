@@ -6,9 +6,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.12"
+lazy val scalaV = "2.12.0"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.4"
+lazy val appV = "3.0.0.5-1"
 
 lazy val sharedSrcDir = "scala"
 
@@ -172,7 +172,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   buildInfoPackage := "querki",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "com.lihaoyi" %%% "scalarx" % "0.4.0",
-    "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "ru.pavkin" %%% "scala-js-momentjs" % "0.10.0",
     "org.querki" %%% "querki-jsext" % "0.9",
     "org.querki" %%% "jquery-facade" % "1.2",
