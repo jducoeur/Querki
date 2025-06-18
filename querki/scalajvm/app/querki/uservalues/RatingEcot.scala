@@ -308,7 +308,7 @@ class RatingEcot(e: Ecology)
     }
 
     def calcAverage(pairs: Seq[(Int, Int)]): (Double, Int) = {
-      val (sum, n) = ((0, 0) /: pairs) { (accum, pair) =>
+      val (sum, n) = pairs.foldLeft((0, 0)) { (accum, pair) =>
         val (curTotal, curEntries) = accum
         val (key, numEntries) = pair
         (curTotal + (key * numEntries), curEntries + numEntries)

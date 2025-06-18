@@ -120,7 +120,7 @@ class CommentNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier with N
         false
       )
 
-      val recipients = (Set(state.owner) /: commentNotifyPrefs) { (recip, onePref) =>
+      val recipients = commentNotifyPrefs.foldLeft(Set(state.owner)) { (recip, onePref) =>
         if (onePref.thingId == state.id || onePref.thingId == comment.thingId) {
           onePref.v.firstAs(YesNoType) match {
             case Some(bool) => {

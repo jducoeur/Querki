@@ -26,7 +26,7 @@ case class Messages(
   ): String = {
     msgs.vs.get(msgName) match {
       case Some(child @ SimpleValue(text)) => {
-        (text /: params) { (current, param) =>
+        params.foldLeft(text) { (current, param) =>
           val (k, v) = param
           current.replaceAllLiterally("$" + k, v)
         }

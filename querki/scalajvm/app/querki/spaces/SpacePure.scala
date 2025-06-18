@@ -139,7 +139,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
     oldProps: PropMap,
     newProps: PropMap
   ): PropMap = {
-    (oldProps /: newProps) { (current, pair) =>
+    newProps.foldLeft(oldProps) { (current, pair) =>
       val (propId, v) = pair
       if (v.isDeleted)
         // The caller has sent the special signal to delete this Property:

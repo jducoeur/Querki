@@ -389,7 +389,7 @@ class LogicModule(e: Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.
         Core.QNone
       else {
         val comparePt = pairs.head._2.pType
-        val mostPair = (pairs.head /: pairs.tail) { (current, next) =>
+        val mostPair = pairs.tail.foldLeft(pairs.head) { (current, next) =>
           val (curReceived, curProcessed) = current
           val (nextReceived, nextProcessed) = next
           if (chooser(comparePt, curProcessed.first, nextProcessed.first))

@@ -54,7 +54,7 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
   )(implicit
     state: SpaceState
   ): Set[TOID] = {
-    (Set.empty[TOID] /: props) { (set, prop) =>
+    props.foldLeft(Set.empty[TOID]) { (set, prop) =>
       if (t.ifSet(prop))
         set + prop.id
       else
@@ -69,7 +69,7 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
   )(implicit
     state: SpaceState
   ): Set[TOID] = {
-    (Set.empty[TOID] /: perms) { (set, perm) =>
+    perms.foldLeft(Set.empty[TOID]) { (set, perm) =>
       if (AccessControl.hasPermission(perm, state, who, t))
         set + perm.id
       else

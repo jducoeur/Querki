@@ -337,7 +337,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    * Tests are frequently composed of Ops, but do not have to be.
    */
   def runTests(tests: TestDef*)(initialState: State): State = {
-    (initialState /: tests) { (state, test) =>
+    tests.foldLeft(initialState) { (state, test) =>
       spew(s"Running test ${test.desc}")
       val stateWithUser: State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
@@ -367,7 +367,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
     initialState: State,
     ops: State => State*
   ): State = {
-    (initialState /: ops) { (state, op) =>
+    ops.foldLeft(initialState) { (state, op) =>
       trying(s"Failed while running an operation in State $state") {
         op(state)
       }

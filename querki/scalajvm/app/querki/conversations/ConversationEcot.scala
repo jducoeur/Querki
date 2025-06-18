@@ -296,7 +296,7 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   // TBD: not tail-recursive, because tail-recursive on trees is a pain. Might want to put in the
   // work to make it so, though.
   private def latestCommentTime(conv: ConversationNode): DateTime = {
-    (conv.comment.createTime /: conv.responses) { (curBest, resp) =>
+    conv.responses.foldLeft(conv.comment.createTime) { (curBest, resp) =>
       val respTime = latestCommentTime(resp)
       if (respTime > curBest) {
         respTime

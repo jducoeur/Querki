@@ -170,7 +170,7 @@ class EcologyImpl(val playApp: Option[play.api.Application]) extends EcologyImpl
   }
 
   private def collectPersistence() = {
-    val msgs = (Seq.empty[(Class[_], Int)] /: _initializedEcots) { (msgs, ecot) =>
+    val msgs = _initializedEcots.foldLeft(Seq.empty[(Class[_], Int)]) { (msgs, ecot) =>
       val (ecotId, ecotMsgs) = ecot.persistentMessages
       if (ecotId == -1)
         msgs

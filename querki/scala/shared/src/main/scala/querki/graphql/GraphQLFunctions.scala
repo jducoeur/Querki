@@ -16,6 +16,6 @@ trait GraphQLFunctions {
    */
   def runGraphQL(
     graphQL: String,
-    pretty: Boolean = false
+    pretty: Boolean
   ): Future[String]
 }

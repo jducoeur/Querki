@@ -120,7 +120,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
   ): Future[Map[TOID, PV]] = withThing(thingId) { thing =>
     implicit val s = state
 
-    val result = (Map.empty[TOID, PV] /: props) { (m, propTOID) =>
+    val result = props.foldLeft(Map.empty[TOID, PV]) { (m, propTOID) =>
       val propId = OID.fromTOID(propTOID)
       thing.getPropOpt(propId) match {
         case Some(pv) => {

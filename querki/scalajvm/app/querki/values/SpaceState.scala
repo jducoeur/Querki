@@ -108,7 +108,7 @@ case class SpaceState(
 
   private def walkAppsRec[R](f: (SpaceState) => Option[R]): Option[R] = {
     // Run through the apps, depth-first, looking for the result:
-    (Option.empty[R] /: apps) { (cur, app) =>
+    apps.foldLeft(Option.empty[R]) { (cur, app) =>
       cur.orElse(app.walkTreeRec(f))
     }
   }
@@ -147,7 +147,7 @@ case class SpaceState(
     f: SpaceState => R,
     accum: (R, R) => R
   ): R = {
-    (f(this) /: apps) { (cur, app) =>
+    apps.foldLeft(f(this)) { (cur, app) =>
       val rest = app.accumulateAllRec(f, accum)
       accum(cur, rest)
     }
@@ -494,7 +494,7 @@ case class SpaceState(
    * pre-sorting them by name.
    */
   lazy val childrenMap: Map[OID, ThingChildren] = {
-    (Map.empty[OID, ThingChildren] /: everythingLocal) { (curMap, t) =>
+    everythingLocal.foldLeft(Map.empty[OID, ThingChildren]) { (curMap, t) =>
       val model = t.model
       val tc = curMap.get(model) match {
         case Some(thingChildren) => thingChildren.copy(children = thingChildren.children + t)
@@ -590,7 +590,7 @@ class SpaceStateOps(
       else
         state.children(root)
 
-    (candidates /: candidates) { (fullSet, child) =>
+    candidates.foldLeft(candidates) { (fullSet, child) =>
       fullSet ++ descendantsRec(child, includeApps)
     }
   }

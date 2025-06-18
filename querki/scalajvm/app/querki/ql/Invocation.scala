@@ -66,7 +66,7 @@ private[ql] case class InvocationValueImpl[T](
         val subFuts = subs.map(_.fut)
         Future.sequence(subFuts).map { subDatas =>
           val resultVs = subDatas.map(_.vs).flatten
-          val resultMetas = (data.metadata /: subDatas.map(_.metadata))(_ + _)
+          val resultMetas = subDatas.map(_.metadata).foldLeft(data.metadata)(_ + _)
           IVData(resultVs, resultMetas)
         }
       }

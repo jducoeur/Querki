@@ -84,7 +84,7 @@ trait Remapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   )(implicit
     oidMap: Map[OID, OID]
   ): PropMap = {
-    (emptyProps /: propsIn) { case (props, (propId, propVal)) =>
+    propsIn.foldLeft(emptyProps) { case (props, (propId, propVal)) =>
       val newId = mappedOID(propId)
       val oldPropOpt = stateOriginal.prop(propId)
       val newVal = oldPropOpt match {
@@ -109,7 +109,7 @@ trait Remapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   }
 
   private def remapTypes(stateOriginal: SpaceState)(stateIn: SpaceState)(implicit oidMap: Map[OID, OID]): SpaceState = {
-    (stateIn /: stateIn.types.values) { (curState, typ) =>
+    stateIn.types.values.foldLeft(stateIn) { (curState, typ) =>
       typ match {
         case mt: ModelTypeDefiner#ModelType => {
           val newId = mappedOID(mt.id)
@@ -129,7 +129,7 @@ trait Remapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   }
 
   private def remapProps(stateOriginal: SpaceState)(stateIn: SpaceState)(implicit oidMap: Map[OID, OID]): SpaceState = {
-    (stateIn /: stateIn.spaceProps.values) { (curState, prop) =>
+    stateIn.spaceProps.values.foldLeft(stateIn) { (curState, prop) =>
       val newId = mappedOID(prop.id)
       val newProp = prop.copy(
         i = newId,
@@ -151,7 +151,7 @@ trait Remapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   )(implicit
     oidMap: Map[OID, OID]
   ): SpaceState = {
-    (stateIn /: stateIn.things.values) { (curState, t) =>
+    stateIn.things.values.foldLeft(stateIn) { (curState, t) =>
       val newId = mappedOID(t.id)
       val newThing = t.copy(
         i = newId,

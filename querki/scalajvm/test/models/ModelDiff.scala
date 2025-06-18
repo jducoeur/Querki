@@ -67,7 +67,7 @@ trait ModelDiff { self: EcologyMember =>
         val diffs = pairs.map { case (eleml, elemr) => DiffShow.diff(eleml, elemr) }
         if (diffs.exists { _.isInstanceOf[Different] }) {
           // Mismatch, so spell it out...
-          val result = ((0, List.empty[String]) /: diffs) { (state, diff) =>
+          val result = diffs.foldLeft((0, List.empty[String])) { (state, diff) =>
             val (nIdentical, strs) = state
             diff match {
               case Identical(_) => (nIdentical + 1, strs)
@@ -130,6 +130,8 @@ trait ModelDiff { self: EcologyMember =>
             case (Identical(_), Identical(_)) => Identical(show(l))
             case (Different(_), _)            => mtDiff
             case (_, Different(_))            => elemDiff
+            // AFAIK, the only way to get to this fall-through is if one or the other is of type Error:
+            case _ => throw new Exception(s"Error in ModelDiff.diff: ($mtDiff, $elemDiff)")
           }
         }
         case _ => {

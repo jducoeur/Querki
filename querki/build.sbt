@@ -6,9 +6,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.12.0"
+lazy val scalaV = "2.12.10"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.5-1"
+lazy val appV = "3.0.0.5-3"
 
 lazy val sharedSrcDir = "scala"
 

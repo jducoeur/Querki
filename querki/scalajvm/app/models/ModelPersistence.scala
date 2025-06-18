@@ -116,7 +116,7 @@ trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner 
 
     // Next, add the Types. Note that we can build the Type before we build the
     // Model it is based on.
-    val typeMap = (Map.empty[OID, PType[_]] /: dh.types) { (map, tpe) =>
+    val typeMap = dh.types.foldLeft(Map.empty[OID, PType[_]]) { (map, tpe) =>
       implicit val s = baseState
       // TODO: ModelType should take modTime, like all other dynamically-created Things:
       val mt = new ModelType(tpe.id, dh.id, querki.core.MOIDs.UrTypeOID, tpe.basedOn, tpe.props)
@@ -125,7 +125,7 @@ trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner 
     val withTypes = baseState.copy(types = typeMap)
 
     // Next, add the Properties.
-    val props = (Map.empty[OID, Property[_, _]] /: dh.spaceProps) { (map, propdh) =>
+    val props = dh.spaceProps.foldLeft(Map.empty[OID, Property[_, _]]) { (map, propdh) =>
       implicit val s = withTypes
       val typ = withTypes.typ(propdh.pType)
       // This sad cast is necessary in order to pass the PType into the Property. It's reasonably
@@ -139,7 +139,7 @@ trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner 
     val withProps = withTypes.copy(spaceProps = props)
 
     // Now add the Things.
-    val ts = (Map.empty[OID, ThingState] /: dh.things) { (map, thingdh) =>
+    val ts = dh.things.foldLeft(Map.empty[OID, ThingState]) { (map, thingdh) =>
       implicit val s = withProps
       val thing =
         ThingState(

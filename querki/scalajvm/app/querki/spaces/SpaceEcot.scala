@@ -193,7 +193,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     startingAt: Int
   ): InvocationValue[PropMap] = {
     val nParams = inv.numParams
-    val fullQV = (inv.wrap(EmptyValue(PropValType)) /: (startingAt until nParams)) { (invv, paramNum) =>
+    val fullQV = (startingAt until nParams).foldLeft(inv.wrap(EmptyValue(PropValType))) { (invv, paramNum) =>
       invv.flatMap { qv =>
         getOnePropVal(inv, context, paramNum).map { elemVal =>
           val (newQV, _) = qv.append(elemVal)
@@ -204,7 +204,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     fullQV.map { qv =>
       // TODO: I'm sure this would be easier with Cats: we're just reducing List[PropMap], which is
       // a simple Monoidal reduce:
-      (emptyProps /: qv.rawList(PropValType)) { (result, propMap) =>
+      qv.rawList(PropValType).foldLeft(emptyProps) { (result, propMap) =>
         result ++ propMap
       }
     }

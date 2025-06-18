@@ -104,7 +104,7 @@ private[spaces] class SpaceMembersActor(
           tracing.trace(s"RemoveMembers($memberIds)")
           // Belt and suspenders check:
           if (AccessControl.isManager(rc.requesterOrAnon, state)) {
-            val resultRM = (RequestM.successful(true) /: memberIds) { (last, memberId) =>
+            val resultRM = memberIds.foldLeft(RequestM.successful(true)) { (last, memberId) =>
               last.flatMap { soFar =>
                 // Accumulate the results: return true iff all of these return true.
                 // Do we care about these results? Not sure, but QI.9v5kfif was what

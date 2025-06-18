@@ -25,7 +25,7 @@ case class TypeChangeInfo(
   ): Unit = {
     if (typeChanged) {
       // Now, run through all of the previously-serialized values, and rebuild them with the new Type:
-      val newState = (stateIn /: serializedValues) { (state, oldPair) =>
+      val newState = serializedValues.foldLeft(stateIn) { (state, oldPair) =>
         val (usingThing, serialized) = oldPair
         val usingThingId = usingThing.id
         val newV = newProp.deserialize(serialized)(state)

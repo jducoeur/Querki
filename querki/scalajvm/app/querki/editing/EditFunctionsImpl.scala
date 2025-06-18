@@ -211,7 +211,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
         // a semigroup. Besides, it would be weird and suspicious to combine the QValues like that.
         // TODO: is it an error if this change list includes multiple changes to the same Property?
         // Maybe.
-        (Option.empty[PropMap] /: changes) { (optMap, chg) =>
+        changes.foldLeft(Option.empty[PropMap]) { (optMap, chg) =>
           val result = evaluateOneChange(chg)
           (optMap, result) match {
             case (None, None)       => None
@@ -238,7 +238,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
     initialProps: Seq[PropertyChange]
   ): Future[ThingInfo] = withThing(modelId) { model =>
     implicit val s = state
-    val propsFromClient = (emptyProps /: initialProps) { (map, change) =>
+    val propsFromClient = initialProps.foldLeft(emptyProps) { (map, change) =>
       change match {
         case ChangePropertyValue(path, vs) => changeToProps(None, path, vs) match {
             case Some(p) => map ++ p

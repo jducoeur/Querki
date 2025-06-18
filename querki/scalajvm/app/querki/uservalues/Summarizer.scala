@@ -321,7 +321,7 @@ trait SummarizerDefs { self: QuerkiEcot =>
       state: SpaceState
     ): Option[DiscreteSummary[UVT]] = {
       val recalculated = {
-        val m = (Map.empty[UVT, Int] /: values) { (totals, v) =>
+        val m = values.foldLeft(Map.empty[UVT, Int]) { (totals, v) =>
           totals.get(v) match {
             case Some(count) => totals + (v -> (count + 1))
             case None        => totals + (v -> 1)
@@ -425,9 +425,9 @@ trait SummarizerDefs { self: QuerkiEcot =>
       }
 
       Future.sequence(keyFuts).map { guts =>
-        (Wikitext("""
-                    |!+noLines
-                    |<dl class="histogram">""".stripMargin) /: guts) { (curText, gut) => curText + gut } +
+        guts.foldLeft(Wikitext("""
+                                 |!+noLines
+                                 |<dl class="histogram">""".stripMargin)) { (curText, gut) => curText + gut } +
           Wikitext("</dl>\n!-noLines\n")
       }
     }

@@ -212,7 +212,7 @@ class ModelDesignerPage(params: ParamMap)(implicit val ecology: Ecology)
         allProps = fullEditInfo.propInfos
         (instanceProps, modelProps) =
           allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
-        sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
+        sortedInstanceProps = fullEditInfo.instancePropIds.foldLeft(Seq.empty[PropEditInfo]) { (current, propId) =>
           instanceProps.find(_.propInfo.oid == propId) match {
             case Some(prop) => current :+ prop
             case None       => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }

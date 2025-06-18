@@ -247,6 +247,8 @@ class PersistentSpaceActor(
       source.runFold(emptySpace.copy(s = appId)) {
         case ((curState, EventEnvelope(offset, appPersistenceId, sequenceNr, evt: SpaceEvent))) =>
           evolveState(Some(curState))(evt)
+        case (_, EventEnvelope(_, _, _, other)) =>
+          throw new Exception(s"PersistentSpaceActor.loadAppVersion() hit unexpected event $other")
       }
     }.flatMap { loadedState =>
       mat.shutdown()
@@ -289,7 +291,7 @@ class PersistentSpaceActor(
     }
 
     // Gather up the Instance Permissions on this Thing, if any:
-    val props = (emptyProps /: instancePermissions) { (map, perm) =>
+    val props = instancePermissions.foldLeft(emptyProps) { (map, perm) =>
       map ++ addPerm(perm)
     }
 
@@ -339,7 +341,7 @@ class PersistentSpaceActor(
         // that need it. Note that, since we're flatMapping over RequestM, this will be synchronous and
         // in-order. But checkInstancePermissionsOn() is smart enough to only do a loopback if it needs
         // to actually *do* something:
-        (checkInstancePermissionsOn(state, instancePermissions, true)(state) /: models) { (reqm, model) =>
+        models.foldLeft(checkInstancePermissionsOn(state, instancePermissions, true)(state)) { (reqm, model) =>
           reqm.flatMap(curState => checkInstancePermissionsOn(model, instancePermissions, false)(curState))
         }
       }

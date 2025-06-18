@@ -58,7 +58,7 @@ private[identity] case class CachedPeople(
   }
 
   lazy val (allPeopleById, allPeopleByIdentityId) =
-    ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true, false)) {
+    state.descendants(PersonOID, false, true, false).foldLeft((Map.empty[OID, Thing], Map.empty[IdentityId, Thing])) {
       (maps, person) =>
         val (personIdMap, identityIdMap) = maps
         val newPersonIdMap = personIdMap + (person.id -> person)
@@ -554,7 +554,7 @@ class PersonModule(e: Ecology)
     // Add Person records for anybody who isn't already in this Space, and return the resulting
     // SpaceState:
     def createPersons(identities: Iterable[FullIdentity]): Future[SpaceState] = {
-      (Future.successful(originalState) /: identities) { (stateFut, identity) =>
+      identities.foldLeft(Future.successful(originalState)) { (stateFut, identity) =>
         stateFut.flatMap { state =>
           val propMap =
             toProps(

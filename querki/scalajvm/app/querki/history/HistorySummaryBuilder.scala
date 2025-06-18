@@ -67,7 +67,7 @@ trait HistorySummaryBuilder extends EcologyMember with Requester with HistoryFol
       } yield (thingId, thing.displayName)
 
       val newThingIds =
-        (allThingIds /: namePairs) { (tn, pair) =>
+        namePairs.foldLeft(allThingIds) { (tn, pair) =>
           val (id, name) = pair
           tn + id
         }
@@ -145,7 +145,7 @@ trait HistorySummaryBuilder extends EcologyMember with Requester with HistoryFol
     rc: RequestContext,
     state: SpaceState
   ): Future[ThingNames] = {
-    (Future.successful(Map.empty[TID, String]) /: ids) { (fut, id) =>
+    ids.foldLeft(Future.successful(Map.empty[TID, String])) { (fut, id) =>
       fut.flatMap { m =>
         state.anything(id) match {
           case Some(t) => t.nameOrComputed.map(name => m + (OID2TID(id) -> name))

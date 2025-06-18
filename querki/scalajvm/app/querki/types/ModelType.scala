@@ -195,7 +195,7 @@ trait ModelTypeDefiner { self: EcologyMember =>
             (propId, state.anything(propId), propVal)
           }
           val sortedInfos = propInfo.toSeq.sortBy(_._2.map(_.displayName).getOrElse(""))
-          val result = (Future.successful(Wikitext.empty) /: propInfo) { (current, pair) =>
+          val result = propInfo.foldLeft(Future.successful(Wikitext.empty)) { (current, pair) =>
             val (propId, propOpt, propVal) = pair
             val propText = propOpt match {
               case Some(prop) => {

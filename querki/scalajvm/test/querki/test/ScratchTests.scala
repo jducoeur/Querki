@@ -38,7 +38,7 @@ class ScratchTests extends QuerkiTests {
             collectClasses(sup) + sup
         }
 
-        (collectRec(clazz.getSuperclass) /: clazz.getInterfaces) { (set, interf) =>
+        clazz.getInterfaces.foldLeft(collectRec(clazz.getSuperclass)) { (set, interf) =>
           set ++ collectRec(interf)
         }
       }

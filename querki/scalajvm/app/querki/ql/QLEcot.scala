@@ -236,7 +236,7 @@ class QLEcot(e: Ecology)
   // bindings referred to in it, so we know what we need to serialize. Conceptually it's a
   // typeclass, but since we only need it here, I'm not bothering with the TC boilerplate.
   private def findBindingsInSeq[T](ts: Seq[T])(getter: T => Set[String]): Set[String] = {
-    (Set.empty[String] /: ts) { (set, t) =>
+    ts.foldLeft(Set.empty[String]) { (set, t) =>
       set ++ getter(t)
     }
   }
@@ -349,7 +349,7 @@ class QLEcot(e: Ecology)
         inv: Invocation,
         boundNames: Set[String]
       ): Map[String, QValue] = {
-        (Map.empty[String, QValue] /: boundNames) { (m, name) =>
+        boundNames.foldLeft(Map.empty[String, QValue]) { (m, name) =>
           findBindingValue(inv, name).map(v => m + (name -> v)).getOrElse(m)
         }
       }

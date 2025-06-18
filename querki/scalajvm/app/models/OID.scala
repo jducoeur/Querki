@@ -84,7 +84,7 @@ object OID {
 object OIDMap {
 
   def apply[T <: Thing](items: T*): Map[OID, T] = {
-    (Map.empty[OID, T] /: items)((m, i) => m + (i.id -> i))
+    items.foldLeft(Map.empty[OID, T])((m, i) => m + (i.id -> i))
   }
 }
 

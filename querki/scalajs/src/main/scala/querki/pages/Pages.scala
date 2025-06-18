@@ -93,7 +93,7 @@ class PagesEcot(e: Ecology) extends ClientEcot(e) with Pages {
     name: String,
     params: ParamMap
   ): Option[Page] = {
-    val pageOpt = (Option.empty[Page] /: factories) { (opt, factory) =>
+    val pageOpt = factories.foldLeft(Option.empty[Page]) { (opt, factory) =>
       opt match {
         case Some(page) => opt
         case None       => factory.constructPageOpt(name, params)

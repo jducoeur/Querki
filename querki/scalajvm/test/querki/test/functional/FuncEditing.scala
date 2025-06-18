@@ -24,7 +24,7 @@ trait FuncEditing { this: FuncMixin =>
     initialState: State,
     ops: (TThing[_], State) => State*
   ): State = {
-    (initialState /: ops) { (state, op) =>
+    ops.foldLeft(initialState) { (state, op) =>
       op(t, state)
     }
   }

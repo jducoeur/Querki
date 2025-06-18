@@ -124,7 +124,7 @@ class AccessControlModule(e: Ecology)
     implicit val s = state
     val managers = state.fetchOrCreateCache(
       managerStateCacheKey, {
-        (Set[OID](state.owner) /: Person.members(state)) { (ids, member) =>
+        Person.members(state).foldLeft(Set[OID](state.owner)) { (ids, member) =>
           val managerIdOpt = for {
             rolesPV <- member.getPropOpt(PersonRolesProp)
             if (rolesPV.rawList.contains(RolesMOIDs.ManagerOID))

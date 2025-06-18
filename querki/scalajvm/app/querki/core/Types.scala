@@ -496,7 +496,7 @@ trait LinkUtils { self: CoreEcot with NameUtils =>
             case _               => Iterable.empty[Thing]
           }
         }
-        (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
+        allowedKinds.foldLeft(Iterable.empty[Thing])((it, kind) => it ++: fetchKind(kind))
       } else {
         // No LinkKind specified, so figure that they only want Things:
         state.things.values

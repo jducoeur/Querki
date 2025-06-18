@@ -41,7 +41,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
       state: SpaceState,
       builder: (SpaceState, XmlElement) => SpaceState
     ): SpaceState = {
-      (state /: elem.elements)(builder)
+      elem.elements.foldLeft(state)(builder)
     }
   }
 

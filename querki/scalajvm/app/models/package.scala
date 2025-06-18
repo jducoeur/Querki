@@ -13,7 +13,7 @@ package object models {
   def emptyProps = Map.empty[OID, QValue]
 
   def toProps(pairs: (OID, QValue)*): PropMap = {
-    (Map.empty[OID, QValue] /: pairs) { (m: Map[OID, QValue], pair: (OID, QValue)) =>
+    pairs.foldLeft(Map.empty[OID, QValue]) { (m: Map[OID, QValue], pair: (OID, QValue)) =>
       m + (pair._1 -> pair._2)
     }
   }

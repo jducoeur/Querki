@@ -64,7 +64,7 @@ private[apps] trait Hollower extends EcologyMember with SpacePure {
     instances: Iterable[ThingState],
     childState: SpaceState
   ): SpaceState = {
-    (childState /: instances) { (curState, instance) =>
+    instances.foldLeft(childState) { (curState, instance) =>
       deletePure(instance.id, instance)(curState)
     }
   }
@@ -78,7 +78,7 @@ private[apps] trait Hollower extends EcologyMember with SpacePure {
     childState: SpaceState,
     idMap: Map[OID, OID]
   ): SpaceState = {
-    (childState /: things) { (curState, thing) =>
+    things.foldLeft(childState) { (curState, thing) =>
       modifyPure(
         thing.id,
         thing,
@@ -125,7 +125,7 @@ private[apps] trait Hollower extends EcologyMember with SpacePure {
     extracted: Iterable[Thing],
     childState: SpaceState
   ): SpaceState = {
-    (childState /: extracted) { (curState, t) =>
+    extracted.foldLeft(childState) { (curState, t) =>
       modifyPure(t.id, t, None, t.props + Apps.ShadowFlag(true), true, t.modTime)(curState)
     }
   }

@@ -23,7 +23,7 @@ class GraphQLController @Inject() (
       rawBuffer <- rc.request.body.asRaw
       bytes <- rawBuffer.asBytes()
       query = bytes.decodeString(StandardCharsets.UTF_8)
-    } yield client[GraphQLFunctions].runGraphQL(query).call()
+    } yield client[GraphQLFunctions].runGraphQL(query, pretty = false).call()
 
     resultOpt.map { resultFut =>
       resultFut.map(Ok(_))

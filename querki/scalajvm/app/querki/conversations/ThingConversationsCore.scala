@@ -103,7 +103,7 @@ abstract class ThingConversationsCore(
     def replaceChildNodes(
       children: Seq[ConversationNode]
     ): (Seq[ConversationNode], Option[ConversationNode], Seq[ConversationNode]) = {
-      ((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode]) /: children) {
+      children.foldLeft((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode])) {
         (state, child) =>
           val (sPre, found, sPost) = state
           found match {

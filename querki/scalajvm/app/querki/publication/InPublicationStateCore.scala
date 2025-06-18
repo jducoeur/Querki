@@ -129,7 +129,7 @@ trait InPublicationStateCore
     case AddPublicationEvents(evts) => {
       tracing.trace(s"AddPublicationEvents")
       persistAllAnd(evts).map { _ =>
-        val s = (pState /: evts) { (curState, evt) =>
+        val s = evts.foldLeft(pState) { (curState, evt) =>
           addEvent(curState, evt)
         }
         setState(s)

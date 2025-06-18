@@ -178,7 +178,7 @@ trait QValue {
   }
 
   def rawList[VT](elemT: PType[VT]): List[VT] = {
-    (List.empty[VT] /: cv)((list, elem) => list :+ elemT.get(elem))
+    cv.foldLeft(List.empty[VT])((list, elem) => list :+ elemT.get(elem))
   }
 
   def contains[VT](

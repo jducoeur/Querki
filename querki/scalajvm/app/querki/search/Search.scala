@@ -472,7 +472,7 @@ class SearchEcot(e: Ecology) extends QuerkiEcot(e) with Search with querki.core.
               state.everythingLocal
             else {
               // Some Models have been specified, so gather the descendants of those Models:
-              (Set.empty[Thing] /: modelIds) { (set, modelId) =>
+              modelIds.foldLeft(Set.empty[Thing]) { (set, modelId) =>
                 set ++ state.descendants(modelId, false, true, false)
               }
             }

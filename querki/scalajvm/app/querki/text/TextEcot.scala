@@ -152,7 +152,7 @@ class TextEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
           if (renderedList.isEmpty) {
             Wikitext.empty
           } else {
-            open + (renderedList.head /: renderedList.tail)((total, next) => total + sep + next) + close
+            open + renderedList.tail.foldLeft(renderedList.head)((total, next) => total + sep + next) + close
           }
       } yield QL.WikitextValue(result)
     }

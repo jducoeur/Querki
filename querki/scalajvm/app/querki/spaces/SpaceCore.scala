@@ -88,8 +88,8 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    * The complexity here is mainly in catching exceptions. Is there no better way to do this?
    * Not only is this complex, but it *must* be the end of the call chain!
    */
-  val pluginReceive: Receive =
-    PartialFunction { any: Any =>
+  val pluginReceive: Receive = {
+    case any: Any => {
       try {
         SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this, rtc).receive).reduce(_ orElse _)(any)
       } catch {
@@ -100,6 +100,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
         }
       }
     }
+  }
 
   //////////////////////////////////////////////////
   //
@@ -309,7 +310,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
   ): RM[SpaceState] = {
     tracing.trace("Loading apps")
     // This does the recursive dive through the tree, returning the Apps specified in there:
-    val appsRM: RM[Map[OID, SpaceState]] = (rtc.successful(appsSoFar) /: state.appInfo) { (rm, appInfo) =>
+    val appsRM: RM[Map[OID, SpaceState]] = state.appInfo.foldLeft(rtc.successful(appsSoFar)) { (rm, appInfo) =>
       rm.flatMap { appMap =>
         val (appId, appVersion) = appInfo
         if (appMap.contains(appId))
@@ -628,7 +629,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     tracing.trace(s"run(${funcs.size} funcs)")
     // Run through all the functions, collect the results or the first error. Note
     // that the resulting list is in reverse order, simply because it's easier that way.
-    (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
+    funcs.foldLeft(rtc.successful(List.empty[ChangeResult])) { (rm, func) =>
       rm.flatMap { changes =>
         val stateToPass = changes.headOption.map(_.resultingState).getOrElse(state)
         func(stateToPass).map(_ +: changes)
@@ -883,45 +884,41 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    *
    * IMPORTANT: this *must* be at the end of the orElse chain!
    */
-  def recoverSpaceCommand: PartialFunction[Any, SpaceState] =
-    PartialFunction { any =>
-      any match {
-        case evt: SpaceEvent => {
-          try {
-            // Make sure we update the snapshotCounter -- otherwise, it might never trigger a Snapshot:
-            incrementSnapshot()
-            evolveState(_currentState)(evt)
-          } catch {
-            case ex: Exception => {
-              QLog.error(s"Exception while recovering SpaceEvent $evt", ex)
-              selfDestruct()
-              throw ex
-            }
-          }
+  def recoverSpaceCommand: PartialFunction[Any, SpaceState] = {
+    case evt: SpaceEvent => {
+      try {
+        // Make sure we update the snapshotCounter -- otherwise, it might never trigger a Snapshot:
+        incrementSnapshot()
+        evolveState(_currentState)(evt)
+      } catch {
+        case ex: Exception => {
+          QLog.error(s"Exception while recovering SpaceEvent $evt", ex)
+          selfDestruct()
+          throw ex
         }
-        // TBD: This is horrible -- we really want to be able to filter the types without these
-        // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
-        // checking ourselves.
-        case _ => throw new Exception(s"SpaceCore.recoverSpaceCommand somehow got non-SpaceEvent $any")
       }
     }
+    // TBD: This is horrible -- we really want to be able to filter the types without these
+    // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
+    // checking ourselves.
+    case other => throw new Exception(s"SpaceCore.recoverSpaceCommand somehow got non-SpaceEvent $other")
+  }
 
   /**
    * The standard recovery procedure for PersistentActors.
    */
-  def receiveRecover: Receive =
+  def receiveRecover: Receive = ({
     // If we're monitoring this Space, record the name of the recovered message
     // TODO: we should probably eventually turn this clause off unless monitoring is turned on
     // for this Space
-    PartialFunction[Any, Any] {
-      case msg => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
-    }.andThen(
-      // Recovery of high-level stuff like Snapshots:
-      recoverPersistence.orElse(
-        // Recovery of individual persisted messages:
-        recoverSpaceCommand.andThen { newState => updateStateCore(newState) }
-      )
+    case msg: Any => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
+  }: PartialFunction[Any, Any]).andThen(
+    // Recovery of high-level stuff like Snapshots:
+    recoverPersistence.orElse(
+      // Recovery of individual persisted messages:
+      recoverSpaceCommand.andThen { newState => updateStateCore(newState) }
     )
+  )
 
   /**
    * The standard PersistentActor receiveCommand, which receives and processes the messages that
@@ -934,20 +931,19 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    * receiveCommand should only be called *once*, and is returning *one* Receive, which is used thereafter.
    * We should instead be using a guard in receiveCommand. See IdentityEmailCore for a more sensible approach.
    */
-  def receiveCommand: Receive =
+  def receiveCommand: Receive = ({
     // If we're monitoring this Space, record the name of the received message
     // for this Space
-    PartialFunction[Any, Any] {
-      case msg => { tracing.trace(s"receiveCommand: ${msg.getClass().getName}"); msg }
-    }.andThen {
-      if (initializing) {
-        // Whilst we're initializing, we need to stash everything except the responses:
-        handleRequestResponse.orElse {
-          case _ => stash()
-        }
-      } else
-        handleRequestResponse.orElse(normalReceiveCommand).orElse(pluginReceive)
-    }
+    case msg => { tracing.trace(s"receiveCommand: ${msg.getClass().getName}"); msg }
+  }: PartialFunction[Any, Any]).andThen {
+    if (initializing) {
+      // Whilst we're initializing, we need to stash everything except the responses:
+      handleRequestResponse.orElse {
+        case _ => stash()
+      }
+    } else
+      handleRequestResponse.orElse(normalReceiveCommand).orElse(pluginReceive)
+  }
 
   var _pubState: Option[CurrentPublicationState] = None
   var _enhancedState: Option[SpaceState] = None

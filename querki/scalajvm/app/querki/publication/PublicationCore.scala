@@ -138,7 +138,7 @@ trait PublicationCore
           infos = wikitextPairs.map { case ThingInfo(oid, wikitext, displayName, notes) =>
             PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString, displayName)
           }
-          notes = ("" /: wikitextPairs) { (text, thingInfo) =>
+          notes = wikitextPairs.foldLeft("") { (text, thingInfo) =>
             thingInfo.notes match {
               case Some(n) => text + n.text
               case None    => text
@@ -182,7 +182,7 @@ trait PublicationCore
 
   def computePublishChanges(thingIds: Seq[OID])(implicit state: SpaceState): ME[Seq[(OID, PropMap)]] = {
     tracing.trace(s"computePublishChanges")
-    (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
+    thingIds.foldLeft(monadError.pure(Seq.empty[(OID, PropMap)])) { (me, thingId) =>
       state.anything(thingId) match {
         case Some(thing) => {
           val newProps =

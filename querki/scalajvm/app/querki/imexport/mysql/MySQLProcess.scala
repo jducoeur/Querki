@@ -143,7 +143,7 @@ object MySQLProcess {
   }
 
   def processStmts(statements: Seq[Stmt]): MySQLDB = {
-    (MySQLDB(Map.empty) /: statements) { (db, stmt) =>
+    statements.foldLeft(MySQLDB(Map.empty)) { (db, stmt) =>
       processStmt(db, stmt)
     }
   }

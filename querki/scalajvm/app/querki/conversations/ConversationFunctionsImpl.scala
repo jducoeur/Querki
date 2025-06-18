@@ -42,7 +42,7 @@ class ConversationFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   }
 
   def getIds(nodes: Seq[ConversationNode]): Set[OID] = {
-    (Set.empty[OID] /: nodes) { (set, node) => set ++ getIds(node) }
+    nodes.foldLeft(Set.empty[OID]) { (set, node) => set ++ getIds(node) }
   }
 
   def toApi(
@@ -93,7 +93,7 @@ class ConversationFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
    * to be able to clear out bad threads from the UI.
    */
   def filterDeadThreads(convs: Seq[ConversationNode]): Seq[ConversationNode] = {
-    (Seq.empty[ConversationNode] /: convs) { (seq, conv) =>
+    convs.foldLeft(Seq.empty[ConversationNode]) { (seq, conv) =>
       if (conv.comment.isDeleted && filterDeadThreads(conv.responses).isEmpty)
         // This node is kaput -- move on
         seq

@@ -83,7 +83,7 @@ class PublicationEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     val id = state.id
 
     def enhance(pub: CurrentPublicationState): SpaceState = {
-      (state /: pub.changes.values.flatten) { (s, evt) =>
+      pub.changes.values.flatten.foldLeft(state) { (s, evt) =>
         evolveState(Some(s))(evt)
       }
     }

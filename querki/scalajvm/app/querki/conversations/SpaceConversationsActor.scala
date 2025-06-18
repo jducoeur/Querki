@@ -103,7 +103,7 @@ private[conversations] class SpaceConversationsActor(
    */
   def buildConversations(comments: Seq[Comment]): ThingConversations = {
     val (dependencies, roots) =
-      ((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment]) /: comments) { (info, comment) =>
+      comments.foldLeft((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment])) { (info, comment) =>
         val (dep, roots) = info
         comment.responseTo match {
           case Some(parentId) => {
@@ -117,7 +117,7 @@ private[conversations] class SpaceConversationsActor(
       }
 
     def buildNodes(branches: Seq[Comment]): Seq[ConversationNode] = {
-      val nodes = (Seq.empty[ConversationNode] /: branches) { (seq, branch) =>
+      val nodes = branches.foldLeft(Seq.empty[ConversationNode]) { (seq, branch) =>
         val children = dependencies.get(branch.id).map(buildNodes(_)).getOrElse(Seq.empty[ConversationNode])
         seq :+ ConversationNode(branch, children)
       }
@@ -174,7 +174,7 @@ private[conversations] class SpaceConversationsActor(
     def replaceChildNodes(
       children: Seq[ConversationNode]
     ): (Seq[ConversationNode], Option[ConversationNode], Seq[ConversationNode]) = {
-      ((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode]) /: children) {
+      children.foldLeft((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode])) {
         (state, child) =>
           val (sPre, found, sPost) = state
           found match {

@@ -16,7 +16,7 @@ case class QLScopes(scopes: List[QLScope] = List.empty) {
   }
 
   def lookup(name: String): Option[QValue] = {
-    (Option.empty[QValue] /: scopes) { (result, scope) =>
+    scopes.foldLeft(Option.empty[QValue]) { (result, scope) =>
       result match {
         case Some(r) => result
         case None    => scope.lookup(name)

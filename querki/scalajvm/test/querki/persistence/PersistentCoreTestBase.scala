@@ -69,7 +69,7 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   }
 
   def doPersistAll(events: collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit): Unit = {
-    val (seqNr, recs) = ((lastSequenceNr, List.empty[HistoryRecord]) /: events) { case ((curSeqNr, recs), event) =>
+    val (seqNr, recs) = events.foldLeft((lastSequenceNr, List.empty[HistoryRecord])) { case ((curSeqNr, recs), event) =>
       val seqNr = curSeqNr + 1
       if (_spewHistory) QLog.spew(s"Persisting $event")
       val res = (seqNr, HistoryRecord(seqNr, event) :: recs)

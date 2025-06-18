@@ -299,7 +299,7 @@ class QLProcessor(
               withScope(
                 context,
                 { scopedContext =>
-                  val newScopes = (scopedContext.scopes(this) /: pairs) { (scopes, pair) =>
+                  val newScopes = pairs.foldLeft(scopedContext.scopes(this)) { (scopes, pair) =>
                     scopes.bind(pair)
                   }
                   processExp(closure.exp, scopedContext.withScopes(this, newScopes))
@@ -527,7 +527,7 @@ class QLProcessor(
     isParam: Boolean = false
   ): Future[Seq[QLContext]] = {
     val defaultScopes = context.scopes.get(this).getOrElse(QLScopes())
-    (fut(Seq.empty[QLContext]) /: phrases) { (prev, phrase) =>
+    phrases.foldLeft(fut(Seq.empty[QLContext])) { (prev, phrase) =>
       prev.flatMap { contexts =>
         val prevContextOpt = contexts.lastOption
         prevContextOpt match {
@@ -624,7 +624,7 @@ class QLProcessor(
     }
     // And merge them together:
     wikified
-      .map { contexts => (Wikitext("") /: contexts)(_.+(_, insertNewlines)) }
+      .map { contexts => contexts.foldLeft(Wikitext(""))(_.+(_, insertNewlines)) }
       // Iff the Future contains an Exception, render that here. This is how we display errors in-place,
       // instead of having them propagate out to overwhelm the page:
       .recoverWith {

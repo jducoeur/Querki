@@ -86,7 +86,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     AccessControl: AccessControl
   ): Option[SpaceState] = {
     // Run through all of the events in changes. If all of the evolutions produce Some, we win:
-    (Option(oldState) /: events) { (curStateOpt, event) =>
+    events.foldLeft(Option(oldState)) { (curStateOpt, event) =>
       curStateOpt.flatMap(curState => evolveForEvent(curState, user, fullState, event, AccessControl))
     }
   }
@@ -233,7 +233,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     // If we are unit-testing, notify the tests that we are doing a full evolution:
     ecology.api[querki.spaces.SpaceOps].notifyFullEvolution()
     // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
-    (rs /: rs.things) { (curState, thingPair) =>
+    rs.things.foldLeft(rs) { (curState, thingPair) =>
       val (thingId, thing) = thingPair
       // Note that we need to pass rs into canRead(), not curState. That is because curState can
       // be in an inconsistent state while we're in the middle of all this. For example, we may
@@ -259,7 +259,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     state: SpaceState,
     userValues: Seq[OneUserValue]
   ): SpaceState = {
-    (state /: userValues) { (curState, uv) =>
+    userValues.foldLeft(state) { (curState, uv) =>
       if (uv.thingId == curState.id) {
         // We're enhancing the Space itself:
         curState.copy(pf = (curState.props + (uv.propId -> uv.v)))

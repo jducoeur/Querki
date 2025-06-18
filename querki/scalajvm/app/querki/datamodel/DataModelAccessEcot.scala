@@ -93,7 +93,7 @@ class DataModelAccessEcot(e: Ecology)
                   }
                 }
 
-                val newProps = (props /: copiedProps) { (curProps, copyId) =>
+                val newProps = copiedProps.foldLeft(props) { (curProps, copyId) =>
                   if (props.contains(copyId))
                     // The create is already overriding the Model's value
                     curProps
@@ -445,7 +445,7 @@ class DataModelAccessEcot(e: Ecology)
       for {
         thing <- inv.contextFirstThing
         thingRoots = {
-          ((Set.empty[OID] /: state.localThings)((set, t) => set + state.root(t))).filterNot(oid =>
+          (state.localThings.foldLeft(Set.empty[OID])((set, t) => set + state.root(t))).filterNot(oid =>
             state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false)
           )
         }

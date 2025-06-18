@@ -41,11 +41,11 @@ case class PublicationState(
   lazy val publicEvents: Vector[OnePublishEvent] = {
     // We iterate through, building up the translated events *and* a map of previous publications, so that each
     // event knows about the previous state of this Thing:
-    val result = ((Vector.empty[OnePublishEvent], Map.empty[OID, PublishedThingInfo]) /: events) {
+    val result = events.foldLeft((Vector.empty[OnePublishEvent], Map.empty[OID, PublishedThingInfo])) {
       case ((evts, prevStates), evt) =>
         val RawPublishEvent(who, things, meta, when) = evt
         val (pubThings, newStates) =
-          ((Seq.empty[OnePublishedThing], prevStates) /: things) { case ((ts, states), (oid, thingInfo)) =>
+          things.foldLeft((Seq.empty[OnePublishedThing], prevStates)) { case ((ts, states), (oid, thingInfo)) =>
             val prevState = prevStates.get(oid)
             // TODO: when we get to diffs, this is where we calculate it, and stick it into this structure:
             val pubThing = OnePublishedThing(

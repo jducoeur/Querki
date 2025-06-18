@@ -39,7 +39,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
         ).map(_.id).toSet
 
       // Then, add Shadows for all of the Models in the App
-      val stateWithShadows = (stateWithApps /: shadowMapping) { case (curState, (appModelId, shadowId)) =>
+      val stateWithShadows = shadowMapping.foldLeft(stateWithApps) { case (curState, (appModelId, shadowId)) =>
         val original = filledApp.thing(appModelId)
         if (original.model == querki.identity.MOIDs.PersonOID)
           // Don't shadow Person records:
@@ -66,7 +66,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
       }
 
       // Finally, copy all of the Types, pointing them at their local Shadow Models:
-      val stateWithTypes = (stateWithShadows /: filledApp.types.values) { (curState, tpe) =>
+      val stateWithTypes = filledApp.types.values.foldLeft(stateWithShadows) { (curState, tpe) =>
         tpe match {
           case mt: ModelTypeDefiner#ModelType => {
             val propsToCopy = mt.props.filter { case (propId, propVal) =>
@@ -86,7 +86,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
       }
 
       // Then, copy all of the Properties into the Space:
-      val stateWithProps = (stateWithTypes /: filledApp.spaceProps.values) { (curState, prop) =>
+      val stateWithProps = filledApp.spaceProps.values.foldLeft(stateWithTypes) { (curState, prop) =>
         // Iff this Property is pointing to a Complex Type, we need to use the local version of that:
         val newType = curState.types.getOrElse(prop.pType.id, prop.pType)
         curState.copy(
@@ -143,7 +143,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
     existingApps: Map[OID, SpaceState]
   ): (SpaceState, Map[OID, SpaceState]) = {
     // For each *parent* of this App...
-    ((rawSpace, existingApps) /: rawSpace.appInfo) { case ((curState, apps), (parentId, parentVersion)) =>
+    (rawSpace.appInfo.foldLeft(rawSpace, existingApps)) { case ((curState, apps), (parentId, parentVersion)) =>
       // ... fill it in...
       val (filledParent, appsNow) = apps.get(parentId) match {
         // We've already built this parent, so we're all set
@@ -176,7 +176,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
     case DHAddApp(req, modTime, appState, parentApps, shadowMapping, afterExtraction) => {
       implicit val s = stateOpt.get
       val newApps = parentApps.map(rehydrate(_))
-      val addedApps = (Map.empty[OID, SpaceState] /: newApps) { (acc, app) =>
+      val addedApps = newApps.foldLeft(Map.empty[OID, SpaceState]) { (acc, app) =>
         acc + (app.id -> app)
       }
       addAppPure(rehydrate(appState), addedApps, s.allApps, shadowMapping, modTime, afterExtraction.getOrElse(false))(s)

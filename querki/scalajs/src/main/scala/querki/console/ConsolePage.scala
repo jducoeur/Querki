@@ -46,7 +46,7 @@ class ConsolePage(params: ParamMap)(implicit val ecology: Ecology) extends Page(
 
   def fixup(str: String) = {
     val lines = str.split("\n").toSeq
-    val withBreaks = (Vector.empty[Modifier] /: lines) { (v, line) =>
+    val withBreaks = lines.foldLeft(Vector.empty[Modifier]) { (v, line) =>
       val leading = leadSpaces(line)
       val break =
         if (v.isEmpty)

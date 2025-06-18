@@ -155,7 +155,7 @@ class IdentityEcot(e: Ecology)
     val requests: Set[Future[Any]] = ids.toSet.map { id: OID => identityCache ? GetIdentityRequest(id) }
     val resultSetFut = Future.sequence(requests)
     resultSetFut.map { resultSet =>
-      (Map.empty[OID, T] /: resultSet) { (m, response) =>
+      resultSet.foldLeft(Map.empty[OID, T]) { (m, response) =>
         response match {
           case IdentityFound(identity)      => m + (identity.id -> identity)
           case IdentityNotFound(identityId) => notFound(m, identityId)

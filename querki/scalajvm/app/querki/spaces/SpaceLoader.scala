@@ -49,7 +49,7 @@ trait SpaceLoader { self: EcologyMember with querki.types.ModelTypeDefiner =>
 
     def getThings[T <: Thing](kind: Int)(builder: (OID, OID, PropMap, DateTime) => T): Map[OID, T] = {
       val tStream = loader.getThingList(kind)(curState)(builder)
-      (Map.empty[OID, T] /: tStream) { (m, t) =>
+      tStream.foldLeft(Map.empty[OID, T]) { (m, t) =>
         try {
           m + (t.id -> t)
         } catch {

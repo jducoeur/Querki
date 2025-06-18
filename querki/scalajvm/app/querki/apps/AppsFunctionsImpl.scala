@@ -7,13 +7,13 @@ import akka.persistence.query._
 import akka.stream.ActorMaterializer
 import org.querki.requester._
 import models._
-import querki.api.{AutowireParams, SpaceApiImpl, ProgressActor, OperationHandle}
+import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
-import querki.data.{TOID, SpaceInfo, TID, ExtractableModelInfo}
+import querki.data.{ExtractableModelInfo, SpaceInfo, TID, TOID}
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
-import querki.spaces.{RealRTCAble, PersistentSpaceActor, StatusNormal, SpaceCreator}
+import querki.spaces.{PersistentSpaceActor, RealRTCAble, SpaceCreator, StatusNormal}
 import querki.spaces.SpaceMessagePersistence._
 import querki.spaces.messages._
 import querki.time.DateTime
@@ -76,7 +76,7 @@ class AppsFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   }
 
   def checkAppVersions(): Future[Map[TID, AppInfo]] = {
-    (Future.successful(Map.empty[TID, AppInfo]) /: state.apps) { (fut, app) =>
+    state.apps.foldLeft(Future.successful(Map.empty[TID, AppInfo])) { (fut, app) =>
       for {
         m <- fut
         (currentVersionNum, currentTime) <- getCurrentAppVersion(app.id)

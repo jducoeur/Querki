@@ -30,7 +30,7 @@ class PublicationActor(
   )(implicit
     state: SpaceState
   ): RequestM[SpaceState] = {
-    (RequestM.successful(state) /: pairs) { case (rm, (thingId, propMap)) =>
+    pairs.foldLeft(RequestM.successful(state)) { case (rm, (thingId, propMap)) =>
       for {
         _ <- rm
         ThingFound(_, nextState) <- router.request(ChangeProps(who, state.id, thingId, propMap))
