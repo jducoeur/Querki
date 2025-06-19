@@ -72,10 +72,10 @@
   </body>
     
     @if(isProd) {
-      <script src="@routes.Assets.versioned("querkiclient-jsdeps.min.js")"></script>
+      <script src="@routes.Assets.versioned("querkiclient-jsdeps.min.js")" type="text/javascript"></script>
       <script src="@routes.Assets.versioned("querkiclient-opt.js")" type="text/javascript"></script>
     } else {
-      <script src="@routes.Assets.versioned("querkiclient-jsdeps.js")"></script>
+      <script src="@routes.Assets.versioned("querkiclient-jsdeps.js")" type="text/javascript"></script>
       <script src="@routes.Assets.versioned("querkiclient-fastopt.js")" type="text/javascript"></script>
     }
     

@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.10"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.5-3"
+lazy val appV = "3.0.0.5-4"
 
 lazy val sharedSrcDir = "scala"
 
@@ -17,11 +17,11 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   version := appV,
   scalaJSProjects := clients,
   pipelineStages := Seq(digest, gzip),
-  pipelineStages in Assets := Seq(scalaJSPipeline),
+  Assets / pipelineStages := Seq(scalaJSPipeline),
   // Needed for the in-memory Cassandra driver, used during tests:
-  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
+//  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
   // To prevent duplicate-artifact errors in Stage:
-  publishArtifact in (Compile, packageSrc) := false,
+  Compile / packageSrc / publishArtifact := false,
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     // Main Play dependencies
     jdbc,
@@ -100,10 +100,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   },
   // When running server tests, use this alternate config file, which uses the in-memory persistence
   // instead of on-disk:
-  javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
-  fork in Test := true,
+  Test / javaOptions += "-Dconfig.file=conf/application.test.conf",
+  Test / fork := true,
   // So that the FullMidTests can run:
-  envVars in Test := Map("QUERKI_ENV" -> "scenario"),
+  Test / envVars := Map("QUERKI_ENV" -> "scenario"),
   // For cats:
   scalacOptions ++= Seq("-Ypartial-unification", "-deprecation"),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
@@ -111,7 +111,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 )
 // NOTE: we need to turn on akka-http and turn off Netty, because the version of Netty built into
 // Play 2.5 conflicts with the version in the AWS SDK:
-  .enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, PlayAkkaHttpServer, DockerPlugin)
+  .enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, PlayAkkaHttpServer, DockerPlugin, SbtWeb)
   .disablePlugins(PlayNettyServer)
 
   // TODO: this aggregate is how we pull in the client and get it to compile, but it's too broad:
@@ -128,7 +128,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 //  sourceMapsDirectories += file(sharedSrcDir),
 
   // Javascript libraries we require:
-  skip in packageJSDependencies := false,
+  packageJSDependencies / skip := false,
   // Turn off client-side unit testing for now:
   test := {},
   jsDependencies += ("org.webjars" % "jquery" % "2.2.1" / "jquery.js").minified("jquery.min.js"),
@@ -170,6 +170,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += (ProvidedJS / "moment-timezone.js").dependsOn("moment.js"),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
+  // Without this, sbt-web-scalajs only outputs the fastOpt files, but when we dockerize we expect the fullOpt ones:
+  scalaJSStage := FullOptStage,
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "com.lihaoyi" %%% "scalarx" % "0.4.0",
     "ru.pavkin" %%% "scala-js-momentjs" % "0.10.0",
@@ -222,6 +224,7 @@ addCommandAlias("utst", """querkiServer/test-only -- -l "org.scalatest.tags.Slow
 // ftst -- run the Functional (browser) Tests:
 addCommandAlias("ftst", """querkiServer/test-only -- -n "org.scalatest.tags.Slow"""")
 
-onLoad in Global := (Command.process("project querkiServer", _: State)).compose((onLoad in Global).value)
+Global / onLoad := (Global / onLoad).value.andThen("project querkiServer" :: _)
 
-fork in run := true
+// Do we care about this? We essentially never use "run" any more; we run inside Docker instead:
+run / fork := true
