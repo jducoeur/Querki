@@ -70,11 +70,13 @@ package object globals {
   ): Gadget[Output] = new TypedGadget[Output](guts)
 
   /**
-   * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.
+   * The standard implicit ExecutionContext for Futures.
    *
-   * This used to be runNow, but that's now strongly discouraged. This is the only context that sjrd says should be used.
+   * This used to be scala.concurrent.ExecutionContext.global, but that's now considered to be a Very Bad Idea. This
+   * is now the One True EC. For more details, see:
+   *   https://github.com/scala-js/scala-js-macrotask-executor
    */
-  implicit val execContext = scala.concurrent.ExecutionContext.global
+  implicit val execContext = org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
   // I'm now using Future and Promise enough that we may as well make them generally available
   type Future[T] = scala.concurrent.Future[T]

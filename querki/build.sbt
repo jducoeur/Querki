@@ -176,6 +176,9 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   // Without this, sbt-web-scalajs only outputs the fastOpt files, but when we dockerize we expect the fullOpt ones:
   scalaJSStage := FullOptStage,
   libraryDependencies ++= sharedDependencies.value ++ Seq(
+    // Necessary in order to get performant and reliable Futures in SJS. See
+    //   https://github.com/scala-js/scala-js-macrotask-executor
+    "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
     "com.lihaoyi" %%% "scalarx" % "0.4.3",
     // Note that upgrading this requires matching versions of moment.js and moment-timezone above. See matrix at
     //   https://github.com/vpavkin/scala-js-momentjs
