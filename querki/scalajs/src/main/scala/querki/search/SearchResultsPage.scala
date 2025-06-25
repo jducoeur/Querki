@@ -1,6 +1,6 @@
 package querki.search
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._

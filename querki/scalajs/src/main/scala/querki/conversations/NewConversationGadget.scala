@@ -1,7 +1,7 @@
 package querki.conversations
 
 import org.scalajs.dom.html
-import org.scalajs.dom.raw.Element
+import org.scalajs.dom.Element
 import scalatags.JsDom.all.{input => inp, _}
 
 import org.querki.gadgets._

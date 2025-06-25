@@ -6,9 +6,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.12.10"
+lazy val scalaV = "2.12.15"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.5-4"
+lazy val appV = "3.0.0.5-5"
 
 lazy val sharedSrcDir = "scala"
 
@@ -162,6 +162,9 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += (ProvidedJS / "jquery.fileupload-image.js").minified("jquery.fileupload-image.min.js").dependsOn(
     "jquery.fileupload.js"
   ),
+  // Formerly in the jsTree Facade library. We *might* remove this line when that gets pulled back out to be a library,
+  // but it may make more sense to change the library to not include this itself (so as to avoid eviction problems):
+  jsDependencies += ("org.webjars" % "jstree" % "3.2.1" / "jstree.js").minified("jstree.min.js"),
   // This currently has dependency issues, so we're instead making it ProvidedJS for now. At some point, see if we
   // can iron those out and do this properly:
   // jsDependencies += ("org.webjars.npm" % "moment" % "2.22.2" / "moment.js").minified("moment.min.js"),
@@ -173,17 +176,19 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   // Without this, sbt-web-scalajs only outputs the fastOpt files, but when we dockerize we expect the fullOpt ones:
   scalaJSStage := FullOptStage,
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "com.lihaoyi" %%% "scalarx" % "0.4.0",
-    "ru.pavkin" %%% "scala-js-momentjs" % "0.10.0",
-    "org.querki" %%% "querki-jsext" % "0.9",
-    "org.querki" %%% "jquery-facade" % "1.2",
-    "org.querki" %%% "bootstrap-datepicker-facade" % "0.9",
-    "org.querki" %%% "jstree-facade" % "0.5",
-    "org.querki" %%% "squery" % "0.1"
-    // TODO: after evolving everything, pull this back out to a library:
+    "com.lihaoyi" %%% "scalarx" % "0.4.3",
+    // Note that upgrading this requires matching versions of moment.js and moment-timezone above. See matrix at
+    //   https://github.com/vpavkin/scala-js-momentjs
+    "ru.pavkin" %%% "scala-js-momentjs" % "0.10.3",
+    "org.querki" %%% "querki-jsext" % "0.12",
+    "org.querki" %%% "jquery-facade" % "2.1",
+    // TODO: after evolving everything, pull these back out to their libraries:
+    // "org.querki" %%% "bootstrap-datepicker-facade" % "0.9",
+    // "org.querki" %%% "jstree-facade" % "0.5",
+    // "org.querki" %%% "squery" % "0.1"
     // "org.querki" %%% "gadgets" % "0.3"
   )
-).enablePlugins(ScalaJSPlugin, ScalaJSWeb, BuildInfoPlugin).dependsOn(querkiSharedJs)
+).enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
 // See https://github.com/portable-scala/sbt-crossproject/tree/v0.5.0?tab=readme-ov-file#migration-from-scalajs-default-crossproject
 lazy val querkiShared =
@@ -200,7 +205,7 @@ lazy val querkiShared =
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
       )
-    ).jsConfigure(_.enablePlugins(ScalaJSWeb)).jsSettings(
+    ).jsConfigure(_.enablePlugins(ScalaJSWeb, JSDependenciesPlugin)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
@@ -211,10 +216,10 @@ lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.7.4",
-  "com.lihaoyi" %%% "autowire" % "0.2.6",
-  "com.lihaoyi" %%% "scalatags" % "0.6.8",
-  "com.lihaoyi" %%% "fastparse" % "2.1.2"
+  "com.lihaoyi" %%% "upickle" % "0.9.9",
+  "com.lihaoyi" %%% "autowire" % "0.3.1",
+  "com.lihaoyi" %%% "scalatags" % "0.10.0",
+  "com.lihaoyi" %%% "fastparse" % "2.2.4"
   // TODO: pull this back out into a library again after we're done with upgrades:
 //  "org.querki" %%% "shocon" % "0.4",
 ))

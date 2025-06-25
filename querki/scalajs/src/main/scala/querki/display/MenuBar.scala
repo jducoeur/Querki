@@ -1,8 +1,7 @@
 package querki.display
 
 import scala.scalajs.js
-import org.scalajs.{dom => fulldom}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import _root_.rx._

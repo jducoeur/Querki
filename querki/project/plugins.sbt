@@ -19,17 +19,18 @@ resolvers += "bintray/non".at("https://dl.bintray.com/non/maven")
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.25")
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.33")
-addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.1.0-0.6")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.7.1")
+addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 
-// TODO: All of these, as well as vmunier's plugin above, need to be *simultaneously* upgraded after we move to
+// TODO: All of these need to be *simultaneously* upgraded after we move to
 // SJS 1.x! Otherwise we get cryptic errors because of conflicting versions of sbt-web. See
 //   https://github.com/sbt/sbt-less/issues/133
 // Do we actually care about sbt-rjs?
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.10")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
+addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.1.0")
 
 // Adds the stats command -- see https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")

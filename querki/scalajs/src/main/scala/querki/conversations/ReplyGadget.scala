@@ -1,6 +1,6 @@
 package querki.conversations
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 

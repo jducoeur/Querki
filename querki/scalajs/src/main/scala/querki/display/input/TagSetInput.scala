@@ -2,16 +2,15 @@ package querki.display.input
 
 import scala.scalajs.js
 import js.JSConverters._
-
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import scalatags.Escaping
 import org.querki.facades.manifest._
-
 import querki.globals._
-
 import querki.comm._
+
+import java.io.StringWriter
 
 @js.native
 trait ManifestItem extends js.Object {
@@ -82,7 +81,7 @@ class TagSetInput(
         // as well use that.
         // Note that MarcoPoloInput intentionally doesn't have to do this, because it is displaying the
         // result in an input.
-        val escaped = new StringBuilder
+        val escaped = new StringWriter()
         Escaping.escape(raw, escaped)
         escaped.toString.asInstanceOf[js.Any]
       }).formatValue({ (data: js.Any) => ManifestItem.stringOrItem(data)(_.id) })

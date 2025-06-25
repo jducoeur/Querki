@@ -6,7 +6,7 @@ import scala.util.{Failure, Success}
 
 import scala.scalajs.js.timers._
 import org.scalajs.dom
-import dom.raw.File
+import dom.File
 import scalatags.JsDom.all._
 import upickle._
 import autowire._

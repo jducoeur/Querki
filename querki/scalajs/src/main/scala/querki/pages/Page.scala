@@ -1,7 +1,7 @@
 package querki.pages
 
 import scala.concurrent.{Future, Promise}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._

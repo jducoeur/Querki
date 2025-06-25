@@ -7,7 +7,7 @@ import upickle._
 import autowire._
 
 import org.scalajs.{dom => fulldom}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.gadgets._
 
