@@ -18,6 +18,7 @@ val querkiScalacOptions = Seq(
   // Higher-kinded types stop giving a warning around Scala 2.13.1; remove this flag then:
   "-language:higherKinds",
   "-language:implicitConversions",
+  "-Xfatal-warnings",
   "-Ypartial-unification",
 )
 
