@@ -1,7 +1,6 @@
 package querki.pages
 
 import scalatags.JsDom.all._
-import upickle._
 import autowire._
 
 import querki.globals._
@@ -9,7 +8,6 @@ import querki.data.SpaceInfo
 import querki.display.ButtonGadget
 import querki.identity.UserLevel._
 import querki.session.UserFunctions
-import UserFunctions._
 
 /**
  * @author jducoeur

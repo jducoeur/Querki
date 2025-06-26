@@ -1,7 +1,5 @@
 package org.querki.gadgets.components
 
-import scala.scalajs.js
-import js.JSConverters._
 import org.scalajs.dom
 import org.querki.gadgets._
 import org.querki.jquery._

@@ -5,7 +5,6 @@ import autowire._
 
 import moment._
 
-import querki.api._
 import querki.globals._
 import querki.pages._
 

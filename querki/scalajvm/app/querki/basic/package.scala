@@ -2,7 +2,7 @@ package querki
 
 import scala.concurrent.Future
 
-import models.{PType, PTypeBuilder, Property, PropertyBundle, Thing, ThingOps, Wikitext}
+import models.{PType, PTypeBuilder, Property, Thing, ThingOps, Wikitext}
 
 import querki.ecology._
 

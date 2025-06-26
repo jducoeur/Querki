@@ -8,7 +8,7 @@ import rx._
 import org.querki.gadgets._
 
 import EditFunctions._
-import querki.data.{TID => _TID, _}
+import querki.data.{TID => _, _}
 import querki.display.{ButtonGadget}
 import ButtonGadget._
 import querki.display.rx._

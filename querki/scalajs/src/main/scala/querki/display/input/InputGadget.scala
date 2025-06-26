@@ -4,7 +4,6 @@ import scala.util.{Failure, Success}
 import scala.scalajs.js
 import js.UndefOr
 
-import upickle._
 import autowire._
 import org.scalajs.dom
 import dom.html.Element
@@ -13,7 +12,6 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 import querki.data.BasicThingInfo
-import querki.display._
 import querki.display.HookedGadget
 import querki.editing.EditFunctions
 import EditFunctions._

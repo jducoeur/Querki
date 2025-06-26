@@ -3,7 +3,6 @@ package org.querki.facades.manifest
 import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
-import js.{Dynamic, UndefOr}
 import org.querki.jsext._
 
 /**

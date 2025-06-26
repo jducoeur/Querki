@@ -10,7 +10,6 @@ import querki.globals._
 import SearchFunctions._
 import querki.display.HookedGadget
 import querki.pages.{Page, PageContents, PageParamOps, ParamMap}
-import scala.scalajs.js.Any.fromFunction1
 
 /**
  * The Gadget in the MenuBar, which initiates a Search. This mostly just leads to the

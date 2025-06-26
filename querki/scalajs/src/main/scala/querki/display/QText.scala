@@ -1,6 +1,5 @@
 package querki.display
 
-import scala.scalajs.js
 import org.scalajs.dom
 import dom.html.Element
 import org.querki.gadgets._
@@ -10,8 +9,6 @@ import scalatags.JsDom.all._
 import models.Wikitext
 
 import querki.globals._
-
-import querki.qtext.MainDecorator
 
 trait ServerHtmlHolder extends EcologyMember {
 

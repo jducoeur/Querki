@@ -1,6 +1,6 @@
 package querki.identity
 
-import scala.util.{Failure, Success}
+import scala.util.{Success}
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
@@ -22,7 +22,6 @@ import querki.pages._
 import querki.session.UserFunctions
 import querki.util.InputUtils
 import CommonFunctions._
-import UserFunctions._
 
 /**
  * @author jducoeur

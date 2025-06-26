@@ -6,11 +6,10 @@ import scalatags.JsDom.all._
 import rx._
 import org.querki.gadgets._
 
-import querki.data.{TID => _TID, _}
+import querki.data.{TID => _, _}
 import querki.display.{ButtonGadget, QuerkiUIUtils}
 import querki.display.rx._
 import querki.globals._
-import querki.util.ScalatagUtils.FSeq
 
 class AddExistingPropertyGadget(
   page: ModelDesignerPage,

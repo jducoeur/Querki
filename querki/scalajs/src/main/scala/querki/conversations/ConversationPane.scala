@@ -1,14 +1,13 @@
 package querki.conversations
 
 import org.scalajs.dom
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all._
 import autowire._
 import org.querki.gadgets._
 import org.querki.jquery._
 import querki.data.ThingInfo
 import querki.display.WrapperDiv
 import querki.globals._
-import messages._
 
 import scala.util.{Failure, Success}
 

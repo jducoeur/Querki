@@ -4,8 +4,6 @@ import akka.actor._
 
 import models.OID
 
-import org.querki.requester._
-
 import querki.conversations.messages._
 import querki.ecology._
 import querki.globals._

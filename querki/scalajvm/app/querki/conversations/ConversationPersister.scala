@@ -1,14 +1,12 @@
 package querki.conversations
 
 import akka.actor._
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 import anorm.SqlParser._
-import play.api.db._
 
 import models.OID
 
 import querki.db._
-import querki.db.ShardKind._
 import querki.ecology._
 import querki.globals._
 import querki.time.TimeAnorm._

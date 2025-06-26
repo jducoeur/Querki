@@ -5,7 +5,6 @@ import scala.concurrent.Future
 import upickle.default.{macroRW, ReadWriter => RW}
 
 import querki.data._
-import querki.editing.EditFunctions.PropertyChange
 
 trait SecurityFunctions {
   import SecurityFunctions._

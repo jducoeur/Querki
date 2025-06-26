@@ -6,7 +6,7 @@ import querki.data.TID
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
-import querki.spaces.{PersistentSpaceActor, RTCAble, SpaceCreator, StatusNormal}
+import querki.spaces.{RTCAble}
 import querki.spaces.messages._
 
 trait AppExtractorSupport[RM[_]] {

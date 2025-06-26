@@ -1,7 +1,5 @@
 package querki.api
 
-import querki.globals._
-
 import querki.data.ThingInfo
 
 class PassthroughHandler(contents: Map[String, ThingInfo]) extends PassthroughHandlerBase {

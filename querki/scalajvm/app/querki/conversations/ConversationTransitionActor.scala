@@ -7,7 +7,7 @@ import org.querki.requester._
 import querki.conversations.messages._
 import querki.globals._
 import querki.spaces.SpacePersistenceFactory
-import querki.time.{DateTime, DateTimeOrdering}
+import querki.time.{DateTimeOrdering}
 import querki.util.QuerkiActor
 
 /**

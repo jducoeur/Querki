@@ -1,8 +1,6 @@
 package querki.pages
 
-import scala.concurrent.Future
-
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all.{input => _, _}
 import org.scalajs.dom
 import org.querki.jquery._
 import autowire._

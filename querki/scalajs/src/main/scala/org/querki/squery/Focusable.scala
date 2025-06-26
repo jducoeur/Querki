@@ -1,6 +1,5 @@
 package org.querki.squery
 
-import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.html.{Element => HTMLElement}
 import org.querki.squery.Disableable._

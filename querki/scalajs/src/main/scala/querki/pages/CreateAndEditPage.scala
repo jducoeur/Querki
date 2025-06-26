@@ -1,7 +1,7 @@
 package querki.pages
 
 import org.querki.jquery._
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all.{input => _, _}
 import autowire._
 import querki.globals._
 import querki.api.{NotAllowedException, ThingFunctions}

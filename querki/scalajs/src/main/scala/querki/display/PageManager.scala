@@ -8,7 +8,6 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 import autowire._
 import _root_.rx._
-import org.querki.gadgets._
 
 import querki.globals._
 

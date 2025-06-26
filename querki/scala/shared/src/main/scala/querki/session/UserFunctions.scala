@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import upickle.default.{macroRW, ReadWriter => RW}
 
-import models.Wikitext
 import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.identity.UserLevel
 

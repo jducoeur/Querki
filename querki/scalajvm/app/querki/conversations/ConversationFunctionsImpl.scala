@@ -1,17 +1,15 @@
 package querki.conversations
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Future}
 
-import akka.actor._
-
-import models.{Thing, UnknownOID, Wikitext}
+import models.{Thing, UnknownOID}
 
 import querki.api.{AutowireParams, SpaceApiImpl}
 import querki.data.TID
 import querki.globals._
 import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
-import querki.spaces.messages.{SpaceSubsystemRequest, ThingError}
+import querki.spaces.messages.{SpaceSubsystemRequest}
 import querki.values.RequestContext
 
 import messages._

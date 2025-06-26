@@ -1,8 +1,6 @@
 package org.querki.squery
 
-import org.scalajs.dom
 import org.scalajs.dom.{Element, HTMLCollection}
-import org.scalajs.dom.ext._
 
 /**
  * The Findable typeclass represents the ability to "find" within a given entity.

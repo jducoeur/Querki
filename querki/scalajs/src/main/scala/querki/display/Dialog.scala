@@ -1,7 +1,5 @@
 package querki.display
 
-import scala.scalajs.js
-import js.JSConverters._
 import org.querki.jquery._
 import org.scalajs.dom
 import org.querki.facades.bootstrap._

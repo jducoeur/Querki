@@ -4,7 +4,6 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern._
 
 import com.github.nscala_time.time.Imports._
-import com.github.nscala_time.time.StaticDateTime
 
 import models._
 import querki.ecology._

@@ -3,7 +3,6 @@ package querki.admin
 import scalatags.JsDom.all._
 import autowire._
 
-import querki.api._
 import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._

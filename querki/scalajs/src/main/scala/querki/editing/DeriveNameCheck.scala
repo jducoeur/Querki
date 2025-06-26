@@ -8,7 +8,6 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.display.input.InputGadget
-import querki.display.rx._
 
 class DeriveNameCheck(valEditor: PropValueEditor)(implicit e: Ecology)
   extends InputGadget[dom.HTMLDivElement](e)

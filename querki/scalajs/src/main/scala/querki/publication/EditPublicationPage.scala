@@ -14,7 +14,6 @@ import querki.display.QText
 import querki.display.input.InputGadget
 import querki.display.rx._
 import querki.security.{LevelMap, OnePerm, SecurityFunctions}
-import SecurityFunctions._
 
 class EditPublicationPage(params: ParamMap)(implicit val ecology: Ecology) extends Page("editPublish") with LevelMap {
   lazy val Client = interface[querki.client.Client]

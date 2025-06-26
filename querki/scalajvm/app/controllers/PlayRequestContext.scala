@@ -1,14 +1,10 @@
 package controllers
 
 import play.api.mvc._
-import models._
 
-import language.implicitConversions
-import querki.ecology._
 import querki.identity.{IdentityId, User}
 
-import querki.ui.UIRenderer
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 trait RequestHeaderParser {
   val request: RequestHeader

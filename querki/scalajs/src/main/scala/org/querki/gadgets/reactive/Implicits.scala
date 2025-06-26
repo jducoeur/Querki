@@ -1,7 +1,5 @@
 package org.querki.gadgets.reactive
 
-import scala.scalajs.js.|
-import org.scalajs.dom
 import rx._
 
 import org.querki.jquery._

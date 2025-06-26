@@ -11,8 +11,6 @@ import org.querki.jquery._
 import org.querki.squery.Focusable._
 import querki.globals._
 import querki.api.StandardThings
-import querki.comm._
-import querki.data.ThingInfo
 import querki.display.{ButtonGadget, GadgetListeners, GadgetListenersImpl, QuerkiUIUtils, SmallButtonGadget, WrapperDiv}
 import querki.display.input.{InputDependencies, InputDependenciesHandler}
 

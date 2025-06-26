@@ -1,6 +1,5 @@
 package org.querki.squery
 
-import scala.scalajs.js
 import scala.scalajs.js.{URIUtils, Date}
 import org.scalajs.dom
 

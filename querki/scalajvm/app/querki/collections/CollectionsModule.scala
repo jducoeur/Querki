@@ -4,7 +4,6 @@ import models._
 import querki.core.IsLinkType
 import querki.ecology._
 import querki.globals._
-import querki.ql.{QLParser, QLPhrase}
 import querki.types.ModelTypeBase
 import querki.values._
 

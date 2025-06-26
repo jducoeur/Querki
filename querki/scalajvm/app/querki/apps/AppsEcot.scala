@@ -1,9 +1,6 @@
 package querki.apps
 
 import akka.actor._
-import akka.pattern._
-import akka.util.Timeout
-import scala.concurrent.duration._
 
 import models._
 
@@ -13,7 +10,6 @@ import querki.globals._
 import querki.identity.User
 import querki.spaces._
 import querki.spaces.messages.SpacePluginMsg
-import querki.util.{Contributor, Publisher}
 import querki.values.SpaceVersion
 import querki.spaces.StdSpaceCreator
 

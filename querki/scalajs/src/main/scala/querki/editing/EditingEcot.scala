@@ -8,8 +8,6 @@ import org.querki.gadgets._
 import querki.display.RawDiv
 import querki.globals._
 
-import EditFunctions._
-
 class EditingEcot(e: Ecology) extends ClientEcot(e) with Editing {
 
   def implements = Set(classOf[Editing])

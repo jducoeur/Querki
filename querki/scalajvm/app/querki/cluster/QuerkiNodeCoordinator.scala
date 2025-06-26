@@ -1,11 +1,9 @@
 package querki.cluster
 
-import scala.collection.immutable.{HashMap, HashSet}
 import scala.util.{Failure, Success}
 
 import akka.actor._
 import akka.event.LoggingReceive
-import akka.pattern._
 import akka.persistence._
 
 import scala.concurrent.duration._

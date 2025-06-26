@@ -49,7 +49,6 @@ trait JQueryEventEnhanced extends js.Object {
 object JQueryEventEnhanced {
   implicit def jqe2Enhanced(evt: JQueryEventObject): JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]
 }
-import JQueryEventEnhanced._
 
 class LargeTextInputGadget(mods: Modifier*)(implicit e: Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
 

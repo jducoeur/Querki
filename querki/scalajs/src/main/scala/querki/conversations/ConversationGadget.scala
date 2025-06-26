@@ -8,7 +8,6 @@ import org.querki.gadgets._
 import org.querki.jquery._
 import org.querki.squery.Focusable._
 
-import querki.data.ThingInfo
 import querki.display.WrapperDiv
 import querki.globals._
 

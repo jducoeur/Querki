@@ -3,7 +3,6 @@ package querki.photos
 import java.util.regex.Pattern
 
 import scala.scalajs.js
-import js.annotation.JSName
 import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.gadgets._
@@ -20,7 +19,6 @@ import querki.globals._
 
 import querki.comm._
 import querki.display.{HookedGadget, RawSpan}
-import querki.pages.Page
 
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have
 // a "files" member, but it does in the case of a file input field

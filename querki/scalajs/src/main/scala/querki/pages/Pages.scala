@@ -5,7 +5,6 @@ import querki.globals._
 import querki.comm.URL
 import querki.data.SpaceInfo
 import org.querki.gadgets.core.GadgetLookup
-import querki.search.SearchResultsPage
 import org.querki.gadgets.core.ManagedFrag
 
 class PagesEcot(e: Ecology) extends ClientEcot(e) with Pages {

@@ -1,7 +1,6 @@
 package org.querki.gadgets.core
 
 import org.scalajs.dom.html.Element
-import org.scalajs.dom.{Element => AnyElement}
 
 import org.querki.squery.Focusable
 import Focusable._

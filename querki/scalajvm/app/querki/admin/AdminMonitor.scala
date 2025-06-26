@@ -1,7 +1,5 @@
 package querki.admin
 
-import scala.concurrent.duration._
-
 import akka.actor._
 
 import org.querki.requester._
@@ -30,8 +28,6 @@ trait MonitorStats {
  * @author jducoeur
  */
 class AdminMonitor(implicit val ecology: Ecology) extends Actor with Requester with MonitorStats with EcologyMember {
-  import AdminMonitor._
-
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
 

@@ -3,8 +3,6 @@ package querki.util
 import org.scalajs.dom
 import scalatags.JsDom.all._
 
-import querki.globals._
-
 /**
  * Convenience utilities to use with Scalatags. You can either mix this into your class, or use the
  * companion object.

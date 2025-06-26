@@ -2,8 +2,7 @@ package models
 
 import querki.ecology._
 import querki.globals._
-import querki.ql.Invocation
-import querki.values.{ElemValue, EmptyValue, QFut, QLContext}
+import querki.values.{QLContext}
 
 trait Models extends EcologyInterface {
   def PropValType: PType[PropMap] with SimplePTypeBuilder[PropMap]

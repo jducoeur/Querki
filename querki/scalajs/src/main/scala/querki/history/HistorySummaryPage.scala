@@ -1,11 +1,7 @@
 package querki.history
 
-import scala.scalajs.js
-
 import scalatags.JsDom.all._
 import autowire._
-
-import moment._
 
 import org.querki.gadgets._
 import org.querki.jquery._

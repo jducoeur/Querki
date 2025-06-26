@@ -8,12 +8,11 @@ import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
 import models.{Kind, OID, Thing, ThingId}
-import play.api.mvc.{AnyContent, BodyParser, BodyParsers, ControllerComponents, EssentialAction, Result}
-import play.twirl.api.Html
+import play.api.mvc.{AnyContent, ControllerComponents, EssentialAction, Result}
 import querki.data.TID
 import querki.globals.Future
 import querki.history.HistoryFunctions._
-import querki.history.{HistoryFunctions, SpaceHistory}
+import querki.history.{SpaceHistory}
 import querki.spaces.messages.CurrentState
 import querki.util.QLog
 

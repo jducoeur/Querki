@@ -1,13 +1,11 @@
 package querki.apps
 
-import akka.actor.ActorRef
-import akka.persistence._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
 import akka.stream.ActorMaterializer
 import org.querki.requester._
 import models._
-import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
+import querki.api.{AutowireParams, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
 import querki.data.{ExtractableModelInfo, SpaceInfo, TID, TOID}
 import querki.globals._

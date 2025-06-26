@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import upickle.default.{macroRW, ReadWriter => RW}
 
-import models.{DisplayText, Kind, Wikitext}
+import models.{Wikitext}
 import querki.data._
 import querki.pages.ThingPageDetails
 

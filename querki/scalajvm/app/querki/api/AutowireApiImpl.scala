@@ -1,10 +1,8 @@
 package querki.api
 
-import scala.concurrent.Promise
 import scala.util.{Failure, Success}
 import akka.actor._
 import upickle.default._
-import autowire._
 import org.querki.requester._
 import models.{Thing, ThingId}
 import querki.data.TID

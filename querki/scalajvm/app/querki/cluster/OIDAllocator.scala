@@ -1,7 +1,6 @@
 package querki.cluster
 
 import akka.actor._
-import akka.pattern._
 import akka.persistence._
 
 import org.querki.requester._

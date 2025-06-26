@@ -2,17 +2,11 @@ package querki.apps
 
 import scala.language.existentials
 
-import akka.actor._
-
-import org.querki.requester._
-
 import models._
 
 import querki.globals._
-import querki.identity.User
 import querki.spaces.SpacePure
 import querki.time.DateTime
-import querki.types.ModelTypeDefiner
 
 /**
  * The part of the Extract App process that "hollows out" the extracted items from the original Space.

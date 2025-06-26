@@ -1,8 +1,5 @@
 package querki.display.input
 
-import querki.ecology._
-import querki.globals._
-
 trait InputDependencies {
 
   def register(

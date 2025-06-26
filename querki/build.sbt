@@ -20,6 +20,8 @@ val querkiScalacOptions = Seq(
   "-language:implicitConversions",
   "-Xfatal-warnings",
   "-Ypartial-unification",
+  // TODO: turn this back on and keep fixing excess imports:
+//  "-Ywarn-unused:imports",
 )
 
 lazy val querkiServer = (project in file("scalajvm")).settings(

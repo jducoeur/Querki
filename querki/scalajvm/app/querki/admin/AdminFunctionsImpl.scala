@@ -2,7 +2,6 @@ package querki.admin
 
 import scala.concurrent.Future
 
-import akka.actor.ReceiveTimeout
 import akka.cluster._
 import ClusterEvent._
 import akka.cluster.ddata._

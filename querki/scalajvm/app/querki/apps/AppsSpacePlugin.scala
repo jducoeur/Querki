@@ -2,7 +2,7 @@ package querki.apps
 
 import scala.util.{Failure, Success}
 
-import cats._, cats.syntax.eq._
+import cats.syntax.eq._
 
 import akka.actor._
 
@@ -15,7 +15,7 @@ import SpaceMessagePersistence.DHAddApp
 import querki.spaces.messages._
 import querki.time._
 import querki.util.{PublicException, UnexpectedPublicException}
-import querki.values.{RequestContext, SpaceVersion}
+import querki.values.{SpaceVersion}
 
 /**
  * This code runs *inside* the Space Actor, as a plugin. It has important constraints, as described in

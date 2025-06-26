@@ -1,7 +1,5 @@
 package querki.conventions
 
-import models._
-
 import querki.api.commonName
 import querki.ecology._
 import querki.types.MOIDs._

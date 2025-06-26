@@ -12,7 +12,6 @@ import querki.globals._
 import querki.data._
 import querki.display.{QuerkiUIUtils, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
-import querki.display.rx._
 import EditFunctions.PropEditInfo
 
 /**

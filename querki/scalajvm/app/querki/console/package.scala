@@ -3,7 +3,6 @@ package querki
 import models.Property
 import querki.api.AutowireApiImpl
 import querki.globals._
-import querki.ql.Invocation
 import querki.values.QValue
 
 package object console {

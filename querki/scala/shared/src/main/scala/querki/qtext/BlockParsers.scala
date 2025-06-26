@@ -1,7 +1,7 @@
 package querki.qtext
 
 import language.postfixOps
-import util.parsing.combinator.{Parsers, RegexParsers}
+import util.parsing.combinator.{Parsers}
 
 /**
  * A parser for the markdown language.

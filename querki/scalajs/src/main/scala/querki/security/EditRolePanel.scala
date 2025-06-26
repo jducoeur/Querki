@@ -9,7 +9,6 @@ import rx._
 import autowire._
 
 import org.querki.gadgets._
-import org.querki.jquery._
 
 import querki.api.ThingFunctions
 import querki.data.{PropValInfo, ThingInfo}

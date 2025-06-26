@@ -11,7 +11,6 @@ import org.querki.gadgets._
 import querki.globals._
 
 import querki.display.{ButtonGadget}
-import querki.display.rx._
 
 class PropertyEditor(
   val valEditor: PropValueEditor

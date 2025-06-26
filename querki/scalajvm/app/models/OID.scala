@@ -4,9 +4,6 @@ import language.implicitConversions
 
 import querki.core.NameUtils
 import querki.data.{TID, TOID}
-import querki.db.QDB
-import querki.db.ShardKind._
-import querki.globals._
 
 /**
  * OID is the primary identifier for all objects in Querki. Internally, it is a long

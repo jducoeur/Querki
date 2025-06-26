@@ -2,7 +2,6 @@ package funcakka
 
 import scala.util.Success
 
-import cats._
 import cats.instances._
 
 import akka.actor.ActorRef
@@ -18,8 +17,6 @@ object RealActorRefLike {
     }
   }
 }
-
-import RealActorRefLike._
 
 /**
  * This mix-in adapts PersistentActorCore to the reality of a PersistentActor.

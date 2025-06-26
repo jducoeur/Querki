@@ -3,7 +3,7 @@ package org.querki.facades.jstree
 import scala.scalajs.js
 import js.annotation.{JSName}
 import js.JSConverters._
-import js.{|, undefined, UndefOr}
+import js.{|, UndefOr}
 import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.jsext._

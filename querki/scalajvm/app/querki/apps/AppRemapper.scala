@@ -1,10 +1,9 @@
 package querki.apps
 
 import models._
-import querki.cluster.OIDAllocator._
 import querki.globals._
 import querki.spaces.RTCAble
-import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
+import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 
 /**
  * This single-function trait deals with computing the OIDs for a newly extracted App.

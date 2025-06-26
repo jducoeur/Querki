@@ -1,13 +1,11 @@
 package querki.pages
 
 import scala.util.{Failure, Success}
-import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
 
 import org.querki.gadgets._
-import org.querki.jquery._
 
 import querki.api.BadPasswordException
 import querki.display.ButtonGadget
@@ -15,7 +13,6 @@ import querki.display.rx._
 import querki.globals._
 import querki.identity.UserLevel
 import querki.session.UserFunctions
-import UserFunctions._
 
 /**
  * The page that shows my account information.

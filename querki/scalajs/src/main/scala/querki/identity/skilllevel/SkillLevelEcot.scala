@@ -1,6 +1,5 @@
 package querki.identity.skilllevel
 
-import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 

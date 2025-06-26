@@ -2,7 +2,6 @@ package controllers
 
 import play.api.mvc.Call
 import querki.ecology._
-import scala.reflect.runtime.universe
 
 trait Navigable
 

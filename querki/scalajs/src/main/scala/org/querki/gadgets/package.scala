@@ -2,7 +2,6 @@ package org.querki
 
 import org.scalajs.dom
 import org.scalajs.dom.html.Element
-import org.querki.jquery._
 
 /**
  * This is the root of the Gadgets library. This level exists solely to give you the

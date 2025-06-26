@@ -1,6 +1,5 @@
 package querki.security
 
-import org.scalajs.dom
 import org.scalajs.dom.html
 
 import scalatags.JsDom.all._

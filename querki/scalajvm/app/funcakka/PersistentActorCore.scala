@@ -1,8 +1,6 @@
 package funcakka
 
 import cats._
-import cats.implicits._
-import cats.instances._
 
 import akka.actor.Actor.Receive
 

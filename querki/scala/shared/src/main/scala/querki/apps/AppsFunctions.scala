@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import upickle.default.{macroRW, ReadWriter => RW}
 
-import querki.api.OperationHandle
 import querki.data._
 import querki.time.Common.Timestamp
 

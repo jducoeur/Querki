@@ -1,8 +1,6 @@
 package org.querki.facades.bootstrap
 
 import scala.scalajs.js
-import js.{Dynamic, UndefOr, undefined => undef}
-import js.JSConverters._
 import org.querki.jsext._
 import org.querki.jquery._
 

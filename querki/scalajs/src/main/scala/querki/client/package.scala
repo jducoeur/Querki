@@ -1,8 +1,5 @@
 package querki
 
-import upickle.default._
-import autowire._
-
 import querki.globals._
 
 package object client {

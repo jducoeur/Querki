@@ -5,17 +5,13 @@ import scala.concurrent.Future
 
 import akka.actor._
 import akka.cluster.ddata._
-import akka.cluster.singleton._
 import akka.pattern._
 import akka.util.Timeout
 
-import models.Wikitext
-
-import querki.core.QLText
 import querki.ecology._
 import querki.email.EmailNotifier
 import querki.globals._
-import querki.identity.{Identity, PublicIdentity, User, UserId}
+import querki.identity.{PublicIdentity, User, UserId}
 import querki.notifications._
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 import querki.time.DateTime

@@ -2,7 +2,6 @@ package querki.photos
 
 import org.scalajs.dom
 import org.querki.jquery._
-import scalatags.JsDom.all._
 
 import org.querki.facades.bootstrap._
 

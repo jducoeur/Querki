@@ -9,8 +9,6 @@ import querki.spaces.messages._
 import querki.uservalues.PersistMessages._
 import querki.util.QuerkiActor
 
-import PersistMessages._
-
 /**
  * This Actor belongs to the SpaceConversations troupe; it is responsible for sending notifications about comments
  * within this Space.

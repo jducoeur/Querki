@@ -1,6 +1,5 @@
 package controllers
 
-import language.existentials
 import javax.inject._
 import scala.concurrent.ExecutionContext
 import play.api.data._

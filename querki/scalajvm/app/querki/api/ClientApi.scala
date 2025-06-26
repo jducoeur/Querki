@@ -2,9 +2,6 @@ package querki.api
 
 import akka.actor._
 
-import upickle._
-import autowire._
-
 import models.{AsOID, HtmlWikitext}
 
 import querki.globals._

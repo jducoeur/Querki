@@ -1,7 +1,6 @@
 package querki.search
 
 import querki.globals._
-import querki.pages.{Page, PageFactory, ParamMap}
 
 class SearchEcot(e: Ecology) extends ClientEcot(e) with Search {
 
