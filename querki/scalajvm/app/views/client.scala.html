@@ -12,15 +12,6 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Preload the interesting bits, to speed things up a little. -->    
-    @if(isProd) {
-      <link rel="preload" href="@routes.Assets.versioned("querkiclient-jsdeps.min.js")" as="script">
-      <link rel="preload" href="@routes.Assets.versioned("querkiclient-opt.js")" as="script">
-    } else {
-      <link rel="preload" href="@routes.Assets.versioned("querkiclient-jsdeps.js")" as="script">
-      <link rel="preload" href="@routes.Assets.versioned("querkiclient-fastopt.js")" as="script">
-    }
-
     <title>Querki: @loadMsg</title>
 
     <!-- TODO: aggregate all these CSS files together, to reduce queries. -->    
@@ -70,14 +61,9 @@
       </div>
     </div>
   </body>
-    
-    @if(isProd) {
-      <script src="@routes.Assets.versioned("querkiclient-jsdeps.min.js")" type="text/javascript"></script>
-      <script src="@routes.Assets.versioned("querkiclient-opt.js")" type="text/javascript"></script>
-    } else {
-      <script src="@routes.Assets.versioned("querkiclient-jsdeps.js")" type="text/javascript"></script>
-      <script src="@routes.Assets.versioned("querkiclient-fastopt.js")" type="text/javascript"></script>
-    }
+
+    @findScript("querkiclient-jsdeps.min.js", "querkiclient-jsdeps.js")
+    @findScript("querkiclient-opt/main.js", "querkiclient-fastopt/main.js")
     
     <script>
       @Html({

@@ -30,7 +30,7 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.10")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
-addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.1.0")
+addSbtPlugin("com.vmunier" % "sbt-web-scalajs" % "1.2.0")
 
 // Adds the stats command -- see https://github.com/orrsella/sbt-stats
 addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.7")

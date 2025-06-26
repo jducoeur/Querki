@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
 lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.5-5"
+lazy val appV = "3.0.0.5-6"
 
 lazy val sharedSrcDir = "scala"
 
@@ -129,6 +129,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // for now.
   .aggregate(clients.map(projectToRef): _*).dependsOn(querkiSharedJvm)
 
+def toPathMapping(f: File): (File, String) = f -> f.getName
+
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
   version := appV,
@@ -180,6 +182,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   // jsDependencies += ("org.webjars.npm" % "moment-timezone" % "0.5.25" / "moment-timezone.js"),
   jsDependencies += (ProvidedJS / "moment.js").minified("moment.min.js"),
   jsDependencies += (ProvidedJS / "moment-timezone.js").dependsOn("moment.js"),
+  Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
+  Compile / fullLinkJS / jsMappings += toPathMapping((Compile / packageMinifiedJSDependencies).value),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
   // Without this, sbt-web-scalajs only outputs the fastOpt files, but when we dockerize we expect the fullOpt ones:
