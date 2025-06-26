@@ -26,7 +26,7 @@ class AdminCommands(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDef
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserAccess = interface[querki.identity.UserAccess]
 
-  implicit val timeout = Timeout(30 seconds)
+  implicit val timeout = Timeout(30.seconds)
 
   lazy val InspectByEmailCmd = Console.defineAdminCommand(
     InspectByEmailCmdOID,

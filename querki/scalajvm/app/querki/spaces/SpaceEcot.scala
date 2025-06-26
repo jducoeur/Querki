@@ -79,7 +79,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     (classOf[DHAddApp] -> 106)
   )
 
-  implicit val stdTimeout = Timeout(10 seconds)
+  implicit val stdTimeout = Timeout(10.seconds)
 
   def spaceIdGuts[R](
     ownerId: OID,

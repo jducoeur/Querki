@@ -120,7 +120,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
                           |}
                           |</style>""".stripMargin
 
-  val retryDelay = 1 second
+  val retryDelay = 1.second
 
   def futureWithRetries[R](
     name: String

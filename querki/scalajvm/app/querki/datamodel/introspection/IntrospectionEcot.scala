@@ -1,5 +1,7 @@
 package querki.datamodel.introspection
 
+import scala.language.existentials
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 

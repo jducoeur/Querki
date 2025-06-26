@@ -71,12 +71,12 @@ private[streaming] class StringStreamSender(
     val (chunk, index) = remainingChunks.head
     currentIndex = index
     recipient ! StringChunk(chunk, index)
-    currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
+    currentTimeout = Some(context.system.scheduler.scheduleOnce(2.seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
 
   def sendComplete(attempt: Int) = {
     recipient ! Complete(currentIndex)
-    currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
+    currentTimeout = Some(context.system.scheduler.scheduleOnce(2.seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
 
   def receive = LoggingReceive {

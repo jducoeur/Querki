@@ -1,5 +1,7 @@
 package querki.editing
 
+import scala.language.existentials
+
 import akka.actor._
 
 import models._

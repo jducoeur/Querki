@@ -1,5 +1,7 @@
 package querki.basic
 
+import scala.language.existentials
+
 import scala.concurrent.Future
 
 import querki.ecology._

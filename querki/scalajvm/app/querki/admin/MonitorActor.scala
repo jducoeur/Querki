@@ -25,7 +25,7 @@ class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMemb
   lazy val monitor = AdminOps.monitor
   lazy val scheduler = SystemManagement.actorSystem.scheduler
 
-  lazy val heartbeat = Config.getDuration("querki.admin.monitorHeartbeat", 1 minute)
+  lazy val heartbeat = Config.getDuration("querki.admin.monitorHeartbeat", 1.minute)
   lazy val logHeartbeats = Config.getBoolean("querki.admin.logMonitor", false)
 
   var _current: Option[MonitorEvent] = None

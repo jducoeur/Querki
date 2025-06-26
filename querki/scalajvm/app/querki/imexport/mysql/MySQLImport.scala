@@ -1,5 +1,7 @@
 package querki.imexport.mysql
 
+import scala.language.existentials
+
 import scala.annotation.tailrec
 
 import models._

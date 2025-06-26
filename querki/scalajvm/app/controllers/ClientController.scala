@@ -76,7 +76,7 @@ class ClientController @Inject() (
   )(
     cb: PartialFunction[Any, Future[B]]
   ): Future[B] = {
-    akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
+    akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5.seconds)).flatMap(cb)
   }
 
   def index = withUser(false) { rc =>
@@ -229,7 +229,7 @@ class ClientController @Inject() (
   ): Accumulator[ByteString, Either[Result, ActorRef]] = {
     def produceUploadLocation: Future[ActorRef] = {
       // Fairly short timeout for the identification procedure:
-      implicit val timeout = Timeout(5 seconds)
+      implicit val timeout = Timeout(5.seconds)
       val selection = SystemManagement.actorSystem.actorSelection(targetActorPath)
       for {
         ActorIdentity(_, refOpt) <- selection ? Identify("dummy")

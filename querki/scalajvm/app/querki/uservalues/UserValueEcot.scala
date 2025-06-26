@@ -1,5 +1,7 @@
 package querki.uservalues
 
+import scala.language.existentials
+
 import scala.concurrent.duration._
 
 import akka.actor.Actor.Receive
@@ -311,7 +313,7 @@ class UserValueEcot(e: Ecology)
   ) {
 
     override def qlApply(inv: Invocation): QFut = {
-      implicit val timeout = Timeout(10 seconds)
+      implicit val timeout = Timeout(10.seconds)
 
       for {
         prop <- inv.preferDefiningContext.definingContextAsProperty

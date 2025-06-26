@@ -76,7 +76,7 @@ package object globals {
     import scala.concurrent._
     import scala.concurrent.duration._
 
-    Await.result(awaitable, 1 minute)
+    Await.result(awaitable, 1.minute)
   }
 
   /**
@@ -87,7 +87,7 @@ package object globals {
     import scala.concurrent._
     import scala.concurrent.duration._
 
-    Await.result(awaitable, 10 milliseconds)
+    Await.result(awaitable, 10.milliseconds)
   }
 
   /**

@@ -66,7 +66,7 @@ class SessionEcot(e: Ecology) extends QuerkiEcot(e) with Session {
    * ************************************************
    */
 
-  implicit val timeout = Timeout(5 seconds)
+  implicit val timeout = Timeout(5.seconds)
 
   def getCollaborators(
     user: User,

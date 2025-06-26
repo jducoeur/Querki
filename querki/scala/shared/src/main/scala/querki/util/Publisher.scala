@@ -40,7 +40,7 @@ trait Notifier[Evt] extends Publisher[Evt, Unit] {
 trait Aggregator[Evt, Result] extends Publisher[Evt, Result] {
 
   def collect(evt: Evt): Seq[Result] = {
-    contributors.map(_.notify(evt, this)) toSeq
+    contributors.map(_.notify(evt, this)).toSeq
   }
 }
 
@@ -56,7 +56,7 @@ trait Aggregator[Evt, Result] extends Publisher[Evt, Result] {
 trait Sequencer[Evt] extends Publisher[Evt, Evt] {
 
   def update(evt: Evt): Evt = {
-    (evt /: contributors)((current, contributor) => contributor.notify(current, this))
+    contributors.foldLeft(evt)((current, contributor) => contributor.notify(current, this))
   }
   def apply(evt: Evt): Evt = update(evt)
 }

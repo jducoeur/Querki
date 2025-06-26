@@ -1,5 +1,7 @@
 package querki.uservalues
 
+import scala.language.existentials
+
 import models.{Property, Thing}
 import querki.globals._
 import querki.spaces._

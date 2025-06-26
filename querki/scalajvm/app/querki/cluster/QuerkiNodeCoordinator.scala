@@ -50,7 +50,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
   QLog.spew("Creating QuerkiNodeCoordinator")
 
-  lazy val relookupTimeout = Timeout(Config.getDuration("querki.cluster.shardRelookupTimeout", 10 minutes))
+  lazy val relookupTimeout = Timeout(Config.getDuration("querki.cluster.shardRelookupTimeout", 10.minutes))
   lazy val snapshotInterval = Config.getInt("querki.cluster.snapshotInterval", 100)
 
   /**

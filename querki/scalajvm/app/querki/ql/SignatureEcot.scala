@@ -1,5 +1,7 @@
 package querki.ql
 
+import scala.language.existentials
+
 import models._
 
 import querki.ecology._

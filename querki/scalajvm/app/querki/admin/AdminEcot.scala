@@ -112,7 +112,7 @@ class AdminEcot(e: Ecology)
   def isTimedSpace(spaceId: OID) = _curTimedSpaces.contains(spaceId)
 
   def getSpacesStatus[B](req: User)(cb: SystemStatus => B): Future[B] = {
-    akka.pattern.ask(adminActor, GetSpacesStatus(req))(Timeout(5 seconds)).mapTo[SystemStatus].map(cb)
+    akka.pattern.ask(adminActor, GetSpacesStatus(req))(Timeout(5.seconds)).mapTo[SystemStatus].map(cb)
   }
 
   def sendSystemMessage(
@@ -125,7 +125,7 @@ class AdminEcot(e: Ecology)
 
   def getAllUserIds(req: User): Future[Seq[UserId]] = {
     // Very long timeout for this one, becaue it really might take a long time:
-    implicit val timeout = Timeout(1 minute)
+    implicit val timeout = Timeout(1.minute)
     val fut = adminActor ? GetAllUserIdsForAdmin(req)
     fut.mapTo[AllUserIds].map { _.users }
   }

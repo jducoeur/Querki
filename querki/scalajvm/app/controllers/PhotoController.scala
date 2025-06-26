@@ -30,7 +30,7 @@ class PhotoController @Inject() (
   )(
     rh: RequestHeader
   ): Accumulator[ByteString, Either[Result, ActorRef]] = {
-    implicit val timeout = Timeout(5 seconds)
+    implicit val timeout = Timeout(5.seconds)
 
     def produceUploadLocation: Future[ActorRef] = {
       for {
@@ -65,7 +65,7 @@ class PhotoController @Inject() (
       // This Future will give us the pointer to the PhotoUploadActor once we're done sending stuff to it:
       val workerRef = rc.request.body
       // Tell the Actor that we're done sending it bytes, and it's time to process:
-      workerRef.ask(ProcessUpload(PhotoUploadMetadata(rc, propId, thingId)))(30 seconds).map {
+      workerRef.ask(ProcessUpload(PhotoUploadMetadata(rc, propId, thingId)))(30.seconds).map {
         // Once we get this, the Actor is finished, and shutting down
         case PhotoInfo(wikitext) => {
           val pickled = write(wikitext)

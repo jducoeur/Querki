@@ -1,5 +1,7 @@
 package querki.tags
 
+import scala.language.existentials
+
 import scala.xml.NodeSeq
 import models.{
   AsDisplayName,

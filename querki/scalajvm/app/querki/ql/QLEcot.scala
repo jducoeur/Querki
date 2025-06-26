@@ -197,6 +197,10 @@ class QLEcot(e: Ecology)
   lazy val EmptyListCutColl = new QListBase(UnknownOID, emptyProps) {
     def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing
   }
+  // TODO: this import is necessary because the following line calls EmptyListCutColl(), which is added structurally
+  // rather than as any sort of interface. That's probably inefficient, and certainly is poor style. Make sure there
+  // is adequate testing around it, and rewrite so that we're not making this reflective call.
+  import scala.language.reflectiveCalls
   def EmptyListCut() = EmptyListCutColl()
 
   object ErrorTextType

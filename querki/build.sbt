@@ -12,6 +12,15 @@ lazy val appV = "3.0.0.5-5"
 
 lazy val sharedSrcDir = "scala"
 
+val querkiScalacOptions = Seq(
+  "-deprecation",
+  "-feature",
+  // Higher-kinded types stop giving a warning around Scala 2.13.1; remove this flag then:
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-Ypartial-unification",
+)
+
 lazy val querkiServer = (project in file("scalajvm")).settings(
   scalaVersion := scalaV,
   version := appV,
@@ -105,7 +114,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // So that the FullMidTests can run:
   Test / envVars := Map("QUERKI_ENV" -> "scenario"),
   // For cats:
-  scalacOptions ++= Seq("-Ypartial-unification", "-deprecation"),
+  scalacOptions ++= querkiScalacOptions,
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki"
 )
@@ -123,7 +132,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
   version := appV,
-  scalacOptions ++= Seq("-deprecation"),
+  scalacOptions ++= querkiScalacOptions,
   scalaJSUseMainModuleInitializer := true,
 //  sourceMapsDirectories += file(sharedSrcDir),
 
@@ -205,11 +214,13 @@ lazy val querkiShared =
     ).
 // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
     jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
+      scalacOptions ++= querkiScalacOptions,
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
       )
     ).jsConfigure(_.enablePlugins(ScalaJSWeb, JSDependenciesPlugin)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
+      scalacOptions ++= querkiScalacOptions,
       libraryDependencies ++= sharedDependencies.value ++ Seq(
         "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
       ),

@@ -1,5 +1,7 @@
 package querki.types
 
+import scala.language.existentials
+
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 
 import querki.api.commonName

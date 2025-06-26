@@ -77,7 +77,7 @@ private[admin] class AdminStatusWorker(val ecology: Ecology) extends Actor with 
     case req @ GetSpacesStatus(requester) => {
       statusRequestFrom = sender
       statuses = Seq.empty
-      context.system.scheduler.scheduleOnce(3 seconds, self, StatusTimeout)
+      context.system.scheduler.scheduleOnce(3.seconds, self, StatusTimeout)
       SpaceOps.spaceManager ! req
     }
 

@@ -1,5 +1,7 @@
 package querki.spaces
 
+import scala.language.existentials
+
 import models._
 
 import querki.ecology.EcologyMember

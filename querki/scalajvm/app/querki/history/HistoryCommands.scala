@@ -14,7 +14,7 @@ class HistoryCommands(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   val Console = initRequires[querki.console.Console]
   val History = initRequires[History]
 
-  implicit val timeout = Timeout(30 seconds)
+  implicit val timeout = Timeout(30.seconds)
 
   override lazy val props = Seq(
   )

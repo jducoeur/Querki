@@ -247,7 +247,7 @@ case class CompositeWikitext(contents: Vector[Wikitext]) extends Wikitext {
     val indexedContents = contents.zipWithIndex
     // To begin with, we process everything where keepRaw == false, and replace the keepRaw == true...
     val ProcessState(builtStr, substitutionMap) =
-      (ProcessState("", Map.empty[Int, Wikitext]) /: indexedContents) { (state, textAndIndex) =>
+      indexedContents.foldLeft(ProcessState("", Map.empty[Int, Wikitext])) { (state, textAndIndex) =>
         val (text, index) = textAndIndex
         if (text.keepRaw) {
           if (ignoreRaw) {
@@ -261,7 +261,7 @@ case class CompositeWikitext(contents: Vector[Wikitext]) extends Wikitext {
       }
     val processedStr = processor(builtStr)
     // ... and now we substitute in the keepRaw == true entries:
-    val result = (processedStr /: substitutionMap) { (str, entry) =>
+    val result = substitutionMap.foldLeft(processedStr) { (str, entry) =>
       val (index, text) = entry
       str.replaceAllLiterally("(-+" + index + "+-)", text.internal)
     }

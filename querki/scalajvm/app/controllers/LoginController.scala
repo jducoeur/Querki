@@ -134,7 +134,7 @@ class LoginController @Inject() (
   }
 
   val inviteTimeoutParam = "inviteTimeout"
-  val inviteTimeout = Config.getDuration("querki.invitations.inviteTimeout", 5 minutes).toMillis
+  val inviteTimeout = Config.getDuration("querki.invitations.inviteTimeout", 5.minutes).toMillis
 
   def withinTimeout(request: RequestHeader): Boolean = {
     request.session.get(inviteTimeoutParam)
@@ -160,7 +160,7 @@ class LoginController @Inject() (
     spaceIdStr: String
   ) = withRouting(ownerIdStr, spaceIdStr) { implicit rc =>
     implicit val request = rc.request
-    implicit val timeout = Timeout(10 seconds)
+    implicit val timeout = Timeout(10.seconds)
     val rawForm = handleInviteForm.bindFromRequest
     rawForm.fold(
       errorForm => { BadRequest("Error: badly formatted request!") },
@@ -648,7 +648,7 @@ class LoginController @Inject() (
                   spaceId,
                   ReplacePerson(guestUser.mainIdentity.id, user.mainIdentity)
                 )
-                implicit val timeout = Timeout(10 seconds)
+                implicit val timeout = Timeout(10.seconds)
                 (SpaceOps.spaceRegion ? msg).flatMap { _ =>
                   writeUserInfo()
                 }

@@ -529,7 +529,7 @@ class PersonModule(e: Ecology)
     originalState: SpaceState
   ): Future[InvitationResult] = {
     // TODO: this is much too arbitrary:
-    implicit val timeout = Timeout(30 seconds)
+    implicit val timeout = Timeout(30.seconds)
 
     implicit val s = originalState
 
@@ -716,7 +716,7 @@ class PersonModule(e: Ecology)
   ): Future[Option[PublicException]] = {
     val roleId = role.id
     // TODO: this is much too arbitrary:
-    implicit val timeout = Timeout(30 seconds)
+    implicit val timeout = Timeout(30.seconds)
     val identity = rc.requester.get.mainIdentity
     withCache { cache =>
       cache.localPerson(identity.id) match {

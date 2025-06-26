@@ -23,7 +23,7 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
 
   lazy val EmailSender = interface[EmailSender]
 
-  lazy val throttle = Config.getDuration("querki.mail.throttle", 1 second)
+  lazy val throttle = Config.getDuration("querki.mail.throttle", 1.second)
 
   // Emails that are queued up, waiting to be sent.
   // TODO: Note that there is a potential leak here -- this can grow unbounded without us realizing there

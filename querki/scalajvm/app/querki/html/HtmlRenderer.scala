@@ -1,5 +1,7 @@
 package querki.html
 
+import scala.language.existentials
+
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import play.api.Logger

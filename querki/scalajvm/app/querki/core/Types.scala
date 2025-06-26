@@ -1,5 +1,7 @@
 package querki.core
 
+import scala.language.existentials
+
 import scala.xml.NodeSeq
 
 import models._

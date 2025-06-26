@@ -1,5 +1,7 @@
 package querki.apps
 
+import scala.language.existentials
+
 import akka.actor._
 
 import org.querki.requester._

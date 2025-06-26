@@ -1,5 +1,7 @@
 package querki.security
 
+import scala.language.existentials
+
 import scala.concurrent.Future
 
 import models._

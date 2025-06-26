@@ -125,7 +125,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
   /**
    * How long to wait after something goes unreachable, before we invoke Split Brain Resolution.
    */
-  lazy val unreachableTimeout = Config.getDuration("querki.cluster.unreachable.timeout", 20 seconds)
+  lazy val unreachableTimeout = Config.getDuration("querki.cluster.unreachable.timeout", 20.seconds)
   var unreachableTimers: Map[Member, Cancellable] = Map.empty
 
   /**
