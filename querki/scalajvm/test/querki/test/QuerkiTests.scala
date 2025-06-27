@@ -174,7 +174,7 @@ class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with Eco
     import scala.concurrent.duration._
 
     val qt = QLText(text)
-    val wikitext = Await.result(QL.process(qt, context, None, lexicalOpt), 1 second)
+    val wikitext = Await.result(QL.process(qt, context, None, lexicalOpt), 1.second)
     wikitext.plaintext.stripReturns
   }
 

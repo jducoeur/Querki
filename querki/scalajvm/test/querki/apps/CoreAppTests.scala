@@ -113,6 +113,11 @@ class SpaceInWorldWithSnapshots(
   override def configOpt = Some(TestSpaceConfig(Some(interval)))
 }
 
+// TODO: this is necessary because the lazy vals below -- highest, mid1, mid2, etc -- are ad-hoc
+// structurally-defined objects, so we're reaching into them structurally to access them. That's just plain
+// dumb: it's bad style, and inefficient. Figure out a way to rewrite them as proper classes/objects instead.
+import scala.language.reflectiveCalls
+
 /**
  * Actually builds an App hierarchy for testing. Deliberately apes querki.spaces.AppTests.
  */

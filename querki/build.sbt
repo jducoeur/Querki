@@ -24,6 +24,8 @@ val querkiScalacOptions = Seq(
 //  "-Ywarn-unused:imports",
 )
 
+ThisBuild / Test / parallelExecution := false
+
 lazy val querkiServer = (project in file("scalajvm")).settings(
   scalaVersion := scalaV,
   version := appV,

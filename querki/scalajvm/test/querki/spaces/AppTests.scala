@@ -13,6 +13,11 @@ import querki.test._
 class AppTests extends QuerkiTests {
   def getEcology = ecology
 
+  // TODO: this is necessary because the lazy vals below -- highest, mid1, mid2, etc -- are ad-hoc
+  // structurally-defined objects, so we're reaching into them structurally to access them. That's just plain
+  // dumb: it's bad style, and inefficient. Figure out a way to rewrite them as proper classes/objects instead.
+  import scala.language.reflectiveCalls
+
   /**
    * A wrapper that describes our standard complex App-based test world. Test code usually
    * extends this class, and puts the test code in the extension.

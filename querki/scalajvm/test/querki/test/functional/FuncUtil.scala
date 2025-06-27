@@ -1,10 +1,10 @@
 package querki.test.functional
 
 import scala.collection.JavaConverters._
-
 import org.openqa.selenium.WebElement
-
 import querki.util.QLog
+
+import scala.annotation.nowarn
 
 /**
  * Common utility operations for the tests.
@@ -50,6 +50,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    * inconsistent: it uses the old version in its definition of OneBrowserPerTest, so we're kind of stuck for now.
    * When we *can* upgrade past this inconsistency, we should.
    */
+  @nowarn
   implicit val browser: org.scalatest.selenium.WebBrowser = this
 
   /**

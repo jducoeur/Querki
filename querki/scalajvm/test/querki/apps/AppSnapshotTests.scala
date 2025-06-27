@@ -6,6 +6,12 @@ import querki.test._
 
 class AppSnapshotTests extends QuerkiTests with AppTree {
 
+  // TODO: this is necessary because the lazy vals in CoreAppTests -- highest, mid1, mid2, etc -- are ad-hoc
+  // structurally-defined objects, so we're reaching into them structurally to access them. That's just plain
+  // dumb: it's bad style, and inefficient. Figure out a way to rewrite them as proper classes/objects instead.
+  // Ditto for the "original" value below.
+  import scala.language.reflectiveCalls
+
   def runSnapshotTest(interval: Int) = {
     val original = new SpaceInWorldWithSnapshots(highest, interval) {
       addApp(highest)
