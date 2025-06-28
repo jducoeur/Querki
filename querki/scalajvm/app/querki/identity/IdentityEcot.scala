@@ -1,22 +1,19 @@
 package querki.identity
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorRef}
 import akka.cluster.sharding._
 import akka.pattern.ask
-import akka.util.Timeout
 
-import play.api.mvc.{RequestHeader, Security}
+import play.api.mvc.{RequestHeader}
 
 import models._
 
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
-import querki.session.UserSessionMessages.UserSessionMsg
 import querki.system.TOSModule.noTOSUserVersion
 import querki.util.ActorHelpers._
 import querki.values.{EmptyValue, QLContext, SpaceState}
-import querki.util.QLog
 
 import IdentityCacheMessages._
 import UserCacheMessages._

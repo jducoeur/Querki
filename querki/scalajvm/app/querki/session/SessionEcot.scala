@@ -2,18 +2,16 @@ package querki.session
 
 import scala.concurrent.duration._
 
-import akka.actor.{ActorRef, Props}
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import akka.actor.{ActorRef}
+import akka.cluster.sharding.{ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
 
 import querki.api.ClientRequest
 import querki.ecology._
 import querki.globals._
-import querki.identity.{Identity, PublicIdentity, User}
-import messages._
+import querki.identity.{Identity, User}
 import UserSessionMessages._
-import querki.util.ActorHelpers._
 
 private object MOIDs extends EcotIds(47)
 

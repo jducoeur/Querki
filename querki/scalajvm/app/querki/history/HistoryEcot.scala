@@ -8,8 +8,8 @@ import HistoryFunctions._
 import models.OID
 import querki.history.SpaceHistory._
 import querki.ql.{QLCall, QLExp, QLThingId}
-import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
-import querki.util.{ActorHelpers, PublicException}
+import querki.spaces.messages.{SpaceSubsystemRequest}
+import querki.util.{ActorHelpers}
 
 object MOIDs extends EcotIds(65) {
   // Dead -- we've removed this command, since we haven't used it in years:

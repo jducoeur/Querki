@@ -10,7 +10,6 @@ import _root_.io.altoo.akka.serialization.kryo.serializer.scala.{
   ScalaKryo,
   ScalaProductSerializer
 }
-import querki.globals._
 
 /**
  * This class gets plugged in via config, in:

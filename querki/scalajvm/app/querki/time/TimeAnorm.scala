@@ -3,8 +3,6 @@ package querki.time
 import anorm._
 import SqlParser.get
 
-import querki.globals._
-
 object TimeAnorm {
 
   /**

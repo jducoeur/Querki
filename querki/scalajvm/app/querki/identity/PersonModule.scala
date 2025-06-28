@@ -11,22 +11,17 @@ import org.querki.requester._
 import models._
 
 import querki.api.commonName
-import querki.core.QLText
 import querki.ecology._
 import querki.email.emailSepChar
 import querki.globals._
-import querki.ql.QLPhrase
-import querki.spaces.{CacheUpdate, SpaceManager}
+import querki.spaces.{CacheUpdate}
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
-import querki.util.{Contributor, Hasher, Publisher, QLogFuture, SignedHash}
+import querki.util.{Contributor, Hasher, Publisher, SignedHash}
 import querki.values._
 
-import querki.identity._
 import querki.email.EmailAddress
 
-import controllers.{PageEventManager, PlayRequestContext}
-
-import play.api.Logger
+import controllers.{PlayRequestContext}
 
 import IdentityPersistence._
 

@@ -1,10 +1,8 @@
 package querki.session
 
-import scala.concurrent.Promise
-
 import akka.actor._
 
-import models.{Collection, DisplayText, Kind, OID, PType, Thing, ThingId, Wikitext}
+import models.{Collection, OID, PType, ThingId, Wikitext}
 
 import querki.globals._
 

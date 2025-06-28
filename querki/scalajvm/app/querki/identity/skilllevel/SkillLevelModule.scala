@@ -1,6 +1,6 @@
 package querki.identity.skilllevel.impl
 
-import models.{OID, Thing, ThingState}
+import models.{ThingState}
 
 import querki.api.commonName
 import querki.ecology._

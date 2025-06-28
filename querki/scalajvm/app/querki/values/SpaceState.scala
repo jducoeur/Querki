@@ -1,11 +1,8 @@
 package querki.values
 
-import language.existentials
-
 import scala.collection.immutable.{SortedSet, TreeSet}
-import scala.math.Ordering
 
-import cats.Eq, cats.instances._, cats.syntax.eq._
+import cats.Eq
 
 import models._
 
@@ -14,9 +11,6 @@ import com.github.nscala_time.time.Imports._
 import querki.core.NameUtils
 import querki.ecology._
 import querki.globals._
-import querki.identity.User
-
-import querki.util._
 
 /**
  * The keys for the SpaceState's cache. Each element is owned by a specific Ecot, which assigns

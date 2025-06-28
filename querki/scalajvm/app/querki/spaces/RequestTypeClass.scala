@@ -1,6 +1,6 @@
 package querki.spaces
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Try}
 
 import org.querki.requester._
 

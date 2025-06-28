@@ -1,10 +1,8 @@
 package querki
 
-import models.UnknownOID
-
 import querki.ecology._
 import querki.globals._
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{SpaceState}
 
 package object search {
 

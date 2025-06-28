@@ -2,18 +2,13 @@ package querki.tags
 
 import scala.language.existentials
 
-import scala.xml.NodeSeq
 import models.{
   AsDisplayName,
   Collection,
-  DisplayPropVal,
   DisplayText,
   Kind,
-  OID,
   PType,
-  Property,
   PropertyBundle,
-  Thing,
   ThingId,
   ThingOps,
   UnknownOID,
@@ -24,9 +19,8 @@ import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core._
 import querki.ecology._
 import querki.globals._
-import querki.ql.QLPhrase
 import querki.util.{HtmlEscape, SafeUrl}
-import querki.values.{QValue, _}
+import querki.values._
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.

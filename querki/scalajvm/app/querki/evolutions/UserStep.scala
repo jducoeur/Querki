@@ -3,7 +3,6 @@ package querki.evolutions
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import play.api.db._
 
 import models.OID
 

@@ -3,7 +3,6 @@ package querki.spaces
 import scala.util.{Failure, Success}
 
 import akka.actor._
-import akka.event.LoggingReceive
 import akka.pattern.pipe
 
 import org.querki.requester._

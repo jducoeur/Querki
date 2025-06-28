@@ -8,9 +8,6 @@ import querki.identity.User
 import querki.spaces._
 import querki.spaces.messages._
 import querki.util.PublicException
-import querki.values.QValue
-
-import SecurityFunctions._
 
 /**
  * This code runs *inside* the Space Actor, as a plugin. It has important constraints, as described in

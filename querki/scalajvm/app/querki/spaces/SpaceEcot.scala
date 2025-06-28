@@ -1,11 +1,9 @@
 package querki.spaces
 
-import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.util.Success
 
 import akka.actor.{ActorRef, Props}
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding.{ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
@@ -18,7 +16,6 @@ import querki.globals.{execContext, AnyProp, Future, _}
 import querki.ql._
 import querki.spaces.messages._
 import querki.util.PublicException
-import querki.util.ActorHelpers._
 import querki.values.{ElemValue, EmptyValue, QLContext}
 
 object SpaceEcotMOIDs extends EcotIds(37) {

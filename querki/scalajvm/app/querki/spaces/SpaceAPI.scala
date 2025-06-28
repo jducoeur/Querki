@@ -1,13 +1,11 @@
 package querki.spaces
 
 import akka.actor._
-import org.querki.requester._
 import models._
 import org.joda.time.DateTime
 import querki.identity.IdentityPersistence.UserRef
 import querki.identity.User
 import querki.persistence.{PersistentActorCore, UseKryo}
-import querki.spaces.messages.SpaceMessage
 import querki.values.{SpaceState, SpaceVersion}
 
 /**

@@ -5,7 +5,6 @@ import akka.actor._
 import org.querki.requester._
 
 import querki.globals._
-import querki.identity
 import querki.spaces.PersistMessages._
 import querki.spaces.messages._
 

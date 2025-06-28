@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import models.{Thing, Wikitext}
 
-import querki.ecology._
 import querki.values.{RequestContext, SpaceState}
 
 /**

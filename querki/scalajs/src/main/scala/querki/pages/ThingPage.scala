@@ -18,7 +18,7 @@ import querki.globals._
 import querki.api.{ModelLoopException, ThingFunctions, UnknownThingException}
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
-import querki.display.{QLButtonGadget, QText, QuerkiUIUtils, WrapperDiv}
+import querki.display.{QLButtonGadget, QText, QuerkiUIUtils}
 import querki.security.SharingPage
 
 class ThingPage(

@@ -10,7 +10,6 @@ import querki.core.URLableType
 import querki.globals._
 import querki.ecology._
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
-import querki.util.QLog
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object ExternalLinkMOIDs extends EcotIds(46) {

@@ -6,8 +6,8 @@ import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.util.{QLog, XmlHelpers}
-import querki.values.{ElemValue, PropAndVal, QLContext, QValue, RequestContext, SpaceState}
+import querki.util.{XmlHelpers}
+import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
 import MOIDs._
 

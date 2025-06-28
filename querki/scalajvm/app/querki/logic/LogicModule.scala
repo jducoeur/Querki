@@ -1,11 +1,11 @@
 package querki.logic
 
-import models.{OID, PType, ThingOps, ThingState}
+import models.{PType, ThingOps}
 
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLPhrase}
-import querki.util.{PublicException, QLog}
+import querki.ql.{InvocationValue}
+import querki.util.{PublicException}
 import querki.values._
 
 object MOIDs extends EcotIds(9) {

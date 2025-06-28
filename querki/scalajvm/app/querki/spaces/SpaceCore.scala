@@ -1,6 +1,6 @@
 package querki.spaces
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import akka.actor._
 import Actor.Receive
 import akka.persistence._
@@ -10,7 +10,7 @@ import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
+import querki.identity.{PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.publication.{CurrentPublicationState, PublishedAck}

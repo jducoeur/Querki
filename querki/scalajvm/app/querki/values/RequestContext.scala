@@ -1,12 +1,11 @@
 package querki.values
 
-import models.{AsName, AsOID, OID, ThingId, UnknownOID}
+import models.{AsName, AsOID, ThingId, UnknownOID}
 
 import querki.api.RequestMetadata
 import querki.ecology._
-import querki.identity.{Identity, IdentityId, User}
+import querki.identity.{IdentityId, User}
 import querki.ql.QLPhrase
-import querki.ui.UIRenderer
 
 /**
  * This is information about the current Request, which gets sent to the back end.

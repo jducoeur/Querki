@@ -5,7 +5,6 @@ import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder
 import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest
 import com.typesafe.config.ConfigFactory
 import play.api.Configuration
-import querki.util.QLog
 
 object SecretsLoader {
 

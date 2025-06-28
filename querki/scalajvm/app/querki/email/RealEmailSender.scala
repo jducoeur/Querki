@@ -1,6 +1,6 @@
 package querki.email
 
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.{ExecutionContext}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 

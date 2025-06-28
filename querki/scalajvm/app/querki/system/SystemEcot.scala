@@ -5,7 +5,6 @@ import akka.cluster.Cluster
 import akka.cluster.sharding._
 import akka.cluster.singleton._
 import querki.ecology._
-import querki.globals.OID
 import querki.values.SpaceState
 
 /**

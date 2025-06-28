@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import models.{OID, Wikitext}
 
 import querki.email.EmailNotifier
-import querki.identity.{IdentityId, UserId, UserLevel}
+import querki.identity.{IdentityId, UserId}
 import querki.time.DateTime
 import querki.values.QLContext
 

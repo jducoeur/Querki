@@ -2,7 +2,7 @@ package querki.publication
 
 import models._
 import querki.globals._
-import querki.identity.{PublicIdentity, User}
+import querki.identity.{PublicIdentity}
 import querki.time.DateTime
 
 import PublicationEvents._

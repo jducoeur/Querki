@@ -9,7 +9,6 @@ import querki.apps.AppsFunctions
 import AppsFunctions._
 import querki.display._
 import querki.globals._
-import querki.time._
 
 class InfoPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
 

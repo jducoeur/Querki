@@ -6,8 +6,6 @@ import scala.concurrent.duration._
 import akka.actor._
 import ReceivePipeline._
 
-import querki.globals._
-
 /**
  * The child of a RoutingParent, which has a built-in inactivity timeout. Concrete classes must
  * also extend ReceivePipeline. Note that ReceivePipeline must be extended *after* PersistentActor

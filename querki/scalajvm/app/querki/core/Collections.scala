@@ -4,8 +4,6 @@ import language.existentials
 import scala.annotation.tailrec
 import scala.xml.{Attribute, NodeSeq, Null, Text}
 
-import play.api.Logger
-
 // TODO: solely for fromUser, which really should get moved elsewhere:
 import play.api.data.Form
 

@@ -7,7 +7,7 @@ import querki.basic.PlainTextBaseType
 import querki.conventions
 import querki.ecology._
 import querki.globals._
-import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, PropAndVal, QLContext, SpaceState}
 
 class CoreModule(e: Ecology)
   extends CoreEcot(e)

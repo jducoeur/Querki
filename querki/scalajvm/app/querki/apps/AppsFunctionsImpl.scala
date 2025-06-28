@@ -7,7 +7,7 @@ import org.querki.requester._
 import models._
 import querki.api.{AutowireParams, SpaceApiImpl}
 import querki.cluster.OIDAllocator._
-import querki.data.{ExtractableModelInfo, SpaceInfo, TID, TOID}
+import querki.data.{ExtractableModelInfo, SpaceInfo, TID}
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User

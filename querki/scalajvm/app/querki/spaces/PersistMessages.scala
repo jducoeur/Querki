@@ -4,9 +4,7 @@ import org.joda.time.DateTime
 
 import models._
 import models.Kind.Kind
-import models.MIMEType.MIMEType
 
-import querki.identity.User
 import querki.values.SpaceState
 
 /**

@@ -3,8 +3,6 @@ package querki.imexport
 import scala.language.existentials
 
 import scalatags.Text.short._
-import scalatags.generic
-import scalatags.text._
 
 import models._
 

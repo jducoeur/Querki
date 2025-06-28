@@ -8,13 +8,12 @@ import akka.cluster.sharding._
 
 import models.{LiteralTransformWrapper, PTypeBuilder, PropertyBundle, ThingState, Wikitext}
 
-import querki.core.QLText
 import querki.ecology._
 import querki.globals._
-import querki.identity.{FullIdentity, Identity}
+import querki.identity.{Identity}
 import querki.notifications.NotifierId
 import querki.util.SafeUrl
-import querki.values.{ElemValue, QLContext}
+import querki.values.{QLContext}
 
 /**
  * Opaque wrapper for the concept of a "session"; the implementation depends on which version

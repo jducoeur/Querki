@@ -38,8 +38,6 @@ private[conversations] class SpaceConversationsActor(
   val spaceId: OID,
   val space: ActorRef
 ) extends QuerkiBootableActor(ecology) {
-  import context._
-
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ConvEcot = interface[Conversations]
   lazy val NotifyComments = interface[NotifyComments]

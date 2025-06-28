@@ -1,7 +1,6 @@
 package querki.persistence
 
 import akka.actor.{ActorPath, ExtendedActorSystem}
-import akka.serialization.Serialization
 
 import com.esotericsoftware.kryo.{Kryo, Serializer}
 import com.esotericsoftware.kryo.io.{Input, Output}

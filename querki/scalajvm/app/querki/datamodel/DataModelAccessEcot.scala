@@ -3,7 +3,7 @@ package querki.datamodel
 import models.{Kind, PType}
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLCall, QLExp}
+import querki.ql.{QLCall, QLExp}
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._

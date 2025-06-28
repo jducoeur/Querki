@@ -7,7 +7,6 @@ import funcakka._
 import org.querki.requester._
 
 import querki.globals._
-import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence.UseKryo
 import querki.spaces.SpaceMessagePersistence.SpaceEvent

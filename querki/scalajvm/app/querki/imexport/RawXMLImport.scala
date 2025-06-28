@@ -1,7 +1,6 @@
 package querki.imexport
 
 import fastparse._
-import NoWhitespace._
 import XMLParser._
 import models._
 import querki.core.MOIDs.UrTypeOID
@@ -10,7 +9,7 @@ import querki.globals._
 import querki.identity.IdentityPersistence.UserRef
 import querki.identity.User
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
-import querki.values.{ElemValue, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, RequestContext, SpaceState}
 
 /**
  * Reads in a QuerkiML file, and builds a Space from it.

@@ -1,16 +1,13 @@
 package querki.identity
 
-import scala.concurrent.duration._
-
 import akka.actor._
 import akka.event.LoggingReceive
-import akka.pattern.AskTimeoutException
 
 import org.querki.requester._
 
 import querki.ecology._
 import querki.session.UserSessionMessages
-import querki.util.{Config, QLog}
+import querki.util.{Config}
 
 class CollaboratorCache(
   val e: Ecology,

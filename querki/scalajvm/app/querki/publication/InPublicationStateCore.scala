@@ -1,6 +1,5 @@
 package querki.publication
 
-import cats._
 import cats.implicits._
 import akka.actor.Actor.Receive
 import akka.persistence._

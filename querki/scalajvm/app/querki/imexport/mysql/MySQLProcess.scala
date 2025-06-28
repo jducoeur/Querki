@@ -1,6 +1,5 @@
 package querki.imexport.mysql
 
-import querki.globals._
 import querki.time._
 
 /**
@@ -9,7 +8,6 @@ import querki.time._
  */
 object MySQLProcess {
   import MySQLParse._
-  import MySQLProcess._
 
   case class MySQLDB(tables: Map[TableName, MySQLTable])
 

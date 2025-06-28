@@ -1,7 +1,6 @@
 package querki.spaces
 
 import akka.actor._
-import akka.persistence._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
 import akka.stream.ActorMaterializer
@@ -14,7 +13,7 @@ import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
-import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
+import querki.identity.{IdentityPersistence, PublicIdentity, User}
 import querki.identity.IdentityPersistence.SystemUserRef
 import querki.persistence._
 import querki.publication.{AddPublicationEvents, CurrentPublicationState, PublishedAck, ThingPublished}

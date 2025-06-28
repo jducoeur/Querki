@@ -1,7 +1,5 @@
 package querki.publication
 
-import PublicationEvents._
-
 /**
  * The pure-functional heart of the Publication system.
  *

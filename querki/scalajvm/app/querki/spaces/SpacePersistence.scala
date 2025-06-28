@@ -2,7 +2,7 @@ package querki.spaces
 
 import scala.concurrent.Future
 
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 
 import models._
 

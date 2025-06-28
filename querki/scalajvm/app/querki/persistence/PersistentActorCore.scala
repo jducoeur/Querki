@@ -4,8 +4,6 @@ import scala.util.Success
 
 import akka.actor.Actor.Receive
 
-import querki.globals._
-
 /**
  * This is a base trait that abstracts PersistentActor, so that we can write synchronous unit tests
  * for the various "Core" classes.

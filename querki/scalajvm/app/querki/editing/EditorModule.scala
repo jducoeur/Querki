@@ -1,21 +1,16 @@
 package querki.editing
 
-import scala.xml.Elem
-
-import scalatags.Text.all.{id => idAttr, _}
-import scalatags.Text.TypedTag
+import scalatags.Text.all.{id => _, _}
 
 import models._
 
 import querki.api.commonName
-import querki.core.{LinkCandidateProvider, QLText}
+import querki.core.{LinkCandidateProvider}
 import querki.ecology._
 import querki.globals._
 import querki.html.RenderSpecialization._
 import querki.identity.User
-import querki.ql.{QLCall, QLParam, QLPhrase}
-import querki.types._
-import querki.util._
+import querki.ql.{QLCall, QLParam}
 import querki.values._
 
 class EditorModule(e: Ecology) extends QuerkiEcot(e) with Editor with querki.core.MethodDefs with ThingEditor {

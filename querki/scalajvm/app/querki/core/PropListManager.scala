@@ -4,7 +4,7 @@ import scala.language.existentials
 
 import collection.immutable.TreeMap
 
-import models.{DisplayPropVal, Property, PropertyBundle, Thing}
+import models.{DisplayPropVal, PropertyBundle}
 
 import querki.core.MOIDs.UrPropOID
 

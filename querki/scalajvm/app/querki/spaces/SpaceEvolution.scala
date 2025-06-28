@@ -3,13 +3,11 @@ package querki.spaces
 import models.Kind.Kind
 import models.{Kind, ModelPersistence, OID, ThingState}
 import querki.basic.Basic
-import querki.ecology.{EcologyInterface, QuerkiEcot}
-import querki.globals.{spew, Ecology, SpaceState}
+import querki.globals.{Ecology, SpaceState}
 import querki.identity.{Person, User}
 import querki.publication.{CurrentPublicationState, Publication}
 import querki.security.AccessControl
 import querki.spaces.SpaceMessagePersistence._
-import querki.spaces.messages.CurrentState
 import querki.system.System
 import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog

@@ -1,12 +1,9 @@
 package querki.spaces
 
-import scala.util._
-
 import akka.actor._
 
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 import anorm.SqlParser._
-import play.api.db._
 
 import com.github.nscala_time.time.Imports._
 
@@ -15,7 +12,6 @@ import org.querki.requester._
 import messages._
 
 import models.{AsName, OID}
-import models.{Kind, Thing}
 import querki.core.NameUtils
 import querki.db._
 import ShardKind._

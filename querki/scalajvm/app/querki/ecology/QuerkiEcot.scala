@@ -1,8 +1,8 @@
 package querki.ecology
 
-import models.{Collection, OID, OIDMap, PType, PTypeBuilder, Property, ThingState}
+import models.{Collection, OIDMap, PType, PTypeBuilder}
 
-import querki.values.{QValue, SpaceState}
+import querki.values.{SpaceState}
 
 /**
  * This is a simplified version of QuerkiEcot, which is used only by the Core, so that

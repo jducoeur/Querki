@@ -1,11 +1,8 @@
 package querki.evolutions.steps
 
 import anorm._
-import play.api.db._
 
 import querki.ecology._
-
-import models._
 
 import querki.evolutions._
 

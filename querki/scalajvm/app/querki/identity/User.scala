@@ -1,28 +1,13 @@
 package querki.identity
 
-import scala.util._
-
-import anorm._
-import play.api._
-import play.api.db._
-import play.api.mvc._
-import play.api.Play.current
-
 import models.{OID, UnknownOID}
-import models.{AsName, AsOID, ThingId}
-
-import querki.core.NameUtils
-import querki.db.ShardKind
-import ShardKind._
+import models.{AsName}
 
 import querki.system.TOSModule.noTOSUserVersion
 
 import querki.util._
-import SqlHelpers._
 
 import querki.email.EmailAddress
-
-import MOIDs._
 
 import UserLevel._
 

@@ -2,24 +2,13 @@ package querki.css
 
 import scala.concurrent.Future
 
-// TODO: these are all abstraction breaks!
-import controllers.{HtmlEvent, PageEventManager, QuerkiTemplate}
-
 import querki.api.commonName
 import querki.globals._
 import models._
 import querki.ecology._
-import querki.util.{Contributor, Publisher}
 import querki.values._
 
 import querki.ql.CodeType
-import MOIDs.CSSOID
-import MOIDs.CSSTextOID
-import MOIDs.GoogleFontOID
-import MOIDs.StylesheetBaseOID
-import MOIDs.StylesheetOID
-import models.OID.thing2OID
-import scala.reflect.runtime.universe
 
 object MOIDs extends EcotIds(1) {
   val StylesheetOID = sysId(25)

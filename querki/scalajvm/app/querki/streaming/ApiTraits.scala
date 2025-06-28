@@ -1,11 +1,5 @@
 package querki.streaming
 
-import scala.concurrent.duration.FiniteDuration
-
-import akka.util.ByteString
-
-import querki.values.RequestContext
-
 object UploadMessages {
 
   // Standard message types required by Sink.actorRefWithAck -- see

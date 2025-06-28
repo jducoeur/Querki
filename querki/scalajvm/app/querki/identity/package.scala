@@ -16,9 +16,8 @@ import querki.ecology._
 
 import querki.core.QLText
 import querki.email.EmailAddress
-import querki.session.UserSessionMessages.UserSessionMsg
 import querki.util.PublicException
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 package object identity {
 

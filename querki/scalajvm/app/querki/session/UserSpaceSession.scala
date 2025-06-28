@@ -1,7 +1,6 @@
 package querki.session
 
 import akka.actor._
-import akka.persistence._
 
 import models._
 

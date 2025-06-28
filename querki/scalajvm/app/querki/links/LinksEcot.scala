@@ -13,7 +13,7 @@ import querki.globals._
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.spaces.messages.{CreateThing, ThingFound}
 import querki.values.{ElemValue, QLContext, SpaceState}
-import querki.util.{Contributor, PublicException, Publisher, SafeUrl}
+import querki.util.{Contributor, Publisher, SafeUrl}
 
 object MOIDs extends EcotIds(27) {
   val ChoiceOrderOID = moid(1)

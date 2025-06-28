@@ -1,7 +1,5 @@
 package querki.db
 
-import javax.inject._
-
 import java.sql.Connection
 import play.api.db.DBApi
 

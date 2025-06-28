@@ -2,9 +2,8 @@ package querki.notifications
 
 import akka.actor.Props
 
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 import anorm.SqlParser._
-import play.api.db._
 
 import querki.db._
 import ShardKind._
@@ -13,7 +12,6 @@ import querki.identity.UserId
 import querki.spaces.SerializedProps
 import querki.time.TimeAnorm._
 import querki.util.SqlHelpers._
-import querki.values.SpaceState
 
 object PersistenceMOIDs extends EcotIds(49)
 

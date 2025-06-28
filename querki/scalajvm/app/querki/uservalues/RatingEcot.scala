@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle}
 import querki.util.{HtmlEscape, QLog}
-import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, SpaceState}
 
 object RatingMOIDs extends EcotIds(45) {
   val RatingTypeOID = moid(1)

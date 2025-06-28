@@ -11,7 +11,6 @@ import querki.persistence._
 import querki.spaces.RTCAble
 
 import IdentityEmailMessages._
-import IdentityEmailPersistence._
 
 /**
  * This is the core of the IdentityEmailActor, separated out as usual for testability.

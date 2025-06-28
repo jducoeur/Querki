@@ -1,7 +1,5 @@
 package querki.identity
 
-import scala.concurrent.Future
-
 import akka.actor._
 
 import org.querki.requester.Requester
@@ -10,7 +8,6 @@ import models.{OID, UnknownOID}
 
 import querki.ecology._
 import querki.globals._
-import querki.session.UserSessionMessages.UserSessionMsg
 
 /**
  * The front-end cache for Users and Identities. All interactions with these tables should

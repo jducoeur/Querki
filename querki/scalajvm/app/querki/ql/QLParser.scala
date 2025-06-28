@@ -1,8 +1,5 @@
 package querki.ql
 
-import language.existentials
-
-import scala.annotation.tailrec
 import scala.util.parsing.combinator._
 
 import models._
@@ -11,7 +8,6 @@ import querki.core.QLText
 import querki.ecology._
 import querki.globals._
 import querki.html.QHtml
-import querki.util.{DebugRenderable, UnexpectedPublicException}
 import querki.values._
 
 sealed trait QLParseResult[T <: QLParseResultVal]

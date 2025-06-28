@@ -10,8 +10,7 @@ import querki.api.commonName
 import querki.basic.PlainTextBaseType
 import querki.ecology._
 import querki.globals._
-import querki.ql.QLPhrase
-import querki.util.{PublicException, QLog}
+import querki.util.{PublicException}
 import querki.values.{ElemValue, QFut, QLContext, QValue, RequestContext, ShowLinksAsFullAnchors, SpaceState}
 
 import MOIDs._

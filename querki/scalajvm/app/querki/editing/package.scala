@@ -1,6 +1,6 @@
 package querki
 
-import models.{DisplayPropVal, OID, Property, PropertyBundle, Thing, Wikitext}
+import models.{DisplayPropVal, OID, Property, PropertyBundle, Wikitext}
 
 import querki.basic.PlainText
 import querki.core.QLText

@@ -1,9 +1,8 @@
 package querki.evolutions
 
 import anorm._
-import anorm.SqlParser.{int, long}
+import anorm.SqlParser.{int}
 import java.sql.Connection
-import play.api.db._
 
 import querki.ecology._
 

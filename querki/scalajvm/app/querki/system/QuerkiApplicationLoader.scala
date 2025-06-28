@@ -9,7 +9,6 @@ import play.api.inject.guice._
 import play.api.{Application, ApplicationLoader, Configuration}
 
 // For cleaning up afterwards:
-import scala.concurrent.Future
 import javax.inject._
 import play.api.inject.ApplicationLifecycle
 

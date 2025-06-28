@@ -2,7 +2,7 @@ package querki.util
 
 import scala.concurrent.duration._
 
-import play.api.{Configuration, Play}
+import play.api.{Configuration}
 
 import querki.ecology.PlayEcology
 import querki.globals._

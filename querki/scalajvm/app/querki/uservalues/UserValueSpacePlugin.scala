@@ -2,7 +2,7 @@ package querki.uservalues
 
 import scala.language.existentials
 
-import models.{Property, Thing}
+import models.{Property}
 import querki.globals._
 import querki.spaces._
 import querki.spaces.messages.SpacePluginMsg

@@ -2,8 +2,6 @@ package querki.editing
 
 import scala.language.existentials
 
-import akka.actor._
-
 import models._
 
 import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
@@ -13,7 +11,7 @@ import EditFunctions._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingError, ThingFound}
 import querki.util.{PublicException}
-import querki.values.{QLRequestContext, QValue}
+import querki.values.{QLRequestContext}
 import models.OID.thing2OID
 import models.ThingId.thingId2Str
 

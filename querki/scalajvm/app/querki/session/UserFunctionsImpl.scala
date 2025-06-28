@@ -1,16 +1,12 @@
 package querki.session
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
-import autowire._
-
-import models.{AsOID, OID, ThingId, Wikitext}
+import models.{AsOID, OID, ThingId}
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.globals._
-import querki.identity.UserLevel
 import querki.spaces.messages._
 
 /**

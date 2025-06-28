@@ -2,13 +2,10 @@ package querki.types.impl
 
 import scala.language.existentials
 
-import scala.concurrent.Future
-
 import models._
 
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._
-import querki.util.QLog
 import querki.values._
 
 import querki.types._

@@ -3,7 +3,6 @@ package querki.identity
 import akka.actor._
 
 import querki.ecology._
-import querki.util.QLog
 
 private[identity] class UserCache(val ecology: Ecology) extends Actor with EcologyMember {
 

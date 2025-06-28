@@ -5,7 +5,7 @@ import querki.console.CommandEffectArgs
 import querki.console.ConsoleFunctions.{DisplayTextResult, ErrorResult}
 import querki.ecology.{EcotIds, QuerkiEcot}
 import querki.globals._
-import querki.ql.{QLExp, QLTextStage, UnQLText}
+import querki.ql.{QLExp, QLTextStage}
 
 object MOIDs extends EcotIds(76) {
   val GraphQLCommandOID = moid(1)

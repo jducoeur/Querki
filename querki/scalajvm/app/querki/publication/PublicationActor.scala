@@ -6,8 +6,7 @@ import funcakka._
 import org.querki.requester._
 import models._
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
-import querki.spaces.TracingSpace
+import querki.identity.{User}
 import querki.spaces.messages._
 
 class PublicationActor(

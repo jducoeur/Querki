@@ -1,21 +1,17 @@
 package querki.spaces
 
-import language.postfixOps
 import scala.util._
 
 import akka.actor._
 
 import org.querki.requester._
 
-import models._
 import messages._
 
 import querki.cluster.OIDAllocator._
 import querki.core.NameUtils
 import querki.ecology._
 import querki.globals._
-import querki.identity.User
-import querki.spaces._
 import querki.util.UnexpectedPublicException
 
 import PersistMessages._

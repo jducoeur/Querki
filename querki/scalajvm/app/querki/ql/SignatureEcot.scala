@@ -7,7 +7,7 @@ import models._
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
-import querki.values.{QLContext, QValue}
+import querki.values.{QLContext}
 
 object SignatureMOIDs extends EcotIds(61) {
   val SignatureModelOID = moid(1)

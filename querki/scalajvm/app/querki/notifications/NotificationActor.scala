@@ -6,7 +6,7 @@ import org.querki.requester._
 
 import querki.ecology._
 import querki.email.IdentityEmailMessages._
-import querki.identity.{IdentityCacheMessages, IdentityId, PublicIdentity, User, UserCacheMessages, UserLevel}
+import querki.identity.{IdentityId, User}
 import querki.util._
 
 /**

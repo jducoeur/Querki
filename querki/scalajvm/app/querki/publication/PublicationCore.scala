@@ -1,7 +1,5 @@
 package querki.publication
 
-import scala.math.Ordering._
-import cats._
 import cats.implicits._
 import akka.actor.Actor.Receive
 import akka.persistence.RecoveryCompleted
@@ -10,7 +8,7 @@ import funcakka.Implicits._
 import models._
 import querki.core.QLText
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{User}
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.values.RequestContext
 import PublicationCommands._

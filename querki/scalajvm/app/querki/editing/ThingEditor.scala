@@ -1,12 +1,9 @@
 package querki.editing
 
-import models.{Property, PropertyBundle, Thing, Wikitext}
+import models.{PropertyBundle, Wikitext}
 
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
-import querki.ql.Invocation
-import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self: EditorModule =>

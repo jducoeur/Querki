@@ -4,7 +4,7 @@ import akka.actor._
 
 import querki.ecology._
 import querki.globals._
-import querki.spaces.{CacheUpdate, DBSpacePersistenceFactory, SpaceManager, SpaceOps}
+import querki.spaces.{CacheUpdate}
 
 /**
  * The master root for all of Querki's back end. Note that this does *not* control the front end

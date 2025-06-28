@@ -6,7 +6,6 @@ import collection.immutable.TreeMap
 
 import models._
 
-import querki.basic.PlainText
 import querki.ecology._
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 

@@ -6,13 +6,10 @@ import akka.actor.{ActorRef, Props}
 
 import anorm.SqlQuery
 
-import models._
-
 import querki.ecology._
-import querki.identity.{IdentityId, PublicIdentity, User, UserId}
-import querki.notifications.Common
+import querki.identity.{User, UserId}
 import querki.spaces.SerializedProps
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 package object notifications {
 

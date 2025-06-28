@@ -14,8 +14,7 @@ import models._
 import querki.basic.PlainText
 import querki.core.{IsTextType, QLText}
 import querki.html.QHtml
-import querki.tools.ProfileHandle
-import querki.util.{QLog, UnexpectedPublicException}
+import querki.util.{QLog}
 import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, QValue, SpaceState}
 
 object MOIDs extends EcotIds(24) {

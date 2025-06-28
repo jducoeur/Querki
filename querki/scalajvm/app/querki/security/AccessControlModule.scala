@@ -5,7 +5,7 @@ import models._
 import querki.api.commonName
 import querki.ecology._
 import querki.globals._
-import querki.identity.{Identity, User}
+import querki.identity.{User}
 import querki.spaces.{RTCAble, SpaceAPI, SpacePlugin, SpacePluginProvider}
 import querki.values._
 

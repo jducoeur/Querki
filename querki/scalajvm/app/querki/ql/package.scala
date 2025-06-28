@@ -8,7 +8,7 @@ import querki.basic.PlainText
 import querki.core.QLText
 import querki.ecology._
 import querki.util.PublicException
-import querki.values.{ElemValue, EmptyValue, QFut, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, QFut, QLContext, QValue, SpaceState}
 
 package object ql {
 

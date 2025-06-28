@@ -4,7 +4,6 @@ import upickle.default.{macroRW, ReadWriter => RW}
 
 import models._
 import querki.values.RequestContext
-import autowire.Core
 
 sealed trait SessionMessage extends querki.spaces.messages.SpaceMessagePayload
 

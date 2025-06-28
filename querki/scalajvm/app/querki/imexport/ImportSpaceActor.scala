@@ -1,10 +1,6 @@
 package querki.imexport
 
-import scala.util.{Failure, Success}
-
 import akka.actor._
-
-import upickle._
 
 import org.querki.requester._
 
@@ -16,7 +12,6 @@ import querki.history.HistoryFunctions._
 import querki.spaces._
 import querki.spaces.messages._
 import querki.streaming._
-import UploadMessages._
 import querki.values.RequestContext
 
 import mysql._

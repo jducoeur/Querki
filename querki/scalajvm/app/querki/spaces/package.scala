@@ -14,7 +14,7 @@ import querki.ecology._
 import querki.identity.User
 import querki.spaces.messages.{SpaceMessage, SpaceMgrMsg}
 import querki.time.DateTime
-import querki.util.{Aggregator, Sequencer}
+import querki.util.{Sequencer}
 import querki.values.{QValue, SpaceState, StateCacheKey}
 
 package object spaces {

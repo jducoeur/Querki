@@ -1,7 +1,5 @@
 package querki.evolutions.steps
 
-import java.sql.Connection
-
 import querki.ecology._
 
 import querki.evolutions._

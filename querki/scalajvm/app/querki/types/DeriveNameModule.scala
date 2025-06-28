@@ -2,13 +2,13 @@ package querki.types
 
 import scala.language.existentials
 
-import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
+import models.{DisplayPropVal}
 
 import querki.api.commonName
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
-import querki.spaces.{SpaceChangeManager, TCRReq, ThingChangeRequest}
+import querki.spaces.{TCRReq, ThingChangeRequest}
 
 import querki.util._
 import querki.values._

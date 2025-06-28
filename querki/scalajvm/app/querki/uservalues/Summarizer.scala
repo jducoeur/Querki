@@ -1,20 +1,9 @@
 package querki.uservalues
 
 import scala.concurrent.Future
-import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
-import models.{
-  DisplayPropVal,
-  OID,
-  PType,
-  PTypeBuilder,
-  Property,
-  PropertyBundle,
-  SimplePTypeBuilder,
-  UnknownOID,
-  Wikitext
-}
+import models.{DisplayPropVal, OID, PType, Property, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
@@ -22,7 +11,7 @@ import querki.globals._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
-import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
 case class DiscreteSummary[UVT](
   propId: OID,

@@ -2,20 +2,8 @@ package querki.notifications
 
 import akka.actor._
 
-import anorm.{Success => AnormSuccess, _}
-
-import play.api.db._
-import play.api.Play.current
-
-// TEMP: while hacking the timestamps:
-import com.github.nscala_time.time.Imports._
-
-import models.OID
-
 import querki.ecology._
-import querki.identity.{Identity, UserId}
-import querki.time.DateTime
-import querki.values.QValue
+import querki.identity.{UserId}
 
 /**
  * The Actor that manages the DB side of persisting Notifications for a single User. Created

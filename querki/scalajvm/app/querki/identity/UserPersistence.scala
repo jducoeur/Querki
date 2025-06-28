@@ -5,11 +5,9 @@ import scala.util.Try
 import anorm._
 import anorm.SqlParser
 import SqlParser._
-import play.api._
-import play.api.db._
 import play.api.mvc._
 
-import models.{AsName, AsOID, OID, ThingId, UnknownOID}
+import models.{AsName, AsOID, ThingId, UnknownOID}
 
 import querki.api.{EmailAlreadyTakenException, HandleAlreadyTakenException}
 import querki.core.NameUtils

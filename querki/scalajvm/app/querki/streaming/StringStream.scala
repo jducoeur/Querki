@@ -6,7 +6,6 @@ import akka.actor._
 import akka.event.LoggingReceive
 
 import querki.globals._
-import querki.util.QuerkiActor
 
 /**
  * This pair of classes represents a simple streaming protocol for sending potentially large Strings

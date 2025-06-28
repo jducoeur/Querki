@@ -1,12 +1,11 @@
 package querki.html
 
-import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
+import scala.xml.{NodeSeq, Xhtml}
 
 import scalatags.Text.all.{id => idAttr, i => iAttr, _}
 import scalatags.Text.TypedTag
 
 import org.jsoup
-import jsoup.nodes.{Document => JDoc}
 import jsoup.select.{Elements => JElems}
 
 import models._
@@ -15,7 +14,7 @@ import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
 import querki.ql.{InvocationValue, QLExp, QLParam}
-import querki.util.{HtmlEscape, SafeUrl, XmlHelpers}
+import querki.util.{HtmlEscape, SafeUrl}
 import querki.values._
 
 object UIMOIDs extends EcotIds(11) {

@@ -3,19 +3,16 @@ package querki.uservalues
 import akka.actor._
 import akka.event.LoggingReceive
 
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 import anorm.SqlParser._
-import play.api.db._
 
 import org.querki.requester._
 
 import models.OID
 
 import querki.db._
-import querki.db.ShardKind._
 import querki.ecology._
 import querki.identity.{Identity, PublicIdentity}
-import querki.identity.IdentityCacheMessages._
 import querki.spaces.messages.SpaceSubsystemRequest
 import querki.time.DateTime
 import querki.time.TimeAnorm._

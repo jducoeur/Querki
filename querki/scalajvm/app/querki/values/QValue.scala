@@ -4,12 +4,7 @@ import scala.concurrent.Future
 
 import models._
 
-// TODO: both of these should get evolved away!
-import play.api.Logger
-
 import querki.ecology.Ecology
-import querki.util._
-import querki.values._
 
 /**
  * Marker trait, to indicate that we should stop processing at this value. Mix it

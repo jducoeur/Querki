@@ -1,7 +1,6 @@
 package querki.imexport
 
 import scalatags.Text.short._
-import scalatags.generic
 import scalatags.text._
 import scalatags.text.Builder.{GenericAttrValueSource => vsrc}
 

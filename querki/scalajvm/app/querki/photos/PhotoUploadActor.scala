@@ -10,13 +10,13 @@ import org.imgscalr.Scalr
 import java.security.MessageDigest
 import java.math.BigInteger
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
-import com.amazonaws.regions.{Region, Regions}
+import com.amazonaws.regions.{Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
 // When needed, uncomment better-files in build.sbt:
 // import better.files._
 import org.querki.requester.Requester
-import models.{MIMEType, OID, Wikitext}
+import models.{MIMEType}
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
@@ -27,7 +27,7 @@ import querki.streaming.UploadActor
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
-import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
+import querki.values.{QLContext, SpaceState}
 
 class PhotoUploadActor(
   e: Ecology,
@@ -38,7 +38,6 @@ class PhotoUploadActor(
      with UploadActor[PhotoUploadMetadata]
      with EcologyMember {
 
-  import PhotoUploadActor._
   import PhotoUploadMessages._
 
   implicit val ecology = e

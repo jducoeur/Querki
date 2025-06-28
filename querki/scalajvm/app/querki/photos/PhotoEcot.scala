@@ -1,19 +1,13 @@
 package querki.photos
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.xml.NodeSeq
 
-import akka.actor.{ActorRef, Props}
-import akka.pattern.ask
-import akka.util.Timeout
-
 import scalatags.Text.all.{span => htmlSpan, _}
 
 import models.{
-  Collection,
   DelegatingType,
   DisplayPropVal,
   FullInputRendering,
@@ -26,14 +20,13 @@ import models.{
   ThingState,
   Wikitext
 }
-import models.MIMEType.MIMEType
 
 import querki.basic.PlainText
 import querki.ecology._
 import querki.time.DateTime
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
-import querki.util.{Config, QLog, XmlHelpers}
-import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.util.{XmlHelpers}
+import querki.values.{ElemValue, QLContext}
 
 private[photos] object MOIDs extends EcotIds(52) {
   val PhotoTypeOID = moid(1)
@@ -75,7 +68,6 @@ class PhotoEcot(e: Ecology)
      with querki.core.MethodDefs
      with PhotosInternal {
   import MOIDs._
-  import PhotoUploadActor._
 
   val Basic = initRequires[querki.basic.Basic]
   val Editor = initRequires[querki.editing.Editor]
