@@ -92,7 +92,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.chuusai" %% "shapeless" % "2.3.11",
     //
     // TEST-ONLY DEPENDENCIES:
-    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     // This will need replacing with a different library after Scala 2.12!
