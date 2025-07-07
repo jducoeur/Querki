@@ -41,6 +41,9 @@ trait StreamController { self: ApplicationBase =>
 
     // This is largely just wrapper code to go from the built-in Sink constructor to a nice normal
     // Accumulator:
+    // TODO: this is apparently not quite right -- this isn't necessarily completing before the code that depends on it
+    // (in, eg, PhotoController) picks up and kicks off processing. Figure out what's wrong and make this more
+    // correct and deterministic:
     val futureAccumulator: Future[Accumulator[ByteString, Either[Result, ActorRef]]] =
       workerRefFuture.map { workerRef =>
         val sink: Sink[ByteString, Future[Either[Result, ActorRef]]] = Sink.actorRefWithAck(

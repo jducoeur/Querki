@@ -28,6 +28,8 @@ trait UploadActor[MetadataType] { self: Actor =>
 
   var uploadComplete: Boolean = false
 
+  var metadataOpt: Option[(MetadataType, ActorRef)] = None
+
   /**
    * Returns true iff the stream appears to be gzip'ped.
    *
@@ -88,7 +90,7 @@ trait UploadActor[MetadataType] { self: Actor =>
    * and UploadProcessFailed, and then call context.stop(self), but this is left to the
    * individual case to decide.
    */
-  def processBuffer(metadata: MetadataType): Unit
+  def processBuffer(metadata: MetadataType, metadataSender: ActorRef): Unit
 
   // Implements the receiving end of Sink.actorRefWithSink(). See
   //   https://doc.akka.io/libraries/akka-core/2.5/stream/stream-integrations.html#sink-actorrefwithack
@@ -108,6 +110,8 @@ trait UploadActor[MetadataType] { self: Actor =>
       QLog.spew(s"Upload complete!")
       QLog.spew(s"Bytes received: $bytesSoFar")
       QLog.spew(s"Allocated size of the outputStream: ${outputStream.size()}")
+
+      processIfReady()
     }
 
     case OnFailure(ex) => {
@@ -118,11 +122,35 @@ trait UploadActor[MetadataType] { self: Actor =>
     // Our extension to the protocol: the semantic layer should kick this off at the end, adding any metadata
     // needed in order to process this uploaded file. This is when the actual work happens.
     case ProcessUpload(metadataRaw) => {
-      QLog.spew(s"Beginning processing...")
       // Ugly, but needed to put the types together, and avoids erasure warnings. Will error at runtime if we
       // get it wrong. (This is one of those places where we could probably do better with Akka Typed.)
-      val metadata = metadataRaw.asInstanceOf[MetadataType]
-      processBuffer(metadata)
+      metadataOpt = Some((metadataRaw.asInstanceOf[MetadataType], sender))
+      // In airy theory, ProcessUpload should come after StreamComplete, but we've found it to be flaky in
+      // practice. We should fix the sending side (in StreamController and PhotoController), but for now we
+      // play it safe and allow things to run in either order:
+      processIfReady()
+    }
+  }
+
+  def processIfReady(): Unit = {
+    (uploadComplete, metadataOpt) match {
+      case (true, Some((metadata, metadataSender))) => {
+        QLog.spew(s"Beginning processing...")
+        try {
+          processBuffer(metadata, metadataSender)
+          QLog.spew("Done processing...")
+          // Just to be on the safe side, clear the actor state, in case another item comes in before we shut down:
+          uploadComplete = false
+          metadataOpt = None
+        } catch {
+          // There's no general-purpose solution, but let's at least make sure it's logged before the Actor dies:
+          case th: Throwable => {
+            QLog.error(s"Failure while processing uploaded file!", th)
+            throw th
+          }
+        }
+      }
+      case _ => QLog.spew("Not ready to begin processing yet...")
     }
   }
 

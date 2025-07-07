@@ -13,12 +13,9 @@ import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.regions.{Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
-// When needed, uncomment better-files in build.sbt:
-// import better.files._
 import org.querki.requester.Requester
 import models.{MIMEType}
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
 import querki.photos.PhotoUploadMessages.PhotoUploadMetadata
 import querki.session.messages.ChangeProps2
@@ -59,12 +56,22 @@ class PhotoUploadActor(
   def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
 
   // The guts of the upload processing, called after we have built the input stream
-  def processBuffer(metadata: PhotoUploadMetadata): Unit = {
+  def processBuffer(
+    metadata: PhotoUploadMetadata,
+    metadataSender: ActorRef
+  ): Unit = {
     val PhotoUploadMetadata(rc, propId, thingId) = metadata
 
     spewIfEnabled(s"UploadDone; type is $mimeType")
-    //      printBuffer()
+    // DO NOT CHECK IN -- this should only be uncommented for debugging:
+    // logBuffer()
     val originalImage = ImageIO.read(uploadedStream)
+
+    if (originalImage == null) {
+      throw new Exception(
+        s"Null result from ImageIO.read(); suggests that it can't find an ImageReader for MIME type $mimeType"
+      )
+    }
 
     spewIfEnabled(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
 
@@ -224,35 +231,44 @@ class PhotoUploadActor(
             QLContext(Core.ExactlyOne(lastElem), Some(rc), TimeProvider.qlEndTime)(newState, ecology)
           )
           loopback(processFut).map { wikified =>
-            sender ! PhotoInfo(wikified)
+            metadataSender ! PhotoInfo(wikified)
             finish()
           }
         }
         case ThingError(error, stateOpt) => {
-          sender ! PhotoFailed
+          metadataSender ! PhotoFailed
           finish()
         }
       }
     }
   }
 
-//  def printBuffer() = {
-//    QLog.spew(s"Dumping photo to photodump.txt for debugging")
-//    val file = File.home / "photodump.txt"
-//    file.clear()
-//
-//    def printBytes(start: Int): String = {
-//      val end = scala.math.min(start + 16, chunkBuffer.size - 1)
-//      (start until end).map { i =>
-//        val byte = chunkBuffer(i)
-//        f"$byte%2x"
-//      }.mkString(" ")
-//    }
-//
-//    for (i <- 0 until chunkBuffer.size by 16) {
-//      file.appendLine(f"$i%8x: ${printBytes(i)}")
-//    }
-//  }
+  def logBuffer() = {
+    QLog.spew(s"Dumping photo to log for debugging")
+
+    // We need to make sure we clean up after ourselves. Yes, it's a horrible mutable Java API:
+    uploadedStream.mark(1000000)
+
+    def printBytes(howMany: Int): String = {
+      (1 to howMany).map { _ =>
+        val byte = uploadedStream.read()
+        if (byte >= 0)
+          f"$byte%2x"
+        else
+          // read() returns -1 when we've hit EOF, so just ignore that:
+          ""
+      }.mkString(" ")
+    }
+
+    // Just keep telling myself that when in Java APIs, do as the Javoids do:
+    var i: Int = 0
+    while (uploadedStream.available() > 0) {
+      QLog.spew(f"$i%8x: ${printBytes(16)}")
+      i += 16
+    }
+
+    uploadedStream.reset()
+  }
 
   /**
    * Quick and dirty method for grouping the spews in here.

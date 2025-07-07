@@ -122,7 +122,7 @@ class ImportSpaceActor(
     context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
 
-  def processBuffer(rc: RequestContext) = {
+  def processBuffer(rc: RequestContext, metadataSender: ActorRef) = {
     // TODO: oh god, this is horrible. There is a State monad fighting to break out of this code when I have time...
     processPercent = 50
     importMsg = "Done uploading; constructing the new Space's data (this may take a while)..."
