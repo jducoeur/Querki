@@ -163,8 +163,8 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   lazy val TimedSpaceKey = AdminInternal.TimedSpaceKey
 
   def beginSpaceTiming(spaceId: TOID): Future[Unit] = {
-    implicit val node = Cluster(context.system)
-    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ + spaceId.underlying)
+    implicit val node = SelfUniqueAddress(Cluster(context.system).selfUniqueAddress)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ :+ spaceId.underlying)
     fut(())
   }
 
@@ -173,8 +173,8 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   }
 
   def stopSpaceTiming(spaceId: TOID): Future[Unit] = {
-    implicit val node = Cluster(context.system)
-    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ - spaceId.underlying)
+    implicit val node = SelfUniqueAddress(Cluster(context.system).selfUniqueAddress)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_.remove(spaceId.underlying))
     fut(())
   }
 

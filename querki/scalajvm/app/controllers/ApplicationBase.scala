@@ -1,20 +1,16 @@
 package controllers
 
 import javax.inject._
-
-import play.api.Logger
 import play.api.mvc._
-
 import upickle.default._
-
 import models._
-
 import querki.api._
 import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
+import querki.util.QLogging
 
-trait ApplicationBase extends BaseController with EcologyMember {
+trait ApplicationBase extends BaseController with EcologyMember with QLogging {
 
   // Concrete Controllers must inject this in their constructor signatures:
   val appProv: Provider[play.api.Application]
@@ -53,7 +49,7 @@ trait ApplicationBase extends BaseController with EcologyMember {
     try {
       throw new Exception("Got error; redirecting: " + errorMsg)
     } catch {
-      case e: Throwable => Logger.info(e.toString, e)
+      case e: Throwable => logger.info(e.toString, e)
     }
     Redirect(redirectTo).flashing("error" -> errorMsg)
   }

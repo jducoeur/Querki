@@ -197,7 +197,7 @@ class EcologyProviderImpl extends EcologyProvider {
  */
 class QuerkiModule extends AbstractModule {
 
-  def configure() = {
+  override def configure() = {
     bind(classOf[ShutdownHandler]).to(classOf[QuerkiShutdownHandler]).asEagerSingleton
     bind(classOf[EcologyProvider]).to(classOf[EcologyProviderImpl]).asEagerSingleton
   }

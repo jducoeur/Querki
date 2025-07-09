@@ -1,8 +1,8 @@
 package querki.values
 
 import models.{PType, UnknownOID}
-
 import querki.globals._
+import querki.util.QLogging
 
 /**
  * The value of a primitive Type. These are always considered "elements", since they
@@ -16,7 +16,7 @@ import querki.globals._
 case class ElemValue(
   elem: Any,
   pType: PType[_]
-) {
+) extends QLogging {
   import ElemValue._
 
   lazy val myType = pType.realType
@@ -45,7 +45,7 @@ case class ElemValue(
         try {
           throw new PublicException("Func.generalWrongType", expectedType.realType.displayName, myType.displayName)
         } catch {
-          case e: Exception => play.api.Logger.error("", e); throw e
+          case e: Exception => logger.error("", e); throw e
         }
       }
     )

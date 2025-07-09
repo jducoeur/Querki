@@ -7,8 +7,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
-lazy val akkaV = "2.5.3"
-lazy val appV = "3.0.0.5"
+lazy val akkaV = "2.5.26"
+lazy val appV = "3.0.0.6-1"
 
 lazy val sharedSrcDir = "scala"
 
@@ -58,7 +58,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
-    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.54",
+    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.59",
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",

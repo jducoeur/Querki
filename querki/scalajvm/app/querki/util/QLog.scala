@@ -1,13 +1,11 @@
 package querki.util
 
-import play.api.Logger
-
 import models._
 
 import querki.types.ModelTypeBase
 import querki.values.SpaceState
 
-object QLog {
+object QLog extends QLogging {
 
   /**
    * Hack: we need to know whether we are in the Play environment or not, and that's
@@ -31,7 +29,7 @@ object QLog {
     error: => Throwable
   ) = {
     if (inPlay) {
-      Logger.error(message, error)
+      logger.error(message, error)
       // Annoyingly, Logger.error only displays the top of the stack trace.
       // Can we fix Logger.error?
       println("Full error trace:")
@@ -74,7 +72,7 @@ object QLog {
    */
   def warn[T](message: => String): Option[T] = {
     if (inPlay)
-      Logger.warn(message)
+      logger.warn(message)
     else
       println(message)
 
@@ -83,7 +81,7 @@ object QLog {
 
   def info(message: => String) = {
     if (inPlay)
-      Logger.info(message)
+      logger.info(message)
     else
       println(message)
   }
