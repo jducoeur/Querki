@@ -17,7 +17,10 @@ import scala.util.{Failure, Success}
 package object globals {
 
   val Config = querki.util.Config
+  // TODO: this is going to become much more of an edge case, and won't belong here any more once
+  // QLogging is fully up and running:
   val QLog = querki.util.QLog
+  type QLogging = querki.util.QLogging
   type PublicException = querki.util.PublicException
 
   type AnyProp = models.AnyProp
@@ -56,6 +59,7 @@ package object globals {
 
   def spewingFut[T](msg: String)(f: => Future[T]): Future[T] = {
     QLog.spew(s"Will be trying $msg")
+    implicit val ec = scala.concurrent.ExecutionContext.global
     f.onComplete {
       case Success(result) => QLog.spew(s"  $msg succeeded, produces $result")
       case Failure(th)     => QLog.error(s"  $msg failed", th)

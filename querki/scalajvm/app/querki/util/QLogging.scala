@@ -20,4 +20,36 @@ trait QLogging {
    * every object. We'll see if that proves wise or not.
    */
   lazy val logger = Logger(this.getClass)
+
+  def formatMsg(
+    msg: => String,
+    fileName: sourcecode.FileName,
+    line: sourcecode.Line
+  ): String = {
+    s"(${fileName.value}:${line.value}) $msg"
+  }
+
+  def logError(
+    msg: => String
+  )(implicit
+    filename: sourcecode.FileName,
+    line: sourcecode.Line
+  ): Unit =
+    logger.error(formatMsg(msg, filename, line))
+
+  def logInfo(
+    msg: => String
+  )(implicit
+    filename: sourcecode.FileName,
+    line: sourcecode.Line
+  ): Unit =
+    logger.info(formatMsg(msg, filename, line))
+
+  def logTrace(
+    msg: => String
+  )(implicit
+    filename: sourcecode.FileName,
+    line: sourcecode.Line
+  ): Unit =
+    logger.trace(formatMsg(msg, filename, line))
 }

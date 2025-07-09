@@ -18,4 +18,8 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
+    <logger name="querki" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
 </configuration>
