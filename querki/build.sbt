@@ -80,10 +80,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
     // A simple Base64 library, for embedding stuff into HTML:
     // TODO: can/should we replace this with upickle? I don't think base64 is gaining us anything interesting:
-    "com.github.marklister" %% "base64" % "0.2.9",
+    "com.github.marklister" %% "base64" % "0.3.0",
     // We are also using BooPickle for embedding:
     // TODO: at this point, we probably should replace this with upickle, using one of the compact encodings:
-    "io.suzaku" %% "boopickle" % "1.3.1",
+    "io.suzaku" %% "boopickle" % "1.5.0",
     // We use JSoup for HTML cleaning:
     "org.jsoup" % "jsoup" % "1.11.2",
     // For graphql processing:
