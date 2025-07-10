@@ -91,6 +91,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.chuusai" %% "shapeless" % "2.3.13",
     //
     // TEST-ONLY DEPENDENCIES:
+    // ScalaTest can't upgrade until scalatestplus-play does, and *that* can't upgrade until we hit Play 2.8. So
+    // this is a bit stuck for now:
     "org.scalatest" %% "scalatest" % "3.0.8" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
@@ -98,7 +100,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "ai.x" %% "diff" % "2.0.1" % "test",
     // In-memory H2 database, for simulating MySQL:
     "com.h2database" % "h2" % "1.4.192" % "test",
-    // In-memory Akka Persistence driver, used for tests. This will need switching to a fork after Scala 2.12!
+    // In-memory Akka Persistence driver, used for tests. Probably need to switch to a fork for Akka 2.6!
+    // Eg, https://github.com/firstbirdtech/akka-persistence-inmemory and thence
+    // https://github.com/alstanchev/pekko-persistence-inmemory
     "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test"
   ),
   // Docker configuration
