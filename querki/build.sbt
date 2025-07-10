@@ -72,7 +72,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.lihaoyi" %% "sourcecode" % "0.4.2",
     // Only used for debugging at this point; uncomment when needed:
     // "com.github.pathikrit" %% "better-files" % "3.9.2",
-    "org.typelevel" %% "cats-core" % "2.0.0",
+    "org.typelevel" %% "cats-core" % "2.13.0",
     "org.typelevel" %% "cats-effect" % "2.0.0",
     "co.fs2" %% "fs2-core" % "2.1.0",
     "com.github.julien-truffaut" %% "monocle-core" % "1.5.0",
