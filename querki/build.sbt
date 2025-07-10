@@ -77,7 +77,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "co.fs2" %% "fs2-core" % "2.5.12",
     "com.github.julien-truffaut" %% "monocle-core" % "2.1.0",
     "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
-    "org.scala-lang.modules" %% "scala-xml" % "1.3.1",
+    "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
     // A simple Base64 library, for embedding stuff into HTML:
     // TODO: can/should we replace this with upickle? I don't think base64 is gaining us anything interesting:
     "com.github.marklister" %% "base64" % "0.2.9",
