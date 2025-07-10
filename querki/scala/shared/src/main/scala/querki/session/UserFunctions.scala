@@ -104,6 +104,8 @@ object UserFunctions {
   case object TOSOld extends TOSState
 
   object TOSState {
+    implicit val okayRW: RW[TOSOkay.type] = macroRW
+    implicit val oldRW: RW[TOSOld.type] = macroRW
     implicit val rw: RW[TOSState] = macroRW
   }
 }

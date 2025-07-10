@@ -138,6 +138,11 @@ object SecurityFunctions {
   case object SecurityInherited extends SecurityLevel
 
   object SecurityLevel {
+    implicit val publicRW: RW[SecurityPublic.type] = macroRW
+    implicit val membersRW: RW[SecurityMembers.type] = macroRW
+    implicit val ownerRW: RW[SecurityOwner.type] = macroRW
+    implicit val customRW: RW[SecurityCustom.type] = macroRW
+    implicit val inheritedRW: RW[SecurityInherited.type] = macroRW
     implicit val rw: RW[SecurityLevel] = macroRW
   }
 

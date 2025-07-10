@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
 lazy val akkaV = "2.5.26"
-lazy val appV = "3.0.0.6-1"
+lazy val appV = "3.0.0.6-2"
 
 lazy val sharedSrcDir = "scala"
 
@@ -69,8 +69,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
     "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
     // TODO: upgrade after we're on sbt 1.x:
-    "com.lihaoyi" %% "pprint" % "0.8.1",
-    "com.lihaoyi" %% "sourcecode" % "0.3.1",
+    "com.lihaoyi" %% "pprint" % "0.9.0",
+    "com.lihaoyi" %% "sourcecode" % "0.4.2",
     // Only used for debugging at this point; uncomment when needed:
     // "com.github.pathikrit" %% "better-files" % "3.9.2",
     "org.typelevel" %% "cats-core" % "2.0.0",
@@ -239,10 +239,10 @@ lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.9.9",
-  "com.lihaoyi" %%% "autowire" % "0.3.1",
-  "com.lihaoyi" %%% "scalatags" % "0.10.0",
-  "com.lihaoyi" %%% "fastparse" % "2.2.4"
+  "com.lihaoyi" %%% "upickle" % "4.2.1",
+  "com.lihaoyi" %%% "autowire" % "0.3.3",
+  "com.lihaoyi" %%% "scalatags" % "0.13.1",
+  "com.lihaoyi" %%% "fastparse" % "3.1.1"
   // TODO: pull this back out into a library again after we're done with upgrades:
 //  "org.querki" %%% "shocon" % "0.4",
 ))
