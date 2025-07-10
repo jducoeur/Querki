@@ -18,7 +18,8 @@ private[spaces] class SpaceMembersActor(
 ) extends Actor
      with Requester
      with Stash
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
   implicit val ecology = e
 
   lazy val AccessControl = interface[querki.security.AccessControl]
@@ -91,7 +92,7 @@ private[spaces] class SpaceMembersActor(
             val inviteRM = loopback(Person.inviteMembers(rc, inviteeEmails, collabs, state))
             inviteRM.onComplete {
               case Success(_)  =>
-              case Failure(ex) => QLog.error("Got an Exception while processing InviteRequest", ex)
+              case Failure(ex) => logError("Got an Exception while processing InviteRequest", ex)
             }
             for {
               result <- inviteRM

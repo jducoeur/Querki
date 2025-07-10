@@ -23,7 +23,8 @@ class FPComputeGraphQL(
   val rc: RequestContext,
   val state: SpaceState,
   val ecology: Ecology
-) extends JsValueableMixin {
+) extends JsValueableMixin
+     with QLogging {
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
   final val expQueryName = "_exp"
@@ -396,7 +397,7 @@ class FPComputeGraphQL(
       }
       case other => {
         // We don't expect this to happen until and unless we open up the possibility of more Collections:
-        QLog.error(
+        logError(
           s"FPComputeGraphQL: request to process a collection of type ${prop.cType} for Property ${prop.displayName}"
         )
         res(JsNull)

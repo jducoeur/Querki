@@ -10,7 +10,6 @@ import querki.html.QHtml
 import querki.identity.User
 import querki.notifications._
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.util.QLog
 import querki.values.{QLContext, RequestContext, SpaceState}
 
 import messages.Comment
@@ -142,7 +141,7 @@ class CommentNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier with N
               }
             }
             case None => {
-              QLog.error("CommentNotifier got a commentNotifyPref that isn't a YesNo: " + onePref)
+              logError("CommentNotifier got a commentNotifyPref that isn't a YesNo: " + onePref)
               recip
             }
           }
@@ -213,7 +212,7 @@ class CommentNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier with N
     } yield body.map(RenderedNotification(HtmlWikitext(QHtml(header)), _))
 
     resultOpt.getOrElse {
-      QLog.error("CommentNotifier got badly-formed Notification: " + note)
+      logError("CommentNotifier got badly-formed Notification: " + note)
       Future.successful(RenderedNotification(
         Wikitext("INTERNAL ERROR"),
         Wikitext("We're sorry, but this message seems to have gotten messed up")

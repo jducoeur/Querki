@@ -10,7 +10,6 @@ import messages._
 
 import querki.cluster.OIDAllocator._
 import querki.core.NameUtils
-import querki.ecology._
 import querki.globals._
 import querki.util.UnexpectedPublicException
 
@@ -27,7 +26,8 @@ class SpaceManager(
 ) extends Actor
      with Requester
      with EcologyMember
-     with SpaceCreator {
+     with SpaceCreator
+     with QLogging {
 
   implicit val ecology = e
 
@@ -51,7 +51,7 @@ class SpaceManager(
 //        // Each Space responds for itself:
 //        children.foreach(space => space.forward(req))
 //      } else {
-//        QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
+//        logError("Illegal request for GetSpacesStatus, from user " + requester.id)
 //      }
 //    }
 
@@ -59,7 +59,7 @@ class SpaceManager(
       if (requester.isAdmin) {
         persister.forward(req)
       } else {
-        QLog.error("Illegal request for GetSpaceCount, from user " + requester.id)
+        logError("Illegal request for GetSpaceCount, from user " + requester.id)
       }
     }
 

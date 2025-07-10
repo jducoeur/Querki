@@ -20,7 +20,8 @@ trait PublicationCore
      with PersistentActorCore
      with EcologyMember
      with querki.types.ModelTypeDefiner
-     with ModelPersistence {
+     with ModelPersistence
+     with QLogging {
 
   private lazy val AccessControl = interface[querki.security.AccessControl]
   private lazy val AWS = interface[querki.aws.AWS]
@@ -70,9 +71,15 @@ trait PublicationCore
       try {
         f
       } catch {
-        case th: Throwable => QLog.logAndThrowException(th)
+        case th: Throwable => {
+          logError("", th)
+          throw th
+        }
       }
-    resultME.handleError(th => QLog.logAndThrowException(th))
+    resultME.handleError(th => {
+      logError("", th)
+      throw th
+    })
   }
 
   def log(msg: => String): Unit = {
@@ -158,7 +165,7 @@ trait PublicationCore
       case _ => {
         val ex =
           new Exception(s"Somehow, User $who tried to Publish in ${state.id}, but doesn't have a local Identity!")
-        QLog.error("Error in PublicationCore.doPublish()", ex)
+        logError("Error in PublicationCore.doPublish()", ex)
         monadError.raiseError(ex)
       }
     }

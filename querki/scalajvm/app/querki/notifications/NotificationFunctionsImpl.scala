@@ -49,7 +49,7 @@ class NotificationFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
         }
         Future.sequence(noteFuts)
       } catch {
-        case ex: Exception => { QLog.error("Exception in getRecentNotifications", ex); throw ex }
+        case ex: Exception => { logError("Exception in getRecentNotifications", ex); throw ex }
       }
     }
   }

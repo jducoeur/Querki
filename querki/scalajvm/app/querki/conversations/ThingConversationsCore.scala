@@ -205,7 +205,7 @@ abstract class ThingConversationsCore(
   def receiveRecover: Receive = {
     case SnapshotOffer(metadata, msg) => {
       // We aren't yet using snapshots, so this is weird:
-      QLog.error(s"ThingConversationsCore got offered a snapshot: $msg")
+      logError(s"ThingConversationsCore got offered a snapshot: $msg")
     }
 
     case evt: DHConvs => {

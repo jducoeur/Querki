@@ -2,25 +2,20 @@ package querki.uservalues
 
 import akka.actor._
 import akka.event.LoggingReceive
-
 import anorm.{Success => _, _}
 import anorm.SqlParser._
-
 import org.querki.requester._
-
 import models.OID
-
 import querki.db._
 import querki.ecology._
 import querki.identity.{Identity, PublicIdentity}
 import querki.spaces.messages.SpaceSubsystemRequest
 import querki.time.DateTime
 import querki.time.TimeAnorm._
-import querki.util.QLog
 import querki.util.SqlHelpers._
 import querki.values.{EmptyValue, QValue, SpaceState}
-
 import PersistMessages._
+import querki.globals.QLogging
 
 private[uservalues] class UserValuePersister(
   val spaceId: OID,
@@ -28,7 +23,8 @@ private[uservalues] class UserValuePersister(
   val ecology: Ecology
 ) extends Actor
      with EcologyMember
-     with Requester {
+     with Requester
+     with QLogging {
 
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
@@ -47,7 +43,7 @@ private[uservalues] class UserValuePersister(
     def v(implicit state: SpaceState): QValue = {
       state.prop(propId) match {
         case Some(prop) => prop.deserialize(valStr)
-        case None       => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
+        case None       => { logError("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
       }
     }
 

@@ -16,7 +16,11 @@ import querki.util._
  * TODO: eventually, restructure this into a pool of workers, or even just turn it into a function in the
  * NotificationEcot -- it's not at all clear that having this as its own Actor gains us anything at all.
  */
-private[notifications] class NotificationActor(val ecology: Ecology) extends Actor with EcologyMember with Requester {
+private[notifications] class NotificationActor(val ecology: Ecology)
+  extends Actor
+     with EcologyMember
+     with Requester
+     with QLogging {
   import NotificationActor._
   import UserNotificationActor._
 
@@ -57,7 +61,7 @@ private[notifications] class NotificationActor(val ecology: Ecology) extends Act
               // ought to be streaming them in. This *begs* for Slick.
             }
           } else {
-            QLog.error("NotificationActor received an AllUsers message from someone who isn't an admin:\n" + msg)
+            logError("NotificationActor received an AllUsers message from someone who isn't an admin:\n" + msg)
           }
         }
 

@@ -13,7 +13,6 @@ import models.Kind._
 import querki.cluster.OIDAllocator._
 import querki.db._
 import ShardKind._
-import querki.ecology._
 import querki.globals._
 import querki.time._
 import querki.time.TimeAnorm._
@@ -60,7 +59,8 @@ private[spaces] class SpacePersister(
      with EcologyMember
      with Requester
      with SpaceLoader
-     with ModelTypeDefiner {
+     with ModelTypeDefiner
+     with QLogging {
 
   lazy val Core = interface[querki.core.Core]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
@@ -233,7 +233,7 @@ private[spaces] class SpacePersister(
                     case error: Exception => {
                       // TODO: this should go to a more serious error log, that we pay attention to. It
                       // indicates an internal DB inconsistency that we should have ways to clean up.
-                      QLog.error("Error while trying to load ThingStream " + id, error)
+                      logError("Error while trying to load ThingStream " + id, error)
                       None
                     }
                   }

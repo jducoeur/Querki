@@ -28,7 +28,7 @@ class MarcoPoloImpl(info: AutowireParams)(implicit e: Ecology) extends SpaceApiI
     val thingFuts =
       state.accumulateAll[Seq[Future[Option[MarcoPoloItem]]]](getLinksFromSpace(_, propOpt, lowerQ), (x, y) => x ++ y)
     val futSeq = Future.sequence(thingFuts)
-    futSeq.failed.foreach { th => QLog.error(s"MarcoPolo failed to look up the string $q", th) }
+    futSeq.failed.foreach { th => logError(s"MarcoPolo failed to look up the string $q", th) }
     futSeq.map { thingOpts =>
       val things = thingOpts.flatten
       val allItems: Seq[MarcoPoloItem] = propOpt match {

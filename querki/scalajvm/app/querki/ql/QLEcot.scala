@@ -14,7 +14,6 @@ import models._
 import querki.basic.PlainText
 import querki.core.{IsTextType, QLText}
 import querki.html.QHtml
-import querki.util.{QLog}
 import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, QValue, SpaceState}
 
 object MOIDs extends EcotIds(24) {
@@ -218,7 +217,7 @@ class QLEcot(e: Ecology)
     try {
       throw new Exception("dummy")
     } catch {
-      case e: Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")
+      case e: Exception => logError(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")
     }
     WarningValue(msg)
   }

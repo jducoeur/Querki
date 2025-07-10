@@ -2,7 +2,7 @@ package querki.ql
 
 import models.{Thing, ThingId, Wikitext}
 import querki.values.{EmptyValue, QLContext, QValue}
-import querki.globals.{fut, Config, Ecology, EcologyMember, Future, PublicException, QLog}
+import querki.globals.{fut, Config, Ecology, EcologyMember, Future, PublicException, QLogging}
 
 import scala.concurrent.ExecutionContext
 
@@ -14,7 +14,8 @@ class QLProcessor(
 )(implicit
   val ecology: Ecology,
   ec: ExecutionContext
-) extends EcologyMember {
+) extends EcologyMember
+     with QLogging {
 
   lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
@@ -55,18 +56,18 @@ class QLProcessor(
       try {
         val sid = stageId.getAndIncrement
         val indent = "  " * context.depth
-        QLog.info(s"$indent$sid: [[${stage.reconstructString}]] on ${context.debugRender}")
+        logTrace(s"$indent$sid: [[${stage.reconstructString}]] on ${context.debugRender}")
         val result = processor
         result.onComplete {
           case scala.util.Success(result) =>
-            QLog.info(s"$indent$sid = ${result.debugRender}")
+            logTrace(s"$indent$sid = ${result.debugRender}")
           case scala.util.Failure(ex) =>
-            QLog.error(s"$indent$sid returned Failure!", ex)
+            logError(s"$indent$sid returned Failure!", ex)
         }
         result
       } catch {
         case th: Throwable => {
-          QLog.error(
+          logError(
             s"Exception while processing stage ${stage.reconstructString} with context ${context.debugRender}",
             th
           )
@@ -266,7 +267,7 @@ class QLProcessor(
         fut(newContext)
       }
     }.getOrElse {
-      QLog.error(s"Failed to find the scope for binding $binding!")
+      logError(s"Failed to find the scope for binding $binding!")
       warningFut(context, s"Internal error while trying to parse!")
     }
   }

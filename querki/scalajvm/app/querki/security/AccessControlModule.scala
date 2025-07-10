@@ -276,7 +276,7 @@ class AccessControlModule(e: Ecology)
         }
       }
     } catch {
-      case ex: Exception => { QLog.error("Exception while checking permissions", ex); false }
+      case ex: Exception => { logError("Exception while checking permissions", ex); false }
     }
   }
 

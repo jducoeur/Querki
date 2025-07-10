@@ -68,13 +68,13 @@ case class InternalException(message: String) extends Exception(message)
  * especially since you don't actually have to declare any of the types. We may actually want some
  * syntactic glue to clarify.
  */
-object Tryer {
+object Tryer extends QLogging {
 
   def apply[T, R](func: => T)(succ: T => R)(fail: PublicException => R): R = {
     val t = Try { func }
     t match {
       case Failure(ex: PublicException) => fail(ex)
-      case Failure(error)               => { QLog.error("Internal error", error); fail(UnexpectedPublicException) }
+      case Failure(error)               => { logError("Internal error", error); fail(UnexpectedPublicException) }
       case Success(v)                   => succ(v)
     }
   }
@@ -89,7 +89,7 @@ object Tryer {
 //    def result:R = {
 //      t match {
 //        case Failure(ex:PublicException) if (fail.isDefined) => fail.get(ex)
-//        case Failure(error) if (fail.isDefined) => { QLog.error("Internal error", error); fail.get(UnexpectedPublicException) }
+//        case Failure(error) if (fail.isDefined) => { logError("Internal error", error); fail.get(UnexpectedPublicException) }
 //        case Success(v) if (succ.isDefined) => succ.get(v)
 //        case _ => throw new Exception("Incompletely defined TryTrans")
 //      }
@@ -106,7 +106,7 @@ class TryTrans[T, R](
   func: => T,
   succ: Option[T => R] = None,
   fail: Option[PublicException => R] = None
-) {
+) extends QLogging {
   type TRet = R
   def onSucc(f: T => R) = new TryTrans(func, Some(f), fail)
   def onFail(f: PublicException => R) = new TryTrans(func, succ, Some(f))
@@ -120,7 +120,7 @@ class TryTrans[T, R](
     } catch {
       case ex: PublicException => fail.get(ex)
       case ex: Exception => {
-        QLog.error("Internal error", ex)
+        logError("Internal error", ex)
         fail.get(UnexpectedPublicException)
       }
     }

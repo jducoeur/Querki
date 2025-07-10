@@ -10,7 +10,6 @@ import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
 case class DiscreteSummary[UVT](
@@ -29,7 +28,7 @@ case class DiscreteSummary[UVT](
 /**
  * Describes a mechanism for summarizing the User Values for a Property.
  */
-trait Summarizer[UVT, VT] {
+trait Summarizer[UVT, VT] extends QLogging {
 
   /**
    * Based on the previous and current User Values for a single User, produce an updated summary
@@ -295,7 +294,7 @@ trait SummarizerDefs { self: QuerkiEcot =>
         }
 
         case None => {
-          QLog.error(s"Got addToSummary for unknown Thing $tid")
+          logError(s"Got addToSummary for unknown Thing $tid")
           DiscreteSummary(fromProp.id, Map())
         }
       }

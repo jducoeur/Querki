@@ -207,7 +207,7 @@ class RatingEcot(e: Ecology)
                       |<span class="_ratingAvg">${"%.2f".format(v.avg)} (${v.n})</span>""".stripMargin)
         }
         case None => {
-          QLog.warn(s"_ratingAverageType called on unknown Property ${v.propId}")
+          logWarn(s"_ratingAverageType called on unknown Property ${v.propId}")
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f".format(v.avg)}' data-readonly='true'></div>
                       |<span class="_ratingAvg">${"%.2f".format(v.avg)} (${v.n})</span>""".stripMargin)
         }

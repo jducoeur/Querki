@@ -46,28 +46,26 @@ package object globals {
   /**
    * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.
    */
-  def spewing[T](msg: String)(f: => T): T = {
-    QLog.spew(s"Trying $msg")
+  def spewing[T](from: QLogging)(msg: String)(f: => T): T = {
+    from.logTrace(s"Trying $msg")
     try {
       val result = f
-      QLog.spew(s"  $msg succeeded, returning $result")
+      from.logTrace(s"  $msg succeeded, returning $result")
       result
     } catch {
-      case ex: Exception => { QLog.error(s"  $msg failed", ex); throw ex }
+      case ex: Exception => { from.logError(s"  $msg failed", ex); throw ex }
     }
   }
 
-  def spewingFut[T](msg: String)(f: => Future[T]): Future[T] = {
-    QLog.spew(s"Will be trying $msg")
+  def spewingFut[T](from: QLogging)(msg: String)(f: => Future[T]): Future[T] = {
+    from.logTrace(s"Will be trying $msg")
     implicit val ec = scala.concurrent.ExecutionContext.global
     f.onComplete {
-      case Success(result) => QLog.spew(s"  $msg succeeded, produces $result")
-      case Failure(th)     => QLog.error(s"  $msg failed", th)
+      case Success(result) => from.logTrace(s"  $msg succeeded, produces $result")
+      case Failure(th)     => from.logError(s"  $msg failed", th)
     }
     f
   }
-
-  def spew(msg: String) = QLog.spew(msg)
 
   type Future[T] = scala.concurrent.Future[T]
   val Future = scala.concurrent.Future

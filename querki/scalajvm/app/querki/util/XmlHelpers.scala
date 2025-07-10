@@ -7,7 +7,7 @@ import scala.xml.parsing.XhtmlParser
 
 import scalatags.Text.TypedTag
 
-object XmlHelpers {
+object XmlHelpers extends QLogging {
 
   /**
    * This deals with a pretty common pattern. We're generally passing NodeSeqs around to represent blocks of HTML.
@@ -58,7 +58,7 @@ object XmlHelpers {
       parseXhtmlFragment(displayText.str)
     } catch {
       case ex: Exception => {
-        QLog.error(s"Exception while trying to parse XML ${displayText.str}", ex)
+        logError(s"Exception while trying to parse XML ${displayText.str}", ex)
         NodeSeq.Empty
       }
     }
@@ -76,7 +76,7 @@ object XmlHelpers {
       parseXhtmlFragment(htmlStr)
     } catch {
       case ex: Exception => {
-        QLog.error(s"Exception while trying to parse XML ${htmlStr}", ex)
+        logError(s"Exception while trying to parse XML ${htmlStr}", ex)
         NodeSeq.Empty
       }
     }

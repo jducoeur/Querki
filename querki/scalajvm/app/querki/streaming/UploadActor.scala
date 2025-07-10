@@ -19,7 +19,7 @@ import querki.globals._
  * @author jducoeur
  * @tparam MetadataType the type of the metadata for this UploadActor, received at the end
  */
-trait UploadActor[MetadataType] { self: Actor =>
+trait UploadActor[MetadataType] extends QLogging { self: Actor =>
 
   /**
    * How many bytes have we received so far?
@@ -64,7 +64,7 @@ trait UploadActor[MetadataType] { self: Actor =>
   lazy val uploadedStream = {
     val baseStream = new ByteArrayInputStream(outputStream.toByteArray)
     if (isGZip(baseStream)) {
-      QLog.spew("Received GZip stream")
+      logTrace("Received GZip stream")
       new GZIPInputStream(baseStream)
     } else {
       baseStream
@@ -78,7 +78,7 @@ trait UploadActor[MetadataType] { self: Actor =>
    */
   lazy val uploaded = {
     val str = Source.fromInputStream(uploadedStream).mkString
-    QLog.spew(s"Size of uploaded String: ${str.length}")
+    logTrace(s"Size of uploaded String: ${str.length}")
     str
   }
 
@@ -90,7 +90,10 @@ trait UploadActor[MetadataType] { self: Actor =>
    * and UploadProcessFailed, and then call context.stop(self), but this is left to the
    * individual case to decide.
    */
-  def processBuffer(metadata: MetadataType, metadataSender: ActorRef): Unit
+  def processBuffer(
+    metadata: MetadataType,
+    metadataSender: ActorRef
+  ): Unit
 
   // Implements the receiving end of Sink.actorRefWithSink(). See
   //   https://doc.akka.io/libraries/akka-core/2.5/stream/stream-integrations.html#sink-actorrefwithack
@@ -107,15 +110,15 @@ trait UploadActor[MetadataType] { self: Actor =>
     case StreamComplete => {
       uploadComplete = true
 
-      QLog.spew(s"Upload complete!")
-      QLog.spew(s"Bytes received: $bytesSoFar")
-      QLog.spew(s"Allocated size of the outputStream: ${outputStream.size()}")
+      logTrace(s"Upload complete!")
+      logTrace(s"Bytes received: $bytesSoFar")
+      logTrace(s"Allocated size of the outputStream: ${outputStream.size()}")
 
       processIfReady()
     }
 
     case OnFailure(ex) => {
-      QLog.error("Upload failed!", ex)
+      logError("Upload failed!", ex)
       // Is there anything else useful to do here?
     }
 
@@ -135,22 +138,22 @@ trait UploadActor[MetadataType] { self: Actor =>
   def processIfReady(): Unit = {
     (uploadComplete, metadataOpt) match {
       case (true, Some((metadata, metadataSender))) => {
-        QLog.spew(s"Beginning processing...")
+        logTrace(s"Beginning processing...")
         try {
           processBuffer(metadata, metadataSender)
-          QLog.spew("Done processing...")
+          logTrace("Done processing...")
           // Just to be on the safe side, clear the actor state, in case another item comes in before we shut down:
           uploadComplete = false
           metadataOpt = None
         } catch {
           // There's no general-purpose solution, but let's at least make sure it's logged before the Actor dies:
           case th: Throwable => {
-            QLog.error(s"Failure while processing uploaded file!", th)
+            logError(s"Failure while processing uploaded file!", th)
             throw th
           }
         }
       }
-      case _ => QLog.spew("Not ready to begin processing yet...")
+      case _ => logTrace("Not ready to begin processing yet...")
     }
   }
 

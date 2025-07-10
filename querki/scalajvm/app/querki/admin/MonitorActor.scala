@@ -15,7 +15,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember {
+class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember with QLogging {
 
   import MonitorActor._
 
@@ -37,8 +37,9 @@ class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMemb
 
   def sendUpdate() = {
     _current.map(evt => monitor ! evt)
+    // TODO: remove this config flag and just use normal log levels:
     if (logHeartbeats)
-      QLog.spew(s"Send Monitor heartbeat ${_current}")
+      logTrace(s"Send Monitor heartbeat ${_current}")
   }
 
   def receive = {

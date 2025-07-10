@@ -10,13 +10,13 @@ import akka.util.Timeout
 
 import models._
 
-import querki.ecology._
+import querki.ecology.{EcotIds}
 import querki.globals._
 import querki.spaces._
 import querki.spaces.messages.{SpacePluginMsg, SpaceSubsystemRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
-import querki.util.{ActorHelpers, Contributor, Publisher, QLog}
+import querki.util.{ActorHelpers, Contributor, Publisher}
 import querki.values.{QLContext, SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
@@ -105,7 +105,7 @@ class UserValueEcot(e: Ecology)
   def isUserValueProp(propId: OID)(implicit state: SpaceState): Boolean = {
     state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.userValueProps)) match {
       case Some(rawEntry) => { rawEntry.asInstanceOf[Set[OID]].contains(propId) }
-      case None           => { QLog.error("UserValueEcot couldn't find its state cache in Space " + state.id); false }
+      case None           => { logError("UserValueEcot couldn't find its state cache in Space " + state.id); false }
     }
   }
 

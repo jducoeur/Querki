@@ -36,7 +36,7 @@ import querki.persistence._
  *
  * @author jducoeur
  */
-class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester with EcologyMember {
+class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester with EcologyMember with QLogging {
 
   import QuerkiNodeCoordinator._
 
@@ -46,7 +46,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
   private var snapshotCounter = 0
 
-  QLog.spew("Creating QuerkiNodeCoordinator")
+  logTrace("Creating QuerkiNodeCoordinator")
 
   lazy val relookupTimeout = Timeout(Config.getDuration("querki.cluster.shardRelookupTimeout", 10.minutes))
   lazy val snapshotInterval = Config.getInt("querki.cluster.snapshotInterval", 100)
@@ -72,7 +72,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
     path: NodePath,
     shardId: ShardId
   ): ShardId = {
-    QLog.spew(s"Assigning shard $shardId to node $path -- currently at $shardAssignments")
+    logTrace(s"Assigning shard $shardId to node $path -- currently at $shardAssignments")
     // We increment the snapshotCounter here, so that it is updated correctly during
     // recovery:
     snapshotCounter += 1
@@ -81,9 +81,9 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
   }
 
   def doUnassign(path: NodePath) = {
-    QLog.spew(s"Removing shard assignment from node $path")
+    logTrace(s"Removing shard assignment from node $path")
     shardAssignments -= path
-    QLog.spew(s"Resulting shard assignments are $shardAssignments")
+    logTrace(s"Resulting shard assignments are $shardAssignments")
   }
 
   def assignShard(path: NodePath): ShardId = {
@@ -96,7 +96,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
   }
 
   def snap() = {
-    QLog.spew(s"QuerkiNodeCoordinator saving snapshot")
+    logTrace(s"QuerkiNodeCoordinator saving snapshot")
     snapshotCounter = 0
     saveSnapshot(ShardSnapshot(fullShards, shardAssignments))
   }
@@ -104,7 +104,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
   def makeAssignment(ref: ActorRef) = {
     val path = nodePath(ref)
     _assignmentsBeingChecked -= path
-    QLog.spew(s"In makeAssignment($path)")
+    logTrace(s"In makeAssignment($path)")
     // If we already have an entry, it is by definition stale since the Node
     // is asking for a new one:
     doUnassign(path)
@@ -126,7 +126,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
   ) = {
     val path = nodePath(ref)
     _assignmentsBeingChecked -= path
-    QLog.spew(s"In unassign($path, $reassign)")
+    logTrace(s"In unassign($path, $reassign)")
     shardAssignments.get(path).map { shardId =>
       persist(ShardUnassigned(path, shardId)) { msg =>
         doUnassign(path)
@@ -141,7 +141,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
     event: Option[Any]
   ): Unit = {
     cause.fillInStackTrace()
-    QLog.error(s"QuerkiNodeCoordinator failed recovery, on event $event", cause)
+    logError(s"QuerkiNodeCoordinator failed recovery, on event $event", cause)
     super.onRecoveryFailure(cause, event)
   }
 
@@ -154,50 +154,50 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
     case OldShardAssigned(ref, assignment) => {
       // We pre-emptively reserve the Shard, and will sanity-check whether that's real on
       // RecoveryCompleted:
-      QLog.spew(s"Recovered OldShardAssigned($ref, $assignment)")
+      logTrace(s"Recovered OldShardAssigned($ref, $assignment)")
       doAssign(nodePath(ref), assignment)
     }
 
     case ShardAssigned(path, assignment) => {
       // We pre-emptively reserve the Shard, and will sanity-check whether that's real on
       // RecoveryCompleted:
-      QLog.spew(s"Recovered ShardAssigned($path, $assignment)")
+      logTrace(s"Recovered ShardAssigned($path, $assignment)")
       doAssign(path, assignment)
     }
 
     case OldShardUnassigned(ref, shardId) => {
-      QLog.spew(s"Recovered OldShardUnassigned($ref, $shardId)")
+      logTrace(s"Recovered OldShardUnassigned($ref, $shardId)")
       doUnassign(nodePath(ref))
     }
 
     case ShardUnassigned(path, shardId) => {
-      QLog.spew(s"Recovered ShardUnassigned($path, $shardId)")
+      logTrace(s"Recovered ShardUnassigned($path, $shardId)")
       doUnassign(path)
     }
 
     case ShardUnavailable(shardId) => {
-      QLog.spew(s"Recovered ShardUnavailable($shardId)")
+      logTrace(s"Recovered ShardUnavailable($shardId)")
       fullShards += shardId
     }
 
     case SnapshotOffer(metadata, OldShardSnapshot(f, s)) => {
-      QLog.spew(s"QuerkiNodeCoordinator recovering old snapshot; fullShards are $f; assignments are $s")
+      logTrace(s"QuerkiNodeCoordinator recovering old snapshot; fullShards are $f; assignments are $s")
       fullShards = f
       shardAssignments = s.map { case (path, nodeId) => (nodePath(path), nodeId) }
     }
 
     case SnapshotOffer(metadata, ShardSnapshot(f, s)) => {
-      QLog.spew(s"QuerkiNodeCoordinator recovering snapshot; fullShards are $f; assignments are $s")
+      logTrace(s"QuerkiNodeCoordinator recovering snapshot; fullShards are $f; assignments are $s")
       fullShards = f
       shardAssignments = s
     }
 
     case RecoveryCompleted => {
-      QLog.spew(s"Finished recovering the QuerkiNodeCoordinator")
+      logTrace(s"Finished recovering the QuerkiNodeCoordinator")
       // Okay -- now let's take a look at our assignments and see if they make sense:
       _assignmentsBeingChecked = shardAssignments.keySet
       shardAssignments.foreach { case (path, id) =>
-        QLog.spew(s"CheckShardAssignment($id) for $path")
+        logTrace(s"CheckShardAssignment($id) for $path")
         context.system.actorSelection(ActorPath.fromString(path.s)).request(CheckShardAssignment(id)).onComplete {
           result =>
             // Do we still care about this request? If not, just ignore the result. This check will be false if
@@ -208,24 +208,24 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
                 case Failure(ex) => {
                   // We don't have a ref, and have no way to get one, so we have to persist this with
                   // a snapshot instead:
-                  QLog.spew(s"CheckShardAssignment($id) Failed")
+                  logTrace(s"CheckShardAssignment($id) Failed")
                   doUnassign(path)
                   snap()
                 }
 
                 // This assignment is still active:
                 case Success(ConfirmShardAssignment(ref)) => {
-                  QLog.spew(s"CheckShardAssignment($id) Confirmed as $ref")
+                  logTrace(s"CheckShardAssignment($id) Confirmed as $ref")
                   context.watch(ref)
                 }
 
                 // Found the node, but that's not the right assignment:
                 case Success(RefuteShardAssignment(ref)) => {
-                  QLog.spew(s"CheckShardAssignment($id) refuted by $ref; expected $path")
+                  logTrace(s"CheckShardAssignment($id) refuted by $ref; expected $path")
                   unassign(ref, false)
                 }
 
-                case other => QLog.error(
+                case other => logError(
                     s"QuerkiNodeCoordinator.RecoveryCompleted, checking Shard Assignments, got unexpected response $other"
                   )
               }
@@ -237,13 +237,13 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
   val receiveCommand: Receive = LoggingReceive {
     case AssignShard(nodeRef) => {
-      QLog.spew(s"Coordinator got AssignShard request from $nodeRef")
+      logTrace(s"Coordinator got AssignShard request from $nodeRef")
       context.watch(nodeRef)
       makeAssignment(nodeRef)
     }
 
     case ShardFull(shardId, nodeRef) => {
-      QLog.spew(s"Coordinator got ShardFull($shardId, $nodeRef)")
+      logTrace(s"Coordinator got ShardFull($shardId, $nodeRef)")
       persist(ShardUnavailable(shardId)) { msg =>
         fullShards += shardId
       }
@@ -252,12 +252,12 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
     }
 
     case Terminated(nodeRef) => {
-      QLog.spew(s"Coordinator got Terminated($nodeRef)")
+      logTrace(s"Coordinator got Terminated($nodeRef)")
       unassign(nodeRef, false)
     }
 
-    case SaveSnapshotSuccess(metadata)        => //QLog.spew(s"Successfully saved snapshot: $metadata")
-    case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
+    case SaveSnapshotSuccess(metadata)        => //logTrace(s"Successfully saved snapshot: $metadata")
+    case SaveSnapshotFailure(metadata, cause) => logError(s"Failed to save snapshot: $metadata", cause)
 
     case Stop => {
       context.stop(self)

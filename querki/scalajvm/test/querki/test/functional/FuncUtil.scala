@@ -160,7 +160,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    */
   def spew(str: => String) = {
     // TODO: make this config-selectable
-    QLog.spew(str)
+    logTrace(str)
   }
 
   def loginAs(user: TestUser)(state: State): State = {

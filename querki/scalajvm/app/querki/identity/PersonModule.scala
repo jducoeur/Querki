@@ -11,7 +11,6 @@ import org.querki.requester._
 import models._
 
 import querki.api.commonName
-import querki.ecology._
 import querki.email.emailSepChar
 import querki.globals._
 import querki.spaces.{CacheUpdate}
@@ -789,7 +788,7 @@ class PersonModule(e: Ecology)
             } yield acceptOpenInvitationForRole(rc, role)
 
             resultOpt.getOrElse {
-              QLog.error(s"Shared Invite $invite somehow doesn't have a linked Role!")
+              logError(s"Shared Invite $invite somehow doesn't have a linked Role!")
               fail
             }
           }
@@ -798,7 +797,7 @@ class PersonModule(e: Ecology)
           acceptOpenInvitationForRole(rc, invite)
         } else {
           // WTF? This shouldn't be possible, even when hacked:
-          QLog.error(s"Shared Invite $invite is of some unrecognized type! How did this get signed?")
+          logError(s"Shared Invite $invite is of some unrecognized type! How did this get signed?")
           fail
         }
       }

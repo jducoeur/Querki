@@ -10,7 +10,6 @@ import querki.core.MOIDs.UrPropOID
 
 import querki.ecology._
 import querki.globals._
-import querki.util.QLog
 import querki.values.SpaceState
 
 object PropListMOIDs extends EcotIds(20)
@@ -177,7 +176,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
               list :+ (prop, v)
             }
             case None => {
-              QLog.error("Was unable to find Property " + oid + " in prepPropList()")
+              logError("Was unable to find Property " + oid + " in prepPropList()")
               list
             }
           }

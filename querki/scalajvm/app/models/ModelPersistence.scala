@@ -1,6 +1,5 @@
 package models
 
-import querki.ecology._
 import querki.globals._
 import querki.identity.IdentityId
 import querki.identity.IdentityPersistence.UserRef
@@ -10,7 +9,7 @@ import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.values.{SpaceState, SpaceVersion}
 
-trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner =>
+trait ModelPersistence extends QLogging { self: EcologyMember with querki.types.ModelTypeDefiner =>
 
   import ModelPersistence._
 
@@ -34,7 +33,7 @@ trait ModelPersistence { self: EcologyMember with querki.types.ModelTypeDefiner 
           (k, prop.serialize(v))
         }
         case None => {
-          QLog.stackTrace(s"Trying to serialize unknown Property $k, with value $v!")
+          stackTrace(s"Trying to serialize unknown Property $k, with value $v!")
           (k, "")
         }
       }

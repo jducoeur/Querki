@@ -20,7 +20,7 @@ import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
 import querki.uservalues.SummarizeChange
 import querki.uservalues.PersistMessages._
-import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
+import querki.util.{PublicException, TimeoutChild, UnexpectedPublicException}
 import querki.values.{QValue, RequestContext, SpaceState}
 
 /**
@@ -44,7 +44,8 @@ private[session] class OldUserSpaceSession(
      with EcologyMember
      with TimeoutChild
      with SpaceEvolution
-     with autowire.Server[String, Reader, Writer] {
+     with autowire.Server[String, Reader, Writer]
+     with QLogging {
   implicit val ecology = e
 
   // Needed for SpacePure:
@@ -352,7 +353,7 @@ private[session] class OldUserSpaceSession(
               // ... then tell the Space to summarize it, if there is a Summary Property...
               val msg = for {
                 prop <-
-                  state.prop(propId).orElse(QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId"))
+                  state.prop(propId).orElse(logWarn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId"))
                 summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
                 summaryPropId <- summaryLinkPV.firstOpt
                 newV = if (v.isDeleted) None else Some(v)
@@ -406,15 +407,15 @@ private[session] class OldUserSpaceSession(
             s ! ClientError(write(aex))
           }
           case pex: PublicException => {
-            QLog.error(s"Replied with PublicException $th instead of ApiException when invoking $req")
+            logError(s"Replied with PublicException $th instead of ApiException when invoking $req")
             s ! ClientError(pex.display(Some(rc)))
           }
           case ex: Exception => {
-            QLog.error(s"Got exception when invoking $req", ex)
+            logError(s"Got exception when invoking $req", ex)
             s ! ClientError(UnexpectedPublicException.display(Some(rc)))
           }
           case _ => {
-            QLog.error(s"Got exception when invoking $req: $th")
+            logError(s"Got exception when invoking $req: $th")
             s ! ClientError(UnexpectedPublicException.display(Some(rc)))
           }
         }
@@ -466,7 +467,7 @@ private[session] class OldUserSpaceSession(
       tracing.trace(s"received SpaceSubsystemRequest(${payload.getClass.getSimpleName})")
       checkDisplayName(req, space)
       payload match {
-        case GetActiveSessions => QLog.error("OldUserSpaceSession received GetActiveSessions! WTF?")
+        case GetActiveSessions => logError("OldUserSpaceSession received GetActiveSessions! WTF?")
 
         case ChangeProps2(thingId, props) => {
           changeProps(req, thingId, props)

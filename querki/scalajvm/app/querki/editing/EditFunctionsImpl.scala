@@ -123,12 +123,12 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
       else
         props
 
-    if (doLogEdits) QLog.spew(s"About to send ChangeProps2(${thing.toThingId}, $allProps)")
+    if (doLogEdits) logTrace(s"About to send ChangeProps2(${thing.toThingId}, $allProps)")
 
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, allProps))).map {
       case ThingFound(_, _) => PropertyChanged
       case ThingError(ex, _) => {
-        if (doLogEdits) QLog.error(s"ChangeProps2 got error", ex)
+        if (doLogEdits) logError(s"ChangeProps2 got error", ex)
         throw new querki.api.GeneralChangeFailure("Error during save")
       }
     }
@@ -138,7 +138,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
     thingId: TID,
     changeTop: PropertyChange
   ): Future[PropertyChangeResponse] = withThing(thingId) { thing =>
-    if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $changeTop")
+    if (doLogEdits) logTrace(s"Got alterProperty on $thingId: $changeTop")
     implicit val s = state
 
     def evaluateOneChange(change: PropertyChange): Option[PropMap] = change match {
@@ -225,7 +225,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
 
     val propsOpt: Option[PropMap] = evaluateOneChange(changeTop)
 
-    if (doLogEdits) QLog.spew(s"Actual changes to be performed: $propsOpt")
+    if (doLogEdits) logTrace(s"Actual changes to be performed: $propsOpt")
 
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)

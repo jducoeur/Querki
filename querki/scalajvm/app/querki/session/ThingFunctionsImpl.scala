@@ -138,7 +138,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
           ).orElse(
             tryType(Core.LinkType) { vs => LinkV(vs.map(_.toTID)) }
           ).getOrElse {
-            QLog.error(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
+            logError(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
             m
           }
         }

@@ -27,7 +27,12 @@ trait MonitorStats {
  *
  * @author jducoeur
  */
-class AdminMonitor(implicit val ecology: Ecology) extends Actor with Requester with MonitorStats with EcologyMember {
+class AdminMonitor(implicit val ecology: Ecology)
+  extends Actor
+     with Requester
+     with MonitorStats
+     with EcologyMember
+     with QLogging {
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
 
@@ -68,7 +73,7 @@ class AdminMonitor(implicit val ecology: Ecology) extends Actor with Requester w
           spaces -= evt.spaceId
           watches -= mon.path
         }
-        case None => QLog.error(s"AdminMonitor somehow got a Terminated message for unknown Monitor ${mon.path}!")
+        case None => logError(s"AdminMonitor somehow got a Terminated message for unknown Monitor ${mon.path}!")
       }
     }
   }

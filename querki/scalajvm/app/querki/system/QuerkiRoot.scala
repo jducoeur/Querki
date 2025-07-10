@@ -2,7 +2,7 @@ package querki.system
 
 import akka.actor._
 
-import querki.ecology._
+import querki.ecology.EcologyImpl
 import querki.globals._
 import querki.spaces.{CacheUpdate}
 
@@ -14,7 +14,7 @@ import querki.spaces.{CacheUpdate}
  * For the time being, this is basically nothing but a root supervisor -- it has no real messages of
  * its own. This may well change eventually, especially once we get into clustering.
  */
-class QuerkiRoot extends Actor {
+class QuerkiRoot extends Actor with QLogging {
 
   import QuerkiRoot._
 
@@ -29,10 +29,10 @@ class QuerkiRoot extends Actor {
 
   def checkAsyncInitDone() = {
     if (ecology.waitingForAsync) {
-      QLog.spew(s"Waiting for ${ecology.asyncInitters} to initialize")
+      logTrace(s"Waiting for ${ecology.asyncInitters} to initialize")
     } else {
       initCaller.map { origSender =>
-        QLog.spew("... Querki running.")
+        logTrace("... Querki running.")
         origSender ! Initialized(ecology)
       }
     }
@@ -59,7 +59,7 @@ class QuerkiRoot extends Actor {
     }
 
     case AsyncInitted(clazz) => {
-      QLog.spew(s"Async Initter $clazz is ready")
+      logTrace(s"Async Initter $clazz is ready")
       ecology.gotAsync(clazz)
       checkAsyncInitDone()
     }

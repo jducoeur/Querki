@@ -1,14 +1,14 @@
 package querki.persistence
 
 import scala.util.Success
-
 import akka.actor.Actor.Receive
+import querki.util.QLogging
 
 /**
  * This is a base trait that abstracts PersistentActor, so that we can write synchronous unit tests
  * for the various "Core" classes.
  */
-trait PersistentActorCore {
+trait PersistentActorCore extends QLogging {
 
   def persistenceId: String
 

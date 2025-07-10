@@ -238,13 +238,13 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
             case Some(identity) =>
               if (identity.kind != IdentityKind.SimpleEmail) {
                 val ex = new Exception(s"Somehow attempting to upgrade an Identity that already has a User!")
-                QLog.error("Error in createUser", ex)
+                logError("Error in createUser", ex)
                 Some(ex)
               } else
                 None
             case None => {
               val ex = new Exception(s"Somehow trying to createUser for an unknown Identity $identityId!")
-              QLog.error("Error in createUser", ex)
+              logError("Error in createUser", ex)
               Some(ex)
             }
           }

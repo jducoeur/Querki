@@ -72,7 +72,7 @@ class AdminController @Inject() (
         }
       }.recover {
         case ex: Throwable => {
-          QLog.error(s"Unable to generate full space history for $spaceIdStr", ex)
+          logError(s"Unable to generate full space history for $spaceIdStr", ex)
           // If something goes wrong, like a timeout, make sure we still stop the actor:
           system.stop(historyRef)
           InternalServerError

@@ -75,7 +75,7 @@ class ImportSpaceActor(
       }
 
       case _ => {
-        QLog.error(s"ImportSpaceActor called with unknown ImportDataType $importType")
+        logError(s"ImportSpaceActor called with unknown ImportDataType $importType")
         throw new Exception("Unknown ImportDataType!")
       }
     }
@@ -122,7 +122,10 @@ class ImportSpaceActor(
     context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
 
-  def processBuffer(rc: RequestContext, metadataSender: ActorRef) = {
+  def processBuffer(
+    rc: RequestContext,
+    metadataSender: ActorRef
+  ) = {
     // TODO: oh god, this is horrible. There is a State monad fighting to break out of this code when I have time...
     processPercent = 50
     importMsg = "Done uploading; constructing the new Space's data (this may take a while)..."
@@ -136,8 +139,8 @@ class ImportSpaceActor(
         case _                    => "There was an error trying to upload that Space -- sorry! Please contact us, so we can look into it."
       }
 
-      QLog.warn(s"Error during Import Space: $importMsg")
-      QLog.warn(s"Exception while uploading Space: $ex\n${ex.getStackTrace}")
+      logWarn(s"Error during Import Space: $importMsg")
+      logWarn(s"Exception while uploading Space: $ex\n${ex.getStackTrace}")
 
       failed = true
     }

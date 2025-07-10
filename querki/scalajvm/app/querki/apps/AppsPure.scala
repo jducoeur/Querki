@@ -10,7 +10,7 @@ import querki.types.ModelTypeDefiner
  * This is basically a chunk of SpacePure, refactored out for conceptual cleanness. These are
  * the pure stateless functions at the heart of manipulating the Apps for a Space.
  */
-trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember {
+trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember with QLogging {
 
   private lazy val Apps = interface[Apps]
   private lazy val Core = interface[querki.core.Core]
@@ -159,7 +159,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
             case _ => {
               val msg =
                 s"State ${rawSpace.displayName}, app ${curState.displayName} asked for unknown Parent App $parentId"
-              QLog.error(msg)
+              logError(msg)
               throw new Exception(msg)
             }
           }

@@ -53,9 +53,9 @@ class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Co
     state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.propsBySkill)) match {
       case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Seq[Property[_, _]]]] }
       case None => {
-        QLog.warn(s"""SkillLevel couldn't find its state cache in Space ${state.id}; 
-                     |we must be copying SpaceState without copying the cache! 
-                     |Recalculating now...""".stripMargin)
+        logWarn(s"""SkillLevel couldn't find its state cache in Space ${state.id};
+                   |we must be copying SpaceState without copying the cache! 
+                   |Recalculating now...""".stripMargin)
         calculatePropsBySkill(state)
       }
     }

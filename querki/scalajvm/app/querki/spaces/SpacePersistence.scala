@@ -9,7 +9,6 @@ import models._
 import querki.ecology._
 import querki.time.DateTime
 import querki.time.TimeAnorm._
-import querki.util.QLog
 import querki.values.{ElemValue, EmptyValue, QLContext, SpaceState}
 
 object SpacePersistenceMOIDs extends EcotIds(28)
@@ -107,7 +106,7 @@ class SpacePersistenceEcot(e: Ecology) extends QuerkiEcot(e) with SpacePersisten
         }
         case None => {
           // This is *very* weird, and typically means that an Ecot has failed to register a Property in System Space:
-          QLog.error(s"Attempting to serialize Property $ptr, but could not find it in Space ${space.displayName}")
+          logError(s"Attempting to serialize Property $ptr, but could not find it in Space ${space.displayName}")
           s"$ptr:"
         }
       }
@@ -129,7 +128,7 @@ class SpacePersistenceEcot(e: Ecology) extends QuerkiEcot(e) with SpacePersisten
       (id, v)
     } catch {
       case e: Exception => {
-        QLog.error(s"""Exception while trying to deserialize property string "$propStr":""", e)
+        logError(s"""Exception while trying to deserialize property string "$propStr":""", e)
         (UnknownOID, EmptyValue.untyped)
       }
     }

@@ -125,7 +125,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
         }.getOrElse(state)
       }
       case _ => {
-        QLog.error(s"SpacePure.createPure is trying to create something of kind $kind!")
+        logError(s"SpacePure.createPure is trying to create something of kind $kind!")
         // This shouldn't be possible -- we're checking against it in createSomething()
         state
       }

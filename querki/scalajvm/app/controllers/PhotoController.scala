@@ -55,7 +55,7 @@ class PhotoController @Inject() (
     withUser(true, parser = BodyParser(photoReceiver(ownerId, spaceId) _)) { rc =>
       // By the time we get here, we have fired up a PhotoUploadActor, and we have a pointer to a Future that
       // will be completed once all of the chunks are sent to it:
-      QLog.spew(s"Finished receiving")
+      logTrace(s"Finished receiving")
 
       // TODO: this should really check headOption, and give some more-meaningful error if it is empty:
       val propIdStr = rc.queryParam("propId").head

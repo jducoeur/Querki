@@ -10,7 +10,7 @@ import querki.values.{PropAndVal, QLContext, QValue, RequestContext, SpaceState}
  * but would make the code a fair bit more sensible. (In particular, get rid of the verdammt thingOps, which are a major
  * code smell.)
  */
-trait PropertyBundle {
+trait PropertyBundle extends QLogging {
 
   /**
    * Returns true iff this bundle is an actual Thing, that you can treat on its own for operations like

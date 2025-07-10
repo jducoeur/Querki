@@ -45,7 +45,7 @@ object RoutingStates {
  * This encapsulates the concept of a parent that has TimeoutChildren. You don't use this directly,
  * you use its subtraits, depending on how many children you're looking for.
  */
-trait RoutingParentBase[K] extends Actor with ReceivePipeline {
+trait RoutingParentBase[K] extends Actor with ReceivePipeline with QLogging {
 
   class ManagedChild(
     val id: K,
@@ -110,7 +110,7 @@ trait RoutingParentBase[K] extends Actor with ReceivePipeline {
     case KillMe => {
       findChild(sender) match {
         case Some(child) => child.beginShutdown
-        case _           => QLog.warn(s"RouterParent got KillMe from unknown child $sender")
+        case _           => logWarn(s"RouterParent got KillMe from unknown child $sender")
       }
       HandledCompletely
     }

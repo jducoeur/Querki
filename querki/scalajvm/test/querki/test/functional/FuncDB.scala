@@ -35,7 +35,7 @@ trait FuncDB { this: FuncMixin =>
           trans(conn)
         } catch {
           case ex: Exception => {
-            QLog.error("Exception executing DB transaction during setupDatabase", ex)
+            logError("Exception executing DB transaction during setupDatabase", ex)
             throw ex
           }
         }

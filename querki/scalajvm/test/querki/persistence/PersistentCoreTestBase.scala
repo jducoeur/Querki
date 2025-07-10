@@ -64,14 +64,15 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   def doPersist[A <: UseKryo](event: A)(handler: (A) => Unit) = {
     lastSequenceNr += 1
     history = HistoryRecord(lastSequenceNr, event) :: history
-    if (_spewHistory) QLog.spew(s"Persisting $event")
+    // TODO: remove this config flag and just use normal log levels:
+    if (_spewHistory) logTrace(s"Persisting $event")
     handler(event)
   }
 
   def doPersistAll(events: collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit): Unit = {
     val (seqNr, recs) = events.foldLeft((lastSequenceNr, List.empty[HistoryRecord])) { case ((curSeqNr, recs), event) =>
       val seqNr = curSeqNr + 1
-      if (_spewHistory) QLog.spew(s"Persisting $event")
+      if (_spewHistory) logTrace(s"Persisting $event")
       val res = (seqNr, HistoryRecord(seqNr, event) :: recs)
       handler(event)
       res
@@ -122,7 +123,7 @@ trait PersistentCoreTestBase extends PersistentActorCore {
   def saveSnapshot(snapshot: Any) = {
     val metadata = SnapshotMetadata(persistenceId, lastSequenceNr, DateTime.now.getMillis)
     val event = SnapshotOffer(metadata, snapshot)
-    if (_spewHistory) QLog.spew(s"Persisting $event")
+    if (_spewHistory) logTrace(s"Persisting $event")
     // Note that the snapshot *replaces* the rest of the history, intentionally. Playback should start
     // from here:
     history = HistoryRecord(lastSequenceNr, event) :: Nil

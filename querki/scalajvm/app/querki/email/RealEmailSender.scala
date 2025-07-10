@@ -34,6 +34,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
   lazy val from = Config.getString(fullKey("from"))
   lazy val smtpHost = Config.getString(fullKey("smtpHost"))
   lazy val smtpPort = Config.getInt(fullKey("port"), 0)
+  // TODO: now that we have a better logging stack, drop this in favor of using the trace level of logging for this type:
   lazy val debug = Config.getBoolean(fullKey("debug"), false)
   lazy val username = Config.getString(fullKey("smtpUsername"), "")
   lazy val password = Config.getString(fullKey("smtpPassword"), "")
@@ -135,7 +136,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
     if (retries > 0) {
       future.recoverWith {
         case ex: Exception => {
-          if (debug) QLog.spew(s"$name() got Exception ${ex.getMessage}; retrying $retries")
+          if (debug) logTrace(s"$name() got Exception ${ex.getMessage}; retrying $retries")
           // We delay a little, then try again:
           after(retryDelay, scheduler) { futureWithRetries(name)(f, retries - 1) }
         }
@@ -145,7 +146,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
       future.onComplete {
         _ match {
           case Success(_)  => // Yay!
-          case Failure(ex) => QLog.error(s"Failure trying to send email, in $name", ex)
+          case Failure(ex) => logError(s"Failure trying to send email, in $name", ex)
         }
       }
 
@@ -256,7 +257,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
         transport <- transportFut
         _ <- connect(transport)
         _ <- sendMessage(msg, transport)
-        _ = if (debug) QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+        _ = if (debug) logTrace(s"Sent email; transport returned ${transport.getLastServerResponse}")
       } yield transport.getLastReturnCode
 
       returnCodeFut.andThen {
@@ -346,7 +347,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
         transport.connect(username, password)
         transport.sendMessage(msg, msg.getAllRecipients)
         if (debug)
-          QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+          logTrace(s"Sent email; transport returned ${transport.getLastServerResponse}")
       } else {
         // Non-TLS -- running on a test server, so just do it the easy way:
         Transport.send(msg)

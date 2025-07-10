@@ -49,7 +49,8 @@ private[history] class SpaceHistory(
      with HistoryFoldingImpl
      with RestoreDeleted
      with HistorySummaryBuilder
-     with FindDeleted {
+     with FindDeleted
+     with QLogging {
 
   def timeoutConfig: String = "querki.history.timeout"
 
@@ -135,7 +136,7 @@ private[history] class SpaceHistory(
       loopback(findAllDeleted(rc, predicateOpt, renderOpt)).map { deletedList =>
         sender ! DeletedThings(deletedList)
       }.recover {
-        case ex: Exception => spew(s"Got an Exception: $ex")
+        case ex: Exception => logTrace(s"Got an Exception: $ex")
       }
     }
   }

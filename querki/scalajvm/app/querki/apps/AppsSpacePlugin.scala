@@ -33,7 +33,8 @@ class AppsSpacePlugin[RM[_]](
      with IdentityPersistence
      with querki.types.ModelTypeDefiner
      with EcologyMember
-     with AppsPure {
+     with AppsPure
+     with QLogging {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -108,7 +109,7 @@ class AppsSpacePlugin[RM[_]](
           th match {
             case ex: PublicException => api.respond(AddAppResult(Some(ex), None))
             case ex => {
-              QLog.error(s"AddApp received an unexpected exception", ex)
+              logError(s"AddApp received an unexpected exception", ex)
               api.respond(ThingError(UnexpectedPublicException))
             }
           }

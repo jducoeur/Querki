@@ -128,7 +128,8 @@ class ApiManagement(e: Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiI
   }
 
   def apiTrace(msg: => String): Unit = {
+    // TODO: remove this config flag and just use normal trace levels:
     if (traceApi)
-      QLog.spew(msg)
+      logTrace(msg)
   }
 }

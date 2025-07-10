@@ -95,7 +95,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
       } catch {
         case ex: PublicException => respond(ThingError(ex))
         case ex: Throwable => {
-          QLog.error(s"Space.plugins received an unexpected exception before doPersist()", ex)
+          logError(s"Space.plugins received an unexpected exception before doPersist()", ex)
           respond(ThingError(UnexpectedPublicException))
         }
       }
@@ -283,7 +283,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     _currentState match {
       case Some(s) => s
       case None => {
-        QLog.error("!!!! State not ready in Actor " + id)
+        logError("!!!! State not ready in Actor " + id)
         emptySpace
       }
     }
@@ -521,7 +521,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
       // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
       // better than nothing:
       if (thingIdOpt.isEmpty && enhancedState.anything(thingId).isDefined) {
-        QLog.error(
+        logError(
           s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}"
         )
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
@@ -697,7 +697,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
         th match {
           case ex: PublicException => respond(ThingError(ex))
           case ex => {
-            QLog.error(s"Space.$opName received an unexpected exception before doPersist()", ex)
+            logError(s"Space.$opName received an unexpected exception before doPersist()", ex)
             respond(ThingError(UnexpectedPublicException))
           }
         }
@@ -733,8 +733,13 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    *
    * This is rather wordy, but we're trying to diagnose QI.7w4gfs3, so it's helpful.
    */
-  def initSpew(msg: String): Unit = {
-    QLog.spew(s"Space $id: $msg")
+  def initSpew(
+    msg: String
+  )(implicit
+    fileName: sourcecode.FileName,
+    line: sourcecode.Line
+  ): Unit = {
+    logTrace(s"Space $id: $msg")
   }
 
   def handlingInitExceptions[R](phase: String)(f: => R): R = {
@@ -745,7 +750,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
       r
     } catch {
       case ex: Exception => {
-        QLog.error(s"Exception while initializing $id, phase $phase", ex)
+        logError(s"Exception while initializing $id, phase $phase", ex)
         // We don't have a good way to recover from initialization Exceptions -- if we keep going, we're going to
         // wind up with data corruption. So shut down, in the hopes of better luck next time:
         selfDestruct()
@@ -838,7 +843,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
           val result = afterOwnerIdentity.map(_ => readied())
           result.onComplete {
             case Success(_)  => // That's fine
-            case Failure(ex) => QLog.error("SpaceCore.readyState got an async failure", ex)
+            case Failure(ex) => logError("SpaceCore.readyState got an async failure", ex)
           }
           result
         }
@@ -870,7 +875,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
           initializing = true
           readyState(Some(currentState))
         } else {
-          QLog.error(s"Somehow recovered Space $id with the ownerIdentity intact?")
+          logError(s"Somehow recovered Space $id with the ownerIdentity intact?")
         }
       }
     }
@@ -892,7 +897,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
         evolveState(_currentState)(evt)
       } catch {
         case ex: Exception => {
-          QLog.error(s"Exception while recovering SpaceEvent $evt", ex)
+          logError(s"Exception while recovering SpaceEvent $evt", ex)
           selfDestruct()
           throw ex
         }
@@ -1002,7 +1007,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     // by this Space!
     case msg @ InitialState(who, spaceId, display, ownerId) => {
       if (_currentState.isDefined) {
-        QLog.error(s"Space $id received $msg, but already has state $currentState!")
+        logError(s"Space $id received $msg, but already has state $currentState!")
       } else {
         val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
         persistAllAnd(List(msg)).map { _ =>
@@ -1195,7 +1200,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
     case SaveSnapshotFailure(metadata, cause) => {
       // TODO: what should we do here? This explicitly isn't fatal, but it *is* scary as all heck:
-      QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
+      logError(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
     }
 
     case ps: CurrentPublicationState => {

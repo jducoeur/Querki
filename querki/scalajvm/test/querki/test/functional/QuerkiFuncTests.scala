@@ -27,6 +27,7 @@ trait FuncMixin
      with FuncUtil
      with FuncInvites
      with EcologyMember
+     with QLogging
 
 /**
  * The actual test runner. This defines the functional-test "cake", and the tests to run.

@@ -14,10 +14,10 @@ class ProfilerEcot(e: Ecology) extends QuerkiEcot(e) with Profiler {
   override def term() = {
     if (!profiles.isEmpty) {
       // We've done some profiling, so print out the results.
-      QLog.info("Profile results:")
+      logInfo("Profile results:")
       val allProfiles = profiles.values.toSeq.sortBy(_.name)
       allProfiles.foreach { profile =>
-        QLog.info(
+        logInfo(
           s"${profile.name}: ${profile.runs} runs, averaging ${(profile.time.getMillis / profile.runs)} ms, total ${profile.time.getMillis}"
         )
       }

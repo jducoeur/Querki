@@ -50,7 +50,8 @@ class PersistentSpaceActor(
 ) extends SpaceCore[RequestM](RealRTCAble)(e)
      with Requester
      with PersistentQuerkiActor
-     with IdentityPersistence {
+     with IdentityPersistence
+     with QLogging {
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
 
   /**
@@ -179,7 +180,7 @@ class PersistentSpaceActor(
     // fall back to the MySQL layer, but complain about it.
     def getOwnerId(): RequestM[OID] = {
       if (ownerIdIn == UnknownOID) {
-        QLog.error(s"Space $id got UnknownOID as its owner in fetchOwnerIdentity(). Falling back to MySQL...")
+        logError(s"Space $id got UnknownOID as its owner in fetchOwnerIdentity(). Falling back to MySQL...")
         persister.request(GetOwner).map {
           case SpaceOwner(id) => id
         }
@@ -201,8 +202,9 @@ class PersistentSpaceActor(
     if (timeSpaceOps) {
       stateRouter ! MonitorMsg(msg, DateTime.now)
     }
+    // TODO: gate this on the TRACE log level here, instead of a config flag:
     if (monitorSpaces) {
-      QLog.spew(s"SPACE MONITOR ($id): $msg")
+      logTrace(s"SPACE MONITOR ($id): $msg")
     }
   }
 

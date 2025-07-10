@@ -87,7 +87,7 @@ class PhotoUploadActor(
       // TODO: is this happening any more? ImageIO.read() was occasionally returning null, which I
       // believe was a symptom of the messages from PhotoController to here getting out of order,
       // because we weren't composing Futures properly. I *think* that is fixed...
-      QLog.error("OriginalImage is null! WTF?")
+      logError("OriginalImage is null! WTF?")
     }
 
     // For the time being, we are presuming that PNGs are screenshots, and should just be left alone:
@@ -162,7 +162,7 @@ class PhotoUploadActor(
         val putResult = s3client.putObject(putRequest)
       } catch {
         case e: Throwable => {
-          QLog.error(s"Error while trying to upload $name", e)
+          logError(s"Error while trying to upload $name", e)
           throw e
         }
       }
@@ -200,7 +200,7 @@ class PhotoUploadActor(
           oldFilename <- oldBundle.getFirstOpt(PhotosInternal.ImageFilenameProp)
           oldThumbFilename <- oldBundle.getFirstOpt(PhotosInternal.ImageThumbnailFilenameProp)
         } yield {
-          QLog.spew(s"Removing ${oldFilename.text} and ${oldThumbFilename.text}")
+          logTrace(s"Removing ${oldFilename.text} and ${oldThumbFilename.text}")
           s3client.deleteObject(AWS.bucket, oldFilename.text);
           s3client.deleteObject(AWS.bucket, oldThumbFilename.text)
         }
@@ -216,7 +216,7 @@ class PhotoUploadActor(
       self ! ImageComplete
     }
 
-    //      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
+    //      logTrace(s"About to actually update the Space -- the QValue is $qv")
     (router ? SpaceSubsystemRequest(
       rc.requesterOrAnon,
       state.id,
@@ -243,8 +243,10 @@ class PhotoUploadActor(
     }
   }
 
+  // TODO: break this out into its own object, and filter it on the TRACE level of logging for that object, so we
+  // can turn it on and off in a more fine-grained way:
   def logBuffer() = {
-    QLog.spew(s"Dumping photo to log for debugging")
+    logTrace(s"Dumping photo to log for debugging")
 
     // We need to make sure we clean up after ourselves. Yes, it's a horrible mutable Java API:
     uploadedStream.mark(1000000)
@@ -263,7 +265,7 @@ class PhotoUploadActor(
     // Just keep telling myself that when in Java APIs, do as the Javoids do:
     var i: Int = 0
     while (uploadedStream.available() > 0) {
-      QLog.spew(f"$i%8x: ${printBytes(16)}")
+      logTrace(f"$i%8x: ${printBytes(16)}")
       i += 16
     }
 
@@ -272,9 +274,11 @@ class PhotoUploadActor(
 
   /**
    * Quick and dirty method for grouping the spews in here.
+   *
+   * TODO: remove this in favor of more conventional control of the TRACE log level.
    */
   def spewIfEnabled(msg: String): Unit = {
-    QLog.spew(msg)
+    logTrace(msg)
   }
 
   override def receive = LoggingReceive(handleChunks.orElse {

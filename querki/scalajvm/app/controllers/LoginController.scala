@@ -398,7 +398,7 @@ class LoginController @Inject() (
                     val msg = error match {
                       case err: PublicException => err.display(request, ecology)
                       case _ =>
-                        QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+                        logError("Internal Error during signup", error); "Something went wrong; please try again"
                     }
                     withSpaceInfo { (info, ownerIdentity) =>
                       BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)(messages))
@@ -469,7 +469,7 @@ class LoginController @Inject() (
             val msg = error match {
               case ex: ApiException     => write(ex)
               case err: PublicException => err.display(request, ecology)
-              case _                    => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+              case _                    => logError("Internal Error during signup", error); "Something went wrong; please try again"
             }
             BadRequest(s"$msg")
           }

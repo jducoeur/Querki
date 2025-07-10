@@ -13,7 +13,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-abstract class QuerkiActor(e: Ecology) extends Actor with Requester with EcologyMember {
+abstract class QuerkiActor(e: Ecology) extends Actor with Requester with EcologyMember with QLogging {
   implicit val ecology = e
 
   /**

@@ -16,81 +16,9 @@ object QLog extends QLogging {
 
   def inPlay: Boolean = !runningUnitTests
 
-  def stackTrace(message: => String): Unit = {
-    try {
-      throw new Exception("Debugging Stack Trace requested")
-    } catch {
-      case ex: Exception => error(message, ex)
-    }
-  }
-
-  def error(
-    message: => String,
-    error: => Throwable
-  ) = {
-    if (inPlay) {
-      logger.error(message, error)
-      // Annoyingly, Logger.error only displays the top of the stack trace.
-      // Can we fix Logger.error?
-      println("Full error trace:")
-      error.printStackTrace()
-    } else {
-      println(message + "\n" + error.toString())
-      error.printStackTrace()
-    }
-  }
-
-  def error(message: => String) = {
-    // TBD: I think errors are serious at this point that they should always include a stack:
-//    if (inPlay)
-//      Logger.error(message)
-//    else
-//      println(message)
-    stackTrace("Non-Exception Error: " + message)
-  }
-
-  // Convenience function:
-  def logAndThrowException(ex: => Throwable): Nothing = {
-    error("", ex)
-    throw ex
-  }
-
-  /**
-   * warn() should be used for situations that are unexpected not plausible: inconsistencies
-   * in User Space that we don't *expect* to see, but could imagine arising under certain
-   * circumstances. Basically, stuff to keep an eye on, but which is not immediately alarming.
-   *
-   * The Option signature here is so that you can say:
-   * {{{
-   * for {
-   *   myThingy <- getThingyOpt orElse QLog.warn("getThingOpt unexpectedly returned None!")
-   * }
-   *   ...
-   * }}}
-   * Basically, it helps with the very common case where you have unexpectedly gotten None inside
-   * of an Option for comprehension. (Yes, this is conceptually hackish, but it happens all the time.)
-   */
-  def warn[T](message: => String): Option[T] = {
-    if (inPlay)
-      logger.warn(message)
-    else
-      println(message)
-
-    None
-  }
-
-  def info(message: => String) = {
-    if (inPlay)
-      logger.info(message)
-    else
-      println(message)
-  }
-
-  def spew(msg: String) = info("----> " + msg)
-
-  def spewRet[T](block: => T): T = {
+  def logTraceRet[T](block: => T): T = {
     val ret: T = block
-    spew(ret.toString)
+    logTrace(ret.toString)
     ret
   }
 
@@ -130,46 +58,46 @@ $renderProps
 """
   }
 
-  def spewThing(t: Thing)(implicit state: SpaceState) = {
+  def logTraceThing(t: Thing)(implicit state: SpaceState) = {
     val rendered = renderThing(t)
-    spew(rendered)
+    logTrace(rendered)
   }
 
-  def spewState(state: SpaceState): Unit = {
-    spew(s"Full details of $state")
+  def logTraceState(state: SpaceState): Unit = {
+    logTrace(s"Full details of $state")
     implicit val s = state
 
-    spew("Apps")
+    logTrace("Apps")
     state.apps.foreach { app =>
-      spew("=============================================")
-      spewState(app)
-      spew("=============================================")
+      logTrace("=============================================")
+      logTraceState(app)
+      logTrace("=============================================")
     }
 
-    spew(s"The State Itself")
-    spew(s"==========")
-    spewThing(state)
+    logTrace(s"The State Itself")
+    logTrace(s"==========")
+    logTraceThing(state)
 
-    spew(s"Local Things")
-    spew(s"==========")
+    logTrace(s"Local Things")
+    logTrace(s"==========")
     for {
       thing <- state.localThings
-    } spewThing(thing)
+    } logTraceThing(thing)
 
-    spew(s"Local Props")
-    spew(s"==========")
+    logTrace(s"Local Props")
+    logTrace(s"==========")
     for {
       prop <- state.spaceProps.values
-    } spewThing(prop)
+    } logTraceThing(prop)
 
     val types = state.types.values
     if (!types.isEmpty) {
-      spew(s"Local Types")
-      spew(s"==========")
+      logTrace(s"Local Types")
+      logTrace(s"==========")
       for {
         tpe <- types
         if (tpe.isInstanceOf[ModelTypeBase])
-      } spew(s"${tpe.id} (${tpe.displayName}), based on ${tpe.asInstanceOf[ModelTypeBase].basedOn}")
+      } logTrace(s"${tpe.id} (${tpe.displayName}), based on ${tpe.asInstanceOf[ModelTypeBase].basedOn}")
     }
   }
 }

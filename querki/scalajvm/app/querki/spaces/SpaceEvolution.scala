@@ -10,7 +10,6 @@ import querki.security.AccessControl
 import querki.spaces.SpaceMessagePersistence._
 import querki.system.System
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.util.QLog
 
 /**
  * This is a home for pure functions that take a Space and some sort of events, and return an updated Space.
@@ -184,14 +183,14 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
                 Some(createPure(req, kind, id, thing.model, thing.props, modTime)(prevState))
               } else {
                 // This shouldn't be possible:
-                QLog.error(s"Logic error processing $event!")
+                logError(s"Logic error processing $event!")
                 None
               }
             } else
               None
           }
           case None => {
-            QLog.error(
+            logError(
               s"Found a DHModifyThing for unknown Thing $id in Space ${fullState.displayName} (${fullState.id})!"
             )
             None

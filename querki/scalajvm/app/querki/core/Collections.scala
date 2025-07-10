@@ -42,7 +42,7 @@ object Collections {
   val emptyTextMarkerStr = s"$emptyTextMarker"
 }
 
-trait CollectionBase { self: CoreEcot =>
+trait CollectionBase extends QLogging { self: CoreEcot =>
   def UnknownType: PType[Unit]
 
   abstract class SystemCollection(
@@ -210,7 +210,7 @@ trait CollectionBase { self: CoreEcot =>
       vs.headOption match {
         case Some(v) => fromUserString(prop, v, elemT, state)
         case None => {
-          QLog.error(s"ExactlyOne.fromUser() received an empty list of values!")
+          logError(s"ExactlyOne.fromUser() received an empty list of values!")
           FormFieldInfo(prop, Some(apply(elemT.default(state))), true, true)
         }
       }

@@ -60,8 +60,9 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   lazy val traceConv = Config.getBoolean("querki.test.traceConversations", false)
 
   def convTrace(msg: => String): Unit = {
+    // TODO: remove this config flag and just use normal log levels:
     if (traceConv)
-      QLog.spew(msg)
+      logTrace(msg)
   }
 
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)

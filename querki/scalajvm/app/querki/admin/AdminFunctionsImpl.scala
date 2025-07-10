@@ -147,7 +147,7 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
         MonitorCurrent(SystemManagement.clusterAddress, qstate, spaces)
       }
       case _ => {
-        QLog.error("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
+        logError("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
         throw new Exception("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
       }
     }
@@ -193,7 +193,7 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
       }
       .recover {
         case ex: akka.pattern.AskTimeoutException => TimingMsgs(true, 0, Seq.empty)
-        case ex                                   => { QLog.error("getSpaceTimingsSince got unexpected error", ex); TimingMsgs(true, 0, Seq.empty) }
+        case ex                                   => { logError("getSpaceTimingsSince got unexpected error", ex); TimingMsgs(true, 0, Seq.empty) }
       }
   }
 }

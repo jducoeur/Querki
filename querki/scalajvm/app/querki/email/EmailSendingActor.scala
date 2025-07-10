@@ -66,7 +66,7 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
               case ex: Exception => {
                 // Synchronous error, so we expect to be able to continue:
                 sendingAllowed = true
-                QLog.error(s"Exception while sending email $msg", ex)
+                logError(s"Exception while sending email $msg", ex)
               }
             }
           }

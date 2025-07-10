@@ -13,7 +13,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-trait ProgressActor { asActor: Actor =>
+trait ProgressActor extends QLogging { asActor: Actor =>
   import ProgressActor._
 
   /**
@@ -35,7 +35,7 @@ trait ProgressActor { asActor: Actor =>
 
   def failWith(msg: String) = {
     failed = true
-    QLog.error(msg)
+    logError(msg)
     throw new Exception(msg)
   }
 

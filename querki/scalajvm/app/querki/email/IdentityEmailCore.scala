@@ -78,7 +78,7 @@ abstract class IdentityEmailCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecolo
           }
           case _ => {
             val ex = new Exception(s"IdentityEmailCore was unable to fetch the email address for Identity $identityId!")
-            QLog.error("IdentityEmailCore recovery failed!", ex)
+            logError("IdentityEmailCore recovery failed!", ex)
             throw ex
           }
         }
@@ -111,10 +111,10 @@ abstract class IdentityEmailCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecolo
           } else {
             // Note that we drop the email on the floor if shouldSendEmail() returns false. That is *entirely*
             // intentional: for privacy reasons, the sender doesn't get feedback that they've been blocked.
-//            QLog.spew(s"Dropping $note due to Unsubscription")
+//            logTrace(s"Dropping $note due to Unsubscription")
           }
         }
-        case None => QLog.error(s"IdentityEmailCore somehow received notification without an EmailNotifier: $note")
+        case None => logError(s"IdentityEmailCore somehow received notification without an EmailNotifier: $note")
       }
     }
 

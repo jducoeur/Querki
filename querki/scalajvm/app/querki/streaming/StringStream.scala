@@ -49,7 +49,8 @@ private[streaming] class StringStreamSender(
   str: String,
   e: Ecology
 ) extends Actor
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
 
   implicit val ecology = e
 
@@ -139,7 +140,7 @@ private[streaming] class StringStreamSender(
             originator.get ! SendComplete
           } else {
             // Something's seriously wrong; give up
-            QLog.error("StringStreamSender failed to send string, with ${remainingChunks.size} remaining: $str")
+            logError("StringStreamSender failed to send string, with ${remainingChunks.size} remaining: $str")
           }
           // Either way, we're out of work to do:
           context.stop(self)

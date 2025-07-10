@@ -5,7 +5,6 @@ import scala.xml.NodeSeq
 
 import querki.ecology.Ecology
 import querki.ql.Invocation
-import querki.util.QLog
 import querki.values._
 
 case class SerializationException[VT](tpe: PType[VT])
@@ -37,7 +36,7 @@ abstract class PType[VT](
       ElemValue(doDeserialize(ser), this)
     } catch {
       case error: Exception => {
-        QLog.error(s"Type ${displayName}: error trying to deserialize string '$ser'", error)
+        logError(s"Type ${displayName}: error trying to deserialize string '$ser'", error)
         // Give up and use the default value. This is specifically an error-stop, so that corruptions in one
         // property value don't prevent the entire Thing from loading:
         default

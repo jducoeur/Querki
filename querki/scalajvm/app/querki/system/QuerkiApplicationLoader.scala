@@ -12,7 +12,6 @@ import play.api.{Application, ApplicationLoader, Configuration}
 import javax.inject._
 import play.api.inject.ApplicationLifecycle
 
-import querki.ecology._
 import querki.globals._
 
 import QuerkiRoot._
