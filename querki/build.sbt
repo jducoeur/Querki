@@ -66,8 +66,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
     // TODO: pull back out into a library after upgrades:
 //    "org.querki" %% "requester" % "2.6",
-    // Used to be under com.github.romix; changed owner around 0.6.0 / 1.0.0
-    "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
+    "io.altoo" %% "akka-kryo-serialization" % "1.1.0",
     // TODO: upgrade after we're on sbt 1.x:
     "com.lihaoyi" %% "pprint" % "0.9.0",
     "com.lihaoyi" %% "sourcecode" % "0.4.2",
