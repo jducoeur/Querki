@@ -23,7 +23,7 @@ import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SpaceSubsyst
 import querki.streaming.UploadActor
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
-import querki.util.{Config, QLog}
+import querki.util.{Config}
 import querki.values.{QLContext, SpaceState}
 
 class PhotoUploadActor(

@@ -2,7 +2,6 @@ package querki.qtext
 
 import org.scalatest.{FlatSpec, Matchers}
 import collection.SortedMap
-import org.junit.runner.RunWith
 
 /**
  * Tests basic parsers that are used by the more complex parsing steps.

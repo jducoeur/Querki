@@ -5,9 +5,7 @@ import org.scalatest.Matchers._
 import querki.data.TID
 import querki.test.mid._
 import AllFuncs._
-import ClientState.withUser
 import SecurityMidFuncs._
-import org.scalactic.source.Position
 
 object SecurityMidTests {
 

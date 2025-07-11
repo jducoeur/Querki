@@ -2,17 +2,14 @@ package querki.test.mid
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import cats._
 import cats.data._
 import cats.effect.{ContextShift, IO}
-import cats.implicits._
 import upickle.default._
 import autowire._
 import org.scalatest._
 import Matchers._
 import play.api.Application
 import play.api.mvc.{Result, Session}
-import play.api.test._
 import play.api.test.Helpers._
 import controllers.LoginController
 import querki.data.{SpaceInfo, TID, UserInfo}

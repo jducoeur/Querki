@@ -1,7 +1,5 @@
 package querki.test
 
-import querki.globals._
-
 class TypeTests extends QuerkiTests {
   lazy val TextType = Core.TextType
 

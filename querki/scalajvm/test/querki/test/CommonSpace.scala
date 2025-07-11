@@ -1,8 +1,5 @@
 package querki.test
 
-import models.{ThingState}
-import models.Kind
-
 import querki.ecology._
 import querki.identity.{User}
 import querki.identity.UserLevel._

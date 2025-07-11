@@ -2,7 +2,6 @@ package querki.test.functional
 
 import scala.collection.JavaConverters._
 import org.openqa.selenium.WebElement
-import querki.util.QLog
 
 import scala.annotation.nowarn
 

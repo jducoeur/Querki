@@ -1,7 +1,6 @@
 package querki.qtext
 
 import org.scalatest.{FlatSpec, Matchers}
-import org.junit.runner.RunWith
 
 /**
  * tests parsing of individual lines

@@ -1,15 +1,15 @@
 package querki.test
 
-import akka.actor.{ActorSystem, ActorRef, Actor, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import models.{OID, Thing}
 import querki.core.QLText
 import querki.ecology._
-import querki.globals.{awaitIntentionally, Ecology, QLog, EcologyInterface, QLogging, EcologyMember, QuerkiEcot}
+import querki.globals.{awaitIntentionally, Ecology, EcologyMember, QLog, QLogging, QuerkiEcot}
 import querki.identity.User
-import querki.time.{TimeProvider, DateTime}
-import querki.values.{QLContext, SpaceState, RequestContext, PropAndVal}
+import querki.time.{DateTime, TimeProvider}
+import querki.values.{PropAndVal, QLContext, RequestContext, SpaceState}
 
 class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with EcologyMember with QLogging {
   implicit var ecology: Ecology = null

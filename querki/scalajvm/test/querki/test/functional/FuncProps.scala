@@ -2,8 +2,6 @@ package querki.test.functional
 
 import models.{Collection, Property}
 
-import querki.api.commonName
-
 /**
  * @author jducoeur
  */

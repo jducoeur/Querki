@@ -2,7 +2,6 @@ package querki.search
 
 import models.UnknownOID
 
-import querki.globals._
 import querki.test._
 
 /**

@@ -2,8 +2,6 @@ package querki.test.mid
 
 import org.scalatest.tags.Slow
 
-import play.api.mvc.Session
-
 import AllFuncs._
 
 /**

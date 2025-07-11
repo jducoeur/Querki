@@ -1,12 +1,11 @@
 package querki.test
 
-import models.{OID, Thing}
+import models.{OID}
 
-import querki.ecology._
 import querki.identity.{Identity, IdentityKind, User}
 import querki.identity.UserLevel._
 import querki.system.TOSModule.noTOSUserVersion
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 case object BasicTestUser extends User {
   import querki.identity.MOIDs._

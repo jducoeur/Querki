@@ -1,7 +1,5 @@
 package models
 
-import querki.globals._
-import querki.persistence._
 import querki.test._
 
 import ModelPersistence._
@@ -29,6 +27,8 @@ class ModelPersistenceCoreTests extends QuerkiTests with ModelPersistence with q
 
 // TODO: commented out because ModelDiff depends on the now-dead diff library. Once we are on Scala 2.13, rewrite that
 // and re-enable this test.
+//import querki.globals._
+//import querki.persistence._
 //class ModelPersistenceTests(env: PersistEnv)
 //  extends PersistTest(env)
 //     with ModelPersistence

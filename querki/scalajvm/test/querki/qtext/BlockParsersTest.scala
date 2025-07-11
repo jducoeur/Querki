@@ -1,6 +1,5 @@
 package querki.qtext
 
-import org.junit.runner.RunWith
 import org.scalatest.{FlatSpec, Matchers}
 
 /**

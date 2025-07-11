@@ -18,10 +18,13 @@ val querkiScalacOptions = Seq(
   // Higher-kinded types stop giving a warning around Scala 2.13.1; remove this flag then:
   "-language:higherKinds",
   "-language:implicitConversions",
+  // Suggested here https://github.com/playframework/twirl/issues/105#issuecomment-782985171
+  // Works around spurious unused-import warnings from Twirl; this completely silences warnings in Twirl.
+  // See https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html for details.
+  "-Wconf:src=routes/.*:is,src=twirl/.*:is",
   "-Xfatal-warnings",
   "-Ypartial-unification",
-  // TODO: turn this back on and keep fixing excess imports:
-//  "-Ywarn-unused:imports",
+  "-Ywarn-unused:imports",
 )
 
 ThisBuild / Test / parallelExecution := false

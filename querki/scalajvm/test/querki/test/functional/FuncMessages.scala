@@ -1,7 +1,7 @@
 package querki.test.functional
 
 import scala.io.Source
-import play.api.{Application, Environment}
+import play.api.{Environment}
 import org.querki.shocon._
 
 /**

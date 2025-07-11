@@ -9,7 +9,7 @@ import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle}
-import querki.util.{HtmlEscape, QLog}
+import querki.util.{HtmlEscape}
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object RatingMOIDs extends EcotIds(45) {

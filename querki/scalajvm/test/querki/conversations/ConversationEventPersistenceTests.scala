@@ -3,7 +3,6 @@ package querki.conversations
 import querki.conversations.messages._
 import querki.globals._
 import querki.persistence._
-import querki.test._
 
 import PersistentEvents._
 

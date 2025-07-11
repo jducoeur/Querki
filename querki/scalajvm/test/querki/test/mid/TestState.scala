@@ -4,13 +4,9 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 
-import monocle.Lens
 import monocle.macros.GenLens
 
-import play.api.Application
 import play.api.mvc.Result
-
-import querki.data._
 
 /**
  * The complete state of the test environment, which is threaded through the tests.

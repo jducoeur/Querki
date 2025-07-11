@@ -6,7 +6,7 @@ import querki.api.commonName
 import querki.ecology._
 import querki.identity.skilllevel._
 import querki.spaces.CacheUpdate
-import querki.util.{Contributor, Publisher, QLog}
+import querki.util.{Contributor, Publisher}
 import querki.values.{SpaceState, StateCacheKey}
 
 class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Contributor[CacheUpdate, CacheUpdate] {

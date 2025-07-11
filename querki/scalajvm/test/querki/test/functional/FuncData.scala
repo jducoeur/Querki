@@ -1,7 +1,5 @@
 package querki.test.functional
 
-import org.openqa.selenium.WebElement
-
 object TID {
   def apply(s: String): TID = s
 }

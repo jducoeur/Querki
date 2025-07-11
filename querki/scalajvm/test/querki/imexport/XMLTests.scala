@@ -1,10 +1,9 @@
 package querki.imexport
 
-import fastparse._, NoWhitespace._
+import fastparse._
 
 import models._
 
-import querki.ecology._
 import querki.test._
 import querki.types.ComplexSpace
 import querki.values.QValue

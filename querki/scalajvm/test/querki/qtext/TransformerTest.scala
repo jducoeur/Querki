@@ -1,7 +1,6 @@
 package querki.qtext
 
 import org.scalatest.{FlatSpec, Matchers}
-import org.junit.runner.RunWith
 
 /**
  * Tests the behavior of the complete parser, i.e. all parsing steps together.

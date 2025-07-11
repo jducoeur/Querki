@@ -1,11 +1,8 @@
 package querki.graphql
 
-import cats.effect._
-import cats.implicits._
 import org.scalactic.source.Position
 import play.api.libs.json._
 import querki.test.{CDSpace, QuerkiTests, TestSpace}
-import querki.util.QLog
 
 class ComputeGraphQLTests extends QuerkiTests {
 

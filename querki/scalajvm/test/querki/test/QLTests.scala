@@ -1,7 +1,5 @@
 package querki.test
 
-import org.scalatest.{BeforeAndAfterAll, WordSpec}
-
 class QLTests extends QuerkiTests {
   lazy val QLType = Basic.QLType
 

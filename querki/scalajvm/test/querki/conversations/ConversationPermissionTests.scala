@@ -1,10 +1,6 @@
 package querki.conversations
 
-import org.scalatest.Assertions._
-
-import querki.ecology._
 import querki.identity._
-import querki.identity.UserLevel._
 
 import querki.test._
 

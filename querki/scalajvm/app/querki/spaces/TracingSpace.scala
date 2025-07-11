@@ -2,7 +2,7 @@ package querki.spaces
 
 import querki.ecology.Ecology
 import querki.globals.{OID, QLogging}
-import querki.util.{Config, QLog}
+import querki.util.{Config}
 
 /**
  * Provides deep trace capability for a given Space.

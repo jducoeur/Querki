@@ -14,7 +14,6 @@ import querki.globals._
 import querki.photos.PhotoUploadMessages._
 import querki.spaces.messages.BeginProcessingPhoto
 import querki.streaming.UploadMessages.ProcessUpload
-import querki.util.QLog
 
 class PhotoController @Inject() (
   implicit

@@ -1,7 +1,5 @@
 package querki.html
 
-import scala.xml.XML
-
 import org.jsoup
 
 import models.{AnyProp, Thing}

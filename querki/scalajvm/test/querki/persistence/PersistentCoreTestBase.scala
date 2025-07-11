@@ -5,7 +5,6 @@ import scala.collection.immutable.Queue
 import akka.actor.Actor.Receive
 import akka.persistence._
 
-import querki.globals._
 import querki.time.DateTime
 
 case class HistoryRecord(

@@ -2,7 +2,6 @@ package querki.imexport
 
 import querki.test._
 
-import querki.ecology._
 import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 
 class CSVTests extends QuerkiTests {

@@ -4,8 +4,6 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import querki.values.SpaceState
 
-import querki.test._
-
 class EcologyTests extends WordSpec with Matchers with BeforeAndAfterAll {
   trait TestInterface1 extends EcologyInterface {}
 

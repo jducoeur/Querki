@@ -2,7 +2,6 @@ package querki.spaces
 
 import models._
 
-import querki.globals._
 import querki.test._
 
 /**

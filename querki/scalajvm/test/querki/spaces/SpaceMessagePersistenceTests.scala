@@ -2,10 +2,7 @@ package querki.spaces
 
 import models._
 
-import querki.globals._
 import querki.persistence._
-import querki.spaces.messages._
-import querki.test._
 import querki.time.DateTime
 
 import SpaceMessagePersistence._

@@ -1,13 +1,12 @@
 package querki.test.mid
 
 import org.scalatest.Matchers._
-import cats.effect.IO
 import autowire._
 import querki.api.ThingFunctions
 import querki.data._
 import querki.editing.EditFunctions
 import querki.editing.EditFunctions._
-import querki.globals._
+import querki.globals.execContext
 import AllFuncs._
 import org.scalactic.source.Position
 

@@ -9,7 +9,6 @@ import models.ThingId
 
 import querki.ecology._
 import querki.identity._
-import querki.values.SpaceState
 
 /**
  * Private trait, used to set up the "user database" for testing.

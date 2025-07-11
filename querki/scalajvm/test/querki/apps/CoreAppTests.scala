@@ -2,8 +2,6 @@ package querki.apps
 
 import scala.util.{Success}
 
-import org.scalatest.Assertions._
-
 import models._
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason

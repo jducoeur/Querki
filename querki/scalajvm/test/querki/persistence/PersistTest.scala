@@ -1,9 +1,5 @@
 package querki.persistence
 
-import java.io._
-
-import com.esotericsoftware.kryo.io._
-
 import querki.globals._
 
 /**

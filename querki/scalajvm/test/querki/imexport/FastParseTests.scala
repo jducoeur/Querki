@@ -2,7 +2,7 @@ package querki.imexport {
 
   import querki.test._
 
-  import fakefastparse.all._
+//  import fakefastparse.all._
 
   /**
    * @author jducoeur

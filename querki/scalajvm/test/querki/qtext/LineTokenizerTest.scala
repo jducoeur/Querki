@@ -1,7 +1,6 @@
 package querki.qtext
 
 import org.scalatest.{FlatSpecLike, Matchers}
-import org.junit.runner.RunWith
 
 /**
  * Tests the Line Tokenizer that prepares input for parsing.

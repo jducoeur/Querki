@@ -1,9 +1,5 @@
 package querki.time
 
-import querki.ecology._
-
-import querki.time._
-
 import querki.test._
 
 class DateTimeTests extends QuerkiTests {

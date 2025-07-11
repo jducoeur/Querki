@@ -1,13 +1,9 @@
 package querki.security
 
-import org.scalatest.Assertions._
 import models.UnknownOID
-import querki.ecology._
-import querki.identity._
 import querki.identity.UserLevel._
 import querki.test._
 import models.OID.thing2OID
-import scala.reflect.runtime.universe
 
 class AccessControlTests extends QuerkiTests {
   lazy val AccessControl = interface[querki.security.AccessControl]

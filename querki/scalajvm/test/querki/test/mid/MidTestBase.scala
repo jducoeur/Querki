@@ -3,9 +3,6 @@ package querki.test.mid
 import org.scalatest._
 import org.scalatestplus.play._
 import play.api.{Application, ApplicationLoader, Environment}
-import play.api.db.Databases
-import play.api.inject.guice._
-import querki.db.ShardKind
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 import AllFuncs._

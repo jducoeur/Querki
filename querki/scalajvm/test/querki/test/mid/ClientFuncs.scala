@@ -2,8 +2,6 @@ package querki.test.mid
 
 import scala.concurrent.Promise
 import upickle.default.{ReadWriter => RW, _}
-import ujson._
-import autowire._
 import play.api.mvc.{AnyContentAsFormUrlEncoded, Result, Session}
 import play.api.test._
 import play.api.test.Helpers._

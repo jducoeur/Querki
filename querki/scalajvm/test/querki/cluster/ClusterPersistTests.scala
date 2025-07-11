@@ -3,11 +3,9 @@ package querki.cluster
 import scala.collection.immutable.{HashMap, HashSet}
 
 import akka.actor._
-import akka.actor.Actor.noSender
 
 import querki.globals._
 import querki.persistence._
-import querki.test._
 
 class TestActor extends Actor with QLogging {
 

@@ -2,9 +2,6 @@ package querki.test.functional
 
 import play.api.{Application, ApplicationLoader, Environment}
 import org.scalatest._
-import org.scalatest.tags.Slow
-import play.api.test._
-import play.api.test.Helpers._
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice.GuiceOneServerPerTest
 import querki.globals._
