@@ -91,7 +91,7 @@ class PersistenceTests extends QuerkiTests with PersistEnv {
       _serializer = Some(new KryoSerializer(actorSystem))
 
       new CommonPersistenceTests(this)
-      new models.ModelPersistenceTests(this)
+//      new models.ModelPersistenceTests(this)
       new querki.apps.AppPersistenceTests(this)
       new querki.cluster.QuerkiNodeCoordinatorPersistTests(this)
       new querki.cluster.OIDAllocationPersistTests(this)

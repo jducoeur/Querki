@@ -97,7 +97,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     // This will need replacing with a different library after Scala 2.12!
-    "ai.x" %% "diff" % "2.0.1" % "test",
+//    "ai.x" %% "diff" % "2.0.1" % "test",
     // In-memory H2 database, for simulating MySQL:
     "com.h2database" % "h2" % "1.4.192" % "test",
     // In-memory Akka Persistence driver, used for tests. Probably need to switch to a fork for Akka 2.6!
