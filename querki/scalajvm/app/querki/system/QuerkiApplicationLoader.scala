@@ -8,9 +8,16 @@ import com.google.inject.AbstractModule
 import play.api.inject.guice._
 import play.api.{Application, ApplicationLoader, Configuration}
 
+import scala.concurrent.Await
+
 // For cleaning up afterwards:
 import javax.inject._
 import play.api.inject.ApplicationLifecycle
+
+// For evolving akka-persistence-cassandra to v0.98:
+import akka.persistence.cassandra._
+import akka.Done
+import scala.concurrent.ExecutionException
 
 import querki.globals._
 
@@ -68,6 +75,21 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
         classLoader = app.classloader
       )
     logInfo(s"ActorSystem started")
+
+    // TEMP: migrate akka-persistence-cassandra to v0.98. This isn't *quite* idempotent, although I think it's close
+    // enough to be reasonably safe to include here:
+    val migrator = EventsByTagMigration(_appSystem)
+    logInfo(s"About to migrate to akka-persistence-cassandra 0.98...")
+    val schemaMigration: Future[Done] = for {
+      _ <- migrator.createTables()
+      done <- migrator.addTagsColumn().recover {
+        case i: ExecutionException if i.getMessage.contains("conflicts with an existing column") => Done
+      }
+    } yield done
+    val migrationResult = Await.ready(schemaMigration, 10.seconds)
+    logInfo(
+      s"akka-persistence-cassandra migration *basics* complete (${migrationResult.value}) -- still need to migrate tag views as we load spaces"
+    )
 
     // HORRIBLE HACK: need to inject the ActorSystem into KryoInit *somewhere*.
     // TODO: figure out a better way to do this!

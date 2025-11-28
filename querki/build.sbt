@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
 lazy val akkaV = "2.5.26"
-lazy val appV = "3.0.0.6-2"
+lazy val appV = "3.0.0.6"
 
 lazy val sharedSrcDir = "scala"
 
@@ -64,7 +64,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
-    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.59",
+    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.98",
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
@@ -112,8 +112,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test"
   ),
   // Docker configuration
-  // For now, we're using the full OpenJDK image. That's a bit fatty -- is there a leaner one for us to start with?
-  dockerBaseImage := "openjdk:8-jre-alpine",
+  // As of Nov '25 we've switched to Corretto -- OpenJDK has been deprecated, and this seems to *slightly* have
+  // the edge for AWS environments. But we could just as easily choose Eclipse Temurin if we find we want to switch.
+  dockerBaseImage := "amazoncorretto:8-alpine-jre",
   dockerExposedPorts := Seq(9000),
   // We need bash to be present in the Docker image; otherwise, it won't boot. So this installs that as part of
   // setup:

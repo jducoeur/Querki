@@ -2,7 +2,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%-5level - %msg%n</pattern>
+            <pattern>%-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -19,6 +19,30 @@
     </logger>
 
     <logger name="querki" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+    <logger name="akka" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="io.altoo" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="com.zaxxer" level="WARN">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="com.datastax.driver.core.CodecRegistry" level="INFO">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="javax.management.mbeanserver" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
