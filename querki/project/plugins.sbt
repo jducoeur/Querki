@@ -17,7 +17,10 @@ resolvers += "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repos
 resolvers += "bintray/non".at("https://dl.bintray.com/non/maven")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.25")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.7.4")
+
+// TEMP: for now, this is slightly newer than the version Play is using. Remove this before too long!
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.4.0")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.19.0")
 addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
