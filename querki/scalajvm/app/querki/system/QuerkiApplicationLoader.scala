@@ -86,7 +86,11 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
         case i: ExecutionException if i.getMessage.contains("conflicts with an existing column") => Done
       }
     } yield done
-    val migrationResult = Await.ready(schemaMigration, 10.seconds)
+    val tagViewSkipper = schemaMigration.flatMap(_ =>
+      // We don't actually use tags, so just skip this step for all persistence IDs:
+      migrator.migrateToTagViews(filter = _ => false)
+    )
+    val migrationResult = Await.ready(tagViewSkipper, 10.seconds)
     logInfo(
       s"akka-persistence-cassandra migration *basics* complete (${migrationResult.value}) -- still need to migrate tag views as we load spaces"
     )

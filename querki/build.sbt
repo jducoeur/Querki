@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
 lazy val akkaV = "2.5.26"
-lazy val appV = "3.0.0.6"
+lazy val appV = "3.0.0.7"
 
 lazy val sharedSrcDir = "scala"
 
