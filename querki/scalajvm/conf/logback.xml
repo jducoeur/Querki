@@ -2,7 +2,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%-5level %logger - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -38,11 +38,23 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
+    <logger name="com.datastax.driver" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="com.datastax.oss.driver" level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
     <logger name="com.datastax.driver.core.CodecRegistry" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
     <logger name="javax.management.mbeanserver" level="INFO">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="akka.stream.alpakka.cassandra" level="DEBUG">
         <appender-ref ref="STDOUT" />
     </logger>
 

@@ -4,7 +4,6 @@ import akka.actor.Actor
 import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
 import akka.persistence.query.{EventEnvelope, PersistenceQuery}
-import akka.stream.ActorMaterializer
 import querki.globals._
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.{SpacePure, TracingSpace}
@@ -68,6 +67,8 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   def tracing: TracingSpace
   def persistenceId: String
 
+  implicit def system = context.system
+
   // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
   // likely with machinery to override Ecology members. But it'll do for now.
   lazy val test =
@@ -103,7 +104,6 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   ): Future[T] = {
     tracing.trace("foldOverHistory")
     val source = readJournal.currentEventsByPersistenceId(persistenceId, start, end)
-    implicit val mat = ActorMaterializer()
     source.runFoldAsync(zero) {
       // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
       case (current, EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent)) => {
@@ -111,7 +111,6 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
       }
       case (current, _) => Future.successful(current)
     }.map { result =>
-      mat.shutdown()
       result
     }
   }

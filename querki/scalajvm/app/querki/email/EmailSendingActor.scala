@@ -18,7 +18,7 @@ import querki.util.QuerkiActor
  * Note that this delegates all the real work to the stateless EmailSender. During functional tests, this gets
  * swapped out for a test version. All this Actor does is mediate the threading.
  */
-class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
+class EmailSendingActor(e: Ecology) extends QuerkiActor(e) with Timers {
   import EmailSendingActor._
 
   lazy val EmailSender = interface[EmailSender]
@@ -38,7 +38,7 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
 
   override def preStart(): Unit = {
     // Start up a regular event that will send emails on a throttle:
-    context.system.scheduler.schedule(throttle, throttle, self, DoSend)
+    timers.startTimerWithFixedDelay(DoSend, DoSend, throttle)
   }
 
   def doReceive: Receive = {

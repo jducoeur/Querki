@@ -3,7 +3,6 @@ package querki.spaces
 import akka.actor._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
-import akka.stream.ActorMaterializer
 
 import org.querki.requester._
 
@@ -243,7 +242,7 @@ class PersistentSpaceActor(
   ): RequestM[SpaceState] = {
     val appPersistenceId = toPersistenceId(appId)
     val source = readJournal.currentEventsByPersistenceId(appPersistenceId, 0, version.v)
-    implicit val mat = ActorMaterializer()
+    implicit val system = context.system
     loopback {
       source.runFold(emptySpace.copy(s = appId)) {
         case ((curState, EventEnvelope(offset, appPersistenceId, sequenceNr, evt: SpaceEvent))) =>
@@ -252,7 +251,6 @@ class PersistentSpaceActor(
           throw new Exception(s"PersistentSpaceActor.loadAppVersion() hit unexpected event $other")
       }
     }.flatMap { loadedState =>
-      mat.shutdown()
       // Now that we've loaded this App, recurse in and load *its* Apps:
       loadAppsFor(loadedState, appsSoFar)
     }

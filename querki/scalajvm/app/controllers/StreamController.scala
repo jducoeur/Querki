@@ -46,7 +46,7 @@ trait StreamController { self: ApplicationBase =>
     // correct and deterministic:
     val futureAccumulator: Future[Accumulator[ByteString, Either[Result, ActorRef]]] =
       workerRefFuture.map { workerRef =>
-        val sink: Sink[ByteString, Future[Either[Result, ActorRef]]] = Sink.actorRefWithAck(
+        val sink: Sink[ByteString, Future[Either[Result, ActorRef]]] = Sink.actorRefWithBackpressure(
           workerRef,
           StreamInitialized,
           AckMessage,

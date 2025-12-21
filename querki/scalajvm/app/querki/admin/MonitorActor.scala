@@ -15,7 +15,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember with QLogging {
+class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember with QLogging with Timers {
 
   import MonitorActor._
 
@@ -31,7 +31,7 @@ class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMemb
   var _current: Option[MonitorEvent] = None
 
   override def preStart() = {
-    scheduler.schedule(heartbeat, heartbeat, self, SendUpdate)
+    timers.startTimerWithFixedDelay(SendUpdate, SendUpdate, heartbeat)
     super.preStart()
   }
 

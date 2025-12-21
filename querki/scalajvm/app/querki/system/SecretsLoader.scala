@@ -47,7 +47,7 @@ object SecretsLoader {
       val secretsConfig = ConfigFactory.parseString(hoconStr)
       val secretsConfiguration = Configuration(secretsConfig)
 
-      val fullConfig = configWithEnv ++ secretsConfiguration
+      val fullConfig = secretsConfiguration.withFallback(configWithEnv)
 
       fullConfig
     }.getOrElse {
