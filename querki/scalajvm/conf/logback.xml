@@ -26,11 +26,11 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="akka" level="TRACE">
+    <logger name="akka" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="io.altoo" level="TRACE">
+    <logger name="io.altoo" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
@@ -38,11 +38,11 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="com.datastax.driver" level="TRACE">
+    <logger name="com.datastax.driver" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="com.datastax.oss.driver" level="TRACE">
+    <logger name="com.datastax.oss.driver" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
@@ -54,7 +54,7 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="akka.stream.alpakka.cassandra" level="DEBUG">
+    <logger name="akka.stream.alpakka.cassandra" level="INFO">
         <appender-ref ref="STDOUT" />
     </logger>
 
