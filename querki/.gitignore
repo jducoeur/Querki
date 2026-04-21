@@ -21,3 +21,5 @@ dist
 /scalajvm/Server.iml
 localsecrets.conf
 aws_creds
+/localsecrets.cass3.conf
+/localsecrets.cass4.conf

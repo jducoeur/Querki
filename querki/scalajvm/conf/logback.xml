@@ -6,56 +6,31 @@
         </encoder>
     </appender>
 
-    <logger name="com.jolbox.bonecp" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
+    <!--
+      All loggers below exist solely to set per-package level thresholds.
+      They intentionally have no <appender-ref>; log events inherit the
+      STDOUT appender from the <root> element. Adding an appender-ref
+      here without additivity="false" causes every event to be written
+      twice (once by this logger, once by root).
+    -->
 
-    <logger name="play" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="application" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="querki" level="TRACE">
-        <appender-ref ref="STDOUT" />
-    </logger>
+    <logger name="com.jolbox.bonecp" level="DEBUG" />
+    <logger name="play" level="DEBUG" />
+    <logger name="application" level="DEBUG" />
+    <logger name="querki" level="TRACE" />
+    <logger name="akka" level="INFO" />
+    <logger name="io.altoo" level="TRACE" />
+    <logger name="com.zaxxer" level="WARN" />
+    <logger name="com.datastax.driver" level="INFO" />
+    <logger name="com.datastax.oss.driver" level="TRACE" />
+    <logger name="com.datastax.driver.core.CodecRegistry" level="INFO" />
+    <logger name="javax.management.mbeanserver" level="INFO" />
+    <logger name="akka.stream.alpakka.cassandra" level="INFO" />
+    <logger name="akka.persistence" level="TRACE" />
+    <logger name="akka.serialization" level="TRACE" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
-
-    <logger name="akka" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="io.altoo" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.zaxxer" level="WARN">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.datastax.driver" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.datastax.oss.driver" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="com.datastax.driver.core.CodecRegistry" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="javax.management.mbeanserver" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
-
-    <logger name="akka.stream.alpakka.cassandra" level="INFO">
-        <appender-ref ref="STDOUT" />
-    </logger>
 
 </configuration>

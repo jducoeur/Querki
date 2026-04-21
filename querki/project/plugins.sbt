@@ -19,6 +19,8 @@ resolvers += "bintray/non".at("https://dl.bintray.com/non/maven")
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.2")
 
+addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
+
 // TEMP: for now, this is slightly newer than the version Play is using. Remove this before too long!
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.4.0")
 
