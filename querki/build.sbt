@@ -7,8 +7,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.12.15"
-lazy val akkaV = "2.5.26"
-lazy val appV = "3.0.0.8-1"
+lazy val akkaV = "2.6.5"
+lazy val appV = "3.0.0.11-3"
 
 lazy val sharedSrcDir = "scala"
 
@@ -32,6 +32,13 @@ val querkiScalacOptions = Seq(
 
 ThisBuild / Test / parallelExecution := false
 
+// HACK: this is awful, but the AWS library is trying to install databind 2.12.3, and the Scala code intentionally
+// crashes when that's the case. So let's pull the versions back to the Play one:
+ThisBuild / dependencyOverrides ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.4",
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.10.4"
+)
+
 lazy val querkiServer = (project in file("scalajvm")).settings(
   scalaVersion := scalaV,
   version := appV,
@@ -42,6 +49,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 //  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
   // To prevent duplicate-artifact errors in Stage:
   Compile / packageSrc / publishArtifact := false,
+  dependencyOverrides += "com.datastax.oss" % "java-driver-core-shaded" % "4.6.1",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     // Main Play dependencies
     jdbc,
@@ -58,15 +66,23 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.sun.mail" % "mailapi" % "1.6.2",
     "com.github.nscala-time" %% "nscala-time" % "3.0.0",
     "com.typesafe.akka" %% "akka-testkit" % akkaV,
-    "com.typesafe.akka" %% "akka-contrib" % akkaV,
+    // TODO: does't exist for Akka 2.6 -- do we care? Probably not.
+//    "com.typesafe.akka" %% "akka-contrib" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-tools" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-sharding" % akkaV,
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
-    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.98",
+    // We've been getting weird errors trying to connect to Cassandra; there seems to be evidence that the right
+    // fix it to use the shaded version of the driver, which includes a shaded version of Netty. Try to keep
+    // the version of java-driver-core-shaded lined up with the transitive dependency (akka-persistence-cassandra ->
+    // akka-stream-alpakka-cassandra -> java-driver-core).
+    ("com.typesafe.akka" %% "akka-persistence-cassandra" % "1.0.1")
+      .exclude("com.datastax.oss", "java-driver-core"),
+    "com.datastax.oss" % "java-driver-core-shaded" % "4.6.1",
     "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
     "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
+    "com.typesafe.akka" %% "akka-cluster-typed" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     // TODO: need to migrate this to 2.x before EOY 2025!
     "com.amazonaws" % "aws-java-sdk" % "1.12.99",
@@ -109,7 +125,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // In-memory Akka Persistence driver, used for tests. Probably need to switch to a fork for Akka 2.6!
     // Eg, https://github.com/firstbirdtech/akka-persistence-inmemory and thence
     // https://github.com/alstanchev/pekko-persistence-inmemory
-    "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.2" % "test"
+    // Argh: doesn't exist for Scala 2.12 -- re-enable once we're on 2.13!
+    //"com.firstbird" %% "akka-persistence-inmemory" % "3.0.0" % "test"
   ),
   // Docker configuration
   // As of Nov '25 we've switched to Corretto -- OpenJDK has been deprecated, and this seems to *slightly* have

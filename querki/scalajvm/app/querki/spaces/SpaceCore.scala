@@ -914,8 +914,6 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    */
   def receiveRecover: Receive = ({
     // If we're monitoring this Space, record the name of the recovered message
-    // TODO: we should probably eventually turn this clause off unless monitoring is turned on
-    // for this Space
     case msg: Any => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
   }: PartialFunction[Any, Any]).andThen(
     // Recovery of high-level stuff like Snapshots:

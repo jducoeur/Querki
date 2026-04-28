@@ -2,7 +2,6 @@ package querki.apps
 
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
-import akka.stream.ActorMaterializer
 import org.querki.requester._
 import models._
 import querki.api.{AutowireParams, SpaceApiImpl}
@@ -38,6 +37,7 @@ class AppsFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   lazy val System = interface[querki.system.System]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
 
   lazy val SystemState: SpaceState = System.State
   lazy val id = state.id
@@ -56,7 +56,7 @@ class AppsFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
     lazy val readJournal =
       PersistenceQuery(context.system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
     val source = readJournal.currentEventsByPersistenceId(appId.toThingId.toString, 0, Int.MaxValue)
-    implicit val mat = ActorMaterializer()
+    implicit val actorSystem = SystemManagement.actorSystem
 
     source.runFold((0L, querki.time.epoch)) {
       case ((n, t), EventEnvelope(offset, persistenceId, sequenceNr, evt)) =>
@@ -68,7 +68,6 @@ class AppsFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
         }
     }
       .map { case (n, t) =>
-        mat.shutdown()
         (SpaceVersion(n), t)
       }
   }

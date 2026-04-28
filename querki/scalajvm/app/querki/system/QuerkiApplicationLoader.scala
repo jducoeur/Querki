@@ -8,16 +8,9 @@ import com.google.inject.AbstractModule
 import play.api.inject.guice._
 import play.api.{Application, ApplicationLoader, Configuration}
 
-import scala.concurrent.Await
-
 // For cleaning up afterwards:
 import javax.inject._
 import play.api.inject.ApplicationLifecycle
-
-// For evolving akka-persistence-cassandra to v0.98:
-import akka.persistence.cassandra._
-import akka.Done
-import scala.concurrent.ExecutionException
 
 import querki.globals._
 
@@ -40,7 +33,9 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
     // The environment that we're running in, based on the QUERKI_ENV environment variable. This will throw (and
     // intentionally prevent startup) if not set!
     val querkiEnv = QuerkiEnv.load()
-    logInfo(s"Querki starting up for the ${querkiEnv.name} environment")
+    logInfo(
+      s"Querki starting up for the ${querkiEnv.name} environment"
+    )
     val configWithEnv = configurationWithEnv(context.initialConfiguration, querkiEnv)
 
     // Step one: fetch the secrets, and merge them into the runtime configuration
@@ -60,40 +55,23 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
     // TODO: all of this still reeks of ConductR, and can likely be stripped down:
     // I suspect this fallback shouldn't be "application", but if I set to it anything else I
     // get errors. It really feels like there are internals that are looking for "application".
-    val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "")
-    val systemVersion = sys.env.getOrElse("BUNDLE_SYSTEM_VERSION", "1")
-    val fullSystemName =
-      if (systemName.length > 0)
-        s"$systemName-$systemVersion"
-      else
-        "application"
-    logInfo(s"Starting the main ActorSystem as $fullSystemName")
-    _appSystem =
-      ActorSystem(
-        name = fullSystemName,
-        config = fullConfig.underlying,
-        classLoader = app.classloader
-      )
-    logInfo(s"ActorSystem started")
-
-    // TEMP: migrate akka-persistence-cassandra to v0.98. This isn't *quite* idempotent, although I think it's close
-    // enough to be reasonably safe to include here:
-    val migrator = EventsByTagMigration(_appSystem)
-    logInfo(s"About to migrate to akka-persistence-cassandra 0.98...")
-    val schemaMigration: Future[Done] = for {
-      _ <- migrator.createTables()
-      done <- migrator.addTagsColumn().recover {
-        case i: ExecutionException if i.getMessage.contains("conflicts with an existing column") => Done
-      }
-    } yield done
-    val tagViewSkipper = schemaMigration.flatMap(_ =>
-      // We don't actually use tags, so just skip this step for all persistence IDs:
-      migrator.migrateToTagViews(filter = _ => false)
-    )
-    val migrationResult = Await.ready(tagViewSkipper, 10.seconds)
-    logInfo(
-      s"akka-persistence-cassandra migration *basics* complete (${migrationResult.value}) -- still need to migrate tag views as we load spaces"
-    )
+    // EXPERIMENT: we are merging the two ActorSystems, so all this becomes redundant:
+//    val systemName = sys.env.getOrElse("BUNDLE_SYSTEM", "")
+//    val systemVersion = sys.env.getOrElse("BUNDLE_SYSTEM_VERSION", "1")
+//    val fullSystemName =
+//      if (systemName.length > 0)
+//        s"$systemName-$systemVersion"
+//      else
+//        "application"
+//    logInfo(s"Starting the main ActorSystem as $fullSystemName")
+//    _appSystem =
+//      ActorSystem(
+//        name = fullSystemName,
+//        config = fullConfig.underlying,
+//        classLoader = app.classloader
+//      )
+//    logInfo(s"ActorSystem started")
+    _appSystem = app.actorSystem
 
     // HORRIBLE HACK: need to inject the ActorSystem into KryoInit *somewhere*.
     // TODO: figure out a better way to do this!
@@ -136,7 +114,7 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
   ): Configuration = {
     val subConfig = configuration.getOptional[Configuration](querkiEnv.name)
     subConfig.map { sc =>
-      configuration ++ sc
+      sc.withFallback(configuration)
     }.getOrElse(throw new RuntimeException(s"No sub-configuration found for environment ${querkiEnv.name}!"))
   }
 }

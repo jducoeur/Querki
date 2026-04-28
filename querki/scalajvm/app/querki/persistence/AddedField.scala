@@ -1,5 +1,7 @@
 package querki.persistence
 
+import querki.util.QLog
+
 /**
  * Wrapper type, for fields that get added to an Event that has already been serialized
  * into the database.
@@ -24,33 +26,34 @@ object AddedField {
 
   implicit class AddedFieldMethods[T](af: AddedField[T]) {
 
-    def getOrElse(default: T): T =
-      if (af == null)
-        default
-      else {
+    private def handle[U](name: String)(ifNull: => U)(ifFound: T => U): U =
+      if (af == null) {
+        QLog.logTrace(s"AddedField.$name: found null")
+        ifNull
+      } else {
         af match {
-          case AddedFieldImpl(c) => c
+          case AddedFieldImpl(t) => {
+            QLog.logTrace(s"AddedField.$name: found added value $t")
+            ifFound(t)
+          }
+          case other => {
+            QLog.logError(s"AddedField.$name: found unexpected value $other")
+            ifNull
+          }
         }
       }
 
+    def getOrElse(default: T): T =
+      handle("getOrElse")(default)(t => t)
+
     def map[R](f: T => R): Option[R] =
-      if (af == null)
-        None
-      else {
-        af match {
-          case AddedFieldImpl(c) => Some(f(c))
-        }
-      }
+      handle("map")(Option.empty[R])(t => Some(f(t)))
+
     def isEmpty: Boolean = af == null
     def isDefined: Boolean = !isEmpty
 
     def toOption: Option[T] =
-      if (af == null)
-        None
-      else
-        af match {
-          case AddedFieldImpl(c) => Some(c)
-        }
+      handle("toOption")(Option.empty[T])(t => Some(t))
   }
 
   implicit def t2AddedField[T](t: T): AddedField[T] = AddedFieldImpl(t)
