@@ -28,6 +28,8 @@ Scala is pinned to `2.12.15`, Akka to `2.6.5`. Target JDK is Java 8 (Corretto in
 - `querki/scalajvm/conf/application.conf` — the real config (use `application.conf.template` and `scenario.conf` / `test.conf` for reference instead)
 - `*.db`, `logs/`, `target/`, `tmp/`, `testdb/`, `querki/journal/`, `querki/snapshots/`, `project/project/`, `play-fork-run.sbt`, `sbt-ui.sbt`, `local.sbt`
 
+`querki/tmp/` is also where the user typically drops scratch files for a debugging session — boot logs, CloudWatch exports (e.g. `LoadGoodSpace.txt`, `LoadBadSpace.txt`, `bootlog.txt`). Those *are* fine to read when the user points at them; just treat them as throwaways and don't refer back to them in later sessions.
+
 ## Build, Run, Test
 
 All from `./querki/`:
@@ -85,8 +87,20 @@ A **Space** (a user-owned collection of Things) is the main unit of live state. 
 - `SpaceRouter` / `SpaceManager` handle addressing and lifecycle.
 - The event journal and snapshot store are **Cassandra** (`akka-persistence-cassandra`, using the shaded Datastax driver). MySQL is only used for user accounts, identity, and similar "system" data (`app/querki/db/`, `querki.identity.UserPersistence`).
 - `SpaceChangeManager` is the extension point: other Ecots inject `SpacePlugin`s to intercept / add messages into Space processing (see `SpaceCore.pluginReceive`).
+- Each Space's Akka Persistence `persistenceId` is `id.toThingId.toString` — i.e. `"."` + the OID, e.g. `.7w4g7wg`. `InPublicationStateCore` uses `inpubstate-.<oid>`, `PublicationCore` uses `publish-.<oid>`, and conversation actors use `conv-<spaceOid>-<thingOid>`. Useful when querying the Cassandra journal directly: `SELECT * FROM <keyspace>.messages WHERE persistence_id = '.<oid>' AND partition_nr = 0;`. If `recoverPersistence` only sees `RecoveryCompleted` (no `SnapshotOffer`, no events) and `SpaceCore` logs `This Space has no events`, the journal returned zero rows for that persistenceId — which is normally a config/keyspace problem, not a code one.
 
 Persisted messages must be marked `UseKryo` and registered via `persistentMessages` on their Ecot (`akka-kryo-serialization` is used, initialized through `querki.persistence.KryoInit`). **Never change a persisted message's shape without an evolution** — the `querki.evolutions` package exists precisely for schema migration of journaled state.
+
+#### akka-persistence-cassandra 0.98 → 1.0.1 (mid-migration)
+
+The codebase is in the middle of upgrading `akka-persistence-cassandra` from 0.98 (with Datastax Driver 3) to 1.0.1 (with the shaded Datastax Driver 4). Two major footguns to be aware of when touching anything persistence-related:
+
+1. **Plugin paths changed.** 0.98 uses top-level config namespaces `cassandra-journal { ... }` and `cassandra-snapshot-store { ... }`; 1.0.1 uses `akka.persistence.cassandra.journal { ... }` and `akka.persistence.cassandra.snapshot { ... }`. `persistence.conf` has been migrated to set `akka.persistence.journal.plugin = "akka.persistence.cassandra.journal"` (and the snapshot equivalent), so the plugin resolves to the 1.0.1 namespace. **Any settings still living under `cassandra-journal { ... }` / `cassandra-snapshot-store { ... }` in `application.conf` (and in production secrets) are silently ignored** — including `keyspace`, `keyspace-autocreate`, `authentication`, etc. As of this writing, `application.conf.template` still uses the old namespaces; that's stale and misleading.
+2. **Driver config namespaces changed too.** Driver 3 reads `cassandra-journal.contact-points = [...]`; Driver 4 reads `datastax-java-driver.basic.contact-points = [...]` and `datastax-java-driver.basic.load-balancing-policy.local-datacenter = "..."`. The two are mutually unintelligible — a Driver 4 binary with only Driver 3 config falls back to its built-in default of `127.0.0.1:9042`, which from inside the Querki Docker container resolves to nothing.
+
+When debugging "old Spaces don't load but new ones do" or "half-broken Space" symptoms after an upgrade, the first thing to check is whether the running binary is reading from the same keyspace the data was written to. Old Spaces written by 3.0.0.7a or earlier live in whatever keyspace the old `cassandra-journal { keyspace = ... }` block named (historically `querki_spaces_prod` in prod); the 1.0.1 binary, with that block ignored, defaults to `akka.messages` and `akka_snapshot.snapshots` and finds nothing for the old persistenceIds.
+
+Some leftover lines in `persistence.conf` that look meaningful are now dead and can be ignored or removed, e.g. `cassandra-journal.meta-in-events-by-tag-view = off` (old namespace, no-op under 1.0.1).
 
 ### QL — Querki's embedded language
 
@@ -111,6 +125,8 @@ Three distinct test styles, all under `scalajvm/test/`:
 - Routes are in `scalajvm/conf/routes`. The main ones: `/u/:user/:space/` → SPA; `/raw/...` → server-rendered HTML; `/_apiRequest` and `/u/:user/:space/_apiRequest` → autowire RPC; `/graphql/:user/:space` → GraphQL.
 - `build.sbt` contains a number of `TODO: upgrade when ...` notes that document the dependency chain blocking Play, Akka, Scala, and sbt upgrades. When touching deps, respect those chains.
 - The build has `pipelineStages := Seq(digest, gzip)` and uses `sbt-web-scalajs`; the Scala.js stage is forced to `FullOptStage` in the client project because sbt-web-scalajs otherwise only emits fastOpt.
+- **Logback additivity.** `conf/logback.xml` deliberately attaches `<appender-ref>` only to `<root>`; named loggers below it set per-package levels and have **no** appender-refs. Adding an `<appender-ref>` to a named logger without `additivity="false"` causes every event to be written twice (once by the named logger, once by root). If you want to add a new per-package level, just add `<logger name="..." level="..."/>` — don't copy an `<appender-ref>` line.
+- **Docker tag must match `appV`.** `sbt docker:publishLocal` tags the image as `querkiserver:<appV>`, where `appV` is set near the top of `build.sbt`. Bumping `appV` does not delete the old image tag, so `docker run ... querkiserver:<old-tag>` will silently keep running the old binary while you think you're testing the new code. Always run with the tag that matches the current `appV`, and confirm by checking the Akka version printed during boot (e.g. 3.0.0.7a runs Akka 2.5.26; 3.0.0.8+ runs Akka 2.6.5).
 
 ## Where to Look First
 
