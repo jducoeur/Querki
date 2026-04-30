@@ -1,7 +1,7 @@
 package querki
 
 import org.scalactic.source.Position
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import play.api.libs.json._
 
 package object graphql {

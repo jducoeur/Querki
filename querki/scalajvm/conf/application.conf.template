@@ -202,7 +202,7 @@ play-akka {
     cluster {
       # This is the fallback setup, for when we're not actually running under ConductR:
       seed-nodes = [
-        "akka.tcp://application@127.0.0.1:2552"
+        "akka://application@127.0.0.1:2552"
       ]
     }
   }
@@ -226,7 +226,7 @@ akka {
   cluster {
     # This is the fallback setup, for when we're not actually running under ConductR:
     seed-nodes = [
-       "akka.tcp://local-querki-server@127.0.0.1:2551"
+       "akka://local-querki-server@127.0.0.1:2551"
     ]
   }
     

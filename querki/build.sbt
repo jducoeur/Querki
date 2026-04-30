@@ -115,8 +115,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // TEST-ONLY DEPENDENCIES:
     // ScalaTest can't upgrade until scalatestplus-play does, and *that* can't upgrade until we hit Play 2.8. So
     // this is a bit stuck for now:
-    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.1.4" % "test",
+    "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % "test",
     // Powerful structural-diffing library: https://github.com/xdotai/diff
     // This will need replacing with a different library after Scala 2.12!
 //    "ai.x" %% "diff" % "2.0.1" % "test",

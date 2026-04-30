@@ -1,6 +1,6 @@
 package querki.test.mid
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import autowire._
 import querki.api.ThingFunctions
 import querki.data._

@@ -1,6 +1,7 @@
 package querki.qtext
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 trait InlineBase { this: InlineParsers with Matchers =>
 
@@ -29,7 +30,7 @@ trait InlineBase { this: InlineParsers with Matchers =>
  * Tests Inline Parsing, i.e. emphasis , strong text, links, escapes etc.
  */
 //@RunWith(classOf[JUnitRunner])
-class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with InlineBase {
+class InlineParsersTest extends AnyFlatSpec with Matchers with InlineParsers with InlineBase {
 
   def deco() = new MainDecorator {}
 
