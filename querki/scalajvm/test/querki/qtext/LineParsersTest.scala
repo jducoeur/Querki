@@ -1,12 +1,13 @@
 package querki.qtext
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * tests parsing of individual lines
  */
 //@RunWith(classOf[JUnitRunner])
-class LineParsersTest extends FlatSpec with Matchers with LineParsers {
+class LineParsersTest extends AnyFlatSpec with Matchers with LineParsers {
 
   def deco() = new MainDecorator {}
 

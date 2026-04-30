@@ -50,7 +50,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    * When we *can* upgrade past this inconsistency, we should.
    */
   @nowarn
-  implicit val browser: org.scalatest.selenium.WebBrowser = this
+  implicit val browser: org.scalatestplus.selenium.WebBrowser = this
 
   /**
    * This works around the very unfortunate limitation that WebBrowser.Element doesn't allow

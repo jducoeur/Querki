@@ -2,7 +2,7 @@ package querki.notifications
 
 import autowire._
 import org.scalactic.source.Position
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import querki.globals.execContext
 import querki.test.mid.ClientState.withUser
 import querki.test.mid._

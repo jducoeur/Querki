@@ -2,7 +2,7 @@ package querki.test.mid
 
 import querki.data._
 import AllFuncs._
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import querki.security.SecurityMidFuncs
 
 /**

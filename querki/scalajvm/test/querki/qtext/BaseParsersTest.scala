@@ -1,6 +1,7 @@
 package querki.qtext
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import collection.SortedMap
 
 /**
@@ -8,7 +9,7 @@ import collection.SortedMap
  */
 
 //@RunWith(classOf[JUnitRunner])
-class BaseParsersTest extends FlatSpec with Matchers with BaseParsers {
+class BaseParsersTest extends AnyFlatSpec with Matchers with BaseParsers {
 
   "The BaseParsers" should "parse a newline" in {
     val p = nl

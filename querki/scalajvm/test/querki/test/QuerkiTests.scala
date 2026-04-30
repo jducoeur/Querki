@@ -2,7 +2,9 @@ package querki.test
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import models.{OID, Thing}
 import querki.core.QLText
 import querki.ecology._
@@ -11,7 +13,7 @@ import querki.identity.User
 import querki.time.{DateTime, TimeProvider}
 import querki.values.{PropAndVal, QLContext, RequestContext, SpaceState}
 
-class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with EcologyMember with QLogging {
+class QuerkiTests extends AnyWordSpec with Matchers with BeforeAndAfterAll with EcologyMember with QLogging {
   implicit var ecology: Ecology = null
 
   QLog.runningUnitTests = true

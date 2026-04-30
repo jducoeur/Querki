@@ -2,6 +2,8 @@ package querki.test.functional
 
 import play.api.{Application, ApplicationLoader, Environment}
 import org.scalatest._
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice.GuiceOneServerPerTest
 import querki.globals._
@@ -14,7 +16,7 @@ import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
  * This keep recompiles down to a manageable level.
  */
 trait FuncMixin
-  extends WordSpec
+  extends AnyWordSpec
      with Matchers
      with org.scalatest.concurrent.Eventually
      with OneBrowserPerTest // includes WebBrowser
@@ -38,7 +40,7 @@ trait FuncMixin
 @Ignore
 class QuerkiFuncTests
 // Infrastructure mix-ins, from ScalaTest and Play:
-  extends WordSpec
+  extends AnyWordSpec
      with Matchers
      with BeforeAndAfterAll
      with GuiceOneServerPerTest
@@ -73,9 +75,9 @@ class QuerkiFuncTests
    * This is where we override the standard Application settings.
    */
   override implicit def newAppForTest(td: TestData): Application = {
-    val context = ApplicationLoader.createContext(
+    val context = ApplicationLoader.Context.create(
       Environment.simple(),
-      Map(
+      initialSettings = Map(
         // For the moment, the names of the test DBs are hardcoded. That will probably have to
         // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",

@@ -28,9 +28,9 @@ trait MidTestBase extends PlaySpec with GuiceOneAppPerTest with EcologyMember {
   override implicit def newAppForTest(testData: TestData): Application = {
     // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
     // enhances the built-in one!
-    val context = ApplicationLoader.createContext(
+    val context = ApplicationLoader.Context.create(
       Environment.simple(),
-      Map(
+      initialSettings = Map(
         // See scenario.conf instead of here
       )
     )

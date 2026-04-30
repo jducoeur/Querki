@@ -1,7 +1,7 @@
 package querki.conversations
 
 import org.scalatest.tags.Slow
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 import querki.test.mid._
 

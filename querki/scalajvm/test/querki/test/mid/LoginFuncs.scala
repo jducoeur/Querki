@@ -6,8 +6,7 @@ import cats.data._
 import cats.effect.{ContextShift, IO}
 import upickle.default._
 import autowire._
-import org.scalatest._
-import Matchers._
+import org.scalatest.matchers.should.Matchers._
 import play.api.Application
 import play.api.mvc.{Result, Session}
 import play.api.test.Helpers._

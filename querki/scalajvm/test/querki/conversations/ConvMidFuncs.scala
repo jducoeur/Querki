@@ -2,7 +2,7 @@ package querki.conversations
 
 import autowire._
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 import querki.conversations.messages._
 import querki.data.TID

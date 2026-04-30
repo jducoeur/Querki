@@ -1,6 +1,6 @@
 package querki.test.mid
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import org.scalatest.tags.Slow
 import ClientState.{cache, switchToUser, withUser}
 import AllFuncs._

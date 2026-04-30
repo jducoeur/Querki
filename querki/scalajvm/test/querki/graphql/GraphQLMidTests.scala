@@ -2,7 +2,7 @@ package querki.graphql
 
 import java.nio.charset.StandardCharsets
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import querki.test.mid._
 import AllFuncs._
 import controllers.GraphQLController

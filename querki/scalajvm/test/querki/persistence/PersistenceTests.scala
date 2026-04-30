@@ -7,7 +7,7 @@ import querki.globals._
 import querki.identity.User
 import querki.test._
 
-trait PersistEnv extends org.scalatest.WordSpecLike with EcologyMember {
+trait PersistEnv extends org.scalatest.wordspec.AnyWordSpecLike with EcologyMember {
   def asrt(a: Boolean)
 
   def checkEquality[T](
