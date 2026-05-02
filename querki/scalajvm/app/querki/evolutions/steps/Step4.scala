@@ -29,6 +29,6 @@ class Step4(implicit val ecology: Ecology) extends Step {
         |  INDEX moderation_queue_{cname} (needsModeration, createTime)
         |) DEFAULT CHARSET=utf8;
         |""".stripMargin
-    ).execute
+    ).execute()
   }
 }

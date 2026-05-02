@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 //@RunWith(classOf[JUnitRunner])
 class LineParsersTest extends AnyFlatSpec with Matchers with LineParsers {
 
-  def deco() = new MainDecorator {}
+  def deco: Decorator = new MainDecorator {}
 
   "The LineParsers" should "parse horizontal rulers" in {
     val p = ruler

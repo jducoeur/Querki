@@ -1,7 +1,5 @@
 package models
 
-import language.implicitConversions
-
 import upickle.default.{macroRW, ReadWriter => RW}
 
 import querki.qtext.{MainDecorator, Transformer}
@@ -263,7 +261,7 @@ case class CompositeWikitext(contents: Vector[Wikitext]) extends Wikitext {
     // ... and now we substitute in the keepRaw == true entries:
     val result = substitutionMap.foldLeft(processedStr) { (str, entry) =>
       val (index, text) = entry
-      str.replaceAllLiterally("(-+" + index + "+-)", text.internal)
+      str.replace("(-+" + index + "+-)", text.internal)
     }
     result
   }
@@ -310,33 +308,33 @@ trait TransformWrapper {
 
 class QuerkiTransformer extends Transformer with MainDecorator {
   // We now allow XML in QText, but note that the parser only allows a few, whitelisted constructs:
-  override def allowVerbatimXml(): Boolean = true
+  override def allowVerbatimXml: Boolean = true
   // We use <div> instead of a real <p>, because it turns out that older versions of IE (specifically IE9)
   // do not permit <form>s inside of <p> -- and restructure the HTML to prevent it, breaking our forms.
-  override def decorateParagraphOpen(): String = """<div class="para">"""
-  override def decorateParagraphClose(): String = """</div>"""
+  override def decorateParagraphOpen: String = """<div class="para">"""
+  override def decorateParagraphClose: String = """</div>"""
 }
 
 class HtmlTransformer extends Transformer with MainDecorator {
-  override def allowVerbatimXml(): Boolean = true
+  override def allowVerbatimXml: Boolean = true
 }
 
 class RawTransformer extends Transformer with MainDecorator {
-  override def allowVerbatimXml(): Boolean = true
-  override def decorateParagraphOpen(): String = ""
-  override def decorateParagraphClose(): String = ""
+  override def allowVerbatimXml: Boolean = true
+  override def decorateParagraphOpen: String = ""
+  override def decorateParagraphClose: String = ""
 }
 
 class SpanTransformer extends Transformer with MainDecorator {
-  override def allowVerbatimXml(): Boolean = true
-  override def decorateParagraphOpen(): String = "<span>"
-  override def decorateParagraphClose(): String = "</span>"
+  override def allowVerbatimXml: Boolean = true
+  override def decorateParagraphOpen: String = "<span>"
+  override def decorateParagraphClose: String = "</span>"
 }
 
 class StripTransformer extends Transformer with MainDecorator {
-  override def allowVerbatimXml(): Boolean = true
+  override def allowVerbatimXml: Boolean = true
 
-  override def decorateBreak(): String = "\n"
+  override def decorateBreak: String = "\n"
   override def decorateCode(code: String): String = "`" + code + "`"
   override def decorateEmphasis(text: String): String = "*" + text + "*"
   override def decorateStrong(text: String): String = "**" + text + "**"
@@ -353,29 +351,29 @@ class StripTransformer extends Transformer with MainDecorator {
     src: String,
     title: Option[String]
   ): String = ""
-  override def decorateRuler(): String = "======\n"
+  override def decorateRuler: String = "======\n"
   override def decorateHeaderOpen(headerNo: Int): String = ""
   override def decorateHeaderClose(headerNo: Int): String = ""
-  override def decorateCodeBlockOpen(): String = "\n\n"
-  override def decorateCodeBlockClose(): String = "\n\n"
-  override def decorateParagraphOpen(): String = ""
-  override def decorateParagraphClose(): String = ""
-  override def decorateBlockQuoteOpen(): String = "\n"
-  override def decorateBlockQuoteClose(): String = "\n"
-  override def decorateItemOpen(): String = "* "
-  override def decorateItemClose(): String = "\n"
-  override def decorateUListOpen(): String = ""
-  override def decorateUListClose(): String = "\n"
-  override def decorateOListOpen(): String = ""
-  override def decorateOListClose(): String = "\n"
-  override def decorateDListOpen(): String = ""
-  override def decorateDListClose(): String = "\n"
-  override def decorateDTitleOpen(): String = ""
-  override def decorateDTitleClose(): String = "\n"
-  override def decorateDDescOpen(): String = "    "
-  override def decorateDDescClose(): String = "\n"
+  override def decorateCodeBlockOpen: String = "\n\n"
+  override def decorateCodeBlockClose: String = "\n\n"
+  override def decorateParagraphOpen: String = ""
+  override def decorateParagraphClose: String = ""
+  override def decorateBlockQuoteOpen: String = "\n"
+  override def decorateBlockQuoteClose: String = "\n"
+  override def decorateItemOpen: String = "* "
+  override def decorateItemClose: String = "\n"
+  override def decorateUListOpen: String = ""
+  override def decorateUListClose: String = "\n"
+  override def decorateOListOpen: String = ""
+  override def decorateOListClose: String = "\n"
+  override def decorateDListOpen: String = ""
+  override def decorateDListClose: String = "\n"
+  override def decorateDTitleOpen: String = ""
+  override def decorateDTitleClose: String = "\n"
+  override def decorateDDescOpen: String = "    "
+  override def decorateDDescClose: String = "\n"
   override def decorateClassDivOpen(className: String): String = ""
-  override def decorateClassDivClose(): String = ""
+  override def decorateClassDivClose: String = ""
 
   override def decorateClassSpan(
     className: String,
@@ -384,9 +382,9 @@ class StripTransformer extends Transformer with MainDecorator {
 }
 
 class LiteralTransformer(showParas: Boolean) extends StripTransformer {
-  override def decorateParagraphOpen(): String = ""
-  override def decorateParagraphClose(): String = if (showParas) "\n\n" else ""
-  override def escapeXmlEntities(): Boolean = false
+  override def decorateParagraphOpen: String = ""
+  override def decorateParagraphClose: String = if (showParas) "\n\n" else ""
+  override def escapeXmlEntities: Boolean = false
 }
 
 class LiteralTransformWrapper(showParas: Boolean = true) extends TransformWrapper {

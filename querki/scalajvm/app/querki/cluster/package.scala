@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import akka.actor._
 
-import querki.ecology._
 import querki.globals._
 
 /**

@@ -105,7 +105,7 @@ case class PlayAjaxException(
 class PlayAjax(call: PlayCall) {
 
   def callAjax(data: (String, String)*): Future[String] = {
-    val promise = Promise[String]
+    val promise = Promise[String]()
 
     // Change this line to print all API calls.
     // TODO: this should come from config!
@@ -137,7 +137,7 @@ class PlayAjax(call: PlayCall) {
   }
 
   def callAjax[U](cb: PartialFunction[AjaxResult, U]): Future[Try[U]] = {
-    val promise = Promise[Try[U]]
+    val promise = Promise[Try[U]]()
 
     val deferred = call.ajax().asInstanceOf[JQueryDeferred]
     deferred.done { (data: String, textStatus: String, jqXHR: JQueryDeferred) =>

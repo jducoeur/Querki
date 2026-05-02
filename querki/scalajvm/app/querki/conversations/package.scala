@@ -6,7 +6,6 @@ import models.{OID, Property, Thing, Wikitext}
 
 import querki.conversations.messages.Comment
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
@@ -107,6 +106,6 @@ package object conversations {
       commentNotifyPrefs: Seq[OneUserValue]
     )(implicit
       state: SpaceState
-    )
+    ): Unit
   }
 }

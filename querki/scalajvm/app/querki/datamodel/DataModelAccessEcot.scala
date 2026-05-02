@@ -59,11 +59,11 @@ class DataModelAccessEcot(e: Ecology)
   lazy val QL = interface[querki.ql.QL]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += PropCopier
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += PropCopier
   }
 

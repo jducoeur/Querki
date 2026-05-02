@@ -33,7 +33,7 @@ class ClientDataEcot(e: Ecology) extends ClientEcot(e) with DataAccess with Data
   def setModel(model: Option[ThingInfo]) = mainModel = model
   def setSpace(space: Option[SpaceInfo]) = _space = space
 
-  val standardThingPromise = Promise[StandardThings]
+  val standardThingPromise = Promise[StandardThings]()
   def standardThings: Future[StandardThings] = standardThingPromise.future
 
   // NOTE: this generates a spurious error in Eclipse, because it's generated code.

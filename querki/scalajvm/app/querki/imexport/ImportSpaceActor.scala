@@ -102,7 +102,7 @@ class ImportSpaceActor(
           // We're into processing.
           processPercent
         }
-      sender ! ImportProgress(importMsg, percent, spaceInfo, failed)
+      sender() ! ImportProgress(importMsg, percent, spaceInfo, failed)
     }
 
     case CompletionAcknowledged => context.stop(self)

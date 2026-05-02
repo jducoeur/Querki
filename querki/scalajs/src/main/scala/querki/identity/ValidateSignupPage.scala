@@ -7,7 +7,6 @@ import scalatags.JsDom.all._
 import autowire._
 import org.querki.gadgets._
 
-import querki.ecology._
 import querki.globals._
 import querki.pages._
 import querki.session.UserFunctions

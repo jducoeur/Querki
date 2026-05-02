@@ -102,12 +102,12 @@ class PersonModule(e: Ecology)
 
   lazy val prof = Profiler.createHandle("Person")
 
-  override def init = {
+  override def init() = {
     PageEventManager.requestReceived += InviteLoginChecker
     SpaceChangeManager.updateStateCache += this
   }
 
-  override def term = {
+  override def term() = {
     PageEventManager.requestReceived -= InviteLoginChecker
     SpaceChangeManager.updateStateCache -= this
   }

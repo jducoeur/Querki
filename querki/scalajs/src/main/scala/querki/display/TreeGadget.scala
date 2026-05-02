@@ -70,7 +70,7 @@ class QLTree(implicit e: Ecology) extends HookedGadget[dom.html.Div](e) with Que
 
     val qlNode = span.find("._treeQL")
     val withData =
-      qlNode.mapElems(qle => $(qle).text).headOption match {
+      qlNode.mapElems(qle => $(qle).text()).headOption match {
         case Some(ql) => node.children(true).data(NodeData(Some(ql), tid))
         case None     => node.data(NodeData(None, tid))
       }

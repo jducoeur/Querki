@@ -189,7 +189,7 @@ class AdminEcot(e: Ecology)
       from.id,
       None,
       SystemMessageNotifier.id,
-      DateTime.now,
+      DateTime.now(),
       None,
       None,
       SpacePersistence.serProps(payload, SystemState)

@@ -178,7 +178,7 @@ trait ModelPersistence extends QLogging { self: EcologyMember with querki.types.
     // And then the Properties:
     val fixedProps = fixedSpace.spaceProps.mapValues { prop =>
       secondPassProps(prop)((p, metaProps) => p.copy(pf = metaProps))
-    }
+    }.toMap
     fixedSpace.copy(spaceProps = fixedProps)
   }
 }

@@ -46,7 +46,7 @@ trait RealActorCore extends PersistentActorCore { actor: PersistentActor with Re
    * Either, for unit-testing? (Maybe not without cheating and involving a mutable var.)
    */
   def persistAnd[Evt](event: Evt): RequestM[Evt] = {
-    val rm = RequestM.prep[Evt]
+    val rm = RequestM.prep[Evt]()
     persist(event) { persisted =>
       rm.resolve(Success(persisted))
     }
@@ -54,7 +54,7 @@ trait RealActorCore extends PersistentActorCore { actor: PersistentActor with Re
   }
 
   def persistAllAnd[Evt](events: collection.immutable.Seq[Evt]): RequestM[Seq[Evt]] = {
-    val rm = RequestM.prep[Seq[Evt]]
+    val rm = RequestM.prep[Seq[Evt]]()
     persistAll(events) { persisted =>
       // Note that this is called for *each* persisted...
     }

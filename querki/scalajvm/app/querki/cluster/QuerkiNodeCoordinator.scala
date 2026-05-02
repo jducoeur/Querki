@@ -111,7 +111,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
     val assignment = assignShard(path)
     persist(ShardAssigned(path, assignment)) { msg =>
-      sender ! ShardAssignment(assignment)
+      sender() ! ShardAssignment(assignment)
     }
 
     // Take occasional snapshots of the state:

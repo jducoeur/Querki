@@ -62,7 +62,7 @@ object Cookies {
       encode(key) + 
         "=" + 
         encode(value).
-        withAttr[Date]("expires", expires, _.toUTCString).
+        withAttr[Date]("expires", expires, _.toUTCString()).
         withAttr[Long]("max-age", maxAge, _.toString).
         // secure is just a flag:
         withAttr[Boolean]("secure", secure, _ => "")

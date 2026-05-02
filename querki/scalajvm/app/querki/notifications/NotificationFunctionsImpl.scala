@@ -47,7 +47,7 @@ class NotificationFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
             )
           }
         }
-        Future.sequence(noteFuts)
+        Future.sequence(noteFuts.toList).map(_.toSeq)
       } catch {
         case ex: Exception => { logError("Exception in getRecentNotifications", ex); throw ex }
       }

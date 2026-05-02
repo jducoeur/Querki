@@ -21,24 +21,24 @@ trait Decorator {
   /**
    * The string used to ident one level. Defaults to the empty string
    */
-  def indentation() = ""
+  def indentation: String = ""
 
   /**
    * If true, inline xml tags and verbatim xml blocks are allowed,
    * otherwise they are escaped and included as plain text
    */
-  def allowVerbatimXml(): Boolean = true
+  def allowVerbatimXml: Boolean = true
 
   /**
    * If true, XML entities get escaped as normal. Otherwise, they are simply left alone.
    * This should only be turned off if you know that the environment is safe!
    */
-  def escapeXmlEntities(): Boolean = true
+  def escapeXmlEntities: Boolean = true
 
   /**
    * used to print out manual line breaks (default: <br />)
    */
-  def decorateBreak(): String = "<br />"
+  def decorateBreak: String = "<br />"
 
   /**
    * used to print out inline code (default: <code>...</code>)
@@ -111,7 +111,7 @@ trait Decorator {
   /**
    * used to print a horizontal ruler defaults to "<hr />\n"
    */
-  def decorateRuler(): String = "<hr />\n"
+  def decorateRuler: String = "<hr />\n"
 
   /**
    * used to print the beginning of a header, defaults to "<h[headerNo]>"
@@ -126,98 +126,98 @@ trait Decorator {
   /**
    * used to print the beginning of a code block, defaults to "<pre><code>"
    */
-  def decorateCodeBlockOpen(): String = "<pre><code>"
+  def decorateCodeBlockOpen: String = "<pre><code>"
 
   /**
    * used to print the end of a code block, defaults to "</code></pre>\n"
    */
-  def decorateCodeBlockClose(): String = "</code></pre>\n"
+  def decorateCodeBlockClose: String = "</code></pre>\n"
 
   /**
    * used to print the beginning of a paragraph, defaults to "<p>"
    */
-  def decorateParagraphOpen(): String = "<p>"
+  def decorateParagraphOpen: String = "<p>"
 
   /**
    * used to print the end of a paragraph, defaults to "</p>\n"
    */
-  def decorateParagraphClose(): String = "</p>\n"
+  def decorateParagraphClose: String = "</p>\n"
 
   /**
    * used to print the beginning of a blockquote, defaults to "<blockquote>"
    */
-  def decorateBlockQuoteOpen(): String = "<blockquote>"
+  def decorateBlockQuoteOpen: String = "<blockquote>"
 
   /**
    * used to print the end of a blockquote, defaults to "</blockquote>\n"
    */
-  def decorateBlockQuoteClose(): String = "</blockquote>\n"
+  def decorateBlockQuoteClose: String = "</blockquote>\n"
 
   /**
    * used to print the beginning of a list item, defaults to "<li>"
    */
-  def decorateItemOpen(): String = "<li>"
+  def decorateItemOpen: String = "<li>"
 
   /**
    * used to print the end of a list item, defaults to "</li>"
    */
-  def decorateItemClose(): String = "</li>\n"
+  def decorateItemClose: String = "</li>\n"
 
   /**
    * used to print the beginning of an unordered list, defaults to "<ul>\n"
    */
-  def decorateUListOpen(): String = "<ul>\n"
+  def decorateUListOpen: String = "<ul>\n"
 
   /**
    * used to print the end of an unordered list, defaults to "</ul>\n"
    */
-  def decorateUListClose(): String = "</ul>\n"
+  def decorateUListClose: String = "</ul>\n"
 
   /**
    * used to print the beginning of an ordered list, defaults to <ol>\n
    */
-  def decorateOListOpen(): String = "<ol>\n"
+  def decorateOListOpen: String = "<ol>\n"
 
   /**
    * used to print the end of an ordered list, defaults to </ol>\n
    */
-  def decorateOListClose(): String = "</ol>\n"
+  def decorateOListClose: String = "</ol>\n"
 
   /**
    * used to print the beginning of a definition list, defaults to "<dl>\n"
    */
-  def decorateDListOpen(): String = "<dl>\n"
+  def decorateDListOpen: String = "<dl>\n"
 
   /**
    * used to print the end of a definition list, defaults to "</dl>\n"
    */
-  def decorateDListClose(): String = "</dl>\n"
+  def decorateDListClose: String = "</dl>\n"
 
   /**
    * used to print the beginning of a definition, defaults to "<li>"
    */
-  def decorateDTitleOpen(): String = "<dt>"
+  def decorateDTitleOpen: String = "<dt>"
 
   /**
    * used to print the end of a definition, defaults to "</li>"
    */
-  def decorateDTitleClose(): String = "</dt>\n"
+  def decorateDTitleClose: String = "</dt>\n"
 
   /**
    * used to print the beginning of a definition, defaults to "<li>"
    */
-  def decorateDDescOpen(): String = "<dd>"
+  def decorateDDescOpen: String = "<dd>"
 
   /**
    * used to print the end of a definition, defaults to "</li>"
    */
-  def decorateDDescClose(): String = "</dd>\n"
+  def decorateDDescClose: String = "</dd>\n"
 
   /**
    * decorate the beginning and end of a class-defining div for style declaration
    */
   def decorateClassDivOpen(className: String): String = "<div class=\"" + className + "\">\n"
-  def decorateClassDivClose(): String = "</div>\n"
+  def decorateClassDivClose: String = "</div>\n"
 
   def decorateClassSpan(
     className: String,

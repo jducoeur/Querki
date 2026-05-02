@@ -970,7 +970,7 @@ class CollectionsModule(e: Ecology)
       for {
         v <- inv.contextValue
         len = v.cv.size
-        rnd = floor(random * len).toInt
+        rnd = floor(random() * len).toInt
         item = v.cv.drop(rnd).head
       } yield ExactlyOne(item)
     }

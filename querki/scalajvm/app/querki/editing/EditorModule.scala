@@ -6,7 +6,6 @@ import models._
 
 import querki.api.commonName
 import querki.core.{LinkCandidateProvider}
-import querki.ecology._
 import querki.globals._
 import querki.html.RenderSpecialization._
 import querki.identity.User

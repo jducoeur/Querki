@@ -2,7 +2,6 @@ package models
 
 import querki.api.ModelLoopException
 import querki.basic.PlainText
-import querki.ecology._
 import querki.globals._
 import querki.identity.IdentityPersistence.UserRef
 import querki.time.DateTime

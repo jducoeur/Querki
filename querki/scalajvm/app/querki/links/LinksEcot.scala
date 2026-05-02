@@ -34,11 +34,11 @@ class LinksEcot(e: Ecology) extends QuerkiEcot(e) with Links with querki.core.Na
 
   lazy val urlBase = Config.getString("querki.app.urlRoot")
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += ChoiceCreator
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += ChoiceCreator
   }
 

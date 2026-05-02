@@ -27,7 +27,7 @@ private[conversations] class NewConversationGadget(
   lazy val shouldShowStartLink = startLinkTextOpt.isDefined
   lazy val startLinkClass = startLinkClassOpt.getOrElse("")
   lazy val startLinkText = startLinkTextOpt.getOrElse("Click to start a new conversation")
-  lazy val startLink = a(cls := startLinkClass, onclick := { _: JQueryEventObject => showInput }, startLinkText)
+  lazy val startLink = a(cls := startLinkClass, onclick := { _: JQueryEventObject => showInput() }, startLinkText)
 
   def showStartLink() = {
     $(elem).empty()

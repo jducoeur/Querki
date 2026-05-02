@@ -103,7 +103,7 @@ class ExtractAppPage(params: ParamMap)(implicit val ecology: Ecology) extends Pa
           p("When you have selected the elements you would like to bring into the App, press this button."),
           new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space", disabled := notReady)({ () =>
             val jq = $(extractTree.get.elem)
-            val selectedIds = jq.getSelectedIds.map(TID(_))
+            val selectedIds = jq.getSelectedIds.toSeq.map(TID(_))
             Client[AppsFunctions].extractApp(
               selectedIds,
               appNameInput.get.text.now,

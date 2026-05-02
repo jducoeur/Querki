@@ -21,7 +21,7 @@ class MonitorPage(params: ParamMap)(implicit val ecology: Ecology) extends Page(
 
   def pageContent =
     for {
-      update <- Client[AdminFunctions].monitor.call()
+      update <- Client[AdminFunctions].monitor().call()
       guts =
         div(
           h1("Currently Active in Querki"),
@@ -48,7 +48,7 @@ class MonitorPage(params: ParamMap)(implicit val ecology: Ecology) extends Page(
             space.size,
             " bytes",
             " (last updated ",
-            Moment(space.timestamp).calendar(),
+            Moment(space.timestamp.toDouble).calendar(),
             ")"
           )
         )

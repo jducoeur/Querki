@@ -1,7 +1,6 @@
 package models
 
 import querki.core.MOIDs._
-import querki.ecology._
 import querki.globals._
 import querki.ql.Invocation
 import querki.time.DateTime

@@ -15,7 +15,7 @@ class LocalizationEcot(e: Ecology) extends ClientEcot(e) with Localization {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
 
-  val _readyPromise = Promise[Unit]
+  val _readyPromise = Promise[Unit]()
   val ready = _readyPromise.future
 
   case class MessagesImpl(

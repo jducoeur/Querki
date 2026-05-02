@@ -92,7 +92,7 @@ package object api {
     )(implicit
       apiTag: ClassTag[API],
       implTag: ClassTag[IMPL]
-    )
+    ): Unit
   }
 
   /**

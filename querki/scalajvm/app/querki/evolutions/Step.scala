@@ -57,7 +57,7 @@ trait Step extends EcologyMember with QLogging {
     QDB(System) { implicit conn =>
       SQL("""
           UPDATE Spaces SET version = {version} WHERE id = {id}
-          """).on("version" -> version, "id" -> spaceId.raw).executeUpdate
+          """).on("version" -> version, "id" -> spaceId.raw).executeUpdate()
     }
   }
 
@@ -76,14 +76,14 @@ trait Step extends EcologyMember with QLogging {
           CREATE TABLE {bname} LIKE {tname}
           """,
         info.version
-      ).executeUpdate
+      ).executeUpdate()
       SpacePersistence.SpaceSQL(
         info.id,
         """
           INSERT {bname} SELECT * FROM {tname}
           """,
         info.version
-      ).executeUpdate
+      ).executeUpdate()
     }
   }
 

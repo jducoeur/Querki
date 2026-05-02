@@ -5,7 +5,6 @@ import akka.actor._
 import models.OID
 
 import querki.conversations.messages._
-import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
@@ -219,7 +218,7 @@ private[conversations] class SpaceConversationsActor(
       state = current
     }
 
-    case GetActiveThings => sender ! ActiveThings(loadedConversations.size)
+    case GetActiveThings => sender() ! ActiveThings(loadedConversations.size)
 
     case SpaceSubsystemRequest(req, _, msg) => {
       msg match {
@@ -229,11 +228,11 @@ private[conversations] class SpaceConversationsActor(
         case GetConversations(thingId) => {
           if (!ConvEcot.canReadComments(req, thingId, state)) {
             // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
-            sender ! ThingError(new PublicException(SpaceError.UnknownID))
+            sender() ! ThingError(new PublicException(SpaceError.UnknownID))
           } else {
             // TODO: if the requester is not a Moderator, strip out needsModeration comments.
             // TODO: strip out isDeleted comments.
-            withConversations(thingId) { convs => sender ! convs }
+            withConversations(thingId) { convs => sender() ! convs }
           }
         }
 
@@ -246,13 +245,13 @@ private[conversations] class SpaceConversationsActor(
          */
         case NewComment(commentIn) => {
           convTrace(s"    Conv Actor got a NewComment for $commentIn")
-          val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
+          val comment = commentIn.copy(id = nextId, createTime = DateTime.now())
           nextId += 1
           val thingId: OID = comment.thingId
           if (!ConvEcot.canWriteComments(comment.authorId, thingId, state)) {
             // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
             // send a Notification to the moderator(s), instead of rejecting it outright like this:
-            sender ! ThingError(new PublicException(SpaceError.ModifyNotAllowed))
+            sender() ! ThingError(new PublicException(SpaceError.ModifyNotAllowed))
           } else {
             convTrace(s"    Fetching the conversations, to add the comment")
             // Fetch the Conversations for this Thing. Note that the innards here may be async!
@@ -311,7 +310,7 @@ private[conversations] class SpaceConversationsActor(
               persister ! AddComment(node.comment, state)
 
               // Send the ack of the newly-created comment, saying where to place it:
-              sender ! AddedNode(parent.map(_.comment.id), node)
+              sender() ! AddedNode(parent.map(_.comment.id), node)
 
               // Finally, send out Notifications -- fire-and-forget, will get there eventually:
               NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state)
@@ -338,15 +337,15 @@ private[conversations] class SpaceConversationsActor(
                   // ... persist the deletion (this is fire-and-forget)...
                   persister ! UpdateComment(deleted, state)
                   // ... and tell the requester we are done:
-                  sender ! CommentDeleted
+                  sender() ! CommentDeleted
 
                   // TODO: we really should delete the notifications, but we have no mechanism for doing so
                   // currently. Hmm...
                 } else {
-                  sender ! CommentNotDeleted
+                  sender() ! CommentNotDeleted
                 }
               }
-              case None => sender ! CommentNotDeleted
+              case None => sender() ! CommentNotDeleted
             }
           }
         }

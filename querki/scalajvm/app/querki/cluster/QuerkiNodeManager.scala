@@ -202,10 +202,10 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
     case CheckShardAssignment(id) => {
       if (_shardId.map(_ == id).getOrElse(false)) {
         logInfo(s"QuerkiNodeManager.CheckShardAssignment($id) Confirmed")
-        sender ! ConfirmShardAssignment(self)
+        sender() ! ConfirmShardAssignment(self)
       } else {
         logInfo(s"QuerkiNodeManager.CheckShardAssignment($id) Refuted -- actually ${_shardId}")
-        sender ! RefuteShardAssignment(self)
+        sender() ! RefuteShardAssignment(self)
       }
     }
 
@@ -240,7 +240,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
       resolveSplit(member)
     }
 
-    case QuerkiNodeManager.RequestState => sender ! _clusterState
+    case QuerkiNodeManager.RequestState => sender() ! _clusterState
   }
 }
 

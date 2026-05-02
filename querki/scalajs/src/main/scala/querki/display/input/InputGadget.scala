@@ -220,7 +220,7 @@ object InputGadget {
     val StatusLine = ecology.api[querki.display.StatusLine]
 
     StatusLine.showUntilChange("Saving...")
-    val promise = Promise[PropertyChangeResponse]
+    val promise = Promise[PropertyChangeResponse]()
     Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
       case Success(response) => {
         response match {

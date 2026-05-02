@@ -64,11 +64,11 @@ class NavSectionEcot(e: Ecology) extends QuerkiEcot(e) with NavSectionMgr {
       NavSection(
         "Logged in as " + truncateName(user.name),
         Seq(
-          NavLink("Log out", routes.LoginController.logout)
+          NavLink("Log out", routes.LoginController.logout())
         )
       )
     }.getOrElse {
-      NavLink("Log in", routes.ClientController.index)
+      NavLink("Log in", routes.ClientController.index())
     }
   }
 }

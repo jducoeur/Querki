@@ -9,7 +9,6 @@ import models._
 import com.github.nscala_time.time.Imports._
 
 import querki.core.NameUtils
-import querki.ecology._
 import querki.globals._
 
 /**

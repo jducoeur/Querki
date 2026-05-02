@@ -33,7 +33,7 @@ trait ApplicationBase extends BaseController with EcologyMember with QLogging {
   // immediate vs. future results. Is it a decent answer?
   implicit def result2Future(res: Result): Future[Result] = Future.successful(res)
 
-  lazy val indexRoute = routes.ClientController.index
+  lazy val indexRoute = routes.ClientController.index()
 
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to

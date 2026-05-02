@@ -54,7 +54,7 @@ trait ProgressActor extends QLogging { asActor: Actor =>
 
     case GetProgress => {
       val percent = calcProgress()
-      sender ! OperationProgress(phaseDescription, percent, (failed || percent >= 100), failed)
+      sender() ! OperationProgress(phaseDescription, percent, (failed || percent >= 100), failed)
     }
 
     case CompletionAcknowledged => context.stop(context.self)

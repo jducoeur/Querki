@@ -1,6 +1,5 @@
 package models
 
-import language.implicitConversions
 
 import querki.core.NameUtils
 import querki.data.{TID, TOID}

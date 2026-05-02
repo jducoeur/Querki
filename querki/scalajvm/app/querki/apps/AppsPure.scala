@@ -179,7 +179,7 @@ trait AppsPure extends ModelPersistence with ModelTypeDefiner with EcologyMember
       val addedApps = newApps.foldLeft(Map.empty[OID, SpaceState]) { (acc, app) =>
         acc + (app.id -> app)
       }
-      addAppPure(rehydrate(appState), addedApps, s.allApps, shadowMapping, modTime, afterExtraction.getOrElse(false))(s)
+      addAppPure(rehydrate(appState), addedApps, s.allApps(), shadowMapping, modTime, afterExtraction.getOrElse(false))(s)
     }
 
   }

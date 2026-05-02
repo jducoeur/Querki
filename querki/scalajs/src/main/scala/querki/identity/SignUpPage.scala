@@ -1,6 +1,6 @@
 package querki.identity
 
-import scala.util.{Success}
+import scala.util.Success
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
@@ -16,7 +16,6 @@ import querki.data.UserInfo
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import QuerkiEmptyable._
-import querki.ecology._
 import querki.globals._
 import querki.pages._
 import querki.session.UserFunctions

@@ -21,7 +21,7 @@ class GraphQLEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  override def postInit: Unit = {
+  override def postInit(): Unit = {
     ApiRegistry.registerApiImplFor[GraphQLFunctions, GraphQLFunctionsImpl](SpaceOps.spaceRegion, requiresLogin = false)
   }
 

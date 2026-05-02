@@ -48,13 +48,13 @@ class CollaboratorCache(
       _allCollaborators match {
         case Some(collabs) => {
           // We have all the necessary info, so just send the response:
-          sendResults(collabs, term, sender)
+          sendResults(collabs, term, sender())
         }
         case None => {
           if (fetching) {
             // There's already a request for the collaborators outstanding. Instead of duplicating effort,
             // simply log this request. When the fetch completes, this will be dispatched.
-            currentRequests = currentRequests :+ (sender, term)
+            currentRequests = currentRequests :+ (sender(), term)
           } else {
             // Time to go fetch the full collaborator list:
             fetching = true
@@ -65,7 +65,7 @@ class CollaboratorCache(
               import context.dispatcher
               val collabs = identities.values
               _allCollaborators = Some(collabs)
-              sendResults(collabs, term, sender)
+              sendResults(collabs, term, sender())
               // If other requests have come in the meantime, dispatch them as well:
               currentRequests.map { request =>
                 val (requester, otherTerm) = request

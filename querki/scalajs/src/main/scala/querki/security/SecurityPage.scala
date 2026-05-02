@@ -14,7 +14,6 @@ import models.Kind
 
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget}
-import querki.ecology._
 import querki.globals._
 import querki.pages._
 

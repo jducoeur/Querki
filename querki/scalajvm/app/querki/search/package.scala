@@ -1,6 +1,5 @@
 package querki
 
-import querki.ecology._
 import querki.globals._
 import querki.values.{SpaceState}
 

@@ -24,11 +24,11 @@ class DeriveNameModule(e: Ecology) extends QuerkiEcot(e) with DeriveName with Na
 
   lazy val NameProp = Core.NameProp
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += NameDeriver
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += NameDeriver
   }
 

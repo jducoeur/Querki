@@ -45,7 +45,7 @@ class EditSpaceInfoPage(params: ParamMap)(implicit val ecology: Ecology)
         super.save()
     }
 
-    def doRender = span(display := "none")
+    def doRender() = span(display := "none")
     def hook() = {}
   }
 

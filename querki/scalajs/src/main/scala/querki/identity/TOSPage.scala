@@ -72,7 +72,7 @@ object TOSPage {
    * TODO: this approach should probably be replaced by something better and more monadic.
    */
   def run(implicit ecology: Ecology): Future[Unit] = {
-    val promise = Promise[Unit]
+    val promise = Promise[Unit]()
     val page = new TOSPage(Some(_ => promise.complete(Success(()))))
     ecology.api[querki.display.PageManager].renderPage(page)
     promise.future

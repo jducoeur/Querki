@@ -431,10 +431,7 @@ class QLProcessor(
         case QLLink(l)      => linkToWikitext(l, context)
       }
     }
-    // *Sigh* -- the conversion below is an artifact of the fact that the AST, originally written in
-    // Scala 2.11, results in futures being a scala.collection.Seq, which isn't defined as immutable.
-    // That ancient footgun has since been fixed, but it'll take us until 2.13 to get there, I believe.
-    Future.foldLeft(futures.to[scala.collection.immutable.Seq])(Wikitext(""))(_ + _)
+    Future.foldLeft(futures.toSeq)(Wikitext(""))(_ + _)
   }
 
   private def processNumber(

@@ -1,6 +1,5 @@
 package models
 
-import language.implicitConversions
 import scala.concurrent.Future
 import scala.xml._
 

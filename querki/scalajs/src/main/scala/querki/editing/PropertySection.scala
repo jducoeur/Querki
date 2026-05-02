@@ -41,7 +41,7 @@ class PropertySection(
   def values = {
     $(elem).children("li").map({ propElem: dom.Element =>
       $(propElem).data("propid")
-    }: js.ThisFunction0[dom.Element, Any]).get().asInstanceOf[js.Array[String]]
+    }: js.ThisFunction0[dom.Element, Any]).get().asInstanceOf[js.Array[String]].toSeq
   }
 
   // Note that this is only ever invoked on the Instance Property Section:

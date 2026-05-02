@@ -5,7 +5,6 @@ import autowire._
 import rx._
 import org.querki.gadgets._
 
-import querki.ecology._
 import querki.editing.EditFunctions
 import EditFunctions.ChangePropertyValue
 import querki.globals._

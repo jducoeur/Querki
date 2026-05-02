@@ -189,7 +189,7 @@ class DataModelEcot(e: Ecology) extends ClientEcot(e) with DataModel with querki
   )(implicit
     ctx: Ctx.Owner
   ): Future[Option[TID]] = {
-    val promise = Promise[Option[TID]]
+    val promise = Promise[Option[TID]]()
     modelSelectionForm(
       title,
       msg,

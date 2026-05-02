@@ -7,7 +7,6 @@ import anorm.SqlParser._
 import models.OID
 
 import querki.db._
-import querki.ecology._
 import querki.globals._
 import querki.time.TimeAnorm._
 import querki.util.SqlHelpers._
@@ -69,7 +68,7 @@ private[conversations] class ConversationPersister(
         val nOpt =
           SpaceSQL("""SELECT MAX(id) as max from {cname}""")
             .as(int("max").?.single)
-        sender ! CurrentMaxCommentId(nOpt.getOrElse(0))
+        sender() ! CurrentMaxCommentId(nOpt.getOrElse(0))
       }
     }
 
@@ -84,7 +83,7 @@ private[conversations] class ConversationPersister(
 
         // TBD: this may be conceptually inappropriate. If we want to think in EventSourcedProcessor terms, we should probably
         // instead send a stream of AddComment messages, I think.
-        sender ! AllCommentsFor(thingId, comments)
+        sender() ! AllCommentsFor(thingId, comments)
       }
     }
 
@@ -95,7 +94,7 @@ private[conversations] class ConversationPersister(
 	          """)
           .as(commentParser(state).*)
 
-        sender ! AllComments(comments)
+        sender() ! AllComments(comments)
       }
     }
 
@@ -116,7 +115,7 @@ private[conversations] class ConversationPersister(
           "responseTo" -> comment.responseTo,
           "needsModeration" -> comment.needsModeration,
           "primaryResponse" -> comment.primaryResponse
-        ).executeUpdate
+        ).executeUpdate()
       }
     }
 
@@ -137,7 +136,7 @@ private[conversations] class ConversationPersister(
           "isEdited" -> comment.isEdited,
           "isDeleted" -> comment.isDeleted,
           "isArchived" -> comment.isArchived
-        ).executeUpdate
+        ).executeUpdate()
       }
     }
   }

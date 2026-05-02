@@ -103,8 +103,8 @@ trait RoutingParentBase[K] extends Actor with ReceivePipeline with QLogging {
   def routeToChild(
     key: K,
     msg: Any
-  )
-  def removeChild(key: K)
+  ): Unit
+  def removeChild(key: K): Unit
 
   pipelineInner {
     case KillMe => {

@@ -76,7 +76,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
         ),
         owner.mainIdentity.id,
         name,
-        DateTime.now,
+        DateTime.now(),
         Seq.empty,
         Some(SystemSpace),
         Map.empty,

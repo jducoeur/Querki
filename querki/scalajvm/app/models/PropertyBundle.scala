@@ -55,7 +55,7 @@ trait PropertyBundle extends QLogging {
     prop.fromOpt(props)
   }
 
-  def getDisplayPropVal[VT, _](prop: Property[VT, _])(implicit state: SpaceState): DisplayPropVal = {
+  def getDisplayPropVal[VT, A](prop: Property[VT, A])(implicit state: SpaceState): DisplayPropVal = {
     val local = localPropVal(prop)
     local match {
       case Some(v) => DisplayPropVal(Some(this), prop, Some(v))

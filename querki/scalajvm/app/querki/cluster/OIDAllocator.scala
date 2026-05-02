@@ -101,7 +101,7 @@ class OIDAllocator(
 
       def giveOID() = {
         val oid = OID(shardId, current)
-        sender ! NewOID(oid)
+        sender() ! NewOID(oid)
         current += 1
 
         if (current == shardFullMark) {
@@ -137,7 +137,7 @@ class OIDAllocator(
         val oids = for (n <- 0 to nAlloc) yield { OID(shardId, current + n) }
         // TODO: Related to the noisy spew in NextOID:
         logTrace(s"Shard $shardId giving OID Block of $nAlloc Ids from ${oids.head} to ${oids.last}")
-        sender ! NewOIDs(oids)
+        sender() ! NewOIDs(oids)
         current += nAlloc
 
         if (!wasFull && (current >= shardFullMark)) {

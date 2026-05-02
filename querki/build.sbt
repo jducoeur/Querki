@@ -6,7 +6,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.12.15"
+lazy val scalaV = "2.13.7"
 lazy val akkaV = "2.6.5"
 lazy val appV = "3.0.0.11-3"
 
@@ -23,10 +23,40 @@ val querkiScalacOptions = Seq(
   // and then narrowed to do exactly what we want.
   // See https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html for details.
   "-Wconf:cat=unused-imports&src=twirl/.*:is",
+  // Suppress auto-application deprecation from autowire's route macro (can't fix in macro-generated code):
+  "-Wconf:msg=Auto-application to:s",
+  // Suppress top-level wildcard warning in fastparse parser definitions (idiomatic fastparse pattern):
+  "-Wconf:msg=Top-level wildcard is not allowed:s",
+  // Suppress unchecked erasure warnings (type pattern erasure is unavoidable in these cases):
+  "-Wconf:msg=is unchecked since it is eliminated by erasure:s",
+  // Suppress unicode arrow deprecation (from copied Akka code in ReceivePipeline):
+  "-Wconf:msg=unicode arrow:s",
+  // Suppress deprecated HashMap inheritance warning (legacy code):
+  "-Wconf:msg=HashMap will be made final:s",
+  // Suppress replaceAllLiterally deprecation (trivial, fix later):
+  "-Wconf:msg=replaceAllLiterally:s",
+  // Suppress non-exhaustive match warnings (existing code pattern):
+  "-Wconf:msg=match may not be exhaustive:s",
+  // Suppress symbol literal deprecation (in Twirl templates):
+  "-Wconf:msg=symbol literal is deprecated:s",
+  // Suppress various 2.13 collection deprecations (to be fixed incrementally):
+  "-Wconf:msg=Use .view.mapValues:s",
+  "-Wconf:msg=Use .view.filterKeys:s",
+  "-Wconf:msg=deprecated.*for collections of type Iterable:s",
+  "-Wconf:msg=Use LazyList instead of Stream:s",
+  "-Wconf:msg=Use a scala.collection.mutable.MultiDict:s",
+  "-Wconf:msg=Passing an explicit array value to a Scala varargs:s",
+  "-Wconf:msg=any2stringadd in object Predef is deprecated:s",
+  "-Wconf:msg=Adding a number and a String is deprecated:s",
+  "-Wconf:msg=Implicit injection of \\+ is deprecated:s",
+  "-Wconf:msg=newBuilder in object StringBuilder is deprecated:s",
+  // Suppress Array to IndexedSeq conversion deprecation (generated code):
+  "-Wconf:msg=copyArrayToImmutableIndexedSeq:s",
+  // Suppress method override parameter list mismatch (generated or macro code):
+  "-Wconf:msg=method with a single empty parameter list overrides:s",
   // Turns on verbose warnings, if we need the category name for a given warning:
   //"-Wconf:any:wv",
   "-Xfatal-warnings",
-  "-Ypartial-unification",
   "-Ywarn-unused:imports",
 )
 

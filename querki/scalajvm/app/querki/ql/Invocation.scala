@@ -2,11 +2,8 @@ package querki.ql
 
 import scala.reflect.ClassTag
 
-import querki.values.SpaceState
-
 import models.{AsOID, Collection, PType, Property, PropertyBundle, Thing, ThingId}
 
-import querki.ecology._
 import querki.globals._
 import querki.types.ModelTypeBase
 import querki.util.PublicException

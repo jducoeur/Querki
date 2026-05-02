@@ -8,7 +8,7 @@ trait InlineBase { this: InlineParsers with Matchers =>
   def runSucceedingParsingTests(
     p: Parser[String],
     l: List[(String, String)]
-  ) {
+  ): Unit = {
     for ((a, b) <- l) {
       try {
         apply(p, a) should equal(b)
@@ -21,7 +21,7 @@ trait InlineBase { this: InlineParsers with Matchers =>
   def runExceptionParsingTests(
     p: Parser[String],
     l: List[String]
-  ) {
+  ): Unit = {
     for (s <- l) an[IllegalArgumentException] should be thrownBy { apply(p, s) }
   }
 }
@@ -32,7 +32,7 @@ trait InlineBase { this: InlineParsers with Matchers =>
 //@RunWith(classOf[JUnitRunner])
 class InlineParsersTest extends AnyFlatSpec with Matchers with InlineParsers with InlineBase {
 
-  def deco() = new MainDecorator {}
+  def deco: Decorator = new MainDecorator {}
 
   ///////////////////////////////////////////////////////////////
   // Inline parsing Tests                                      //

@@ -270,7 +270,7 @@ class StandardThingHeader(
     )
   }
 
-  def doRender =
+  def doRender() =
     div(
       cls := "page-header",
       h1(

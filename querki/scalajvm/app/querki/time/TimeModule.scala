@@ -3,7 +3,6 @@ package querki.time
 import scala.xml.NodeSeq
 import org.querki.requester.RequestM
 import models._
-import querki.ecology._
 import querki.globals._
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.values.{ElemValue, QLContext, SpaceState}
@@ -50,11 +49,11 @@ class TimeModule(e: Ecology) extends QuerkiEcot(e) with Time with querki.core.Me
   lazy val QDuration = interface[QDuration]
   lazy val QL = interface[querki.ql.QL]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += DateInitializer
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += DateInitializer
   }
 

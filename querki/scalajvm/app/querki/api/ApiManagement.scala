@@ -7,7 +7,6 @@ import scala.reflect.ClassTag
 import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
-import querki.ecology._
 import querki.globals._
 import querki.spaces.messages.SpaceBlocked
 import querki.streaming._

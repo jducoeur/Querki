@@ -42,7 +42,7 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) with Timers {
   }
 
   def doReceive: Receive = {
-    case msg: EmailMsg => emailQueue = emailQueue.enqueue(EmailEvent(sender, msg))
+    case msg: EmailMsg => emailQueue = emailQueue.enqueue(EmailEvent(sender(), msg))
 
     // This gets called once per tick:
     case DoSend => if (sendingAllowed) {

@@ -425,7 +425,7 @@ trait RequesterImplicits {
    * this implicit will take your RequestM and turn it into a Future of the matching type.
    */
   implicit def request2Future[T](req:RequestM[T]):Future[T] = {
-    val promise = Promise[T]
+    val promise = Promise[T]()
     req onComplete {
       case Success(v) => promise.success(v)
       case Failure(ex) => promise.failure(ex)
@@ -535,7 +535,7 @@ trait Requester extends Actor with RequesterImplicits {
   }
   
   def doRequestGuts[T](f:Future[Any], handler:RequestM[T])(implicit tag: ClassTag[T]) = {
-    val originalSender = sender
+    val originalSender = sender()
     import context.dispatcher
     val fTyped = f.mapTo[T]
     fTyped.onComplete {

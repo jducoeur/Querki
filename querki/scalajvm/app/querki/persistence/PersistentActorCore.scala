@@ -41,7 +41,7 @@ trait PersistentActorCore extends QLogging {
 
   def doPersistAll(events: collection.immutable.Seq[UseKryo])(handler: UseKryo => Unit): Unit
 
-  def deferAsync[A](event: A)(handler: (A) ⇒ Unit): Unit
+  def deferAsync[A](event: A)(handler: (A) => Unit): Unit
 
   /**
    * The sequence ID of the most recently-processed persistence message. Normally implemented by

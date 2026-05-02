@@ -6,7 +6,6 @@ import org.querki.requester.Requester
 
 import models.{OID, UnknownOID}
 
-import querki.ecology._
 import querki.globals._
 
 /**
@@ -47,7 +46,7 @@ private[identity] class IdentityCache(val ecology: Ecology) extends Actor with R
 
   def receive = {
     case GetIdentityRequest(id) => {
-      fetchAndThen(id) { resp => sender ! resp }
+      fetchAndThen(id) { resp => sender() ! resp }
     }
 
     case InvalidateCacheForIdentity(id) => {
@@ -85,8 +84,8 @@ private[identity] class IdentityCacheFetcher(val ecology: Ecology) extends Actor
   def receive = {
     case GetIdentityRequest(id) => {
       UserAccess.getFullIdentity(id) match {
-        case Some(identity) => sender ! IdentityFound(identity)
-        case None           => sender ! IdentityNotFound(id)
+        case Some(identity) => sender() ! IdentityFound(identity)
+        case None           => sender() ! IdentityNotFound(id)
       }
     }
   }

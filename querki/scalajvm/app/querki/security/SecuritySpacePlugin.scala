@@ -57,7 +57,7 @@ class SecuritySpacePlugin[RM[_]](
           val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Instance Permissions"))
           for {
             // Create the Permissions Thing:
-            createResult <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, None)(state)
+            createResult <- api.doCreate(req, querki.security.MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, None)(state)
             ChangeResult(createEvents, permThingIdOpt, newState) = createResult
             permThingId = permThingIdOpt.get
             permThing = newState.anything(permThingId).get

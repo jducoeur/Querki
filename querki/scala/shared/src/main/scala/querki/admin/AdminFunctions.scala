@@ -5,8 +5,6 @@ import upickle.default.{macroRW, readwriter, ReadWriter => RW}
 import scala.concurrent.Future
 import querki.data.{TID, TOID}
 import querki.identity.UserLevel._
-import AdminFunctions.AdminUserView
-import AdminFunctions.QuerkiStats
 
 /**
  * Client/Server Admin capabilities. You may only call these APIs if the logged-in session has admin rights.
