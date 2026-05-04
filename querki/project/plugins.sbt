@@ -17,7 +17,7 @@ resolvers += "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repos
 resolvers += "bintray/non".at("https://dl.bintray.com/non/maven")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.2")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.22")
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
 

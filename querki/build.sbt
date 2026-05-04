@@ -7,7 +7,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.13.7"
-lazy val akkaV = "2.6.5"
+lazy val akkaV = "2.6.21"
 lazy val appV = "3.0.0.11-3"
 
 lazy val sharedSrcDir = "scala"
@@ -156,7 +156,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // Eg, https://github.com/firstbirdtech/akka-persistence-inmemory and thence
     // https://github.com/alstanchev/pekko-persistence-inmemory
     // Argh: doesn't exist for Scala 2.12 -- re-enable once we're on 2.13!
-    //"com.firstbird" %% "akka-persistence-inmemory" % "3.0.0" % "test"
+    "com.firstbird" %% "akka-persistence-inmemory" % "2.6.0" % "test"
   ),
   // Docker configuration
   // As of Nov '25 we've switched to Corretto -- OpenJDK has been deprecated, and this seems to *slightly* have

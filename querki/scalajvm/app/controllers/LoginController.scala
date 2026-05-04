@@ -506,7 +506,7 @@ class LoginController @Inject() (
     val rawForm = resetPasswordForm.bindFromRequest()
     // We show the same error in all cases, to avoid information leakage
     def showError = {
-      doError(routes.LoginController.sendPasswordReset(), "That isn't a known login handle or email address")
+      doError(routes.LoginController.sendPasswordReset, "That isn't a known login handle or email address")
     }
     rawForm.fold(
       errorForm => showError,

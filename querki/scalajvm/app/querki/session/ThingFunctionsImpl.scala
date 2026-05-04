@@ -1,6 +1,6 @@
 package querki.session
 
-import akka.actor._
+//import akka.actor._
 
 import models.{Collection, OID, PType, Thing, ThingId, Wikitext}
 
