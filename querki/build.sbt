@@ -65,8 +65,8 @@ ThisBuild / Test / parallelExecution := false
 // HACK: this is awful, but the AWS library is trying to install databind 2.12.3, and the Scala code intentionally
 // crashes when that's the case. So let's pull the versions back to the Play one:
 ThisBuild / dependencyOverrides ++= Seq(
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.4",
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.10.4"
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4",
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.11.4"
 )
 
 lazy val querkiServer = (project in file("scalajvm")).settings(
