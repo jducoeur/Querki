@@ -10,7 +10,7 @@ trait GraphQLValue[T <: Value, R] {
 
 object GraphQLValue {
 
-  implicit val BooleanV = new GraphQLValue[BooleanValue, Boolean] {
+  implicit val BooleanV: GraphQLValue[BooleanValue, Boolean] = new GraphQLValue[BooleanValue, Boolean] {
     val name = "Boolean"
 
     def fromValue(v: Value): Option[BooleanValue] = {
@@ -23,7 +23,7 @@ object GraphQLValue {
     def value(t: BooleanValue): Boolean = t.value
   }
 
-  implicit val StringV = new GraphQLValue[StringValue, String] {
+  implicit val StringV: GraphQLValue[StringValue, String] = new GraphQLValue[StringValue, String] {
     val name = "String"
 
     def fromValue(v: Value): Option[StringValue] = {
@@ -36,7 +36,7 @@ object GraphQLValue {
     def value(t: StringValue): String = t.value
   }
 
-  implicit val EnumV = new GraphQLValue[EnumValue, String] {
+  implicit val EnumV: GraphQLValue[EnumValue, String] = new GraphQLValue[EnumValue, String] {
     val name = "Enum"
 
     def fromValue(v: Value): Option[EnumValue] = {

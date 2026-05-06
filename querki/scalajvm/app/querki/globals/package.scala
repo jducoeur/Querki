@@ -1,6 +1,7 @@
 package querki
 
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
+import scala.util.{Success, Failure}
 
 /**
  * Standard includes for Server-side Querki. The intent here is that most files should say:
@@ -69,7 +70,7 @@ package object globals {
 
   type Future[T] = scala.concurrent.Future[T]
   val Future = scala.concurrent.Future
-  implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
+  implicit lazy val execContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   /**
    * Marker for places we are cheating and waiting. ALL USES OF THIS ARE BY DEFINITION BUGS TO BE FIXED.

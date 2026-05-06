@@ -6,7 +6,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.13.7"
+lazy val scalaV = "2.13.18"
 lazy val akkaV = "2.6.21"
 lazy val appV = "3.0.0.11-3"
 
@@ -66,7 +66,8 @@ ThisBuild / Test / parallelExecution := false
 // crashes when that's the case. So let's pull the versions back to the Play one:
 ThisBuild / dependencyOverrides ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4",
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.11.4"
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.11.4",
+  "org.scala-lang.modules" %% "scala-xml" % "2.3.0"
 )
 
 lazy val querkiServer = (project in file("scalajvm")).settings(
@@ -161,7 +162,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
   // Docker configuration
   // As of Nov '25 we've switched to Corretto -- OpenJDK has been deprecated, and this seems to *slightly* have
   // the edge for AWS environments. But we could just as easily choose Eclipse Temurin if we find we want to switch.
-  dockerBaseImage := "amazoncorretto:8-alpine-jre",
+  dockerBaseImage := "amazoncorretto:11-alpine-jre",
   dockerExposedPorts := Seq(9000),
   // We need bash to be present in the Docker image; otherwise, it won't boot. So this installs that as part of
   // setup:

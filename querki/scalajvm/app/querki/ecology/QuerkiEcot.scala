@@ -11,7 +11,7 @@ import querki.values.{SpaceState}
 abstract class CoreEcot(ecologyIn: Ecology) extends EcotImpl {
 
   // Note that this cannot, sadly, be a val, because it is needed in Ecot's constructor:
-  implicit def ecology = ecologyIn
+  implicit def ecology: Ecology = ecologyIn
 
   // Common classes:
   type SystemType[T] = querki.core.TypeUtils.SystemType[T]

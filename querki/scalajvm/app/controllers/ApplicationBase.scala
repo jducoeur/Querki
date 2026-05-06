@@ -4,6 +4,7 @@ import javax.inject._
 import play.api.mvc._
 import upickle.default._
 import models._
+import play.api
 import querki.api._
 import querki.globals._
 import querki.identity._
@@ -14,7 +15,7 @@ trait ApplicationBase extends BaseController with EcologyMember with QLogging {
 
   // Concrete Controllers must inject this in their constructor signatures:
   val appProv: Provider[play.api.Application]
-  implicit lazy val app = appProv.get
+  implicit lazy val app: api.Application = appProv.get
 
   implicit lazy val ecology: Ecology = app.injector.instanceOf(classOf[querki.system.EcologyProvider]).ecology
 

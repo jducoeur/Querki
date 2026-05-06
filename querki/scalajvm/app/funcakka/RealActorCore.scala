@@ -10,7 +10,7 @@ import org.querki.requester.{RequestM, Requester}
 
 object RealActorRefLike {
 
-  implicit val RERLInstance = new ActorRefLike[ActorRef] {
+  implicit val RERLInstance: ActorRefLike[ActorRef] = new ActorRefLike[ActorRef] {
 
     def !(t: ActorRef)(message: Any)(implicit sender: ActorRef): Unit = {
       t ! message

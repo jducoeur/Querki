@@ -1,11 +1,11 @@
 package querki.test.mid
 
-import scala.concurrent.Future
+import akka.stream.Materializer
+
+import scala.concurrent.{Future, ExecutionContextExecutor}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
-
 import monocle.macros.GenLens
-
 import play.api.mvc.Result
 
 /**
@@ -63,8 +63,8 @@ case class HarnessInfo(test: MidTestBase) {
   lazy val injector = app.injector
 
   // These are implicit so you can simply `import state.harness._` to get at them:
-  implicit def executionContext = app.actorSystem.dispatcher
-  implicit def materializer = app.materializer
+  implicit def executionContext: ExecutionContextExecutor = app.actorSystem.dispatcher
+  implicit def materializer: Materializer = app.materializer
 
   def controller[T : ClassTag] = injector.instanceOf[T]
 }

@@ -35,8 +35,8 @@ class RemovePropertyActor(
   lazy val InstanceProps = Editor.InstanceProps
   lazy val LinkType = Core.LinkType
 
-  implicit val s = state
-  implicit val e = ecology
+  implicit val s: SpaceState = state
+  implicit val e: Ecology = ecology
 
   lazy val prop = state.prop(propId).get
   lazy val propName = prop.displayName

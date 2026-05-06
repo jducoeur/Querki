@@ -28,7 +28,7 @@ case class SpaceVersion(v: Long) extends AnyVal
 
 object SpaceVersion {
   val Unknown = SpaceVersion(-1)
-  implicit val versionEqual = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }
+  implicit val versionEqual: Eq[SpaceVersion] = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }
 }
 
 /**

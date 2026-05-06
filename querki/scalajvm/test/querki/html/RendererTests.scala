@@ -23,7 +23,7 @@ class RendererTests extends QuerkiTests {
         val tagVal1 = new TestThing("Tag Value 1", tagModel)
         val tagVal2 = new TestThing("Tag Value 2", tagModel)
         val tagVal3 = new TestThing("Tag Value 3", tagModel)
-        val tagProp = new TestProperty(Tags.NewTagSetType, QSet, "Tag Property")
+        val tagProp = new TestProperty(this.Tags.NewTagSetType, QSet, "Tag Property")
 
         val bottomModel = new SimpleTestThing("Bottom Model", tagProp("Tag Value 2"))
         val bottomType = new ModelType(toid, bottomModel.id, Core.toProps())

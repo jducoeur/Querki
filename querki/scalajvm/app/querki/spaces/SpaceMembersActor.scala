@@ -20,7 +20,7 @@ private[spaces] class SpaceMembersActor(
      with Stash
      with EcologyMember
      with QLogging {
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Person = interface[querki.identity.Person]

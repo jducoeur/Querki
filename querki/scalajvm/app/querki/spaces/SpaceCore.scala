@@ -72,7 +72,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
 
-  implicit lazy val tracing = TracingSpace(id, "SpaceCore: ")
+  implicit lazy val tracing: TracingSpace = TracingSpace(id, "SpaceCore: ")
 
   ////////////////////////////////////////////
   //

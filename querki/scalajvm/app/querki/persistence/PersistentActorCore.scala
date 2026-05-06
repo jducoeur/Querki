@@ -2,6 +2,7 @@ package querki.persistence
 
 import scala.util.Success
 import akka.actor.Actor.Receive
+import querki.spaces.RequestTC
 import querki.util.QLogging
 
 /**
@@ -73,7 +74,7 @@ trait PersistentRMCore[RM[_]] { self: PersistentActorCore =>
   /**
    * This is a bit subtle, but turns out abstract RM into a RequestTC, which has useful operations on it.
    */
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   /**
    * A wrapper around persist() that allows us to chain from it. No clue why this isn't built into Akka Persistence.

@@ -29,7 +29,7 @@ object TimeAnorm {
 
   def dateTime(name: String): RowParser[DateTime] = get[DateTime](name)
 
-  implicit val dateTimeToStatement = new ToStatement[DateTime] {
+  implicit val dateTimeToStatement: ToStatement[DateTime] = new ToStatement[DateTime] {
 
     def set(
       s: java.sql.PreparedStatement,

@@ -20,7 +20,7 @@ trait EmptyableCoreImplicits {
    * High-level version of .rxEmpty for GadgetRef -- basically, if the contained Gadget is itself
    * RxEmptyable, then the GadgetRef is as well.
    */
-  implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable] = new RxEmptyable[GadgetRef[G]] {
+  implicit def RxEmptyableGadgetRef[G <: Gadget[_] : RxEmptyable]: RxEmptyable[GadgetRef[G]] = new RxEmptyable[GadgetRef[G]] {
     def rxEmpty(ref:GadgetRef[G])(implicit ctx:Ctx.Owner):Rx[Boolean] = {
       ref.flatMapRx { g =>
         implicitly[RxEmptyable[G]].rxEmpty(g)

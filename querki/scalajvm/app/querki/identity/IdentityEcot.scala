@@ -1,22 +1,19 @@
 package querki.identity
 
-import akka.actor.{ActorRef}
+import akka.actor.ActorRef
 import akka.cluster.sharding._
 import akka.pattern.ask
-
-import play.api.mvc.{RequestHeader}
-
+import play.api.mvc.RequestHeader
 import models._
-
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
 import querki.system.TOSModule.noTOSUserVersion
 import querki.util.ActorHelpers._
-import querki.values.{EmptyValue, QLContext, SpaceState}
-
+import querki.values.{QLContext, SpaceState, EmptyValue}
 import IdentityCacheMessages._
 import UserCacheMessages._
+import akka.util.Timeout
 
 object IdentityMOIDs extends EcotIds(39) {
   val IdentityTypeOID = moid(1)
@@ -109,7 +106,7 @@ class IdentityEcot(e: Ecology)
     val tosVersion = noTOSUserVersion
   }
 
-  implicit val cacheTimeout = defaultTimeout
+  implicit val cacheTimeout: Timeout = defaultTimeout
 
   def getIdentity(id: OID): Future[Option[PublicIdentity]] = {
     getIdentityInternal(id)

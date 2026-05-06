@@ -150,7 +150,7 @@ class SignatureEcot(e: Ecology) extends QuerkiEcot(e) with Signature with Signat
     state: SpaceState,
     paramsOpt: Option[Seq[QLParam]]
   ) extends SignatureMap {
-    implicit val s = state
+    implicit val s: SpaceState = state
 
     case class ParamResultImpl(
       expOpt: Option[QLExp],

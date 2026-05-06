@@ -24,7 +24,7 @@ class RequesterTests
     TestKit.shutdownActorSystem(system)
   }
 
-  implicit val dur = 1.second
+  implicit val dur: FiniteDuration = 1.second
 }
 
 class Doubler extends Actor {

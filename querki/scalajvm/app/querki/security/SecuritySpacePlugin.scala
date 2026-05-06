@@ -26,7 +26,7 @@ class SecuritySpacePlugin[RM[_]](
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
 
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   /**
    * Fetches the Instance Permissions for the specified Thing, if that makes sense and creating

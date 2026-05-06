@@ -1,16 +1,15 @@
 package querki.spaces
 
 import models._
-
 import querki.persistence._
 import querki.time.DateTime
-
 import SpaceMessagePersistence._
+import querki.values.SpaceState
 
 class SpaceMessagePersistenceTests(env: PersistEnv) extends PersistTest(env) with SpaceMessagePersistenceBase {
 
   val s = env.commonSpace
-  implicit val state = s.state
+  implicit val state: SpaceState = s.state
 
   checkSerialization(querki.identity.IdentityPersistence.UserRef(s.owner.id, Some(s.owner.mainIdentity.id)))
 

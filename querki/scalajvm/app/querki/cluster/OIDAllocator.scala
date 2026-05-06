@@ -34,7 +34,7 @@ class OIDAllocator(
      with QLogging {
   import OIDAllocator._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   override def persistenceId = s"alloc$shardId"
 

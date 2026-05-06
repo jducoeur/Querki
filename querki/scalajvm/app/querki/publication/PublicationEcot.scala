@@ -191,7 +191,7 @@ class PublicationEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   ) {
     // TODO: this is annoyingly hard-coded. Think this through -- how long should it be? Should it
     // be configurable? (Probably.)
-    implicit val timeout = Timeout(10.seconds)
+    implicit val timeout: Timeout = Timeout(10.seconds)
 
     override def qlApply(inv: Invocation): QFut = {
       implicit val spaceState = inv.state

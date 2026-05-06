@@ -30,6 +30,8 @@ trait BlockParsers extends Parsers {
    * A markdown block element.
    */
   sealed abstract class MarkdownBlock extends InlineParsers {
+    // TODO: this name winds up conflicting with the "deco" in MarkdownBlock, because the precedence rules changed
+    // in Scala 3. (That's why there are a bazillion "this.deco"s below.) Adjust all of this to be less stupid.
     override def deco: Decorator = BlockParsers.this.deco
 
     /**
@@ -74,7 +76,7 @@ trait BlockParsers extends Parsers {
     def addResult(
       level: Int,
       out: StringBuilder
-    ): Unit = { out.append(indent(level)).append(deco.decorateRuler) }
+    ): Unit = { out.append(indent(level)).append(this.deco.decorateRuler) }
   }
 
   /**
@@ -90,9 +92,9 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateHeaderOpen(headerLevel))
+      out.append(indent(level)).append(this.deco.decorateHeaderOpen(headerLevel))
         .append(applyInline(content, lookup))
-        .append(indent(level)).append(deco.decorateHeaderClose(headerLevel))
+        .append(indent(level)).append(this.deco.decorateHeaderClose(headerLevel))
     }
   }
 
@@ -105,13 +107,13 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateCodeBlockOpen)
+      out.append(indent(level)).append(this.deco.decorateCodeBlockOpen)
       for (line <- lines) {
         val escaped = escapeXml(line.payload)
         out.append(escaped).append('\n')
         //out.append(line.content)
       }
-      out.append(indent(level)).append(deco.decorateCodeBlockClose)
+      out.append(indent(level)).append(this.deco.decorateCodeBlockClose)
     }
   }
 
@@ -124,13 +126,13 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateCodeBlockOpen)
+      out.append(indent(level)).append(this.deco.decorateCodeBlockOpen)
       for (line <- lines) {
         val escaped = escapeXml(line.fullLine)
         out.append(escaped).append('\n')
         //out.append(line.content)
       }
-      out.append(indent(level)).append(deco.decorateCodeBlockClose)
+      out.append(indent(level)).append(this.deco.decorateCodeBlockClose)
     }
   }
 
@@ -146,7 +148,7 @@ trait BlockParsers extends Parsers {
     def addResult(
       level: Int,
       out: StringBuilder
-    ): Unit = { out.append(indent(level)).append(deco.decorateClassDivOpen(className)) }
+    ): Unit = { out.append(indent(level)).append(this.deco.decorateClassDivOpen(className)) }
   }
 
   class ClassDivBlockEnd extends MarkdownBlock {
@@ -154,7 +156,7 @@ trait BlockParsers extends Parsers {
     def addResult(
       level: Int,
       out: StringBuilder
-    ): Unit = { out.append(indent(level)).append(deco.decorateClassDivClose) }
+    ): Unit = { out.append(indent(level)).append(this.deco.decorateClassDivClose) }
   }
 
   /**
@@ -182,14 +184,14 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      if (!suppressPara) { out.append(indent(level)).append(deco.decorateParagraphOpen) }
+      if (!suppressPara) { out.append(indent(level)).append(this.deco.decorateParagraphOpen) }
       addResultPlain(level, out)
-      if (!suppressPara) { out.append(indent(level)).append(deco.decorateParagraphClose) }
+      if (!suppressPara) { out.append(indent(level)).append(this.deco.decorateParagraphClose) }
     }
 
     def replaceLineEnd(str: String) =
       if (addBreaks)
-        str.replace("\n", deco.decorateBreak + "\n")
+        str.replace("\n", this.deco.decorateBreak + "\n")
       else
         str
 
@@ -211,7 +213,7 @@ trait BlockParsers extends Parsers {
 
       if (addBreaks) {
         // Add the empty lines that are following this:
-        empties.foreach(empty => out.append(deco.decorateBreak).append('\n'))
+        empties.foreach(empty => out.append(this.deco.decorateBreak).append('\n'))
       } else if (!suppressPara) {
         // drop last newline so paragraph closing tag ends the line:
         if (!out.isEmpty && out.charAt(out.length - 1) == '\n') out.setLength(out.length - 1)
@@ -241,9 +243,9 @@ trait BlockParsers extends Parsers {
       //now apply the normal markdown parser to the new content
       val innerBlocks = BlockParsers.this.applyBlocks(reader)
       //wrap the resulting blocks in blockquote tags
-      out.append(indent(level)).append(deco.decorateBlockQuoteOpen)
+      out.append(indent(level)).append(this.deco.decorateBlockQuoteOpen)
       innerBlocks.foreach(block => block.addResult(level + 1, out))
-      out.append(indent(level)).append(deco.decorateBlockQuoteClose)
+      out.append(indent(level)).append(this.deco.decorateBlockQuoteClose)
     }
   }
 
@@ -332,9 +334,9 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateOListOpen)
+      out.append(indent(level)).append(this.deco.decorateOListOpen)
       super.addResult(level, out)
-      out.append(indent(level)).append(deco.decorateOListClose)
+      out.append(indent(level)).append(this.deco.decorateOListClose)
     }
   }
 
@@ -347,9 +349,9 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateUListOpen)
+      out.append(indent(level)).append(this.deco.decorateUListOpen)
       super.addResult(level, out)
-      out.append(indent(level)).append(deco.decorateUListClose)
+      out.append(indent(level)).append(this.deco.decorateUListClose)
     }
   }
 
@@ -362,9 +364,9 @@ trait BlockParsers extends Parsers {
       level: Int,
       out: StringBuilder
     ): Unit = {
-      out.append(indent(level)).append(deco.decorateDListOpen)
+      out.append(indent(level)).append(this.deco.decorateDListOpen)
       super.addResult(level, out)
-      out.append(indent(level)).append(deco.decorateDListClose)
+      out.append(indent(level)).append(this.deco.decorateDListClose)
     }
   }
 

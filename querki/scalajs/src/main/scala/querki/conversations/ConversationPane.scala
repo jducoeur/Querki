@@ -22,7 +22,7 @@ class ConversationPane(
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
 
-  implicit val t = thingInfo
+  implicit val t: ThingInfo = thingInfo
 
   override def onCreate(e: dom.HTMLDivElement) = {
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()

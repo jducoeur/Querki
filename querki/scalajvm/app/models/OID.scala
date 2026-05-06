@@ -1,6 +1,5 @@
 package models
 
-
 import querki.core.NameUtils
 import querki.data.{TID, TOID}
 
@@ -136,7 +135,7 @@ object ThingId {
     }
   }
 
-  implicit def thingId2Str(id: ThingId) = id.toString()
+  implicit def thingId2Str(id: ThingId): String = id.toString()
 }
 
 case class IndexedOID(

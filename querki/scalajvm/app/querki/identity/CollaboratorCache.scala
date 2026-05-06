@@ -16,7 +16,7 @@ class CollaboratorCache(
      with Requester
      with EcologyMember {
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]

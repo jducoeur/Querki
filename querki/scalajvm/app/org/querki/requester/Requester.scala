@@ -523,7 +523,7 @@ trait Requester extends Actor with RequesterImplicits {
    * TODO: this is suspicious, since it does not follow Akka's preferred pattern for timeouts.
    * We might change how this works.
    */
-  implicit val requestTimeout = Timeout(10.seconds)
+  implicit val requestTimeout: Timeout = Timeout(10.seconds)
  
   /**
    * Send a request, and specify the handler for the received response. You may also specify a failHandler,

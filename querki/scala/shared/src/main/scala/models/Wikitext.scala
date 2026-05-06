@@ -16,7 +16,7 @@ case class DisplayText(val str: String) {
 }
 
 object DisplayText {
-  implicit def displayText2String(disp: DisplayText) = disp.str
+  implicit def displayText2String(disp: DisplayText): String = disp.str
 }
 
 // TODO: dear lord, can we redo this as a typeclass somehow? The matrix of subclasses of Wikitext and different

@@ -46,7 +46,7 @@ private[session] class OldUserSpaceSession(
      with SpaceEvolution
      with autowire.Server[String, Reader, Writer]
      with QLogging {
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   // Needed for SpacePure:
   // TODO: gah. A fine example of the problems of the inheritance-based approach. Can/should we refactor SpacePure and

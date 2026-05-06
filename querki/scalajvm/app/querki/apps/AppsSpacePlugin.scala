@@ -39,7 +39,7 @@ class AppsSpacePlugin[RM[_]](
   lazy val Apps = interface[Apps]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   def modelsToShadow(app: SpaceState): Seq[Thing] = {
     val (models, instances) = app.things.values.partition(_.isModel(app))

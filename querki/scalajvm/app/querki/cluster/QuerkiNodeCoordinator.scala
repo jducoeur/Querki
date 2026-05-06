@@ -40,7 +40,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
   import QuerkiNodeCoordinator._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   override def persistenceId = "nodeCoordinator"
 

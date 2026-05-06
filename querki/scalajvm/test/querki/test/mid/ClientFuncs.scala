@@ -10,6 +10,7 @@ import querki.api._
 import querki.data._
 import querki.globals._
 import AllFuncs._
+import akka.stream.Materializer
 import org.scalactic.source.Position
 
 /**
@@ -17,7 +18,7 @@ import org.scalactic.source.Position
  * won't usually make the calls explicitly. Instead, call this via Autowire.
  */
 trait ClientFuncs {
-  implicit lazy val clientFuncs = this
+  implicit lazy val clientFuncs: ClientFuncs = this
 
   lazy val querkiVersion: String = querki.BuildInfo.version
 
@@ -29,7 +30,7 @@ trait ClientFuncs {
     def callApi(req: FakeRequest[AnyContentAsFormUrlEncoded]): Future[Result]
     def currentPageParams: Map[String, String]
 
-    implicit lazy val materializer = harness.app.materializer
+    implicit lazy val materializer: Materializer = harness.app.materializer
     def controller = harness.controller[ClientController]
 
     private val resultPromise = Promise[Result]

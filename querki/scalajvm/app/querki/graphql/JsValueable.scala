@@ -33,7 +33,7 @@ trait JsValueable[VT] {
  */
 trait JsValueableMixin { self: FPComputeGraphQL =>
 
-  implicit val intJsValueable = new JsValueable[Int] {
+  implicit val intJsValueable: JsValueable[Int] = new JsValueable[Int] {
 
     def toJsValue(
       v: Int,
@@ -42,7 +42,7 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
     ) = res(JsNumber(v))
   }
 
-  implicit val textJsValueable = new JsValueable[QLText] {
+  implicit val textJsValueable: JsValueable[QLText] = new JsValueable[QLText] {
 
     def toJsValue(
       v: QLText,
@@ -80,7 +80,7 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
     }
   }
 
-  implicit val plainTextJsValueable = new JsValueable[PlainText] {
+  implicit val plainTextJsValueable: JsValueable[PlainText] = new JsValueable[PlainText] {
 
     def toJsValue(
       v: PlainText,
@@ -89,7 +89,7 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
     ) = res(JsString(v.text))
   }
 
-  implicit val linkJsValueable = new JsValueable[OID] {
+  implicit val linkJsValueable: JsValueable[OID] = new JsValueable[OID] {
 
     def toJsValue(
       v: OID,
@@ -104,7 +104,7 @@ trait JsValueableMixin { self: FPComputeGraphQL =>
     }
   }
 
-  implicit val booleanJsValueable = new JsValueable[Boolean] {
+  implicit val booleanJsValueable: JsValueable[Boolean] = new JsValueable[Boolean] {
 
     override def toJsValue(
       v: Boolean,

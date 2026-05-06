@@ -39,8 +39,8 @@ private[identity] case class CachedPeople(
   state: SpaceState
 ) extends EcologyMember {
 
-  implicit val s = state
-  implicit val e = ecology
+  implicit val s: SpaceState = state
+  implicit val e: Ecology = ecology
 
   lazy val Person = interface[Person]
 

@@ -11,6 +11,8 @@ import _root_.io.altoo.akka.serialization.kryo.serializer.scala.{
   ScalaProductSerializer
 }
 
+import scala.annotation.nowarn
+
 /**
  * This class gets plugged in via config, in:
  *
@@ -23,7 +25,11 @@ import _root_.io.altoo.akka.serialization.kryo.serializer.scala.{
  * can have schema evolution without too much pain.
  *
  * TODO: can we make this injected, to make it less statically horrible?
+ *
+ * TODO: a *ton* of this is now deprecated! That's extremely scary, and we're going to have to deal with it soon,
+ * but for now we're just marking it as nowarn and moving on.
  */
+@nowarn("cat=deprecation")
 class KryoInit extends DefaultKryoInitializer {
 
   override def postInit(kryo: ScalaKryo): Unit = {
@@ -58,6 +64,7 @@ class KryoInit extends DefaultKryoInitializer {
  * deal with Ecot initialization? Basically, we're looking for a way to do all of this setup before
  * the first Kryo gets created.
  */
+@nowarn("cat=deprecation")
 object KryoInit {
 
   /**

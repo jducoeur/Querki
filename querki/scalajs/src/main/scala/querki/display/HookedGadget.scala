@@ -18,7 +18,7 @@ import querki.globals._
  * @author jducoeur
  */
 abstract class HookedGadget[T <: dom.html.Element](e: Ecology) extends Gadget[T] with EcologyMember {
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val GadgetsInternal = interface[GadgetsInternal]
 

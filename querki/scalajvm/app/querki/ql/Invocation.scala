@@ -151,7 +151,7 @@ private[ql] case class InvocationImpl(
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val LinkType = Core.LinkType
 
-  implicit val inv = this
+  implicit val inv: InvocationImpl = this
 
   /**
    * The signature for this function, which we use to extract specific params.
