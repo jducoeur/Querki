@@ -301,7 +301,7 @@ class UITests extends QuerkiTests {
       2
       3
       4
-      5""".strip)
+      5""".stripFront)
     }
 
     "work with an empty list" in {
