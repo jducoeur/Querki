@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.13.18"
 lazy val akkaV = "2.6.21"
-lazy val appV = "3.0.0.11-3"
+lazy val appV = "3.0.0.12-SNAPSHOT"
 
 lazy val sharedSrcDir = "scala"
 
@@ -160,16 +160,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.firstbird" %% "akka-persistence-inmemory" % "2.6.0" % "test"
   ),
   // Docker configuration
-  // As of Nov '25 we've switched to Corretto -- OpenJDK has been deprecated, and this seems to *slightly* have
-  // the edge for AWS environments. But we could just as easily choose Eclipse Temurin if we find we want to switch.
-  dockerBaseImage := "amazoncorretto:11-alpine-jre",
+  // Temurin JRE 11 on Debian slim — includes bash out of the box, JRE-only so much smaller than a full JDK.
+  dockerBaseImage := "eclipse-temurin:11-jre-jammy",
   dockerExposedPorts := Seq(9000),
-  // We need bash to be present in the Docker image; otherwise, it won't boot. So this installs that as part of
-  // setup:
-  dockerCommands := dockerCommands.value.flatMap {
-    case cmd @ Cmd("FROM", _) => List(cmd, Cmd("RUN", "apk update && apk add bash"))
-    case other                => List(other)
-  },
   // When running server tests, use this alternate config file, which uses the in-memory persistence
   // instead of on-disk:
   Test / javaOptions += "-Dconfig.file=conf/application.test.conf",

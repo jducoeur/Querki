@@ -19,15 +19,15 @@
     <logger name="application" level="DEBUG" />
     <logger name="querki" level="TRACE" />
     <logger name="akka" level="INFO" />
-    <logger name="io.altoo" level="TRACE" />
+    <logger name="io.altoo" level="INFO" />
     <logger name="com.zaxxer" level="WARN" />
     <logger name="com.datastax.driver" level="INFO" />
-    <logger name="com.datastax.oss.driver" level="TRACE" />
+    <logger name="com.datastax.oss.driver" level="INFO" />
     <logger name="com.datastax.driver.core.CodecRegistry" level="INFO" />
     <logger name="javax.management.mbeanserver" level="INFO" />
     <logger name="akka.stream.alpakka.cassandra" level="INFO" />
-    <logger name="akka.persistence" level="TRACE" />
-    <logger name="akka.serialization" level="TRACE" />
+    <logger name="akka.persistence" level="INFO" />
+    <logger name="akka.serialization" level="INFO" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
