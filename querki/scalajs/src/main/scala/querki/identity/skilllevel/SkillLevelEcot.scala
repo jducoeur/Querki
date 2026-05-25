@@ -1,6 +1,5 @@
 package querki.identity.skilllevel
 
-import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 
@@ -9,7 +8,6 @@ import org.querki.gadgets._
 
 import querki.data._
 import querki.display.{ButtonGadget, Dialog}
-import querki.ecology._
 import querki.globals._
 import querki.session.UserFunctions
 

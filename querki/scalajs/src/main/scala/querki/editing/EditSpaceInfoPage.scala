@@ -6,7 +6,6 @@ import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import autowire._
-import rx._
 import org.querki.gadgets._
 
 import querki.data.BasicThingInfo
@@ -46,7 +45,7 @@ class EditSpaceInfoPage(params: ParamMap)(implicit val ecology: Ecology)
         super.save()
     }
 
-    def doRender = span(display := "none")
+    def doRender() = span(display := "none")
     def hook() = {}
   }
 
@@ -57,8 +56,8 @@ class EditSpaceInfoPage(params: ParamMap)(implicit val ecology: Ecology)
     .whenRendered { g =>
       g.selectedValOpt.triggerLater {
         // Whenever the selection changes, save both objects:
-        spaceSaver.foreachNow(_.save())
-        spacePermsSaver.foreachNow(_.save())
+        spaceSaver.foreachNow(_.saveDiscarding())
+        spacePermsSaver.foreachNow(_.saveDiscarding())
       }
     }
 

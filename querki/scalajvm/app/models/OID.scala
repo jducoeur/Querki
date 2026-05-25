@@ -1,12 +1,7 @@
 package models
 
-import language.implicitConversions
-
 import querki.core.NameUtils
 import querki.data.{TID, TOID}
-import querki.db.QDB
-import querki.db.ShardKind._
-import querki.globals._
 
 /**
  * OID is the primary identifier for all objects in Querki. Internally, it is a long
@@ -84,7 +79,7 @@ object OID {
 object OIDMap {
 
   def apply[T <: Thing](items: T*): Map[OID, T] = {
-    (Map.empty[OID, T] /: items)((m, i) => m + (i.id -> i))
+    items.foldLeft(Map.empty[OID, T])((m, i) => m + (i.id -> i))
   }
 }
 
@@ -140,7 +135,7 @@ object ThingId {
     }
   }
 
-  implicit def thingId2Str(id: ThingId) = id.toString()
+  implicit def thingId2Str(id: ThingId): String = id.toString()
 }
 
 case class IndexedOID(

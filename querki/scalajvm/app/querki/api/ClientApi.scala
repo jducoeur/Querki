@@ -2,9 +2,6 @@ package querki.api
 
 import akka.actor._
 
-import upickle._
-import autowire._
-
 import models.{AsOID, HtmlWikitext}
 
 import querki.globals._
@@ -44,9 +41,9 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
     ApiRegistry.registerApiImplFor[CommonFunctions, CommonFunctionsImpl](anonHandler, false)
   }
 
-  implicit def thing2TID(t: Thing) = TID(t.id.toThingId.toString)
-  implicit def OID2TID(oid: OID) = TID(oid.toThingId.toString)
-  implicit def OID2TOID(oid: OID) = TOID(oid.id.toThingId.toString)
+  implicit def thing2TID(t: Thing): TID = TID(t.id.toThingId.toString)
+  implicit def OID2TID(oid: OID): TID = TID(oid.toThingId.toString)
+  implicit def OID2TOID(oid: OID): TOID = TOID(oid.id.toThingId.toString)
 
   def setFlags(
     t: Thing,
@@ -54,7 +51,7 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
   )(implicit
     state: SpaceState
   ): Set[TOID] = {
-    (Set.empty[TOID] /: props) { (set, prop) =>
+    props.foldLeft(Set.empty[TOID]) { (set, prop) =>
       if (t.ifSet(prop))
         set + prop.id
       else
@@ -69,7 +66,7 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
   )(implicit
     state: SpaceState
   ): Set[TOID] = {
-    (Set.empty[TOID] /: perms) { (set, perm) =>
+    perms.foldLeft(Set.empty[TOID]) { (set, perm) =>
       if (AccessControl.hasPermission(perm, state, who, t))
         set + perm.id
       else

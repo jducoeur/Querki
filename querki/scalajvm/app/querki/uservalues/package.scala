@@ -2,10 +2,10 @@ package querki
 
 import akka.actor.Props
 
-import models.{OID, PType, Property}
+import models.{OID, Property}
 
 import querki.ecology._
-import querki.values.{QValue, SpaceState}
+import querki.values.{SpaceState}
 
 package object uservalues {
 

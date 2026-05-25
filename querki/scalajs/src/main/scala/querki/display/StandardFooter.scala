@@ -1,6 +1,6 @@
 package querki.display
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import org.querki.gadgets._

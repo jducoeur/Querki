@@ -1,11 +1,8 @@
 package querki.api
 
-import scala.concurrent.Promise
 import scala.util.{Failure, Success}
 import akka.actor._
 import upickle.default._
-import autowire._
-import rx._
 import org.querki.requester._
 import models.{Thing, ThingId}
 import querki.data.TID
@@ -65,15 +62,16 @@ abstract class AutowireApiImpl(
   e: Ecology
 ) extends EcologyMember
      with RequesterImplicits
-     with autowire.Server[String, Reader, Writer] {
+     with autowire.Server[String, Reader, Writer]
+     with QLogging {
   def user = info.user
   def rc = info.rc
   def self = info.actor.self
-  implicit def context = info.actor.context
+  implicit def context: ActorContext = info.actor.context
   def sender = info.sender
   def requester = info.actor
 
-  implicit lazy val ecology = e
+  implicit lazy val ecology: Ecology = e
 
   // This is mainly to support the implementation in SpaceApiImpl
   def trace(msg: => String): Unit = {}
@@ -97,15 +95,15 @@ abstract class AutowireApiImpl(
         sender ! ClientError(write(aex))
       }
       case pex: PublicException => {
-        QLog.error(s"$apiName replied with PublicException $th instead of ApiException when invoking $req")
+        logError(s"$apiName replied with PublicException $th instead of ApiException when invoking $req")
         sender ! ClientError(pex.display(Some(rc)))
       }
       case ex: Exception => {
-        QLog.error(s"Got exception from $apiName when invoking $req", ex)
+        logError(s"Got exception from $apiName when invoking $req", ex)
         sender ! ClientError(UnexpectedPublicException.display(Some(rc)))
       }
       case _ => {
-        QLog.error(s"Got throwable from $apiName when invoking $req", th)
+        logError(s"Got throwable from $apiName when invoking $req", th)
         sender ! ClientError(UnexpectedPublicException.display(Some(rc)))
       }
     }

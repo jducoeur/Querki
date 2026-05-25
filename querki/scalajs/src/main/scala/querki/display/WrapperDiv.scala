@@ -46,7 +46,7 @@ class WrapperDiv(implicit val ecology: Ecology) extends Gadget[dom.html.Div] wit
     this
   }
 
-  def doRender = contentsOpt match {
+  def doRender() = contentsOpt match {
     case Some(contents) => div(modifiers :+ bindNode(contents))
     case None           => div(modifiers ++ initial)
   }
@@ -66,9 +66,9 @@ class WrapperDiv(implicit val ecology: Ecology) extends Gadget[dom.html.Div] wit
     elemOpt match {
       case Some(elem) => {
         if (retainExisting)
-          $(elem).children().detach
+          $(elem).children().detach()
         else
-          $(elem).empty
+          $(elem).empty()
         $(elem).append(newContent)
         $(elem).change()
         onInserted()

@@ -1,17 +1,22 @@
 package querki.persistence
 
 import akka.actor.{ActorPath, ActorRef, ExtendedActorSystem}
-
 import com.esotericsoftware.kryo._
-import com.romix.scala.serialization.kryo._
-import com.romix.akka.serialization.kryo._
+import _root_.io.altoo.akka.serialization.kryo.DefaultKryoInitializer
+import _root_.io.altoo.akka.serialization.kryo.serializer.akka.ActorRefSerializer
+import _root_.io.altoo.akka.serialization.kryo.serializer.scala.{
+  ScalaImmutableAbstractMapSerializer,
+  ScalaImmutableAbstractSetSerializer,
+  ScalaKryo,
+  ScalaProductSerializer
+}
 
-import querki.globals._
+import scala.annotation.nowarn
 
 /**
  * This class gets plugged in via config, in:
  *
- *   akka.actor.kryo.kryo-custom-serializer-init
+ *   akka-kryo-serialization.kryo-initializer
  *
  * It tells Kryo to use the TaggedFieldSerializer, so that persisted types can evolve properly.
  *
@@ -20,10 +25,14 @@ import querki.globals._
  * can have schema evolution without too much pain.
  *
  * TODO: can we make this injected, to make it less statically horrible?
+ *
+ * TODO: a *ton* of this is now deprecated! That's extremely scary, and we're going to have to deal with it soon,
+ * but for now we're just marking it as nowarn and moving on.
  */
-class KryoInit {
+@nowarn("cat=deprecation")
+class KryoInit extends DefaultKryoInitializer {
 
-  def customize(kryo: Kryo): Unit = {
+  override def postInit(kryo: ScalaKryo): Unit = {
 
 //    QLog.spew(s"Customizing a Kryo instance...")
 
@@ -55,6 +64,7 @@ class KryoInit {
  * deal with Ecot initialization? Basically, we're looking for a way to do all of this setup before
  * the first Kryo gets created.
  */
+@nowarn("cat=deprecation")
 object KryoInit {
 
   /**
@@ -62,7 +72,7 @@ object KryoInit {
    *
    * TODO: is it possible for us to access the actual KryoSerializer.serializerPool?
    */
-  var _rawKryos: Seq[Kryo] = Seq.empty
+  var _rawKryos: Seq[ScalaKryo] = Seq.empty
 
   /**
    * The messages declared by the various Ecots, which need to get registered into the Kryos.
@@ -104,7 +114,7 @@ object KryoInit {
    * IMPORTANT: many of these types are abstract, and rely upon the new SubclassResolver that we've
    * added to the romix library.
    */
-  def registerAkkaMsgs(kryo: Kryo): Unit = {
+  def registerAkkaMsgs(kryo: ScalaKryo): Unit = {
     _actorSystem.map { actorSystem =>
       kryo.register(classOf[ActorPath], new ActorPathSerializer(actorSystem), 100)
       kryo.register(classOf[ActorRef], new ActorRefSerializer(actorSystem), 101)
@@ -141,7 +151,7 @@ object KryoInit {
   /**
    * Register the messages from the Ecology into this Kryo.
    */
-  def registerMsgs(kryo: Kryo): Unit = {
+  def registerMsgs(kryo: ScalaKryo): Unit = {
     _msgDecls.foreach { decls =>
 //      QLog.spew(s"... registering message declarations...")
       decls.foreach { case (clazz, id) =>

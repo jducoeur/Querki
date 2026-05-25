@@ -3,8 +3,7 @@ package querki.test.mid
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import play.api.mvc.{Cookies, Result, Session}
-import play.api.test.Helpers.{SET_COOKIE}
+import play.api.mvc.{Result, Session}
 
 import akka.stream.Materializer
 import akka.util.ByteString
@@ -15,8 +14,7 @@ import akka.util.ByteString
 class ResultHelpers(result: Result) {
   def headers: Map[String, String] = result.header.headers
   def header(name: String): Option[String] = headers.get(name)
-  def cookies: Cookies = Cookies.fromSetCookieHeader(header(SET_COOKIE))
-  def sess: Session = Session.decodeFromCookie(cookies.get(Session.COOKIE_NAME))
+  def sess: Session = result.newSession.getOrElse(Session())
   def status: Int = result.header.status
 
   def charset: Option[String] =

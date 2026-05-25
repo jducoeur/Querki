@@ -6,14 +6,15 @@ import autowire._
 import rx._
 import org.querki.gadgets._
 import org.querki.jquery._
-
 import querki.api._
 import AdminFunctions._
-import querki.display.{ButtonGadget}
+import querki.display.ButtonGadget
 import querki.display.rx._
 import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
+
+import scala.util.{Failure, Success}
 
 class ManageUsersPage(params: ParamMap)(implicit val ecology: Ecology) extends Page() {
 
@@ -23,13 +24,15 @@ class ManageUsersPage(params: ParamMap)(implicit val ecology: Ecology) extends P
   implicit class CallExt[T](fut: Future[T]) {
 
     def checkForeach[U](cb: (T) => U) = {
-      fut.onFailure {
-        case NotAnAdminException() => Pages.showSpacePage(DataAccess.space.get).flashing(
-            true,
-            "Manage Users is for Querki Administrators only. Sorry."
-          )
+      fut.onComplete {
+        case Failure(ex) => ex match {
+            case NotAnAdminException() => Pages.showSpacePage(DataAccess.space.get).flashing(
+                true,
+                "Manage Users is for Querki Administrators only. Sorry."
+              )
+          }
+        case Success(value) => cb(value)
       }
-      fut.foreach(cb)
     }
   }
 
@@ -57,7 +60,7 @@ class ManageUsersPage(params: ParamMap)(implicit val ecology: Ecology) extends P
 
     val levelSelector = GadgetRef[RxSelect].whenSet { g =>
       g.selectedOption.triggerLater {
-        g.selectedOption.now.map { opt =>
+        g.selectedOption.now.foreach { opt =>
           val newLevel = Integer.parseInt(opt.valueString)
           if (newLevel != user.level) {
             Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>

@@ -1,6 +1,8 @@
 package querki.uservalues
 
-import models.{Property, Thing}
+import scala.language.existentials
+
+import models.{Property}
 import querki.globals._
 import querki.spaces._
 import querki.spaces.messages.SpacePluginMsg
@@ -45,9 +47,9 @@ class UserValueSpacePlugin[RM[_]](
     val SummarizeChange(tid, fromProp, summaryId, previous, current) = msg
     val resultOpt = for {
       rawProp <- state.prop(summaryId).orElse(
-        QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
+        logWarn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
       )
-      thing <- state.anything(tid).orElse(QLog.warn(s"UserValueSpacePlugin didn't find requested Thing $tid"))
+      thing <- state.anything(tid).orElse(logWarn(s"UserValueSpacePlugin didn't find requested Thing $tid"))
       (summaryProp, summarizer) <- asSummarizer(rawProp, msg)
       newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
       newProps = thing.props + (summaryProp.id -> newSummary)

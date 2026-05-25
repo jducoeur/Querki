@@ -1,7 +1,7 @@
 package querki.qtext
 
-import org.scalatest.{FlatSpec, Matchers}
-import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the behavior of the complete parser, i.e. all parsing steps together.
@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
  * Package Explorer, and do File -> Convert Line Delimiters To -> Unix.
  */
 //@RunWith(classOf[JUnitRunner])
-class TransformerTest extends FlatSpec with Matchers with Transformer with MainDecorator {
+class TransformerTest extends AnyFlatSpec with Matchers with Transformer with MainDecorator {
 
   implicit class testableString(str: String) {
     // Multi-line test strings should use this, to deal with Unix vs. Windows problems:

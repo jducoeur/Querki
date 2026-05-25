@@ -6,13 +6,10 @@ import akka.actor.{ActorRef, Props}
 
 import anorm.SqlQuery
 
-import models._
-
 import querki.ecology._
-import querki.identity.{IdentityId, PublicIdentity, User, UserId}
-import querki.notifications.Common
+import querki.identity.{User, UserId}
 import querki.spaces.SerializedProps
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 package object notifications {
 
@@ -43,12 +40,12 @@ package object notifications {
     /**
      * Registers the given Notifier, so that it can be used to send and interpret Notifications.
      */
-    def register(notifier: Notifier)
+    def register(notifier: Notifier): Unit
 
     /**
      * Remove this notifier. Should be called during term().
      */
-    def unregister(notifier: Notifier)
+    def unregister(notifier: Notifier): Unit
   }
 
   /**
@@ -79,7 +76,7 @@ package object notifications {
       req: User,
       recipients: Recipients,
       note: Notification
-    )
+    ): Unit
 
     /**
      * Figures out how to display the given Notification.

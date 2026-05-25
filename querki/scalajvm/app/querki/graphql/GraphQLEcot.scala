@@ -5,7 +5,7 @@ import querki.console.CommandEffectArgs
 import querki.console.ConsoleFunctions.{DisplayTextResult, ErrorResult}
 import querki.ecology.{EcotIds, QuerkiEcot}
 import querki.globals._
-import querki.ql.{QLExp, QLTextStage, UnQLText}
+import querki.ql.{QLExp, QLTextStage}
 
 object MOIDs extends EcotIds(76) {
   val GraphQLCommandOID = moid(1)
@@ -21,7 +21,7 @@ class GraphQLEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  override def postInit: Unit = {
+  override def postInit(): Unit = {
     ApiRegistry.registerApiImplFor[GraphQLFunctions, GraphQLFunctionsImpl](SpaceOps.spaceRegion, requiresLogin = false)
   }
 

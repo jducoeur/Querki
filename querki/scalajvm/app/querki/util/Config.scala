@@ -2,7 +2,7 @@ package querki.util
 
 import scala.concurrent.duration._
 
-import play.api.{Configuration, Play}
+import play.api.{Configuration}
 
 import querki.ecology.PlayEcology
 import querki.globals._
@@ -54,21 +54,21 @@ object Config {
     default: Int*
   )(implicit
     ecology: Ecology
-  ): Int = getTyped(key, default, (_.getInt(key)), (_.toInt))
+  ): Int = getTyped(key, default, (_.getOptional[Int](key)), (_.toInt))
 
   def getString(
     key: String,
     default: String*
   )(implicit
     ecology: Ecology
-  ) = getTyped(key, default, (_.getString(key)), (_.toString()))
+  ) = getTyped(key, default, (_.getOptional[String](key)), (_.toString()))
 
   def getBoolean(
     key: String,
     default: Boolean*
   )(implicit
     ecology: Ecology
-  ) = getTyped(key, default, (_.getBoolean(key)), (_.toBoolean))
+  ) = getTyped(key, default, (_.getOptional[Boolean](key)), (_.toBoolean))
 
   def getDuration(
     key: String,
@@ -79,7 +79,7 @@ object Config {
     key,
     default,
     { config =>
-      config.getMilliseconds(key).map(Duration(_, MILLISECONDS))
+      config.getOptional[FiniteDuration](key)
     },
     { str =>
       throw new Exception("Config.getDuration can not yet handle local strings!")

@@ -1,6 +1,5 @@
 package querki.security
 
-import java.security._
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 

@@ -10,7 +10,6 @@ import org.querki.jquery._
 
 import querki.display.{ButtonGadget, Dialog, HookedGadget}
 import querki.display.rx.RxInput
-import querki.ecology._
 import querki.globals._
 import querki.pages.CreateSpacePage
 import querki.session.UserFunctions
@@ -46,7 +45,7 @@ class AppsEcot(e: Ecology) extends ClientEcot(e) with Apps {
    * A simple hook, so that anything with the class "_instantiateAppButton" becomes a button to pop the dialog.
    */
   class UseAppGadget extends HookedGadget[dom.html.Element](ecology) {
-    def doRender = ???
+    def doRender() = ???
 
     def hook() = {
       $(elem).click { evt: JQueryEventObject =>
@@ -99,7 +98,7 @@ class AppsEcot(e: Ecology) extends ClientEcot(e) with Apps {
         ButtonGadget.Primary,
         Seq("Create", id := "_modelSelected"),
         { dialog =>
-          createSpace
+          createSpace()
           dialog.done()
         }
       ),

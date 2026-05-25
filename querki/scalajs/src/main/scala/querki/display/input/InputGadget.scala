@@ -4,7 +4,6 @@ import scala.util.{Failure, Success}
 import scala.scalajs.js
 import js.UndefOr
 
-import upickle._
 import autowire._
 import org.scalajs.dom
 import dom.html.Element
@@ -13,7 +12,6 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 import querki.data.BasicThingInfo
-import querki.display._
 import querki.display.HookedGadget
 import querki.editing.EditFunctions
 import EditFunctions._
@@ -129,6 +127,16 @@ abstract class InputGadget[T <: Element](e: Ecology) extends HookedGadget[T](e) 
   }
 
   /**
+   * Variant of save() that disregards the resulting Future.
+   *
+   * This is a little evil, but occasionally necessary when Scala.Rx chokes on a Future.
+   */
+  def saveDiscarding(): Unit = {
+    save()
+    ()
+  }
+
+  /**
    * InputGadgets should call this iff they have a complex edit cycle -- that is, if you begin to
    * edit and later save those changes. Use this to make sure that changes get saved before we navigate.
    *
@@ -212,7 +220,7 @@ object InputGadget {
     val StatusLine = ecology.api[querki.display.StatusLine]
 
     StatusLine.showUntilChange("Saving...")
-    val promise = Promise[PropertyChangeResponse]
+    val promise = Promise[PropertyChangeResponse]()
     Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
       case Success(response) => {
         response match {

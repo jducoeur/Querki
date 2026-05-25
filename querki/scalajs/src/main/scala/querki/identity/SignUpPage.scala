@@ -1,32 +1,26 @@
 package querki.identity
 
 import scala.util.Success
-
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import upickle.default._
 import autowire._
-
 import org.querki.squery._
 import org.querki.jquery._
 import org.querki.gadgets._
 import org.querki.gadgets.core.GadgetElementRef
-
 import querki.api._
 import querki.comm._
 import querki.data.UserInfo
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import QuerkiEmptyable._
-import querki.ecology._
 import querki.globals._
 import querki.pages._
 import querki.session.UserFunctions
 import querki.util.InputUtils
-
 import CommonFunctions._
-import UserFunctions._
 
 /**
  * @author jducoeur
@@ -186,7 +180,7 @@ class SignUpPage[T](includeSignin: Boolean)(onReady: Option[UserInfo => T])(impl
         // running imperatively, so just show the Index:
         onReady.map(_(user)).getOrElse(PageManager.showIndexPage())
       }
-    }.onFailure { case th =>
+    }.failed.foreach { th =>
       try {
         Client.translateServerException(th)
       } catch {

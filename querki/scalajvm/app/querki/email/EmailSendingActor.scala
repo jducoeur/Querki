@@ -18,12 +18,12 @@ import querki.util.QuerkiActor
  * Note that this delegates all the real work to the stateless EmailSender. During functional tests, this gets
  * swapped out for a test version. All this Actor does is mediate the threading.
  */
-class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
+class EmailSendingActor(e: Ecology) extends QuerkiActor(e) with Timers {
   import EmailSendingActor._
 
   lazy val EmailSender = interface[EmailSender]
 
-  lazy val throttle = Config.getDuration("querki.mail.throttle", 1 second)
+  lazy val throttle = Config.getDuration("querki.mail.throttle", 1.second)
 
   // Emails that are queued up, waiting to be sent.
   // TODO: Note that there is a potential leak here -- this can grow unbounded without us realizing there
@@ -38,11 +38,11 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
 
   override def preStart(): Unit = {
     // Start up a regular event that will send emails on a throttle:
-    context.system.scheduler.schedule(throttle, throttle, self, DoSend)
+    timers.startTimerWithFixedDelay(DoSend, DoSend, throttle)
   }
 
   def doReceive: Receive = {
-    case msg: EmailMsg => emailQueue = emailQueue.enqueue(EmailEvent(sender, msg))
+    case msg: EmailMsg => emailQueue = emailQueue.enqueue(EmailEvent(sender(), msg))
 
     // This gets called once per tick:
     case DoSend => if (sendingAllowed) {
@@ -66,7 +66,7 @@ class EmailSendingActor(e: Ecology) extends QuerkiActor(e) {
               case ex: Exception => {
                 // Synchronous error, so we expect to be able to continue:
                 sendingAllowed = true
-                QLog.error(s"Exception while sending email $msg", ex)
+                logError(s"Exception while sending email $msg", ex)
               }
             }
           }

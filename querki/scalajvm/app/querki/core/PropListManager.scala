@@ -1,14 +1,15 @@
 package querki.core
 
+import scala.language.existentials
+
 import collection.immutable.TreeMap
 
-import models.{DisplayPropVal, Property, PropertyBundle, Thing}
+import models.{DisplayPropVal, PropertyBundle}
 
 import querki.core.MOIDs.UrPropOID
 
 import querki.ecology._
 import querki.globals._
-import querki.util.QLog
 import querki.values.SpaceState
 
 object PropListMOIDs extends EcotIds(20)
@@ -48,7 +49,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
   }
 
   def apply(pairs: (Property[_, _], DisplayPropVal)*): PropList = {
-    (TreeMap.empty[Property[_, _], DisplayPropVal] /: pairs)((m, pair) => m + pair)
+    pairs.foldLeft(TreeMap.empty[Property[_, _], DisplayPropVal])((m, pair) => m + pair)
   }
 
   private def isProperty(bundleOpt: Option[PropertyBundle])(implicit state: SpaceState): Boolean = {
@@ -68,7 +69,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
   ): PropList = {
     // Get the Model's PropList, and push its values into the inherited slots:
     val raw = fromRec(model, thing)
-    (TreeMap.empty[Property[_, _], DisplayPropVal] /: raw) { (result, fromModel) =>
+    raw.foldLeft(TreeMap.empty[Property[_, _], DisplayPropVal]) { (result, fromModel) =>
       val (prop, v) = fromModel
       if (prop == NameProp && !isProperty(thing)) {
         // We don't inherit even the existence of NameProp, *except* for Properties.
@@ -102,7 +103,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
       else
         TreeMap.empty[Property[_, _], DisplayPropVal]
 
-    (inherited /: thing.props.keys) { (m, propId) =>
+    thing.props.keys.foldLeft(inherited) { (m, propId) =>
       val propOpt = state.prop(propId)
       propOpt match {
         case Some(prop) => {
@@ -167,7 +168,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
               Editor.propsNotInModel(thing, editList, state)
           case None => editList
         }
-        val withOpts = (Seq.empty[(Property[_, _], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>
+        val withOpts = fullEditList.foldLeft(Seq.empty[(Property[_, _], Option[DisplayPropVal])]) { (list, oid) =>
           val propOpt = state.prop(oid)
           propOpt match {
             case Some(prop) => {
@@ -175,7 +176,7 @@ class PropListManagerEcot(e: Ecology) extends QuerkiEcot(e) with PropListManager
               list :+ (prop, v)
             }
             case None => {
-              QLog.error("Was unable to find Property " + oid + " in prepPropList()")
+              logError("Was unable to find Property " + oid + " in prepPropList()")
               list
             }
           }

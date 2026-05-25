@@ -63,7 +63,7 @@ class TagTests extends QuerkiTests {
 
       class TSpace extends CommonSpace {
         val linkModel = new SimpleTestThing("Linked Model")
-        val linkedTagsProp = new TestProperty(TagType, QSet, "Tags With Prop", Links.LinkModelProp(linkModel))
+        val linkedTagsProp = new TestProperty(TagType, QSet, "Tags With Prop", this.Links.LinkModelProp(linkModel))
 
         val model = new SimpleTestThing("My Model")
         val thing1 = new TestThing("Thing 1", model, linkedTagsProp("My Tag"))
@@ -82,8 +82,8 @@ class TagTests extends QuerkiTests {
   // === _resolveTags ===
   "_resolveTags" should {
     class TSpace extends CommonSpace {
-      val listOfTags = new TestProperty(Tags.NewTagSetType, QList, "List of Tags")
-      val oneTag = new TestProperty(Tags.NewTagSetType, ExactlyOne, "One Tag")
+      val listOfTags = new TestProperty(this.Tags.NewTagSetType, QList, "List of Tags")
+      val oneTag = new TestProperty(this.Tags.NewTagSetType, ExactlyOne, "One Tag")
 
       val thing1 = new SimpleTestThing("Thing 1", optTextProp("Hello"))
       val thing3 = new SimpleTestThing("Thing 3", optTextProp("world"))
@@ -141,7 +141,7 @@ class TagTests extends QuerkiTests {
     // Test for Issue .3y285gi
     "find references from inside Model Types" in {
       class TSpace extends CommonSpace {
-        val tagProp = new TestProperty(Tags.NewTagSetType, QSet, "My Tag Prop")
+        val tagProp = new TestProperty(this.Tags.NewTagSetType, QSet, "My Tag Prop")
 
         val subModel = new SimpleTestThing("SubModel", tagProp())
         val propOfModelType = TestModelProperty("Complex Prop", subModel, Optional)
@@ -169,8 +169,8 @@ class TagTests extends QuerkiTests {
     // Test for Issue .3y286oo
     "work with a specified Property" in {
       class TSpace extends CommonSpace {
-        val tagProp1 = new TestProperty(Tags.NewTagSetType, QSet, "First Tag Prop")
-        val tagProp2 = new TestProperty(Tags.NewTagSetType, QSet, "Second Tag Prop")
+        val tagProp1 = new TestProperty(this.Tags.NewTagSetType, QSet, "First Tag Prop")
+        val tagProp2 = new TestProperty(this.Tags.NewTagSetType, QSet, "Second Tag Prop")
 
         val targetThing = new SimpleTestThing("Target Thing")
 
@@ -234,7 +234,7 @@ class TagTests extends QuerkiTests {
       // This example is adapted from the Cooks Guild Space, where it came up:
       class TSpace extends CommonSpace {
         val source = new SimpleTestThing("Source")
-        val secondarySourceProp = new TestProperty(Tags.NewTagSetType, ExactlyOne, "Secondary Source")
+        val secondarySourceProp = new TestProperty(this.Tags.NewTagSetType, ExactlyOne, "Secondary Source")
         // Yes, we have an empty ExactlyOne in the Model. That's a bit suspicious, and worth thinking about:
         val secondarySourceDetails = new SimpleTestThing("Secondary Source Details", secondarySourceProp())
         val secondarySources = TestModelProperty("Secondary Sources", secondarySourceDetails, QList)

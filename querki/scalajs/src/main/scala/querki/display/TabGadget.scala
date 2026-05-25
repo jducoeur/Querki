@@ -59,7 +59,7 @@ class TabSetGadget(
       )
     }
 
-    def doRender = a(href := s"#${tab.hrefId}", role := "tab", attr("data-toggle") := "tab", tab.displayName)
+    def doRender() = a(href := s"#${tab.hrefId}", role := "tab", attr("data-toggle") := "tab", tab.displayName)
   }
 
   def tabSetContent: Future[Gadget[html.Element]] =

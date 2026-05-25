@@ -1,6 +1,6 @@
 package querki.display.rx
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
@@ -46,10 +46,10 @@ class RxButtonGroup(
   }
 
   def doRender() =
-    div(cls := "btn-group", data("toggle") := "buttons", mods, renderButtons)
+    div(cls := "btn-group", data("toggle") := "buttons", mods, renderButtons())
 
   def updateSelected() = {
-    buttons.now.find(_.initiallyActive).map(select(_))
+    buttons.now.find(_.initiallyActive).foreach(select(_))
   }
 
   // This is private because it doesn't actually change *to* this button, which is what outside

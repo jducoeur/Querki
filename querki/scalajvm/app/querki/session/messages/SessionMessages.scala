@@ -1,8 +1,9 @@
 package querki.session.messages
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import models._
 import querki.values.RequestContext
-import autowire.Core
 
 sealed trait SessionMessage extends querki.spaces.messages.SpaceMessagePayload
 
@@ -24,6 +25,11 @@ case class MarcoPoloItem(
   display: String,
   id: String
 )
+
+object MarcoPoloItem {
+  implicit val rw: RW[MarcoPoloItem] = macroRW
+}
+
 case class MarcoPoloResponse(items: Seq[MarcoPoloItem])
 
 // Fire-and-forget message to append the given text to the log

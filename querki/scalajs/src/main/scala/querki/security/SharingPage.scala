@@ -2,7 +2,6 @@ package querki.security
 
 import scalatags.JsDom.all._
 import autowire._
-import enumeratum._
 
 import querki.globals._
 
@@ -58,13 +57,11 @@ class SharingPage(params: ParamMap)(implicit val ecology: Ecology) extends Page(
 }
 
 object SharingPage {
-  sealed trait Tab extends EnumEntry
+  sealed trait Tab { def entryName: String }
 
-  object Tab extends Enum[Tab] {
-    val values = findValues
-
-    case object Invite extends Tab
-    case object Members extends Tab
-    case object CustomRoles extends Tab
+  object Tab {
+    case object Invite extends Tab { val entryName = "Invite" }
+    case object Members extends Tab { val entryName = "Members" }
+    case object CustomRoles extends Tab { val entryName = "CustomRoles" }
   }
 }

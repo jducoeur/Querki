@@ -1,10 +1,10 @@
 package querki.admin
 
+import upickle.default.{macroRW, readwriter, ReadWriter => RW}
+
 import scala.concurrent.Future
 import querki.data.{TID, TOID}
 import querki.identity.UserLevel._
-import AdminFunctions.AdminUserView
-import AdminFunctions.QuerkiStats
 
 /**
  * Client/Server Admin capabilities. You may only call these APIs if the logged-in session has admin rights.
@@ -83,6 +83,10 @@ object AdminFunctions {
     nSpaces: Long
   )
 
+  object QuerkiStats {
+    implicit val rw: RW[QuerkiStats] = macroRW
+  }
+
   case class AdminUserView(
     userId: TID,
     mainHandle: String,
@@ -90,31 +94,52 @@ object AdminFunctions {
     level: UserLevel
   )
 
+  object AdminUserView {
+    implicit val rw: RW[AdminUserView] = macroRW
+  }
+
   /*
    * The following are mostly lifted directly from akka.cluster, so that we can pass the cluster's
    * state to the client without the client needing to be dependent on the Akka library.
    *
-   * TODO: is there a better way to do this?
+   * TODO: in upickle 0.4.4, this was being serialized with no guidance; I'm guessing that means it was a String.
    */
-  sealed trait QMemberStatus
-  case object QDown extends QMemberStatus
-  case object QExiting extends QMemberStatus
-  case object QJoining extends QMemberStatus
-  case object QLeaving extends QMemberStatus
-  case object QRemoved extends QMemberStatus
-  case object QUp extends QMemberStatus
-  case object QWeaklyUp extends QMemberStatus
+  sealed trait QMemberStatus { def name: String }
+  case object QDown extends QMemberStatus { val name = "QDown" }
+  case object QExiting extends QMemberStatus { val name = "QExiting" }
+  case object QJoining extends QMemberStatus { val name = "QJoining" }
+  case object QLeaving extends QMemberStatus { val name = "QLeaving" }
+  case object QRemoved extends QMemberStatus { val name = "QRemoved" }
+  case object QUp extends QMemberStatus { val name = "QUp" }
+  case object QWeaklyUp extends QMemberStatus { val name = "QWeaklyUp" }
+
+  object QMemberStatus {
+    val items = List(QDown, QExiting, QJoining, QLeaving, QRemoved, QUp, QWeaklyUp)
+
+    val itemsByName =
+      items.map(i => (i.name -> i)).toMap
+
+    implicit val rw: RW[QMemberStatus] = readwriter[String].bimap(_.name, itemsByName(_))
+  }
 
   case class QMember(
     address: String,
     status: QMemberStatus
   )
 
+  object QMember {
+    implicit val rw: RW[QMember] = macroRW
+  }
+
   case class QCurrentClusterState(
     members: Seq[QMember],
     unreachable: Seq[QMember],
     leader: String
   )
+
+  object QCurrentClusterState {
+    implicit val rw: RW[QCurrentClusterState] = macroRW
+  }
 
   case class RunningSpace(
     name: String,
@@ -124,15 +149,27 @@ object AdminFunctions {
     timestamp: Long
   )
 
+  object RunningSpace {
+    implicit val rw: RW[RunningSpace] = macroRW
+  }
+
   case class MonitorCurrent(
     monitorNode: String,
     state: QCurrentClusterState,
     spaces: Seq[RunningSpace]
   )
 
+  object MonitorCurrent {
+    implicit val rw: RW[MonitorCurrent] = macroRW
+  }
+
   case class TimingMsgs(
     error: Boolean,
     nowAt: Int,
     msgs: Seq[String]
   )
+
+  object TimingMsgs {
+    implicit val rw: RW[TimingMsgs] = macroRW
+  }
 }

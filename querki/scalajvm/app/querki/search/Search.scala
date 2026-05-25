@@ -1,18 +1,14 @@
 package querki.search
 
-import scala.collection.immutable.SortedSet
-import scala.concurrent.Future
-
-import scalatags.Text.all.{min => attrMin, _}
+import scalatags.Text.all.{min => _, _}
 
 import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.identity.User
 import querki.tags.IsTag
-import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
-import querki.values.{ElemValue, RequestContext, SpaceState}
+import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
+import querki.values.{SpaceState}
 
 object MOIDs extends EcotIds(19) {
   val SearchInputOID = moid(1)
@@ -472,7 +468,7 @@ class SearchEcot(e: Ecology) extends QuerkiEcot(e) with Search with querki.core.
               state.everythingLocal
             else {
               // Some Models have been specified, so gather the descendants of those Models:
-              (Set.empty[Thing] /: modelIds) { (set, modelId) =>
+              modelIds.foldLeft(Set.empty[Thing]) { (set, modelId) =>
                 set ++ state.descendants(modelId, false, true, false)
               }
             }

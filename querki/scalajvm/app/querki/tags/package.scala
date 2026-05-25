@@ -7,7 +7,6 @@ import models.{PType, PTypeBuilder, Property, Thing}
 import querki.globals._
 
 import querki.core.QLText
-import querki.basic.PlainText
 
 package object tags {
   val defaultDisplayText = """Referenced from:

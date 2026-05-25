@@ -1,5 +1,7 @@
 package querki.datamodel.introspection
 
+import scala.language.existentials
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -8,7 +10,7 @@ import models.{DisplayPropVal, HtmlWikitext, PropertyBundle, SimplePTypeBuilder,
 import querki.datamodel.DataModelTag
 import querki.ecology._
 import querki.ql.CodeType
-import querki.util.{PublicException, QLog, XmlEscape}
+import querki.util.{PublicException, XmlEscape}
 import querki.values.{QLContext, SpaceState}
 
 object MOIDs extends EcotIds(34) {

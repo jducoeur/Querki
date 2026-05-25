@@ -2,14 +2,10 @@ package querki.system
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
-import scala.util.Try
-
-import controllers.{PageEventManager, PlayRequestContext}
 
 import querki.ecology._
 import querki.identity.User
 import querki.session.UserFunctions._
-import querki.util._
 
 object MOIDs extends EcotIds(8)
 

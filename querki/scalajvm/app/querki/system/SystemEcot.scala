@@ -5,7 +5,6 @@ import akka.cluster.Cluster
 import akka.cluster.sharding._
 import akka.cluster.singleton._
 import querki.ecology._
-import querki.globals.OID
 import querki.values.SpaceState
 
 /**
@@ -16,7 +15,7 @@ trait SystemManagement extends EcologyInterface {
   /**
    * Set the final System Space. The code that initialized the Ecology *must* call this once complete!
    */
-  def setState(state: SpaceState)
+  def setState(state: SpaceState): Unit
 
   /**
    * The ActorSystem, if it exists. Note that it does *not* exist in many unit tests, and thus

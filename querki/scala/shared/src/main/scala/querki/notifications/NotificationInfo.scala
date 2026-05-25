@@ -2,6 +2,8 @@ package querki.notifications
 
 import models.Wikitext
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data.IdentityInfo
 import querki.time.Common.Timestamp
 
@@ -30,6 +32,10 @@ case class RenderedNotification(
   content: Wikitext
 )
 
+object RenderedNotification {
+  implicit val rw: RW[RenderedNotification] = macroRW
+}
+
 case class NotificationInfo(
   id: NotificationId,
   sender: IdentityInfo,
@@ -40,3 +46,7 @@ case class NotificationInfo(
   isRead: Boolean,
   isDeleted: Boolean
 )
+
+object NotificationInfo {
+  implicit val rw: RW[NotificationInfo] = macroRW
+}

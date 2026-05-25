@@ -1,8 +1,8 @@
 package querki.conversations
 
 import org.scalajs.dom.html
-import org.scalajs.dom.raw.Element
-import scalatags.JsDom.all.{input => inp, _}
+import org.scalajs.dom.Element
+import scalatags.JsDom.all._
 
 import org.querki.gadgets._
 import org.querki.jquery._
@@ -27,7 +27,7 @@ private[conversations] class NewConversationGadget(
   lazy val shouldShowStartLink = startLinkTextOpt.isDefined
   lazy val startLinkClass = startLinkClassOpt.getOrElse("")
   lazy val startLinkText = startLinkTextOpt.getOrElse("Click to start a new conversation")
-  lazy val startLink = a(cls := startLinkClass, onclick := { _: JQueryEventObject => showInput }, startLinkText)
+  lazy val startLink = a(cls := startLinkClass, onclick := { _: JQueryEventObject => showInput() }, startLinkText)
 
   def showStartLink() = {
     $(elem).empty()

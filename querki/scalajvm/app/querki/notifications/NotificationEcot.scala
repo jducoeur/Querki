@@ -1,19 +1,15 @@
 package querki.notifications
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
 import akka.cluster.sharding._
-import akka.util.Timeout
-
-import play.api.libs.concurrent.Execution.Implicits._
 
 import querki.api.ClientRequest
 import querki.ecology._
 import querki.globals._
-import querki.identity.{PublicIdentity, User, UserRouteableMessage}
-import querki.values.{QLRequestContext, RequestContext, SpaceState}
+import querki.identity.{User, UserRouteableMessage}
+import querki.values.{QLRequestContext, RequestContext}
 
 private object MOIDs extends EcotIds(48)
 

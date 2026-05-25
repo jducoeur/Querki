@@ -2,11 +2,8 @@ package querki.ql
 
 import scala.reflect.ClassTag
 
-import querki.values.SpaceState
-
 import models.{AsOID, Collection, PType, Property, PropertyBundle, Thing, ThingId}
 
-import querki.ecology._
 import querki.globals._
 import querki.types.ModelTypeBase
 import querki.util.PublicException
@@ -66,7 +63,7 @@ private[ql] case class InvocationValueImpl[T](
         val subFuts = subs.map(_.fut)
         Future.sequence(subFuts).map { subDatas =>
           val resultVs = subDatas.map(_.vs).flatten
-          val resultMetas = (data.metadata /: subDatas.map(_.metadata))(_ + _)
+          val resultMetas = subDatas.map(_.metadata).foldLeft(data.metadata)(_ + _)
           IVData(resultVs, resultMetas)
         }
       }
@@ -154,7 +151,7 @@ private[ql] case class InvocationImpl(
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val LinkType = Core.LinkType
 
-  implicit val inv = this
+  implicit val inv: InvocationImpl = this
 
   /**
    * The signature for this function, which we use to extract specific params.

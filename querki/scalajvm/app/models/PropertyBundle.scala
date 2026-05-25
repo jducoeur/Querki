@@ -10,7 +10,7 @@ import querki.values.{PropAndVal, QLContext, QValue, RequestContext, SpaceState}
  * but would make the code a fair bit more sensible. (In particular, get rid of the verdammt thingOps, which are a major
  * code smell.)
  */
-trait PropertyBundle {
+trait PropertyBundle extends QLogging {
 
   /**
    * Returns true iff this bundle is an actual Thing, that you can treat on its own for operations like
@@ -55,7 +55,7 @@ trait PropertyBundle {
     prop.fromOpt(props)
   }
 
-  def getDisplayPropVal[VT, _](prop: Property[VT, _])(implicit state: SpaceState): DisplayPropVal = {
+  def getDisplayPropVal[VT, A](prop: Property[VT, A])(implicit state: SpaceState): DisplayPropVal = {
     val local = localPropVal(prop)
     local match {
       case Some(v) => DisplayPropVal(Some(this), prop, Some(v))

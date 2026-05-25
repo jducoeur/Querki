@@ -1,16 +1,12 @@
 package querki.identity
 
-import scala.concurrent.Future
-
 import akka.actor._
 
 import org.querki.requester.Requester
 
 import models.{OID, UnknownOID}
 
-import querki.ecology._
 import querki.globals._
-import querki.session.UserSessionMessages.UserSessionMsg
 
 /**
  * The front-end cache for Users and Identities. All interactions with these tables should
@@ -50,7 +46,7 @@ private[identity] class IdentityCache(val ecology: Ecology) extends Actor with R
 
   def receive = {
     case GetIdentityRequest(id) => {
-      fetchAndThen(id) { resp => sender ! resp }
+      fetchAndThen(id) { resp => sender() ! resp }
     }
 
     case InvalidateCacheForIdentity(id) => {
@@ -88,8 +84,8 @@ private[identity] class IdentityCacheFetcher(val ecology: Ecology) extends Actor
   def receive = {
     case GetIdentityRequest(id) => {
       UserAccess.getFullIdentity(id) match {
-        case Some(identity) => sender ! IdentityFound(identity)
-        case None           => sender ! IdentityNotFound(id)
+        case Some(identity) => sender() ! IdentityFound(identity)
+        case None           => sender() ! IdentityNotFound(id)
       }
     }
   }

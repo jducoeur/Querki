@@ -2,10 +2,7 @@ package querki.conversations
 
 import akka.actor.{ActorRef, Props}
 import akka.pattern._
-
 import com.github.nscala_time.time.Imports._
-import com.github.nscala_time.time.StaticDateTime
-
 import models._
 import querki.ecology._
 import querki.globals._
@@ -14,9 +11,9 @@ import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages.SpaceSubsystemRequest
 import querki.time.DateTime
 import querki.util.ActorHelpers
-import querki.values.{QLContext, RequestContext, SpaceState}
-
+import querki.values.{QLContext, SpaceState, RequestContext}
 import PersistentEvents._
+import akka.util.Timeout
 import messages._
 
 object MOIDs extends EcotIds(35) {
@@ -42,7 +39,7 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit val timeout = ActorHelpers.timeout
+  implicit val timeout: Timeout = ActorHelpers.timeout
 
   override def postInit() = {
     // Some entry points are legal without login:
@@ -61,8 +58,9 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   lazy val traceConv = Config.getBoolean("querki.test.traceConversations", false)
 
   def convTrace(msg: => String): Unit = {
+    // TODO: remove this config flag and just use normal log levels:
     if (traceConv)
-      QLog.spew(msg)
+      logTrace(msg)
   }
 
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
@@ -296,7 +294,7 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   // TBD: not tail-recursive, because tail-recursive on trees is a pain. Might want to put in the
   // work to make it so, though.
   private def latestCommentTime(conv: ConversationNode): DateTime = {
-    (conv.comment.createTime /: conv.responses) { (curBest, resp) =>
+    conv.responses.foldLeft(conv.comment.createTime) { (curBest, resp) =>
       val respTime = latestCommentTime(resp)
       if (respTime > curBest) {
         respTime

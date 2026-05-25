@@ -2,7 +2,8 @@ package querki.session
 
 import scala.concurrent.Future
 
-import models.Wikitext
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data.{SpaceInfo, TID, UserInfo}
 import querki.identity.UserLevel
 
@@ -83,6 +84,10 @@ object UserFunctions {
     memberOf: Seq[SpaceInfo]
   )
 
+  object AllSpaces {
+    implicit val rw: RW[AllSpaces] = macroRW
+  }
+
   case class AccountInfo(
     handle: String,
     displayName: String,
@@ -90,7 +95,17 @@ object UserFunctions {
     level: UserLevel.UserLevel
   )
 
+  object AccountInfo {
+    implicit val rw: RW[AccountInfo] = macroRW
+  }
+
   sealed trait TOSState
   case object TOSOkay extends TOSState
   case object TOSOld extends TOSState
+
+  object TOSState {
+    implicit val okayRW: RW[TOSOkay.type] = macroRW
+    implicit val oldRW: RW[TOSOld.type] = macroRW
+    implicit val rw: RW[TOSState] = macroRW
+  }
 }

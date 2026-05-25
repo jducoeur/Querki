@@ -1,11 +1,8 @@
 package models
 
-import language.implicitConversions
 import scala.concurrent.Future
 import scala.xml._
 
-import querki.ecology.Ecology
-import querki.util._
 import querki.values._
 
 /**

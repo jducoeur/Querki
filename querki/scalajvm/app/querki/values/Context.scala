@@ -6,7 +6,7 @@ import querki.ecology._
 import querki.ql.QLProcessor
 
 // TODO: this is a bad smell! Can we hide the parser better behind the Context?
-import querki.ql.{QLCall, QLParser, QLPhrase, QLScopes}
+import querki.ql.{QLCall, QLParser, QLScopes}
 import querki.util.DebugRenderable
 
 /**

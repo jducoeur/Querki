@@ -1,13 +1,13 @@
 package querki.editing
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import rx._
 import scalatags.JsDom.all._
 import org.querki.gadgets._
 
 import querki.globals._
 
-import querki.data.{TID => _TID, _}
+import querki.data.{TID => _, _}
 import querki.display.{ButtonGadget, QuerkiUIUtils}
 import ButtonGadget._
 

@@ -2,7 +2,6 @@ package querki.datamodel
 
 import scala.util.Success
 
-import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import autowire._
@@ -16,7 +15,6 @@ import querki.data.ThingInfo
 import querki.display.{ButtonGadget, Dialog}
 import querki.display.rx.RxSelect
 import querki.editing.EditFunctions
-import EditFunctions.ChangePropertyValue
 import querki.pages.PageImplicits
 
 class DataModelEcot(e: Ecology) extends ClientEcot(e) with DataModel with querki.util.ScalatagUtils with PageImplicits {
@@ -191,7 +189,7 @@ class DataModelEcot(e: Ecology) extends ClientEcot(e) with DataModel with querki
   )(implicit
     ctx: Ctx.Owner
   ): Future[Option[TID]] = {
-    val promise = Promise[Option[TID]]
+    val promise = Promise[Option[TID]]()
     modelSelectionForm(
       title,
       msg,

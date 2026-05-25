@@ -1,7 +1,5 @@
 package controllers
 
-import language.postfixOps
-
 import play.twirl.api.Html
 
 import QuerkiTemplate._

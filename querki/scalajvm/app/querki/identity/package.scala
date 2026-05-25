@@ -16,9 +16,8 @@ import querki.ecology._
 
 import querki.core.QLText
 import querki.email.EmailAddress
-import querki.session.UserSessionMessages.UserSessionMsg
 import querki.util.PublicException
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{RequestContext}
 
 package object identity {
 
@@ -62,6 +61,15 @@ package object identity {
   }
 
   val IdentityTag = "Users, Identities and Invitations"
+
+  /**
+   * The key to the username in the session.
+   *
+   * This identifier used to be fetched as Play's Security.username, but that was deprecated in 2.6. And *that* was
+   * just the value of "session.username" in config -- which we never set, so in practice it has always just defaulted
+   * to "username" anyway. So we may as well just use that.
+   */
+  val usernameSessionKey = "username"
 
   /**
    * The values that can be put into the SpaceMembership table.

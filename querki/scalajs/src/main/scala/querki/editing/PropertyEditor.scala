@@ -1,6 +1,6 @@
 package querki.editing
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
@@ -11,7 +11,6 @@ import org.querki.gadgets._
 import querki.globals._
 
 import querki.display.{ButtonGadget}
-import querki.display.rx._
 
 class PropertyEditor(
   val valEditor: PropValueEditor

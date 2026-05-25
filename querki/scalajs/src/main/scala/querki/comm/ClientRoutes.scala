@@ -16,18 +16,12 @@ import querki.globals._
  * calls, and exposes them to the global namespace as "clientRoutes". This, in turn, picks those up
  * and provides them to the Client code as needed.
  *
- * @TODO: this isn't bad, but it's still mediocre -- since it's js.Dynamic, there's no static checking
+ * TODO: this isn't bad, but it's still mediocre -- since it's js.Dynamic, there's no static checking
  * of the calls at all. We'd like to do something that's truly strongly typed, but Autowire isn't the
  * solution to this particular problem, since it's fundamentally Play-based. The right solution is
  * probably at compile time, to build something that gets at the routing information *before* Scala.js,
  * reflects on that, and generates the client-side glue code.
  */
-@js.native
-@js.annotation.JSName("clientRoutes")
-private[comm] object ClientRoutes extends js.Object {
-  def controllers: js.Dynamic = js.native
-}
-
 class ApiCommEcot(e: Ecology) extends ClientEcot(e) with ApiComm {
 
   def implements = Set(classOf[ApiComm])
@@ -35,7 +29,9 @@ class ApiCommEcot(e: Ecology) extends ClientEcot(e) with ApiComm {
   /**
    * This Ecot exists primarily to expose this accessor in a managed (and stubbable) way.
    */
-  lazy val controllers = ClientRoutes.controllers
+  lazy val controllers = {
+    js.Dynamic.global.clientRoutes.controllers
+  }
 }
 
 /**
@@ -109,11 +105,11 @@ case class PlayAjaxException(
 class PlayAjax(call: PlayCall) {
 
   def callAjax(data: (String, String)*): Future[String] = {
-    val promise = Promise[String]
+    val promise = Promise[String]()
 
     // Change this line to print all API calls.
     // TODO: this should come from config!
-    val spewAPICalls = true
+    val spewAPICalls = false
 
     // Note that this is *not* the literal dataStr,
     // mainly because that is fairly hard to read!
@@ -141,7 +137,7 @@ class PlayAjax(call: PlayCall) {
   }
 
   def callAjax[U](cb: PartialFunction[AjaxResult, U]): Future[Try[U]] = {
-    val promise = Promise[Try[U]]
+    val promise = Promise[Try[U]]()
 
     val deferred = call.ajax().asInstanceOf[JQueryDeferred]
     deferred.done { (data: String, textStatus: String, jqXHR: JQueryDeferred) =>

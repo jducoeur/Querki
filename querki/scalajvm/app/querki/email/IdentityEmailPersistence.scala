@@ -1,9 +1,5 @@
 package querki.email
 
-import models._
-import ModelPersistence._
-
-import querki.globals._
 import querki.persistence._
 
 object IdentityEmailPersistence {

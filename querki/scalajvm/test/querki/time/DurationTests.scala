@@ -1,6 +1,5 @@
 package querki.time
 
-import querki.globals._
 import querki.test._
 import querki.types.SimplePropertyBundle
 

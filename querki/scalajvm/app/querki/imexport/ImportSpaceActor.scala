@@ -1,10 +1,6 @@
 package querki.imexport
 
-import scala.util.{Failure, Success}
-
 import akka.actor._
-
-import upickle._
 
 import org.querki.requester._
 
@@ -16,7 +12,6 @@ import querki.history.HistoryFunctions._
 import querki.spaces._
 import querki.spaces.messages._
 import querki.streaming._
-import UploadMessages._
 import querki.values.RequestContext
 
 import mysql._
@@ -39,14 +34,14 @@ class ImportSpaceActor(
   totalSize: Int
 ) extends Actor
      with Requester
-     with UploadActor
+     with UploadActor[RequestContext]
      with Remapper[RequestM]
      with SpaceCreator
      with querki.core.NameUtils
      with EcologyMember {
   import ImportSpaceActor._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
@@ -57,7 +52,7 @@ class ImportSpaceActor(
 
   // TODO: replace this silliness with proper typeclass usage, now that I have a better idea what I'm doing than
   // I did years ago when I wrote this:
-  implicit def rtc = RealRTCAble
+  implicit def rtc: RealRTCAble.type = RealRTCAble
 
   def getOIDs(nRequested: Int): RequestM[Seq[OID]] = {
     Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids)
@@ -80,7 +75,7 @@ class ImportSpaceActor(
       }
 
       case _ => {
-        QLog.error(s"ImportSpaceActor called with unknown ImportDataType $importType")
+        logError(s"ImportSpaceActor called with unknown ImportDataType $importType")
         throw new Exception("Unknown ImportDataType!")
       }
     }
@@ -107,7 +102,7 @@ class ImportSpaceActor(
           // We're into processing.
           processPercent
         }
-      sender ! ImportProgress(importMsg, percent, spaceInfo, failed)
+      sender() ! ImportProgress(importMsg, percent, spaceInfo, failed)
     }
 
     case CompletionAcknowledged => context.stop(self)
@@ -127,7 +122,10 @@ class ImportSpaceActor(
     context.actorOf(PersistentSpaceActor.actorProps(ecology, SpacePersistenceFactory, self, spaceId, false), "Space")
   }
 
-  def processBuffer(rc: RequestContext) = {
+  def processBuffer(
+    rc: RequestContext,
+    metadataSender: ActorRef
+  ) = {
     // TODO: oh god, this is horrible. There is a State monad fighting to break out of this code when I have time...
     processPercent = 50
     importMsg = "Done uploading; constructing the new Space's data (this may take a while)..."
@@ -141,8 +139,8 @@ class ImportSpaceActor(
         case _                    => "There was an error trying to upload that Space -- sorry! Please contact us, so we can look into it."
       }
 
-      QLog.warn(s"Error during Import Space: $importMsg")
-      QLog.warn(s"Exception while uploading Space: $ex\n${ex.getStackTrace}")
+      logWarn(s"Error during Import Space: $importMsg")
+      logWarn(s"Exception while uploading Space: $ex\n${ex.getStackTrace}")
 
       failed = true
     }
@@ -193,13 +191,7 @@ class ImportSpaceActor(
       true
     }
 
-    result.onFailure {
-      case ex: Exception => {
-        handleError(ex)
-      }
-    }
-
-    sender ! UploadProcessSuccessful("Processing in progress")
+    result.failed.foreach { ex => handleError(ex) }
   }
 }
 

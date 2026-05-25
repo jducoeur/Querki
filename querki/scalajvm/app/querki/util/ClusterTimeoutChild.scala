@@ -5,8 +5,6 @@ import scala.concurrent.duration._
 import akka.actor.{Actor, ReceiveTimeout}
 import akka.cluster.sharding.ShardRegion
 
-import querki.globals._
-
 /**
  * Request sent from a child to the parent, telling the parent to kill it.
  */

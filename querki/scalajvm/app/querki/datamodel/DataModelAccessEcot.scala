@@ -3,7 +3,7 @@ package querki.datamodel
 import models.{Kind, PType}
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLCall, QLExp}
+import querki.ql.{QLCall, QLExp}
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._
@@ -59,11 +59,11 @@ class DataModelAccessEcot(e: Ecology)
   lazy val QL = interface[querki.ql.QL]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += PropCopier
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += PropCopier
   }
 
@@ -93,7 +93,7 @@ class DataModelAccessEcot(e: Ecology)
                   }
                 }
 
-                val newProps = (props /: copiedProps) { (curProps, copyId) =>
+                val newProps = copiedProps.foldLeft(props) { (curProps, copyId) =>
                   if (props.contains(copyId))
                     // The create is already overriding the Model's value
                     curProps
@@ -445,7 +445,7 @@ class DataModelAccessEcot(e: Ecology)
       for {
         thing <- inv.contextFirstThing
         thingRoots = {
-          ((Set.empty[OID] /: state.localThings)((set, t) => set + state.root(t))).filterNot(oid =>
+          (state.localThings.foldLeft(Set.empty[OID])((set, t) => set + state.root(t))).filterNot(oid =>
             state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false)
           )
         }

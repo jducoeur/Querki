@@ -3,8 +3,15 @@ package querki.apps
 import querki.persistence._
 import querki.spaces._
 import querki.test._
+import querki.values.SpaceState
 
 class AppSnapshotTests extends QuerkiTests with AppTree {
+
+  // TODO: this is necessary because the lazy vals in CoreAppTests -- highest, mid1, mid2, etc -- are ad-hoc
+  // structurally-defined objects, so we're reaching into them structurally to access them. That's just plain
+  // dumb: it's bad style, and inefficient. Figure out a way to rewrite them as proper classes/objects instead.
+  // Ditto for the "original" value below.
+  import scala.language.reflectiveCalls
 
   def runSnapshotTest(interval: Int) = {
     val original = new SpaceInWorldWithSnapshots(highest, interval) {
@@ -16,8 +23,8 @@ class AppSnapshotTests extends QuerkiTests with AppTree {
       val inst4 = addThing("Instance 4", highest.rootModel)
       val inst5 = addThing("Instance 5", highest.rootModel)
     }
-    implicit val replay = new ReplayCoreSpace(original)
-    implicit val s = replay.state
+    implicit val replay: ReplayCoreSpace = new ReplayCoreSpace(original)
+    implicit val s: SpaceState = replay.state
 
     pql("""[[My Root Model._instances]]""") should
       equal(listOfLinkText(
@@ -44,7 +51,7 @@ class AppPersistenceTests(env: PersistEnv) extends PersistTest(env) with SpaceMe
   lazy val Basic = interface[querki.basic.Basic]
 
   val s = mainSpace
-  implicit val state = s.state
+  implicit val state: SpaceState = s.state
 
   checkSerialization(dh(state))
   checkSerialization(SpaceSnapshot(dh(state), Seq.empty))

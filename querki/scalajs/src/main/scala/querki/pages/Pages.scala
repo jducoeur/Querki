@@ -5,7 +5,6 @@ import querki.globals._
 import querki.comm.URL
 import querki.data.SpaceInfo
 import org.querki.gadgets.core.GadgetLookup
-import querki.search.SearchResultsPage
 import org.querki.gadgets.core.ManagedFrag
 
 class PagesEcot(e: Ecology) extends ClientEcot(e) with Pages {
@@ -93,7 +92,7 @@ class PagesEcot(e: Ecology) extends ClientEcot(e) with Pages {
     name: String,
     params: ParamMap
   ): Option[Page] = {
-    val pageOpt = (Option.empty[Page] /: factories) { (opt, factory) =>
+    val pageOpt = factories.foldLeft(Option.empty[Page]) { (opt, factory) =>
       opt match {
         case Some(page) => opt
         case None       => factory.constructPageOpt(name, params)

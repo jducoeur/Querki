@@ -1,11 +1,13 @@
 package querki.ql
 
+import scala.language.existentials
+
 import models._
 
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
-import querki.values.{QLContext, QValue}
+import querki.values.{QLContext}
 
 object SignatureMOIDs extends EcotIds(61) {
   val SignatureModelOID = moid(1)
@@ -148,7 +150,7 @@ class SignatureEcot(e: Ecology) extends QuerkiEcot(e) with Signature with Signat
     state: SpaceState,
     paramsOpt: Option[Seq[QLParam]]
   ) extends SignatureMap {
-    implicit val s = state
+    implicit val s: SpaceState = state
 
     case class ParamResultImpl(
       expOpt: Option[QLExp],

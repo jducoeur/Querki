@@ -1,8 +1,8 @@
 package querki.imexport
 
 import play.api.libs.json._
-
 import models._
+import querki.{basic, core}
 import querki.core.NameUtils
 import querki.globals._
 import querki.values.QValue
@@ -25,16 +25,16 @@ class JsonExport(
   lazy val QList = Core.QList
   lazy val QSet = Core.QSet
 
-  implicit val plaintextWrites = new Writes[querki.basic.PlainText] {
+  implicit val plaintextWrites: Writes[basic.PlainText] = new Writes[querki.basic.PlainText] {
     def writes(text: querki.basic.PlainText) = Json.toJson(text.text)
   }
 
-  implicit val qltextWrites = new Writes[querki.core.QLText] {
+  implicit val qltextWrites: Writes[core.QLText] = new Writes[querki.core.QLText] {
     def writes(text: querki.core.QLText) = Json.toJson(text.text)
   }
 
   // A PropMap get recursed into:
-  implicit val propMapPairWrites = new Writes[(PropMap, Set[OID])] {
+  implicit val propMapPairWrites: Writes[(PropMap, Set[OID])] = new Writes[(PropMap, Set[OID])] {
 
     def writes(pair: (PropMap, Set[OID])) = {
       val (propMap, seen) = pair
@@ -53,7 +53,7 @@ class JsonExport(
   }
 
   // An OID needs to be checked for loops, then treated as a PropMap:
-  implicit val oidWrites = new Writes[(OID, Set[OID])] {
+  implicit val oidWrites: Writes[(OID, Set[OID])] = new Writes[(OID, Set[OID])] {
 
     def writes(pair: (OID, Set[OID])) = {
       val (oid, seen) = pair

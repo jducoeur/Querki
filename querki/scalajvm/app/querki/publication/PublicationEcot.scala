@@ -83,7 +83,7 @@ class PublicationEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     val id = state.id
 
     def enhance(pub: CurrentPublicationState): SpaceState = {
-      (state /: pub.changes.values.flatten) { (s, evt) =>
+      pub.changes.values.flatten.foldLeft(state) { (s, evt) =>
         evolveState(Some(s))(evt)
       }
     }
@@ -191,7 +191,7 @@ class PublicationEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
   ) {
     // TODO: this is annoyingly hard-coded. Think this through -- how long should it be? Should it
     // be configurable? (Probably.)
-    implicit val timeout = Timeout(10 seconds)
+    implicit val timeout: Timeout = Timeout(10.seconds)
 
     override def qlApply(inv: Invocation): QFut = {
       implicit val spaceState = inv.state
@@ -242,7 +242,7 @@ class PublicationEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     override def qlApply(inv: Invocation): QFut = {
       // TODO: this is annoyingly hard-coded. Think this through -- how long should it be? Should it
       // be configurable? (Probably.)
-      implicit val timeout = Timeout(10 seconds)
+      implicit val timeout = Timeout(10.seconds)
       for {
         since <- inv.processAsOpt("since", Time.QDate)
         until <- inv.processAsOpt("until", Time.QDate)

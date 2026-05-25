@@ -1,8 +1,6 @@
 package funcakka
 
 import cats._
-import cats.implicits._
-import cats.instances._
 
 import akka.actor.Actor.Receive
 
@@ -67,7 +65,8 @@ trait PersistentActorCore {
   type AR
   implicit val actorRefLike: ActorRefLike[AR]
 
-  implicit def sender: AR
+  def sender(): AR
+  implicit def implicitSender: AR = sender()
   def self: AR
 
   /**

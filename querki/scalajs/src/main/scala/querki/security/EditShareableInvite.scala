@@ -10,9 +10,7 @@ import autowire._
 import org.querki.gadgets._
 import org.querki.jquery._
 
-import querki.api.ThingFunctions
-import querki.api.ThingFunctions._
-import querki.data.{PropValInfo, TOID, ThingInfo}
+import querki.data.{ThingInfo}
 import querki.display.{ButtonGadget, Dialog, QuerkiUIUtils}
 import querki.display.input._
 import querki.display.rx.RxCheckbox

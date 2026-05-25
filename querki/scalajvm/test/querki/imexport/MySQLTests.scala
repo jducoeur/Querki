@@ -2,18 +2,14 @@ package querki.imexport
 
 import mysql._
 
-import fastparse._, NoWhitespace._
+import fastparse._
 
 import models._
 
-import querki.ecology._
 import querki.test._
 import querki.time._
-import querki.util.QLog
 
 class AdHocMySQLTests extends QuerkiTests with ParserTests {
-  import MySQLParse._
-  import MySQLProcess._
 
   "The MySQLParser" should {
     "do an ad hoc test" in {

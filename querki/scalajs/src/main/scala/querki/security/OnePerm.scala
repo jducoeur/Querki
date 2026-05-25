@@ -12,9 +12,8 @@ import org.querki.jquery._
 import org.querki.gadgets._
 
 import querki.data.BasicThingInfo
-import querki.display.{ButtonGadget, RawDiv}
+import querki.display.{RawDiv}
 import querki.display.input.InputGadget
-import querki.display.rx._
 import querki.editing.EditFunctions
 import querki.globals._
 import querki.pages.Page
@@ -111,7 +110,7 @@ class OnePerm(
     val box = GadgetRef.of[html.Input]
 
     val watcher = currently.trigger {
-      box.mapElemNow { e =>
+      box.foreachElemNow { e =>
         $(e).prop("checked", (currently.now == page.levelMap(level).underlying))
       }
     }

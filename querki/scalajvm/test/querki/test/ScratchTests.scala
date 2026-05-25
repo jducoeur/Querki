@@ -3,10 +3,10 @@ package querki.test
 import querki.globals._
 import akka.actor._
 
-class TestActor extends Actor {
+class TestActor extends Actor with QLogging {
 
   def receive = {
-    case something => QLog.spew(s"TestActor got $something")
+    case something => logTrace(s"TestActor got $something")
   }
 }
 
@@ -38,7 +38,7 @@ class ScratchTests extends QuerkiTests {
             collectClasses(sup) + sup
         }
 
-        (collectRec(clazz.getSuperclass) /: clazz.getInterfaces) { (set, interf) =>
+        clazz.getInterfaces.foldLeft(collectRec(clazz.getSuperclass)) { (set, interf) =>
           set ++ collectRec(interf)
         }
       }
@@ -46,10 +46,10 @@ class ScratchTests extends QuerkiTests {
       val actorSystem = ActorSystem()
       val ref = actorSystem.actorOf(Props(classOf[TestActor]))
       val clazz = ref.getClass
-      QLog.spew(s"The ActorRef is actually a $clazz")
-      QLog.spew(s"The full collection of superclasses are:")
+      logTrace(s"The ActorRef is actually a $clazz")
+      logTrace(s"The full collection of superclasses are:")
       collectClasses(clazz).foreach { sup =>
-        QLog.spew(s"    $sup")
+        logTrace(s"    $sup")
       }
     }
 

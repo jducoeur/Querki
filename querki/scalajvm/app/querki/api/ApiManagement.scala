@@ -7,7 +7,6 @@ import scala.reflect.ClassTag
 import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
-import querki.ecology._
 import querki.globals._
 import querki.spaces.messages.SpaceBlocked
 import querki.streaming._
@@ -21,7 +20,7 @@ class ApiManagement(e: Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiI
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val actorSystem = SystemManagement.actorSystem
 
-  implicit val timeout = Timeout(Config.getDuration("querki.api.timeout", 60 seconds))
+  implicit val timeout: Timeout = Timeout(Config.getDuration("querki.api.timeout", 60.seconds))
 
   case class RouterInfo(
     router: ActorRef,
@@ -128,7 +127,8 @@ class ApiManagement(e: Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiI
   }
 
   def apiTrace(msg: => String): Unit = {
+    // TODO: remove this config flag and just use normal trace levels:
     if (traceApi)
-      QLog.spew(msg)
+      logTrace(msg)
   }
 }

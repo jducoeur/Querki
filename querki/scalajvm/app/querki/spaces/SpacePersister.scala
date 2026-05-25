@@ -2,29 +2,23 @@ package querki.spaces
 
 import akka.actor._
 
-import anorm.{Success => AnormSuccess, _}
+import anorm.{Success => _, _}
 import anorm.SqlParser._
-
-import play.api.db._
 
 import org.querki.requester._
 
 import models._
 import models.Kind._
-import models.MIMEType.MIMEType
 
 import querki.cluster.OIDAllocator._
 import querki.db._
 import ShardKind._
-import querki.ecology._
-import querki.evolutions.Evolutions
 import querki.globals._
-import querki.identity.{User}
 import querki.time._
 import querki.time.TimeAnorm._
 import querki.types.ModelTypeDefiner
-import querki.values.{ElemValue, QLContext, QValue, SpaceState}
-import querki.util.SqlHelpers.{oid => oidParser, _}
+import querki.values.{SpaceState}
+import querki.util.SqlHelpers.{oid => oidParser}
 
 import PersistMessages._
 
@@ -65,7 +59,8 @@ private[spaces] class SpacePersister(
      with EcologyMember
      with Requester
      with SpaceLoader
-     with ModelTypeDefiner {
+     with ModelTypeDefiner
+     with QLogging {
 
   lazy val Core = interface[querki.core.Core]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
@@ -238,7 +233,7 @@ private[spaces] class SpacePersister(
                     case error: Exception => {
                       // TODO: this should go to a more serious error log, that we pay attention to. It
                       // indicates an internal DB inconsistency that we should have ways to clean up.
-                      QLog.error("Error while trying to load ThingStream " + id, error)
+                      logError("Error while trying to load ThingStream " + id, error)
                       None
                     }
                   }

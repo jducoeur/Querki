@@ -6,7 +6,6 @@ import akka.actor._
 import akka.event.LoggingReceive
 
 import querki.globals._
-import querki.util.QuerkiActor
 
 /**
  * This pair of classes represents a simple streaming protocol for sending potentially large Strings
@@ -50,9 +49,10 @@ private[streaming] class StringStreamSender(
   str: String,
   e: Ecology
 ) extends Actor
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   val chunkSize = Config.getInt("querki.stream.stringChunkSize", 10000)
 
@@ -71,12 +71,12 @@ private[streaming] class StringStreamSender(
     val (chunk, index) = remainingChunks.head
     currentIndex = index
     recipient ! StringChunk(chunk, index)
-    currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
+    currentTimeout = Some(context.system.scheduler.scheduleOnce(2.seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
 
   def sendComplete(attempt: Int) = {
     recipient ! Complete(currentIndex)
-    currentTimeout = Some(context.system.scheduler.scheduleOnce(2 seconds, self, ChunkTimeout(currentIndex, attempt)))
+    currentTimeout = Some(context.system.scheduler.scheduleOnce(2.seconds, self, ChunkTimeout(currentIndex, attempt)))
   }
 
   def receive = LoggingReceive {
@@ -140,7 +140,7 @@ private[streaming] class StringStreamSender(
             originator.get ! SendComplete
           } else {
             // Something's seriously wrong; give up
-            QLog.error("StringStreamSender failed to send string, with ${remainingChunks.size} remaining: $str")
+            logError("StringStreamSender failed to send string, with ${remainingChunks.size} remaining: $str")
           }
           // Either way, we're out of work to do:
           context.stop(self)

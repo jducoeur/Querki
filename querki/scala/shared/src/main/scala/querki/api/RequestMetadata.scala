@@ -1,11 +1,11 @@
 package querki.api
 
-import querki.history.HistoryFunctions.HistoryVersion
+import upickle.default.{macroRW, ReadWriter => RW}
 
 /**
  * Additional information that goes with *all* API requests.
  *
- * @TBD: I can argue that asOf should be done as a cookie instead. The question is mainly how
+ * TBD: I can argue that asOf should be done as a cookie instead. The question is mainly how
  * persistent we want it to be.
  *
  * @param version The version of the Client that we are currently using.
@@ -15,3 +15,7 @@ case class RequestMetadata(
   version: String,
   pageParams: Map[String, String]
 )
+
+object RequestMetadata {
+  implicit val rw: RW[RequestMetadata] = macroRW
+}

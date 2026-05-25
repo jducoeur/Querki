@@ -6,8 +6,7 @@ import funcakka._
 import org.querki.requester._
 import models._
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
-import querki.spaces.TracingSpace
+import querki.identity.{User}
 import querki.spaces.messages._
 
 class PublicationActor(
@@ -30,7 +29,7 @@ class PublicationActor(
   )(implicit
     state: SpaceState
   ): RequestM[SpaceState] = {
-    (RequestM.successful(state) /: pairs) { case (rm, (thingId, propMap)) =>
+    pairs.foldLeft(RequestM.successful(state)) { case (rm, (thingId, propMap)) =>
       for {
         _ <- rm
         ThingFound(_, nextState) <- router.request(ChangeProps(who, state.id, thingId, propMap))

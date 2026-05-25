@@ -1,12 +1,11 @@
 package querki
 
 import scala.concurrent.Future
-import scala.reflect.ClassTag
 
 import akka.actor.ActorRef
 
 import querki.ecology._
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{Identity, User}
 
 package object session {
 

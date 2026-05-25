@@ -1,12 +1,12 @@
 package querki.identity.skilllevel.impl
 
-import models.{OID, Thing, ThingState}
+import models.{ThingState}
 
 import querki.api.commonName
 import querki.ecology._
 import querki.identity.skilllevel._
 import querki.spaces.CacheUpdate
-import querki.util.{Contributor, Publisher, QLog}
+import querki.util.{Contributor, Publisher}
 import querki.values.{SpaceState, StateCacheKey}
 
 class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Contributor[CacheUpdate, CacheUpdate] {
@@ -18,11 +18,11 @@ class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Co
   lazy val Basic = interface[querki.basic.Basic]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.updateStateCache += this
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.updateStateCache -= this
   }
 
@@ -53,9 +53,9 @@ class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Co
     state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.propsBySkill)) match {
       case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Seq[Property[_, _]]]] }
       case None => {
-        QLog.warn(s"""SkillLevel couldn't find its state cache in Space ${state.id}; 
-                     |we must be copying SpaceState without copying the cache! 
-                     |Recalculating now...""".stripMargin)
+        logWarn(s"""SkillLevel couldn't find its state cache in Space ${state.id};
+                   |we must be copying SpaceState without copying the cache! 
+                   |Recalculating now...""".stripMargin)
         calculatePropsBySkill(state)
       }
     }

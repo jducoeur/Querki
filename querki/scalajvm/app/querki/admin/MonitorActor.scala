@@ -15,7 +15,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember {
+class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMember with QLogging with Timers {
 
   import MonitorActor._
 
@@ -25,20 +25,21 @@ class MonitorActor(implicit val ecology: Ecology) extends Actor with EcologyMemb
   lazy val monitor = AdminOps.monitor
   lazy val scheduler = SystemManagement.actorSystem.scheduler
 
-  lazy val heartbeat = Config.getDuration("querki.admin.monitorHeartbeat", 1 minute)
+  lazy val heartbeat = Config.getDuration("querki.admin.monitorHeartbeat", 1.minute)
   lazy val logHeartbeats = Config.getBoolean("querki.admin.logMonitor", false)
 
   var _current: Option[MonitorEvent] = None
 
   override def preStart() = {
-    scheduler.schedule(heartbeat, heartbeat, self, SendUpdate)
+    timers.startTimerWithFixedDelay(SendUpdate, SendUpdate, heartbeat)
     super.preStart()
   }
 
   def sendUpdate() = {
     _current.map(evt => monitor ! evt)
+    // TODO: remove this config flag and just use normal log levels:
     if (logHeartbeats)
-      QLog.spew(s"Send Monitor heartbeat ${_current}")
+      logTrace(s"Send Monitor heartbeat ${_current}")
   }
 
   def receive = {

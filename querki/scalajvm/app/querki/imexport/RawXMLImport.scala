@@ -1,7 +1,6 @@
 package querki.imexport
 
 import fastparse._
-import NoWhitespace._
 import XMLParser._
 import models._
 import querki.core.MOIDs.UrTypeOID
@@ -10,7 +9,7 @@ import querki.globals._
 import querki.identity.IdentityPersistence.UserRef
 import querki.identity.User
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
-import querki.values.{ElemValue, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, RequestContext, SpaceState}
 
 /**
  * Reads in a QuerkiML file, and builds a Space from it.
@@ -41,7 +40,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
       state: SpaceState,
       builder: (SpaceState, XmlElement) => SpaceState
     ): SpaceState = {
-      (state /: elem.elements)(builder)
+      elem.elements.foldLeft(state)(builder)
     }
   }
 
@@ -129,7 +128,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
       emptyProps,
       rc.requesterOrAnon.mainIdentity.id,
       name.get,
-      DateTime.now,
+      DateTime.now(),
       Seq.empty,
       Some(SystemSpace),
       Map.empty,
@@ -209,7 +208,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
         ptyp.typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
         coll.coll,
         buildProps,
-        DateTime.now
+        DateTime.now()
       )
     state.copy(spaceProps = state.spaceProps + (p.id -> p))
   }
@@ -226,7 +225,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
         state.id,
         modelref.oidPlus,
         buildProps,
-        DateTime.now,
+        DateTime.now(),
         cr = creatorAttr.oidOpt.map(oid => UserRef(User.Anonymous.id, Some(oid)))
       )
     state.copy(things = state.things + (model.id -> model))
@@ -251,7 +250,7 @@ private[imexport] class RawXMLImport(rc: RequestContext)(implicit val ecology: E
         state.id,
         thingOpt.get,
         buildProps,
-        DateTime.now,
+        DateTime.now(),
         cr = creatorAttr.oidOpt.map(oid => UserRef(User.Anonymous.id, Some(oid)))
       )
     state.copy(things = state.things + (model.id -> model))

@@ -1,6 +1,5 @@
 package querki.util
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
 import akka.actor._
@@ -14,7 +13,7 @@ import querki.globals._
  */
 object ActorHelpers {
 
-  def timeout(implicit e: Ecology) = Timeout(Config.getDuration("querki.akka.timeout", 5 seconds))
+  def timeout(implicit e: Ecology) = Timeout(Config.getDuration("querki.akka.timeout", 5.seconds))
 
   implicit class EnhancedActorRef(ref: ActorRef) {
 

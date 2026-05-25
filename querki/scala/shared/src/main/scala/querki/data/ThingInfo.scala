@@ -1,7 +1,8 @@
 package querki.data
 
-import models.{Kind, Wikitext}
+import upickle.default.{macroRW, ReadWriter => RW}
 
+import models.{Kind, Wikitext}
 import querki.core.NameUtils
 
 /**
@@ -13,19 +14,25 @@ case class TID(val underlying: String) extends AnyVal {
   def isEmpty: Boolean = underlying.length() == 0
 }
 
+object TID {
+  implicit val rw: RW[TID] = macroRW
+}
+
 /**
  * Variant of TID, to be used for times that can *only* contain an OID, not a
  * ThingName. This is simpler to process.
  */
-case class TOID(val underlying: String) extends AnyVal {
+case class TOID(underlying: String) extends AnyVal {
   def isEmpty: Boolean = underlying.length() == 0
 }
 
 object TOID {
   def apply(thing: BasicThingInfo): TOID = TOID(thing.oid.underlying)
+
+  implicit val rw: RW[TOID] = macroRW
 }
 
-trait BasicThingInfo {
+sealed trait BasicThingInfo {
   def oid: TID
   def linkName: Option[String]
   // This is the pre-neutered display name for this Thing. It should be rendered raw, without
@@ -78,6 +85,10 @@ case class ThingInfo(
   def hasPerm(perm: ThingInfo) = perms.contains(TOID(perm))
 }
 
+object ThingInfo {
+  implicit val rw: RW[ThingInfo] = macroRW
+}
+
 case class SpaceInfo(
   oid: TID,
   linkName: Option[String],
@@ -88,6 +99,10 @@ case class SpaceInfo(
   permissions: Set[TID],
   isApp: Boolean
 ) extends BasicThingInfo
+
+object SpaceInfo {
+  implicit val rw: RW[SpaceInfo] = macroRW
+}
 
 case class PropInfo(
   oid: TID,
@@ -102,6 +117,10 @@ case class PropInfo(
   isShadow: Boolean
 ) extends BasicThingInfo
 
+object PropInfo {
+  implicit val rw: RW[PropInfo] = macroRW
+}
+
 case class PropValInfo(
   propInfo: PropInfo,
   prompt: Option[Wikitext],
@@ -109,6 +128,10 @@ case class PropValInfo(
   tooltip: Option[Wikitext],
   raw: String
 )
+
+object PropValInfo {
+  implicit val rw: RW[PropValInfo] = macroRW
+}
 
 case class SpaceProps(
   oid: TID,
@@ -119,11 +142,19 @@ case class SpaceProps(
   apps: Seq[SpaceProps]
 ) extends BasicThingInfo
 
+object SpaceProps {
+  implicit val rw: RW[SpaceProps] = macroRW
+}
+
 case class CollectionInfo(
   oid: TID,
   linkName: Option[String],
   displayName: String
 ) extends BasicThingInfo
+
+object CollectionInfo {
+  implicit val rw: RW[CollectionInfo] = macroRW
+}
 
 case class TypeInfo(
   oid: TID,
@@ -132,9 +163,34 @@ case class TypeInfo(
   preferredCollection: Option[TID]
 ) extends BasicThingInfo
 
+object TypeInfo {
+  implicit val rw: RW[TypeInfo] = macroRW
+}
+
 case class AllTypeInfo(
   collections: Seq[CollectionInfo],
   standardTypes: Seq[TypeInfo],
   advancedTypes: Seq[TypeInfo],
   models: Seq[ThingInfo]
 )
+
+object AllTypeInfo {
+  implicit val rw: RW[AllTypeInfo] = macroRW
+}
+
+// This is mainly for Apps, but goes here so that BasicThingInfo can be sealed:
+case class ExtractableModelInfo(
+  oid: TID,
+  linkName: Option[String],
+  displayName: String,
+  canExtract: Boolean,
+  extractInstancesByDefault: Boolean
+) extends BasicThingInfo
+
+object ExtractableModelInfo {
+  implicit val rw: RW[ExtractableModelInfo] = macroRW
+}
+
+object BasicThingInfo {
+  implicit val rw: RW[BasicThingInfo] = macroRW
+}

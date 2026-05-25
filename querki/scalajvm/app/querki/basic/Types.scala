@@ -8,10 +8,7 @@ import models._
 
 import querki.core.{IsTextType, NameableType, TextTypeBasis}
 
-import querki.util.SafeUrl
 import querki.values.{ElemValue, QLContext, SpaceState}
-
-import MOIDs._
 
 trait PlainTextBaseType { self: CoreEcot with TextTypeBasis =>
 

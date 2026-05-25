@@ -1,11 +1,9 @@
 package querki.spaces
 
-import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.util.Success
 
 import akka.actor.{ActorRef, Props}
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import akka.cluster.sharding.{ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
@@ -18,7 +16,6 @@ import querki.globals.{execContext, AnyProp, Future, _}
 import querki.ql._
 import querki.spaces.messages._
 import querki.util.PublicException
-import querki.util.ActorHelpers._
 import querki.values.{ElemValue, EmptyValue, QLContext}
 
 object SpaceEcotMOIDs extends EcotIds(37) {
@@ -79,7 +76,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     (classOf[DHAddApp] -> 106)
   )
 
-  implicit val stdTimeout = Timeout(10 seconds)
+  implicit val stdTimeout: Timeout = Timeout(10.seconds)
 
   def spaceIdGuts[R](
     ownerId: OID,
@@ -193,7 +190,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     startingAt: Int
   ): InvocationValue[PropMap] = {
     val nParams = inv.numParams
-    val fullQV = (inv.wrap(EmptyValue(PropValType)) /: (startingAt until nParams)) { (invv, paramNum) =>
+    val fullQV = (startingAt until nParams).foldLeft(inv.wrap(EmptyValue(PropValType))) { (invv, paramNum) =>
       invv.flatMap { qv =>
         getOnePropVal(inv, context, paramNum).map { elemVal =>
           val (newQV, _) = qv.append(elemVal)
@@ -204,7 +201,7 @@ class SpaceEcot(e: Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core
     fullQV.map { qv =>
       // TODO: I'm sure this would be easier with Cats: we're just reducing List[PropMap], which is
       // a simple Monoidal reduce:
-      (emptyProps /: qv.rawList(PropValType)) { (result, propMap) =>
+      qv.rawList(PropValType).foldLeft(emptyProps) { (result, propMap) =>
         result ++ propMap
       }
     }

@@ -1,12 +1,14 @@
 package querki.types
 
-import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
+import scala.language.existentials
+
+import models.{DisplayPropVal}
 
 import querki.api.commonName
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
-import querki.spaces.{SpaceChangeManager, TCRReq, ThingChangeRequest}
+import querki.spaces.{TCRReq, ThingChangeRequest}
 
 import querki.util._
 import querki.values._
@@ -22,11 +24,11 @@ class DeriveNameModule(e: Ecology) extends QuerkiEcot(e) with DeriveName with Na
 
   lazy val NameProp = Core.NameProp
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += NameDeriver
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += NameDeriver
   }
 

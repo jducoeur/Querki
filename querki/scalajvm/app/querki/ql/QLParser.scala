@@ -1,17 +1,12 @@
 package querki.ql
 
-import language.existentials
-
-import scala.annotation.tailrec
 import scala.util.parsing.combinator._
 
 import models._
 
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
 import querki.html.QHtml
-import querki.util.{DebugRenderable, UnexpectedPublicException}
 import querki.values._
 
 sealed trait QLParseResult[T <: QLParseResultVal]
@@ -28,7 +23,8 @@ class QLParser(
 )(implicit
   val ecology: Ecology
 ) extends RegexParsers
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
 
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth.
@@ -192,7 +188,7 @@ class QLParser(
           case Failure(msg, next) => QLParseFailure(renderError(msg, next))
           // TODO: we should probably do something more serious in case of Error:
           case Error(msg, next) =>
-            QLParseFailure { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
+            QLParseFailure { logError("Couldn't parse qlText: " + msg); renderError(msg, next) }
         }
       }
     }
@@ -240,18 +236,18 @@ class QLParser(
       }
     } catch {
       case overflow: java.lang.StackOverflowError => {
-        QLog.error("Stack overflow error while trying to parse this QLText:\n" + input.text)
+        logError("Stack overflow error while trying to parse this QLText:\n" + input.text)
         overflow.printStackTrace()
         wikiFut(
           "We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix."
         )
       }
       case error: Exception => {
-        QLog.error("Exception during QL Processing: " + error, error)
+        logError("Exception during QL Processing: " + error, error)
         wikiFut("We're sorry -- there was an error while trying to display this thing.")
       }
       case error: Throwable => {
-        QLog.error("Throwable during QL Processing: " + error, error)
+        logError("Throwable during QL Processing: " + error, error)
         wikiFut("We're sorry -- there was a serious error while trying to display this thing.")
       }
     }

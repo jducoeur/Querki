@@ -2,7 +2,9 @@ package querki.api
 
 import scala.concurrent.Future
 
-import models.{DisplayText, Kind, Wikitext}
+import upickle.default.{macroRW, ReadWriter => RW}
+
+import models.{Wikitext}
 import querki.data._
 import querki.pages.ThingPageDetails
 
@@ -131,5 +133,12 @@ object ThingFunctions {
 
   case class LinkV(vs: List[TID]) extends PV {
     type TContent = TID
+  }
+
+  object PV {
+    implicit val brw: RW[BoolV] = macroRW
+    implicit val trw: RW[TextV] = macroRW
+    implicit val lrw: RW[LinkV] = macroRW
+    implicit val rw: RW[PV] = macroRW
   }
 }

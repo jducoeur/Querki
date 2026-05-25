@@ -1,7 +1,5 @@
 package querki.display
 
-import org.scalajs.dom
-
 import querki.globals._
 
 package object input {

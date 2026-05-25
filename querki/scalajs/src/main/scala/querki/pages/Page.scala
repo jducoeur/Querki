@@ -1,7 +1,7 @@
 package querki.pages
 
 import scala.concurrent.{Future, Promise}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._
@@ -11,8 +11,6 @@ import org.querki.jquery._
 import org.querki.squery.Focusable._
 import querki.globals._
 import querki.api.StandardThings
-import querki.comm._
-import querki.data.ThingInfo
 import querki.display.{ButtonGadget, GadgetListeners, GadgetListenersImpl, QuerkiUIUtils, SmallButtonGadget, WrapperDiv}
 import querki.display.input.{InputDependencies, InputDependenciesHandler}
 
@@ -88,7 +86,7 @@ abstract class Page(pageName: String = "")
    */
   def refresh(): Unit = {}
 
-  private val renderedContentPromise = Promise[dom.HTMLDivElement]
+  private val renderedContentPromise = Promise[dom.HTMLDivElement]()
 
   /**
    * External tools can observe this; it will be fulfilled once this Page is

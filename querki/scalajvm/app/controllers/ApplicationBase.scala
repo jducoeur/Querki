@@ -1,25 +1,21 @@
 package controllers
 
 import javax.inject._
-
-import play.api.Logger
 import play.api.mvc._
-
 import upickle.default._
-
 import models._
-
+import play.api
 import querki.api._
 import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
-import querki.util._
+import querki.util.QLogging
 
-trait ApplicationBase extends Controller with EcologyMember {
+trait ApplicationBase extends BaseController with EcologyMember with QLogging {
 
   // Concrete Controllers must inject this in their constructor signatures:
   val appProv: Provider[play.api.Application]
-  implicit lazy val app = appProv.get
+  implicit lazy val app: api.Application = appProv.get
 
   implicit lazy val ecology: Ecology = app.injector.instanceOf(classOf[querki.system.EcologyProvider]).ecology
 
@@ -54,7 +50,7 @@ trait ApplicationBase extends Controller with EcologyMember {
     try {
       throw new Exception("Got error; redirecting: " + errorMsg)
     } catch {
-      case e: Throwable => Logger.info(e.toString, e)
+      case e: Throwable => logger.info(e.toString, e)
     }
     Redirect(redirectTo).flashing("error" -> errorMsg)
   }
@@ -107,7 +103,7 @@ trait ApplicationBase extends Controller with EcologyMember {
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
   def withAuth(f: => User => Request[AnyContent] => Future[Result]): EssentialAction = {
-    withAuth(BodyParsers.parse.anyContent)(f)
+    withAuth(parse.anyContent)(f)
   }
 
   def withAuth[B](parser: BodyParser[B])(f: => User => Request[B] => Future[Result]): EssentialAction = {
@@ -134,7 +130,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   // be set iff requireLogin is true.
   def withUser[B](
     requireLogin: Boolean,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     f: PlayRequestContextFull[B] => Future[Result]
   ) = withAuth(parser) { user => implicit request =>
@@ -204,7 +200,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   def withRouting[B](
     ownerIdStr: String,
     spaceId: String,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     f: (PlayRequestContextFull[B] => Future[Result])
   ): EssentialAction =
@@ -253,7 +249,7 @@ trait ApplicationBase extends Controller with EcologyMember {
   def withLocalClient[B](
     ownerId: String,
     spaceIdStr: String,
-    parser: BodyParser[B] = BodyParsers.parse.anyContent
+    parser: BodyParser[B] = parse.anyContent
   )(
     cb: (PlayRequestContextFull[B], LocalClient) => Future[Result]
   ) =

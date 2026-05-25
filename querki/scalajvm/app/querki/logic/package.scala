@@ -1,11 +1,7 @@
 package querki
 
-import models.PType
-
 import querki.ecology._
-import querki.globals._
-import querki.ql.Invocation
-import querki.values.{ElemValue, QFut, QValue}
+import querki.values.{ElemValue}
 
 package object logic {
 

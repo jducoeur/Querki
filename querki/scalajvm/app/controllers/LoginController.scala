@@ -1,23 +1,14 @@
 package controllers
 
 import javax.inject._
-
 import scala.concurrent.duration._
-import scala.util._
-
 import akka.pattern._
 import akka.util.Timeout
-
 import play.api.data._
 import play.api.data.Forms._
-import play.api.data.format.Formats._
 import play.api.data.validation.Constraints._
+import play.api.i18n._
 import play.api.mvc._
-
-// Provide an implicit Messages object, which is needed to pass into some of the templates.
-// TODO: this is a temporary hack -- we'll need to switch to the injected version of Messages
-// before too long.
-import play.api.i18n.Messages.Implicits._
 
 import upickle.default._
 
@@ -25,15 +16,11 @@ import models._
 
 import querki.api.ApiException
 import querki.cluster.OIDAllocator._
-import querki.data.UserInfo
-import querki.db.ShardKind
-import querki.ecology._
 import querki.email.EmailAddress
 import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
 import querki.time.DateTime
-import querki.values.QLRequestContext
 
 case class PasswordChangeInfo(
   password: String,
@@ -41,7 +28,11 @@ case class PasswordChangeInfo(
   newPasswordAgain: String
 )
 
-class LoginController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class LoginController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase
+     with I18nSupport {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Email = interface[querki.email.Email]
@@ -143,11 +134,11 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
   }
 
   val inviteTimeoutParam = "inviteTimeout"
-  val inviteTimeout = Config.getDuration("querki.invitations.inviteTimeout", 5 minutes).toMillis
+  val inviteTimeout = Config.getDuration("querki.invitations.inviteTimeout", 5.minutes).toMillis
 
   def withinTimeout(request: RequestHeader): Boolean = {
     request.session.get(inviteTimeoutParam)
-      .map { param => new DateTime(param.toLong).isAfter(DateTime.now) }
+      .map { param => new DateTime(param.toLong).isAfter(DateTime.now()) }
       .getOrElse(false)
   }
   val inviteSpaceIdParam = "inviteSpaceId"
@@ -169,8 +160,8 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     spaceIdStr: String
   ) = withRouting(ownerIdStr, spaceIdStr) { implicit rc =>
     implicit val request = rc.request
-    implicit val timeout = Timeout(10 seconds)
-    val rawForm = handleInviteForm.bindFromRequest
+    implicit val timeout = Timeout(10.seconds)
+    val rawForm = handleInviteForm.bindFromRequest()
     rawForm.fold(
       errorForm => { BadRequest("Error: badly formatted request!") },
       info => {
@@ -204,7 +195,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
                 // Set up the Session for this Guest, and record when the "invitation" period expires:
                 Ok(write(userInfoOpt.get)).withSession(
                   (inviteUser.toSession :+
-                    (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
+                    (inviteTimeoutParam -> DateTime.now().plus(inviteTimeout).getMillis.toString) :+
                     (inviteSpaceIdParam -> spaceId.toString)): _*
                 )
                 // We add the Email address as its own cookie, for Client use:
@@ -257,7 +248,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
                 // that, unlike the clause above, there is no email cookie.
                 Ok(write(userInfoOpt.get)).withSession(
                   (inviteUser.toSession :+
-                    (inviteTimeoutParam -> DateTime.now.plus(inviteTimeout).getMillis.toString) :+
+                    (inviteTimeoutParam -> DateTime.now().plus(inviteTimeout).getMillis.toString) :+
                     (inviteSpaceIdParam -> spaceId.toString)): _*
                 )
             }
@@ -302,7 +293,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
               // skip the signup process and just give them login!
               // Nope. Let them sign up for Querki. This will loop through to signup, below:
               val startForm = SignupInfo(email, "", "", "")
-              Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info))
+              Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info)(request2Messages(rc.request)))
             }
           }
         }
@@ -320,7 +311,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     spaceId: String
   ) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
-    userForm.bindFromRequest.fold(
+    userForm.bindFromRequest().fold(
       errors => doError(Call(request.method, request.path), "I didn't understand that"),
       form => {
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
@@ -365,15 +356,19 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     spaceId: String
   ) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
-    val rawForm = signupForm.bindFromRequest
+    // Disentangle the implicits:
+    val messages = request2Messages(request)
+    val rawForm = signupForm.bindFromRequest()
     rawForm.fold(
       errorForm => {
-        withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc, errorForm, info)) }
+        withSpaceInfo { (info, ownerIdentity) =>
+          BadRequest(views.html.handleInvite(this, rc, errorForm, info)(messages))
+        }
       },
       info => {
         passwordValidationError(info.password) match {
           case Some(err) => withSpaceInfo { (info, ownerIdentity) =>
-              BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info))
+              BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info)(messages))
             }
           case None => {
             // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
@@ -403,10 +398,10 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
                     val msg = error match {
                       case err: PublicException => err.display(request, ecology)
                       case _ =>
-                        QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+                        logError("Internal Error during signup", error); "Something went wrong; please try again"
                     }
                     withSpaceInfo { (info, ownerIdentity) =>
-                      BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info))
+                      BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)(messages))
                     }
                   }
                 }
@@ -433,7 +428,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
    */
   def signupStart() = withUser(false) { implicit rc =>
     implicit val request = rc.request
-    val rawForm = signupForm.bindFromRequest
+    val rawForm = signupForm.bindFromRequest()
     rawForm.fold(
       errorForm => { BadRequest("Error: badly formatted request!") },
       info => {
@@ -474,7 +469,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
             val msg = error match {
               case ex: ApiException     => write(ex)
               case err: PublicException => err.display(request, ecology)
-              case _                    => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+              case _                    => logError("Internal Error during signup", error); "Something went wrong; please try again"
             }
             BadRequest(s"$msg")
           }
@@ -508,7 +503,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
 
   def doSendPasswordReset() = withUser(false) { rc =>
     implicit val request = rc.request
-    val rawForm = resetPasswordForm.bindFromRequest
+    val rawForm = resetPasswordForm.bindFromRequest()
     // We show the same error in all cases, to avoid information leakage
     def showError = {
       doError(routes.LoginController.sendPasswordReset, "That isn't a known login handle or email address")
@@ -520,7 +515,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
           user <- UserAccess.getUserByHandleOrEmail(handle)
           identity <- user.loginIdentity
           email = identity.email.addr
-          expires = DateTime.now.plusDays(2).getMillis()
+          expires = DateTime.now().plusDays(2).getMillis()
           hash = Encryption.calcHash(resetValidationStr(email, expires))
           subject = Wikitext("Reset your Querki password")
           body = Wikitext(
@@ -552,7 +547,9 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
     hash: String
   ) = withUser(false) { rc =>
     val initialPasswordForm = PasswordChangeInfo(hash, "", "")
-    Ok(views.html.resetPassword(this, rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm)))
+    Ok(views.html.resetPassword(this, rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm))(
+      request2Messages(rc.request)
+    ))
   }
 
   def doResetPassword(
@@ -571,7 +568,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
         )
       else {
         implicit val request = rc.request
-        val rawForm = passwordChangeForm.bindFromRequest
+        val rawForm = passwordChangeForm.bindFromRequest()
         rawForm.fold(
           errorForm => showError("That wasn't a legal reset-password form???"),
           info => {
@@ -599,7 +596,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
 
   def dologin = Action.async { implicit request =>
     val rc = PlayRequestContextFull(request, None, UnknownOID)
-    userForm.bindFromRequest.fold(
+    userForm.bindFromRequest().fold(
       errors => doError(indexRoute, "I didn't understand that"),
       form => {
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
@@ -622,7 +619,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
    */
   def clientlogin = Action.async { implicit request =>
     val rc = PlayRequestContextFull(request, None, UnknownOID)
-    userForm.bindFromRequest.fold(
+    userForm.bindFromRequest().fold(
       errors => Ok("failed"),
       form => {
         val guestUserOpt = IdentityAccess.guestFromSession(request)
@@ -651,7 +648,7 @@ class LoginController @Inject() (val appProv: Provider[play.api.Application]) ex
                   spaceId,
                   ReplacePerson(guestUser.mainIdentity.id, user.mainIdentity)
                 )
-                implicit val timeout = Timeout(10 seconds)
+                implicit val timeout = Timeout(10.seconds)
                 (SpaceOps.spaceRegion ? msg).flatMap { _ =>
                   writeUserInfo()
                 }

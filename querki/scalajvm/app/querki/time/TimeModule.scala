@@ -1,11 +1,8 @@
 package querki.time
 
 import scala.xml.NodeSeq
-import com.github.nscala_time.time.Imports._
-import com.github.nscala_time.time.StaticDateTime
 import org.querki.requester.RequestM
 import models._
-import querki.ecology._
 import querki.globals._
 import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.values.{ElemValue, QLContext, SpaceState}
@@ -52,11 +49,11 @@ class TimeModule(e: Ecology) extends QuerkiEcot(e) with Time with querki.core.Me
   lazy val QDuration = interface[QDuration]
   lazy val QL = interface[querki.ql.QL]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.thingChanges += DateInitializer
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.thingChanges += DateInitializer
   }
 
@@ -76,7 +73,7 @@ class TimeModule(e: Ecology) extends QuerkiEcot(e) with Time with querki.core.Me
         case tcr @ ThingChangeRequest(who, req, state, router, Some(modelId), None, kind, props, changedProps) => {
           val initedProps = state.anything(modelId).map { model =>
             // Go through all the Properties on the *model*, looking for Dates with InitOnCreate:
-            (emptyProps /: model.props) { case (pm, (propId, pv)) =>
+            model.props.foldLeft(emptyProps) { case (pm, (propId, pv)) =>
               val resultOpt =
                 for {
                   prop <- state.prop(propId)

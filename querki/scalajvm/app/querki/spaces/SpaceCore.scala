@@ -1,6 +1,6 @@
 package querki.spaces
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import akka.actor._
 import Actor.Receive
 import akka.persistence._
@@ -10,7 +10,7 @@ import Kind.Kind
 import querki.core.NameUtils
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
-import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
+import querki.identity.{PublicIdentity, User}
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence._
 import querki.publication.{CurrentPublicationState, PublishedAck}
@@ -72,7 +72,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
 
-  implicit lazy val tracing = TracingSpace(id, "SpaceCore: ")
+  implicit lazy val tracing: TracingSpace = TracingSpace(id, "SpaceCore: ")
 
   ////////////////////////////////////////////
   //
@@ -88,18 +88,19 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    * The complexity here is mainly in catching exceptions. Is there no better way to do this?
    * Not only is this complex, but it *must* be the end of the call chain!
    */
-  val pluginReceive: Receive =
-    PartialFunction { any: Any =>
+  val pluginReceive: Receive = {
+    case any: Any => {
       try {
         SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this, rtc).receive).reduce(_ orElse _)(any)
       } catch {
         case ex: PublicException => respond(ThingError(ex))
         case ex: Throwable => {
-          QLog.error(s"Space.plugins received an unexpected exception before doPersist()", ex)
+          logError(s"Space.plugins received an unexpected exception before doPersist()", ex)
           respond(ThingError(UnexpectedPublicException))
         }
       }
     }
+  }
 
   //////////////////////////////////////////////////
   //
@@ -282,7 +283,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     _currentState match {
       case Some(s) => s
       case None => {
-        QLog.error("!!!! State not ready in Actor " + id)
+        logError("!!!! State not ready in Actor " + id)
         emptySpace
       }
     }
@@ -309,7 +310,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
   ): RM[SpaceState] = {
     tracing.trace("Loading apps")
     // This does the recursive dive through the tree, returning the Apps specified in there:
-    val appsRM: RM[Map[OID, SpaceState]] = (rtc.successful(appsSoFar) /: state.appInfo) { (rm, appInfo) =>
+    val appsRM: RM[Map[OID, SpaceState]] = state.appInfo.foldLeft(rtc.successful(appsSoFar)) { (rm, appInfo) =>
       rm.flatMap { appMap =>
         val (appId, appVersion) = appInfo
         if (appMap.contains(appId))
@@ -520,7 +521,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
       // sufficient yet -- it could fail if the OID exists only on the Publication fork -- but it's
       // better than nothing:
       if (thingIdOpt.isEmpty && enhancedState.anything(thingId).isDefined) {
-        QLog.error(
+        logError(
           s"Duplicate OID found! State = ${state.displayName} (${state.id}); trying to reuse OID $thingId, which is currently ${enhancedState.anything(thingId)}"
         )
         throw new PublicException("Space.createThing.OIDExists", thingId.toThingId.toString)
@@ -628,7 +629,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     tracing.trace(s"run(${funcs.size} funcs)")
     // Run through all the functions, collect the results or the first error. Note
     // that the resulting list is in reverse order, simply because it's easier that way.
-    (rtc.successful(List.empty[ChangeResult]) /: funcs) { (rm, func) =>
+    funcs.foldLeft(rtc.successful(List.empty[ChangeResult])) { (rm, func) =>
       rm.flatMap { changes =>
         val stateToPass = changes.headOption.map(_.resultingState).getOrElse(state)
         func(stateToPass).map(_ +: changes)
@@ -696,7 +697,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
         th match {
           case ex: PublicException => respond(ThingError(ex))
           case ex => {
-            QLog.error(s"Space.$opName received an unexpected exception before doPersist()", ex)
+            logError(s"Space.$opName received an unexpected exception before doPersist()", ex)
             respond(ThingError(UnexpectedPublicException))
           }
         }
@@ -732,8 +733,13 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    *
    * This is rather wordy, but we're trying to diagnose QI.7w4gfs3, so it's helpful.
    */
-  def initSpew(msg: String): Unit = {
-    QLog.spew(s"Space $id: $msg")
+  def initSpew(
+    msg: String
+  )(implicit
+    fileName: sourcecode.FileName,
+    line: sourcecode.Line
+  ): Unit = {
+    logTrace(s"Space $id: $msg")
   }
 
   def handlingInitExceptions[R](phase: String)(f: => R): R = {
@@ -744,7 +750,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
       r
     } catch {
       case ex: Exception => {
-        QLog.error(s"Exception while initializing $id, phase $phase", ex)
+        logError(s"Exception while initializing $id, phase $phase", ex)
         // We don't have a good way to recover from initialization Exceptions -- if we keep going, we're going to
         // wind up with data corruption. So shut down, in the hopes of better luck next time:
         selfDestruct()
@@ -837,7 +843,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
           val result = afterOwnerIdentity.map(_ => readied())
           result.onComplete {
             case Success(_)  => // That's fine
-            case Failure(ex) => QLog.error("SpaceCore.readyState got an async failure", ex)
+            case Failure(ex) => logError("SpaceCore.readyState got an async failure", ex)
           }
           result
         }
@@ -869,7 +875,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
           initializing = true
           readyState(Some(currentState))
         } else {
-          QLog.error(s"Somehow recovered Space $id with the ownerIdentity intact?")
+          logError(s"Somehow recovered Space $id with the ownerIdentity intact?")
         }
       }
     }
@@ -883,45 +889,39 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    *
    * IMPORTANT: this *must* be at the end of the orElse chain!
    */
-  def recoverSpaceCommand: PartialFunction[Any, SpaceState] =
-    PartialFunction { any =>
-      any match {
-        case evt: SpaceEvent => {
-          try {
-            // Make sure we update the snapshotCounter -- otherwise, it might never trigger a Snapshot:
-            incrementSnapshot()
-            evolveState(_currentState)(evt)
-          } catch {
-            case ex: Exception => {
-              QLog.error(s"Exception while recovering SpaceEvent $evt", ex)
-              selfDestruct()
-              throw ex
-            }
-          }
+  def recoverSpaceCommand: PartialFunction[Any, SpaceState] = {
+    case evt: SpaceEvent => {
+      try {
+        // Make sure we update the snapshotCounter -- otherwise, it might never trigger a Snapshot:
+        incrementSnapshot()
+        evolveState(_currentState)(evt)
+      } catch {
+        case ex: Exception => {
+          logError(s"Exception while recovering SpaceEvent $evt", ex)
+          selfDestruct()
+          throw ex
         }
-        // TBD: This is horrible -- we really want to be able to filter the types without these
-        // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
-        // checking ourselves.
-        case _ => throw new Exception(s"SpaceCore.recoverSpaceCommand somehow got non-SpaceEvent $any")
       }
     }
+    // TBD: This is horrible -- we really want to be able to filter the types without these
+    // runtime matches. But AFAIK, there's no good way to do so, so we are doing the mismatch
+    // checking ourselves.
+    case other => throw new Exception(s"SpaceCore.recoverSpaceCommand somehow got non-SpaceEvent $other")
+  }
 
   /**
    * The standard recovery procedure for PersistentActors.
    */
-  def receiveRecover: Receive =
+  def receiveRecover: Receive = ({
     // If we're monitoring this Space, record the name of the recovered message
-    // TODO: we should probably eventually turn this clause off unless monitoring is turned on
-    // for this Space
-    PartialFunction[Any, Any] {
-      case msg => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
-    }.andThen(
-      // Recovery of high-level stuff like Snapshots:
-      recoverPersistence.orElse(
-        // Recovery of individual persisted messages:
-        recoverSpaceCommand.andThen { newState => updateStateCore(newState) }
-      )
+    case msg: Any => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
+  }: PartialFunction[Any, Any]).andThen(
+    // Recovery of high-level stuff like Snapshots:
+    recoverPersistence.orElse[Any, Unit](
+      // Recovery of individual persisted messages:
+      recoverSpaceCommand.andThen[Unit] { newState => updateStateCore(newState); () }
     )
+  )
 
   /**
    * The standard PersistentActor receiveCommand, which receives and processes the messages that
@@ -934,20 +934,19 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
    * receiveCommand should only be called *once*, and is returning *one* Receive, which is used thereafter.
    * We should instead be using a guard in receiveCommand. See IdentityEmailCore for a more sensible approach.
    */
-  def receiveCommand: Receive =
+  def receiveCommand: Receive = ({
     // If we're monitoring this Space, record the name of the received message
     // for this Space
-    PartialFunction[Any, Any] {
-      case msg => { tracing.trace(s"receiveCommand: ${msg.getClass().getName}"); msg }
-    }.andThen {
-      if (initializing) {
-        // Whilst we're initializing, we need to stash everything except the responses:
-        handleRequestResponse.orElse {
-          case _ => stash()
-        }
-      } else
-        handleRequestResponse.orElse(normalReceiveCommand).orElse(pluginReceive)
-    }
+    case msg => { tracing.trace(s"receiveCommand: ${msg.getClass().getName}"); msg }
+  }: PartialFunction[Any, Any]).andThen {
+    if (initializing) {
+      // Whilst we're initializing, we need to stash everything except the responses:
+      handleRequestResponse.orElse {
+        case _ => stash()
+      }
+    } else
+      handleRequestResponse.orElse(normalReceiveCommand).orElse(pluginReceive)
+  }
 
   var _pubState: Option[CurrentPublicationState] = None
   var _enhancedState: Option[SpaceState] = None
@@ -1006,7 +1005,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     // by this Space!
     case msg @ InitialState(who, spaceId, display, ownerId) => {
       if (_currentState.isDefined) {
-        QLog.error(s"Space $id received $msg, but already has state $currentState!")
+        logError(s"Space $id received $msg, but already has state $currentState!")
       } else {
         val msg = DHInitState(UserRef(who.id, Some(ownerId)), display)
         persistAllAnd(List(msg)).map { _ =>
@@ -1199,7 +1198,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     case SaveSnapshotSuccess(metadata) => // Normal -- don't need to do anything
     case SaveSnapshotFailure(metadata, cause) => {
       // TODO: what should we do here? This explicitly isn't fatal, but it *is* scary as all heck:
-      QLog.error(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
+      logError(s"MAJOR PERSISTENCE ERROR: failed to save snapshot $metadata, because of $cause")
     }
 
     case ps: CurrentPublicationState => {

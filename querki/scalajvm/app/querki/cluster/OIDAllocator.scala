@@ -1,7 +1,6 @@
 package querki.cluster
 
 import akka.actor._
-import akka.pattern._
 import akka.persistence._
 
 import org.querki.requester._
@@ -31,10 +30,11 @@ class OIDAllocator(
   shardId: ShardId
 ) extends PersistentActor
      with Requester
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
   import OIDAllocator._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   override def persistenceId = s"alloc$shardId"
 
@@ -77,7 +77,7 @@ class OIDAllocator(
       // We don't currently need to do anything at the end of recovery
     }
 
-    case other => QLog.error(s"OIDAllocator got unexpected message $other")
+    case other => logError(s"OIDAllocator got unexpected message $other")
   }
 
   def sendFull(n: Int): Unit = {
@@ -101,7 +101,7 @@ class OIDAllocator(
 
       def giveOID() = {
         val oid = OID(shardId, current)
-        sender ! NewOID(oid)
+        sender() ! NewOID(oid)
         current += 1
 
         if (current == shardFullMark) {
@@ -136,8 +136,8 @@ class OIDAllocator(
 
         val oids = for (n <- 0 to nAlloc) yield { OID(shardId, current + n) }
         // TODO: Related to the noisy spew in NextOID:
-        QLog.spew(s"Shard $shardId giving OID Block of $nAlloc Ids from ${oids.head} to ${oids.last}")
-        sender ! NewOIDs(oids)
+        logTrace(s"Shard $shardId giving OID Block of $nAlloc Ids from ${oids.head} to ${oids.last}")
+        sender() ! NewOIDs(oids)
         current += nAlloc
 
         if (!wasFull && (current >= shardFullMark)) {
@@ -160,8 +160,8 @@ class OIDAllocator(
       }
     }
 
-    case SaveSnapshotSuccess(metadata)        => //QLog.spew(s"Successfully saved snapshot: $metadata")
-    case SaveSnapshotFailure(metadata, cause) => QLog.error(s"Failed to save snapshot: $metadata", cause)
+    case SaveSnapshotSuccess(metadata)        => //logTrace(s"Successfully saved snapshot: $metadata")
+    case SaveSnapshotFailure(metadata, cause) => logError(s"Failed to save snapshot: $metadata", cause)
   }
 }
 

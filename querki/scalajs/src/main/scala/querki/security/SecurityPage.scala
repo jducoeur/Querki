@@ -9,16 +9,11 @@ import autowire._
 import rx._
 
 import org.querki.gadgets._
-import org.querki.jquery._
 
 import models.Kind
 
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, RawDiv}
-import querki.display.input.InputGadget
-import querki.display.rx._
-import querki.ecology._
-import querki.editing.EditFunctions
+import querki.display.{ButtonGadget}
 import querki.globals._
 import querki.pages._
 

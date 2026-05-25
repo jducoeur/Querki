@@ -1,7 +1,5 @@
 package querki.publication
 
-import scala.math.Ordering._
-import cats._
 import cats.implicits._
 import akka.actor.Actor.Receive
 import akka.persistence.RecoveryCompleted
@@ -10,7 +8,7 @@ import funcakka.Implicits._
 import models._
 import querki.core.QLText
 import querki.globals._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{User}
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.values.RequestContext
 import PublicationCommands._
@@ -22,7 +20,8 @@ trait PublicationCore
      with PersistentActorCore
      with EcologyMember
      with querki.types.ModelTypeDefiner
-     with ModelPersistence {
+     with ModelPersistence
+     with QLogging {
 
   private lazy val AccessControl = interface[querki.security.AccessControl]
   private lazy val AWS = interface[querki.aws.AWS]
@@ -72,9 +71,15 @@ trait PublicationCore
       try {
         f
       } catch {
-        case th: Throwable => QLog.logAndThrowException(th)
+        case th: Throwable => {
+          logError("", th)
+          throw th
+        }
       }
-    resultME.handleError(th => QLog.logAndThrowException(th))
+    resultME.handleError(th => {
+      logError("", th)
+      throw th
+    })
   }
 
   def log(msg: => String): Unit = {
@@ -138,7 +143,7 @@ trait PublicationCore
           infos = wikitextPairs.map { case ThingInfo(oid, wikitext, displayName, notes) =>
             PublishedThingInfo(oid, wikitext.display.toString, wikitext.strip.toString, displayName)
           }
-          notes = ("" /: wikitextPairs) { (text, thingInfo) =>
+          notes = wikitextPairs.foldLeft("") { (text, thingInfo) =>
             thingInfo.notes match {
               case Some(n) => text + n.text
               case None    => text
@@ -160,7 +165,7 @@ trait PublicationCore
       case _ => {
         val ex =
           new Exception(s"Somehow, User $who tried to Publish in ${state.id}, but doesn't have a local Identity!")
-        QLog.error("Error in PublicationCore.doPublish()", ex)
+        logError("Error in PublicationCore.doPublish()", ex)
         monadError.raiseError(ex)
       }
     }
@@ -182,7 +187,7 @@ trait PublicationCore
 
   def computePublishChanges(thingIds: Seq[OID])(implicit state: SpaceState): ME[Seq[(OID, PropMap)]] = {
     tracing.trace(s"computePublishChanges")
-    (monadError.pure(Seq.empty[(OID, PropMap)]) /: thingIds) { (me, thingId) =>
+    thingIds.foldLeft(monadError.pure(Seq.empty[(OID, PropMap)])) { (me, thingId) =>
       state.anything(thingId) match {
         case Some(thing) => {
           val newProps =
@@ -221,7 +226,7 @@ trait PublicationCore
         for {
           _ <- publish(who, things, meta, spaceState)
           finalState <- updatePublishedThings(who, things)(spaceState)
-        } yield { sender ! PublishResponse(finalState) }
+        } yield { sender() ! PublishResponse(finalState) }
       }
     }
 
@@ -230,7 +235,7 @@ trait PublicationCore
         for {
           _ <- publish(who, things, meta, spaceState)
           finalState <- updatePublishedThings(who, things)(spaceState)
-        } yield { sender ! PublishResponse(spaceState) }
+        } yield { sender() ! PublishResponse(spaceState) }
       }
     }
 
@@ -256,7 +261,7 @@ trait PublicationCore
 
       val filtered = curState.publicEvents.filter(includeEvent)
       // TODO: deal with coalesce
-      sender ! RequestedEvents(filtered)
+      sender() ! RequestedEvents(filtered)
     }
 
     case GetRSSUrl(who) => {

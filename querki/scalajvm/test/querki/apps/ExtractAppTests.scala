@@ -111,7 +111,7 @@ class ExtractAppTests extends QuerkiTests {
         )
       } catch {
         case ex: Exception => {
-          QLog.error("Got an exception while trying to extract an app", ex)
+          logError("Got an exception while trying to extract an app", ex)
           throw ex
         }
       }

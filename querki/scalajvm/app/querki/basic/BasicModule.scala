@@ -5,16 +5,12 @@ import scala.xml.NodeSeq
 import models._
 
 import querki.api.commonName
-import querki.conventions._
 import querki.core._
-import querki.ecology._
 import querki.globals._
-import querki.ql.QLPhrase
-import querki.types._
 import querki.values.{ElemValue, PropAndVal, QFut, QLContext, RequestContext, SpaceState, StateCacheKey}
 
 class BasicModule(e: Ecology) extends QuerkiEcot(e) with Basic with WithQL with TextTypeBasis with PlainTextBaseType {
-  import MOIDs._
+  import querki.basic.MOIDs._
 
   val DeriveName = initRequires[querki.types.DeriveName]
   lazy val QL = interface[querki.ql.QL]

@@ -42,7 +42,7 @@ object Saveable {
     def toSaveable(t: ThingInfo) = SaveableText(t.oid.underlying)
   }
 
-  implicit def ListSaveable[T : Saveable] = new Saveable[List[T]] {
+  implicit def ListSaveable[T : Saveable]: Saveable[List[T]] = new Saveable[List[T]] {
 
     def toSaveable(ts: List[T]) = {
       val contents: List[String] = ts.map(_.toSaveable).map(_.toSave).flatten

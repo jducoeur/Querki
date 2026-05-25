@@ -2,16 +2,11 @@ package querki.test.mid
 
 import org.scalatest._
 import org.scalatestplus.play._
-
 import play.api.{Application, ApplicationLoader, Environment}
-import play.api.db.Databases
-import play.api.inject.guice._
-
-import querki.db.ShardKind
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
-
 import AllFuncs._
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
 /**
  * Primary base trait for all "mid-level" tests. These are semi-functional tests: testing the more or less
@@ -22,7 +17,7 @@ import AllFuncs._
  * This intentionally uses OneAppPerTest, not OneAppPerSuite, because the latter creates the app even if
  * we aren't running any actual tests due to -l filtering.
  */
-trait MidTestBase extends PlaySpec with OneAppPerTest with EcologyMember {
+trait MidTestBase extends PlaySpec with GuiceOneAppPerTest with EcologyMember {
   lazy val dbManager = new MidFuncDB
 
   /**
@@ -33,24 +28,10 @@ trait MidTestBase extends PlaySpec with OneAppPerTest with EcologyMember {
   override implicit def newAppForTest(testData: TestData): Application = {
     // IMPORTANT: test code runs with an alternate config file, application.test.conf, which
     // enhances the built-in one!
-    val context = ApplicationLoader.createContext(
+    val context = ApplicationLoader.Context.create(
       Environment.simple(),
-      Map(
-        // Flag to allow system code to check whether we are in this mode:
-        "querki.test.inmemory" -> "true",
-        // For these tests, use the in-memory H2 SQL DB:
-        "db.system.driver" -> "org.h2.Driver",
-        "db.system.url" -> "jdbc:h2:mem:system;MODE=MYSQL",
-        "db.user.driver" -> "org.h2.Driver",
-        "db.user.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
-//        "db.template.driver" -> "org.h2.Driver",
-//        "db.template.url" -> "jdbc:h2:mem:user;MODE=MYSQL",
-
-        // Tell the Email Ecot to use the test version of the sender, which doesn't actually send
-        // mail, but instead lets us inspect what has been "sent":
-        "querki.mail.test" -> "true",
-        // Don't bother to throttle emails significantly:
-        "querki.mail.throttle" -> "10ms"
+      initialSettings = Map(
+        // See scenario.conf instead of here
       )
     )
 

@@ -1,11 +1,7 @@
 package querki.history
 
-import scala.scalajs.js
-
 import scalatags.JsDom.all._
 import autowire._
-
-import org.widok.moment._
 
 import org.querki.gadgets._
 import org.querki.jquery._
@@ -29,17 +25,6 @@ class HistorySummaryPage(params: ParamMap)(implicit val ecology: Ecology)
   lazy val spaceInfo = DataAccess.space.get
 
   val defaultNRecords = 100
-
-  implicit class RichString(s: String) {
-
-    def toLongOption: Option[Long] = {
-      try {
-        Some(s.toLong)
-      } catch {
-        case _: NumberFormatException => None
-      }
-    }
-  }
 
   lazy val nRecords: Int = params.get("nRecords").flatMap(_.toLongOption).map(_.toInt).getOrElse(defaultNRecords)
 

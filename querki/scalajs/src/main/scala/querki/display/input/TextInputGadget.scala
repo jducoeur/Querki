@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import js._
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -49,7 +49,6 @@ trait JQueryEventEnhanced extends js.Object {
 object JQueryEventEnhanced {
   implicit def jqe2Enhanced(evt: JQueryEventObject): JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]
 }
-import JQueryEventEnhanced._
 
 class LargeTextInputGadget(mods: Modifier*)(implicit e: Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
 

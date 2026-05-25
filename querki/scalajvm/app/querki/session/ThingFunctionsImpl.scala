@@ -1,10 +1,8 @@
 package querki.session
 
-import scala.concurrent.Promise
+//import akka.actor._
 
-import akka.actor._
-
-import models.{Collection, DisplayText, Kind, OID, PType, Thing, ThingId, Wikitext}
+import models.{Collection, OID, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
@@ -120,7 +118,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
   ): Future[Map[TOID, PV]] = withThing(thingId) { thing =>
     implicit val s = state
 
-    val result = (Map.empty[TOID, PV] /: props) { (m, propTOID) =>
+    val result = props.foldLeft(Map.empty[TOID, PV]) { (m, propTOID) =>
       val propId = OID.fromTOID(propTOID)
       thing.getPropOpt(propId) match {
         case Some(pv) => {
@@ -140,7 +138,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
           ).orElse(
             tryType(Core.LinkType) { vs => LinkV(vs.map(_.toTID)) }
           ).getOrElse {
-            QLog.error(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
+            logError(s"getPropertyValues() request for not-yet-implemented type ${pv.prop.pType.displayName}")
             m
           }
         }
@@ -245,7 +243,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
     includeInstances: Boolean
   ): Future[Seq[ThingInfo]] = withThing(modelId) { model =>
     implicit val s = state
-    val result = state.children(model).filter { t =>
+    val result = state.children(model).toSet[Thing].filter { t =>
       if (t.isModel)
         includeModels
       else

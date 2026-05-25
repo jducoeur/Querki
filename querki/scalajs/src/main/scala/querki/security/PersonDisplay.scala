@@ -9,7 +9,6 @@ import querki.api.StandardThings
 import querki.display.QuerkiUIUtils
 import querki.globals._
 import querki.pages.Page
-import querki.util.ScalatagUtils
 
 class PersonDisplay(
   showCls: String,

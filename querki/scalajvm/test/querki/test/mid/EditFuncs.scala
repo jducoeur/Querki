@@ -1,14 +1,11 @@
 package querki.test.mid
 
-import cats.effect.IO
-
 import autowire._
 
 import querki.data._
 import querki.editing._
 import querki.editing.EditFunctions._
-import querki.api.ThingFunctions
-import querki.globals._
+import querki.globals.execContext
 
 import AllFuncs._
 

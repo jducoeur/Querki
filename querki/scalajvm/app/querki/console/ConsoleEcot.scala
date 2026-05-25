@@ -1,7 +1,5 @@
 package querki.console
 
-import scala.xml.NodeSeq
-
 import models._
 import querki.api._
 import querki.core.QLText

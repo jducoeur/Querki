@@ -10,7 +10,7 @@ import akka.pattern.AskTimeoutException
 
 import org.querki.requester._
 
-import querki.ecology._
+import querki.ecology.PlayEcology
 import querki.globals._
 
 /**
@@ -32,7 +32,8 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
      with Stash
      with Requester
      with EcologyMember
-     with querki.system.AsyncInittingActor[QuerkiNodeManager] {
+     with querki.system.AsyncInittingActor[QuerkiNodeManager]
+     with QLogging {
   import QuerkiNodeCoordinator._
   import QuerkiNodeManager._
 
@@ -49,11 +50,11 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
   def allocator = _allocator.get
 
   def requestShardId(msg: Any): Unit = {
-    QLog.spew(s"QuerkiNodeManager sending $msg to Coordinator")
+    logInfo(s"QuerkiNodeManager sending $msg to Coordinator")
     val reqM = ClusterPrivate.nodeCoordinator.request(msg).onComplete {
 
       case Success(ShardAssignment(id)) => {
-        QLog.spew(s"QuerkiNodeManager received ShardAssignment($id)")
+        logInfo(s"QuerkiNodeManager received ShardAssignment($id)")
         _shardId = Some(id)
         _allocator = Some(context.actorOf(OIDAllocator.actorProps(ecology, shardId), "OIDAllocator"))
         initted()
@@ -68,12 +69,12 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
         // Note that this timeout is downright normal when we're starting up the seed node. The
         // QuerkiNodeManager tends to ask for its shard before the Coordinator singleton has been
         // fully created, and the ClusterSingleton mechanism appears to just drop the request on the floor.
-        QLog.warn(s"QuerkiNodeManager: AssignShard timed out; trying again")
+        logWarn(s"QuerkiNodeManager: AssignShard timed out; trying again")
         requestShardId(msg)
       }
 
       case other => {
-        QLog.error(s"QuerkiNodeManager got unexpected response $other from AssignShard!")
+        logError(s"QuerkiNodeManager got unexpected response $other from AssignShard!")
       }
     }
   }
@@ -90,7 +91,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
 
   def setState(s: CurrentClusterState) = {
     _clusterState = Some(s)
-    ownStatus.foreach(status => QLog.spew(s"I am currently $status"))
+    ownStatus.foreach(status => logInfo(s"I am currently $status"))
   }
 
   def updateState(
@@ -98,7 +99,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
     mem: Member,
     f: CurrentClusterState => CurrentClusterState
   ) = {
-    QLog.spew(s"$op member $mem")
+    logTrace(s"$op member $mem")
     val cs = _clusterState.get
     setState(f(cs))
   }
@@ -125,7 +126,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
   /**
    * How long to wait after something goes unreachable, before we invoke Split Brain Resolution.
    */
-  lazy val unreachableTimeout = Config.getDuration("querki.cluster.unreachable.timeout", 20 seconds)
+  lazy val unreachableTimeout = Config.getDuration("querki.cluster.unreachable.timeout", 20.seconds)
   var unreachableTimers: Map[Member, Cancellable] = Map.empty
 
   /**
@@ -161,11 +162,11 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
       val nReachables = state.members.size - nUnreachables
       if (nReachables < quorum) {
         // We're on the wrong side -- kill ourselves!
-        QLog.spew(s"SBR: quorum is $quorum, and we can only see $nReachables, so I'm shooting myself in the head!")
+        logInfo(s"SBR: quorum is $quorum, and we can only see $nReachables, so I'm shooting myself in the head!")
         app.stop()
       } else {
         // We can still see quorum, so down the unreachable Member
-        QLog.spew(s"SBR: quorum is $quorum, and I can still see $nReachables, so downing $mem")
+        logInfo(s"SBR: quorum is $quorum, and I can still see $nReachables, so downing $mem")
         Cluster(context.system).down(mem.address)
       }
     }
@@ -200,11 +201,11 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
     // of the world:
     case CheckShardAssignment(id) => {
       if (_shardId.map(_ == id).getOrElse(false)) {
-        QLog.spew(s"QuerkiNodeManager.CheckShardAssignment($id) Confirmed")
-        sender ! ConfirmShardAssignment(self)
+        logInfo(s"QuerkiNodeManager.CheckShardAssignment($id) Confirmed")
+        sender() ! ConfirmShardAssignment(self)
       } else {
-        QLog.spew(s"QuerkiNodeManager.CheckShardAssignment($id) Refuted -- actually ${_shardId}")
-        sender ! RefuteShardAssignment(self)
+        logInfo(s"QuerkiNodeManager.CheckShardAssignment($id) Refuted -- actually ${_shardId}")
+        sender() ! RefuteShardAssignment(self)
       }
     }
 
@@ -214,7 +215,7 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
      * Cluster Events
      */
     case s @ CurrentClusterState(mem, unreachable, seenBy, leader, roleLeaderMap) => {
-      QLog.spew(s"CurrentClusterState = $s")
+      logTrace(s"CurrentClusterState = $s")
       setState(s)
     }
 
@@ -235,11 +236,11 @@ class QuerkiNodeManager(implicit val ecology: Ecology)
     }
 
     case HandleUnreachable(member) => {
-      QLog.spew(s"Member $member is persistently unreachable, so invoking Split-Brain!")
+      logInfo(s"Member $member is persistently unreachable, so invoking Split-Brain!")
       resolveSplit(member)
     }
 
-    case QuerkiNodeManager.RequestState => sender ! _clusterState
+    case QuerkiNodeManager.RequestState => sender() ! _clusterState
   }
 }
 

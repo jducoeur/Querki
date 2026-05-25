@@ -2,8 +2,6 @@ package querki.qtext
 
 import querki.test._
 
-import org.scalatest.FlatSpec
-
 class HtmlTest extends QuerkiTests with Transformer with MainDecorator {
   "Simple, legal XHTML fragments" should {
     "parse cleanly" in {

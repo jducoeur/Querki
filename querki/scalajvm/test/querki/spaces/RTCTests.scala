@@ -119,7 +119,7 @@ class RTCTests extends QuerkiTests {
      * Given an RM from some operation, convert it to the prevailing RequestTC type so
      * we can work with it.
      */
-    implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+    implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
     def double(foo: Int): RM[Int] = {
       if (foo < 0)

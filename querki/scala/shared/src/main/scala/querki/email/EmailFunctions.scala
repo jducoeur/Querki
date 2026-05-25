@@ -2,6 +2,8 @@ package querki.email
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import models.Wikitext
 import querki.data.TOID
 
@@ -38,9 +40,17 @@ object EmailFunctions {
     desc: String
   )
 
+  object UnsubOption {
+    implicit val rw: RW[UnsubOption] = macroRW
+  }
+
   case class UnsubPageInfo(
     identityId: TOID,
     emailInfo: Wikitext,
     options: Seq[UnsubOption]
   )
+
+  object UnsubPageInfo {
+    implicit val rw: RW[UnsubPageInfo] = macroRW
+  }
 }

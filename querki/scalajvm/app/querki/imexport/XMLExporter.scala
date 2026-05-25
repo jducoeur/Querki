@@ -1,8 +1,8 @@
 package querki.imexport
 
+import scala.language.existentials
+
 import scalatags.Text.short._
-import scalatags.generic
-import scalatags.text._
 
 import models._
 
@@ -30,12 +30,12 @@ private[imexport] class XMLExporter(implicit val ecology: Ecology) extends Ecolo
   lazy val SystemSpace = System.State
   lazy val systemId = SystemSpace.id
 
-  implicit def PropNameOrdering = PropListManager.PropNameOrdering
+  implicit def PropNameOrdering: Ordering[Property[_, _]] = PropListManager.PropNameOrdering
 
   import QuerkiML._
-  implicit def tidAttr = new ThingAttr
-  implicit def asOIDAttr = new AsOIDAttr
-  implicit def oidAttr = new OIDAttr
+  implicit def tidAttr: ThingAttr = new ThingAttr
+  implicit def asOIDAttr: AsOIDAttr = new AsOIDAttr
+  implicit def oidAttr: OIDAttr = new OIDAttr
 
   final val standardSpaceNS = "https://www.querki.net/"
 

@@ -149,7 +149,7 @@ class FunctionEcot(e: Ecology) extends QuerkiEcot(e) with Functions {
     val impls =
       state.allProps.values.filter(_.model == ImplementationModelOID) ++
         state.allThings.filter(_.model == ImplementationModelOID)
-    (FunctionImpls(Map.empty) /: impls) { (impls, prop) =>
+    impls.foldLeft(FunctionImpls(Map.empty)) { (impls, prop) =>
       val propInfo = for {
         implementsPV <- prop.getPropOpt(ImplementsFunctionProp)(state)
         implements <- implementsPV.firstOpt

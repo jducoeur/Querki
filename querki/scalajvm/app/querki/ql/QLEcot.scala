@@ -14,8 +14,6 @@ import models._
 import querki.basic.PlainText
 import querki.core.{IsTextType, QLText}
 import querki.html.QHtml
-import querki.tools.ProfileHandle
-import querki.util.{QLog, UnexpectedPublicException}
 import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, QValue, SpaceState}
 
 object MOIDs extends EcotIds(24) {
@@ -197,6 +195,10 @@ class QLEcot(e: Ecology)
   lazy val EmptyListCutColl = new QListBase(UnknownOID, emptyProps) {
     def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing
   }
+  // TODO: this import is necessary because the following line calls EmptyListCutColl(), which is added structurally
+  // rather than as any sort of interface. That's probably inefficient, and certainly is poor style. Make sure there
+  // is adequate testing around it, and rewrite so that we're not making this reflective call.
+  import scala.language.reflectiveCalls
   def EmptyListCut() = EmptyListCutColl()
 
   object ErrorTextType
@@ -215,7 +217,7 @@ class QLEcot(e: Ecology)
     try {
       throw new Exception("dummy")
     } catch {
-      case e: Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")
+      case e: Exception => logError(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")
     }
     WarningValue(msg)
   }
@@ -236,7 +238,7 @@ class QLEcot(e: Ecology)
   // bindings referred to in it, so we know what we need to serialize. Conceptually it's a
   // typeclass, but since we only need it here, I'm not bothering with the TC boilerplate.
   private def findBindingsInSeq[T](ts: Seq[T])(getter: T => Set[String]): Set[String] = {
-    (Set.empty[String] /: ts) { (set, t) =>
+    ts.foldLeft(Set.empty[String]) { (set, t) =>
       set ++ getter(t)
     }
   }
@@ -349,7 +351,7 @@ class QLEcot(e: Ecology)
         inv: Invocation,
         boundNames: Set[String]
       ): Map[String, QValue] = {
-        (Map.empty[String, QValue] /: boundNames) { (m, name) =>
+        boundNames.foldLeft(Map.empty[String, QValue]) { (m, name) =>
           findBindingValue(inv, name).map(v => m + (name -> v)).getOrElse(m)
         }
       }

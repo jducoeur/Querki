@@ -1,5 +1,7 @@
 package querki.api
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data.UserInfo
 
 /**
@@ -21,3 +23,7 @@ case class ResponseWrapper(
   currentUser: Option[UserInfo],
   payload: String
 )
+
+object ResponseWrapper {
+  implicit val rw: RW[ResponseWrapper] = macroRW
+}

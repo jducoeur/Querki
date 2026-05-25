@@ -2,8 +2,6 @@ package querki.imexport.mysql
 
 import fastparse._, NoWhitespace._
 
-import querki.globals._
-
 object MySQLParse {
   sealed trait Stmt
 

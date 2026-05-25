@@ -1,6 +1,6 @@
 package querki.editing
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.gadgets._
 import org.querki.jquery._
 import scalatags.JsDom.all._
@@ -8,7 +8,6 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.display.input.InputGadget
-import querki.display.rx._
 
 class DeriveNameCheck(valEditor: PropValueEditor)(implicit e: Ecology)
   extends InputGadget[dom.HTMLDivElement](e)

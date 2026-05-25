@@ -8,7 +8,6 @@ import Replicator._
 
 import models._
 
-import querki.ecology._
 import querki.globals._
 import querki.identity.{User, UserId}
 import querki.notifications.{AllUsers}
@@ -75,9 +74,9 @@ private[admin] class AdminStatusWorker(val ecology: Ecology) extends Actor with 
   def receive = {
     // TODO: this needs to be rewritten, probably using DistributedPubSub?
     case req @ GetSpacesStatus(requester) => {
-      statusRequestFrom = sender
+      statusRequestFrom = sender()
       statuses = Seq.empty
-      context.system.scheduler.scheduleOnce(3 seconds, self, StatusTimeout)
+      context.system.scheduler.scheduleOnce(3.seconds, self, StatusTimeout)
       SpaceOps.spaceManager ! req
     }
 
@@ -125,7 +124,7 @@ private[admin] class AdminUserIdFetcher(val ecology: Ecology) extends Actor with
   def receive = {
     case GetAllUserIdsForAdmin(req) => req.requireAdmin {
         val userIds = UserAccess.getAllIdsForAdmin(req)
-        sender ! AllUserIds(userIds)
+        sender() ! AllUserIds(userIds)
         context.stop(self)
       }
   }

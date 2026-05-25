@@ -651,7 +651,7 @@ Wild!, 19, """.stripReturns)
     }
 
     "handle sorting on fields of complex types" in {
-      import querki.types.{ComplexSpace, SimplePropertyBundle}
+      import querki.types.{SimplePropertyBundle}
 
       class ComplexSpaceWithList extends CommonSpace {
         val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number in Model")

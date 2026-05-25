@@ -3,7 +3,6 @@ package querki.spaces
 import scala.util.{Failure, Success}
 
 import akka.actor._
-import akka.event.LoggingReceive
 import akka.pattern.pipe
 
 import org.querki.requester._
@@ -19,8 +18,9 @@ private[spaces] class SpaceMembersActor(
 ) extends Actor
      with Requester
      with Stash
-     with EcologyMember {
-  implicit val ecology = e
+     with EcologyMember
+     with QLogging {
+  implicit val ecology: Ecology = e
 
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Person = interface[querki.identity.Person]
@@ -92,7 +92,7 @@ private[spaces] class SpaceMembersActor(
             val inviteRM = loopback(Person.inviteMembers(rc, inviteeEmails, collabs, state))
             inviteRM.onComplete {
               case Success(_)  =>
-              case Failure(ex) => QLog.error("Got an Exception while processing InviteRequest", ex)
+              case Failure(ex) => logError("Got an Exception while processing InviteRequest", ex)
             }
             for {
               result <- inviteRM
@@ -104,7 +104,7 @@ private[spaces] class SpaceMembersActor(
           tracing.trace(s"RemoveMembers($memberIds)")
           // Belt and suspenders check:
           if (AccessControl.isManager(rc.requesterOrAnon, state)) {
-            val resultRM = (RequestM.successful(true) /: memberIds) { (last, memberId) =>
+            val resultRM = memberIds.foldLeft(RequestM.successful(true)) { (last, memberId) =>
               last.flatMap { soFar =>
                 // Accumulate the results: return true iff all of these return true.
                 // Do we care about these results? Not sure, but QI.9v5kfif was what

@@ -11,22 +11,16 @@ import org.querki.requester._
 import models._
 
 import querki.api.commonName
-import querki.core.QLText
-import querki.ecology._
 import querki.email.emailSepChar
 import querki.globals._
-import querki.ql.QLPhrase
-import querki.spaces.{CacheUpdate, SpaceManager}
+import querki.spaces.{CacheUpdate}
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
-import querki.util.{Contributor, Hasher, Publisher, QLogFuture, SignedHash}
+import querki.util.{Contributor, Hasher, Publisher, SignedHash}
 import querki.values._
 
-import querki.identity._
 import querki.email.EmailAddress
 
-import controllers.{PageEventManager, PlayRequestContext}
-
-import play.api.Logger
+import controllers.{PlayRequestContext}
 
 import IdentityPersistence._
 
@@ -45,8 +39,8 @@ private[identity] case class CachedPeople(
   state: SpaceState
 ) extends EcologyMember {
 
-  implicit val s = state
-  implicit val e = ecology
+  implicit val s: SpaceState = state
+  implicit val e: Ecology = ecology
 
   lazy val Person = interface[Person]
 
@@ -58,7 +52,7 @@ private[identity] case class CachedPeople(
   }
 
   lazy val (allPeopleById, allPeopleByIdentityId) =
-    ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true, false)) {
+    state.descendants(PersonOID, false, true, false).foldLeft((Map.empty[OID, Thing], Map.empty[IdentityId, Thing])) {
       (maps, person) =>
         val (personIdMap, identityIdMap) = maps
         val newPersonIdMap = personIdMap + (person.id -> person)
@@ -108,12 +102,12 @@ class PersonModule(e: Ecology)
 
   lazy val prof = Profiler.createHandle("Person")
 
-  override def init = {
+  override def init() = {
     PageEventManager.requestReceived += InviteLoginChecker
     SpaceChangeManager.updateStateCache += this
   }
 
-  override def term = {
+  override def term() = {
     PageEventManager.requestReceived -= InviteLoginChecker
     SpaceChangeManager.updateStateCache -= this
   }
@@ -529,7 +523,7 @@ class PersonModule(e: Ecology)
     originalState: SpaceState
   ): Future[InvitationResult] = {
     // TODO: this is much too arbitrary:
-    implicit val timeout = Timeout(30 seconds)
+    implicit val timeout = Timeout(30.seconds)
 
     implicit val s = originalState
 
@@ -554,7 +548,7 @@ class PersonModule(e: Ecology)
     // Add Person records for anybody who isn't already in this Space, and return the resulting
     // SpaceState:
     def createPersons(identities: Iterable[FullIdentity]): Future[SpaceState] = {
-      (Future.successful(originalState) /: identities) { (stateFut, identity) =>
+      identities.foldLeft(Future.successful(originalState)) { (stateFut, identity) =>
         stateFut.flatMap { state =>
           val propMap =
             toProps(
@@ -716,7 +710,7 @@ class PersonModule(e: Ecology)
   ): Future[Option[PublicException]] = {
     val roleId = role.id
     // TODO: this is much too arbitrary:
-    implicit val timeout = Timeout(30 seconds)
+    implicit val timeout = Timeout(30.seconds)
     val identity = rc.requester.get.mainIdentity
     withCache { cache =>
       cache.localPerson(identity.id) match {
@@ -794,7 +788,7 @@ class PersonModule(e: Ecology)
             } yield acceptOpenInvitationForRole(rc, role)
 
             resultOpt.getOrElse {
-              QLog.error(s"Shared Invite $invite somehow doesn't have a linked Role!")
+              logError(s"Shared Invite $invite somehow doesn't have a linked Role!")
               fail
             }
           }
@@ -803,7 +797,7 @@ class PersonModule(e: Ecology)
           acceptOpenInvitationForRole(rc, invite)
         } else {
           // WTF? This shouldn't be possible, even when hacked:
-          QLog.error(s"Shared Invite $invite is of some unrecognized type! How did this get signed?")
+          logError(s"Shared Invite $invite is of some unrecognized type! How did this get signed?")
           fail
         }
       }

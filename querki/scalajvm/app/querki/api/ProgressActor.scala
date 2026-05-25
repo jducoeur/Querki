@@ -1,7 +1,5 @@
 package querki.api
 
-import scala.concurrent.Future
-
 import akka.actor._
 
 import querki.globals._
@@ -15,7 +13,7 @@ import querki.globals._
  *
  * @author jducoeur
  */
-trait ProgressActor { asActor: Actor =>
+trait ProgressActor extends QLogging { asActor: Actor =>
   import ProgressActor._
 
   /**
@@ -37,7 +35,7 @@ trait ProgressActor { asActor: Actor =>
 
   def failWith(msg: String) = {
     failed = true
-    QLog.error(msg)
+    logError(msg)
     throw new Exception(msg)
   }
 
@@ -56,7 +54,7 @@ trait ProgressActor { asActor: Actor =>
 
     case GetProgress => {
       val percent = calcProgress()
-      sender ! OperationProgress(phaseDescription, percent, (failed || percent >= 100), failed)
+      sender() ! OperationProgress(phaseDescription, percent, (failed || percent >= 100), failed)
     }
 
     case CompletionAcknowledged => context.stop(context.self)

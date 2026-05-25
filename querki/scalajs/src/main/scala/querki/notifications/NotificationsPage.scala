@@ -1,13 +1,12 @@
 package querki.notifications
 
-import scala.scalajs.js
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all.{input => _, _}
 
 import autowire._
 
-import org.widok.moment._
+import moment._
 
 import querki.globals._
 
@@ -71,7 +70,7 @@ class NotificationsPage(params: ParamMap)(implicit val ecology: Ecology) extends
                   "From ",
                   span(cls := "noteSender", note.sender.name),
                   " ",
-                  span(cls := "noteTime", Moment(note.sentTime).calendar())
+                  span(cls := "noteTime", Moment(note.sentTime.toDouble).calendar())
                 ),
                 new QText(note.rendered.headline, cls := "noteHeadline"),
                 new QText(note.rendered.content, cls := "noteContent")

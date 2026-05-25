@@ -70,7 +70,7 @@ class QLTree(implicit e: Ecology) extends HookedGadget[dom.html.Div](e) with Que
 
     val qlNode = span.find("._treeQL")
     val withData =
-      qlNode.mapElems(qle => $(qle).text).headOption match {
+      qlNode.mapElems(qle => $(qle).text()).headOption match {
         case Some(ql) => node.children(true).data(NodeData(Some(ql), tid))
         case None     => node.data(NodeData(None, tid))
       }
@@ -97,7 +97,7 @@ class QLTree(implicit e: Ecology) extends HookedGadget[dom.html.Div](e) with Que
     $(tree).jsTree(JsTreeOptions.core(JsTreeCore.
       // We are turning off workers, because they are causing weird crashes, I think:
     worker(false).data({ (asNode: JsTreeNode, cb: js.Function1[js.Array[JsTreeNode], Any]) =>
-      if (asNode.id == "#") {
+      if (asNode.id.isDefined && (asNode.id.get == "#")) {
         cb(js.Array(node))
       } else {
         val nodeData = asNode.data.asInstanceOf[NodeData]

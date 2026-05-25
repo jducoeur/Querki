@@ -3,16 +3,13 @@ package querki.spaces
 import models.Kind.Kind
 import models.{Kind, ModelPersistence, OID, ThingState}
 import querki.basic.Basic
-import querki.ecology.{EcologyInterface, QuerkiEcot}
-import querki.globals.{spew, Ecology, SpaceState}
+import querki.globals.{Ecology, SpaceState}
 import querki.identity.{Person, User}
 import querki.publication.{CurrentPublicationState, Publication}
 import querki.security.AccessControl
 import querki.spaces.SpaceMessagePersistence._
-import querki.spaces.messages.CurrentState
 import querki.system.System
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.util.QLog
 
 /**
  * This is a home for pure functions that take a Space and some sort of events, and return an updated Space.
@@ -86,7 +83,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     AccessControl: AccessControl
   ): Option[SpaceState] = {
     // Run through all of the events in changes. If all of the evolutions produce Some, we win:
-    (Option(oldState) /: events) { (curStateOpt, event) =>
+    events.foldLeft(Option(oldState)) { (curStateOpt, event) =>
       curStateOpt.flatMap(curState => evolveForEvent(curState, user, fullState, event, AccessControl))
     }
   }
@@ -186,14 +183,14 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
                 Some(createPure(req, kind, id, thing.model, thing.props, modTime)(prevState))
               } else {
                 // This shouldn't be possible:
-                QLog.error(s"Logic error processing $event!")
+                logError(s"Logic error processing $event!")
                 None
               }
             } else
               None
           }
           case None => {
-            QLog.error(
+            logError(
               s"Found a DHModifyThing for unknown Thing $id in Space ${fullState.displayName} (${fullState.id})!"
             )
             None
@@ -233,7 +230,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     // If we are unit-testing, notify the tests that we are doing a full evolution:
     ecology.api[querki.spaces.SpaceOps].notifyFullEvolution()
     // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. How can we make this better?
-    (rs /: rs.things) { (curState, thingPair) =>
+    rs.things.foldLeft(rs) { (curState, thingPair) =>
       val (thingId, thing) = thingPair
       // Note that we need to pass rs into canRead(), not curState. That is because curState can
       // be in an inconsistent state while we're in the middle of all this. For example, we may
@@ -259,7 +256,7 @@ trait SpaceEvolution extends SpacePure with ModelPersistence {
     state: SpaceState,
     userValues: Seq[OneUserValue]
   ): SpaceState = {
-    (state /: userValues) { (curState, uv) =>
+    userValues.foldLeft(state) { (curState, uv) =>
       if (uv.thingId == curState.id) {
         // We're enhancing the Space itself:
         curState.copy(pf = (curState.props + (uv.propId -> uv.v)))

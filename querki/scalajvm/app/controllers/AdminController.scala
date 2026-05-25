@@ -8,23 +8,25 @@ import akka.actor.ActorRef
 import akka.pattern._
 import akka.util.Timeout
 import models.{Kind, OID, Thing, ThingId}
-import play.api.mvc.{AnyContent, BodyParser, BodyParsers, EssentialAction, Result}
-import play.twirl.api.Html
+import play.api.mvc.{AnyContent, ControllerComponents, EssentialAction, Result}
 import querki.data.TID
 import querki.globals.Future
 import querki.history.HistoryFunctions._
-import querki.history.{HistoryFunctions, SpaceHistory}
+import querki.history.{SpaceHistory}
 import querki.spaces.messages.CurrentState
 import querki.util.QLog
 
 import scala.util.Random
 
-class AdminController @Inject() (val appProv: Provider[play.api.Application]) extends ApplicationBase {
+class AdminController @Inject() (
+  val appProv: Provider[play.api.Application],
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase {
 
   lazy val System = interface[querki.system.System]
 
   /**
-   * Extended version of [[withUser()]], enforcing that this entry point may only be called by a logged-in Admin.
+   * Extended version of withUser(), enforcing that this entry point may only be called by a logged-in Admin.
    */
   def withAdmin(
     f: PlayRequestContextFull[AnyContent] => Future[Result]
@@ -70,7 +72,7 @@ class AdminController @Inject() (val appProv: Provider[play.api.Application]) ex
         }
       }.recover {
         case ex: Throwable => {
-          QLog.error(s"Unable to generate full space history for $spaceIdStr", ex)
+          logError(s"Unable to generate full space history for $spaceIdStr", ex)
           // If something goes wrong, like a timeout, make sure we still stop the actor:
           system.stop(historyRef)
           InternalServerError

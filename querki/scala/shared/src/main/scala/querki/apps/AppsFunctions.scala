@@ -2,7 +2,8 @@ package querki.apps
 
 import scala.concurrent.Future
 
-import querki.api.OperationHandle
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data._
 import querki.time.Common.Timestamp
 
@@ -48,22 +49,22 @@ trait AppsFunctions {
 
 object AppsFunctions {
 
-  case class ExtractableModelInfo(
-    oid: TID,
-    linkName: Option[String],
-    displayName: String,
-    canExtract: Boolean,
-    extractInstancesByDefault: Boolean
-  ) extends BasicThingInfo
-
   case class AppState(
     version: Long,
     when: Timestamp
   )
+
+  object AppState {
+    implicit val rw: RW[AppState] = macroRW
+  }
 
   case class AppInfo(
     appId: TID,
     inUse: AppState,
     nowAt: AppState
   )
+
+  object AppInfo {
+    implicit val rw: RW[AppInfo] = macroRW
+  }
 }

@@ -1,9 +1,7 @@
 package querki.test.mid
 
-import cats._
 import cats.data._
 import cats.effect.{ContextShift, IO}
-import cats.implicits._
 import autowire._
 import play.api.mvc.Session
 import querki.api._

@@ -15,22 +15,22 @@ trait FormFuncs {
 
   def getRequest =
     FakeRequest()
-      .copyFakeRequest(method = "GET")
+      .withMethod("GET")
 
   def sessionRequest(implicit session: Session) =
     FakeRequest()
-      .copyFakeRequest(method = "GET")
+      .withMethod("GET")
       .withSession(session.data.toSeq: _*)
 
   def formRequest(formData: (String, String)*) = {
     FakeRequest()
-      .copyFakeRequest(method = "POST")
+      .withMethod("POST")
       .withFormUrlEncodedBody(formData: _*)
   }
 
   def sessionFormRequest(formData: (String, String)*)(implicit session: Session) = {
     FakeRequest()
-      .copyFakeRequest(method = "POST")
+      .withMethod("POST")
       .withSession(session.data.toSeq: _*)
       .withFormUrlEncodedBody(formData: _*)
   }

@@ -2,6 +2,8 @@ package querki.editing
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import models.Wikitext
 
 import querki.api.OperationHandle
@@ -128,10 +130,27 @@ object EditFunctions {
 
   case class MultiplePropertyChanges(changes: Seq[PropertyChange]) extends PropertyChange
 
+  object PropertyChange {
+    implicit val cpvrw: RW[ChangePropertyValue] = macroRW
+    implicit val mlirw: RW[MoveListItem] = macroRW
+    implicit val alirw: RW[AddListItem] = macroRW
+    implicit val dlirw: RW[DeleteListItem] = macroRW
+    implicit val atsrw: RW[AddToSet] = macroRW
+    implicit val rfsrw: RW[RemoveFromSet] = macroRW
+    implicit val mpcrw: RW[MultiplePropertyChanges] = macroRW
+    implicit val rw: RW[PropertyChange] = macroRW
+  }
+
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
   // Client-only, used when we are not actually making changes now; never returned from the server.
   case object PropertyNotChangedYet extends PropertyChangeResponse
+
+  object PropertyChangeResponse {
+    implicit val pcrw: RW[PropertyChanged.type] = macroRW
+    implicit val pncyrw: RW[PropertyNotChangedYet.type] = macroRW
+    implicit val rw: RW[PropertyChangeResponse] = macroRW
+  }
 
   case class FullEditInfo(
     instancePropIds: Seq[TID],
@@ -139,6 +158,10 @@ object EditFunctions {
     derivingName: Boolean,
     propInfos: Seq[PropEditInfo]
   )
+
+  object FullEditInfo {
+    implicit val rw: RW[FullEditInfo] = macroRW
+  }
 
   case class PropEditInfo(
     propInfo: PropInfo,
@@ -151,8 +174,16 @@ object EditFunctions {
     editor: String
   )
 
+  object PropEditInfo {
+    implicit val rw: RW[PropEditInfo] = macroRW
+  }
+
   case class PropUsage(
     nModels: Int,
     nInstances: Int
   )
+
+  object PropUsage {
+    implicit val rw: RW[PropUsage] = macroRW
+  }
 }

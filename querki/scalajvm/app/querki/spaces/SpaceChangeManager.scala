@@ -1,17 +1,11 @@
 package querki.spaces
 
-import scala.concurrent.Future
-
 import akka.actor.Actor
-
-import org.querki.requester._
 
 import models._
 
 import querki.ecology._
-import querki.identity.User
 import querki.util._
-import querki.values._
 
 object SpaceChangeMOIDs extends EcotIds(32)
 

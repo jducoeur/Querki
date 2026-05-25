@@ -1,23 +1,22 @@
 package querki.uservalues
 
+import scala.language.existentials
+
 import scala.concurrent.duration._
 
-import akka.actor.Actor.Receive
 import akka.actor.Props
-import akka.event.LoggingReceive
 import akka.pattern._
 import akka.util.Timeout
 
 import models._
 
-import querki.ecology._
+import querki.ecology.{EcotIds}
 import querki.globals._
-import querki.ql.InvocationValue
 import querki.spaces._
 import querki.spaces.messages.{SpacePluginMsg, SpaceSubsystemRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.uservalues.PersistMessages._
-import querki.util.{ActorHelpers, Contributor, Publisher, QLog, UnexpectedPublicException}
+import querki.util.{ActorHelpers, Contributor, Publisher}
 import querki.values.{QLContext, SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
@@ -60,12 +59,12 @@ class UserValueEcot(e: Ecology)
 
   lazy val IdentityType = IdentityAccess.IdentityType
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.updateStateCache += UserValueCacheUpdater
     SpaceChangeManager.registerPluginProvider(this)
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.updateStateCache -= UserValueCacheUpdater
   }
 
@@ -106,7 +105,7 @@ class UserValueEcot(e: Ecology)
   def isUserValueProp(propId: OID)(implicit state: SpaceState): Boolean = {
     state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.userValueProps)) match {
       case Some(rawEntry) => { rawEntry.asInstanceOf[Set[OID]].contains(propId) }
-      case None           => { QLog.error("UserValueEcot couldn't find its state cache in Space " + state.id); false }
+      case None           => { logError("UserValueEcot couldn't find its state cache in Space " + state.id); false }
     }
   }
 
@@ -311,7 +310,7 @@ class UserValueEcot(e: Ecology)
   ) {
 
     override def qlApply(inv: Invocation): QFut = {
-      implicit val timeout = Timeout(10 seconds)
+      implicit val timeout = Timeout(10.seconds)
 
       for {
         prop <- inv.preferDefiningContext.definingContextAsProperty

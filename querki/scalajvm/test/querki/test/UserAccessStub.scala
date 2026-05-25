@@ -9,7 +9,6 @@ import models.ThingId
 
 import querki.ecology._
 import querki.identity._
-import querki.values.SpaceState
 
 /**
  * Private trait, used to set up the "user database" for testing.
@@ -19,7 +18,7 @@ trait UserTesting extends EcologyInterface {
   /**
    * Add the "users" defined in this Space.
    */
-  def prepSpace(space: TestSpace)
+  def prepSpace(space: TestSpace): Unit
 }
 
 class UserAccessStub(e: Ecology) extends QuerkiEcot(e) with UserAccess with UserTesting {

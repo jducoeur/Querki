@@ -1,7 +1,7 @@
 package querki.display.input
 
 import scala.scalajs.js
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -136,7 +136,7 @@ class SortableListGadget(implicit e: Ecology) extends InputGadget[dom.HTMLUListE
     numberItems()
     updatePage()
     // Do our best to set focus to the first relevant field of the new element:
-    $(newLiElem).find(".propEditor,input,textarea").first.focus()
+    $(newLiElem).find(".propEditor,input,textarea").first().focus()
     Gadgets.createGadgets(newLiElem)
     Gadgets.hookPendingGadgets()
     saveChange({ path => AddListItem(path) }).foreach { response =>
@@ -176,7 +176,7 @@ class SortableListGadget(implicit e: Ecology) extends InputGadget[dom.HTMLUListE
       // Stop gets called after a drag-and-drop event:
       stop({ (evt: JQueryEventObject, ui: SortChangeUI) =>
         val item = ui.item.get
-        val sortList = item.parent
+        val sortList = item.parent()
         val oldIndex = item.data("index").asInstanceOf[Int]
         val newIndex = sortList.children("li").index(item)
         saveChange({ path => MoveListItem(path, oldIndex, newIndex) })

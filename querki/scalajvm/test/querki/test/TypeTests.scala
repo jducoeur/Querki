@@ -1,14 +1,12 @@
 package querki.test
 
-import querki.globals._
-
 class TypeTests extends QuerkiTests {
   lazy val TextType = Core.TextType
 
   "Set of Text" should {
     "render appropriately" in {
       class TSpace extends CommonSpace {
-        val textSetProp = new TestProperty(TextType, QSet, "My Text Set")
+        val textSetProp = new TestProperty(this.TextType, QSet, "My Text Set")
 
         val myThing = new SimpleTestThing(
           "My Thing",
@@ -48,7 +46,7 @@ class TypeTests extends QuerkiTests {
   "List of Text" should {
     "render appropriately" in {
       class TSpace extends CommonSpace {
-        val textListProp = new TestProperty(TextType, QList, "My Text List")
+        val textListProp = new TestProperty(this.TextType, QList, "My Text List")
 
         val myThing =
           new SimpleTestThing("My Thing", textListProp("First Value", "Second Value", "Third Value", "Fourth Value"))

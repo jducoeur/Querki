@@ -1,6 +1,5 @@
 package querki.spaces.messages
 
-import language.implicitConversions
 import models._
 import Kind._
 import models.{OID, ThingId}
@@ -241,7 +240,6 @@ object SpaceError {
   val UnknownName = "Thing.find.unknownName"
   val UnknownPath = "Thing.find.noSuch"
 }
-import SpaceError._
 
 // General message published from a Space to its subscribers. Possibly still a bit half-baked, but is likely to become
 // important.

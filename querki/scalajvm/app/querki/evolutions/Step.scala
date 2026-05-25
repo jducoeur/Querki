@@ -1,17 +1,14 @@
 package querki.evolutions
 
 import anorm._
-import anorm.SqlParser.{int, long}
+import anorm.SqlParser.int
+
 import java.sql.Connection
-import play.api.db._
-
 import querki.ecology._
-
 import models._
-
 import querki.db._
 import querki.db.ShardKind._
-import querki.util.Config
+import querki.util.{Config, QLogging}
 import querki.util.SqlHelpers._
 
 /**
@@ -21,7 +18,7 @@ import querki.util.SqlHelpers._
  * By and large, a Step will specify the version, and fill in doEvolve(), which makes
  * the actual changes to the Space table.
  */
-trait Step extends EcologyMember {
+trait Step extends EcologyMember with QLogging {
 
   /**
    * Each Step must specify this version stamp, which must be unique!
@@ -60,7 +57,7 @@ trait Step extends EcologyMember {
     QDB(System) { implicit conn =>
       SQL("""
           UPDATE Spaces SET version = {version} WHERE id = {id}
-          """).on("version" -> version, "id" -> spaceId.raw).executeUpdate
+          """).on("version" -> version, "id" -> spaceId.raw).executeUpdate()
     }
   }
 
@@ -79,14 +76,14 @@ trait Step extends EcologyMember {
           CREATE TABLE {bname} LIKE {tname}
           """,
         info.version
-      ).executeUpdate
+      ).executeUpdate()
       SpacePersistence.SpaceSQL(
         info.id,
         """
           INSERT {bname} SELECT * FROM {tname}
           """,
         info.version
-      ).executeUpdate
+      ).executeUpdate()
     }
   }
 

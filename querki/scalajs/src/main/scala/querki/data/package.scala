@@ -2,7 +2,7 @@ package querki
 
 import scala.concurrent.Future
 
-import querki.globals._
+import querki.globals.{TID => _, _}
 
 import querki.api.StandardThings
 
@@ -90,9 +90,9 @@ package object data {
    * This trait is used to store the data we fetch from the server.
    */
   trait DataSetting extends EcologyInterface {
-    def unpickleRequest(pickled: String)
-    def setThing(thing: Option[ThingInfo])
-    def setModel(model: Option[ThingInfo])
-    def setSpace(space: Option[SpaceInfo])
+    def unpickleRequest(pickled: String): Unit
+    def setThing(thing: Option[ThingInfo]): Unit
+    def setModel(model: Option[ThingInfo]): Unit
+    def setSpace(space: Option[SpaceInfo]): Unit
   }
 }

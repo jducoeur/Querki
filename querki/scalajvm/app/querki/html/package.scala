@@ -6,10 +6,9 @@ import play.api.data.Form
 
 import scalatags.Text.TypedTag
 
-import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, PType, Property, Thing, ThingId, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, PType, Property, Thing, ThingId, Wikitext}
 
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
 import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}

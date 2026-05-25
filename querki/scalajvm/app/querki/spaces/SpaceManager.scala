@@ -1,21 +1,16 @@
 package querki.spaces
 
-import language.postfixOps
 import scala.util._
 
 import akka.actor._
 
 import org.querki.requester._
 
-import models._
 import messages._
 
 import querki.cluster.OIDAllocator._
 import querki.core.NameUtils
-import querki.ecology._
 import querki.globals._
-import querki.identity.User
-import querki.spaces._
 import querki.util.UnexpectedPublicException
 
 import PersistMessages._
@@ -31,9 +26,10 @@ class SpaceManager(
 ) extends Actor
      with Requester
      with EcologyMember
-     with SpaceCreator {
+     with SpaceCreator
+     with QLogging {
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   private lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SpaceOps = interface[SpaceOps]
@@ -55,7 +51,7 @@ class SpaceManager(
 //        // Each Space responds for itself:
 //        children.foreach(space => space.forward(req))
 //      } else {
-//        QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
+//        logError("Illegal request for GetSpacesStatus, from user " + requester.id)
 //      }
 //    }
 
@@ -63,7 +59,7 @@ class SpaceManager(
       if (requester.isAdmin) {
         persister.forward(req)
       } else {
-        QLog.error("Illegal request for GetSpaceCount, from user " + requester.id)
+        logError("Illegal request for GetSpaceCount, from user " + requester.id)
       }
     }
 

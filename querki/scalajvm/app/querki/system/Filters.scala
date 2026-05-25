@@ -7,7 +7,8 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.http.HttpFilters
 import play.filters.gzip.GzipFilter
-import querki.globals._
+import querki.globals.{execContext => _, _}
+import querki.identity.usernameSessionKey
 
 class Filters @Inject() (
   gzip: GzipFilter,
@@ -36,9 +37,10 @@ class LoggingFilter @Inject() (
   ec: ExecutionContext,
   ecoProv: EcologyProvider
 ) extends Filter
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
 
-  implicit lazy val ecology = ecoProv.ecology
+  implicit lazy val ecology: Ecology = ecoProv.ecology
 
   lazy val logAllRequests = Config.getBoolean("querki.test.logAllRequests", false)
 
@@ -54,13 +56,13 @@ class LoggingFilter @Inject() (
       nextRequestId += 1
       val reqId = nextRequestId
       // Log the beginning of the request...
-      QLog.info(s"+++ $reqId -- ${rh.method} ${rh.uri} from ${rh.session.get(Security.username)}...")
+      logInfo(s"+++ $reqId -- ${rh.method} ${rh.uri} from ${rh.session.get(usernameSessionKey)}...")
       val start = System.currentTimeMillis
 
       def logTime(result: Result): Result = {
         val time = System.currentTimeMillis - start
         // ... and (possibly asynchronously) the end...
-        QLog.info(s"... $reqId -- took ${time}ms and returned $result")
+        logInfo(s"... $reqId -- took ${time}ms and returned $result")
         result.withHeaders("Request-Time" -> time.toString)
       }
 
@@ -70,7 +72,7 @@ class LoggingFilter @Inject() (
         }
       } catch {
         case ex: Exception => {
-          QLog.error(s"!!! $reqId -- threw Exception", ex)
+          logError(s"!!! $reqId -- threw Exception", ex)
           throw ex
         }
       }
@@ -87,9 +89,10 @@ class RedirectFilter @Inject() (
   ec: ExecutionContext,
   ecoProv: EcologyProvider
 ) extends Filter
-     with EcologyMember {
+     with EcologyMember
+     with QLogging {
 
-  implicit lazy val ecology = ecoProv.ecology
+  implicit lazy val ecology: Ecology = ecoProv.ecology
 
   // Define a "bad" host and a "good" one, so we can redirect www.querki.net to just querki.net.
   // TODO: this is all kind of wretchedly typed. Config should return None, not empty String, if it is missing.
@@ -110,7 +113,7 @@ class RedirectFilter @Inject() (
     if (redirecting) {
       if (rh.domain == redirectFrom) {
         val newUri = rewriteUri(rh)
-        QLog.info(s"Redirecting ${rh.host}${rh.uri} to ${newUri}")
+        logInfo(s"Redirecting ${rh.host}${rh.uri} to ${newUri}")
         // Note that this is *extremely* crude -- it only deals with GETs correctly. But that should suffice for the
         // realistic use cases we are dealing with, and pushes the user over to the right pathway quickly.
         Future.successful(SeeOther(newUri))

@@ -3,25 +3,20 @@ package querki.apps
 import scala.scalajs.js
 import js.JSConverters._
 import org.scalajs.dom
-
 import scalatags.JsDom.all._
 import autowire._
 import rx._
-
 import org.querki.gadgets._
 import org.querki.jquery._
 import org.querki.facades.jstree._
-
 import querki.api.ThingFunctions
-import querki.data.{PropValInfo, ThingInfo}
+import querki.data.{ExtractableModelInfo, PropValInfo, ThingInfo}
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx._
 import QuerkiEmptyable._
 import querki.globals._
-import querki.pages.{IndexPage, Page, PageContents, ParamMap}
+import querki.pages.{Page, PageContents, ParamMap}
 import querki.util.InputUtils
-
-import AppsFunctions._
 
 /**
  * @author jducoeur
@@ -108,7 +103,7 @@ class ExtractAppPage(params: ParamMap)(implicit val ecology: Ecology) extends Pa
           p("When you have selected the elements you would like to bring into the App, press this button."),
           new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space", disabled := notReady)({ () =>
             val jq = $(extractTree.get.elem)
-            val selectedIds = jq.getSelectedIds.map(TID(_))
+            val selectedIds = jq.getSelectedIds.toSeq.map(TID(_))
             Client[AppsFunctions].extractApp(
               selectedIds,
               appNameInput.get.text.now,

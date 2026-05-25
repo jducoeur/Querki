@@ -3,7 +3,6 @@ package querki.photos
 import java.util.regex.Pattern
 
 import scala.scalajs.js
-import js.annotation.JSName
 import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.gadgets._
@@ -20,14 +19,13 @@ import querki.globals._
 
 import querki.comm._
 import querki.display.{HookedGadget, RawSpan}
-import querki.pages.Page
 
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have
 // a "files" member, but it does in the case of a file input field
 // TODO: submit this as a PR to scala-js-dom:
 @js.native
 trait FileTarget extends js.Object {
-  def files: dom.raw.FileList = js.native
+  def files: dom.FileList = js.native
 }
 
 object FileTarget {
@@ -152,7 +150,7 @@ class PhotoInputButton(implicit e: Ecology) extends HookedGadget[dom.html.Input]
       val file = evt.target.files(0)
       if (Pattern.matches("image.*", file.`type`)) {
         val reader = new dom.FileReader()
-        reader.onload = { uievt: dom.UIEvent => }
+        reader.onload = { uievt: dom.ProgressEvent => }
       } else {
         StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
       }

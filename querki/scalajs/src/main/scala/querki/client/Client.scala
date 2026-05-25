@@ -1,7 +1,7 @@
 package querki.client
 
 import scala.concurrent.Future
-import upickle.default._
+import upickle.default.{ReadWriter => RW, _}
 import querki.globals._
 import querki.api._
 import querki.comm._
@@ -75,6 +75,8 @@ class ClientImpl(e: Ecology) extends ClientEcot(e) with Client {
       { ex => translateServerException(ex) }
     )
   }
+
+  implicit val requestRW: RW[autowire.Core.Request[String]] = macroRW
 
   def makeCall(
     req: Request,

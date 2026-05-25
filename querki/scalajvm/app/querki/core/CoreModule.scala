@@ -7,7 +7,7 @@ import querki.basic.PlainTextBaseType
 import querki.conventions
 import querki.ecology._
 import querki.globals._
-import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, PropAndVal, QLContext, SpaceState}
 
 class CoreModule(e: Ecology)
   extends CoreEcot(e)
@@ -58,7 +58,7 @@ class CoreModule(e: Ecology)
     }
 
     override def hasProp(propId: OID)(implicit state: SpaceState): Boolean = {
-      props.contains(propId)
+      this.props.contains(propId)
     }
 
     override def allProps(implicit state: SpaceState): Set[Property[_, _]] = localProps
@@ -196,7 +196,7 @@ class CoreModule(e: Ecology)
   lazy val UrProp = Property(
     UrPropOID,
     systemOID,
-    UrThing,
+    UrThing: ThingState,
     TextType,
     ExactlyOne,
     toProps(

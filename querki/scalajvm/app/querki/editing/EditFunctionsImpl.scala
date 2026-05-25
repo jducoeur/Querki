@@ -1,6 +1,6 @@
 package querki.editing
 
-import akka.actor._
+import scala.language.existentials
 
 import models._
 
@@ -11,7 +11,7 @@ import EditFunctions._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingError, ThingFound}
 import querki.util.{PublicException}
-import querki.values.{QLRequestContext, QValue}
+import querki.values.{QLRequestContext}
 import models.OID.thing2OID
 import models.ThingId.thingId2Str
 
@@ -123,12 +123,12 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
       else
         props
 
-    if (doLogEdits) QLog.spew(s"About to send ChangeProps2(${thing.toThingId}, $allProps)")
+    if (doLogEdits) logTrace(s"About to send ChangeProps2(${thing.toThingId}, $allProps)")
 
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, allProps))).map {
       case ThingFound(_, _) => PropertyChanged
       case ThingError(ex, _) => {
-        if (doLogEdits) QLog.error(s"ChangeProps2 got error", ex)
+        if (doLogEdits) logError(s"ChangeProps2 got error", ex)
         throw new querki.api.GeneralChangeFailure("Error during save")
       }
     }
@@ -138,7 +138,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
     thingId: TID,
     changeTop: PropertyChange
   ): Future[PropertyChangeResponse] = withThing(thingId) { thing =>
-    if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $changeTop")
+    if (doLogEdits) logTrace(s"Got alterProperty on $thingId: $changeTop")
     implicit val s = state
 
     def evaluateOneChange(change: PropertyChange): Option[PropMap] = change match {
@@ -211,7 +211,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
         // a semigroup. Besides, it would be weird and suspicious to combine the QValues like that.
         // TODO: is it an error if this change list includes multiple changes to the same Property?
         // Maybe.
-        (Option.empty[PropMap] /: changes) { (optMap, chg) =>
+        changes.foldLeft(Option.empty[PropMap]) { (optMap, chg) =>
           val result = evaluateOneChange(chg)
           (optMap, result) match {
             case (None, None)       => None
@@ -225,7 +225,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
 
     val propsOpt: Option[PropMap] = evaluateOneChange(changeTop)
 
-    if (doLogEdits) QLog.spew(s"Actual changes to be performed: $propsOpt")
+    if (doLogEdits) logTrace(s"Actual changes to be performed: $propsOpt")
 
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
@@ -238,7 +238,7 @@ class EditFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Space
     initialProps: Seq[PropertyChange]
   ): Future[ThingInfo] = withThing(modelId) { model =>
     implicit val s = state
-    val propsFromClient = (emptyProps /: initialProps) { (map, change) =>
+    val propsFromClient = initialProps.foldLeft(emptyProps) { (map, change) =>
       change match {
         case ChangePropertyValue(path, vs) => changeToProps(None, path, vs) match {
             case Some(p) => map ++ p

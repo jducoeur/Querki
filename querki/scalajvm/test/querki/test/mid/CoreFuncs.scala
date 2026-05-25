@@ -7,17 +7,17 @@ import org.scalatest.Assertions._
 /**
  * Common functions for using in tests.
  */
-trait CoreFuncs {
+trait CoreFuncs extends QLogging {
 
   /**
    * Temporary spewage, during debugging.
    */
-  def spew(msg: => Any) = TestOp.pure { QLog.spew(msg.toString) }
+  def spew(msg: => Any) = TestOp.pure { logTrace(msg.toString) }
 
   /**
    * The name of a test "step", always printed.
    */
-  def step(msg: String) = TestOp.pure { QLog.info(s"**** $msg") }
+  def step(msg: String) = TestOp.pure { logInfo(s"**** $msg") }
 
   /**
    * TestOp-friendly version of assert().

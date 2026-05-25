@@ -1,13 +1,12 @@
 package querki.spaces
 
 import akka.actor._
-import org.querki.requester._
 import models._
 import org.joda.time.DateTime
 import querki.identity.IdentityPersistence.UserRef
 import querki.identity.User
 import querki.persistence.{PersistentActorCore, UseKryo}
-import querki.spaces.messages.SpaceMessage
+import querki.util.QLogging
 import querki.values.{SpaceState, SpaceVersion}
 
 /**
@@ -125,7 +124,7 @@ trait SpaceAPI[RM[_]] extends PersistentActorCore {
 abstract class SpacePlugin[RM[_]](
   val space: SpaceAPI[RM],
   rtc: RTCAble[RM]
-) {
+) extends QLogging {
 
   /**
    * The receive handler.

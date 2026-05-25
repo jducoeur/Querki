@@ -1,15 +1,10 @@
 package models
 
-import scala.annotation.tailrec
-
 import querki.api.ModelLoopException
 import querki.basic.PlainText
-import querki.ecology._
 import querki.globals._
 import querki.identity.IdentityPersistence.UserRef
-import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
-import querki.util.QLog
 import querki.values._
 
 /**

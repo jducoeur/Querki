@@ -15,9 +15,11 @@ package object mid {
   /**
    * We're not going to try to compose everything beautifully in a Future-centric world.
    * For this test harness, it's usually acceptable to block and wait.
+   *
+   * TODO: someday, the goal is to make everything IO-based instead, and get rid of this Await.
    */
   implicit class Waitable[T](a: Awaitable[T]) {
-    def waitFor(): T = Await.result(a, 5 seconds)
+    def waitFor(): T = Await.result(a, 5.seconds)
   }
 
   /**
@@ -28,7 +30,7 @@ package object mid {
   /**
    * Provides synchronous functions for fetching fields from a Result, suitable for mapping.
    */
-  implicit def result2Helpers(result: Result) = new ResultHelpers(result)
+  implicit def result2Helpers(result: Result): ResultHelpers = new ResultHelpers(result)
 
   implicit def ThingInfo2TID(thingInfo: ThingInfo): TID = thingInfo.oid
 }

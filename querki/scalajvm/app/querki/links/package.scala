@@ -2,7 +2,6 @@ package querki
 
 import models.{OID, PType, PTypeBuilder, Property}
 
-import querki.basic.PlainText
 import querki.ecology._
 import querki.globals._
 import querki.values.QValue

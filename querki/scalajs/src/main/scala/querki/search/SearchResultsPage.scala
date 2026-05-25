@@ -1,6 +1,6 @@
 package querki.search
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
@@ -10,7 +10,6 @@ import querki.globals._
 import SearchFunctions._
 import querki.display.HookedGadget
 import querki.pages.{Page, PageContents, PageParamOps, ParamMap}
-import scala.scalajs.js.Any.fromFunction1
 
 /**
  * The Gadget in the MenuBar, which initiates a Search. This mostly just leads to the
@@ -29,7 +28,7 @@ class SearchGadget(implicit e: Ecology) extends HookedGadget[dom.HTMLInputElemen
     // TODO: in the long run, can we do prompting, a la Google?
     $(elem).keydown { (evt: JQueryEventObject) =>
       if (evt.which == 13) {
-        val query = $(elem).value.asInstanceOf[String]
+        val query = $(elem).value().asInstanceOf[String]
         Search.searchResultsFactory.showPage(("query" -> query))
         false
       }

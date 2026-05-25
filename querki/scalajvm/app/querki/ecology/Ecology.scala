@@ -1,7 +1,8 @@
 package querki.ecology
 
-import scala.reflect.ClassTag
+import querki.globals.QLogging
 
+import scala.reflect.ClassTag
 import querki.values.SpaceState
 
 /**
@@ -67,7 +68,7 @@ object SystemIds extends EcotIds(0) {
  */
 trait AsyncInitter
 
-trait EcotImpl extends Ecot {
+trait EcotImpl extends Ecot with QLogging {
 
   import scala.reflect.runtime.{universe => ru}
   import scala.reflect.runtime.universe._
@@ -170,7 +171,7 @@ class EcologyImpl(val playApp: Option[play.api.Application]) extends EcologyImpl
   }
 
   private def collectPersistence() = {
-    val msgs = (Seq.empty[(Class[_], Int)] /: _initializedEcots) { (msgs, ecot) =>
+    val msgs = _initializedEcots.foldLeft(Seq.empty[(Class[_], Int)]) { (msgs, ecot) =>
       val (ecotId, ecotMsgs) = ecot.persistentMessages
       if (ecotId == -1)
         msgs

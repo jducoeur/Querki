@@ -35,7 +35,7 @@ private[spaces] class SpaceRouter(e: Ecology) extends Actor with EcologyMember w
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val tracing = TracingSpace(spaceId, "SpaceRouter: ")
 

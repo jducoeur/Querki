@@ -6,9 +6,8 @@ import scala.util.{Failure, Success}
 
 import scala.scalajs.js.timers._
 import org.scalajs.dom
-import dom.raw.File
+import dom.File
 import scalatags.JsDom.all._
-import upickle._
 import autowire._
 import rx._
 
@@ -18,13 +17,10 @@ import org.querki.gadgets._
 
 import querki.api.SpaceExistsException
 import querki.comm._
-import querki.data.SpaceInfo
-import org.querki.gadgets.core.GadgetLookup
 import querki.display.rx._
 import querki.imexport.ImportSpaceFunctions
 import querki.globals._
-// Needed in order to get evt.target.files:
-import querki.photos.FileTarget._
+
 import querki.util.InputUtils
 
 /**

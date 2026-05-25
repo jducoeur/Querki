@@ -138,7 +138,7 @@ trait FileUploadResults extends js.Object {
  */
 @js.native
 trait FileUploadData extends js.Object {
-  def files: dom.raw.FileList = js.native
+  def files: dom.FileList = js.native
   def submit(): JQueryDeferred = js.native
   var url: String = js.native
 }

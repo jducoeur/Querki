@@ -276,6 +276,8 @@ class UserlandNotifierEcot(e: Ecology)
         val spaceId = OID(context)
         (Wikitext(s"Saved - you will no longer get emails from this Space"), DHUnsubUserlandSpace(spaceId))
       }
+
+      case other => throw new Exception(s"Got unexpected unsubId in UserlandNotifier.getUnsubEvent: $other")
     }
   }
 

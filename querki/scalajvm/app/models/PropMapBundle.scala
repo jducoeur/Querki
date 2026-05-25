@@ -1,7 +1,6 @@
 package models
 
-import querki.globals._
-import querki.values.{PropAndVal, QValue}
+import querki.values.{PropAndVal}
 
 /**
  * This provides functions similar to PropertyBundle, for raw PropMaps. It is intentionally simpler, and

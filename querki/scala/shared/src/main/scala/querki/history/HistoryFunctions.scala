@@ -2,12 +2,13 @@ package querki.history
 
 import scala.concurrent.Future
 
-import enumeratum.EnumEntry._
-import enumeratum.values._
+import upickle.default.{macroRW, ReadWriter => RW}
 
 import models._
 import querki.data._
 import querki.time.Common.Timestamp
+
+import upickle.default._
 
 trait HistoryFunctions {
   import HistoryFunctions._
@@ -50,17 +51,22 @@ object HistoryFunctions {
   sealed abstract class SetStateReason(
     val value: Int,
     val msgName: String
-  ) extends IntEnumEntry
+  )
 
-  case object SetStateReason extends IntEnum[SetStateReason] with IntUPickleEnum[SetStateReason] {
-    val values = findValues
-
+  case object SetStateReason {
     case object Unknown extends SetStateReason(value = 0, msgName = "unknown")
     case object ImportedFromMySQL extends SetStateReason(value = 1, msgName = "importFromOld")
     case object ExtractedAppFromHere extends SetStateReason(value = 2, msgName = "extractedApp")
     case object InitialAppState extends SetStateReason(value = 3, msgName = "initialAppState")
     case object RolledBack extends SetStateReason(value = 4, msgName = "rolledBack")
     case object ImportedFromExport extends SetStateReason(value = 5, msgName = "importFromExport")
+
+    val items = List(Unknown, ImportedFromMySQL, ExtractedAppFromHere, InitialAppState, RolledBack, ImportedFromExport)
+
+    lazy val itemsByValue: Map[Int, SetStateReason] =
+      items.map(i => (i.value -> i)).toMap
+
+    implicit val rw: ReadWriter[SetStateReason] = readwriter[Int].bimap(_.value, itemsByValue(_))
   }
 
   /**
@@ -132,6 +138,16 @@ object HistoryFunctions {
     appId: TID
   ) extends EvtSummary
 
+  object EvtSummary {
+    implicit val sssrw: RW[SetStateSummary] = macroRW
+    implicit val isrw: RW[ImportSummary] = macroRW
+    implicit val csrw: RW[CreateSummary] = macroRW
+    implicit val msrw: RW[ModifySummary] = macroRW
+    implicit val dsrw: RW[DeleteSummary] = macroRW
+    implicit val aasrw: RW[AddAppSummary] = macroRW
+    implicit val rw: RW[EvtSummary] = macroRW
+  }
+
   type IdentityMap = Map[String, IdentityInfo]
   type ThingNames = Map[TID, String]
 
@@ -140,6 +156,10 @@ object HistoryFunctions {
     thingNames: ThingNames
   )
 
+  object EvtContext {
+    implicit val rw: RW[EvtContext] = macroRW
+  }
+
   /**
    * The full history of this Space, in summary form.
    */
@@ -147,4 +167,8 @@ object HistoryFunctions {
     events: Seq[EvtSummary],
     context: EvtContext
   )
+
+  object HistorySummary {
+    implicit val rw: RW[HistorySummary] = macroRW
+  }
 }

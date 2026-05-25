@@ -9,7 +9,7 @@ import org.querki.requester.{RequestM, Requester}
 import querki.identity.User
 import models.Thing
 
-trait RestoreDeleted extends HistoryFolding with Requester {
+trait RestoreDeleted extends HistoryFolding with Requester with QLogging {
 
   def spaceRouter: ActorRef
 
@@ -59,7 +59,7 @@ trait RestoreDeleted extends HistoryFolding with Requester {
       case found: ThingFound => found
       case other => {
         val msg = s"Got $other when trying to recreate thing $thing"
-        QLog.error(msg)
+        logError(msg)
         throw new Exception(msg)
       }
     }

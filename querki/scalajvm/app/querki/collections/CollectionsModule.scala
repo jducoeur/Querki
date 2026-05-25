@@ -4,7 +4,6 @@ import models._
 import querki.core.IsLinkType
 import querki.ecology._
 import querki.globals._
-import querki.ql.{QLParser, QLPhrase}
 import querki.types.ModelTypeBase
 import querki.values._
 
@@ -421,7 +420,7 @@ class CollectionsModule(e: Ecology)
         val matchedTerms = left.terms.zip(right.terms)
         // Iterate over the paired elements, which correspond to the parameters to _sort. Use the first
         // result where they don't match:
-        val resultOpt = (Option.empty[Boolean] /: matchedTerms) { (current, terms) =>
+        val resultOpt = matchedTerms.foldLeft(Option.empty[Boolean]) { (current, terms) =>
           current match {
             // We've already found a valid pair to sort on, so skip the rest:
             case Some(b) => current
@@ -971,7 +970,7 @@ class CollectionsModule(e: Ecology)
       for {
         v <- inv.contextValue
         len = v.cv.size
-        rnd = floor(random * len).toInt
+        rnd = floor(random() * len).toInt
         item = v.cv.drop(rnd).head
       } yield ExactlyOne(item)
     }
@@ -1041,7 +1040,7 @@ class CollectionsModule(e: Ecology)
       context: QLContext,
       exp: querki.ql.QLExp
     ): Future[QValue] = {
-      (Future.successful(init) /: context.value.elems) { (accFut, elem) =>
+      context.value.elems.foldLeft(Future.successful(init)) { (accFut, elem) =>
         accFut.flatMap { acc =>
           val parser = context.parser.get.withBindings(Map(
             ("acc" -> acc),

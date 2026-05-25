@@ -7,7 +7,6 @@ import akka.actor.Scheduler
 
 import models.Wikitext
 
-import querki.ecology._
 import querki.globals._
 import querki.identity.Identity
 
@@ -97,7 +96,7 @@ private[email] class TestEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
   var nextEmailListener: Option[Promise[TestEmailMessageDetails]] = None
 
   def handleNextEmail: Future[TestEmailMessageDetails] = {
-    val promise = Promise[TestEmailMessageDetails]
+    val promise = Promise[TestEmailMessageDetails]()
     nextEmailListener = Some(promise)
     promise.future
   }

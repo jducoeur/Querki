@@ -1,7 +1,6 @@
 package querki.qtext
 
 import language.postfixOps
-import util.parsing.json.Parser
 import util.parsing.combinator.RegexParsers
 import collection.SortedMap
 
@@ -138,7 +137,7 @@ trait BaseParsers extends RegexParsers {
     if (in.atEnd) Failure("End of input.", in)
     else {
       val c = in.first
-      val lower: SortedMap[Char, Char] = rs.to(c)
+      val lower: SortedMap[Char, Char] = rs.rangeTo(c)
       val (begin: Char, end: Char) =
         if (lower.isEmpty) ('\u0001', '\u0000') //this invalid pair always causes failure
         else lower.last
@@ -358,7 +357,7 @@ trait BaseParsers extends RegexParsers {
         }
 
         val attrStr = allAttrs.map(pair => s""" ${pair._1}=${quotify(pair._2)}""").mkString
-        '<' + name + attrStr + w + e
+        s"<$name$attrStr$w$e"
       }
     }
 

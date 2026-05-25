@@ -41,7 +41,7 @@ private[security] class PermCheckboxes(
     (for {
       thingProps <- thingPropsOpt
       rolePermsProp <- thingProps.find(_.propInfo.oid == std.security.rolePermissionsProp.oid)
-    } yield rolePermsProp.raw.lines.toList).getOrElse(List())
+    } yield rolePermsProp.raw.linesIterator.toList).getOrElse(List())
   }
 
   def hasPerm(perm: PermInfo) = thingPermNames.contains(perm.name)

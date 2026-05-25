@@ -234,7 +234,7 @@ class GroupingEcot(e: Ecology)
           case None => keyThingPairs
         }
         sortedPairs = fixedPairs.sortWith(sortFunc)
-        rawGroupings = (Seq.empty[(QValue, Seq[QValue])] /: sortedPairs) { (seqs, pair) =>
+        rawGroupings = sortedPairs.foldLeft(Seq.empty[(QValue, Seq[QValue])]) { (seqs, pair) =>
           val (key, id) = pair
           if (seqs.isEmpty)
             Seq((key, Seq(id)))

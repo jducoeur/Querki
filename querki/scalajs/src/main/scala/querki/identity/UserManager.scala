@@ -34,7 +34,7 @@ class LoginLogic(
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val UserAccess = interface[UserAccess]
 
-  val loginPromise = Promise[Unit]
+  val loginPromise = Promise[Unit]()
 
   def finishLogin() = {
     loginPromise.complete(Success(()))

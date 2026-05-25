@@ -1,10 +1,10 @@
 package querki.spaces
 
+import scala.language.existentials
 import models._
-
 import querki.ecology.EcologyMember
 import querki.time.{epoch, DateTime}
-import querki.util.QLog
+import querki.util.QLogging
 import querki.values.SpaceState
 
 // It really feels like there should be *some* way to pass getThingStream as a parameter without introducing this
@@ -18,7 +18,7 @@ trait ThingStreamLoader {
  * Performs the guts of loading a Space. This is broken out from Load itself specifically so that it can be
  * decoupled from the actual SQL code, stubbed and unit-tested.
  */
-trait SpaceLoader { self: EcologyMember with querki.types.ModelTypeDefiner =>
+trait SpaceLoader extends QLogging { self: EcologyMember with querki.types.ModelTypeDefiner =>
 
   // Fields defined in SpacePersister or the test stub:
   def Core: querki.core.Core
@@ -49,12 +49,12 @@ trait SpaceLoader { self: EcologyMember with querki.types.ModelTypeDefiner =>
 
     def getThings[T <: Thing](kind: Int)(builder: (OID, OID, PropMap, DateTime) => T): Map[OID, T] = {
       val tStream = loader.getThingList(kind)(curState)(builder)
-      (Map.empty[OID, T] /: tStream) { (m, t) =>
+      tStream.foldLeft(Map.empty[OID, T]) { (m, t) =>
         try {
           m + (t.id -> t)
         } catch {
           case error: Exception => {
-            QLog.error("Error while trying to assemble ThingStream " + id, error)
+            logError("Error while trying to assemble ThingStream " + id, error)
             m
           }
         }
@@ -84,7 +84,7 @@ trait SpaceLoader { self: EcologyMember with querki.types.ModelTypeDefiner =>
     curState =
       if (spaceStream.isEmpty) {
         // This wants to be a Big Nasty Error!
-        QLog.error("Was unable to find/load Space " + id + "/" + name + ". INVESTIGATE THIS!")
+        logError("Was unable to find/load Space " + id + "/" + name + ". INVESTIGATE THIS!")
 
         // In the meantime, we fall back on a plain Space Thing:
         new SpaceState(

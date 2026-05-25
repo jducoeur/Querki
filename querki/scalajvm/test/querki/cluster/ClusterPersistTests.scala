@@ -3,16 +3,14 @@ package querki.cluster
 import scala.collection.immutable.{HashMap, HashSet}
 
 import akka.actor._
-import akka.actor.Actor.noSender
 
 import querki.globals._
 import querki.persistence._
-import querki.test._
 
-class TestActor extends Actor {
+class TestActor extends Actor with QLogging {
 
   def receive = {
-    case something => QLog.spew(s"TestActor got $something")
+    case something => logTrace(s"TestActor got $something")
   }
 }
 

@@ -4,15 +4,14 @@ import cats.data._
 import cats.data.Validated._
 import cats.effect.{ContextShift, IO}
 import cats.implicits._
-import models.{DisplayText, OID, PType, Property, Thing, ThingId, Wikitext}
+import models.{OID, PType, Property, Thing, ThingId}
 import play.api.libs.json._
-import querki.basic.PlainText
 import querki.basic.MOIDs._
 import querki.core.MOIDs._
 import querki.tags.MOIDs._
 import querki.core.QLText
 import querki.globals._
-import querki.values.{PropAndVal, QValue, RequestContext}
+import querki.values.{QValue, RequestContext}
 import sangria.ast._
 import sangria.parser.QueryParser
 
@@ -24,7 +23,8 @@ class FPComputeGraphQL(
   val rc: RequestContext,
   val state: SpaceState,
   val ecology: Ecology
-) extends JsValueableMixin {
+) extends JsValueableMixin
+     with QLogging {
   final val thingQueryName = "_thing"
   final val instancesQueryName = "_instances"
   final val expQueryName = "_exp"
@@ -397,7 +397,7 @@ class FPComputeGraphQL(
       }
       case other => {
         // We don't expect this to happen until and unless we open up the possibility of more Collections:
-        QLog.error(
+        logError(
           s"FPComputeGraphQL: request to process a collection of type ${prop.cType} for Property ${prop.displayName}"
         )
         res(JsNull)

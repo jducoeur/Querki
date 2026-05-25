@@ -2,7 +2,7 @@ package querki.spaces
 
 import akka.actor.{ActorContext, ActorRef, Props}
 import akka.actor.SupervisorStrategy._
-import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxPool}
+import akka.routing.{DefaultResizer, SmallestMailboxPool}
 
 import querki.ecology._
 import querki.identity.UserId

@@ -1,7 +1,5 @@
 package querki.qtext
 
-import java.io.{InputStreamReader, StringWriter}
-
 /**
  * This is the Transformer that uses the other parsers to transform markdown into xhtml.
  * Mix this trait in if you want more control over the output (like switching verbatim xml on/off or using
@@ -10,11 +8,11 @@ import java.io.{InputStreamReader, StringWriter}
 trait Transformer { dec: Decorator =>
 
   private object lineTokenizer extends LineTokenizer(dec) {
-    override def allowXmlBlocks() = dec.allowVerbatimXml()
+    override def allowXmlBlocks = dec.allowVerbatimXml
   }
 
   private object blockParser extends BlockParsers {
-    def deco() = dec
+    def deco: Decorator = dec
   }
 
   /**

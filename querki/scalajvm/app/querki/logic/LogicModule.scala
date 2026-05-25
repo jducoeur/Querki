@@ -1,11 +1,11 @@
 package querki.logic
 
-import models.{OID, PType, ThingOps, ThingState}
+import models.{PType, ThingOps}
 
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLPhrase}
-import querki.util.{PublicException, QLog}
+import querki.ql.{InvocationValue}
+import querki.util.{PublicException}
 import querki.values._
 
 object MOIDs extends EcotIds(9) {
@@ -389,7 +389,7 @@ class LogicModule(e: Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.
         Core.QNone
       else {
         val comparePt = pairs.head._2.pType
-        val mostPair = (pairs.head /: pairs.tail) { (current, next) =>
+        val mostPair = pairs.tail.foldLeft(pairs.head) { (current, next) =>
           val (curReceived, curProcessed) = current
           val (nextReceived, nextProcessed) = next
           if (chooser(comparePt, curProcessed.first, nextProcessed.first))
@@ -596,35 +596,45 @@ class LogicModule(e: Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.
     if (qvn.isEmpty || qvm.isEmpty)
       None
     else {
-      val comp = (qvn.pType, qvm.pType) match {
+      (qvn.pType, qvm.pType) match {
         case (IntType, IntType) =>
-          CompPair(qvn.rawList(IntType), qvm.rawList(IntType), implicitly[Numeric[Int]], IntType)
+          Some(CompPair(qvn.rawList(IntType), qvm.rawList(IntType), implicitly[Numeric[Int]], IntType))
         case (IntType, LongType) =>
-          CompPair(qvn.rawList(IntType).map(_.toLong), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType)
+          Some(CompPair(qvn.rawList(IntType).map(_.toLong), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType))
         case (IntType, FloatType) =>
-          CompPair(qvn.rawList(IntType).map(_.toDouble), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType)
+          Some(CompPair(
+            qvn.rawList(IntType).map(_.toDouble),
+            qvm.rawList(FloatType),
+            implicitly[Numeric[Double]],
+            FloatType
+          ))
         case (LongType, IntType) =>
-          CompPair(qvn.rawList(LongType), qvm.rawList(IntType).map(_.toLong), implicitly[Numeric[Long]], LongType)
+          Some(CompPair(qvn.rawList(LongType), qvm.rawList(IntType).map(_.toLong), implicitly[Numeric[Long]], LongType))
         case (LongType, LongType) =>
-          CompPair(qvn.rawList(LongType), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType)
-        case (LongType, FloatType) => CompPair(
+          Some(CompPair(qvn.rawList(LongType), qvm.rawList(LongType), implicitly[Numeric[Long]], LongType))
+        case (LongType, FloatType) => Some(CompPair(
             qvn.rawList(LongType).map(_.toDouble),
             qvm.rawList(FloatType),
             implicitly[Numeric[Double]],
             FloatType
-          )
+          ))
         case (FloatType, IntType) =>
-          CompPair(qvn.rawList(FloatType), qvm.rawList(IntType).map(_.toDouble), implicitly[Numeric[Double]], FloatType)
-        case (FloatType, LongType) => CompPair(
+          Some(CompPair(
+            qvn.rawList(FloatType),
+            qvm.rawList(IntType).map(_.toDouble),
+            implicitly[Numeric[Double]],
+            FloatType
+          ))
+        case (FloatType, LongType) => Some(CompPair(
             qvn.rawList(FloatType),
             qvm.rawList(LongType).map(_.toDouble),
             implicitly[Numeric[Double]],
             FloatType
-          )
+          ))
         case (FloatType, FloatType) =>
-          CompPair(qvn.rawList(FloatType), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType)
+          Some(CompPair(qvn.rawList(FloatType), qvm.rawList(FloatType), implicitly[Numeric[Double]], FloatType))
+        case _ => None
       }
-      Some(comp)
     }
   }
 

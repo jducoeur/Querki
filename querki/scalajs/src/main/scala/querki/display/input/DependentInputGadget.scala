@@ -4,10 +4,9 @@ import org.scalajs.dom.html.Element
 
 import autowire._
 
-import org.querki.gadgets._
 import org.querki.jquery._
 
-import querki.display.{HookedGadget, RawSpan, ServerHtmlHolder}
+import querki.display.{HookedGadget, ServerHtmlHolder}
 import querki.editing.EditFunctions
 import querki.globals._
 
@@ -56,5 +55,5 @@ class DependentInputGadget(implicit e: Ecology) extends HookedGadget[Element](e)
     }
   }
 
-  def doRender = ???
+  def doRender() = ???
 }

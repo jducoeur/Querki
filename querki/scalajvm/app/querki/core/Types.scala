@@ -1,5 +1,7 @@
 package querki.core
 
+import scala.language.existentials
+
 import scala.xml.NodeSeq
 
 import models._
@@ -8,8 +10,7 @@ import querki.api.commonName
 import querki.basic.PlainTextBaseType
 import querki.ecology._
 import querki.globals._
-import querki.ql.QLPhrase
-import querki.util.{PublicException, QLog}
+import querki.util.{PublicException}
 import querki.values.{ElemValue, QFut, QLContext, QValue, RequestContext, ShowLinksAsFullAnchors, SpaceState}
 
 import MOIDs._
@@ -496,7 +497,7 @@ trait LinkUtils { self: CoreEcot with NameUtils =>
             case _               => Iterable.empty[Thing]
           }
         }
-        (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
+        allowedKinds.foldLeft(Iterable.empty[Thing])((it, kind) => it ++: fetchKind(kind))
       } else {
         // No LinkKind specified, so figure that they only want Things:
         state.things.values
@@ -511,7 +512,7 @@ trait LinkUtils { self: CoreEcot with NameUtils =>
         prop.firstOpt(Links.LinkModelProp) match {
           case Some(modelId) => {
             val allInstanceIds =
-              state.descendants(modelId, true, true, true).map(_.id)
+              state.descendants(modelId, true, true, true).toSet[Thing].map(_.id)
             allCandidates.filter(candidate => allInstanceIds.contains(candidate.id))
           }
           case None => allCandidates

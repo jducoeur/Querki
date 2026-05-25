@@ -1,7 +1,5 @@
 package querki.db
 
-import javax.inject._
-
 import java.sql.Connection
 import play.api.db.DBApi
 
@@ -19,7 +17,7 @@ import ShardKind._
  *
  * @author jducoeur
  */
-object QDB {
+object QDB extends QLogging {
 
   def apply[A](db: ShardKind.ShardKind)(trans: Connection => A)(implicit ecology: Ecology): A = {
     val dbapi = PlayEcology.playApi[DBApi]
@@ -28,7 +26,7 @@ object QDB {
         trans(conn)
       } catch {
         case ex: Exception => {
-          QLog.error("Exception executing DB transaction", ex)
+          logError("Exception executing DB transaction", ex)
           throw ex
         }
       }

@@ -1,35 +1,33 @@
 package controllers
 
 import javax.inject._
-
 import scala.concurrent.duration._
 import akka.actor._
 import akka.pattern._
-import akka.util.Timeout
-
+import akka.stream.Materializer
+import akka.util.{ByteString, Timeout}
 import play.api.data._
 import play.api.data.Forms._
-import play.api.libs.streams.Streams
+import play.api.libs.streams.Accumulator
 import play.api.mvc._
-
-import upickle.default._
+import upickle.default.{ReadWriter => RW, _}
 import autowire._
-
-import models.{AsName, AsOID, MIMEType, Thing, ThingId}
-
+import models.{AsName, AsOID, MIMEType, ThingId}
 import querki.api._
 import querki.ecology.PlayEcology
 import querki.globals._
 import querki.imexport.ImexportFunctions
-import querki.pages.PageIDs._
 import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
-import querki.spaces.messages.{SpaceMgrMsg, SpaceSubsystemRequest, ThingError}
-import querki.spaces.messages.SpaceError._
+import querki.spaces.messages.SpaceSubsystemRequest
 import querki.streaming.UploadMessages._
 import querki.util.PublicException
 
-class ClientController @Inject() (val appProv: Provider[play.api.Application])
-  extends ApplicationBase
+class ClientController @Inject() (
+  implicit
+  val appProv: Provider[play.api.Application],
+  mat: Materializer,
+  val controllerComponents: ControllerComponents
+) extends ApplicationBase
      with StreamController {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
@@ -78,7 +76,7 @@ class ClientController @Inject() (val appProv: Provider[play.api.Application])
   )(
     cb: PartialFunction[Any, Future[B]]
   ): Future[B] = {
-    akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
+    akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5.seconds)).flatMap(cb)
   }
 
   def index = withUser(false) { rc =>
@@ -156,9 +154,11 @@ class ClientController @Inject() (val appProv: Provider[play.api.Application])
     Redirect(new Call(spaceCall.method, spaceCall.url + s"#!$thingId"))
   }
 
+  implicit val requestRW: RW[autowire.Core.Request[String]] = macroRW
+
   def unpickleRequest(rc: PlayRequestContext): (autowire.Core.Request[String], RequestMetadata) = {
     implicit val request = rc.request
-    requestForm.bindFromRequest.fold(
+    requestForm.bindFromRequest().fold(
       errors => throw new Exception("API got badly-defined request!"),
       apiRequest =>
         (
@@ -222,10 +222,14 @@ class ClientController @Inject() (val appProv: Provider[play.api.Application])
    * This isn't an entry point, it's the BodyParser for upload(). It expects to receive the path
    * to an UploadActor; it finds that Actor, then sends it the chunks as they come in.
    */
-  private def uploadReceiver(targetActorPath: String)(rh: RequestHeader) = {
+  private def uploadReceiver(
+    targetActorPath: String
+  )(
+    rh: RequestHeader
+  ): Accumulator[ByteString, Either[Result, ActorRef]] = {
     def produceUploadLocation: Future[ActorRef] = {
       // Fairly short timeout for the identification procedure:
-      implicit val timeout = Timeout(5 seconds)
+      implicit val timeout = Timeout(5.seconds)
       val selection = SystemManagement.actorSystem.actorSelection(targetActorPath)
       for {
         ActorIdentity(_, refOpt) <- selection ? Identify("dummy")
@@ -234,7 +238,7 @@ class ClientController @Inject() (val appProv: Provider[play.api.Application])
       yield refOpt.get
     }
 
-    Streams.iterateeToAccumulator(uploadBodyChunks(produceUploadLocation)(rh))
+    uploadBodyChunks(produceUploadLocation)(rh)
   }
 
   /**
@@ -245,24 +249,11 @@ class ClientController @Inject() (val appProv: Provider[play.api.Application])
    */
   def upload(targetActorPath: String) =
     withUser(true, parser = BodyParser(uploadReceiver(targetActorPath) _)) { rc =>
-      for {
-        uploadRef <- rc.request.body.asInstanceOf[Future[ActorRef]]
-        // We ask the UploadActor how much time it's going to need to process this upload:
-        // TODO: this mechanism is now obsolete; the architecture is more interactive, and
-        // UploadComplete responds quickly:
-        UploadTimeout(uploadDuration) <- uploadRef.ask(GetUploadTimeout)(5 seconds)
-        uploadTimeout = Timeout(uploadDuration)
-        result <- uploadRef.ask(UploadComplete(rc))(uploadTimeout)
-      } yield {
-        result match {
-          case UploadProcessSuccessful(response) => Ok(response)
-          case UploadProcessFailed(ex)           => BadRequest(ex)
-          case _ => {
-            QLog.error(s"upload() entry point got unknown response $result");
-            InternalServerError("upload() got a bad response internally")
-          }
-        }
-      }
+      val uploadRef = rc.request.body
+      // At this point, we've uploaded the body, so kick off processing:
+      uploadRef ! ProcessUpload(rc)
+
+      Future(Ok("Uploaded -- Beginning processing"))
     }
 
   /**

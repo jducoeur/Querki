@@ -1,12 +1,8 @@
 package querki.editing
 
-import scala.scalajs.js
-import org.scalajs.dom
 import org.querki.jquery._
-import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
-import rx._
 
 import querki.globals._
 
@@ -14,10 +10,7 @@ import EditFunctions._
 import querki.api.{ModelLoopException, ThingFunctions}
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{ButtonGadget, RawDiv, WithTooltip}
-import querki.display.input.{InputGadget}
-import querki.display.rx.{RxThingSelector}
 import querki.pages._
-import querki.publication.PublicationFunctions
 
 class ModelDesignerPage(params: ParamMap)(implicit val ecology: Ecology)
   extends Page("modelDesigner")
@@ -212,7 +205,7 @@ class ModelDesignerPage(params: ParamMap)(implicit val ecology: Ecology)
         allProps = fullEditInfo.propInfos
         (instanceProps, modelProps) =
           allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
-        sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
+        sortedInstanceProps = fullEditInfo.instancePropIds.foldLeft(Seq.empty[PropEditInfo]) { (current, propId) =>
           instanceProps.find(_.propInfo.oid == propId) match {
             case Some(prop) => current :+ prop
             case None       => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }

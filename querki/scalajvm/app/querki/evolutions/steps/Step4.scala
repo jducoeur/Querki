@@ -1,7 +1,5 @@
 package querki.evolutions.steps
 
-import java.sql.Connection
-
 import querki.ecology._
 
 import querki.evolutions._
@@ -31,6 +29,6 @@ class Step4(implicit val ecology: Ecology) extends Step {
         |  INDEX moderation_queue_{cname} (needsModeration, createTime)
         |) DEFAULT CHARSET=utf8;
         |""".stripMargin
-    ).execute
+    ).execute()
   }
 }

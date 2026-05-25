@@ -5,7 +5,6 @@ import autowire._
 import rx._
 import org.querki.gadgets._
 
-import querki.ecology._
 import querki.editing.EditFunctions
 import EditFunctions.ChangePropertyValue
 import querki.globals._
@@ -14,7 +13,6 @@ import querki.display.QText
 import querki.display.input.InputGadget
 import querki.display.rx._
 import querki.security.{LevelMap, OnePerm, SecurityFunctions}
-import SecurityFunctions._
 
 class EditPublicationPage(params: ParamMap)(implicit val ecology: Ecology) extends Page("editPublish") with LevelMap {
   lazy val Client = interface[querki.client.Client]
@@ -41,6 +39,7 @@ class EditPublicationPage(params: ParamMap)(implicit val ecology: Ecology) exten
         InputGadget.doSaveChange(model.oid, msg).flatMap { response =>
           Client[PublicationFunctions].changePublishedModels().call()
         }
+        ()
       }
       guts =
         div(

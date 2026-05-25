@@ -14,7 +14,7 @@ import querki.ecology._
 import querki.identity.User
 import querki.spaces.messages.{SpaceMessage, SpaceMgrMsg}
 import querki.time.DateTime
-import querki.util.{Aggregator, Sequencer}
+import querki.util.{Sequencer}
 import querki.values.{QValue, SpaceState, StateCacheKey}
 
 package object spaces {
@@ -239,7 +239,7 @@ package object spaces {
     /**
      * Allows other Ecots to plug their own code into Space processing.
      */
-    def registerPluginProvider(provider: SpacePluginProvider)
+    def registerPluginProvider(provider: SpacePluginProvider): Unit
 
     /**
      * Lets a Space get at all the SpacePluginProviders. Should not be used outside of Spaces.

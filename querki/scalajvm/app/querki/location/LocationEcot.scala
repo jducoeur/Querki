@@ -1,12 +1,12 @@
 package querki.location
 
-import models.{PropertyBundle, ThingState, Wikitext}
+import models.{PropertyBundle, ThingState}
 
 import querki.core.QLText
 import querki.ecology._
 import querki.globals._
 import querki.ql.InvocationValue
-import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
+import querki.types.{ModelTypeDefiner}
 import querki.util.SafeUrl
 
 object MOIDs extends EcotIds(63) {

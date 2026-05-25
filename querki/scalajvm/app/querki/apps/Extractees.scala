@@ -76,7 +76,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
         ),
         owner.mainIdentity.id,
         name,
-        DateTime.now,
+        DateTime.now(),
         Seq.empty,
         Some(SystemSpace),
         Map.empty,
@@ -88,7 +88,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
 
     val init = Extractees(initState, Set.empty, extractState)
     val withRoot = extractStateRoot(init, name, canon)
-    (withRoot /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
+    oids.foldLeft(withRoot) { (ext, elemId) => addThingToExtract(elemId, ext) }
   }
 
   private def extractStateRoot(
@@ -100,7 +100,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
   ): Extractees = {
     if (in.extractState) {
       // If the Space depends on local Properties, make sure to include those, too:
-      val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
+      val withProps = state.props.keys.foldLeft(in) { (ext, propId) => addPropToExtract(propId, ext) }
       val s = withProps.state
       // Actually copy in the Space's Properties, *except* for the Name.
       withProps.copy(state =
@@ -129,7 +129,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
         case Some(t) => {
           if (t.spaceId == state.id) {
             // Add all the props to the list...
-            val withProps = (in /: t.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
+            val withProps = t.props.keys.foldLeft(in) { (ext, propId) => addPropToExtract(propId, ext) }
             // ... and this thing:
             withProps.copy(state = withProps.state.copy(things = withProps.state.things + (id -> t)))
           } else
@@ -155,7 +155,7 @@ private[apps] trait ExtracteeComputer { self: EcologyMember =>
         case Some(p) => {
           if (p.spaceId == state.id) {
             // Add meta-props, if any...
-            val withProps = (in /: p.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
+            val withProps = p.props.keys.foldLeft(in) { (ext, propId) => addPropToExtract(propId, ext) }
             // ... the Type...
 //            QLog.spew(s"Extracting prop with pType ${p.pType}:")
 //            QLog.spewThing(p)(state)

@@ -1,8 +1,8 @@
 package querki.util
 
 import java.security.SecureRandom
-
-import play.api.libs.Crypto
+import play.api.libs.crypto.{CookieSigner, CookieSignerProvider}
+import querki.ecology.{Ecology, PlayEcology}
 
 /**
  * Wraps around part of a hash, to make stringifying easier. The stringifier code is
@@ -59,14 +59,15 @@ object SignedHash {
 }
 
 /**
- * This is a hash-generation service, adapted from this page:
+ * This is a hash-generation service, originally adapted from this page:
  *
  * http://www.javacodegeeks.com/2012/05/secure-password-storage-donts-dos-and.html
  *
+ * But this no longer has much to do with our password hashing; instead, it's mainly used to
+ * sign invitations and suchlike.
+ *
  * IMPORTANT: As of this writing, this uses PBKDF2. That's not half-bad, and fine
- * for many purposes. (Eg, invitation links.) But for hard-core password storage,
- * we may want to upgrade to scrypt. That's more expensive to compute, but current
- * theory is that it's *probably* more secure, since it is even harder to crack.
+ * for many purposes. (Eg, invitation links.)
  *
  * TODO: this should become an Ecot! Note that parts of it have been pulled out into
  * querki.security.EncryptionEcot. The remainder is currently Play-dependent; we should
@@ -89,6 +90,19 @@ object Hasher {
   }
 
   /**
+   * Gets the standard Play CookieSigner, for signing things.
+   *
+   * TODO: this isn't quite right. This is only intended for signing *cookies*, and we're mostly signing other
+   * things. We got here because we used to be using the now-deprecated Crypto.sign(), which went away at Play 2.6.
+   * It's not tragic, but it's a bit inappropriate -- we should switch to using an algorithm that is more apt for
+   * the use cases we're putting it to.
+   */
+  private def signer(implicit ecology: Ecology): CookieSigner = {
+    val cookieSignerProvider = PlayEcology.playApi[CookieSignerProvider]
+    cookieSignerProvider.get
+  }
+
+  /**
    * Sign the given string, with some salt for good measure.
    *
    * sep is the character to use as the separator between the elements of the
@@ -101,16 +115,18 @@ object Hasher {
   def sign(
     original: String,
     sep: Char
+  )(implicit
+    ecology: Ecology
   ): SignedHash = {
     val salt = HashInfo(makeSalt).toString
     val withSalt = salt + "-" + original
-    val sig = Crypto.sign(withSalt)
+    val sig = signer.sign(withSalt)
     SignedHash(sig, salt, original, sep)
   }
 
-  def checkSignature(hash: SignedHash): Boolean = {
+  def checkSignature(hash: SignedHash)(implicit ecology: Ecology): Boolean = {
     val withSalt = hash.salt + "-" + hash.msg
-    val sig = Crypto.sign(withSalt)
+    val sig = signer.sign(withSalt)
     (sig == hash.signature)
   }
 }

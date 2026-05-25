@@ -7,7 +7,6 @@ import funcakka._
 import org.querki.requester._
 
 import querki.globals._
-import querki.identity.User
 import querki.identity.IdentityPersistence.UserRef
 import querki.persistence.UseKryo
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
@@ -41,14 +40,16 @@ class InPublicationStateActor(
      with EcologyMember {
 
   def notifyChanges(curState: CurrentPublicationState): Unit = {
-    router ! curState
+    router.!(curState)(self)
   }
 
   def respondWithState(curState: CurrentPublicationState): Unit = {
-    sender ! curState
+    sender.!(curState)(self)
   }
 
-  def respondPublished(): Unit = sender ! PublishedAck()
+  def respondPublished(): Unit = {
+    sender.!(PublishedAck())(self)
+  }
 }
 
 object InPublicationStateActor {

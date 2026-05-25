@@ -1,6 +1,5 @@
 package querki.display
 
-import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._

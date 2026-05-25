@@ -1,9 +1,7 @@
 package querki.conversations.messages
 
-import models.{OID, ThingId}
+import models.{OID}
 
-import querki.conversations._
-import querki.identity.User
 import querki.spaces.messages.SpaceMessagePayload
 
 /**

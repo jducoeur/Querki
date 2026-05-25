@@ -1,8 +1,8 @@
 package querki.conversations
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import dom.Element
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all._
 import autowire._
 
 import org.querki.gadgets._
@@ -10,7 +10,7 @@ import org.querki.jquery._
 
 import models.HtmlWikitext
 import querki.data.{IdentityInfo, TID}
-import querki.display.{HookedGadget, QText}
+import querki.display.{QText}
 import querki.display.input.DeleteButton
 import querki.globals._
 import querki.time._
@@ -33,7 +33,7 @@ private[conversations] class CommentGadget(
       id := s"_comment$cid",
       a(cls := "_commentLink", name := s"comment$cid"),
       if (comment.canDelete) {
-        new DeleteButton(doDelete)
+        new DeleteButton(doDelete _)
       },
       div(
         cls := "_commentHeader",

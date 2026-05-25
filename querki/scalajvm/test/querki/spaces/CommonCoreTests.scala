@@ -1,9 +1,7 @@
 package querki.spaces
 
 import models._
-import Kind.Kind
 import querki.basic.MOIDs.SimpleThingOID
-import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
 import querki.identity.User
 import querki.identity.UserLevel._

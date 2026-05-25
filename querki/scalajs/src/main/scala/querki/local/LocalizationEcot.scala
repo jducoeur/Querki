@@ -15,7 +15,7 @@ class LocalizationEcot(e: Ecology) extends ClientEcot(e) with Localization {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
 
-  val _readyPromise = Promise[Unit]
+  val _readyPromise = Promise[Unit]()
   val ready = _readyPromise.future
 
   case class MessagesImpl(
@@ -36,7 +36,7 @@ class LocalizationEcot(e: Ecology) extends ClientEcot(e) with Localization {
     ): String = {
       msgs.vs.get(msgName) match {
         case Some(child @ SimpleValue(text)) => {
-          (text /: params) { (current, param) =>
+          params.foldLeft(text) { (current, param) =>
             val (k, v) = param
             current.replaceAllLiterally("$" + k, v)
           }
@@ -55,7 +55,7 @@ class LocalizationEcot(e: Ecology) extends ClientEcot(e) with Localization {
     ajaxCall.callAjax().map { messageText =>
       val hoconTable = HoconParse(messageText)
       _messages = Some(MessagesImpl("", hoconTable))
-      _readyPromise.complete(Success())
+      _readyPromise.complete(Success(()))
     }
   }
 }

@@ -1,6 +1,5 @@
 package querki.test.regression
 
-import querki.globals._
 import querki.test._
 
 /**

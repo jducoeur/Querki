@@ -104,9 +104,9 @@ querki {
   }
   
   aws {
+    region : "AWS REGION"
+    secretsName : "FULL NAME OF HOCON FILE IN AWS SECRETS MANAGER"
     username : "AWS USER NAME"
-    accessKeyId : "IMA ACCESS KEY ID"
-    secretAccessKey : "IMA SECRET KEY"
     bucket : "S3 BUCKET"
     bucketUrl : "BASE URL, NO TRAILING SLASH"
   }
@@ -202,7 +202,7 @@ play-akka {
     cluster {
       # This is the fallback setup, for when we're not actually running under ConductR:
       seed-nodes = [
-        "akka.tcp://application@127.0.0.1:2552"
+        "akka://application@127.0.0.1:2552"
       ]
     }
   }
@@ -226,7 +226,7 @@ akka {
   cluster {
     # This is the fallback setup, for when we're not actually running under ConductR:
     seed-nodes = [
-       "akka.tcp://local-querki-server@127.0.0.1:2551"
+       "akka://local-querki-server@127.0.0.1:2551"
     ]
   }
     

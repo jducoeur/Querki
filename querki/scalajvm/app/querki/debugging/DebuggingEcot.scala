@@ -103,7 +103,7 @@ class DebuggingEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDef
       inv.context.request.requester match {
         case Some(requester) => {
           val request = SpaceSubsystemRequest(requester, inv.state.id, GetDebugLog())
-          implicit val timeout = Timeout(2 seconds)
+          implicit val timeout = Timeout(2.seconds)
           (SpaceOps.spaceRegion ? request).map {
             case CurrentDebugLog(msgs) => {
               if (msgs.isEmpty) {
@@ -132,7 +132,7 @@ class DebuggingEcot(e: Ecology) extends QuerkiEcot(e) with querki.core.MethodDef
       inv.context.request.requester match {
         case Some(requester) => {
           val request = SpaceSubsystemRequest(requester, inv.state.id, ClearDebugLog())
-          implicit val timeout = Timeout(2 seconds)
+          implicit val timeout = Timeout(2.seconds)
           (SpaceOps.spaceRegion ? request).map {
             case DebugLogCleared => DisplayTextResult("Debug log cleared.")
             case _               => ErrorResult("Got an expected result!")

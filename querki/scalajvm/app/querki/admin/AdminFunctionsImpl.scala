@@ -2,7 +2,6 @@ package querki.admin
 
 import scala.concurrent.Future
 
-import akka.actor.ReceiveTimeout
 import akka.cluster._
 import ClusterEvent._
 import akka.cluster.ddata._
@@ -148,7 +147,7 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
         MonitorCurrent(SystemManagement.clusterAddress, qstate, spaces)
       }
       case _ => {
-        QLog.error("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
+        logError("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
         throw new Exception("Somehow got a request for the Admin Monitor before there is a CurrentClusterState?")
       }
     }
@@ -164,8 +163,8 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   lazy val TimedSpaceKey = AdminInternal.TimedSpaceKey
 
   def beginSpaceTiming(spaceId: TOID): Future[Unit] = {
-    implicit val node = Cluster(context.system)
-    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ + spaceId.underlying)
+    implicit val node = SelfUniqueAddress(Cluster(context.system).selfUniqueAddress)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ :+ spaceId.underlying)
     fut(())
   }
 
@@ -174,8 +173,8 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   }
 
   def stopSpaceTiming(spaceId: TOID): Future[Unit] = {
-    implicit val node = Cluster(context.system)
-    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_ - spaceId.underlying)
+    implicit val node = SelfUniqueAddress(Cluster(context.system).selfUniqueAddress)
+    replicator ! Update(TimedSpaceKey, ORSet.empty[String], WriteLocal, None)(_.remove(spaceId.underlying))
     fut(())
   }
 
@@ -194,7 +193,7 @@ class AdminFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
       }
       .recover {
         case ex: akka.pattern.AskTimeoutException => TimingMsgs(true, 0, Seq.empty)
-        case ex                                   => { QLog.error("getSpaceTimingsSince got unexpected error", ex); TimingMsgs(true, 0, Seq.empty) }
+        case ex                                   => { logError("getSpaceTimingsSince got unexpected error", ex); TimingMsgs(true, 0, Seq.empty) }
       }
   }
 }

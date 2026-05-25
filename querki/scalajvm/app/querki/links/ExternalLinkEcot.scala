@@ -10,7 +10,6 @@ import querki.core.URLableType
 import querki.globals._
 import querki.ecology._
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
-import querki.util.QLog
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object ExternalLinkMOIDs extends EcotIds(46) {
@@ -88,7 +87,7 @@ class ExternalLinkEcot(e: Ecology)
       implicit val s = context.state
       val bundle = elem.get(this)
       val result = for {
-        pv <- bundle.getPropOpt(Basic.DisplayNameProp)
+        pv <- bundle.getPropOpt(this.Basic.DisplayNameProp)
         text <- pv.firstOpt
       } yield text.text
 
@@ -110,7 +109,7 @@ class ExternalLinkEcot(e: Ecology)
       } yield url.url
 
       val displayNameOpt = for {
-        pv <- bundle.getPropOpt(Basic.DisplayNameProp)
+        pv <- bundle.getPropOpt(this.Basic.DisplayNameProp)
         text <- pv.firstOpt
       } yield text.text
 

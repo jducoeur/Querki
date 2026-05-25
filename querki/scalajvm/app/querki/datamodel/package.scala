@@ -2,7 +2,6 @@ package querki
 
 import models.{AnyProp, Property, Thing}
 
-import querki.ecology._
 import querki.globals._
 import querki.values.QValue
 

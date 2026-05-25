@@ -4,10 +4,7 @@ import scala.collection.immutable.Queue
 import scala.concurrent.duration._
 
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
 import ReceivePipeline._
-
-import querki.globals._
 
 /**
  * The child of a RoutingParent, which has a built-in inactivity timeout. Concrete classes must
@@ -17,7 +14,7 @@ import querki.globals._
  * Note that ClusterTimeoutChild is quite similar, but designed specifically to work with
  * ClusterSharding.
  */
-trait TimeoutChild extends Actor { pipe: ReceivePipeline =>
+trait TimeoutChild extends Actor with ReceivePipeline {
 
   /**
    * Instances must define this -- it is the name of the config string that defines how long
@@ -48,7 +45,7 @@ object RoutingStates {
  * This encapsulates the concept of a parent that has TimeoutChildren. You don't use this directly,
  * you use its subtraits, depending on how many children you're looking for.
  */
-trait RoutingParentBase[K] extends Actor { pipe: ReceivePipeline =>
+trait RoutingParentBase[K] extends Actor with ReceivePipeline with QLogging {
 
   class ManagedChild(
     val id: K,
@@ -106,14 +103,14 @@ trait RoutingParentBase[K] extends Actor { pipe: ReceivePipeline =>
   def routeToChild(
     key: K,
     msg: Any
-  )
-  def removeChild(key: K)
+  ): Unit
+  def removeChild(key: K): Unit
 
   pipelineInner {
     case KillMe => {
       findChild(sender) match {
         case Some(child) => child.beginShutdown
-        case _           => QLog.warn(s"RouterParent got KillMe from unknown child $sender")
+        case _           => logWarn(s"RouterParent got KillMe from unknown child $sender")
       }
       HandledCompletely
     }

@@ -1,18 +1,17 @@
 package querki.history
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
+import akka.persistence.query.scaladsl.{ReadJournal, CurrentEventsByPersistenceIdQuery}
 import akka.persistence.query.{EventEnvelope, PersistenceQuery}
-import akka.stream.ActorMaterializer
 import querki.globals._
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
-import querki.spaces.{SpacePure, TracingSpace}
+import querki.spaces.{TracingSpace, SpacePure}
 
 /**
  * The interesting bits from a single history record.
  *
- * Note that this is a subset of the underlying [[EventEnvelope]], mostly to hide the fields that I don't think we
+ * Note that this is a subset of the underlying EventEnvelope, mostly to hide the fields that I don't think we
  * should ever care about.
  */
 case class HistoryEvent(
@@ -50,9 +49,9 @@ trait HistoryFolding extends SpacePure {
   /**
    * Run the given evolution operation over the entire history of this Space.
    *
-   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
+   * Note that foldOverPartialHistory() is more general, but less often useful.
    *
-   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
+   * The evolve function is async because we often need that. If the algorithm you need is synchronous, just
    * wrap the result in Future.successful().
    *
    * @param zero the initial state of the fold
@@ -67,6 +66,8 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
 
   def tracing: TracingSpace
   def persistenceId: String
+
+  implicit def system: ActorSystem = context.system
 
   // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
   // likely with machinery to override Ecology members. But it'll do for now.
@@ -103,7 +104,6 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   ): Future[T] = {
     tracing.trace("foldOverHistory")
     val source = readJournal.currentEventsByPersistenceId(persistenceId, start, end)
-    implicit val mat = ActorMaterializer()
     source.runFoldAsync(zero) {
       // Note that this quite intentionally rejects anything that isn't a SpaceEvent!
       case (current, EventEnvelope(offset, persistenceId, sequenceNr, evt: SpaceEvent)) => {
@@ -111,7 +111,6 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
       }
       case (current, _) => Future.successful(current)
     }.map { result =>
-      mat.shutdown()
       result
     }
   }
@@ -119,9 +118,9 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   /**
    * Run the given evolution operation over the entire history of this Space.
    *
-   * Note that [[foldOverPartialHistory()]] is more general, but less often useful.
+   * Note that foldOverPartialHistory() is more general, but less often useful.
    *
-   * The [[evolve]] function is async because we often need that. If the algorithm you need is synchronous, just
+   * The evolve function is async because we often need that. If the algorithm you need is synchronous, just
    * wrap the result in Future.successful().
    *
    * @param zero the initial state of the fold

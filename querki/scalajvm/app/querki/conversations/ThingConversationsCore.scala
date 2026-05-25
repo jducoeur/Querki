@@ -48,7 +48,7 @@ abstract class ThingConversationsCore(
     req: User,
     comment: Comment,
     parentAuthors: Seq[IdentityId]
-  )
+  ): Unit
 
   implicit var state: SpaceState = initState
   val persistenceId = s"conv-${initState.id.toString}-${thingId.toString}"
@@ -103,7 +103,7 @@ abstract class ThingConversationsCore(
     def replaceChildNodes(
       children: Seq[ConversationNode]
     ): (Seq[ConversationNode], Option[ConversationNode], Seq[ConversationNode]) = {
-      ((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode]) /: children) {
+      children.foldLeft((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode])) {
         (state, child) =>
           val (sPre, found, sPost) = state
           found match {
@@ -205,7 +205,7 @@ abstract class ThingConversationsCore(
   def receiveRecover: Receive = {
     case SnapshotOffer(metadata, msg) => {
       // We aren't yet using snapshots, so this is weird:
-      QLog.error(s"ThingConversationsCore got offered a snapshot: $msg")
+      logError(s"ThingConversationsCore got offered a snapshot: $msg")
     }
 
     case evt: DHConvs => {
@@ -280,7 +280,7 @@ abstract class ThingConversationsCore(
             // send a Notification to the moderator(s), instead of rejecting it outright like this:
             respond(ThingError(new PublicException(SpaceError.ModifyNotAllowed)))
           } else {
-            val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
+            val comment = commentIn.copy(id = nextId, createTime = DateTime.now())
             nextId += 1
             val evt = DHAddComment(dh(comment))
             doPersist(evt) { _ =>

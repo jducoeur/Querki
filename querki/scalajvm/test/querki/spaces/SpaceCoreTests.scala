@@ -1,7 +1,6 @@
 package querki.spaces
 
-import akka.actor.Actor.{noSender, Receive}
-import akka.persistence._
+import akka.actor.Actor.{noSender}
 
 import models._
 import Kind.Kind
@@ -9,13 +8,12 @@ import querki.basic.MOIDs.SimpleThingOID
 import querki.conversations.TestConversations
 import querki.core.MOIDs.{UrPropOID, UrTypeOID}
 import querki.globals._
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{PublicIdentity, User}
 import querki.persistence._
 import querki.publication._
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
 import querki.spaces.messages._
 import querki.test._
-import querki.time._
 import querki.values.{QValue, SpaceVersion}
 
 case class TestSpaceConfig(snapshotInterval: Option[Int])

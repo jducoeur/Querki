@@ -1,8 +1,7 @@
 package querki.publication
 
 import org.scalatest.tags.Slow
-import org.scalatest.Matchers._
-import querki.data.TID
+import org.scalatest.matchers.should.Matchers._
 import querki.test.mid._
 import AllFuncs._
 import ClientState.withUser
@@ -56,6 +55,8 @@ object PublicationMidTests {
       instance3Name = "Third Instance"
       instance3 <- makeThing(model, instance3Name)
       _ <- checkNameIsMissingFor(instance3Name, member)
+      // TODO: the following is producing a PublicException (I know, because I had to debug that for Play 2.6).
+      // Check that Exception!
       _ <- withUser(member) { evaluateQL(instance3, "_publish") }
       _ <- checkNameIsMissingFor(instance3Name, member)
     } yield ()

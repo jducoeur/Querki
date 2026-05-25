@@ -4,7 +4,6 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 import org.querki.gadgets._
-import org.querki.jquery._
 
 import querki.display.{ButtonGadget}
 import querki.globals._
@@ -36,7 +35,7 @@ class RunButton(
       disabled := active,
       new RxTextFrag(Rx { if (active()) activeLabel else inactiveLabel }),
       mods
-    )(doClick)
+    )(doClick _)
 
   private def doClick(): Unit = {
     active() = true

@@ -2,7 +2,6 @@ package funcakka
 
 import scala.util.Success
 
-import cats._
 import cats.instances._
 
 import akka.actor.ActorRef
@@ -11,15 +10,13 @@ import org.querki.requester.{RequestM, Requester}
 
 object RealActorRefLike {
 
-  implicit val RERLInstance = new ActorRefLike[ActorRef] {
+  implicit val RERLInstance: ActorRefLike[ActorRef] = new ActorRefLike[ActorRef] {
 
     def !(t: ActorRef)(message: Any)(implicit sender: ActorRef): Unit = {
       t ! message
     }
   }
 }
-
-import RealActorRefLike._
 
 /**
  * This mix-in adapts PersistentActorCore to the reality of a PersistentActor.
@@ -49,7 +46,7 @@ trait RealActorCore extends PersistentActorCore { actor: PersistentActor with Re
    * Either, for unit-testing? (Maybe not without cheating and involving a mutable var.)
    */
   def persistAnd[Evt](event: Evt): RequestM[Evt] = {
-    val rm = RequestM.prep[Evt]
+    val rm = RequestM.prep[Evt]()
     persist(event) { persisted =>
       rm.resolve(Success(persisted))
     }
@@ -57,7 +54,7 @@ trait RealActorCore extends PersistentActorCore { actor: PersistentActor with Re
   }
 
   def persistAllAnd[Evt](events: collection.immutable.Seq[Evt]): RequestM[Seq[Evt]] = {
-    val rm = RequestM.prep[Seq[Evt]]
+    val rm = RequestM.prep[Seq[Evt]]()
     persistAll(events) { persisted =>
       // Note that this is called for *each* persisted...
     }

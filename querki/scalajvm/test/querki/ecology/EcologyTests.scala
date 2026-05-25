@@ -1,12 +1,12 @@
 package querki.ecology
 
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 
 import querki.values.SpaceState
 
-import querki.test._
-
-class EcologyTests extends WordSpec with Matchers with BeforeAndAfterAll {
+class EcologyTests extends AnyWordSpec with Matchers with BeforeAndAfterAll {
   trait TestInterface1 extends EcologyInterface {}
 
   trait TestInterface2 extends EcologyInterface {

@@ -2,6 +2,8 @@ package querki.imexport
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import querki.data.SpaceInfo
 
 /**
@@ -70,4 +72,8 @@ object ImportSpaceFunctions {
     spaceInfo: Option[SpaceInfo],
     failed: Boolean = false
   )
+
+  object ImportProgress {
+    implicit val rw: RW[ImportProgress] = macroRW
+  }
 }

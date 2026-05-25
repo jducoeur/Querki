@@ -2,12 +2,12 @@ package querki.notifications
 
 import autowire._
 import rx._
-import org.widok.moment._
+import moment._
 
 import querki.globals._
 
 import querki.comm._
-import querki.pages.{Page, PageFactory, ParamMap}
+import querki.pages.{Page}
 import querki.util.{Contributor, Publisher}
 
 class NotificationsEcot(e: Ecology) extends ClientEcot(e) with Notifications {

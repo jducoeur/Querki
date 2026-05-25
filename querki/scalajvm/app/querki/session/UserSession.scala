@@ -11,11 +11,9 @@ import querki.globals._
 import models.OID
 
 import querki.api.{AutowireParams, ClientRequest}
-import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.identity.skilllevel._
 import querki.persistence._
-import querki.time.DateTime
 import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
@@ -23,7 +21,8 @@ private[session] class UserSession(val ecology: Ecology)
   extends PersistentActor
      with Requester
      with EcologyMember
-     with ClusterTimeoutChild {
+     with ClusterTimeoutChild
+     with QLogging {
   import UserSessionMessages._
   import UserSession._
 
@@ -71,7 +70,7 @@ private[session] class UserSession(val ecology: Ecology)
         case old: UserStateOld => {
           // TODO: this is basically dead experimental code, and UserStateOld can be removed
           // before terribly long:
-          QLog.spew(s"Recovered an old UserState: $old")
+          logTrace(s"Recovered an old UserState: $old")
         }
         case state: UserState => {
           currentState = state

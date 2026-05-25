@@ -1,22 +1,15 @@
 package querki.values
 
-import language.existentials
-
 import scala.collection.immutable.{SortedSet, TreeSet}
-import scala.math.Ordering
 
-import cats.Eq, cats.instances._, cats.syntax.eq._
+import cats.Eq
 
 import models._
 
 import com.github.nscala_time.time.Imports._
 
 import querki.core.NameUtils
-import querki.ecology._
 import querki.globals._
-import querki.identity.User
-
-import querki.util._
 
 /**
  * The keys for the SpaceState's cache. Each element is owned by a specific Ecot, which assigns
@@ -35,7 +28,7 @@ case class SpaceVersion(v: Long) extends AnyVal
 
 object SpaceVersion {
   val Unknown = SpaceVersion(-1)
-  implicit val versionEqual = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }
+  implicit val versionEqual: Eq[SpaceVersion] = Eq.instance[SpaceVersion] { (v1, v2) => v1.v == v2.v }
 }
 
 /**
@@ -108,7 +101,7 @@ case class SpaceState(
 
   private def walkAppsRec[R](f: (SpaceState) => Option[R]): Option[R] = {
     // Run through the apps, depth-first, looking for the result:
-    (Option.empty[R] /: apps) { (cur, app) =>
+    apps.foldLeft(Option.empty[R]) { (cur, app) =>
       cur.orElse(app.walkTreeRec(f))
     }
   }
@@ -147,7 +140,7 @@ case class SpaceState(
     f: SpaceState => R,
     accum: (R, R) => R
   ): R = {
-    (f(this) /: apps) { (cur, app) =>
+    apps.foldLeft(f(this)) { (cur, app) =>
       val rest = app.accumulateAllRec(f, accum)
       accum(cur, rest)
     }
@@ -494,7 +487,7 @@ case class SpaceState(
    * pre-sorting them by name.
    */
   lazy val childrenMap: Map[OID, ThingChildren] = {
-    (Map.empty[OID, ThingChildren] /: everythingLocal) { (curMap, t) =>
+    everythingLocal.foldLeft(Map.empty[OID, ThingChildren]) { (curMap, t) =>
       val model = t.model
       val tc = curMap.get(model) match {
         case Some(thingChildren) => thingChildren.copy(children = thingChildren.children + t)
@@ -590,7 +583,7 @@ class SpaceStateOps(
       else
         state.children(root)
 
-    (candidates /: candidates) { (fullSet, child) =>
+    candidates.foldLeft(candidates) { (fullSet, child) =>
       fullSet ++ descendantsRec(child, includeApps)
     }
   }

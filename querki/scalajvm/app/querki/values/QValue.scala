@@ -4,12 +4,7 @@ import scala.concurrent.Future
 
 import models._
 
-// TODO: both of these should get evolved away!
-import play.api.Logger
-
 import querki.ecology.Ecology
-import querki.util._
-import querki.values._
 
 /**
  * Marker trait, to indicate that we should stop processing at this value. Mix it
@@ -178,7 +173,7 @@ trait QValue {
   }
 
   def rawList[VT](elemT: PType[VT]): List[VT] = {
-    (List.empty[VT] /: cv)((list, elem) => list :+ elemT.get(elem))
+    cv.foldLeft(List.empty[VT])((list, elem) => list :+ elemT.get(elem))
   }
 
   def contains[VT](

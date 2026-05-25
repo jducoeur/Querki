@@ -1,7 +1,5 @@
 package querki.html
 
-import scala.xml.XML
-
 import org.jsoup
 
 import models.{AnyProp, Thing}
@@ -303,7 +301,7 @@ class UITests extends QuerkiTests {
       2
       3
       4
-      5""".strip)
+      5""".stripFront)
     }
 
     "work with an empty list" in {

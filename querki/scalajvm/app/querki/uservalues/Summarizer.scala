@@ -1,28 +1,16 @@
 package querki.uservalues
 
 import scala.concurrent.Future
-import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
-import models.{
-  DisplayPropVal,
-  OID,
-  PType,
-  PTypeBuilder,
-  Property,
-  PropertyBundle,
-  SimplePTypeBuilder,
-  UnknownOID,
-  Wikitext
-}
+import models.{DisplayPropVal, OID, PType, Property, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.uservalues.PersistMessages.OneUserValue
-import querki.util.QLog
-import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
 case class DiscreteSummary[UVT](
   propId: OID,
@@ -40,7 +28,7 @@ case class DiscreteSummary[UVT](
 /**
  * Describes a mechanism for summarizing the User Values for a Property.
  */
-trait Summarizer[UVT, VT] {
+trait Summarizer[UVT, VT] extends QLogging {
 
   /**
    * Based on the previous and current User Values for a single User, produce an updated summary
@@ -306,7 +294,7 @@ trait SummarizerDefs { self: QuerkiEcot =>
         }
 
         case None => {
-          QLog.error(s"Got addToSummary for unknown Thing $tid")
+          logError(s"Got addToSummary for unknown Thing $tid")
           DiscreteSummary(fromProp.id, Map())
         }
       }
@@ -321,7 +309,7 @@ trait SummarizerDefs { self: QuerkiEcot =>
       state: SpaceState
     ): Option[DiscreteSummary[UVT]] = {
       val recalculated = {
-        val m = (Map.empty[UVT, Int] /: values) { (totals, v) =>
+        val m = values.foldLeft(Map.empty[UVT, Int]) { (totals, v) =>
           totals.get(v) match {
             case Some(count) => totals + (v -> (count + 1))
             case None        => totals + (v -> 1)
@@ -425,9 +413,9 @@ trait SummarizerDefs { self: QuerkiEcot =>
       }
 
       Future.sequence(keyFuts).map { guts =>
-        (Wikitext("""
-                    |!+noLines
-                    |<dl class="histogram">""".stripMargin) /: guts) { (curText, gut) => curText + gut } +
+        guts.foldLeft(Wikitext("""
+                                 |!+noLines
+                                 |<dl class="histogram">""".stripMargin)) { (curText, gut) => curText + gut } +
           Wikitext("</dl>\n!-noLines\n")
       }
     }

@@ -4,8 +4,6 @@ import language.existentials
 import scala.annotation.tailrec
 import scala.xml.{Attribute, NodeSeq, Null, Text}
 
-import play.api.Logger
-
 // TODO: solely for fromUser, which really should get moved elsewhere:
 import play.api.data.Form
 
@@ -44,7 +42,7 @@ object Collections {
   val emptyTextMarkerStr = s"$emptyTextMarker"
 }
 
-trait CollectionBase { self: CoreEcot =>
+trait CollectionBase extends QLogging { self: CoreEcot =>
   def UnknownType: PType[Unit]
 
   abstract class SystemCollection(
@@ -212,7 +210,7 @@ trait CollectionBase { self: CoreEcot =>
       vs.headOption match {
         case Some(v) => fromUserString(prop, v, elemT, state)
         case None => {
-          QLog.error(s"ExactlyOne.fromUser() received an empty list of values!")
+          logError(s"ExactlyOne.fromUser() received an empty list of values!")
           FormFieldInfo(prop, Some(apply(elemT.default(state))), true, true)
         }
       }
@@ -330,7 +328,7 @@ trait CollectionBase { self: CoreEcot =>
     ): Future[Wikitext] = {
       Future.sequence(v.map(elem => elemT.wikify(context)(elem, displayOpt, lexicalThing))).map { renderedElems =>
         // Concatenate the rendered elements, with newlines in-between:
-        (Wikitext.empty /: renderedElems)((soFar, next) => soFar.+(next, true))
+        renderedElems.foldLeft(Wikitext.empty)((soFar, next) => soFar.+(next, true))
       }
     }
 
@@ -685,7 +683,7 @@ trait CollectionCreation { self: CoreEcot with CollectionBase with CoreExtra =>
       in: Iterable[RT],
       builder: PTypeBuilderBase[VT, RT]
     ): QValue = {
-      val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
+      val rawList = in.foldLeft(List.empty[ElemValue])((list, next) => list :+ builder(next))
       makePropValue(rawList, builder.pType)
     }
   }
@@ -707,7 +705,7 @@ trait CollectionCreation { self: CoreEcot with CollectionBase with CoreExtra =>
       context: QLContext
     ): QValue = {
       val sorted = rawList.sortWith(pt.comp(context))
-      val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted) { (state, next) =>
+      val deduped = sorted.foldLeft((List.empty[ElemValue], Option.empty[ElemValue])) { (state, next) =>
         val (list, prevOpt) = state
         prevOpt match {
           case Some(prev) =>

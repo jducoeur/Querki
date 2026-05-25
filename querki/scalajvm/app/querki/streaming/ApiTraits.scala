@@ -1,33 +1,24 @@
 package querki.streaming
 
-import scala.concurrent.duration.FiniteDuration
-
-import akka.util.ByteString
-
-import querki.values.RequestContext
-
 object UploadMessages {
 
-  /**
-   * NOTE: this is coming from a ByteString, and it seems like we might as well just send a ByteString.
-   * We're converting and sending Vector[Byte] instead because I've found empirically that something is
-   * *deeply* broken in serialization of ByteString, such that the receiving end is frequently getting
-   * a corrupted, null-filled version.
-   */
-  case class UploadChunk(
-    index: Int,
-    chunk: Vector[Byte]
-  )
+  // Standard message types required by Sink.actorRefWithAck -- see
+  //   https://doc.akka.io/libraries/akka-core/2.5/stream/stream-integrations.html#sink-actorrefwithack
 
-  case class UploadChunkAck(
-    index: Int,
-    currentTotalSize: Int
-  )
-  case class UploadComplete(rc: RequestContext)
+  // Sent to say that we're ready to start sending
+  case object StreamInitialized
 
-  case object GetUploadTimeout
-  case class UploadTimeout(timeout: FiniteDuration)
+  // Response from the UploadActor to the sender; sent for each message
+  case object AckMessage
 
-  case class UploadProcessSuccessful(response: String)
-  case class UploadProcessFailed(ex: String)
+  // Sent when the stream finishes
+  case object StreamComplete
+
+  // Sent when the stream hits an error
+  case class OnFailure(ex: Throwable)
+
+  // Our extension to the protocol: when everything is uploaded, add the metadata and kick things off. This is
+  // called at the semantic layer (usually the controller), since the metadata type depends on what we're
+  // trying to do here.
+  case class ProcessUpload[T](t: T)
 }

@@ -2,7 +2,7 @@ package querki.apps
 
 import scala.util.{Failure, Success}
 
-import cats._, cats.syntax.eq._
+import cats.syntax.eq._
 
 import akka.actor._
 
@@ -15,7 +15,7 @@ import SpaceMessagePersistence.DHAddApp
 import querki.spaces.messages._
 import querki.time._
 import querki.util.{PublicException, UnexpectedPublicException}
-import querki.values.{RequestContext, SpaceVersion}
+import querki.values.{SpaceVersion}
 
 /**
  * This code runs *inside* the Space Actor, as a plugin. It has important constraints, as described in
@@ -33,12 +33,13 @@ class AppsSpacePlugin[RM[_]](
      with IdentityPersistence
      with querki.types.ModelTypeDefiner
      with EcologyMember
-     with AppsPure {
+     with AppsPure
+     with QLogging {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   def modelsToShadow(app: SpaceState): Seq[Thing] = {
     val (models, instances) = app.things.values.partition(_.isModel(app))
@@ -74,7 +75,7 @@ class AppsSpacePlugin[RM[_]](
 
     // Okay -- load the app:
     for {
-      app <- api.loadAppVersion(appId, appVersion, state.allApps)
+      app <- api.loadAppVersion(appId, appVersion, state.allApps())
       // Secondary check: is this App willing to be used?
       _ = {
         if (!AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, state.ownerIdentity.get.id, app))
@@ -87,8 +88,8 @@ class AppsSpacePlugin[RM[_]](
     } yield {
       implicit val s = state
       val dhApp = dh(app)
-      val dhParents = app.allApps.values.toSeq.map(dh(_))
-      val time = DateTime.now
+      val dhParents = app.allApps().values.toSeq.map(dh(_))
+      val time = DateTime.now()
       val msg = DHAddApp(req, time, dhApp, dhParents, idMapping, afterExtraction)
       ChangeResult(List(msg), Some(appId), addFilledAppPure(app, idMapping, time, afterExtraction)(s))
     }
@@ -108,7 +109,7 @@ class AppsSpacePlugin[RM[_]](
           th match {
             case ex: PublicException => api.respond(AddAppResult(Some(ex), None))
             case ex => {
-              QLog.error(s"AddApp received an unexpected exception", ex)
+              logError(s"AddApp received an unexpected exception", ex)
               api.respond(ThingError(UnexpectedPublicException))
             }
           }

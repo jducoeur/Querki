@@ -1,6 +1,5 @@
 package querki.publication
 
-import cats._
 import cats.implicits._
 import akka.actor.Actor.Receive
 import akka.persistence._
@@ -129,7 +128,7 @@ trait InPublicationStateCore
     case AddPublicationEvents(evts) => {
       tracing.trace(s"AddPublicationEvents")
       persistAllAnd(evts).map { _ =>
-        val s = (pState /: evts) { (curState, evt) =>
+        val s = evts.foldLeft(pState) { (curState, evt) =>
           addEvent(curState, evt)
         }
         setState(s)

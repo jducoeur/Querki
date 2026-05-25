@@ -3,7 +3,6 @@ package querki.conversations
 import querki.conversations.messages._
 import querki.globals._
 import querki.persistence._
-import querki.test._
 
 import PersistentEvents._
 
@@ -18,7 +17,7 @@ class ConversationEventPersistenceTests(env: PersistEnv)
   lazy val CommentText = Conversations.CommentText
 
   val s = env.commonSpace
-  implicit val state = s.state
+  implicit val state: SpaceState = s.state
   val owner = s.owner.mainIdentity.id
   val m1 = s.member1.user.mainIdentity.id
   val m2 = s.member2.user.mainIdentity.id

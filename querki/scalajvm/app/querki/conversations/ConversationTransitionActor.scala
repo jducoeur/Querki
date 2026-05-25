@@ -7,7 +7,7 @@ import org.querki.requester._
 import querki.conversations.messages._
 import querki.globals._
 import querki.spaces.SpacePersistenceFactory
-import querki.time.{DateTime, DateTimeOrdering}
+import querki.time.{DateTimeOrdering}
 import querki.util.QuerkiActor
 
 /**
@@ -33,7 +33,7 @@ class ConversationTransitionActor(
    */
   def buildConversations(comments: Seq[Comment]): ThingConversations = {
     val (dependencies, roots) =
-      ((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment]) /: comments) { (info, comment) =>
+      comments.foldLeft((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment])) { (info, comment) =>
         val (dep, roots) = info
         comment.responseTo match {
           case Some(parentId) => {
@@ -47,7 +47,7 @@ class ConversationTransitionActor(
       }
 
     def buildNodes(branches: Seq[Comment]): Seq[ConversationNode] = {
-      val nodes = (Seq.empty[ConversationNode] /: branches) { (seq, branch) =>
+      val nodes = branches.foldLeft(Seq.empty[ConversationNode]) { (seq, branch) =>
         val children = dependencies.get(branch.id).map(buildNodes(_)).getOrElse(Seq.empty[ConversationNode])
         seq :+ ConversationNode(branch, children)
       }
@@ -65,7 +65,7 @@ class ConversationTransitionActor(
         convsByThing = commentsByThing.map { case (thingId, comments) => (thingId, buildConversations(comments)) }
         // Go through all the Things that have conversations. For each, fire up a ThingConversationsActor, send it
         // the conversations, and wait for an Ack. This is a bit high-latency, but avoids saturating anything.
-        _ <- (RequestM.successful(ConvsSet()) /: convsByThing) { case (prevReq, (thingId, convs)) =>
+        _ <- convsByThing.foldLeft(RequestM.successful(ConvsSet())) { case (prevReq, (thingId, convs)) =>
           prevReq.flatMap { _ =>
             val convActor = context.actorOf(ThingConversationsActor.actorProps(state, thingId, Actor.noSender, ecology))
             convActor.requestFor[ConvsSet](SetConversations(convs)).map { set =>
@@ -75,7 +75,7 @@ class ConversationTransitionActor(
             }
           }
         }
-      } sender ! TransitionComplete
+      } sender() ! TransitionComplete
     }
   }
 }

@@ -1,8 +1,5 @@
 package querki.test.mid
 
-import monocle.Lens
-import monocle.macros.GenLens
-
 import querki.data._
 
 /**

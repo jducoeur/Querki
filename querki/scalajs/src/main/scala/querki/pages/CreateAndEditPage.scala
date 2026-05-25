@@ -1,7 +1,7 @@
 package querki.pages
 
 import org.querki.jquery._
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all.{input => _, _}
 import autowire._
 import querki.globals._
 import querki.api.{NotAllowedException, ThingFunctions}
@@ -61,11 +61,12 @@ class CreateAndEditPage(params: ParamMap)(implicit val ecology: Ecology) extends
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()
     initVals <- initialValues
     thingInfoFut = Client[EditFunctions].create(modelId, initVals).call()
-    _ = thingInfoFut.onFailure {
-      case ex: NotAllowedException => {
+    _ = thingInfoFut.failed.foreach {
+      case NotAllowedException() => {
         PageManager.nextChangeFuture.map(_.flash(true, "You aren't allowed to create things -- are you logged in?"))
         PageManager.showRoot()
       }
+      case _ => // TODO: other Failures?
     }
     thingInfo <- thingInfoFut
 

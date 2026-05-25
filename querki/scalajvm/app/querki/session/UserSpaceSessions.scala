@@ -1,12 +1,9 @@
 package querki.session
 
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
-import akka.event.LoggingReceive
 import models._
 import querki.admin.{MonitorActor, SpaceMonitorEvent}
 import querki.api.ClientRequest
-import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.publication.CurrentPublicationState
@@ -14,7 +11,6 @@ import querki.session.messages._
 import querki.spaces.TracingSpace
 import querki.spaces.messages.{CurrentState, SpaceSubsystemRequest}
 import querki.util.{QuerkiBootableActor, RoutingParent}
-import querki.values._
 
 private[session] class UserSpaceSessions(
   e: Ecology,
@@ -23,7 +19,6 @@ private[session] class UserSpaceSessions(
   timeSpaceOps: Boolean
 ) extends QuerkiBootableActor(e)
      with EcologyMember
-     with ReceivePipeline
      with RoutingParent[User] {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Publication = interface[querki.publication.Publication]

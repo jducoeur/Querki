@@ -5,17 +5,13 @@ import scala.concurrent.Future
 
 import akka.actor._
 import akka.cluster.ddata._
-import akka.cluster.singleton._
 import akka.pattern._
 import akka.util.Timeout
 
-import models.Wikitext
-
-import querki.core.QLText
 import querki.ecology._
 import querki.email.EmailNotifier
 import querki.globals._
-import querki.identity.{Identity, PublicIdentity, User, UserId}
+import querki.identity.{PublicIdentity, User, UserId}
 import querki.notifications._
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 import querki.time.DateTime
@@ -112,7 +108,7 @@ class AdminEcot(e: Ecology)
   def isTimedSpace(spaceId: OID) = _curTimedSpaces.contains(spaceId)
 
   def getSpacesStatus[B](req: User)(cb: SystemStatus => B): Future[B] = {
-    akka.pattern.ask(adminActor, GetSpacesStatus(req))(Timeout(5 seconds)).mapTo[SystemStatus].map(cb)
+    akka.pattern.ask(adminActor, GetSpacesStatus(req))(Timeout(5.seconds)).mapTo[SystemStatus].map(cb)
   }
 
   def sendSystemMessage(
@@ -125,7 +121,7 @@ class AdminEcot(e: Ecology)
 
   def getAllUserIds(req: User): Future[Seq[UserId]] = {
     // Very long timeout for this one, becaue it really might take a long time:
-    implicit val timeout = Timeout(1 minute)
+    implicit val timeout = Timeout(1.minute)
     val fut = adminActor ? GetAllUserIdsForAdmin(req)
     fut.mapTo[AllUserIds].map { _.users }
   }
@@ -193,7 +189,7 @@ class AdminEcot(e: Ecology)
       from.id,
       None,
       SystemMessageNotifier.id,
-      DateTime.now,
+      DateTime.now(),
       None,
       None,
       SpacePersistence.serProps(payload, SystemState)

@@ -124,7 +124,7 @@ trait EcotBase[ST, ET <: EcotBase[ST, ET]] extends EcologyMemberBase[ST, ET] { s
    * Initialization call, which may be overridden by the Module. This should hook in
    * all Listeners.
    */
-  def init = {}
+  def init() = {}
 
   /**
    * Called after everything has finished initializing, but before we open the gates. This
@@ -136,12 +136,12 @@ trait EcotBase[ST, ET <: EcotBase[ST, ET]] extends EcologyMemberBase[ST, ET] { s
    * postInit is not called in any particular order, and you should make no assumptions
    * about it.
    */
-  def postInit = {}
+  def postInit() = {}
 
   /**
    * Termination call, which may be overridden by the Module on system shutdown.
    */
-  def term = {}
+  def term() = {}
 
   /**
    * If this Ecot needs to add something to the initial system state, do it here.
@@ -237,7 +237,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   def term(): Unit = {
     _termOrder.foreach { ecot =>
 //      println(s"Terminating ecot ${ecot.fullName}")
-      ecot.term
+      ecot.term()
     }
   }
 
@@ -334,7 +334,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
     // TODO: this should go through Log instead:
 //    println(s"Initializing ecot ${ecot.fullName}")
     val newState = ecot.addState(currentState)
-    ecot.init
+    ecot.init()
     _initializedEcots += ecot
     _termOrder = ecot :: _termOrder
     ecot.implements.foreach(interface => _initializedInterfaces += (interface -> ecot))
@@ -381,7 +381,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   private def postInitialize(ecots: Set[ET]) = {
     ecots.foreach { ecot =>
       try {
-        ecot.postInit
+        ecot.postInit()
       } catch {
         case ex: Exception => {
           println(s"Got exception while post-initializing ${ecot.fullName}: $ex")

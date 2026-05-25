@@ -1,14 +1,11 @@
 package querki.test.functional
 
 import play.api.{Application, ApplicationLoader, Environment}
-
 import org.scalatest._
-import org.scalatest.tags.Slow
-import org.scalatest.selenium._
-import play.api.test._
-import play.api.test.Helpers._
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.play._
-
+import org.scalatestplus.play.guice.GuiceOneServerPerTest
 import querki.globals._
 import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
 
@@ -19,17 +16,17 @@ import querki.system.{QuerkiApplicationLoader, QuerkiRoot}
  * This keep recompiles down to a manageable level.
  */
 trait FuncMixin
-  extends WordSpec
+  extends AnyWordSpec
      with Matchers
      with org.scalatest.concurrent.Eventually
-     with WebBrowser
-     with OneBrowserPerTest
-     with OneServerPerTest
+     with OneBrowserPerTest // includes WebBrowser
+     with GuiceOneServerPerTest
      with FuncDB
      with FuncInterfaces
      with FuncUtil
      with FuncInvites
      with EcologyMember
+     with QLogging
 
 /**
  * The actual test runner. This defines the functional-test "cake", and the tests to run.
@@ -43,15 +40,14 @@ trait FuncMixin
 @Ignore
 class QuerkiFuncTests
 // Infrastructure mix-ins, from ScalaTest and Play:
-  extends WordSpec
+  extends AnyWordSpec
      with Matchers
      with BeforeAndAfterAll
-     with OneServerPerTest
+     with GuiceOneServerPerTest
      with OneBrowserPerTest
      // For now, we're just going to target Chrome. Eventually, obviously, we should
      // test this stuff cross-browser:
      with ChromeFactory
-     with WebBrowser
      with concurrent.IntegrationPatience
 
      // Structural mix-ins for the tests:
@@ -67,11 +63,11 @@ class QuerkiFuncTests
      with Persistence
      with RegressionTests1 {
 
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     setupCassandra()
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
     teardownCassandra()
   }
 
@@ -79,9 +75,9 @@ class QuerkiFuncTests
    * This is where we override the standard Application settings.
    */
   override implicit def newAppForTest(td: TestData): Application = {
-    val context = ApplicationLoader.createContext(
+    val context = ApplicationLoader.Context.create(
       Environment.simple(),
-      Map(
+      initialSettings = Map(
         // For the moment, the names of the test DBs are hardcoded. That will probably have to
         // change eventually.
         "db.system.url" -> "jdbc:mysql://localhost/test_system?characterEncoding=UTF-8",

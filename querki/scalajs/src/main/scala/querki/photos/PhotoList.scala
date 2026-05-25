@@ -2,10 +2,9 @@ package querki.photos
 
 import scala.scalajs.js
 import js.Math
-import org.scalajs.dom.{raw => domRaw, _}
+import org.scalajs.dom._
 import org.querki.jquery._
-import scalatags.JsDom.all.{html => htmlTag, _}
-import querki.globals._
+import scalatags.JsDom.all.{html => _, _}
 import querki.util.ScalatagUtils
 
 /**

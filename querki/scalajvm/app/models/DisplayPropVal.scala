@@ -142,7 +142,7 @@ object DisplayPropVal {
           path.flatten
         else
           path.flatten.dropRight(1)
-      (Option.empty[FieldIds] /: propIds) { (current, propId) =>
+      propIds.foldLeft(Option.empty[FieldIds]) { (current, propId) =>
         val prop = state.prop(propId.id).get
         Some(new FieldIds(bundle, prop, current, propId.i, listIndex))
       }

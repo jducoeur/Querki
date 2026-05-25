@@ -2,9 +2,7 @@ package querki.core
 
 import models.{PropertyThingOps, ThingOps}
 
-import querki.ecology._
 import querki.globals._
-import querki.util.QLog
 import querki.values.QLContext
 
 /**

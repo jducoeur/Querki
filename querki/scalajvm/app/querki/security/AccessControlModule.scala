@@ -5,7 +5,7 @@ import models._
 import querki.api.commonName
 import querki.ecology._
 import querki.globals._
-import querki.identity.{Identity, User}
+import querki.identity.{User}
 import querki.spaces.{RTCAble, SpaceAPI, SpacePlugin, SpacePluginProvider}
 import querki.values._
 
@@ -124,7 +124,7 @@ class AccessControlModule(e: Ecology)
     implicit val s = state
     val managers = state.fetchOrCreateCache(
       managerStateCacheKey, {
-        (Set[OID](state.owner) /: Person.members(state)) { (ids, member) =>
+        Person.members(state).foldLeft(Set[OID](state.owner)) { (ids, member) =>
           val managerIdOpt = for {
             rolesPV <- member.getPropOpt(PersonRolesProp)
             if (rolesPV.rawList.contains(RolesMOIDs.ManagerOID))
@@ -276,7 +276,7 @@ class AccessControlModule(e: Ecology)
         }
       }
     } catch {
-      case ex: Exception => { QLog.error("Exception while checking permissions", ex); false }
+      case ex: Exception => { logError("Exception while checking permissions", ex); false }
     }
   }
 

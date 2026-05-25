@@ -56,6 +56,8 @@ class DurationEcot(e: Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with 
       case DurationMonths.id => Period.months(durationQuantity)
       case DurationWeeks.id  => Period.weeks(durationQuantity)
       case DurationDays.id   => Period.days(durationQuantity)
+      // TODO: this whole Duration thing really should be more strongly typed
+      case other => throw new Exception(s"toPeriod() found unexpected Duration $other")
     }
   }
 

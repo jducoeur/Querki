@@ -1,7 +1,5 @@
 package querki.evolutions.steps
 
-import java.sql.Connection
-
 import querki.ecology._
 
 import querki.evolutions._
@@ -22,6 +20,6 @@ class Step5(implicit val ecology: Ecology) extends Step {
         |  PRIMARY KEY (identityId, thingId, propertyId)
         |) DEFAULT CHARSET=utf8;
         |""".stripMargin
-    ).execute
+    ).execute()
   }
 }

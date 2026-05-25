@@ -1,6 +1,6 @@
 package querki.email
 
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.{ExecutionContext}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
@@ -15,8 +15,8 @@ import akka.pattern.after
 
 import models.Wikitext
 
-import querki.ecology._
-import querki.globals._
+// We specificially *don't* want the global EC below -- we handle that explicitly:
+import querki.globals.{execContext => _, _}
 import querki.identity.Identity
 
 /**
@@ -33,6 +33,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
   lazy val from = Config.getString(fullKey("from"))
   lazy val smtpHost = Config.getString(fullKey("smtpHost"))
   lazy val smtpPort = Config.getInt(fullKey("port"), 0)
+  // TODO: now that we have a better logging stack, drop this in favor of using the trace level of logging for this type:
   lazy val debug = Config.getBoolean(fullKey("debug"), false)
   lazy val username = Config.getString(fullKey("smtpUsername"), "")
   lazy val password = Config.getString(fullKey("smtpPassword"), "")
@@ -119,7 +120,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
                           |}
                           |</style>""".stripMargin
 
-  val retryDelay = 1 second
+  val retryDelay = 1.second
 
   def futureWithRetries[R](
     name: String
@@ -128,13 +129,13 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
     retries: Int = 3
   )(implicit
     scheduler: Scheduler,
-    ex: ExecutionContext
+    ec: ExecutionContext
   ): Future[R] = {
     val future = Future { f }
     if (retries > 0) {
       future.recoverWith {
         case ex: Exception => {
-          if (debug) QLog.spew(s"$name() got Exception ${ex.getMessage}; retrying $retries")
+          if (debug) logTrace(s"$name() got Exception ${ex.getMessage}; retrying $retries")
           // We delay a little, then try again:
           after(retryDelay, scheduler) { futureWithRetries(name)(f, retries - 1) }
         }
@@ -144,7 +145,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
       future.onComplete {
         _ match {
           case Success(_)  => // Yay!
-          case Failure(ex) => QLog.error(s"Failure trying to send email, in $name", ex)
+          case Failure(ex) => logError(s"Failure trying to send email, in $name", ex)
         }
       }
 
@@ -255,12 +256,12 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
         transport <- transportFut
         _ <- connect(transport)
         _ <- sendMessage(msg, transport)
-        _ = if (debug) QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+        _ = if (debug) logTrace(s"Sent email; transport returned ${transport.getLastServerResponse}")
       } yield transport.getLastReturnCode
 
       returnCodeFut.andThen {
         // When the whole thing finishes, regardless of what happens, make sure we release the Transport:
-        case _ => transportFut.onSuccess { case transport => transport.close() }
+        case _ => transportFut.foreach { transport => transport.close() }
       }
     } else {
       // Non-TLS -- running on a test server, so just do it the easy way:
@@ -345,7 +346,7 @@ private[email] class RealEmailSender(e: Ecology) extends QuerkiEcot(e) with Emai
         transport.connect(username, password)
         transport.sendMessage(msg, msg.getAllRecipients)
         if (debug)
-          QLog.spew(s"Sent email; transport returned ${transport.getLastServerResponse}")
+          logTrace(s"Sent email; transport returned ${transport.getLastServerResponse}")
       } else {
         // Non-TLS -- running on a test server, so just do it the easy way:
         Transport.send(msg)

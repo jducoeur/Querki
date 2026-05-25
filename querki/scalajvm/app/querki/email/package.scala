@@ -8,12 +8,10 @@ import models.Property
 
 // For the HACKs below:
 import scala.util.Try
-import models.{OID, Thing, Wikitext}
+import models.{Wikitext}
 
-import querki.core.QLText
-import querki.identity.{Identity, IdentityId, User}
+import querki.identity.{Identity, IdentityId}
 import querki.notifications.NotifierId
-import querki.values.{QLContext, SpaceState}
 
 import querki.ecology._
 

@@ -1,10 +1,9 @@
 package querki.test.functional
 
-import scala.collection.JavaConverters._
-
+import scala.jdk.CollectionConverters._
 import org.openqa.selenium.WebElement
 
-import querki.util.QLog
+import scala.annotation.nowarn
 
 /**
  * Common utility operations for the tests.
@@ -45,8 +44,13 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
 
   /**
    * Note that this implicit is available pretty much throughout the mixins.
+   *
+   * TODO: this kicks out a deprecation warning because WebBrowser has moved. But scalatestplus-play is internally
+   * inconsistent: it uses the old version in its definition of OneBrowserPerTest, so we're kind of stuck for now.
+   * When we *can* upgrade past this inconsistency, we should.
    */
-  implicit val browser: org.scalatest.selenium.WebBrowser = this
+  @nowarn
+  implicit val browser: org.scalatestplus.selenium.WebBrowser = this
 
   /**
    * This works around the very unfortunate limitation that WebBrowser.Element doesn't allow
@@ -72,7 +76,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
   /**
    * This loads the clientStrings and parses them, so we can compare against what we expect.
    */
-  lazy val messages = new FuncMessages(app).messages
+  lazy val messages = new FuncMessages().messages
 
   /**
    * Access the messages for a specific page.
@@ -155,7 +159,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    */
   def spew(str: => String) = {
     // TODO: make this config-selectable
-    QLog.spew(str)
+    logTrace(str)
   }
 
   def loginAs(user: TestUser)(state: State): State = {
@@ -333,7 +337,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
    * Tests are frequently composed of Ops, but do not have to be.
    */
   def runTests(tests: TestDef*)(initialState: State): State = {
-    (initialState /: tests) { (state, test) =>
+    tests.foldLeft(initialState) { (state, test) =>
       spew(s"Running test ${test.desc}")
       val stateWithUser: State = adjustUser(state, test)
       val stateWithPage = adjustPage(stateWithUser, test)
@@ -363,7 +367,7 @@ trait FuncUtil extends FuncData with FuncMenu with FuncEditing with FuncTypes wi
     initialState: State,
     ops: State => State*
   ): State = {
-    (initialState /: ops) { (state, op) =>
+    ops.foldLeft(initialState) { (state, op) =>
       trying(s"Failed while running an operation in State $state") {
         op(state)
       }

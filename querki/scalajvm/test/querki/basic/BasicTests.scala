@@ -61,7 +61,7 @@ class BasicTests extends QuerkiTests {
 			</li>
 			</ul>
 			</li>
-			</ul>""".strip)
+			</ul>""".stripFront)
     }
   }
 

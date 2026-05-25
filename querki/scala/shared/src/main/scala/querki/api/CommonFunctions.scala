@@ -2,6 +2,8 @@ package querki.api
 
 import scala.concurrent.Future
 
+import upickle.default.{macroRW, ReadWriter => RW}
+
 import models.Wikitext
 import querki.data.ThingInfo
 
@@ -44,6 +46,10 @@ object CommonFunctions {
     text: Wikitext
   )
 
+  object TOSInfo {
+    implicit val rw: RW[TOSInfo] = macroRW
+  }
+
 }
 
 /**
@@ -52,6 +58,11 @@ object CommonFunctions {
  */
 sealed trait OperationHandle
 case class ActorOperationHandle(path: String) extends OperationHandle
+
+object OperationHandle {
+  implicit val aohrw: RW[ActorOperationHandle] = macroRW
+  implicit val rw: RW[OperationHandle] = macroRW
+}
 
 /**
  * A description of the current state of a long-running operation.
@@ -62,6 +73,10 @@ case class OperationProgress(
   complete: Boolean,
   failed: Boolean
 )
+
+object OperationProgress {
+  implicit val rw: RW[OperationProgress] = macroRW
+}
 
 trait PassthroughHandlerBase {
   def pass(name: String): ThingInfo

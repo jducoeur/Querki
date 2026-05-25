@@ -1,12 +1,8 @@
 package querki.imexport
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import akka.actor._
-import akka.pattern._
-import akka.serialization.Serialization
-import akka.util.Timeout
 
 import models.AsName
 import querki.api._

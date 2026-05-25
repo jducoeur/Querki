@@ -1,12 +1,9 @@
 package querki.editing
 
-import models.{Property, PropertyBundle, Thing, Wikitext}
+import models.{PropertyBundle, Wikitext}
 
 import querki.core.QLText
-import querki.ecology._
 import querki.globals._
-import querki.ql.Invocation
-import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self: EditorModule =>
@@ -59,7 +56,7 @@ trait ThingEditor { self: EditorModule =>
   }
 
   private case class EditorRowLayout(props: Seq[LayoutElement]) {
-    def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
+    def span = props.foldLeft(0) { (sum, propLayout) => sum + propLayout.span }
     def layout = s"""{{row:
                     |${props.map(_.layout).mkString}
                     |}}
@@ -74,7 +71,7 @@ trait ThingEditor { self: EditorModule =>
    * than 12 spans each.
    */
   private def splitRows(propLayouts: Iterable[LayoutElement]): Seq[EditorRowLayout] = {
-    (Seq(EditorRowLayout(Seq.empty)) /: propLayouts) { (rows, nextProp) =>
+    propLayouts.foldLeft(Seq(EditorRowLayout(Seq.empty))) { (rows, nextProp) =>
       val currentRow = rows.last
       if ((currentRow.span + nextProp.span) > maxSpanPerRow)
         // Need a new row

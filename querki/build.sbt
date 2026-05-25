@@ -1,130 +1,201 @@
 import sbt.Project.projectToRef
 
-import ByteConversions._
+import com.typesafe.sbt.packager.docker._
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.12"
-lazy val akkaV = "2.4.18"
-lazy val enumeratumV = "1.5.3"
-lazy val appV = "2.10.4.2"
+lazy val scalaV = "2.13.18"
+lazy val akkaV = "2.6.21"
+lazy val appV = "3.0.0.12"
 
 lazy val sharedSrcDir = "scala"
+
+val querkiScalacOptions = Seq(
+  "-deprecation",
+  "-feature",
+  // Higher-kinded types stop giving a warning around Scala 2.13.1; remove this flag then:
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  // Works around spurious unused-import warnings from Twirl; this completely silences warnings in Twirl.
+  // Suggested here https://github.com/playframework/twirl/issues/105#issuecomment-782985171
+  // and then narrowed to do exactly what we want.
+  // See https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html for details.
+  "-Wconf:cat=unused-imports&src=twirl/.*:is",
+  // Suppress auto-application deprecation from autowire's route macro (can't fix in macro-generated code):
+  "-Wconf:msg=Auto-application to:s",
+  // Suppress top-level wildcard warning in fastparse parser definitions (idiomatic fastparse pattern):
+  "-Wconf:msg=Top-level wildcard is not allowed:s",
+  // Suppress unchecked erasure warnings (type pattern erasure is unavoidable in these cases):
+  "-Wconf:msg=is unchecked since it is eliminated by erasure:s",
+  // Suppress unicode arrow deprecation (from copied Akka code in ReceivePipeline):
+  "-Wconf:msg=unicode arrow:s",
+  // Suppress deprecated HashMap inheritance warning (legacy code):
+  "-Wconf:msg=HashMap will be made final:s",
+  // Suppress replaceAllLiterally deprecation (trivial, fix later):
+  "-Wconf:msg=replaceAllLiterally:s",
+  // Suppress non-exhaustive match warnings (existing code pattern):
+  "-Wconf:msg=match may not be exhaustive:s",
+  // Suppress symbol literal deprecation (in Twirl templates):
+  "-Wconf:msg=symbol literal is deprecated:s",
+  // Suppress various 2.13 collection deprecations (to be fixed incrementally):
+  "-Wconf:msg=Use .view.mapValues:s",
+  "-Wconf:msg=Use .view.filterKeys:s",
+  "-Wconf:msg=deprecated.*for collections of type Iterable:s",
+  "-Wconf:msg=Use LazyList instead of Stream:s",
+  "-Wconf:msg=Use a scala.collection.mutable.MultiDict:s",
+  "-Wconf:msg=Passing an explicit array value to a Scala varargs:s",
+  "-Wconf:msg=any2stringadd in object Predef is deprecated:s",
+  "-Wconf:msg=Adding a number and a String is deprecated:s",
+  "-Wconf:msg=Implicit injection of \\+ is deprecated:s",
+  "-Wconf:msg=newBuilder in object StringBuilder is deprecated:s",
+  // Suppress Array to IndexedSeq conversion deprecation (generated code):
+  "-Wconf:msg=copyArrayToImmutableIndexedSeq:s",
+  // Suppress method override parameter list mismatch (generated or macro code):
+  "-Wconf:msg=method with a single empty parameter list overrides:s",
+  // Turns on verbose warnings, if we need the category name for a given warning:
+  //"-Wconf:any:wv",
+  "-Xfatal-warnings",
+  "-Ywarn-unused:imports",
+)
+
+ThisBuild / Test / parallelExecution := false
+
+// HACK: this is awful, but the AWS library is trying to install databind 2.12.3, and the Scala code intentionally
+// crashes when that's the case. So let's pull the versions back to the Play one:
+ThisBuild / dependencyOverrides ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.4",
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.11.4",
+  "org.scala-lang.modules" %% "scala-xml" % "2.3.0"
+)
 
 lazy val querkiServer = (project in file("scalajvm")).settings(
   scalaVersion := scalaV,
   version := appV,
   scalaJSProjects := clients,
-  pipelineStages := Seq(scalaJSProd, digest, gzip),
+  pipelineStages := Seq(digest, gzip),
+  Assets / pipelineStages := Seq(scalaJSPipeline),
   // Needed for the in-memory Cassandra driver, used during tests:
-  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
+//  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
   // To prevent duplicate-artifact errors in Stage:
-  publishArtifact in (Compile, packageSrc) := false,
+  Compile / packageSrc / publishArtifact := false,
+  dependencyOverrides += "com.datastax.oss" % "java-driver-core-shaded" % "4.6.1",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     // Main Play dependencies
     jdbc,
     // anorm,
     filters,
-    "com.typesafe.play" %% "anorm" % "2.5.0",
-    // Add your project dependencies here,
+    guice,
+    "org.playframework.anorm" %% "anorm" % "2.7.0",
+    // TODO: this was later renamed mysql-connector-j and has been maintained as such. Upgrade in due course:
     "mysql" % "mysql-connector-java" % "5.1.36",
+    // TODO: this has apparently become jakarta.mail-api and moved on to a new major version. Also needs upgrading:
     "com.sun.mail" % "javax.mail" % "1.6.2",
+    // TODO: currently up to 2.0.1 -- do the major bump eventually:
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.6.2",
-    "com.github.nscala-time" %% "nscala-time" % "1.6.0",
+    "com.github.nscala-time" %% "nscala-time" % "3.0.0",
     "com.typesafe.akka" %% "akka-testkit" % akkaV,
-    "com.typesafe.akka" %% "akka-contrib" % akkaV,
+    // TODO: does't exist for Akka 2.6 -- do we care? Probably not.
+//    "com.typesafe.akka" %% "akka-contrib" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-tools" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-sharding" % akkaV,
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-persistence" % akkaV,
-    "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.17",
-    "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaV,
+    // We've been getting weird errors trying to connect to Cassandra; there seems to be evidence that the right
+    // fix it to use the shaded version of the driver, which includes a shaded version of Netty. Try to keep
+    // the version of java-driver-core-shaded lined up with the transitive dependency (akka-persistence-cassandra ->
+    // akka-stream-alpakka-cassandra -> java-driver-core).
+    ("com.typesafe.akka" %% "akka-persistence-cassandra" % "1.0.1")
+      .exclude("com.datastax.oss", "java-driver-core"),
+    "com.datastax.oss" % "java-driver-core-shaded" % "4.6.1",
+    "com.typesafe.akka" %% "akka-persistence-query" % akkaV,
+    "com.typesafe.akka" %% "akka-distributed-data" % akkaV,
+    "com.typesafe.akka" %% "akka-cluster-typed" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
-    "com.amazonaws" % "aws-java-sdk" % "1.8.4",
-    "com.vmunier" %% "play-scalajs-scripts" % "0.5.0",
-//    "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "2.6",
-    "com.github.mauricio" %% "mysql-async" % "0.2.16",
-//      "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
-    "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.2",
-//      "com.typesafe.conductr" %% "play25-conductr-bundle-lib" % "1.4.4",
-    "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaV,
-//      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-    // Pretty-printer: http://www.lihaoyi.com/upickle-pprint/pprint/
-    "com.lihaoyi" %% "pprint" % "0.4.1",
-    "com.lihaoyi" %%% "fastparse" % "2.3.2",
-    "com.lihaoyi" %% "sourcecode" % "0.2.3",
-    // Powerful structural-diffing library: https://github.com/xdotai/diff
-    "ai.x" %% "diff" % "1.2.0" % "test",
-    // Only used for debugging at this point:
-    "com.github.pathikrit" %% "better-files" % "2.17.1",
-    "org.typelevel" %% "cats-core" % "2.0.0",
-    "org.typelevel" %% "cats-effect" % "2.0.0",
-    "co.fs2" %% "fs2-core" % "2.1.0",
-    "com.github.julien-truffaut" %% "monocle-core" % "1.5.0",
-    "com.github.julien-truffaut" %% "monocle-macro" % "1.5.0",
-    // Updated version of the XML library:
-    "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+    // TODO: need to migrate this to 2.x before EOY 2025!
+    "com.amazonaws" % "aws-java-sdk" % "1.12.99",
+    // TODO: pull back out into a library after upgrades:
+//    "org.querki" %% "requester" % "2.6",
+    "io.altoo" %% "akka-kryo-serialization" % "1.1.0",
+    // TODO: upgrade after we're on sbt 1.x:
+    "com.lihaoyi" %% "pprint" % "0.9.0",
+    "com.lihaoyi" %% "sourcecode" % "0.4.2",
+    // Only used for debugging at this point; uncomment when needed:
+    // "com.github.pathikrit" %% "better-files" % "3.9.2",
+    "org.typelevel" %% "cats-core" % "2.13.0",
+    "org.typelevel" %% "cats-effect" % "2.5.5",
+    "co.fs2" %% "fs2-core" % "2.5.12",
+    "com.github.julien-truffaut" %% "monocle-core" % "2.1.0",
+    "com.github.julien-truffaut" %% "monocle-macro" % "2.1.0",
+    "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
     // A simple Base64 library, for embedding stuff into HTML:
-    "com.github.marklister" %% "base64" % "0.2.3",
+    // TODO: can/should we replace this with upickle? I don't think base64 is gaining us anything interesting:
+    "com.github.marklister" %% "base64" % "0.3.0",
     // We are also using BooPickle for embedding:
-    "io.suzaku" %% "boopickle" % "1.2.6",
+    // TODO: at this point, we probably should replace this with upickle, using one of the compact encodings:
+    "io.suzaku" %% "boopickle" % "1.5.0",
     // We use JSoup for HTML cleaning:
     "org.jsoup" % "jsoup" % "1.11.2",
-    // In-memory Akka Persistence driver, used for tests. Note that this is for Akka 2.4!
-    "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.3.9" % "test",
-    // In-memory H2 database, used for tests:
-    "com.h2database" % "h2" % "1.4.192" % "test",
     // For graphql processing:
-    "org.sangria-graphql" %% "sangria" % "1.4.2",
-    "com.chuusai" %% "shapeless" % "2.3.3"
+    "org.sangria-graphql" %% "sangria" % "3.5.3",
+    "com.chuusai" %% "shapeless" % "2.3.13",
+    //
+    // TEST-ONLY DEPENDENCIES:
+    // ScalaTest can't upgrade until scalatestplus-play does, and *that* can't upgrade until we hit Play 2.8. So
+    // this is a bit stuck for now:
+    "org.scalatest" %% "scalatest" % "3.1.4" % "test",
+    "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % "test",
+    // Powerful structural-diffing library: https://github.com/xdotai/diff
+    // This will need replacing with a different library after Scala 2.12!
+//    "ai.x" %% "diff" % "2.0.1" % "test",
+    // In-memory H2 database, for simulating MySQL:
+    "com.h2database" % "h2" % "1.4.192" % "test",
+    // In-memory Akka Persistence driver, used for tests. Probably need to switch to a fork for Akka 2.6!
+    // Eg, https://github.com/firstbirdtech/akka-persistence-inmemory and thence
+    // https://github.com/alstanchev/pekko-persistence-inmemory
+    // Argh: doesn't exist for Scala 2.12 -- re-enable once we're on 2.13!
+    "com.firstbird" %% "akka-persistence-inmemory" % "2.6.0" % "test"
   ),
-  // ConductR params
-  BundleKeys.nrOfCpus := 1.0,
-  // We have 4GB nodes. This allows for 2 simultaneous bundles per node during release, plus
-  // overhead for ConductR and system. 1.5 GB seems safe in practice; we might be able to raise this to 2GB?
-  BundleKeys.memory := 1536.MB,
-  BundleKeys.diskSpace := 5.MB,
-  BundleKeys.startCommand ++= Seq(
-    "-Dhttp.address=$WEB_BIND_IP -Dhttp.port=$WEB_BIND_PORT",
-    "-java-home /apps/java"
-  ),
-  BundleKeys.system := "querki-server",
-  BundleKeys.endpoints := Map(
-    "akka-remote" -> Endpoint("tcp"),
-    "web" -> Endpoint("http", services = Set(URI("http://:9000")))
-  ),
+  // Docker configuration
+  // Temurin JRE 11 on Debian slim — includes bash out of the box, JRE-only so much smaller than a full JDK.
+  dockerBaseImage := "eclipse-temurin:11-jre-jammy",
+  dockerExposedPorts := Seq(9000),
   // When running server tests, use this alternate config file, which uses the in-memory persistence
   // instead of on-disk:
-  javaOptions in Test += "-Dconfig.file=conf/application.test.conf",
-  fork in Test := true,
+  Test / javaOptions += "-Dconfig.file=conf/application.test.conf",
+  Test / fork := true,
+  // So that the FullMidTests can run:
+  Test / envVars := Map("QUERKI_ENV" -> "scenario"),
   // For cats:
-  scalacOptions += "-Ypartial-unification",
+  scalacOptions ++= querkiScalacOptions,
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-  buildInfoPackage := "querki",
-  EclipseKeys.skipParents in ThisBuild := false
-).enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin). //, ConductRPlugin).
+  buildInfoPackage := "querki"
+)
+// NOTE: we need to turn on akka-http and turn off Netty, because the version of Netty built into
+// Play 2.5 conflicts with the version in the AWS SDK:
+  .enablePlugins(JavaAppPackaging, PlayScala, BuildInfoPlugin, PlayAkkaHttpServer, DockerPlugin, SbtWeb)
+  .disablePlugins(PlayNettyServer)
+
   // TODO: this aggregate is how we pull in the client and get it to compile, but it's too broad:
   // it causes the system to run the Client during unit testing, which we don't want. We need to
   // figure out how to restructure such that the client gets *built* but not *tested*, at least
   // for now.
-  aggregate(clients.map(projectToRef): _*).dependsOn(querkiSharedJvm)
+  .aggregate(clients.map(projectToRef): _*).dependsOn(querkiSharedJvm)
+
+def toPathMapping(f: File): (File, String) = f -> f.getName
 
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
   version := appV,
-  persistLauncher := true,
-  persistLauncher in Test := false,
+  scalacOptions ++= querkiScalacOptions,
+  scalaJSUseMainModuleInitializer := true,
 //  sourceMapsDirectories += file(sharedSrcDir),
-  jsDependencies += RuntimeDOM,
-//  postLinkJSEnv := PhantomJSEnv(autoExit = false).value,
 
   // Javascript libraries we require:
-  skip in packageJSDependencies := false,
+  packageJSDependencies / skip := false,
   // Turn off client-side unit testing for now:
   test := {},
   jsDependencies += ("org.webjars" % "jquery" % "2.2.1" / "jquery.js").minified("jquery.min.js"),
@@ -158,51 +229,73 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += (ProvidedJS / "jquery.fileupload-image.js").minified("jquery.fileupload-image.min.js").dependsOn(
     "jquery.fileupload.js"
   ),
+  // Formerly in the jsTree Facade library. We *might* remove this line when that gets pulled back out to be a library,
+  // but it may make more sense to change the library to not include this itself (so as to avoid eviction problems):
+  jsDependencies += ("org.webjars" % "jstree" % "3.2.1" / "jstree.js").minified("jstree.min.js"),
+  // This currently has dependency issues, so we're instead making it ProvidedJS for now. At some point, see if we
+  // can iron those out and do this properly:
+  // jsDependencies += ("org.webjars.npm" % "moment" % "2.22.2" / "moment.js").minified("moment.min.js"),
+  // jsDependencies += ("org.webjars.npm" % "moment-timezone" % "0.5.25" / "moment-timezone.js"),
+  jsDependencies += (ProvidedJS / "moment.js").minified("moment.min.js"),
+  jsDependencies += (ProvidedJS / "moment-timezone.js").dependsOn("moment.js"),
+  Compile / fastLinkJS / jsMappings += toPathMapping((Compile / packageJSDependencies).value),
+  Compile / fullLinkJS / jsMappings += toPathMapping((Compile / packageMinifiedJSDependencies).value),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
+  // Without this, sbt-web-scalajs only outputs the fastOpt files, but when we dockerize we expect the fullOpt ones:
+  scalaJSStage := FullOptStage,
   libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scalajs-dom" % "0.9.3",
-    "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
-    "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-    "org.querki" %%% "querki-jsext" % "0.8",
-    "org.querki" %%% "jquery-facade" % "1.2",
-    "org.querki" %%% "bootstrap-datepicker-facade" % "0.8",
-    "io.github.widok" %%% "scala-js-momentjs" % "0.1.5",
-    "org.querki" %%% "jstree-facade" % "0.5",
-    "org.querki" %%% "squery" % "0.1",
-    "org.querki" %%% "gadgets" % "0.3",
-    "com.lihaoyi" %%% "fastparse" % "0.4.3"
+    // Necessary in order to get performant and reliable Futures in SJS. See
+    //   https://github.com/scala-js/scala-js-macrotask-executor
+    "org.scala-js" %%% "scala-js-macrotask-executor" % "1.1.1",
+    "com.lihaoyi" %%% "scalarx" % "0.4.3",
+    // Note that upgrading this requires matching versions of moment.js and moment-timezone above. See matrix at
+    //   https://github.com/vpavkin/scala-js-momentjs
+    "ru.pavkin" %%% "scala-js-momentjs" % "0.10.3",
+    "org.querki" %%% "querki-jsext" % "0.12",
+    "org.querki" %%% "jquery-facade" % "2.1",
+    // TODO: after evolving everything, pull these back out to their libraries:
+    // "org.querki" %%% "bootstrap-datepicker-facade" % "0.9",
+    // "org.querki" %%% "jstree-facade" % "0.5",
+    // "org.querki" %%% "squery" % "0.1"
+    // "org.querki" %%% "gadgets" % "0.3"
   )
-).enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).dependsOn(querkiSharedJs)
+).enablePlugins(ScalaJSPlugin, ScalaJSWeb, JSDependenciesPlugin, BuildInfoPlugin).dependsOn(querkiSharedJs)
 
-lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")).settings(
-  scalaVersion := scalaV,
-  version := appV
-).
+// See https://github.com/portable-scala/sbt-crossproject/tree/v0.5.0?tab=readme-ov-file#migration-from-scalajs-default-crossproject
+lazy val querkiShared =
+  crossProject(JSPlatform, JVMPlatform)
+    .withoutSuffixFor(JVMPlatform)
+    .crossType(CrossType.Full)
+    .in(file("scala"))
+    .settings(
+      scalaVersion := scalaV,
+      version := appV
+    ).
 // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
-jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
-  libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-  )
-).jsConfigure(_.enablePlugins(ScalaJSPlay)).jsSettings(
+    jvmConfigure(_.enablePlugins(SbtTwirl)).jvmSettings(
+      scalacOptions ++= querkiScalacOptions,
+      libraryDependencies ++= sharedDependencies.value ++ Seq(
+        "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
+      )
+    ).jsConfigure(_.enablePlugins(ScalaJSWeb, JSDependenciesPlugin)).jsSettings(
 //    sourceMapsBase := baseDirectory.value / "..",
-  libraryDependencies ++= sharedDependencies.value ++ Seq(
-    "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"
-  ),
-  test := {},
-  EclipseKeys.useProjectId := true
-)
+      scalacOptions ++= querkiScalacOptions,
+      libraryDependencies ++= sharedDependencies.value ++ Seq(
+        "org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2"
+      ),
+      test := {}
+    )
 lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.4.3",
-  "com.lihaoyi" %%% "scalarx" % "0.3.2",
-  "com.lihaoyi" %%% "autowire" % "0.2.5",
-  "com.lihaoyi" %%% "scalatags" % "0.6.5",
-  "org.querki" %%% "shocon" % "0.4",
-  "com.beachape" %%% "enumeratum" % enumeratumV,
-  "com.beachape" %%% "enumeratum-upickle" % enumeratumV
+  "com.lihaoyi" %%% "upickle" % "4.2.1",
+  "com.lihaoyi" %%% "autowire" % "0.3.3",
+  "com.lihaoyi" %%% "scalatags" % "0.13.1",
+  "com.lihaoyi" %%% "fastparse" % "3.1.1"
+  // TODO: pull this back out into a library again after we're done with upgrades:
+//  "org.querki" %%% "shocon" % "0.4",
 ))
 
 // utst -- run the Unit Tests:
@@ -210,11 +303,7 @@ addCommandAlias("utst", """querkiServer/test-only -- -l "org.scalatest.tags.Slow
 // ftst -- run the Functional (browser) Tests:
 addCommandAlias("ftst", """querkiServer/test-only -- -n "org.scalatest.tags.Slow"""")
 
-onLoad in Global := (Command.process("project querkiServer", _: State)).compose((onLoad in Global).value)
+Global / onLoad := (Global / onLoad).value.andThen("project querkiServer" :: _)
 
-// for Eclipse users
-EclipseKeys.skipParents in ThisBuild := false
-// Compile the project before generating Eclipse files, so that generated .scala or .class files for views and routes are present
-EclipseKeys.preTasks := Seq(compile in (querkiServer, Compile))
-
-fork in run := true
+// Do we care about this? We essentially never use "run" any more; we run inside Docker instead:
+run / fork := true

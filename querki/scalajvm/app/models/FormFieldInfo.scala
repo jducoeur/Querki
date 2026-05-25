@@ -1,7 +1,5 @@
 package models
 
-import language.existentials
-
 import querki.util._
 import querki.values._
 

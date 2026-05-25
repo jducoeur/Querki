@@ -1,14 +1,11 @@
 package querki.display.input
 
-import scala.scalajs.js
-import js.ThisFunction._
 import org.scalajs.dom
 import dom.html.Element
 import org.querki.jquery._
 import org.querki.gadgets._
 import querki.globals._
-import querki.display.HookedGadget
-import querki.display.rx.{RxText, RxTextHolder}
+import querki.display.rx.{RxTextHolder}
 
 /**
  * Private interface, allowing InputGadgets to work with their master controller.
@@ -97,7 +94,7 @@ class InputGadgetsEcot(e: Ecology) extends ClientEcot(e) with InputGadgets with 
     if (gadgetsBeingEdited.isEmpty)
       Future.successful(())
     else {
-      val promise = Promise[Unit]
+      val promise = Promise[Unit]()
       savePromise = Some(promise)
       gadgetsBeingEdited.foreach(_.save())
       promise.future

@@ -35,7 +35,7 @@ trait FuncDB { this: FuncMixin =>
           trans(conn)
         } catch {
           case ex: Exception => {
-            QLog.error("Exception executing DB transaction during setupDatabase", ex)
+            logError("Exception executing DB transaction during setupDatabase", ex)
             throw ex
           }
         }
@@ -85,13 +85,13 @@ trait FuncDB { this: FuncMixin =>
 
     // Stop the current cluster. We intentionally ignore the return code -- this will return an
     // error if there is no current cluster, and we don't care.
-    "ccm stop" !
+    "ccm stop".!
 
     // Again, this will error if there is no such cluster, and that's fine.
-    "ccm remove ftst" !
+    "ccm remove ftst".!
 
     // This one we actually care about:
-    if (("ccm create ftst -v 3.0.6 -n 3 -s" !) != 0)
+    if (("ccm create ftst -v 3.0.6 -n 3 -s".!) != 0)
       throw new Exception(s"Failed to create a fresh Cassandra cluster!")
 
     spew("... cluster created")
@@ -106,10 +106,10 @@ trait FuncDB { this: FuncMixin =>
   def teardownCassandra() = {
     spew("Shutting down Cassandra cluster...")
 
-    val ret = "ccm stop" #&&
+    val ret = ("ccm stop" #&&
       "ccm remove ftst" #&&
       "ccm switch dev" #&&
-      "ccm start" !
+      "ccm start").!
 
     if (ret != 0)
       throw new Exception(s"Failed to switch back to the normal Cassandra cluster -- return code $ret!")

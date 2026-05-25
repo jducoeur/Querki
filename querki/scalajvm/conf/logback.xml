@@ -2,20 +2,35 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%-5level - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="com.jolbox.bonecp" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
+    <!--
+      All loggers below exist solely to set per-package level thresholds.
+      They intentionally have no <appender-ref>; log events inherit the
+      STDOUT appender from the <root> element. Adding an appender-ref
+      here without additivity="false" causes every event to be written
+      twice (once by this logger, once by root).
+    -->
 
-    <logger name="play" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
+    <logger name="com.jolbox.bonecp" level="DEBUG" />
+    <logger name="play" level="DEBUG" />
+    <logger name="application" level="DEBUG" />
+    <logger name="querki" level="TRACE" />
+    <logger name="akka" level="INFO" />
+    <logger name="io.altoo" level="INFO" />
+    <logger name="com.zaxxer" level="WARN" />
+    <logger name="com.datastax.driver" level="INFO" />
+    <logger name="com.datastax.oss.driver" level="INFO" />
+    <logger name="com.datastax.driver.core.CodecRegistry" level="INFO" />
+    <logger name="javax.management.mbeanserver" level="INFO" />
+    <logger name="akka.stream.alpakka.cassandra" level="INFO" />
+    <logger name="akka.persistence" level="INFO" />
+    <logger name="akka.serialization" level="INFO" />
 
-    <logger name="application" level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
-    </logger>
+    </root>
 
 </configuration>

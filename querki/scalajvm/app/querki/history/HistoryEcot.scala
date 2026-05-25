@@ -5,11 +5,12 @@ import querki.ecology._
 import querki.globals._
 import querki.values.RequestContext
 import HistoryFunctions._
+import akka.util.Timeout
 import models.OID
 import querki.history.SpaceHistory._
-import querki.ql.{QLCall, QLExp, QLThingId}
-import querki.spaces.messages.{SpaceSubsystemRequest, ThingFound}
-import querki.util.{ActorHelpers, PublicException}
+import querki.ql.{QLThingId, QLExp, QLCall}
+import querki.spaces.messages.SpaceSubsystemRequest
+import querki.util.ActorHelpers
 
 object MOIDs extends EcotIds(65) {
   // Dead -- we've removed this command, since we haven't used it in years:
@@ -32,7 +33,7 @@ class HistoryEcot(e: Ecology) extends QuerkiEcot(e) with History with querki.cor
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit val timeout = ActorHelpers.timeout
+  implicit val timeout: Timeout = ActorHelpers.timeout
 
   override def postInit() = {
     ApiRegistry

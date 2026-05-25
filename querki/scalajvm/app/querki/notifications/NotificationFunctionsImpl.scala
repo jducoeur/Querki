@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.globals._
-import querki.notifications.NotificationPersister._
 
 /**
  * Handler for the NotificationFunctions API. Note that this is incestuous with UserNotificationActor,
@@ -48,9 +47,9 @@ class NotificationFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
             )
           }
         }
-        Future.sequence(noteFuts)
+        Future.sequence(noteFuts.toList).map(_.toSeq)
       } catch {
-        case ex: Exception => { QLog.error("Exception in getRecentNotifications", ex); throw ex }
+        case ex: Exception => { logError("Exception in getRecentNotifications", ex); throw ex }
       }
     }
   }

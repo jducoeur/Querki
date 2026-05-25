@@ -1,17 +1,16 @@
 package querki.identity
 
 import org.scalajs.dom.html
-
 import scalatags.JsDom.all._
 import upickle.default._
-
 import org.querki.gadgets._
-
 import querki.comm._
 import querki.data.UserInfo
 import querki.display._
 import querki.globals._
 import querki.pages._
+
+import scala.util.{Failure, Success}
 
 class HandleInvitePage(params: ParamMap)(implicit val ecology: Ecology) extends Page("handleInvite") {
   lazy val invitationString = params.requiredParam("invite")
@@ -60,8 +59,8 @@ class HandleInvitePage(params: ParamMap)(implicit val ecology: Ecology) extends 
 
   def pageContent = {
     // Kick off the handler in parallel, and don't hold up page rendering for it:
-    startInviteProcess().onSuccess {
-      case Some(userInfo) => {
+    startInviteProcess().onComplete {
+      case Success(Some(userInfo)) => {
         UserAccess.setUser(Some(userInfo))
         val navigationFut = gotoPage match {
           case Some(pageName) => {
@@ -89,13 +88,14 @@ class HandleInvitePage(params: ParamMap)(implicit val ecology: Ecology) extends 
           }
         }
       }
-      case None => {
+      case Success(None) => {
         displayDiv <= div(h3("Unable to join"), p("Sorry -- that doesn't appear to be a currently-valid invitation."))
       }
+      case Failure(_) => // TODO
     }
 
     for {
-      _ <- Future.successful()
+      _ <- Future.successful(())
       guts =
         div(
           displayDiv <= div(

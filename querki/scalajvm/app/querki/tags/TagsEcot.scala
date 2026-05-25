@@ -1,17 +1,14 @@
 package querki.tags
 
-import scala.xml.NodeSeq
+import scala.language.existentials
+
 import models.{
   AsDisplayName,
   Collection,
-  DisplayPropVal,
   DisplayText,
   Kind,
-  OID,
   PType,
-  Property,
   PropertyBundle,
-  Thing,
   ThingId,
   ThingOps,
   UnknownOID,
@@ -20,11 +17,9 @@ import models.{
 import querki.api.commonName
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core._
-import querki.ecology._
 import querki.globals._
-import querki.ql.QLPhrase
 import querki.util.{HtmlEscape, SafeUrl}
-import querki.values.{QValue, _}
+import querki.values._
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
@@ -38,7 +33,7 @@ class TagsEcot(e: Ecology)
      with NameTypeBasis
      with TextTypeBasis
      with PlainTextBaseType {
-  import MOIDs._
+  import querki.tags.MOIDs._
 
   val Links = initRequires[querki.links.Links]
   val Basic = initRequires[querki.basic.Basic]

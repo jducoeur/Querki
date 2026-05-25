@@ -2,21 +2,17 @@ package querki.test.mid
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import cats._
 import cats.data._
 import cats.effect.{ContextShift, IO}
-import cats.implicits._
 import upickle.default._
 import autowire._
-import org.scalatest._
-import Matchers._
+import org.scalatest.matchers.should.Matchers._
 import play.api.Application
 import play.api.mvc.{Result, Session}
-import play.api.test._
 import play.api.test.Helpers._
 import controllers.LoginController
 import querki.data.{SpaceInfo, TID, UserInfo}
-import querki.globals._
+import querki.globals.{execContext, fut}
 import querki.session.UserFunctions
 import querki.util.SafeUrl
 import AllFuncs._
@@ -91,13 +87,13 @@ trait LoginFuncs {
     )
 
     implicit val m = mat
-    call(controller.signupStart(), request)
+    call(controller.signupStart(), request).map(_.bakeCookies())
   }
 
   def storeLoginResults(loginResults: LoginResults): TestOp[Unit] = {
     TestOp.update { state =>
       val userName = state.client.testUser.base
-      val updatedClientState = state.client.copy(userInfo = Some(loginResults.userInfo))
+      val updatedClientState = state.client.copy(userInfo = Some(loginResults.userInfo), session = loginResults.session)
       val updatedInClient = TestState.clientL.set(updatedClientState)(state)
       TestState.clientCacheL.modify(_ + (userName -> updatedClientState))(updatedInClient)
     }
@@ -114,7 +110,7 @@ trait LoginFuncs {
         if (result.status == OK) Future.successful(()) else throw new Exception(s"signupF got status ${result.status}!")
       pickledUserInfo <- result.contentAsStringFut
       userInfo = read[UserInfo](pickledUserInfo)
-    } yield LoginResults(fut(result), userInfo, result.sess)
+    } yield LoginResults(fut(result), userInfo, result.newSession.get)
 
     state.plus(resultFut).zip(loginResultsFut)
   }
@@ -156,7 +152,7 @@ trait LoginFuncs {
       "password" -> password
     )
 
-    controller.clientlogin()(request)
+    controller.clientlogin()(request).map(_.bakeCookies())
   }
 
   /**
@@ -202,7 +198,7 @@ trait LoginFuncs {
       userInfoOpt = read[Option[UserInfo]](pickledUserInfo)
       _ = if (userInfoOpt.isEmpty)
         throw new Exception(s"loginF didn't get userInfo when trying to log in ${user.handle}!")
-    } yield LoginResults(resultFut, userInfoOpt.get, result.sess)
+    } yield LoginResults(resultFut, userInfoOpt.get, result.newSession.get)
 
     state.plus(resultFut).zip(loginResultsFut)
   }

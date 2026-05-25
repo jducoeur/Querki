@@ -14,7 +14,7 @@ package object identity {
   }
 
   trait UserAccess extends EcologyInterface {
-    def setUser(user: Option[UserInfo])
+    def setUser(user: Option[UserInfo]): Unit
 
     def user: Option[UserInfo]
 

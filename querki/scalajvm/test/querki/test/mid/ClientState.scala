@@ -1,8 +1,6 @@
 package querki.test.mid
 
 import play.api.mvc.{Result, Session}
-import monocle.Lens
-import monocle.macros.GenLens
 import org.scalactic.source.Position
 import querki.data.{SpaceInfo, TID, UserInfo}
 

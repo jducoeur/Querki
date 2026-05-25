@@ -1,8 +1,7 @@
 package querki.display
 
 import scala.scalajs.js
-import org.scalajs.{dom => fulldom}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import _root_.rx._
@@ -111,7 +110,7 @@ class MenuBar(
   /**
    * Definition of the Menu Bar's data
    *
-   * @TODO: this is way the bloody heck too hard-coded. Can we come up with a decent way to
+   * TODO: this is way the bloody heck too hard-coded. Can we come up with a decent way to
    * construct this based on the routes file, and reference it in a strongly-typed way, along the
    * lines of the old Server-side NavSection?
    */

@@ -11,7 +11,7 @@ import querki.globals._
 import querki.security.Encryption
 import querki.system.TOSModule
 
-class MidFuncDB {
+class MidFuncDB extends QLogging {
 
   def setupDatabase(app: Application) = {
 
@@ -28,7 +28,7 @@ class MidFuncDB {
           trans(conn)
         } catch {
           case ex: Exception => {
-            QLog.error("Exception executing DB transaction during setupDatabase", ex)
+            logError("Exception executing DB transaction during setupDatabase", ex)
             throw ex
           }
         }

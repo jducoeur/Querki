@@ -1,12 +1,11 @@
 package querki.html
 
-import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
+import scala.xml.{NodeSeq, Xhtml}
 
 import scalatags.Text.all.{id => idAttr, i => iAttr, _}
 import scalatags.Text.TypedTag
 
 import org.jsoup
-import jsoup.nodes.{Document => JDoc}
 import jsoup.select.{Elements => JElems}
 
 import models._
@@ -15,7 +14,7 @@ import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
 import querki.ql.{InvocationValue, QLExp, QLParam}
-import querki.util.{HtmlEscape, SafeUrl, XmlHelpers}
+import querki.util.{HtmlEscape, SafeUrl}
 import querki.values._
 
 object UIMOIDs extends EcotIds(11) {
@@ -811,7 +810,7 @@ class UIModule(e: Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Me
           if (done)
             ""
           else {
-            val nextDiv = s"_nextButton${(scala.math.random * 1000000).toInt.toString()}"
+            val nextDiv = s"_nextButton${(scala.math.random() * 1000000).toInt.toString()}"
             div(
               idAttr := nextDiv,
               p(b(a(
@@ -859,7 +858,7 @@ class UIModule(e: Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Me
           targetOpt match {
             case Some(target) => (target.raw.str.trim, "")
             case None => {
-              val name = "target-" + scala.util.Random.nextInt.toString
+              val name = "target-" + scala.util.Random.nextInt().toString
               (name, s"""<div id="$name"></div>""")
             }
           }
@@ -1157,7 +1156,7 @@ class UIModule(e: Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Me
         lexicalThingOpt = lexicalBundleOpt.flatMap(_ match { case t: Thing => Some(t); case _ => None })
         contentsWiki <- inv.fut(contents.wikify(inv.context, None, lexicalThingOpt))
         serialized <- QL.serializeContext(inv, Some("contents"))
-        targetName = "target-" + scala.util.Random.nextInt.toString
+        targetName = "target-" + scala.util.Random.nextInt().toString
       } yield QL.WikitextValue(
         HtmlWikitext(
           s"""<updateable id="$targetName" data-ptype="${pt.id.toThingId}" data-context=".$serialized" data-ql="$contentsQuoted"""" +
@@ -1314,7 +1313,7 @@ class UIModule(e: Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Me
 
     override def qlApply(inv: Invocation): QFut = {
       // The input is actually irrelevant:
-      val n = (scala.math.random * Long.MaxValue).toLong
+      val n = (scala.math.random() * Long.MaxValue).toLong
       fut(QL.WikitextValue(models.Wikitext(s"_rndid${n.toString}")))
     }
   }

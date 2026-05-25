@@ -125,7 +125,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
         }.getOrElse(state)
       }
       case _ => {
-        QLog.error(s"SpacePure.createPure is trying to create something of kind $kind!")
+        logError(s"SpacePure.createPure is trying to create something of kind $kind!")
         // This shouldn't be possible -- we're checking against it in createSomething()
         state
       }
@@ -139,7 +139,7 @@ trait SpacePure extends AppsPure with querki.types.ModelTypeDefiner with ModelPe
     oldProps: PropMap,
     newProps: PropMap
   ): PropMap = {
-    (oldProps /: newProps) { (current, pair) =>
+    newProps.foldLeft(oldProps) { (current, pair) =>
       val (propId, v) = pair
       if (v.isDeleted)
         // The caller has sent the special signal to delete this Property:

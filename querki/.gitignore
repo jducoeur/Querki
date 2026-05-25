@@ -6,6 +6,7 @@ tmp
 .history
 dist
 /.idea
+/.bsp
 /*.iml
 /out
 /.idea_modules
@@ -18,3 +19,8 @@ dist
 /scala/js/src/main/Shared JS.iml
 /scalajvm/public/javascripts/codemirror/
 /scalajvm/Server.iml
+localsecrets.conf
+aws_creds
+/localsecrets.cass3.conf
+/localsecrets.cass4.conf
+/.claude

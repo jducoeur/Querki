@@ -3,7 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
-import scalatags.JsDom.all.{input => inp, _}
+import scalatags.JsDom.all._
 import org.querki.facades.bootstrap._
 
 import querki.display.HookedGadget

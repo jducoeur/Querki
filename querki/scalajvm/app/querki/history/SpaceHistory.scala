@@ -1,7 +1,6 @@
 package querki.history
 
 import akka.actor._
-import akka.contrib.pattern.ReceivePipeline
 import org.querki.requester._
 import models._
 import querki.globals._
@@ -27,7 +26,6 @@ class SpaceHistoryParent(
   val id: OID,
   val spaceRouter: ActorRef
 ) extends Actor
-     with ReceivePipeline
      with SingleRoutingParent {
   def createChild(): ActorRef = context.actorOf(Props(classOf[SpaceHistory], e, id, spaceRouter))
 
@@ -47,12 +45,12 @@ private[history] class SpaceHistory(
 ) extends QuerkiActor(e)
      with SpacePure
      with ModelPersistence
-     with ReceivePipeline
      with TimeoutChild
      with HistoryFoldingImpl
      with RestoreDeleted
      with HistorySummaryBuilder
-     with FindDeleted {
+     with FindDeleted
+     with QLogging {
 
   def timeoutConfig: String = "querki.history.timeout"
 
@@ -92,14 +90,14 @@ private[history] class SpaceHistory(
     case GetHistorySummary(rc, end, nRecords) => {
       tracing.trace(s"GetHistorySummary")
       getHistorySummary(end, nRecords, rc).map { summary =>
-        sender ! summary
+        sender() ! summary
       }
     }
 
     case GetHistoryVersion(v) => {
       tracing.trace("GetHistoryVersion")
       getHistoryRecord(v).map { record =>
-        sender ! CurrentState(record.state)
+        sender() ! CurrentState(record.state)
       }
     }
 
@@ -108,7 +106,7 @@ private[history] class SpaceHistory(
       getHistoryRecord(v).map { record =>
         spaceRouter.request(SetState(user, id, record.state, SetStateReason.RolledBack, v.toString)).foreach {
           _ match {
-            case resp: ThingFound => sender ! resp
+            case resp: ThingFound => sender() ! resp
             case other =>
               throw new Exception(s"Tried to roll space $id back to version $v, but received response $other")
           }
@@ -119,7 +117,7 @@ private[history] class SpaceHistory(
     case RestoreDeletedThing(user, thingIds) => {
       tracing.trace(s"RestoreDeletedThing($thingIds)")
       restoreDeletedThings(user, thingIds.toSet).map { resultingState =>
-        sender ! Restored(thingIds, resultingState)
+        sender() ! Restored(thingIds, resultingState)
       }
     }
 
@@ -127,18 +125,18 @@ private[history] class SpaceHistory(
       // This is only legal for admins:
       if (rc.requesterOrAnon.isAdmin) {
         getCurrentState().map { curState =>
-          sender ! CurrentState(curState)
+          sender() ! CurrentState(curState)
         }
       } else {
-        sender ! SpaceBlocked(PublicException("Space.blocked"))
+        sender() ! SpaceBlocked(PublicException("Space.blocked"))
       }
     }
 
     case ForAllDeletedThings(rc, predicateOpt, renderOpt) => {
       loopback(findAllDeleted(rc, predicateOpt, renderOpt)).map { deletedList =>
-        sender ! DeletedThings(deletedList)
+        sender() ! DeletedThings(deletedList)
       }.recover {
-        case ex: Exception => spew(s"Got an Exception: $ex")
+        case ex: Exception => logTrace(s"Got an Exception: $ex")
       }
     }
   }

@@ -1,7 +1,5 @@
 package querki.evolutions.steps
 
-import java.sql.Connection
-
 import querki.ecology._
 
 import querki.evolutions._
@@ -21,6 +19,6 @@ class Step3(implicit val ecology: Ecology) extends Step {
       """
         ALTER TABLE {tname} ADD COLUMN deleted BOOLEAN DEFAULT FALSE
         """
-    ).execute
+    ).execute()
   }
 }

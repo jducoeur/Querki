@@ -3,7 +3,6 @@ package querki.console
 import querki.api.AutowireApiImpl
 import querki.globals._
 import querki.ql.Invocation
-import querki.util.PublicException
 
 import ConsoleFunctions._
 

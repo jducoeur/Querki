@@ -1,6 +1,5 @@
 package querki.core
 
-import querki.globals._
 import querki.test._
 import querki.util.PublicException
 
@@ -92,8 +91,6 @@ class TypeTests extends QuerkiTests {
     "be able to define abstract function implementations" in {
       class TSpace extends CommonSpace {
         import Core.IntType
-        import querki.ql.Invocation
-        import querki.values.QFut
 
         val Numerator = new TestProperty(IntType, ExactlyOne, "Numerator")
         val Denominator = new TestProperty(IntType, ExactlyOne, "Denominator")

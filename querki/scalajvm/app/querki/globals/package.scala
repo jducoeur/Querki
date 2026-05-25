@@ -1,5 +1,8 @@
 package querki
 
+import scala.concurrent.ExecutionContext
+import scala.util.{Success, Failure}
+
 /**
  * Standard includes for Server-side Querki. The intent here is that most files should say:
  * {{{
@@ -15,7 +18,10 @@ package querki
 package object globals {
 
   val Config = querki.util.Config
+  // TODO: this is going to become much more of an edge case, and won't belong here any more once
+  // QLogging is fully up and running:
   val QLog = querki.util.QLog
+  type QLogging = querki.util.QLogging
   type PublicException = querki.util.PublicException
 
   type AnyProp = models.AnyProp
@@ -41,33 +47,30 @@ package object globals {
   /**
    * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.
    */
-  def spewing[T](msg: String)(f: => T): T = {
-    QLog.spew(s"Trying $msg")
+  def spewing[T](from: QLogging)(msg: String)(f: => T): T = {
+    from.logTrace(s"Trying $msg")
     try {
       val result = f
-      QLog.spew(s"  $msg succeeded, returning $result")
+      from.logTrace(s"  $msg succeeded, returning $result")
       result
     } catch {
-      case ex: Exception => { QLog.error(s"  $msg failed", ex); throw ex }
+      case ex: Exception => { from.logError(s"  $msg failed", ex); throw ex }
     }
   }
 
-  def spewingFut[T](msg: String)(f: => Future[T]): Future[T] = {
-    QLog.spew(s"Will be trying $msg")
-    f.onSuccess {
-      case result => QLog.spew(s"  $msg succeeded, produces $result")
-    }
-    f.onFailure {
-      case th: Throwable => QLog.error(s"  $msg failed", th)
+  def spewingFut[T](from: QLogging)(msg: String)(f: => Future[T]): Future[T] = {
+    from.logTrace(s"Will be trying $msg")
+    implicit val ec = scala.concurrent.ExecutionContext.global
+    f.onComplete {
+      case Success(result) => from.logTrace(s"  $msg succeeded, produces $result")
+      case Failure(th)     => from.logError(s"  $msg failed", th)
     }
     f
   }
 
-  def spew(msg: String) = QLog.spew(msg)
-
   type Future[T] = scala.concurrent.Future[T]
   val Future = scala.concurrent.Future
-  implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
+  implicit lazy val execContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   /**
    * Marker for places we are cheating and waiting. ALL USES OF THIS ARE BY DEFINITION BUGS TO BE FIXED.
@@ -76,7 +79,7 @@ package object globals {
     import scala.concurrent._
     import scala.concurrent.duration._
 
-    Await.result(awaitable, 1 minute)
+    Await.result(awaitable, 1.minute)
   }
 
   /**
@@ -87,7 +90,7 @@ package object globals {
     import scala.concurrent._
     import scala.concurrent.duration._
 
-    Await.result(awaitable, 10 milliseconds)
+    Await.result(awaitable, 10.milliseconds)
   }
 
   /**

@@ -52,7 +52,7 @@ case class AtxHeaderLine(
    * removes all whitespace, nl and trailing hashes from the payload
    * "  foo ##  \n" => "foo"
    */
-  def trimHashes() = {
+  def trimHashes: String = {
     val s = payload.trim
     var idx = s.length - 1
     while (idx >= 0 && s.charAt(idx) == '#') idx -= 1

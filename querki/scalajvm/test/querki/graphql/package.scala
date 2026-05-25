@@ -1,7 +1,7 @@
 package querki
 
 import org.scalactic.source.Position
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import play.api.libs.json._
 
 package object graphql {
@@ -27,7 +27,7 @@ package object graphql {
 
     def array(path: String)(implicit p: Position): Seq[JsValue] = {
       field(path) match {
-        case JsArray(a) => a
+        case JsArray(a) => a.toSeq
         case other      => fail(s"Field $path wasn't an Array: $other")
       }
     }

@@ -19,7 +19,6 @@ import querki.display.{ButtonGadget, RawDiv, TabGadget}
 import querki.display.input.{InputGadget, ManifestItem}
 import querki.display.rx.RunButton
 import querki.editing.EditFunctions
-import querki.editing.EditFunctions.PropEditInfo
 import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages.{Page, PageImplicits}

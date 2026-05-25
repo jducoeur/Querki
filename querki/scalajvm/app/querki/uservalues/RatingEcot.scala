@@ -9,8 +9,8 @@ import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.globals._
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle}
-import querki.util.{HtmlEscape, QLog}
-import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
+import querki.util.{HtmlEscape}
+import querki.values.{ElemValue, QLContext, SpaceState}
 
 object RatingMOIDs extends EcotIds(45) {
   val RatingTypeOID = moid(1)
@@ -207,7 +207,7 @@ class RatingEcot(e: Ecology)
                       |<span class="_ratingAvg">${"%.2f".format(v.avg)} (${v.n})</span>""".stripMargin)
         }
         case None => {
-          QLog.warn(s"_ratingAverageType called on unknown Property ${v.propId}")
+          logWarn(s"_ratingAverageType called on unknown Property ${v.propId}")
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f".format(v.avg)}' data-readonly='true'></div>
                       |<span class="_ratingAvg">${"%.2f".format(v.avg)} (${v.n})</span>""".stripMargin)
         }
@@ -308,7 +308,7 @@ class RatingEcot(e: Ecology)
     }
 
     def calcAverage(pairs: Seq[(Int, Int)]): (Double, Int) = {
-      val (sum, n) = ((0, 0) /: pairs) { (accum, pair) =>
+      val (sum, n) = pairs.foldLeft((0, 0)) { (accum, pair) =>
         val (curTotal, curEntries) = accum
         val (key, numEntries) = pair
         (curTotal + (key * numEntries), curEntries + numEntries)

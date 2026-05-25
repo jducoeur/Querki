@@ -1,5 +1,7 @@
 package querki.imexport.mysql
 
+import scala.language.existentials
+
 import scala.annotation.tailrec
 
 import models._
@@ -87,7 +89,7 @@ class MySQLImport(
    */
   def checkPropGeneration(table: MySQLTable): MySQLTable = {
     // Go through the columns and see if there are any to be omitted:
-    (table /: table.columns.values) { (tbl, col) =>
+    table.columns.values.foldLeft(table) { (tbl, col) =>
       def columnOmitted() = tbl.copy(columns = tbl.columns + (col.name -> col.copy(generateProp = false)))
 
       if (tbl.primaryKey.isDefined && (col.name == tbl.primaryKey.get) && col.clauses.contains(SQLAutoIncrement)) {
@@ -104,7 +106,7 @@ class MySQLImport(
   }
 
   def withConstraints(table: MySQLTable): MySQLTable = {
-    (table /: table.constraints) { (tbl, constraint) =>
+    table.constraints.foldLeft(table) { (tbl, constraint) =>
       val col = tbl.columns(constraint.localCol).copy(rawConstraint = Some(constraint))
       tbl.copy(columns = tbl.columns + (col.name -> col))
     }
@@ -115,7 +117,7 @@ class MySQLImport(
    */
   def preprocessDB(db: MySQLDB): MySQLDB = {
     val tables = db.tables
-    (db /: tables) { (dba, tablePair) =>
+    tables.foldLeft(db) { (dba, tablePair) =>
       val (name, table) = tablePair
       val withGeneration = checkPropGeneration(table)
       val withConstr = withConstraints(withGeneration)
@@ -130,7 +132,7 @@ class MySQLImport(
       Map(Core.NameProp(name)),
       rc.requesterOrAnon.mainIdentity.id,
       name,
-      DateTime.now,
+      DateTime.now(),
       Seq.empty,
       Some(SystemSpace),
       Map.empty,
@@ -229,7 +231,7 @@ class MySQLImport(
           pType.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
           collection,
           Map(Core.setName(qName)),
-          DateTime.now
+          DateTime.now()
         )
 
       Some(prop)
@@ -240,8 +242,8 @@ class MySQLImport(
     db: MySQLDB,
     stateIn: SpaceState
   ): SpaceState = {
-    (stateIn /: db.tables.values) { (tblState, table) =>
-      (tblState /: table.columns.values) { (colState, col) =>
+    db.tables.values.foldLeft(stateIn) { (tblState, table) =>
+      table.columns.values.foldLeft(tblState) { (colState, col) =>
         colMap.get(col.col) match {
           case Some(prop) => {
             propsByTable += (TableAndColumn(table.name, col.col.name) -> prop)
@@ -296,7 +298,7 @@ class MySQLImport(
       table.data match {
         case Some(MySQLData(colOrder, rows)) => {
           val index = colOrder.indexWhere { _ == col.name }
-          val result = ((Set.empty[String], true) /: rows) { (pair, row) =>
+          val result = rows.foldLeft((Set.empty[String], true)) { (pair, row) =>
             val (set, succ) = pair
             if (succ) {
               val v = row.vs(index).v.toString()
@@ -330,7 +332,7 @@ class MySQLImport(
     db: MySQLDB,
     stateIn: SpaceState
   ): SpaceState = {
-    (stateIn /: db.tables.values) { (state, table) =>
+    db.tables.values.foldLeft(stateIn) { (state, table) =>
       val mainPropPairs = table.columns.values.map { col =>
         colMap.get(col.col).map { prop =>
           val default: QValue =
@@ -367,8 +369,8 @@ class MySQLImport(
     db: MySQLDB,
     stateIn: SpaceState
   ): SpaceState = {
-    (stateIn /: db.tables.values) { (tblState, table) =>
-      (tblState /: table.constraints) { (constState, constraint) =>
+    db.tables.values.foldLeft(stateIn) { (tblState, table) =>
+      table.constraints.foldLeft(tblState) { (constState, constraint) =>
         val model = constState.anything(modelMap(table.name)).get.asInstanceOf[ThingState]
         val localCol = table.columns(constraint.localCol)
         val localProp = colMap(localCol.col)
@@ -468,14 +470,14 @@ class MySQLImport(
     db: MySQLDB,
     stateIn: SpaceState
   ): SpaceState = {
-    (stateIn /: db.tables.values) { (tblState, table) =>
+    db.tables.values.foldLeft(stateIn) { (tblState, table) =>
       val primary = table.primaryKey
       table.data match {
         case Some(data) => {
           val props = data.columnOrder.map(colName => propsByTable.get(TableAndColumn(table.name, colName)))
           val cols = data.columnOrder.map(table.columns(_))
           // There are rows in this table, which need to be turned into Things
-          (tblState /: data.rows) { (rowState, row) =>
+          data.rows.foldLeft(tblState) { (rowState, row) =>
             val tInit =
               ThingState(
                 createOID(),
@@ -496,7 +498,7 @@ class MySQLImport(
     db: MySQLDB,
     stateIn: SpaceState
   ): SpaceState = {
-    (stateIn /: pendingLinks.iterator) { (state, pending) =>
+    pendingLinks.iterator.foldLeft(stateIn) { (state, pending) =>
       val PendingLink(tId: OID, prop: Property[OID, Any], key @ RowKey(tableName, v)) = pending
       val tIn = state.thing(tId)
       val t =

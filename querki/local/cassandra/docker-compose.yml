@@ -1,0 +1,33 @@
+services:
+  cassandra:
+    image: cassandra:4.1.7
+    container_name: cassandra-local
+    ports:
+      - "9042:9042"
+      - "7000:7000"
+      - "7001:7001"
+      - "9160:9160"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=dev_cluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=256
+      # Enable automatic SSTable upgrade
+      - JVM_OPTS=-Dcassandra.automatic_sstable_upgrade=true -Xss512k
+      - JVM_EXTRA_OPTS=-XX:CompileCommand=exclude,org.apache.cassandra.db.commitlog.AbstractCommitLogSegmentManager$$AllocatorRunnable.*
+      - CASSANDRA_COMMITLOG_SYNC=periodic
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    platform: linux/amd64
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+      - /tmp:/tmp  # For data export/import
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  cassandra_data:

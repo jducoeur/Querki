@@ -1,10 +1,8 @@
 package querki.spaces
 
 import akka.actor._
-import akka.persistence._
 import akka.persistence.cassandra.query.scaladsl._
 import akka.persistence.query._
-import akka.stream.ActorMaterializer
 
 import org.querki.requester._
 
@@ -14,7 +12,7 @@ import querki.admin.SpaceTimingActor.MonitorMsg
 import querki.cluster.OIDAllocator._
 import querki.conversations.ConversationTransitionActor
 import querki.globals._
-import querki.identity.{Identity, IdentityPersistence, PublicIdentity, User}
+import querki.identity.{IdentityPersistence, PublicIdentity, User}
 import querki.identity.IdentityPersistence.SystemUserRef
 import querki.persistence._
 import querki.publication.{AddPublicationEvents, CurrentPublicationState, PublishedAck, ThingPublished}
@@ -51,7 +49,8 @@ class PersistentSpaceActor(
 ) extends SpaceCore[RequestM](RealRTCAble)(e)
      with Requester
      with PersistentQuerkiActor
-     with IdentityPersistence {
+     with IdentityPersistence
+     with QLogging {
   lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
 
   /**
@@ -180,7 +179,7 @@ class PersistentSpaceActor(
     // fall back to the MySQL layer, but complain about it.
     def getOwnerId(): RequestM[OID] = {
       if (ownerIdIn == UnknownOID) {
-        QLog.error(s"Space $id got UnknownOID as its owner in fetchOwnerIdentity(). Falling back to MySQL...")
+        logError(s"Space $id got UnknownOID as its owner in fetchOwnerIdentity(). Falling back to MySQL...")
         persister.request(GetOwner).map {
           case SpaceOwner(id) => id
         }
@@ -202,8 +201,9 @@ class PersistentSpaceActor(
     if (timeSpaceOps) {
       stateRouter ! MonitorMsg(msg, DateTime.now)
     }
+    // TODO: gate this on the TRACE log level here, instead of a config flag:
     if (monitorSpaces) {
-      QLog.spew(s"SPACE MONITOR ($id): $msg")
+      logTrace(s"SPACE MONITOR ($id): $msg")
     }
   }
 
@@ -242,14 +242,15 @@ class PersistentSpaceActor(
   ): RequestM[SpaceState] = {
     val appPersistenceId = toPersistenceId(appId)
     val source = readJournal.currentEventsByPersistenceId(appPersistenceId, 0, version.v)
-    implicit val mat = ActorMaterializer()
+    implicit val system = context.system
     loopback {
       source.runFold(emptySpace.copy(s = appId)) {
         case ((curState, EventEnvelope(offset, appPersistenceId, sequenceNr, evt: SpaceEvent))) =>
           evolveState(Some(curState))(evt)
+        case (_, EventEnvelope(_, _, _, other)) =>
+          throw new Exception(s"PersistentSpaceActor.loadAppVersion() hit unexpected event $other")
       }
     }.flatMap { loadedState =>
-      mat.shutdown()
       // Now that we've loaded this App, recurse in and load *its* Apps:
       loadAppsFor(loadedState, appsSoFar)
     }
@@ -289,7 +290,7 @@ class PersistentSpaceActor(
     }
 
     // Gather up the Instance Permissions on this Thing, if any:
-    val props = (emptyProps /: instancePermissions) { (map, perm) =>
+    val props = instancePermissions.foldLeft(emptyProps) { (map, perm) =>
       map ++ addPerm(perm)
     }
 
@@ -339,7 +340,7 @@ class PersistentSpaceActor(
         // that need it. Note that, since we're flatMapping over RequestM, this will be synchronous and
         // in-order. But checkInstancePermissionsOn() is smart enough to only do a loopback if it needs
         // to actually *do* something:
-        (checkInstancePermissionsOn(state, instancePermissions, true)(state) /: models) { (reqm, model) =>
+        models.foldLeft(checkInstancePermissionsOn(state, instancePermissions, true)(state)) { (reqm, model) =>
           reqm.flatMap(curState => checkInstancePermissionsOn(model, instancePermissions, false)(curState))
         }
       }

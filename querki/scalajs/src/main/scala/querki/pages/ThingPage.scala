@@ -1,28 +1,24 @@
 package querki.pages
 
-import scala.util.{Failure, Success}
-
 import scala.scalajs.js
-import upickle._
 import autowire._
 
 import org.scalajs.{dom => fulldom}
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.gadgets._
 
 import scalatags.JsDom.all.{data => dta, _}
 import scalatags.JsDom.tags2
 
-import models.{Kind, Wikitext}
+import models.{Kind}
 
 import querki.globals._
 
 import querki.api.{ModelLoopException, ThingFunctions, UnknownThingException}
-import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
-import querki.display.{QLButtonGadget, QText, QuerkiUIUtils, WrapperDiv}
+import querki.display.{QLButtonGadget, QText, QuerkiUIUtils}
 import querki.security.SharingPage
 
 class ThingPage(
@@ -58,7 +54,7 @@ class ThingPage(
     }
 
     val pageFut = Client[ThingFunctions].getThingPage(name, propOpt).call()
-    pageFut.onFailure {
+    pageFut.failed.foreach {
       case ModelLoopException() => StatusLine.showUntilChange(
           "It appears you have a Model loop. Please go into the Advanced Editor and change models there."
         )
@@ -274,7 +270,7 @@ class StandardThingHeader(
     )
   }
 
-  def doRender =
+  def doRender() =
     div(
       cls := "page-header",
       h1(

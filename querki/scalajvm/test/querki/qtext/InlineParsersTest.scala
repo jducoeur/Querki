@@ -1,14 +1,14 @@
 package querki.qtext
 
-import org.scalatest.{FlatSpec, Matchers}
-import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 trait InlineBase { this: InlineParsers with Matchers =>
 
   def runSucceedingParsingTests(
     p: Parser[String],
     l: List[(String, String)]
-  ) {
+  ): Unit = {
     for ((a, b) <- l) {
       try {
         apply(p, a) should equal(b)
@@ -21,7 +21,7 @@ trait InlineBase { this: InlineParsers with Matchers =>
   def runExceptionParsingTests(
     p: Parser[String],
     l: List[String]
-  ) {
+  ): Unit = {
     for (s <- l) an[IllegalArgumentException] should be thrownBy { apply(p, s) }
   }
 }
@@ -30,9 +30,9 @@ trait InlineBase { this: InlineParsers with Matchers =>
  * Tests Inline Parsing, i.e. emphasis , strong text, links, escapes etc.
  */
 //@RunWith(classOf[JUnitRunner])
-class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with InlineBase {
+class InlineParsersTest extends AnyFlatSpec with Matchers with InlineParsers with InlineBase {
 
-  def deco() = new MainDecorator {}
+  def deco: Decorator = new MainDecorator {}
 
   ///////////////////////////////////////////////////////////////
   // Inline parsing Tests                                      //

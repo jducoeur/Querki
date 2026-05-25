@@ -2,16 +2,18 @@ package querki.test
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import models.{OID, Thing}
 import querki.core.QLText
 import querki.ecology._
-import querki.globals.{awaitIntentionally, Ecology, EcologyInterface, EcologyMember, QLog, QuerkiEcot}
+import querki.globals.{awaitIntentionally, Ecology, EcologyMember, QLog, QLogging, QuerkiEcot}
 import querki.identity.User
 import querki.time.{DateTime, TimeProvider}
 import querki.values.{PropAndVal, QLContext, RequestContext, SpaceState}
 
-class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with EcologyMember {
+class QuerkiTests extends AnyWordSpec with Matchers with BeforeAndAfterAll with EcologyMember with QLogging {
   implicit var ecology: Ecology = null
 
   QLog.runningUnitTests = true
@@ -152,7 +154,7 @@ class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with Eco
     }
 
     // Similar to stripReturns, but instead of using stripMargin, we trim the front of the line.
-    def strip: String = str.replace("\r", "").lines.map(trimStart(_)).mkString("\n")
+    def stripFront: String = str.linesIterator.map(trimStart(_)).mkString("\n")
   }
 
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
@@ -174,7 +176,7 @@ class QuerkiTests extends WordSpec with Matchers with BeforeAndAfterAll with Eco
     import scala.concurrent.duration._
 
     val qt = QLText(text)
-    val wikitext = Await.result(QL.process(qt, context, None, lexicalOpt), 1 second)
+    val wikitext = Await.result(QL.process(qt, context, None, lexicalOpt), 1.second)
     wikitext.plaintext.stripReturns
   }
 

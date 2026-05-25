@@ -1,6 +1,6 @@
 package querki.editing
 
-import org.scalajs.dom.{raw => dom}
+import org.scalajs.dom
 import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
@@ -12,7 +12,6 @@ import querki.globals._
 import querki.data._
 import querki.display.{QuerkiUIUtils, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
-import querki.display.rx._
 import EditFunctions.PropEditInfo
 
 /**

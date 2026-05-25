@@ -82,7 +82,7 @@ trait UserValueSessionCore
       val previous = userValues.get((thingId, propId))
 
       val msg = for {
-        prop <- state.prop(propId).orElse(QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId"))
+        prop <- state.prop(propId).orElse(logWarn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId"))
         summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
         summaryPropId <- summaryLinkPV.firstOpt
         newV = if (v.isDeleted) None else Some(v)
@@ -132,7 +132,7 @@ trait UserValueSessionCore
         }
 
         case None =>
-          QLog.warn(s"UserValueSessionCore got a UserValue change request for unknown Thing ${s.id}:$thingId")
+          logWarn(s"UserValueSessionCore got a UserValue change request for unknown Thing ${s.id}:$thingId")
       }
     }
 //

@@ -36,9 +36,9 @@ case class LineReader private (
  */
 class LineTokenizer(val deco: Decorator) extends Parsers {
 
-  object lineParsers extends {
-    val deco = LineTokenizer.this.deco
-  } with LineParsers
+  object lineParsers extends LineParsers {
+    override def deco: Decorator = LineTokenizer.this.deco
+  }
 
   /**
    * we munch whole lines (OM NOM NOM)

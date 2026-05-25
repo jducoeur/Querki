@@ -1,6 +1,5 @@
 package modules.person
 
-import querki.ecology._
 import querki.test._
 
 class PersonTest extends QuerkiTests {
