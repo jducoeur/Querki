@@ -17,7 +17,6 @@ import models.{
 import querki.api.commonName
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core._
-import querki.ecology._
 import querki.globals._
 import querki.util.{HtmlEscape, SafeUrl}
 import querki.values._
@@ -34,7 +33,7 @@ class TagsEcot(e: Ecology)
      with NameTypeBasis
      with TextTypeBasis
      with PlainTextBaseType {
-  import MOIDs._
+  import querki.tags.MOIDs._
 
   val Links = initRequires[querki.links.Links]
   val Basic = initRequires[querki.basic.Basic]

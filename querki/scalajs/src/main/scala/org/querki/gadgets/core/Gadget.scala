@@ -75,7 +75,7 @@ object Gadget {
    */
   def apply(guts:scalatags.JsDom.TypedTag[Element], hook: Element => Unit) = new SimpleGadget(guts, hook)
   
-  implicit def GadgetFocusable[G <: Gadget[_]] = new Focusable[G] {
+  implicit def GadgetFocusable[G <: Gadget[_]]: Focusable[G] = new Focusable[G] {
     /**
      * The Gadget is considered focusable iff it contains something focusable.
      */

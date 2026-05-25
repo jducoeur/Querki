@@ -70,7 +70,7 @@ class NotificationsPage(params: ParamMap)(implicit val ecology: Ecology) extends
                   "From ",
                   span(cls := "noteSender", note.sender.name),
                   " ",
-                  span(cls := "noteTime", Moment(note.sentTime).calendar())
+                  span(cls := "noteTime", Moment(note.sentTime.toDouble).calendar())
                 ),
                 new QText(note.rendered.headline, cls := "noteHeadline"),
                 new QText(note.rendered.content, cls := "noteContent")

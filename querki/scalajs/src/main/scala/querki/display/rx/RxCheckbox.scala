@@ -26,7 +26,7 @@ class RxCheckbox(
       }
     }
 
-  def doRender =
+  def doRender() =
     span(
       box <= input(tpe := "checkbox", if (chk.now) checked := "checked", mods),
       lbl

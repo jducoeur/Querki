@@ -1,5 +1,5 @@
 import querki.globals.Ecology
-import querki.values.{QValue, SpaceState}
+import querki.values.{QValue, SpaceState, SpaceStateOps}
 
 package object models {
 
@@ -20,6 +20,6 @@ package object models {
 
   implicit def bundle2Ops(thing: PropertyBundle)(implicit ecology: Ecology): PropertyBundleOps = thing.thingOps(ecology)
   implicit def thing2Ops(thing: Thing)(implicit ecology: Ecology): ThingOps = thing.thingOps(ecology)
-  implicit def space2Ops(state: SpaceState)(implicit ecology: Ecology) = state.spaceStateOps
-  implicit def props2Bundle(props: PropMap) = new PropMapBundle(props)
+  implicit def space2Ops(state: SpaceState)(implicit ecology: Ecology): SpaceStateOps = state.spaceStateOps
+  implicit def props2Bundle(props: PropMap): PropMapBundle = new PropMapBundle(props)
 }

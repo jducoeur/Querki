@@ -2,9 +2,7 @@ package querki.conversations
 
 import akka.actor.{ActorRef, Props}
 import akka.pattern._
-
 import com.github.nscala_time.time.Imports._
-
 import models._
 import querki.ecology._
 import querki.globals._
@@ -13,9 +11,9 @@ import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages.SpaceSubsystemRequest
 import querki.time.DateTime
 import querki.util.ActorHelpers
-import querki.values.{QLContext, RequestContext, SpaceState}
-
+import querki.values.{QLContext, SpaceState, RequestContext}
 import PersistentEvents._
+import akka.util.Timeout
 import messages._
 
 object MOIDs extends EcotIds(35) {
@@ -41,7 +39,7 @@ class ConversationEcot(e: Ecology) extends QuerkiEcot(e) with Conversations with
   lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit val timeout = ActorHelpers.timeout
+  implicit val timeout: Timeout = ActorHelpers.timeout
 
   override def postInit() = {
     // Some entry points are legal without login:

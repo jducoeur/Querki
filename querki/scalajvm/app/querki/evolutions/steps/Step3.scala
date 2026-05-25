@@ -19,6 +19,6 @@ class Step3(implicit val ecology: Ecology) extends Step {
       """
         ALTER TABLE {tname} ADD COLUMN deleted BOOLEAN DEFAULT FALSE
         """
-    ).execute
+    ).execute()
   }
 }

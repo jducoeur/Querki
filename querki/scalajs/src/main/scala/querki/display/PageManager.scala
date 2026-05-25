@@ -50,7 +50,7 @@ class PageManagerEcot(e: Ecology) extends ClientEcot(e) with PageManager {
 
   def nextChangeFuture: Future[Page] = {
     if (_nextChangePromise.isEmpty)
-      _nextChangePromise = Some(Promise[Page])
+      _nextChangePromise = Some(Promise[Page]())
     _nextChangePromise.get.future
   }
 
@@ -291,7 +291,7 @@ class PageManagerEcot(e: Ecology) extends ClientEcot(e) with PageManager {
   val currentPageRx: Var[Option[Page]] = Var(None)
 
   def changeToPage(page: Page): Unit = {
-    currentPageRx.now.foreach { _.unload }
+    currentPageRx.now.foreach { _.unload() }
     currentPageRx() = Some(page)
   }
   implicit def currentOwner: Ctx.Owner = currentPageRx.now.map(_.ctx).getOrElse(defaultCtx)

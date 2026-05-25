@@ -30,7 +30,7 @@ package object mid {
   /**
    * Provides synchronous functions for fetching fields from a Result, suitable for mapping.
    */
-  implicit def result2Helpers(result: Result) = new ResultHelpers(result)
+  implicit def result2Helpers(result: Result): ResultHelpers = new ResultHelpers(result)
 
   implicit def ThingInfo2TID(thingInfo: ThingInfo): TID = thingInfo.oid
 }

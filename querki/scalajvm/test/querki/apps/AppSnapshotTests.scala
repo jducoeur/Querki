@@ -3,6 +3,7 @@ package querki.apps
 import querki.persistence._
 import querki.spaces._
 import querki.test._
+import querki.values.SpaceState
 
 class AppSnapshotTests extends QuerkiTests with AppTree {
 
@@ -22,8 +23,8 @@ class AppSnapshotTests extends QuerkiTests with AppTree {
       val inst4 = addThing("Instance 4", highest.rootModel)
       val inst5 = addThing("Instance 5", highest.rootModel)
     }
-    implicit val replay = new ReplayCoreSpace(original)
-    implicit val s = replay.state
+    implicit val replay: ReplayCoreSpace = new ReplayCoreSpace(original)
+    implicit val s: SpaceState = replay.state
 
     pql("""[[My Root Model._instances]]""") should
       equal(listOfLinkText(
@@ -50,7 +51,7 @@ class AppPersistenceTests(env: PersistEnv) extends PersistTest(env) with SpaceMe
   lazy val Basic = interface[querki.basic.Basic]
 
   val s = mainSpace
-  implicit val state = s.state
+  implicit val state: SpaceState = s.state
 
   checkSerialization(dh(state))
   checkSerialization(SpaceSnapshot(dh(state), Seq.empty))

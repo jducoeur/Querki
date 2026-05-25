@@ -15,7 +15,7 @@ trait InlineParsers extends BaseParsers {
   /**
    * Defines how the output is formatted and whether inline xml elements are allowed.
    */
-  def deco(): Decorator
+  def deco: Decorator
 
   /////////////////////////////////////
   // Types we use for inline parsing //
@@ -188,7 +188,7 @@ trait InlineParsers extends BaseParsers {
   /**
    * Parses two spaces at the end of a line to a manual break (<br/>)
    */
-  val br: Parser[String] = ("  \n") ^^^ { deco.decorateBreak() + "\n" }
+  val br: Parser[String] = ("  \n") ^^^ { deco.decorateBreak + "\n" }
 
   /**
    * Parses an inline code element.

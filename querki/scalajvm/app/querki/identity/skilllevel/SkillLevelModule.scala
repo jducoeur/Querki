@@ -18,11 +18,11 @@ class SkillLevelModule(e: Ecology) extends QuerkiEcot(e) with SkillLevel with Co
   lazy val Basic = interface[querki.basic.Basic]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.updateStateCache += this
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.updateStateCache -= this
   }
 

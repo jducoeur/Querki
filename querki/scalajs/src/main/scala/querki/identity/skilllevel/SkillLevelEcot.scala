@@ -8,7 +8,6 @@ import org.querki.gadgets._
 
 import querki.data._
 import querki.display.{ButtonGadget, Dialog}
-import querki.ecology._
 import querki.globals._
 import querki.session.UserFunctions
 

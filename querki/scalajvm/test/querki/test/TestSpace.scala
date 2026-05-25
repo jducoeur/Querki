@@ -9,7 +9,7 @@ import querki.ecology._
 import querki.spaces.CacheUpdate
 import querki.types.{ModelTypeDefiner, ModeledPropertyBundle, SimplePropertyBundle}
 import querki.values._
-import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
+import querki.identity.{FullUser, Identity, IdentityKind, User}
 import querki.identity.UserLevel._
 
 /**

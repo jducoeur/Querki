@@ -512,7 +512,7 @@ trait LinkUtils { self: CoreEcot with NameUtils =>
         prop.firstOpt(Links.LinkModelProp) match {
           case Some(modelId) => {
             val allInstanceIds =
-              state.descendants(modelId, true, true, true).map(_.id)
+              state.descendants(modelId, true, true, true).toSet[Thing].map(_.id)
             allCandidates.filter(candidate => allInstanceIds.contains(candidate.id))
           }
           case None => allCandidates

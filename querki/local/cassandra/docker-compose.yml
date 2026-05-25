@@ -1,6 +1,6 @@
 services:
   cassandra:
-    image: cassandra:4.1
+    image: cassandra:4.1.7
     container_name: cassandra-local
     ports:
       - "9042:9042"
@@ -14,7 +14,12 @@ services:
       - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
       - CASSANDRA_NUM_TOKENS=256
       # Enable automatic SSTable upgrade
-      - JVM_OPTS=-Dcassandra.automatic_sstable_upgrade=true
+      - JVM_OPTS=-Dcassandra.automatic_sstable_upgrade=true -Xss512k
+      - JVM_EXTRA_OPTS=-XX:CompileCommand=exclude,org.apache.cassandra.db.commitlog.AbstractCommitLogSegmentManager$$AllocatorRunnable.*
+      - CASSANDRA_COMMITLOG_SYNC=periodic
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    platform: linux/amd64
     volumes:
       - cassandra_data:/var/lib/cassandra
       - /tmp:/tmp  # For data export/import

@@ -36,7 +36,7 @@ object GadgetLookup {
       frags.filter(pred(_))
     }:js.ThisFunction0[dom.Element, Any]).get()
     
-    val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]]
+    val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]].toSeq
         
     gadgetOptsSeq.flatten
   }

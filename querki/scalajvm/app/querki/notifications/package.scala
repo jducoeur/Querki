@@ -40,12 +40,12 @@ package object notifications {
     /**
      * Registers the given Notifier, so that it can be used to send and interpret Notifications.
      */
-    def register(notifier: Notifier)
+    def register(notifier: Notifier): Unit
 
     /**
      * Remove this notifier. Should be called during term().
      */
-    def unregister(notifier: Notifier)
+    def unregister(notifier: Notifier): Unit
   }
 
   /**
@@ -76,7 +76,7 @@ package object notifications {
       req: User,
       recipients: Recipients,
       note: Notification
-    )
+    ): Unit
 
     /**
      * Figures out how to display the given Notification.

@@ -46,7 +46,7 @@ class RxButtonGroup(
   }
 
   def doRender() =
-    div(cls := "btn-group", data("toggle") := "buttons", mods, renderButtons)
+    div(cls := "btn-group", data("toggle") := "buttons", mods, renderButtons())
 
   def updateSelected() = {
     buttons.now.find(_.initiallyActive).foreach(select(_))

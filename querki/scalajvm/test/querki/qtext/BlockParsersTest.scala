@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 //@RunWith(classOf[JUnitRunner])
 class BlockParsersTest extends AnyFlatSpec with Matchers with BlockParsers {
 
-  def deco() = new MainDecorator {}
+  def deco: Decorator = new MainDecorator {}
 
   "The BlockParsers" should "parse optional empty lines" in {
     val p = optEmptyLines

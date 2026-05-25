@@ -72,7 +72,7 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
   def getSnapshotInterval = Config.getInt("querki.space.snapshotInterval", 100)
   lazy val snapshotInterval = getSnapshotInterval
 
-  implicit lazy val tracing = TracingSpace(id, "SpaceCore: ")
+  implicit lazy val tracing: TracingSpace = TracingSpace(id, "SpaceCore: ")
 
   ////////////////////////////////////////////
   //
@@ -917,9 +917,9 @@ abstract class SpaceCore[RM[_]](val rtc: RTCAble[RM])(implicit val ecology: Ecol
     case msg: Any => { tracing.trace(s"receiveRecover: ${msg.getClass().getName}"); msg }
   }: PartialFunction[Any, Any]).andThen(
     // Recovery of high-level stuff like Snapshots:
-    recoverPersistence.orElse(
+    recoverPersistence.orElse[Any, Unit](
       // Recovery of individual persisted messages:
-      recoverSpaceCommand.andThen { newState => updateStateCore(newState) }
+      recoverSpaceCommand.andThen[Unit] { newState => updateStateCore(newState); () }
     )
   )
 

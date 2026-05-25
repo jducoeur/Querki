@@ -70,15 +70,15 @@ object SaveablePropertyValue {
     def getSaveable: Option[PropertyChange] = implicitly[SaveablePropertyValue[S]].get(s)
   }
 
-  implicit val saveableInputGadget = new SaveablePropertyValue[InputGadget[_]] {
+  implicit val saveableInputGadget: SaveablePropertyValue[InputGadget[_]] = new SaveablePropertyValue[InputGadget[_]] {
     def get(g: InputGadget[_]) = Some(g.propertyChangeMsg())
   }
 
-  implicit def saveableGadgetRef[S <: Gadget[_] : SaveablePropertyValue] = new SaveablePropertyValue[GadgetRef[S]] {
+  implicit def saveableGadgetRef[S <: Gadget[_] : SaveablePropertyValue]: SaveablePropertyValue[GadgetRef[S]] = new SaveablePropertyValue[GadgetRef[S]] {
     def get(gr: GadgetRef[S]) = gr.mapNow(_.getSaveable).flatten
   }
 
-  implicit def saveableFromBase[B <: SaveableBase] = new SaveablePropertyValue[B] {
+  implicit def saveableFromBase[B <: SaveableBase]: SaveablePropertyValue[B] = new SaveablePropertyValue[B] {
     def get(h: B) = Some(h.propertyChangeMsg())
   }
 }

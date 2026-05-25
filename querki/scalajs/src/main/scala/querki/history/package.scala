@@ -2,7 +2,6 @@ package querki
 
 import autowire.Core.Request
 
-import querki.ecology._
 import querki.globals._
 import querki.history.HistoryFunctions.HistoryVersion
 import querki.pages.PageFactory

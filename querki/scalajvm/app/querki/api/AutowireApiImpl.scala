@@ -67,11 +67,11 @@ abstract class AutowireApiImpl(
   def user = info.user
   def rc = info.rc
   def self = info.actor.self
-  implicit def context = info.actor.context
+  implicit def context: ActorContext = info.actor.context
   def sender = info.sender
   def requester = info.actor
 
-  implicit lazy val ecology = e
+  implicit lazy val ecology: Ecology = e
 
   // This is mainly to support the implementation in SpaceApiImpl
   def trace(msg: => String): Unit = {}

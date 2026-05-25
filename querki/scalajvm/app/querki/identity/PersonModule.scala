@@ -39,8 +39,8 @@ private[identity] case class CachedPeople(
   state: SpaceState
 ) extends EcologyMember {
 
-  implicit val s = state
-  implicit val e = ecology
+  implicit val s: SpaceState = state
+  implicit val e: Ecology = ecology
 
   lazy val Person = interface[Person]
 
@@ -102,12 +102,12 @@ class PersonModule(e: Ecology)
 
   lazy val prof = Profiler.createHandle("Person")
 
-  override def init = {
+  override def init() = {
     PageEventManager.requestReceived += InviteLoginChecker
     SpaceChangeManager.updateStateCache += this
   }
 
-  override def term = {
+  override def term() = {
     PageEventManager.requestReceived -= InviteLoginChecker
     SpaceChangeManager.updateStateCache -= this
   }

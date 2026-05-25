@@ -183,7 +183,7 @@ trait ModelTypeTestBase extends QuerkiTests {
 
 class ModelTypeTests extends ModelTypeTestBase {
 
-  def makeSpace = new ComplexSpace
+  def makeSpace(): TestSpace = new ComplexSpace
 
   "rebuildBundle" should {
     "work for a reasonably nested value with an index" in {

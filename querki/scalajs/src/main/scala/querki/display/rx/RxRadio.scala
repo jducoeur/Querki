@@ -37,7 +37,7 @@ class RxRadio(
   private class OneButton(btn: RadioButton) extends Gadget[dom.html.Input] {
     def ecology = RxRadio.this.ecology
 
-    def doRender =
+    def doRender() =
       input(
         tpe := "radio",
         name := s"$groupName",
@@ -51,7 +51,7 @@ class RxRadio(
     }
   }
 
-  def doRender =
+  def doRender() =
     form(
       cls := "radio",
       for { btn <- buttons } yield div(

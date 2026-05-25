@@ -40,14 +40,16 @@ class InPublicationStateActor(
      with EcologyMember {
 
   def notifyChanges(curState: CurrentPublicationState): Unit = {
-    router ! curState
+    router.!(curState)(self)
   }
 
   def respondWithState(curState: CurrentPublicationState): Unit = {
-    sender ! curState
+    sender.!(curState)(self)
   }
 
-  def respondPublished(): Unit = sender ! PublishedAck()
+  def respondPublished(): Unit = {
+    sender.!(PublishedAck())(self)
+  }
 }
 
 object InPublicationStateActor {

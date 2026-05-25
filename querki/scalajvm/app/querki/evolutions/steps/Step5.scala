@@ -20,6 +20,6 @@ class Step5(implicit val ecology: Ecology) extends Step {
         |  PRIMARY KEY (identityId, thingId, propertyId)
         |) DEFAULT CHARSET=utf8;
         |""".stripMargin
-    ).execute
+    ).execute()
   }
 }

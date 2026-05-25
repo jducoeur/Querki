@@ -87,7 +87,7 @@ class ExternalLinkEcot(e: Ecology)
       implicit val s = context.state
       val bundle = elem.get(this)
       val result = for {
-        pv <- bundle.getPropOpt(Basic.DisplayNameProp)
+        pv <- bundle.getPropOpt(this.Basic.DisplayNameProp)
         text <- pv.firstOpt
       } yield text.text
 
@@ -109,7 +109,7 @@ class ExternalLinkEcot(e: Ecology)
       } yield url.url
 
       val displayNameOpt = for {
-        pv <- bundle.getPropOpt(Basic.DisplayNameProp)
+        pv <- bundle.getPropOpt(this.Basic.DisplayNameProp)
         text <- pv.firstOpt
       } yield text.text
 

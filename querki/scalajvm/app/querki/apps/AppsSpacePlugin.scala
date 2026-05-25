@@ -39,7 +39,7 @@ class AppsSpacePlugin[RM[_]](
   lazy val Apps = interface[Apps]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   def modelsToShadow(app: SpaceState): Seq[Thing] = {
     val (models, instances) = app.things.values.partition(_.isModel(app))
@@ -75,7 +75,7 @@ class AppsSpacePlugin[RM[_]](
 
     // Okay -- load the app:
     for {
-      app <- api.loadAppVersion(appId, appVersion, state.allApps)
+      app <- api.loadAppVersion(appId, appVersion, state.allApps())
       // Secondary check: is this App willing to be used?
       _ = {
         if (!AccessControl.hasPermission(Apps.CanUseAsAppPerm, app, state.ownerIdentity.get.id, app))
@@ -88,8 +88,8 @@ class AppsSpacePlugin[RM[_]](
     } yield {
       implicit val s = state
       val dhApp = dh(app)
-      val dhParents = app.allApps.values.toSeq.map(dh(_))
-      val time = DateTime.now
+      val dhParents = app.allApps().values.toSeq.map(dh(_))
+      val time = DateTime.now()
       val msg = DHAddApp(req, time, dhApp, dhParents, idMapping, afterExtraction)
       ChangeResult(List(msg), Some(appId), addFilledAppPure(app, idMapping, time, afterExtraction)(s))
     }

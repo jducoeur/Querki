@@ -1,12 +1,11 @@
 package querki
 
 import scala.scalajs.js
-
 import org.scalajs.dom
-
 import org.querki.gadgets.core._
-
 import scalatags.JsDom.TypedTag
+
+import scala.concurrent.ExecutionContext
 
 /**
  * This package provides the "global imports" that are commonly used across the client. It
@@ -50,7 +49,7 @@ package object globals {
    * Worse came to worst we could memoize that, but it's pretty evil to stuff the ecology into the
    * global world.
    */
-  implicit def ecologyGadgetNotifier(implicit e: Ecology) = new org.querki.gadgets.core.GadgetNotifier[Ecology] {
+  implicit def ecologyGadgetNotifier(implicit e: Ecology): GadgetNotifier[Ecology] = new org.querki.gadgets.core.GadgetNotifier[Ecology] {
 
     def layoutChanged[Output <: org.scalajs.dom.html.Element](g: Gadget[Output]): Unit = {
       lazy val Pages = e.api[querki.pages.Pages]
@@ -70,7 +69,7 @@ package object globals {
    * is now the One True EC. For more details, see:
    *   https://github.com/scala-js/scala-js-macrotask-executor
    */
-  implicit val execContext = org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
+  implicit val execContext: ExecutionContext = org.scalajs.macrotaskexecutor.MacrotaskExecutor.Implicits.global
 
   // I'm now using Future and Promise enough that we may as well make them generally available
   type Future[T] = scala.concurrent.Future[T]

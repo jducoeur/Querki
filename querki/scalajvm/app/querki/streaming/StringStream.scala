@@ -52,7 +52,7 @@ private[streaming] class StringStreamSender(
      with EcologyMember
      with QLogging {
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   val chunkSize = Config.getInt("querki.stream.stringChunkSize", 10000)
 

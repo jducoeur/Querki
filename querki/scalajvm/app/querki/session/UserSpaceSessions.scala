@@ -4,7 +4,6 @@ import akka.actor._
 import models._
 import querki.admin.{MonitorActor, SpaceMonitorEvent}
 import querki.api.ClientRequest
-import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.publication.CurrentPublicationState

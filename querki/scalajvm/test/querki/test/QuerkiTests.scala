@@ -154,7 +154,7 @@ class QuerkiTests extends AnyWordSpec with Matchers with BeforeAndAfterAll with 
     }
 
     // Similar to stripReturns, but instead of using stripMargin, we trim the front of the line.
-    def strip: String = str.replace("\r", "").lines.map(trimStart(_)).mkString("\n")
+    def stripFront: String = str.linesIterator.map(trimStart(_)).mkString("\n")
   }
 
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for

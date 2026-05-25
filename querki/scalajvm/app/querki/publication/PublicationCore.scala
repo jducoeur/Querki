@@ -226,7 +226,7 @@ trait PublicationCore
         for {
           _ <- publish(who, things, meta, spaceState)
           finalState <- updatePublishedThings(who, things)(spaceState)
-        } yield { sender ! PublishResponse(finalState) }
+        } yield { sender() ! PublishResponse(finalState) }
       }
     }
 
@@ -235,7 +235,7 @@ trait PublicationCore
         for {
           _ <- publish(who, things, meta, spaceState)
           finalState <- updatePublishedThings(who, things)(spaceState)
-        } yield { sender ! PublishResponse(spaceState) }
+        } yield { sender() ! PublishResponse(spaceState) }
       }
     }
 
@@ -261,7 +261,7 @@ trait PublicationCore
 
       val filtered = curState.publicEvents.filter(includeEvent)
       // TODO: deal with coalesce
-      sender ! RequestedEvents(filtered)
+      sender() ! RequestedEvents(filtered)
     }
 
     case GetRSSUrl(who) => {

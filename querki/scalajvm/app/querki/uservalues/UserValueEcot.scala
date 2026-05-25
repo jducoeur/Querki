@@ -59,12 +59,12 @@ class UserValueEcot(e: Ecology)
 
   lazy val IdentityType = IdentityAccess.IdentityType
 
-  override def init = {
+  override def init() = {
     SpaceChangeManager.updateStateCache += UserValueCacheUpdater
     SpaceChangeManager.registerPluginProvider(this)
   }
 
-  override def term = {
+  override def term() = {
     SpaceChangeManager.updateStateCache -= UserValueCacheUpdater
   }
 

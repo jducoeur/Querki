@@ -18,7 +18,7 @@ class SecurityFunctionsImpl(info: AutowireParams)(implicit e: Ecology)
   extends SpaceApiImpl(info, e)
      with SecurityFunctions {
 
-  implicit val s = state
+  implicit val s: SpaceState = state
 
   lazy val AccessControl = interface[AccessControl]
   lazy val Apps = interface[querki.apps.Apps]

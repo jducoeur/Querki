@@ -41,9 +41,9 @@ class ClientApiEcot(e: Ecology) extends QuerkiEcot(e) with ClientApi {
     ApiRegistry.registerApiImplFor[CommonFunctions, CommonFunctionsImpl](anonHandler, false)
   }
 
-  implicit def thing2TID(t: Thing) = TID(t.id.toThingId.toString)
-  implicit def OID2TID(oid: OID) = TID(oid.toThingId.toString)
-  implicit def OID2TOID(oid: OID) = TOID(oid.id.toThingId.toString)
+  implicit def thing2TID(t: Thing): TID = TID(t.id.toThingId.toString)
+  implicit def OID2TID(oid: OID): TID = TID(oid.toThingId.toString)
+  implicit def OID2TOID(oid: OID): TOID = TOID(oid.id.toThingId.toString)
 
   def setFlags(
     t: Thing,

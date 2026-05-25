@@ -54,5 +54,5 @@ package object comm {
   /**
    * Enrich a named Play entry point with the spaceCall() and spaceUrl() methods.
    */
-  implicit def dyn2SpaceCall(call: js.Dynamic) = SpaceCall(call)
+  implicit def dyn2SpaceCall(call: js.Dynamic): SpaceCall = SpaceCall(call)
 }

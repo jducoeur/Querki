@@ -63,11 +63,11 @@ class QuerkiFuncTests
      with Persistence
      with RegressionTests1 {
 
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     setupCassandra()
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
     teardownCassandra()
   }
 

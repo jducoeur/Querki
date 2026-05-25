@@ -19,7 +19,7 @@ class SpaceTimingActor(e: Ecology) extends QuerkiActor(e) {
       val targetMsgs = msgs.drop(i).map { case MonitorMsg(msg, timestamp) =>
         s"${timestamp.getMillis} -- $msg"
       }
-      sender ! NewMsgs(msgs.size, targetMsgs)
+      sender() ! NewMsgs(msgs.size, targetMsgs)
     }
   }
 }

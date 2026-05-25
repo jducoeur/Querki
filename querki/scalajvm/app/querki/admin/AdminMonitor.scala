@@ -44,20 +44,20 @@ class AdminMonitor(implicit val ecology: Ecology)
   var watches = Map.empty[ActorPath, MonitorEvent]
 
   def cleanOldEvents() = {
-    val now = DateTime.now
+    val now = DateTime.now()
     val old = now.minus(monitorTimeout.toMillis)
     spaces = spaces.filter(_._2.sentTime.isBefore(old))
   }
 
   def watch(evt: MonitorEvent) = {
-    val path = sender.path
+    val path = sender().path
     if (watches.get(path).isEmpty) {
       watches += (path -> evt)
-      context.watch(sender)
+      context.watch(sender())
     }
   }
 
-  def mkParams(rc: RequestContext) = AutowireParams(rc.requesterOrAnon, Some(this), rc, this, sender)
+  def mkParams(rc: RequestContext) = AutowireParams(rc.requesterOrAnon, Some(this), rc, this, sender())
 
   def receive = {
     case evt: SpaceMonitorEvent => { spaces += ((evt.spaceId) -> evt); watch(evt) }
@@ -84,7 +84,7 @@ object AdminMonitor {
 }
 
 sealed trait MonitorEvent {
-  val sentTime = DateTime.now
+  val sentTime = DateTime.now()
 }
 
 case class SpaceMonitorEvent(

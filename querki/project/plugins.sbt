@@ -16,15 +16,16 @@ resolvers += "Sonatype OSS Snapshots".at("https://oss.sonatype.org/content/repos
 // Needed for Li Haoyi's stuff
 resolvers += "bintray/non".at("https://dl.bintray.com/non/maven")
 
+dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "2.3.0"
+
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.2")
+addSbtPlugin(("com.typesafe.play" % "sbt-plugin" % "2.8.22").exclude("com.typesafe.sbt", "sbt-native-packager"))
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.5")
 
-// TEMP: for now, this is slightly newer than the version Play is using. Remove this before too long!
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.4.0")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.10.4")
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.19.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.20.2")
 addSbtPlugin("org.scala-js" % "sbt-jsdependencies" % "1.0.2")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 

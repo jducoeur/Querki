@@ -1,7 +1,6 @@
 package querki
 
 import models.Property
-import querki.ecology._
 import querki.globals._
 import querki.values.RequestContext
 

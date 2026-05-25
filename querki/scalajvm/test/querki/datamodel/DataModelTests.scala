@@ -25,7 +25,7 @@ class DataModelTests extends QuerkiTests {
 
         val myInstance = new TestThing("My Instance", myModel)
       }
-      implicit val s = new TSpace
+      implicit val s: TSpace = new TSpace
 
       assert(!s.myInstance.props.contains(s.myProp.id))
       assert(!s.myInstance.props.contains(s.otherProp.id))
@@ -56,7 +56,7 @@ class DataModelTests extends QuerkiTests {
   // === _allRefs ===
   "_allRefs" should {
     "work normally" in {
-      implicit val s = new CDSpace
+      implicit val s: CDSpace = new CDSpace
 
       pql("""[[Weird Al -> _allRefs -> _sort]]""") should
         equal(listOfLinkText(s.mandatoryFun, s.faves, s.runningWithScissors))
@@ -71,7 +71,7 @@ class DataModelTests extends QuerkiTests {
         val textProp = new TestProperty(Basic.PlainTextType, ExactlyOne, "My Text Prop")
         val myThing = new SimpleTestThing("Test Thing", textProp(plaintext))
       }
-      implicit val s = new TSpace
+      implicit val s: TSpace = new TSpace
 
       pql("""[[Test Thing -> My Text Prop -> _asType(Thing Type)]]""") should
         equal(linkText(s.sandbox))
@@ -81,7 +81,7 @@ class DataModelTests extends QuerkiTests {
   // === _currentSpace ===
   "_currentSpace" should {
     "return the current Space" in {
-      implicit val s = commonSpace
+      implicit val s: CommonSpace = commonSpace
       pql("""[[_currentSpace]]""") should equal(linkText(commonState))
     }
   }
@@ -340,7 +340,7 @@ class DataModelTests extends QuerkiTests {
 
     "work on a Tag Set" in {
       class TSpace extends CommonSpace {
-        val tagSetProp = new TestProperty(Tags.TagSetType, Core.QSet, "My Tag Set")
+        val tagSetProp = new TestProperty(this.Tags.TagSetType, Core.QSet, "My Tag Set")
 
         val myThing = new SimpleTestThing("My Test Thing", tagSetProp("My Instance", "floobity", "Trivial"))
       }
@@ -355,7 +355,7 @@ class DataModelTests extends QuerkiTests {
   // === _kind ===
   "_kind" should {
     "work with the common Types" in {
-      implicit val s = commonSpace
+      implicit val s: CommonSpace = commonSpace
 
       pql("[[My Model -> _kind]]") should equal("0")
       pql("[[Text Type -> _kind]]") should equal("1")

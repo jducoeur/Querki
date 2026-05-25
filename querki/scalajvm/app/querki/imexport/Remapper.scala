@@ -2,7 +2,7 @@ package querki.imexport
 
 import models._
 import querki.globals._
-import querki.spaces.RTCAble
+import querki.spaces.{RTCAble, RequestTC}
 import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 
 /**
@@ -25,7 +25,7 @@ trait Remapper[RM[_]] extends EcologyMember with ModelTypeDefiner {
   private lazy val LinkType = Core.LinkType
 
   implicit def rtc: RTCAble[RM]
-  private implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  private implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   def getOIDs(size: Int): RM[Seq[OID]]
 

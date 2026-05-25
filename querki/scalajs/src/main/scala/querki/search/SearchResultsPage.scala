@@ -28,7 +28,7 @@ class SearchGadget(implicit e: Ecology) extends HookedGadget[dom.HTMLInputElemen
     // TODO: in the long run, can we do prompting, a la Google?
     $(elem).keydown { (evt: JQueryEventObject) =>
       if (evt.which == 13) {
-        val query = $(elem).value.asInstanceOf[String]
+        val query = $(elem).value().asInstanceOf[String]
         Search.searchResultsFactory.showPage(("query" -> query))
         false
       }

@@ -66,7 +66,7 @@ class AppTests extends QuerkiTests {
       val mainInstance = new TestThing("Main Instance", highest.rootModel)
     }
 
-    implicit val s = main
+    implicit val s: TestApp = main
 
     // Check that the specified name resolves to the specified Thing
     def testName(

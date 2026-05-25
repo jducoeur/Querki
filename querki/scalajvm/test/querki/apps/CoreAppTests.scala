@@ -2,7 +2,6 @@ package querki.apps
 
 import scala.util.{Success}
 
-import models._
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User

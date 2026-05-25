@@ -26,17 +26,6 @@ class HistorySummaryPage(params: ParamMap)(implicit val ecology: Ecology)
 
   val defaultNRecords = 100
 
-  implicit class RichString(s: String) {
-
-    def toLongOption: Option[Long] = {
-      try {
-        Some(s.toLong)
-      } catch {
-        case _: NumberFormatException => None
-      }
-    }
-  }
-
   lazy val nRecords: Int = params.get("nRecords").flatMap(_.toLongOption).map(_.toInt).getOrElse(defaultNRecords)
 
   lazy val atEnd: Boolean = !params.contains("end")

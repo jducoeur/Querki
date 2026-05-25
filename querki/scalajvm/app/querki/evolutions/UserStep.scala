@@ -49,7 +49,7 @@ trait UserStep extends EcologyMember {
     QDB(System) { implicit conn =>
       SQL("""
           UPDATE User SET userVersion = {version} WHERE id = {id}
-          """).on("version" -> version, "id" -> userId.raw).executeUpdate
+          """).on("version" -> version, "id" -> userId.raw).executeUpdate()
     }
   }
 
@@ -63,10 +63,10 @@ trait UserStep extends EcologyMember {
 //    // TODO: back up the history and attachments as well?
 //    SpacePersistence.SpaceSQL(info.id, """
 //        CREATE TABLE {bname} LIKE {tname}
-//        """, info.version).executeUpdate
+//        """, info.version).executeUpdate()
 //    SpacePersistence.SpaceSQL(info.id, """
 //        INSERT {bname} SELECT * FROM {tname}
-//        """, info.version).executeUpdate
+//        """, info.version).executeUpdate()
 //  }
 
   /**

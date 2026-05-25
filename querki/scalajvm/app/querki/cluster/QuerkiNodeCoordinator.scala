@@ -40,7 +40,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
   import QuerkiNodeCoordinator._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   override def persistenceId = "nodeCoordinator"
 
@@ -111,7 +111,7 @@ class QuerkiNodeCoordinator(e: Ecology) extends PersistentActor with Requester w
 
     val assignment = assignShard(path)
     persist(ShardAssigned(path, assignment)) { msg =>
-      sender ! ShardAssignment(assignment)
+      sender() ! ShardAssignment(assignment)
     }
 
     // Take occasional snapshots of the state:

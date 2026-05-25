@@ -22,7 +22,7 @@ class DateTimeTests extends QuerkiTests {
       val space = new TSpace
 
       processQText(thingAsContext[TSpace](space, _.thing1), """[[DateTime Prop]]""") should
-        equal("""Mar 15, 2013 10:30:00 AM""")
+        equal("""Mar 15, 2013, 10:30:00 AM""")
     }
 
     "wikify in custom format" in {
@@ -106,12 +106,12 @@ class DateTimeTests extends QuerkiTests {
       pql("""[[Thing 1a -> Date Prop -> _plus(Duration Type(5, days))]]""") should
         equal("03/20/2016")
       pql("""[[Thing 1 -> DateTime Prop -> _plus(Duration Type(5, days))]]""") should
-        equal("Mar 20, 2013 10:30:00 AM")
+        equal("Mar 20, 2013, 10:30:00 AM")
 
       pql("""[[Thing 1a -> Date Prop -> _minus(Duration Type(5, days))]]""") should
         equal("03/10/2016")
       pql("""[[Thing 1 -> DateTime Prop -> _minus(Duration Type(5, days))]]""") should
-        equal("Mar 10, 2013 10:30:00 AM")
+        equal("Mar 10, 2013, 10:30:00 AM")
     }
   }
 }

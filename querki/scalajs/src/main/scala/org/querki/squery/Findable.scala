@@ -47,7 +47,7 @@ trait Findable[A] {
 
 object Findable {
 
-  implicit val FindableSeq = new Findable[HTMLCollection[Element]] {
+  implicit val FindableSeq: Findable[HTMLCollection[Element]] = new Findable[HTMLCollection[Element]] {
 
     def findAll(
       as: HTMLCollection[Element],
@@ -76,7 +76,7 @@ object Findable {
     }
   }
 
-  implicit def FindableElement[E <: Element] = new Findable[E] {
+  implicit def FindableElement[E <: Element]: Findable[E] = new Findable[E] {
 
     def findAll(
       a: E,

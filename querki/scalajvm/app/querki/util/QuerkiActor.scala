@@ -14,7 +14,7 @@ import querki.globals._
  * @author jducoeur
  */
 abstract class QuerkiActor(e: Ecology) extends Actor with Requester with EcologyMember with QLogging {
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   /**
    * The standard receive function, which should be implemented by concrete Actors instead

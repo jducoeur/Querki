@@ -1,12 +1,12 @@
 package querki.history
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, ReadJournal}
+import akka.persistence.query.scaladsl.{ReadJournal, CurrentEventsByPersistenceIdQuery}
 import akka.persistence.query.{EventEnvelope, PersistenceQuery}
 import querki.globals._
 import querki.spaces.SpaceMessagePersistence.SpaceEvent
-import querki.spaces.{SpacePure, TracingSpace}
+import querki.spaces.{TracingSpace, SpacePure}
 
 /**
  * The interesting bits from a single history record.
@@ -67,7 +67,7 @@ trait HistoryFoldingImpl extends Actor with HistoryFolding {
   def tracing: TracingSpace
   def persistenceId: String
 
-  implicit def system = context.system
+  implicit def system: ActorSystem = context.system
 
   // TODO: this is more than a little bit hacky. We should come up with a more principled approach to testing,
   // likely with machinery to override Ecology members. But it'll do for now.

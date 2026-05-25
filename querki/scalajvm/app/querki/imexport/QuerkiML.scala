@@ -59,7 +59,7 @@ class ThingAttr extends scalatags.Text.AttrValue[ThingId] {
     t: Builder,
     a: Attr,
     v: ThingId
-  ) {
+  ): Unit = {
     val str = v match {
       case AsOID(oid)   => QuerkiML.exportOID(oid)
       case AsName(name) => NameUtils.canonicalize(name)
@@ -74,7 +74,7 @@ class AsOIDAttr extends scalatags.Text.AttrValue[AsOID] {
     t: Builder,
     a: Attr,
     v: AsOID
-  ) {
+  ): Unit = {
     t.setAttr(a.name, vsrc(QuerkiML.exportOID(v.oid)))
   }
 }
@@ -85,7 +85,7 @@ class OIDAttr extends scalatags.Text.AttrValue[OID] {
     t: Builder,
     a: Attr,
     v: OID
-  ) {
+  ): Unit = {
     t.setAttr(a.name, vsrc(QuerkiML.exportOID(v)))
   }
 }

@@ -8,11 +8,11 @@ package querki.qtext
 trait Transformer { dec: Decorator =>
 
   private object lineTokenizer extends LineTokenizer(dec) {
-    override def allowXmlBlocks() = dec.allowVerbatimXml()
+    override def allowXmlBlocks = dec.allowVerbatimXml
   }
 
   private object blockParser extends BlockParsers {
-    def deco() = dec
+    def deco: Decorator = dec
   }
 
   /**

@@ -26,7 +26,7 @@ class SecuritySpacePlugin[RM[_]](
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
 
-  implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   /**
    * Fetches the Instance Permissions for the specified Thing, if that makes sense and creating
@@ -57,7 +57,7 @@ class SecuritySpacePlugin[RM[_]](
           val permProps = Map(Basic.DisplayNameProp(s"__${thing.displayName} Instance Permissions"))
           for {
             // Create the Permissions Thing:
-            createResult <- api.doCreate(req, MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, None)(state)
+            createResult <- api.doCreate(req, querki.security.MOIDs.InstancePermissionsModelOID, permProps, Kind.Thing, None)(state)
             ChangeResult(createEvents, permThingIdOpt, newState) = createResult
             permThingId = permThingIdOpt.get
             permThing = newState.anything(permThingId).get

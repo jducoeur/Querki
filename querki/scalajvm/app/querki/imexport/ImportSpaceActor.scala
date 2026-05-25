@@ -41,7 +41,7 @@ class ImportSpaceActor(
      with EcologyMember {
   import ImportSpaceActor._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
@@ -52,7 +52,7 @@ class ImportSpaceActor(
 
   // TODO: replace this silliness with proper typeclass usage, now that I have a better idea what I'm doing than
   // I did years ago when I wrote this:
-  implicit def rtc = RealRTCAble
+  implicit def rtc: RealRTCAble.type = RealRTCAble
 
   def getOIDs(nRequested: Int): RequestM[Seq[OID]] = {
     Cluster.oidAllocator.requestFor[NewOIDs](GiveOIDBlock(nRequested)).map(_.oids)
@@ -102,7 +102,7 @@ class ImportSpaceActor(
           // We're into processing.
           processPercent
         }
-      sender ! ImportProgress(importMsg, percent, spaceInfo, failed)
+      sender() ! ImportProgress(importMsg, percent, spaceInfo, failed)
     }
 
     case CompletionAcknowledged => context.stop(self)

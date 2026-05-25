@@ -17,12 +17,12 @@ object ReceivePipeline {
      *
      * The block of code will be executed before similar blocks in outer interceptors.
      */
-    def andAfter(after: ⇒ Unit): Delegation = InnerAndAfter(transformedMsg, (_ ⇒ after))
+    def andAfter(after: => Unit): Delegation = InnerAndAfter(transformedMsg, (_ => after))
   }
 
   private[ReceivePipeline] case class InnerAndAfter(
     transformedMsg: Any,
-    after: Unit ⇒ Unit
+    after: Unit => Unit
   ) extends Delegation
 
   /**
@@ -32,7 +32,7 @@ object ReceivePipeline {
    */
   case object HandledCompletely extends Delegation
 
-  private def withDefault(interceptor: Interceptor): Interceptor = interceptor.orElse({ case msg ⇒ Inner(msg) })
+  private def withDefault(interceptor: Interceptor): Interceptor = interceptor.orElse({ case msg => Inner(msg) })
 
   type Interceptor = PartialFunction[Any, Delegation]
 
@@ -40,7 +40,7 @@ object ReceivePipeline {
   private case object Done extends HandlerResult
   private case object Undefined extends HandlerResult
 
-  private type Handler = Any ⇒ HandlerResult
+  private type Handler = Any => HandlerResult
 }
 
 /**
@@ -74,20 +74,20 @@ trait ReceivePipeline extends Actor {
     decoratorCache = None
   }
 
-  private def combinedDecorator: Receive ⇒ Receive = { receive ⇒
+  private def combinedDecorator: Receive => Receive = { receive =>
     // So that reconstructed Receive PF is undefined only when the actor's
     // receive is undefined for a transformed message that reaches it...
     val innerReceiveHandler: Handler = {
-      case msg ⇒ receive.lift(msg).map(_ ⇒ Done).getOrElse(Undefined)
+      case msg => receive.lift(msg).map(_ => Done).getOrElse(Undefined)
     }
 
-    val zipped = pipeline.foldRight(innerReceiveHandler) { (outerInterceptor, innerHandler) ⇒
+    val zipped = pipeline.foldRight(innerReceiveHandler) { (outerInterceptor, innerHandler) =>
       outerInterceptor.andThen {
-        case Inner(msg) ⇒ innerHandler(msg)
-        case InnerAndAfter(msg, after) ⇒
+        case Inner(msg) => innerHandler(msg)
+        case InnerAndAfter(msg, after) =>
           try innerHandler(msg)
           finally after(())
-        case HandledCompletely ⇒ Done
+        case HandledCompletely => Done
       }
     }
 
@@ -100,7 +100,7 @@ trait ReceivePipeline extends Actor {
 
     override def applyOrElse[A1 <: Any, B1 >: Unit](
       m: A1,
-      default: A1 ⇒ B1
+      default: A1 => B1
     ): B1 = {
       val result = handler(m)
 
@@ -117,9 +117,9 @@ trait ReceivePipeline extends Actor {
     receive: Receive,
     msg: Any
   ): Unit = {
-    def withCachedDecoration(decorator: Receive ⇒ Receive): Receive = decoratorCache match {
-      case Some((`receive`, cached)) ⇒ cached
-      case _ ⇒
+    def withCachedDecoration(decorator: Receive => Receive): Receive = decoratorCache match {
+      case Some((`receive`, cached)) => cached
+      case _ =>
         val decorated = decorator(receive)
         decoratorCache = Some((receive, decorated))
         decorated

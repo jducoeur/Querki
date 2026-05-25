@@ -55,5 +55,5 @@ class DependentInputGadget(implicit e: Ecology) extends HookedGadget[Element](e)
     }
   }
 
-  def doRender = ???
+  def doRender() = ???
 }

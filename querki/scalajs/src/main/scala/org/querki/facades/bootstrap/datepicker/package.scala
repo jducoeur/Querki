@@ -18,7 +18,7 @@ import org.querki.jquery.JQuery
  */
 package object datepicker {
   implicit def jq2Datepicker(jq:JQuery):BootstrapDatepicker = jq.asInstanceOf[BootstrapDatepicker]
-  implicit def jq2DatepickerCommands(jq:JQuery) = new DatepickerCommands(jq)
+  implicit def jq2DatepickerCommands(jq:JQuery): DatepickerCommands = new DatepickerCommands(jq)
   
   type BeforeShowFunc = js.Function1[Date, UndefOr[Boolean | String | js.Dictionary[Any]]]
 }

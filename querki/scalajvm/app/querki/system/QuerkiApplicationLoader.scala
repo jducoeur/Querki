@@ -27,7 +27,7 @@ class QuerkiApplicationLoader extends ApplicationLoader with QLogging {
   var ecology: Ecology = null
 
   val initTermDuration = 60.seconds
-  implicit val initTermTimeout = Timeout(initTermDuration)
+  implicit val initTermTimeout: Timeout = Timeout(initTermDuration)
 
   def load(context: ApplicationLoader.Context): Application = {
     // The environment that we're running in, based on the QUERKI_ENV environment variable. This will throw (and
@@ -146,7 +146,7 @@ trait ShutdownHandler
 @Singleton
 class QuerkiShutdownHandler @Inject() (lifecycle: ApplicationLifecycle) extends ShutdownHandler with QLogging {
   val initTermDuration = 30.seconds
-  implicit val initTermTimeout = Timeout(initTermDuration)
+  implicit val initTermTimeout: Timeout = Timeout(initTermDuration)
 
   logTrace("Setting up QuerkiShutdownHandler")
 

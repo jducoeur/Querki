@@ -14,7 +14,7 @@ trait Disableable[A] {
 
 object Disableable {
 
-  implicit val DisableableElement = new Disableable[dom.Element] {
+  implicit val DisableableElement: Disableable[dom.Element] = new Disableable[dom.Element] {
 
     def isDisabled(e: dom.Element) = {
       e match {
@@ -30,7 +30,7 @@ object Disableable {
     }
   }
 
-  implicit val DisableableStylesheet = new Disableable[StyleSheet] {
+  implicit val DisableableStylesheet: Disableable[StyleSheet] = new Disableable[StyleSheet] {
     def isDisabled(s: StyleSheet) = s.disabled
   }
 

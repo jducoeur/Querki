@@ -27,7 +27,7 @@ package object graphql {
 
     def array(path: String)(implicit p: Position): Seq[JsValue] = {
       field(path) match {
-        case JsArray(a) => a
+        case JsArray(a) => a.toSeq
         case other      => fail(s"Field $path wasn't an Array: $other")
       }
     }

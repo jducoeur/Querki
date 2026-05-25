@@ -17,7 +17,7 @@ class PassthroughHandler(
   val ClientApi = interface[ClientApi]
   val System = interface[querki.system.System]
 
-  implicit val state = System.State
+  implicit val state: SpaceState = System.State
 
   var contents = Seq.empty[Future[(String, ThingInfo)]]
 

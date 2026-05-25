@@ -15,7 +15,7 @@ trait SystemManagement extends EcologyInterface {
   /**
    * Set the final System Space. The code that initialized the Ecology *must* call this once complete!
    */
-  def setState(state: SpaceState)
+  def setState(state: SpaceState): Unit
 
   /**
    * The ActorSystem, if it exists. Note that it does *not* exist in many unit tests, and thus

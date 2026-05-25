@@ -29,7 +29,7 @@ class SpaceManager(
      with SpaceCreator
      with QLogging {
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   private lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SpaceOps = interface[SpaceOps]

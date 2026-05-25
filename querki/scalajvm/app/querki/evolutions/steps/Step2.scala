@@ -20,7 +20,7 @@ class Step2(implicit val ecology: Ecology) extends Step {
       """
         ALTER TABLE {tname} ADD COLUMN modified TIMESTAMP
         """
-    ).execute
+    ).execute()
     // NOTE: why is this necessary? For reasons beyond the ken of man, despite the fact that the above
     // (and every other version of DEFAULT I can think of) creates *new* objects correctly, the
     // added column winds up with an illegal 0 value for the *existing* rows, which immediately crashes.
@@ -30,6 +30,6 @@ class Step2(implicit val ecology: Ecology) extends Step {
       """
         UPDATE {tname} SET modified = '2013-01-01 00:00:01'
         """
-    ).execute
+    ).execute()
   }
 }

@@ -18,7 +18,7 @@ trait UserTesting extends EcologyInterface {
   /**
    * Add the "users" defined in this Space.
    */
-  def prepSpace(space: TestSpace)
+  def prepSpace(space: TestSpace): Unit
 }
 
 class UserAccessStub(e: Ecology) extends QuerkiEcot(e) with UserAccess with UserTesting {

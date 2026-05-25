@@ -65,7 +65,8 @@ trait PersistentActorCore {
   type AR
   implicit val actorRefLike: ActorRefLike[AR]
 
-  implicit def sender: AR
+  def sender(): AR
+  implicit def implicitSender: AR = sender()
   def self: AR
 
   /**

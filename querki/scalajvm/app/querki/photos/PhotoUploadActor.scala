@@ -37,7 +37,7 @@ class PhotoUploadActor(
 
   import PhotoUploadMessages._
 
-  implicit val ecology = e
+  implicit val ecology: Ecology = e
 
   lazy val Core = interface[querki.core.Core]
   lazy val PhotosInternal = interface[PhotosInternal]

@@ -15,14 +15,14 @@ private[identity] class UserCache(val ecology: Ecology) extends Actor with Ecolo
   def receive = {
     case GetUserByHandle(handle) => {
       usersByHandle.get(handle) match {
-        case Some(user) => sender ! UserFound(user)
+        case Some(user) => sender() ! UserFound(user)
         case None => {
           UserAccess.getUserByHandle(handle) match {
             case Some(user) => {
               usersByHandle += (handle -> user)
-              sender ! UserFound(user)
+              sender() ! UserFound(user)
             }
-            case None => sender ! UserNotFound
+            case None => sender() ! UserNotFound
           }
         }
       }
@@ -30,7 +30,7 @@ private[identity] class UserCache(val ecology: Ecology) extends Actor with Ecolo
 
     case UpdateUser(handle, user) => {
       usersByHandle += (handle -> user)
-      sender ! UpdateAck
+      sender() ! UpdateAck
     }
   }
 }

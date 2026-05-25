@@ -1,0 +1,6 @@
+[tools]
+java = "corretto-11"
+
+[tasks.sbt]
+description = "sbt shell for Querki"
+run = "sbt"

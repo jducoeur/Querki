@@ -58,7 +58,7 @@ class CoreModule(e: Ecology)
     }
 
     override def hasProp(propId: OID)(implicit state: SpaceState): Boolean = {
-      props.contains(propId)
+      this.props.contains(propId)
     }
 
     override def allProps(implicit state: SpaceState): Set[Property[_, _]] = localProps
@@ -196,7 +196,7 @@ class CoreModule(e: Ecology)
   lazy val UrProp = Property(
     UrPropOID,
     systemOID,
-    UrThing,
+    UrThing: ThingState,
     TextType,
     ExactlyOne,
     toProps(

@@ -40,7 +40,7 @@ class LoggingFilter @Inject() (
      with EcologyMember
      with QLogging {
 
-  implicit lazy val ecology = ecoProv.ecology
+  implicit lazy val ecology: Ecology = ecoProv.ecology
 
   lazy val logAllRequests = Config.getBoolean("querki.test.logAllRequests", false)
 
@@ -92,7 +92,7 @@ class RedirectFilter @Inject() (
      with EcologyMember
      with QLogging {
 
-  implicit lazy val ecology = ecoProv.ecology
+  implicit lazy val ecology: Ecology = ecoProv.ecology
 
   // Define a "bad" host and a "good" one, so we can redirect www.querki.net to just querki.net.
   // TODO: this is all kind of wretchedly typed. Config should return None, not empty String, if it is missing.

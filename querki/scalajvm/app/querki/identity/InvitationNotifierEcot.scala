@@ -132,7 +132,7 @@ class InvitationNotifierEcot(e: Ecology) extends QuerkiEcot(e) with Notifier wit
           sender.id,
           None,
           id,
-          DateTime.now,
+          DateTime.now(),
           Some(state.id),
           None,
           SpacePersistence.serProps(payload, state),

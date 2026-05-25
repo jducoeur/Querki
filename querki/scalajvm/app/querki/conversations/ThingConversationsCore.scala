@@ -48,7 +48,7 @@ abstract class ThingConversationsCore(
     req: User,
     comment: Comment,
     parentAuthors: Seq[IdentityId]
-  )
+  ): Unit
 
   implicit var state: SpaceState = initState
   val persistenceId = s"conv-${initState.id.toString}-${thingId.toString}"
@@ -280,7 +280,7 @@ abstract class ThingConversationsCore(
             // send a Notification to the moderator(s), instead of rejecting it outright like this:
             respond(ThingError(new PublicException(SpaceError.ModifyNotAllowed)))
           } else {
-            val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
+            val comment = commentIn.copy(id = nextId, createTime = DateTime.now())
             nextId += 1
             val evt = DHAddComment(dh(comment))
             doPersist(evt) { _ =>

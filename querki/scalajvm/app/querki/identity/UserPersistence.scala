@@ -288,7 +288,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
                   ({userId}, {level}, {now})
                 """).on("userId" -> userId.raw, "level" -> level, "now" -> timestamp.toDate())
             // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
-            userInsert.execute
+            userInsert.execute()
 
             if (identityExists) {
               // We're upgrading an existing Identity.
@@ -327,7 +327,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
                 "email" -> info.email,
                 "authentication" -> authentication
               )
-              identityInsert.execute
+              identityInsert.execute()
             }
           }
 
@@ -421,7 +421,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
               "email" -> email,
               "authentication" -> ""
             )
-            identityInsert.execute
+            identityInsert.execute()
             FullIdentity(identityId, EmailAddress(email), "", displayName, UnknownOID, IdentityKind.SimpleEmail)
           }
         }
@@ -446,7 +446,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
         "authentication" -> Encryption.calcHash(newPassword),
         "id" -> identity.id.raw
       )
-      update.executeUpdate
+      update.executeUpdate()
     }
 
     checkQuerkiLogin(identity.handle, newPassword).getOrElse(
@@ -471,7 +471,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
         "display" -> newDisplay,
         "id" -> identity.id.raw
       )
-      update.executeUpdate
+      update.executeUpdate()
     }
 
     // Tell the cache to reload at the next opportunity:
@@ -493,7 +493,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
             VALUES
             ({identityId}, {spaceId}, {membershipState})
           """).on("identityId" -> identityId.raw, "spaceId" -> spaceId.raw, "membershipState" -> membershipState)
-      insert.execute
+      insert.execute()
     }
   }
 
@@ -530,7 +530,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
              SET level={lv}
            WHERE id={userId}
           """).on("lv" -> level, "userId" -> userId.raw)
-      update.executeUpdate
+      update.executeUpdate()
     }
 
     val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(userId) }
@@ -548,7 +548,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
              SET tosVersion={v}
            WHERE id={userId}
           """).on("v" -> version, "userId" -> userId.raw)
-      update.executeUpdate
+      update.executeUpdate()
     }
 
     val userOpt = QDB(ShardKind.System) { implicit conn => loadByUserId(userId) }
@@ -593,7 +593,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
           """)
         .on("email" -> email)
 
-      update.executeUpdate
+      update.executeUpdate()
     }
 
     oldUserOpt.map { oldUser =>

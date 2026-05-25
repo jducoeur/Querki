@@ -75,7 +75,7 @@ class ConversationTransitionActor(
             }
           }
         }
-      } sender ! TransitionComplete
+      } sender() ! TransitionComplete
     }
   }
 }

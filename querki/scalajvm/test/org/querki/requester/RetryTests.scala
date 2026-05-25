@@ -39,7 +39,7 @@ object RetryTests {
 
     lazy val doubler = context.actorOf(Props(classOf[FinickyDoubler]))
 
-    override implicit val requestTimeout = Timeout(1.millis)
+    override implicit val requestTimeout: Timeout = Timeout(1.millis)
 
     def receive = {
       case Start => {

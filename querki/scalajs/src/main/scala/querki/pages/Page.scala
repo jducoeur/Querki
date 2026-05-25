@@ -86,7 +86,7 @@ abstract class Page(pageName: String = "")
    */
   def refresh(): Unit = {}
 
-  private val renderedContentPromise = Promise[dom.HTMLDivElement]
+  private val renderedContentPromise = Promise[dom.HTMLDivElement]()
 
   /**
    * External tools can observe this; it will be fulfilled once this Page is

@@ -8,12 +8,12 @@ import querki.identity.User
 import querki.test._
 
 trait PersistEnv extends org.scalatest.wordspec.AnyWordSpecLike with EcologyMember {
-  def asrt(a: Boolean)
+  def asrt(a: Boolean): Unit
 
   def checkEquality[T](
     a: T,
     b: T
-  )
+  ): Unit
   // We expose the ActorSystem so that tests can check Akka stuff:
   def testActorSystem: ActorSystem
   def roundtrip[T <: AnyRef](in: T): T
@@ -28,7 +28,7 @@ trait PersistEnv extends org.scalatest.wordspec.AnyWordSpecLike with EcologyMemb
   )(implicit
     space: S,
     requester: User = BasicTestUser
-  )
+  ): Unit
 }
 
 /**

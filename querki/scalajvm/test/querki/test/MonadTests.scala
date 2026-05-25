@@ -16,7 +16,6 @@ package querki.test
 //
 // We can and arguably should just use the version of Monad in Scalaz or Cats in real code. This is mainly to prove
 // that I kind of understand how this stuff works.
-import scala.language.higherKinds
 
 trait MonadLike[F[_]] {
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]

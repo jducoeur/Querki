@@ -1,12 +1,11 @@
 package querki.apps
 
-import models._
 import querki.core.NameUtils
 import querki.data.TID
 import querki.globals._
 import querki.history.HistoryFunctions.SetStateReason
 import querki.identity.User
-import querki.spaces.{RTCAble}
+import querki.spaces.{RTCAble, RequestTC}
 import querki.spaces.messages._
 
 trait AppExtractorSupport[RM[_]] {
@@ -54,8 +53,8 @@ class AppExtractor[RM[_]](
   lazy val SystemState = System.State
   lazy val id = state.id
 
-  implicit val rtc = rtcIn
-  private implicit def rm2rtc[A](rm: RM[A]) = rtc.toRTC(rm)
+  implicit val rtc: RTCAble[RM] = rtcIn
+  private implicit def rm2rtc[A](rm: RM[A]): RequestTC[A, RM] = rtc.toRTC(rm)
 
   def extractApp(
     elements: Seq[TID],

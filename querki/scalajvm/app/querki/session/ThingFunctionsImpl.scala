@@ -1,8 +1,8 @@
 package querki.session
 
-import akka.actor._
+//import akka.actor._
 
-import models.{Collection, OID, PType, ThingId, Wikitext}
+import models.{Collection, OID, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
@@ -243,7 +243,7 @@ class ThingFunctionsImpl(info: AutowireParams)(implicit e: Ecology) extends Spac
     includeInstances: Boolean
   ): Future[Seq[ThingInfo]] = withThing(modelId) { model =>
     implicit val s = state
-    val result = state.children(model).filter { t =>
+    val result = state.children(model).toSet[Thing].filter { t =>
       if (t.isModel)
         includeModels
       else

@@ -158,7 +158,7 @@ class ClientController @Inject() (
 
   def unpickleRequest(rc: PlayRequestContext): (autowire.Core.Request[String], RequestMetadata) = {
     implicit val request = rc.request
-    requestForm.bindFromRequest.fold(
+    requestForm.bindFromRequest().fold(
       errors => throw new Exception("API got badly-defined request!"),
       apiRequest =>
         (

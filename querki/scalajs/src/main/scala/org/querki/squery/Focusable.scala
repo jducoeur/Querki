@@ -27,7 +27,7 @@ object Focusable {
    * This is arguably wrong, but we need to tweak other parts of the sQuery API to make
    * it practical to restrict this.
    */
-  implicit val ElementFormEvents = new Focusable[Element] {
+  implicit val ElementFormEvents: Focusable[Element] = new Focusable[Element] {
     /**
      * Returns true iff this Element can *currently* receive focus.
      * 

@@ -239,7 +239,7 @@ package object spaces {
     /**
      * Allows other Ecots to plug their own code into Space processing.
      */
-    def registerPluginProvider(provider: SpacePluginProvider)
+    def registerPluginProvider(provider: SpacePluginProvider): Unit
 
     /**
      * Lets a Space get at all the SpacePluginProviders. Should not be used outside of Spaces.

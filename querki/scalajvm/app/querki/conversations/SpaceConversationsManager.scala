@@ -46,7 +46,7 @@ private[conversations] class SpaceConversationsManager(
       notifier ! msg
     }
 
-    case GetActiveThings => sender ! ActiveThings(nChildren)
+    case GetActiveThings => sender() ! ActiveThings(nChildren)
 
     case msg @ SpaceSubsystemRequest(req, _, payload) => {
       val thingId = payload match {

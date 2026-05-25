@@ -81,7 +81,7 @@ private[apps] trait Hollower extends EcologyMember with SpacePure {
         idMap.get(thing),
         hollowThing(thing),
         true,
-        DateTime.now
+        DateTime.now()
       )(curState)
     }
   }
@@ -111,7 +111,7 @@ private[apps] trait Hollower extends EcologyMember with SpacePure {
   def hollowThing(thing: Thing): PropMap = {
     // Remove all props on this Thing *except* the ones that are unique to it, and mark it as
     // a Shadow:
-    thing.props.filterKeys(pid => uninheritedProps.contains(pid) || propsToRetain.contains(pid)) + Apps.ShadowFlag(true)
+    thing.props.filterKeys(pid => uninheritedProps.contains(pid) || propsToRetain.contains(pid)).toMap + Apps.ShadowFlag(true)
   }
 
   /**

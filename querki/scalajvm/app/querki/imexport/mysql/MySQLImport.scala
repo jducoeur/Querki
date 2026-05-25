@@ -132,7 +132,7 @@ class MySQLImport(
       Map(Core.NameProp(name)),
       rc.requesterOrAnon.mainIdentity.id,
       name,
-      DateTime.now,
+      DateTime.now(),
       Seq.empty,
       Some(SystemSpace),
       Map.empty,
@@ -231,7 +231,7 @@ class MySQLImport(
           pType.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
           collection,
           Map(Core.setName(qName)),
-          DateTime.now
+          DateTime.now()
         )
 
       Some(prop)

@@ -15,7 +15,6 @@ import akka.pattern.after
 
 import models.Wikitext
 
-import querki.ecology._
 // We specificially *don't* want the global EC below -- we handle that explicitly:
 import querki.globals.{execContext => _, _}
 import querki.identity.Identity

@@ -50,7 +50,7 @@ import org.querki.jquery._
  */
 class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
 
-  def doRender = ???
+  def doRender() = ???
 
   /**
    * The actual renderer for this reference.
