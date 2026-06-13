@@ -1,6 +1,15 @@
 [tools]
 java = "corretto-11"
+python = "latest"
 
 [tasks.sbt]
 description = "sbt shell for Querki"
 run = "sbt"
+
+[tasks.local-up]
+description = "Start local Querki infrastructure (Cassandra + Secrets Manager)"
+run = "docker compose -f local/docker-compose.yml up -d"
+
+[tasks.local-down]
+description = "Stop local Querki infrastructure"
+run = "docker compose -f local/docker-compose.yml down"
