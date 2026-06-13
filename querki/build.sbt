@@ -12,6 +12,21 @@ lazy val appV = "3.0.0.13-SNAPSHOT"
 
 lazy val sharedSrcDir = "scala"
 
+lazy val excludedFromCoverage = Seq(
+  // TEMP: exclude some client-side stuff from coverage, since we're not even running the tests over there currently:
+  // TODO: once we've ported the client and rebuilt the tests over there, remove most of these exclusions:
+  "org.querki.*",
+  "querki.display.*",
+  "querki.pages.*",
+  "querki.print.*",
+  "views.html"
+)
+
+coverageFailOnMinimum := true
+// TODO: these numbers are terrible. Gradually drag them up towards 100:
+coverageMinimumStmtTotal := 37
+coverageMinimumBranchTotal := 40
+
 val querkiScalacOptions = Seq(
   "-deprecation",
   "-feature",
@@ -80,6 +95,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
 //  resolvers += "dnvriend".at("http://dl.bintray.com/dnvriend/maven"),
   // To prevent duplicate-artifact errors in Stage:
   Compile / packageSrc / publishArtifact := false,
+  coverageExcludedPackages := excludedFromCoverage.mkString(";"),
   dependencyOverrides += "com.datastax.oss" % "java-driver-core-shaded" % "4.6.1",
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     // Main Play dependencies
