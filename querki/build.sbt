@@ -8,7 +8,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.13.18"
 lazy val akkaV = "2.6.21"
-lazy val appV = "3.0.0.12"
+lazy val appV = "3.0.0.13-SNAPSHOT"
 
 lazy val sharedSrcDir = "scala"
 
@@ -88,8 +88,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     filters,
     guice,
     "org.playframework.anorm" %% "anorm" % "2.7.0",
-    // TODO: this was later renamed mysql-connector-j and has been maintained as such. Upgrade in due course:
-    "mysql" % "mysql-connector-java" % "5.1.36",
+    "mysql" % "mysql-connector-java" % "8.0.33",
     // TODO: this has apparently become jakarta.mail-api and moved on to a new major version. Also needs upgrading:
     "com.sun.mail" % "javax.mail" % "1.6.2",
     // TODO: currently up to 2.0.1 -- do the major bump eventually:

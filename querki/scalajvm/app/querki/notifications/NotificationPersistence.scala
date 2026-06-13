@@ -104,11 +104,14 @@ class NotificationPersistenceEcot(e: Ecology) extends QuerkiEcot(e) with Notific
           .as(notificationParser.*)
         CurrentNotifications(notes)
       } catch {
-        case e: com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException => {
+        case e: java.sql.SQLSyntaxErrorException => {
           // This is dealing with a very specific race condition that can occur. When a User is newly
           // created, the Client's request for numNewNotifications can race ahead of evolving this User's
           // state, with the result that we can hit this request before the user's Notifications table exists.
           // That results in this Exception. So we just quietly deal with it and return empty.
+          // TBD: is this still true? In Connector/J 5.1 we would get MySQLSyntaxErrorException. That has been
+          // superceded by the more-standard SQLSyntaxErrorException, but it isn't entirely clear that that
+          // applies to the described edge case.
           CurrentNotifications(Seq.empty)
         }
         case e: Throwable => throw e
