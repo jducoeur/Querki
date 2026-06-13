@@ -144,7 +144,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.chuusai" %% "shapeless" % "2.3.13",
     //
     // TEST-ONLY DEPENDENCIES:
-    // ScalaTest can't upgrade until scalatestplus-play does, and *that* can't upgrade until we hit Play 2.8. So
+    // ScalaTest can't upgrade until scalatestplus-play does, and *that* can't upgrade until we hit Play 3.0. So
     // this is a bit stuck for now:
     "org.scalatest" %% "scalatest" % "3.1.4" % "test",
     "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % "test",
@@ -156,7 +156,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     // In-memory Akka Persistence driver, used for tests. Probably need to switch to a fork for Akka 2.6!
     // Eg, https://github.com/firstbirdtech/akka-persistence-inmemory and thence
     // https://github.com/alstanchev/pekko-persistence-inmemory
-    // Argh: doesn't exist for Scala 2.12 -- re-enable once we're on 2.13!
     "com.firstbird" %% "akka-persistence-inmemory" % "2.6.0" % "test"
   ),
   // Docker configuration

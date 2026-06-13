@@ -1,5 +1,7 @@
 # Running Cassandra Locally
 
+**Deprecated:** use the docker-compose in the parent directory instead, with `mise run local-up`.
+
 We used to do development using ccm, but that turned
 into a nightmare of Python maintenance. So we're switched
 to just using plain old Docker.

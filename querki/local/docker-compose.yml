@@ -1,0 +1,73 @@
+name: cassandra
+
+services:
+  cassandra:
+    image: cassandra:4.1.7
+    container_name: cassandra-local
+    ports:
+      - "9042:9042"
+      - "7000:7000"
+      - "7001:7001"
+      - "9160:9160"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=dev_cluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_NUM_TOKENS=256
+      # Enable automatic SSTable upgrade
+      - JVM_OPTS=-Dcassandra.automatic_sstable_upgrade=true -Xss512k
+      - JVM_EXTRA_OPTS=-XX:CompileCommand=exclude,org.apache.cassandra.db.commitlog.AbstractCommitLogSegmentManager$$AllocatorRunnable.*
+      - CASSANDRA_COMMITLOG_SYNC=periodic
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    platform: linux/amd64
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+      - /tmp:/tmp  # For data export/import
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ministack:
+    image: ministackorg/ministack:latest
+    container_name: ministack-local
+    ports:
+      - "4566:4566"
+    environment:
+      - GATEWAY_PORT=4566
+      - AWS_DEFAULT_REGION=us-east-1
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  init-secrets:
+    image: amazon/aws-cli
+    container_name: secrets-init
+    depends_on:
+      ministack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        aws --endpoint-url http://ministack:4566 secretsmanager create-secret \
+          --name querki/app/secrets \
+          --secret-string file:///run/secrets/localsecrets.cass4.conf \
+        || aws --endpoint-url http://ministack:4566 secretsmanager put-secret-value \
+          --secret-id querki/app/secrets \
+          --secret-string file:///run/secrets/localsecrets.cass4.conf
+    volumes:
+      - ../localsecrets.cass4.conf:/run/secrets/localsecrets.cass4.conf:ro
+    restart: "no"
+
+volumes:
+  cassandra_data:
