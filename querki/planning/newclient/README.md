@@ -43,10 +43,13 @@ regression risk.
 | [05-editing-deep-dive.md](05-editing-deep-dive.md) | Full deep-dive on the `editing` package (Model Designer, Advanced Editor, instance editors, property creation, per-field auto-save). The first per-package deep dive; template for the rest. |
 | [06-security-deep-dive.md](06-security-deep-dive.md) | Full deep-dive on the `security` package (per-Thing permission grid, sharing hub, members, invitations, custom roles, shareable links) and its reusable `Saveables`/`ItemList` abstractions. |
 | [07-photos-deep-dive.md](07-photos-deep-dive.md) | Full deep-dive on the `photos` package (upload, thumbnails, full-size view, carousel). The one feature that bypasses autowire (raw streaming upload) and carries the heaviest dead-JS dependency cluster. |
+| [08-remaining-features-deep-dive.md](08-remaining-features-deep-dive.md) | Consolidated deep-dive on the remaining smaller packages (conversations, notifications, search, console, history, publication, apps, identity+skilllevel, admin, email) + the cross-cutting `datamodel` helper. Includes a **cross-cutting patterns** section (dialogs, the non-autowire cluster, composable page-workflows, polling, shared client state) that matters for the whole rewrite. |
 
-(Docs 01–04 cover the whole client at survey depth. Docs 05+ are the per-package deep dives that
-each feature milestone wants before implementation — `conversations`, `history`, `apps`, etc. will
-get their own as we reach them.)
+(Docs 01–04 cover the whole client at survey depth. Docs 05–08 are the per-package deep dives.
+**All feature packages are now covered.** What remains undocumented is the framework/display layer
+itself — the reusable `display` gadgets and the `org.querki.gadgets`/`squery` libraries — which
+docs 01/03 already describe at the level needed, since they're being *replaced* wholesale rather
+than ported.)
 
 ## Status / Progress Log
 
@@ -71,11 +74,24 @@ Keep this updated so work can resume after a quota refresh.
   autowire (raw streaming POST to `_photoUpload`, returns pickled `Wikitext`); client-side resize is
   disabled, so the `load-image`/`canvas-to-blob` deps are likely dead and droppable; the whole
   blueimp jQuery-File-Upload chain needs replacing with File API + fetch/XHR.
+- **2026-06-18** — Deep dive on **all remaining feature packages** in one pass (conversations,
+  notifications, search, console, history, publication, apps, identity+skilllevel, admin, email,
+  datamodel): read the files + relevant shared traits, wrote doc 08. The standout output is the
+  **cross-cutting patterns** section (§12): pervasive confirmation dialogs (need a Calico modal
+  early); a *cluster of non-autowire raw-AJAX endpoints* (login/signup/invite/photos/collaborators);
+  composable page-as-a-step workflows via Promise→IO; polling (not push) for live updates; and the
+  cross-cutting client state (UserAccess/SkillLevel/History/Notifications) that should become shared
+  Signals. **All feature packages are now deep-dived.**
 
 ### Known follow-ups / things not yet deeply read
 - ~~The `editing` package~~ — **done** (doc 05).
 - ~~The `security` package~~ — **done** (doc 06).
 - ~~The `photos` package~~ — **done** (doc 07).
+- ~~The remaining feature packages~~ — **done** (doc 08).
 - The functional-test expectations (`scalajvm/test/.../functional/`) encode a lot of DOM-id
   contracts (`_pageRendered`, `_spaceLink`, etc.) the current client satisfies; the new client may
   need to honor some of these or the tests get rewritten.
+- **Next natural step:** turn the inventory (docs 01–08) into an actual phased implementation plan —
+  scaffolding the parallel sbt project, the shared environment/Signal model, the Calico modal +
+  dialog, the API/IO wrapper, and the milestone sequence from doc 04 §"candidate ordering" refined
+  by doc 08 §13.
