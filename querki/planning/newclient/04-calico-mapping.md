@@ -105,6 +105,30 @@ Each milestone should be independently demoable in the parallel client.
 
 ---
 
+## Isolation strategy (the overriding constraint)
+
+Per the project principle (see README), the priority is **confidence that the new client doesn't
+break the old one.** Server-side changes and surgical existing-client changes *are* allowed, but
+only in service of isolation. Concrete posture for this effort:
+
+- **Additive-first on the server.** When the new client needs something (e.g. a shared `propPath`
+  builder, a new endpoint), prefer adding *new* shared code/endpoints the old client simply ignores,
+  over modifying behavior the old client relies on. A new shared helper that *both* clients then
+  call is the ideal move: it removes a duplicated contract (a drift risk) rather than adding one.
+- **Existing-client touches must be surgical and flagged.** The best kind is "extract a hardcoded
+  constant/format into shared code and have the old client read it" — pure refactor, no behavior
+  change, reviewable in isolation. Avoid anything that alters old-client runtime behavior.
+- **Hard separation of build + runtime.** Separate sbt project, separate compiled JS artifact,
+  separate URL route / feature flag, so the two never share mutable state and can't interfere at
+  runtime. The shared layer (`querkiSharedJs`, autowire traits, upickle models) is the *only*
+  intended coupling, and it's compile-time and read-only from both sides.
+- **`propPath` is the canonical example.** Today `Editing.propPath` (`v-<propId>-<thingId>`)
+  duplicates the server's `FieldIds` format with no shared definition (see doc 05). The
+  isolation-friendly fix is to lift that format into shared code (`querkiShared`) and have *both*
+  the server and the old client call it — turning a silent drift risk into a single source of truth,
+  while the new client reuses it for free. That's a modest, additive, confidence-increasing change
+  of exactly the kind now sanctioned.
+
 ## Open questions to resolve with the user before/while planning implementation
 - Keep the exact Twirl bootstrap contract, or define a fresh entry page for the new client?
 - Server-HTML hooking: pursue the hybrid (client-renders-interactive) direction, or preserve the
@@ -115,3 +139,6 @@ Each milestone should be independently demoable in the parallel client.
   (`#_pageRendered`, `_spaceLink`, ids/classes the Selenium tests assert), vs. rewriting those tests
   alongside?
 - Naming/placement of the new sbt project and its URL route for parallel deployment.
+- For shared contracts currently duplicated (like `propPath`): lift into `querkiShared` now (so the
+  old client de-risks too), or only as each feature is ported? (Leaning: lift opportunistically when
+  we touch the area, since it's additive and reduces drift.)
