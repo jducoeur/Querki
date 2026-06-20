@@ -30,6 +30,10 @@ regression risk.
 - **Throw away the homebrew framework**: the `Gadgets` library (`org.querki.gadgets.*`), the
   `squery` helpers, the Scala.Rx-based reactivity, and the custom client-side `Ecology`. Calico +
   Cats Effect + fs2 + Signal replaces all of that.
+- **Built in Scala 3** (the server stays on 2.x for now; the greenfield client is where the 3
+  migration begins). See doc 09 for the plan and the shared-code complications.
+- **Tested via scenario testing** (the owner's preferred style) with nuanced 100% coverage. See
+  doc 10 and the philosophy reference.
 - This is a **multi-week / multi-month, incremental** effort.
 
 ## Document Index
@@ -44,8 +48,12 @@ regression risk.
 | [06-security-deep-dive.md](06-security-deep-dive.md) | Full deep-dive on the `security` package (per-Thing permission grid, sharing hub, members, invitations, custom roles, shareable links) and its reusable `Saveables`/`ItemList` abstractions. |
 | [07-photos-deep-dive.md](07-photos-deep-dive.md) | Full deep-dive on the `photos` package (upload, thumbnails, full-size view, carousel). The one feature that bypasses autowire (raw streaming upload) and carries the heaviest dead-JS dependency cluster. |
 | [08-remaining-features-deep-dive.md](08-remaining-features-deep-dive.md) | Consolidated deep-dive on the remaining smaller packages (conversations, notifications, search, console, history, publication, apps, identity+skilllevel, admin, email) + the cross-cutting `datamodel` helper. Includes a **cross-cutting patterns** section (dialogs, the non-autowire cluster, composable page-workflows, polling, shared client state) that matters for the whole rewrite. |
+| [09-scala3-and-shared-code.md](09-scala3-and-shared-code.md) | The plan to build the new client in **Scala 3**, the JVM/2.13/3 interop facts, the recommended incremental path (2.13 stepping-stone → cross-build shared to 3), and the complications — chiefly **autowire** (Scala-2-only RPC) and upickle pickler derivation across the version boundary. |
+| [10-testing-strategy.md](10-testing-strategy.md) | The **scenario-testing** harness design: the headline finding that a **browser-free jsdom** harness is feasible; how to "stand up the engine once" across the JVM/JS boundary (real-engine vs emulator); the `StateT[IO, UiState, A]` DSL echoing the server mid-tests; determinism/seams; and scoverage-clamped-to-100. |
+| [reference-philosophy-of-testing.md](reference-philosophy-of-testing.md) | Condensed summary of the owner's 8-part "A Philosophy of Testing" Medium series — the authoritative intent behind the testing approach (scenario tests, nuanced 100%, determinism, code-for-testing). |
 
 (Docs 01–04 cover the whole client at survey depth. Docs 05–08 are the per-package deep dives.
+Docs 09–10 + the philosophy reference cover language choice and testing.
 **All feature packages are now covered.** What remains undocumented is the framework/display layer
 itself — the reusable `display` gadgets and the `org.querki.gadgets`/`squery` libraries — which
 docs 01/03 already describe at the level needed, since they're being *replaced* wholesale rather
@@ -91,7 +99,17 @@ Keep this updated so work can resume after a quota refresh.
 - The functional-test expectations (`scalajvm/test/.../functional/`) encode a lot of DOM-id
   contracts (`_pageRendered`, `_spaceLink`, etc.) the current client satisfies; the new client may
   need to honor some of these or the tests get rewritten.
-- **Next natural step:** turn the inventory (docs 01–08) into an actual phased implementation plan —
-  scaffolding the parallel sbt project, the shared environment/Signal model, the Calico modal +
-  dialog, the API/IO wrapper, and the milestone sequence from doc 04 §"candidate ordering" refined
-  by doc 08 §13.
+- **2026-06-18** — Added the **Scala 3** plan (doc 09) and the **testing strategy** (doc 10), plus a
+  reference summary of the owner's "A Philosophy of Testing" series. Key outcomes: (1) the new client
+  will be Scala 3 — the dominant complication is **autowire being Scala-2-only** (recommend a bespoke
+  Scala-3 RPC matching autowire's wire format to stay isolated; sloth as the later unifying option),
+  preceded by a 2.13 stepping-stone for shared+server; (2) a **browser-free jsdom** scenario harness
+  is feasible (Calico mounts into jsdom; munit-cats-effect drives it as `IO`), with a thin
+  headless-browser tier reserved only for real-geometry cases; (3) "engine once" = boot the real
+  engine in a sibling JVM and drive the JS client over loopback (recommended over a server emulator,
+  but build the transport seam either way); scoverage clamped to 100 with disciplined `$COVERAGE-OFF$`.
+- **Next natural step:** turn the inventory (docs 01–08) + the language/testing decisions (09/10)
+  into an actual phased implementation plan — scaffolding the parallel Scala 3 sbt project, the 2.13
+  shared-code stepping-stone, the transport seam + RPC choice, the shared environment/Signal model,
+  the Calico modal/dialog, and the scenario harness skeleton, sequenced per doc 04 §"candidate
+  ordering" / doc 08 §13.
