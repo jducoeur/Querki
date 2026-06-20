@@ -116,6 +116,8 @@ Three distinct test styles, all under `scalajvm/test/`:
 
 `RealTestingEcot` and `TestingEcot` (`querki.test`) provide test-only hooks that production code must not call.
 
+The owner's testing philosophy — the rationale behind the "mid"/scenario test style, the "nuanced 100%" coverage goal, determinism, and coding-for-testing — is summarized in `querki/planning/reference-philosophy-of-testing.md` (condensed from his "A Philosophy of Testing" blog series). Read it before designing new test infrastructure.
+
 ## Conventions and Gotchas
 
 - **Import `querki.globals._` at the top of server files**, not a grab bag. It brings in `Ecology`, `EcologyMember`, `Future`, `Config`, `QLog`, `fut` (alias for `Future.successful`), `OID`, `SpaceState`, `PublicException`, etc. There's a parallel `querki.globals` on the Scala.js side.

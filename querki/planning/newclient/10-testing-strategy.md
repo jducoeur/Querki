@@ -1,7 +1,7 @@
 # Testing Strategy for the New Client
 
 How the new (Calico, Scala 3) client will be tested. This applies the project owner's own testing
-philosophy (see [reference-philosophy-of-testing.md](reference-philosophy-of-testing.md)) to a
+philosophy (see [reference-philosophy-of-testing.md](../reference-philosophy-of-testing.md)) to a
 Scala.js UI, and is grounded in the **existing server-side scenario-test harness**
 (`scalajvm/test/querki/test/mid/`), which is the prior art we deliberately echo.
 
