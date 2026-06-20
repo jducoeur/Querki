@@ -50,6 +50,7 @@ regression risk.
 | [08-remaining-features-deep-dive.md](08-remaining-features-deep-dive.md) | Consolidated deep-dive on the remaining smaller packages (conversations, notifications, search, console, history, publication, apps, identity+skilllevel, admin, email) + the cross-cutting `datamodel` helper. Includes a **cross-cutting patterns** section (dialogs, the non-autowire cluster, composable page-workflows, polling, shared client state) that matters for the whole rewrite. |
 | [09-scala3-and-shared-code.md](09-scala3-and-shared-code.md) | The plan to build the new client in **Scala 3**, the JVM/2.13/3 interop facts, the recommended incremental path (2.13 stepping-stone → cross-build shared to 3), and the complications — chiefly **autowire** (Scala-2-only RPC) and upickle pickler derivation across the version boundary. |
 | [10-testing-strategy.md](10-testing-strategy.md) | The **scenario-testing** harness design: the headline finding that a **browser-free jsdom** harness is feasible; how to "stand up the engine once" across the JVM/JS boundary (real-engine vs emulator); the `StateT[IO, UiState, A]` DSL echoing the server mid-tests; determinism/seams; and scoverage-clamped-to-100. |
+| [11-coding-style.md](11-coding-style.md) | Scala 3 **coding style** for the new client: the community "Common Scala Style Recommendation" ("use fewer braces, not no braces") + the owner's nuance — **braceless only for short clauses (≤~5 lines), braces beyond**. Plus carry-over repo conventions and scalafmt implications. |
 | [reference-philosophy-of-testing.md](reference-philosophy-of-testing.md) | Condensed summary of the owner's 8-part "A Philosophy of Testing" Medium series — the authoritative intent behind the testing approach (scenario tests, nuanced 100%, determinism, code-for-testing). |
 
 (Docs 01–04 cover the whole client at survey depth. Docs 05–08 are the per-package deep dives.
@@ -108,6 +109,10 @@ Keep this updated so work can resume after a quota refresh.
   headless-browser tier reserved only for real-geometry cases; (3) "engine once" = boot the real
   engine in a sibling JVM and drive the JS client over loopback (recommended over a server emulator,
   but build the transport seam either way); scoverage clamped to 100 with disciplined `$COVERAGE-OFF$`.
+- **2026-06-18** — Added the **Scala 3 coding-style** guidelines (doc 11): community "Common Scala
+  Style Recommendation" ("use fewer braces, not no braces") + the owner's nuance that braceless is
+  for short clauses only (≤~5 lines), braces beyond. Noted scalafmt can't enforce the line-count
+  nuance, so keep it a human convention.
 - **Next natural step:** turn the inventory (docs 01–08) + the language/testing decisions (09/10)
   into an actual phased implementation plan — scaffolding the parallel Scala 3 sbt project, the 2.13
   shared-code stepping-stone, the transport seam + RPC choice, the shared environment/Signal model,
