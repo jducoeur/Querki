@@ -47,7 +47,7 @@ This starts Cassandra and ministack (a lightweight Docker-based AWS emulator), t
 
 * **Create the Querki Docker image**: in order to create a current Docker image, go into sbt, and say:
 ```
-docker:publishLocal
+Docker/publishLocal
 ```
 * **Run Querki**. Here goes! You've created and published the local Docker image; run that from the command line as:
 ```
