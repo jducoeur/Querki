@@ -61,6 +61,273 @@ Querki-specific things to expect:
 Fix anything rated an **error** before upgrading either environment. Re-run with
 `--target-version=8.4.10` before the second hop, too.
 
+### Results of the Step 0 Upgrade Check
+
+No hard errors, but there were some warnings, so recording here the full output from the mysqlsh run:
+
+```
+The MySQL server at localhost:3306, version 5.7.44 - Homebrew, will now be
+checked for compatibility issues for upgrade to MySQL 8.0.46.
+
+1) Check for orphaned routines and events in 5.7 (orphanedObjects)
+   No issues found
+
+2) Usage of old temporal type (oldTemporal)
+   No issues found
+
+3) Usage of db objects with names conflicting with new reserved keywords
+(reservedKeywords)
+   No issues found
+
+4) Usage of utf8mb3 charset (utf8mb3)
+   Warning: The following objects use the deprecated utf8mb3 character set. It
+   is recommended to convert them to use utf8mb4 instead, for improved Unicode
+   support. The utf8mb3 character is subject to removal in the future.
+
+   querkisystem - schema's default character set: utf8
+   querkiuser - schema's default character set: utf8
+   querkisystem.Identity.authentication - column's default character set: utf8
+   querkisystem.Identity.email - column's default character set: utf8
+   querkisystem.Identity.handle - column's default character set: utf8
+   querkisystem.Identity.name - column's default character set: utf8
+   querkisystem.SpaceMembership.nickname - column's default character set: utf8
+   querkisystem.Spaces.display - column's default character set: utf8
+   querkisystem.Spaces.name - column's default character set: utf8
+   querkisystem.User.name - column's default character set: utf8
+   querkiuser.c7w4g7wg.props - column's default character set: utf8
+   querkiuser.c7w4g7wh.props - column's default character set: utf8
+   querkiuser.c7w4g7wj.props - column's default character set: utf8
+   querkiuser.c7w4g7wk.props - column's default character set: utf8
+   querkiuser.c7w4g7wv.props - column's default character set: utf8
+   querkiuser.c7w4jd36.props - column's default character set: utf8
+   querkiuser.c7w4jd4p.props - column's default character set: utf8
+   querkiuser.noteb.props - column's default character set: utf8
+   querkiuser.notev.props - column's default character set: utf8
+   querkiuser.s2avih.props - column's default character set: utf8
+   querkiuser.s2avih_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wg.props - column's default character set: utf8
+   querkiuser.s7w4g7wg_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wg_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4g7wg_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4g7wg_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4g7wg_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4g7wh.props - column's default character set: utf8
+   querkiuser.s7w4g7wh_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wh_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4g7wh_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4g7wh_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4g7wh_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4g7wj.props - column's default character set: utf8
+   querkiuser.s7w4g7wj_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wj_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4g7wj_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4g7wj_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4g7wj_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4g7wk.props - column's default character set: utf8
+   querkiuser.s7w4g7wk_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wk_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4g7wk_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4g7wk_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4g7wk_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4g7wv.props - column's default character set: utf8
+   querkiuser.s7w4g7wv_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4g7wv_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4g7wv_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4g7wv_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4g7wv_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4jd36.props - column's default character set: utf8
+   querkiuser.s7w4jd36_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4jd36_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4jd36_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4jd36_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4jd36_Backup5.props - column's default character set: utf8
+   querkiuser.s7w4jd4p.props - column's default character set: utf8
+   querkiuser.s7w4jd4p_Backup1.props - column's default character set: utf8
+   querkiuser.s7w4jd4p_Backup2.props - column's default character set: utf8
+   querkiuser.s7w4jd4p_Backup3.props - column's default character set: utf8
+   querkiuser.s7w4jd4p_Backup4.props - column's default character set: utf8
+   querkiuser.s7w4jd4p_Backup5.props - column's default character set: utf8
+   querkiuser.uv7w4g7wg.propValue - column's default character set: utf8
+   querkiuser.uv7w4g7wh.propValue - column's default character set: utf8
+   querkiuser.uv7w4g7wj.propValue - column's default character set: utf8
+   querkiuser.uv7w4g7wk.propValue - column's default character set: utf8
+   querkiuser.uv7w4g7wv.propValue - column's default character set: utf8
+   querkiuser.uv7w4jd36.propValue - column's default character set: utf8
+   querkiuser.uv7w4jd4p.propValue - column's default character set: utf8
+
+   More information:
+     https://dev.mysql.com/doc/refman/en/charset-unicode-utf8mb3.html
+
+
+5) Table names in the mysql schema conflicting with new tables in the latest
+MySQL. (mysqlSchema)
+   No issues found
+
+6) Partitioned tables using engines with non native partitioning
+(nonNativePartitioning)
+   No issues found
+
+7) Foreign key constraint names longer than 64 characters (foreignKeyLength)
+   No issues found
+
+8) Usage of obsolete MAXDB sql_mode flag (maxdbSqlModeFlags)
+   No issues found
+
+9) Usage of obsolete sql_mode flags (obsoleteSqlModeFlags)
+   The following DB objects have obsolete options persisted for sql_mode.
+
+   Warning: Ensure the following flags are not persisted in the configuration
+   file as they will prevent the target server from loading.
+   - @@global.sql_mode: defined using obsolete NO_AUTO_CREATE_USER option
+
+   More information:
+     https://dev.mysql.com/doc/refman/8.0/en/mysql-nutshell.html#mysql-nutshell-removals
+
+
+10) ENUM/SET column definitions containing elements longer than 255 characters
+(enumSetElementLength)
+   No issues found
+
+11) Usage of partitioned tables in shared tablespaces
+(partitionedTablesInSharedTablespaces)
+   No issues found
+
+12) Circular directory references in tablespace data file paths
+(circularDirectory)
+   No issues found
+
+13) Usage of removed functions (removedFunctions)
+   No issues found
+
+14) Usage of removed GROUP BY ASC/DESC syntax (groupbyAscSyntax)
+   No issues found
+
+15) System variable check for deprecation, removal, changes in defaults values
+or invalid values. (sysVars)
+  To run this check requires full path to MySQL server configuration file to be specified at 'configPath' key of options dictionary
+
+16) Zero Date, Datetime, and Timestamp values (zeroDates)
+   No issues found
+
+17) Schema inconsistencies resulting from file removal or corruption
+(schemaInconsistency)
+   No issues found
+
+18) Tables recognized by InnoDB that belong to a different engine (engineMixup)
+   No issues found
+
+19) Issues reported by 'check table x for upgrade' command (checkTableCommand)
+   No issues found
+
+20) New default authentication plugin considerations
+(defaultAuthenticationPlugin)
+   Warning: The default authentication plugin 'caching_sha2_password' offers
+      more secure password hashing than previously used 'mysql_native_password'
+      (and consequent improved client connection authentication). However, it also
+      has compatibility implications that may affect existing MySQL installations.
+       If your MySQL installation must serve pre-8.0 clients and you encounter
+      compatibility issues after upgrading, the simplest way to address those
+      issues is to reconfigure the server to revert to the previous default
+      authentication plugin (mysql_native_password). For example, use these lines
+      in the server option file:
+      
+      [mysqld]
+      default_authentication_plugin=mysql_native_password
+      
+      However, the setting should be viewed as temporary, not as a long term or
+      permanent solution, because it causes new accounts created with the setting
+      in effect to forego the improved authentication security.
+      
+      MySQL 8.4.0 removes the deprecated default_authentication_plugin option.
+      The deprecated mysql_native_password authentication plugin is disabled by
+      default as of  MySQL 8.4.0, and is subject to removal in a future version.
+      
+      If you are using replication please take time to understand how the
+      authentication plugin changes may impact you.
+   More information:
+     https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html#upgrade-caching-sha2-password-compatibility-issues
+     https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html#upgrade-caching-sha2-password-replication
+     https://dev.mysql.com/doc/refman/8.4/en/mysql-nutshell.html
+
+21) Indexes on functions with changed semantics
+(changedFunctionsInGeneratedColumns)
+   No issues found
+
+22) Columns which cannot have default values (columnsWhichCannotHaveDefaults)
+   No issues found
+
+23) Check for invalid table names and schema names used in 5.7 (invalid57Names)
+   No issues found
+
+24) Check for deprecated usage of single dollar signs in object names
+(dollarSignName)
+   No issues found
+
+25) Check for indexes that are too large to work on higher versions of MySQL
+Server than 5.7 (indexTooLarge)
+   No issues found
+
+26) Check for deprecated '.<table>' syntax used in routines.
+(emptyDotTableSyntax)
+   No issues found
+
+27) MySQL syntax check for routine-like objects (syntax)
+   No issues found
+
+28) Check for columns that have foreign keys pointing to tables from a
+different database engine. (invalidEngineForeignKey)
+   No issues found
+
+29) Check for deprecated or invalid user authentication methods.
+(authMethodUsage)
+   Some users are using authentication methods that may be deprecated or
+   removed, please review the details below.
+
+   Warning: The following users are using the 'mysql_native_password'
+   authentication method which is deprecated as of MySQL 8.0.34 and will be
+   removed in a future release.
+   Consider switching the users to a different authentication method (i.e.
+   caching_sha2_password).
+   The 'mysql_native_password' authentication type is disabled by default in
+   MySQL 8.4, but can still be enabled by setting
+   loose_mysql_native_password=ON.
+   - jducoeur@localhost
+   - mysql.session@localhost
+   - mysql.sys@localhost
+   - root@localhost
+
+   More information:
+     https://dev.mysql.com/doc/refman/en/caching-sha2-pluggable-authentication.html
+
+
+
+30) Check for deprecated or removed plugin usage. (pluginUsage)
+   No issues found
+
+31) Check for deprecated or invalid default authentication methods in system
+variables. (deprecatedDefaultAuth)
+   The following variables have problems with their set authentication method:
+
+   Warning: default_authentication_plugin - mysql_native_password
+      authentication method is deprecated and it should be considered to correct
+      this before upgrading to 8.4.0 release.
+
+
+
+32) Check for deprecated or invalid authentication methods in use by MySQL
+Router internal accounts. (deprecatedRouterAuthMethod)
+   No issues found
+
+33) Check for deprecated temporal delimiters in table partitions.
+(deprecatedTemporalDelimiter)
+   No issues found
+Errors:   0
+Warnings: 77
+Notices:  0
+
+NOTE: No fatal errors were found that would prevent an upgrade, but some potential issues were detected. Please ensure that the reported issues are not significant before upgrading.
+```
+
 ## Local upgrade — stepped in-place (the AWS rehearsal)
 
 The Homebrew shared-datadir quirk works in our favor here: every formula defaults to
