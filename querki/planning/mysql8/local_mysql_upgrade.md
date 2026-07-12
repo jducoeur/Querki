@@ -328,6 +328,30 @@ Notices:  0
 NOTE: No fatal errors were found that would prevent an upgrade, but some potential issues were detected. Please ensure that the reported issues are not significant before upgrading.
 ```
 
+### What the results mean for us — three things to act on
+
+No fatal errors, so the **5.7 → 8.0** hop is clear to proceed. Three warnings matter, in priority order:
+
+1. **Authentication method (checks 20, 29, 31) — bites at 8.4, not 8.0.** Every real account
+   (`root@localhost`, `jducoeur@localhost`) plus the two internal `mysql.session`/`mysql.sys` accounts
+   still use `mysql_native_password`. That plugin is merely *deprecated* in 8.0 (everything keeps
+   working), but **disabled by default in 8.4** — so any account still on it can no longer authenticate
+   after the second hop. Critically, that includes whatever account the Querki app logs in as (see
+   `localsecrets.conf`; on this box the app's `host.docker.internal` connection is proxied by Docker
+   Desktop onto the host loopback, so it authenticates as a `@localhost`/127.0.0.1 account). **Fix:**
+   convert the real accounts to `caching_sha2_password` while still on 8.0, before hop 2 — folded into
+   Hop 2 below. Leave the internal `mysql.*` accounts alone; the server manages those.
+
+2. **Obsolete `sql_mode` flag `NO_AUTO_CREATE_USER` (check 9).** Harmless *unless* it's persisted in a
+   config file, in which case 8.0+ refuses to start. Before hop 1, check `/opt/homebrew/etc/my.cnf` (and
+   any `~/.my.cnf`) for a `NO_AUTO_CREATE_USER` in `sql_mode` and for a
+   `default_authentication_plugin=mysql_native_password` line (also removed in 8.4). Homebrew's default
+   config usually has neither, but confirm.
+
+3. **`utf8mb3` charset (check 4).** The long list of `.props`/`.name`/`.email`/etc. columns. Warning
+   only — non-blocking through both hops. The `utf8mb4` migration stays its own separate project (see
+   [`mysql_upgrade_plan.md`](mysql_upgrade_plan.md)).
+
 ## Local upgrade — stepped in-place (the AWS rehearsal)
 
 The Homebrew shared-datadir quirk works in our favor here: every formula defaults to
@@ -348,6 +372,16 @@ brew link --force mysql@8.0
 brew services start mysql@8.0     # boots against the 5.7 datadir and upgrades it
 #   verify: mysql --version; log in; run the smoketests
 
+# --- Between hops: convert real accounts off mysql_native_password (REQUIRED before 8.4) ---
+# Do this while still running 8.0, before stopping it. Use each account's real password
+# (the app account's password is in localsecrets.conf). Repeat the ALTER for whatever account
+# Querki actually authenticates as (e.g. jducoeur). Leave mysql.session / mysql.sys to the server.
+#   mysql -u root -p
+#   ALTER USER 'root'@'localhost'     IDENTIFIED WITH caching_sha2_password BY '<pw>';
+#   ALTER USER 'jducoeur'@'localhost' IDENTIFIED WITH caching_sha2_password BY '<pw>';
+#   -- confirm none of your real accounts still show mysql_native_password:
+#   SELECT user, host, plugin FROM mysql.user;
+
 # --- Hop 2: 8.0 -> 8.4 ---
 brew services stop mysql@8.0
 brew unlink mysql@8.0
@@ -367,6 +401,14 @@ echo whatever the checker warned about:
 cat /opt/homebrew/var/mysql/*.err
 ```
 
+**Heads-up on `caching_sha2_password` + the app connection (local only).** Once the app's account uses
+`caching_sha2_password`, Connector/J 8.0.33 supports it — but over a **non-TLS** connection (which the
+local `host.docker.internal` link is) the driver needs the server's RSA public key to finish the
+handshake, and won't request it unless the JDBC URL sets `allowPublicKeyRetrieval=true`. If the app
+fails to connect after hop 2 with a public-key / handshake error, add `allowPublicKeyRetrieval=true`
+(alongside the existing `useSSL=false`) to the DB URLs in `local.conf`. This is a local-only concern —
+RDS connects over TLS, where the public key rides the encrypted channel and no such flag is needed.
+
 ### Alternative: if you only want a working 8.4 dev env (not a rehearsal)
 
 A logical dump + restore straight into a fresh 8.4 skips the datadir dance entirely (you replay SQL
@@ -378,13 +420,9 @@ it's a weaker rehearsal. Procedure: dump (as above) → `brew services stop/unli
 app's DB user/grants (the `mysql` system schema wasn't restored, so the app's login must be
 re-created; the 8.0.33 driver handles 8.x's default `caching_sha2_password` fine).
 
-## AWS RDS path (for reference — the real target)
+## AWS RDS path
 
-1. Take a **manual snapshot** (RDS also auto-snapshots, but be deliberate).
-2. Modify instance → engine **8.0.x**. RDS runs its pre-check, then upgrades the datadir and `mysql.*`
-   system tables internally. Expect **meaningful downtime** for a major-version upgrade.
-3. **Validate on 8.0** — run the smoketests; let it bake.
-4. Later, a **separate** upgrade 8.0 → **8.4**, same shape. Don't stack both in one maintenance window.
-
-The pre-upgrade checker (Step 0) is what tells you, ahead of time, whether RDS's 5.7 → 8.0 pre-check
-will pass.
+The RDS rollout (test environment, then production) has its own document:
+[`aws_mysql_update.md`](aws_mysql_update.md). This local run is the rehearsal for it — the same
+5.7 → 8.0 → 8.4 sequence, the same `mysql_native_password` → `caching_sha2_password` conversion before
+8.4, validated on your laptop first.
