@@ -585,6 +585,39 @@ INSERT INTO OIDNexter SELECT * FROM test_system_template.OIDNexter
 
 ---
 
+## System-schema bootstrap (NOT Anorm — but it creates the System DB tables)
+
+This mechanism is outside the Anorm query set above, but belongs in the inventory because it's where the
+System DB schema (`User`, `Identity`, `Spaces`, `SpaceMembership`, `OIDNexter`, `Apps`) actually comes
+from — the app-code Anorm queries only ever read/write those tables, never create them.
+
+### `scalajvm/conf/evolutions/default/`
+
+These are Play-evolution-style `.sql` files (`1.sql`–`11.sql`, plus `all.sql`), but **Play's automatic
+evolutions are NOT active**:
+
+- `build.sbt` does **not** depend on Play's `evolutions` module (only `jdbc` + `guice`), and no config
+  enables evolutions. So there is no `play_evolutions` tracking table, no checksums, and nothing
+  auto-applies these at startup.
+- **`all.sql` is the live one.** Per `Running Querki Locally.md` (steps 33–34), you hand-copy `all.sql`,
+  fill in its `TODO` placeholders (passwords, etc.), and run it **manually** against the `querkisystem`
+  database to create the System tables. It carries no Play `!Ups`/`!Downs` markers — it's a plain
+  bootstrap script. This is the file that determines a fresh install's System-table definitions
+  (currently `DEFAULT CHARSET=utf8`).
+- **The numbered `1.sql`–`11.sql` are historical.** Only `1.sql`–`4.sql` still carry the old Play
+  markers; later ones drifted. They document how the schema evolved but do not execute.
+
+Consequence for schema changes: because nothing enforces checksums, these files can be edited freely
+without triggering Play re-runs — but only edits to **`all.sql`** affect anything real (new installs).
+The `querkiuser` (User DB) side builds itself lazily as Spaces/users are created, via the Querki
+evolution system (`querki.evolutions`, catalogued above), not via these files.
+
+> Note: an earlier version of this inventory covered only the Anorm queries and missed this bootstrap
+> mechanism. It matters mainly for the deferred charset project — see
+> [`charset_migration.md`](charset_migration.md).
+
+---
+
 ## Upgrade analysis lives elsewhere
 
 Action items, MySQL-8 compatibility notes, charset/retrofit considerations, upgrade sequencing, and

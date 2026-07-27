@@ -97,28 +97,29 @@ with the reads above. No outstanding parser concerns under the new driver.
 
 ## Action items
 
-### Definite
+### Definite — DONE
 
-1. **Old Connector/J exception class** (`NotificationPersistence.scala`, ~line 107): catches
+1. **Old Connector/J exception class** (`NotificationPersistence.scala:107`): was catching
    `com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException`, which doesn't exist in Connector/J
-   8.x. Catch the JDBC-standard `java.sql.SQLSyntaxErrorException` instead. *(Being changed as part of
-   the current driver work.)*
+   8.x. ✅ Now catches the JDBC-standard `java.sql.SQLSyntaxErrorException` (landed with the driver work).
 
-2. **`DEFAULT CHARSET=utf8` → `utf8mb4`** in the four CREATE TABLE DDLs (`Step4`, `Step5`,
-   `UserStep1`, and the thing-table creation in `SpaceManagerPersister` ~line 103). Note: changing the
-   DDL only affects **newly created** tables; it does not retrofit existing ones (see charset section
-   above).
+2. **`information_schema` filter** (`SpacePersister.scala:182`): ✅ added `AND table_schema = DATABASE()`
+   to the table-existence check, and removed a dead `.on("dbname" -> …)` param the query never
+   referenced. (Note: `DATABASE()` is correct here, *not* the old param — the real schema is
+   `querkiuser`, whereas `ShardKind.dbName` returns the Play config name `user`.)
 
-3. **`information_schema` filter** (`SpacePersister.scala` ~line 183): add
-   `AND table_schema = DATABASE()` to the table-existence check. Without it, ambiguous schema
-   visibility could miscount and mis-classify a Space's old-style-table status. Deploy this one
-   *before* the DB upgrade.
+3. **`INSERT Identity (...)` without `INTO`** (`UserPersistence.scala:410`): ✅ normalized to
+   `INSERT INTO Identity`.
 
-4. **`INSERT Identity (...)` without `INTO`** (`UserPersistence.scala` ~line 411): non-standard MySQL
-   extension; still works in 8.x but worth normalizing to `INSERT INTO`.
+4. **`bigInt` casing** (`Step4.scala:18`): ✅ normalized `bigInt` → `bigint`. Cosmetic.
 
-5. **`bigInt` casing** (`Step4.scala` ~line 18): normalize `bigInt` → `bigint`. Cosmetic; MySQL type
-   names are case-insensitive.
+### Deferred to its own project
+
+5. **`DEFAULT CHARSET=utf8` → `utf8mb4`.** Originally scoped as "four app-code DDLs," but it's bigger and
+   entangled — split out into [`charset_migration.md`](charset_migration.md). Not upgrade-blocking:
+   `utf8mb3` works on 8.4 (deprecated, warnings only), so this is orthogonal to the version upgrade and
+   can happen on its own schedule. See that doc for the full scope (System-table bootstrap in `all.sql`,
+   the per-space app-code DDLs, migrating existing tables, and an H2-compatibility question).
 
 ### Likely non-issues, but verify
 
@@ -140,3 +141,14 @@ with the reads above. No outstanding parser concerns under the new driver.
 11. **Dynamic table names**: `{tname}`/`{cname}`/`{uvname}`/`{notename}` are interpolated as raw
     strings (parameterized table names don't work in MySQL). Derived from OIDs, not user input — no
     injection risk, no MySQL 8 change needed.
+
+## Post-validation follow-ups
+
+Deferred until the upgrade is actually proven out (don't do these prematurely):
+
+- **Update `Running Querki Locally.md` (line ~15).** It still tells new devs to install **MySQL 5.7**
+  and says *"we aren't yet compatible with 8.0."* Once local is validated on 8.4, change that to point
+  at the new supported version and drop the incompatibility note. Do this **after** local is confirmed
+  working on 8.4, not before — no point telling people to install 8.4 until it's proven.
+- **Delete the stale Docker MySQL 5.7 image** once the native local instance is upgraded and happy
+  (it's unused, but reads as confusing — see `local_mysql_upgrade.md`).
