@@ -13,3 +13,34 @@ run = "docker compose -f local/docker-compose.yml up -d"
 [tasks.local-down]
 description = "Stop local Querki infrastructure"
 run = "docker compose -f local/docker-compose.yml down"
+
+[tasks.run]
+description = "Run the specified version of Querki (which should have been deployed to local Docker)"
+usage = '''
+arg "<version>" help="Version suffix (the bit after 3.0.0.)"
+'''
+run = '''
+docker run --rm -e QUERKI_ENV=local -e AWS_ACCESS_KEY_ID=XXXXXXXXXXXX1 -e AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXX2 -p 9000:9000 querkiserver:3.0.0.${usage_version}
+'''
+
+[tasks.awslogin]
+description = "Log into AWS for uploading and such"
+run = "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 929919491297.dkr.ecr.us-east-1.amazonaws.com"
+
+[tasks.tag]
+description = "Tag the specified version of Querki in the local Docker"
+usage = '''
+arg "<version>" help="Version suffix (the bit after 3.0.0.)"
+'''
+run = '''
+docker tag querkiserver:3.0.0.${usage_version} 929919491297.dkr.ecr.us-east-1.amazonaws.com/querki/querki:3.0.0.${usage_version}
+'''
+
+[tasks.upload]
+description = "Upload the specified version of Querki from local Docker to AWS"
+usage = '''
+arg "<version>" help="Version suffix (the bit after 3.0.0.)"
+'''
+run = '''
+docker push 929919491297.dkr.ecr.us-east-1.amazonaws.com/querki/querki:3.0.0.${usage_version}
+'''

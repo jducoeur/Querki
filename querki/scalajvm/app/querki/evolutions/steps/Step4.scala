@@ -15,7 +15,7 @@ class Step4(implicit val ecology: Ecology) extends Step {
         |  id int NOT NULL,
         |  thingId bigint NOT NULL,
         |  authorId bigint NOT NULL,
-        |  authorizedBy bigInt DEFAULT NULL,
+        |  authorizedBy bigint DEFAULT NULL,
         |  props MEDIUMTEXT NOT NULL,
         |  createTime datetime NOT NULL,
         |  responseTo int DEFAULT NULL,
