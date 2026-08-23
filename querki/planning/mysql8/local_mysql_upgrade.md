@@ -380,7 +380,19 @@ brew services start mysql@8.0     # boots against the 5.7 datadir and upgrades i
 #   ALTER USER 'root'@'localhost'     IDENTIFIED WITH caching_sha2_password BY '<pw>';
 #   ALTER USER 'jducoeur'@'localhost' IDENTIFIED WITH caching_sha2_password BY '<pw>';
 #   -- confirm none of your real accounts still show mysql_native_password:
-#   SELECT user, host, plugin FROM mysql.user;
+#   SELECT user, host, plugin, account_locked FROM mysql.user;
+
+# NOTE on the reserved mysql.* accounts — you do NOT need to convert these:
+#   mysql.session and mysql.sys will still show mysql_native_password after the conversion, while
+#   mysql.infoschema shows caching_sha2_password. That split is expected: mysql.infoschema is new in
+#   8.0, so the 5.7->8.0 upgrade created it fresh with 8.0's default plugin, whereas session/sys were
+#   carried forward from the 5.7 datadir with their original one.
+#   They're safe to leave because they are LOCKED reserved accounts (account_locked = 'Y') — they
+#   can't be used for client login, and the server components that operate as mysql.session use an
+#   internal path that never does password authentication. So mysql_native_password being disabled in
+#   8.4 has nothing to bite on. MySQL owns these accounts; don't ALTER them.
+#   (The pre-upgrade checker lists them anyway — it enumerates by plugin without weighting for
+#   locked/reserved status, so those entries are false positives.)
 
 # --- Hop 2: 8.0 -> 8.4 ---
 brew services stop mysql@8.0

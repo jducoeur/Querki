@@ -54,4 +54,9 @@ Docker/publishLocal
 docker run --rm -e QUERKI_ENV=local -e AWS_ACCESS_KEY_ID=XXXXXXXXXXXX1 -e AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXX2 -p 9000:9000 querkiserver:3.x.x.x
 ```  
 Update the version number to whatever the current version is. The AWS key values are irrelevant, but need to exist in order to boot.
+
+Or more easily, use mise-en-place -- assuming only the point number has changed, that's:
+```shell
+mr run <last bit of version>
+```
 * **Log in and use Querki**. When that settles down, navigate to `http://localhost:9000`, and theoretically it should show you Querki's login page. Try logging in as the admin.
