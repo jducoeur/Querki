@@ -310,21 +310,21 @@ play.i18n.langs=[ "en", "en-US" ]
 ## db.default.password=
 
 # MySQL configuration for the System tables...
-db.system.driver=com.mysql.jdbc.Driver
+db.system.driver=com.mysql.cj.jdbc.Driver
 db.system.url="jdbc:mysql://localhost/querkisystem?characterEncoding=UTF-8"
 db.system.user=DB LOGIN
 db.system.password=DB PASSWORD
 db.system.logStatements=true
 
 # ... and for the User tables:
-db.user.driver=com.mysql.jdbc.Driver
+db.user.driver=com.mysql.cj.jdbc.Driver
 db.user.url="jdbc:mysql://localhost/querkiuser?characterEncoding=UTF-8"
 db.user.user=DB LOGIN
 db.user.password=DB PASSWORD
 db.user.logStatements=true
 
 # ... and for the Test Template database:
-#db.template.driver=com.mysql.jdbc.Driver
+#db.template.driver=com.mysql.cj.jdbc.Driver
 #db.template.url="jdbc:mysql://localhost/test_system_template?characterEncoding=UTF-8"
 #db.template.user=DB LOGIN
 #db.template.password=DB PASSWORD

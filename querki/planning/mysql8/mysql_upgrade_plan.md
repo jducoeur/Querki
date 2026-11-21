@@ -113,13 +113,25 @@ with the reads above. No outstanding parser concerns under the new driver.
 
 4. **`bigInt` casing** (`Step4.scala:18`): ✅ normalized `bigInt` → `bigint`. Cosmetic.
 
+### Definite — changed in working set, awaiting release
+
+6. **Legacy driver class name** in the `db.*.driver` settings of `test.conf`, `prod.conf`, `local.conf`
+   and `application.conf.template`: was `com.mysql.jdbc.Driver` (the 5.x name), ✅ now
+   `com.mysql.cj.jdbc.Driver`. Under Connector/J 8.x the old name still works as a deprecated alias
+   (it logs a deprecation warning at startup), so this **doesn't block** the DB upgrade and depends
+   only on the driver version, not the server. The conf files are bundled into the build, so it ships
+   with the next release. (`scenario.conf` uses H2's driver and is unaffected.) Missed by the original
+   inventory, which covered only code using Anorm, not config. (`application.conf` has no DB settings;
+   they all live in the per-environment confs, so this covers every case.)
+
 ### Deferred to its own project
 
 5. **`DEFAULT CHARSET=utf8` → `utf8mb4`.** Originally scoped as "four app-code DDLs," but it's bigger and
    entangled — split out into [`charset_migration.md`](charset_migration.md). Not upgrade-blocking:
    `utf8mb3` works on 8.4 (deprecated, warnings only), so this is orthogonal to the version upgrade and
    can happen on its own schedule. See that doc for the full scope (System-table bootstrap in `all.sql`,
-   the per-space app-code DDLs, migrating existing tables, and an H2-compatibility question).
+   the per-space app-code DDLs, migrating existing tables, and H2 compatibility, now known to matter
+   because the mid tests run against H2).
 
 ### Likely non-issues, but verify
 

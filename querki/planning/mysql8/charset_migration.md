@@ -44,9 +44,18 @@ The charset is set in **three** places, and existing data doesn't move on its ow
 - [ ] `all.sql`: change System-table DDL to `utf8mb4` (and consider fixing the historical numbered
       `.sql` files for consistency, though they don't execute).
 - [ ] The four app-code DDLs above: `DEFAULT CHARSET=utf8` → `DEFAULT CHARSET=utf8mb4`.
-- [ ] **H2 compatibility check:** unit tests (`sbt utst`) may run these `CREATE TABLE`s against H2
-      (evolution `doEvolve` is not skipped in in-memory mode). Confirm H2's MySQL mode accepts
-      `DEFAULT CHARSET=utf8mb4` before assuming the DDL change is test-safe.
+- [ ] **Server-level settings on RDS:** the 8.0 parameter groups deliberately pin
+      `character_set_server=utf8` and `collation_server=utf8_bin`, carried over from RDS's 5.7 default
+      group, so the upgrade doesn't change them. This project should move them to `utf8mb4` and a
+      matching `utf8mb4` collation, and decide whether to keep binary (`_bin`) comparison semantics.
+      Also change each schema's default charset (`ALTER DATABASE … CHARACTER SET utf8mb4`), since the
+      pre-upgrade check showed `querkisystem`/`querkiuser` default to `utf8`.
+- [ ] **H2 compatibility check (confirmed needed):** `scenario.conf`, the environment the mid tests
+      (`sbt ftst`) run in, points both `db.system` and `db.user` at in-memory H2
+      (`jdbc:h2:mem:…;MODE=MYSQL`). So these `CREATE TABLE`s *do* run through H2 in tests (evolution
+      `doEvolve` isn't skipped in in-memory mode). Confirm H2's MySQL mode accepts
+      `DEFAULT CHARSET=utf8mb4` before treating the DDL change as test-safe, and check whether the unit
+      tests (`sbt utst`) exercise these DDLs too.
 - [ ] Migration script for existing tables (`ALTER TABLE … CONVERT TO CHARACTER SET utf8mb4`), covering
       both System and User DBs, run per environment.
 - [ ] Watch index key lengths on conversion. (Current DDLs index only numeric/temporal columns, no

@@ -25,7 +25,6 @@ Scala is pinned to `2.12.15`, Akka to `2.6.5`. Target JDK is Java 8 (Corretto in
 
 - `querki/localsecrets.conf` — contains real secrets
 - `querki/aws_creds`
-- `querki/scalajvm/conf/application.conf` — the real config (use `application.conf.template` and `scenario.conf` / `test.conf` for reference instead)
 - `*.db`, `logs/`, `target/`, `tmp/`, `testdb/`, `querki/journal/`, `querki/snapshots/`, `project/project/`, `play-fork-run.sbt`, `sbt-ui.sbt`, `local.sbt`
 
 `querki/tmp/` is also where the user typically drops scratch files for a debugging session — boot logs, CloudWatch exports (e.g. `LoadGoodSpace.txt`, `LoadBadSpace.txt`, `bootlog.txt`). Those *are* fine to read when the user points at them; just treat them as throwaways and don't refer back to them in later sessions.
