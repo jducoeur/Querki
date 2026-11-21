@@ -16,6 +16,12 @@ object TimeAnorm {
     value match {
       case ts: java.sql.Timestamp => Right(new DateTime(ts.getTime))
       //case d: java.sql.Date => Right(new DateTime(d.getTime))
+      // Connector/J 8.x returns DATETIME columns as java.time.LocalDateTime rather than the
+      // java.sql.Timestamp that the 5.1.x driver returned. Interpret it in the JVM default zone,
+      // which reproduces the old `Timestamp.getTime` read semantics. (TIMESTAMP columns still
+      // come back as java.sql.Timestamp, so we keep that case above.)
+      case ldt: java.time.LocalDateTime =>
+        Right(new DateTime(ldt.atZone(java.time.ZoneId.systemDefault).toInstant.toEpochMilli))
       case _ => Left(TypeDoesNotMatch(
           "Cannot convert column " + qualified + ", value " + value + " to date:" + value.asInstanceOf[AnyRef].getClass
         ))

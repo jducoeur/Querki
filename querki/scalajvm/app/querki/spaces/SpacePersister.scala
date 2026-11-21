@@ -183,8 +183,8 @@ private[spaces] class SpacePersister(
             SELECT COUNT(*) as count
             FROM information_schema.tables
             WHERE table_name = '{tname}'
+              AND table_schema = DATABASE()
             """)
-          .on("dbname" -> ShardKind.dbName(ShardKind.User))
           .as(long("count").single)
         if (spacesFound > 0) {
           // The list of all of the Things in this Space.

@@ -407,7 +407,7 @@ class UserPersistence(e: Ecology) extends QuerkiEcot(e) with UserAccess {
           val displayName = email.takeWhile(_ != '@')
           QDB(ShardKind.System) { implicit conn =>
             val identityInsert = SQL("""
-                INSERT Identity
+                INSERT INTO Identity
                   (id, name, userId, kind, handle, email, authentication)
                   VALUES
                   ({identityId}, {display}, {userId}, {kind}, {handle}, {email}, {authentication})

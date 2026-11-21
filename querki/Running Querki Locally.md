@@ -47,11 +47,16 @@ This starts Cassandra and ministack (a lightweight Docker-based AWS emulator), t
 
 * **Create the Querki Docker image**: in order to create a current Docker image, go into sbt, and say:
 ```
-docker:publishLocal
+Docker/publishLocal
 ```
 * **Run Querki**. Here goes! You've created and published the local Docker image; run that from the command line as:
 ```
 docker run --rm -e QUERKI_ENV=local -e AWS_ACCESS_KEY_ID=XXXXXXXXXXXX1 -e AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXX2 -p 9000:9000 querkiserver:3.x.x.x
 ```  
 Update the version number to whatever the current version is. The AWS key values are irrelevant, but need to exist in order to boot.
+
+Or more easily, use mise-en-place -- assuming only the point number has changed, that's:
+```shell
+mr run <last bit of version>
+```
 * **Log in and use Querki**. When that settles down, navigate to `http://localhost:9000`, and theoretically it should show you Querki's login page. Try logging in as the admin.

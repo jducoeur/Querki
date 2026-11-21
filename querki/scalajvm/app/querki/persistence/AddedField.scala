@@ -1,7 +1,5 @@
 package querki.persistence
 
-import querki.util.QLog
-
 /**
  * Wrapper type, for fields that get added to an Event that has already been serialized
  * into the database.
@@ -28,16 +26,13 @@ object AddedField {
 
     private def handle[U](name: String)(ifNull: => U)(ifFound: T => U): U =
       if (af == null) {
-        QLog.logTrace(s"AddedField.$name: found null")
         ifNull
       } else {
         af match {
           case AddedFieldImpl(t) => {
-            QLog.logTrace(s"AddedField.$name: found added value $t")
             ifFound(t)
           }
           case other => {
-            QLog.logError(s"AddedField.$name: found unexpected value $other")
             ifNull
           }
         }
